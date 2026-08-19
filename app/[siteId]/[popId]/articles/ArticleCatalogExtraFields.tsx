@@ -2,7 +2,6 @@
 
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
 import type { ArticleItemKind } from "@/lib/articleItemKind"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -13,23 +12,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-export type ArticleSupplierOption = {
-  id: string
-  name: string
-}
-
 export type ArticleCatalogExtraFormState = {
   brand: string
   discountMode: "" | ArticleDiscountMode
   discountValue: string
-  supplierIds: string[]
 }
 
 type Props = {
   itemKind: ArticleItemKind
   idPrefix: string
-  suppliers: ArticleSupplierOption[]
-  suppliersLoading?: boolean
   value: ArticleCatalogExtraFormState
   onChange: (patch: Partial<ArticleCatalogExtraFormState>) => void
 }
@@ -37,19 +28,9 @@ type Props = {
 export function ArticleCatalogExtraFields({
   itemKind,
   idPrefix,
-  suppliers,
-  suppliersLoading = false,
   value,
   onChange,
 }: Props) {
-  const toggleSupplier = (supplierId: string, checked: boolean) => {
-    onChange({
-      supplierIds: checked
-        ? [...new Set([...value.supplierIds, supplierId])]
-        : value.supplierIds.filter((id) => id !== supplierId),
-    })
-  }
-
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -61,39 +42,6 @@ export function ArticleCatalogExtraFields({
           placeholder="Opcional"
           className="bg-background"
         />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Proveedores</Label>
-        {suppliersLoading ? (
-          <p className="text-sm text-muted-foreground">Cargando proveedores…</p>
-        ) : suppliers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No hay proveedores cargados en este punto de venta.
-          </p>
-        ) : (
-          <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-border/60 bg-muted/10 p-2">
-            {suppliers.map((s) => {
-              const checked = value.supplierIds.includes(s.id)
-              return (
-                <label
-                  key={s.id}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1 hover:bg-muted/40"
-                >
-                  <Checkbox
-                    checked={checked}
-                    onCheckedChange={(c) => toggleSupplier(s.id, c === true)}
-                    aria-label={s.name}
-                  />
-                  <span className="truncate text-sm text-foreground">{s.name}</span>
-                </label>
-              )
-            })}
-          </div>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Podés elegir uno o más proveedores habituales para este ítem.
-        </p>
       </div>
 
       {itemKind === "merchandise" ? (
@@ -160,6 +108,5 @@ export function defaultArticleCatalogExtraFormState(): ArticleCatalogExtraFormSt
     brand: "",
     discountMode: "",
     discountValue: "",
-    supplierIds: [],
   }
 }

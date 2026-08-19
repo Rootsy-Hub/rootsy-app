@@ -8,6 +8,7 @@ import {
   menuOuterEntityFootClass,
   menuOuterEntityFootContentClass,
   menuOuterEntityFootFloatingClass,
+  menuOuterEntityFootFloatingChromeClass,
   menuOuterEntityFootFloatingContentClass,
   menuOuterEntityVeilClass,
 } from "@/app/[siteId]/[popId]/menu/menuOuterEntityStyles"
@@ -26,6 +27,32 @@ type Props = {
   children: ReactNode
   className?: string
   contentClassName?: string
+}
+
+function MenuOuterEntityAtmosphere({
+  withHorizon = true,
+}: {
+  withHorizon?: boolean
+}) {
+  return (
+    <>
+      <div aria-hidden className="menu-outer-entity-core" />
+      <div aria-hidden className="menu-outer-entity-sky" />
+      <div aria-hidden className={menuOuterEntityVeilClass} />
+      <div aria-hidden className="menu-outer-entity-weight" />
+      <div aria-hidden className="menu-outer-entity-edge" />
+      <div aria-hidden className="menu-outer-entity-stars" />
+      <div aria-hidden className="menu-outer-entity-stars--bright">
+        <span className="menu-outer-entity-star menu-outer-entity-star--md" />
+        <span className="menu-outer-entity-star menu-outer-entity-star--sm" />
+        <span className="menu-outer-entity-star menu-outer-entity-star--md" />
+        <span className="menu-outer-entity-star menu-outer-entity-star--sm" />
+      </div>
+      {withHorizon ? (
+        <div aria-hidden className="menu-outer-entity-horizon" />
+      ) : null}
+    </>
+  )
 }
 
 /** Banda del universo exterior — cinturón de mundos o base del dock. */
@@ -66,19 +93,13 @@ export function MenuOuterEntity({
       ) : null}
 
       <div className={bodyClass} style={lifeStyle}>
-        <div aria-hidden className="menu-outer-entity-core" />
-        <div aria-hidden className="menu-outer-entity-sky" />
-        <div aria-hidden className={menuOuterEntityVeilClass} />
-        <div aria-hidden className="menu-outer-entity-weight" />
-        <div aria-hidden className="menu-outer-entity-edge" />
-        <div aria-hidden className="menu-outer-entity-stars" />
-        <div aria-hidden className="menu-outer-entity-stars--bright">
-          <span className="menu-outer-entity-star menu-outer-entity-star--md" />
-          <span className="menu-outer-entity-star menu-outer-entity-star--sm" />
-          <span className="menu-outer-entity-star menu-outer-entity-star--md" />
-          <span className="menu-outer-entity-star menu-outer-entity-star--sm" />
-        </div>
-        <div aria-hidden className="menu-outer-entity-horizon" />
+        {isFloatingFoot ? (
+          <div aria-hidden className={menuOuterEntityFootFloatingChromeClass}>
+            <MenuOuterEntityAtmosphere withHorizon={false} />
+          </div>
+        ) : (
+          <MenuOuterEntityAtmosphere />
+        )}
         <div className={cn(contentClass, contentClassName)}>{children}</div>
       </div>
 

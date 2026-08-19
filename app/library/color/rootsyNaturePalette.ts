@@ -87,7 +87,7 @@ export const SOMBRA_FAMILY: NatureFamily = {
     { id: "z950", label: "950", hex: hx("sombra", "950"), usage: "★ Shell POS — fondo general." },
     { id: "z900", label: "900", hex: hx("sombra", "900"), usage: "Toolbox inferior — cliente, pago." },
     { id: "z800", label: "800", hex: hx("sombra", "800"), usage: "Media de card — void detrás de foto." },
-    { id: "z700", label: "700", hex: hx("sombra", "700"), usage: "★ Rail categorías — sidebar 288px (6× space.600)." },
+    { id: "z700", label: "700", hex: hx("sombra", "700"), usage: "★ Rail categorías — sidebar w-64 (256px)." },
     { id: "z600", label: "600", hex: hx("sombra", "600"), usage: "Canvas catálogo — grilla de productos." },
     { id: "z500", label: "500", hex: hx("sombra", "500"), usage: "★ Superficie card — cuerpo del producto." },
     { id: "z400", label: "400", hex: hx("sombra", "400"), usage: "Labels de sección — sage muted." },

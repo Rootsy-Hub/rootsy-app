@@ -6,11 +6,10 @@ import type { OperationCartLineOverrideState } from "@/components/sale-operation
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
 import {
-  layoutsOperarSummaryCartCellClass,
-  layoutsOperarSummaryCartHeadingClass,
   layoutsOperarSummaryCartListSurfaceClass,
-  layoutsOperarSummaryCartMetaClass,
+  layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
+  layoutsOperarTicketScrollColumnClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { dataWorkspaceBlocksSkeletonTone } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -111,37 +110,24 @@ export function SaleOperationTicketOrderPanel({
 
   const panel = (
     <>
-      {/* 1.2.1 — cantidad de líneas */}
-      <div
-        className={cn(
-          layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL),
-          "row-start-1 min-h-0 shrink-0",
-        )}
-      >
-        <div className="min-w-0">
-          <h2 className={layoutsOperarSummaryCartHeadingClass}>{listTitle}</h2>
-          {listSubtitle ? (
-            <p className="mt-0.5 truncate text-xs font-medium text-[var(--layouts-operar-light-cart-line-meta)]">
-              {listSubtitle}
-            </p>
-          ) : null}
-        </div>
-        <span className={layoutsOperarSummaryCartMetaClass}>
-          {loading ? "Cargando…" : `${ticketLineCount} ${ticketLineCount === 1 ? "línea" : "líneas"}`}
-        </span>
-      </div>
-
-      {/* 1.2.2 — listado ticket */}
       <div
         ref={cartScrollContainerRef}
-        className={cn(
-          layoutsOperarSummaryCartCellClass,
-          "layouts-operar-scroll-minimal overflow-y-auto",
-        )}
+        className={layoutsOperarTicketScrollColumnClass}
         role="region"
-        aria-label="Ítems agregados"
+        aria-label="Pedido"
         aria-busy={loading || undefined}
       >
+        <div className={layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL)}>
+          <div className="min-w-0">
+            <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
+            {listSubtitle ? (
+              <p className="mt-0.5 truncate text-xs font-medium text-[var(--layouts-operar-light-cart-line-meta)]">
+                {listSubtitle}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
         {loading ? (
           <SaleOperationTicketOrderPanelSkeleton />
         ) : ticketLineCount === 0 ? (
@@ -153,6 +139,7 @@ export function SaleOperationTicketOrderPanel({
             className={cn(
               layoutsOperarSummaryCartListSurfaceClass,
               layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+              "shrink-0",
             )}
           >
             {cartDisplayGroups.map((group) => (
@@ -193,6 +180,12 @@ export function SaleOperationTicketOrderPanel({
             ))}
           </div>
         )}
+
+        {!loading && hasTicketItems ? (
+          <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
+            <SaleOperationTotalBar {...totalBar} tone="operar" className="w-full" />
+          </div>
+        ) : null}
       </div>
 
       {!loading && hasTicketItems ? (
@@ -200,18 +193,6 @@ export function SaleOperationTicketOrderPanel({
           <SaleOperationActionsBar {...actions} variant="operar" />
         </div>
       ) : null}
-
-      {/* 1.2.4 — totales */}
-      <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
-        {loading ? (
-          <div className="flex h-full flex-col justify-end gap-2 p-3" aria-hidden>
-            <div className={cn(ticketSkeleton.barSm, "ml-auto h-4 w-24")} />
-            <div className={cn(ticketSkeleton.bar, "ml-auto h-6 w-32")} />
-          </div>
-        ) : (
-          <SaleOperationTotalBar {...totalBar} tone="operar" className="h-full w-full" />
-        )}
-      </div>
     </>
   )
 

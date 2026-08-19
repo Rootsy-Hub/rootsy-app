@@ -25,6 +25,7 @@ import {
 } from "@/lib/operateCatalogPage"
 import { resolveCatalogProductImage } from "@/lib/menuCatalogProduct"
 import {
+  layoutsOperarCatalogCanvasBodyClass,
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
@@ -215,10 +216,11 @@ export function PurchaseCatalogBrowser({
           resultCount={productosFiltrados.length}
         />
 
+        <div className={layoutsOperarCatalogCanvasBodyClass}>
         <div
           ref={setScrollRoot}
           className={cn(
-            "min-h-0",
+            "min-h-0 h-full",
             showGridSkeleton
               ? layoutsOperarCatalogCanvasScrollClass
               : displayError
@@ -264,6 +266,7 @@ export function PurchaseCatalogBrowser({
               }
             />
           )}
+        </div>
         </div>
       </section>
     </div>

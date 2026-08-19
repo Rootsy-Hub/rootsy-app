@@ -39,7 +39,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Catálogo",
     component: "Sidebar filtros",
-    token: "w-288 (6× space.600) · sombra-950 · collapsible",
+    token: "w-64 (256px) · library-sidebar · library-nav · collapsible",
     source: "sale/page.tsx · data-workspace-sidebar",
   },
   {
@@ -69,7 +69,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Ticket",
     component: "SaleOperationTicketOrderPanel",
-    token: "bg bruma-100 · row-span-2",
+    token: "bg bruma-50 · row-span-2",
     source: "sale/page.tsx · aside carrito",
   },
   {
@@ -81,7 +81,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Ticket",
     component: "SaleOperationActionsBar",
-    token: "Descartar · Vender",
+    token: "RootsIconButton · círculo full · Descartar · Cobrar",
     source: "SaleOperationTicketOrderPanel",
   },
   {

@@ -1,11 +1,23 @@
 "use client"
 
+import { shortUnitOfMeasure } from "@/lib/articleItemKind"
 import { cn } from "@/lib/utils"
 
 export function formatCartLineQuantity(n: number): string {
   const rounded = Math.round(n * 1e6) / 1e6
   if (Number.isInteger(rounded)) return String(rounded)
   return rounded.toLocaleString("es-AR", { maximumFractionDigits: 6 })
+}
+
+/** Unidad → 1x · otras unidades → 3kg / 0,44lt. */
+export function formatOperarTicketQuantity(
+  cantidad: number,
+  unitOfMeasure: string | null | undefined,
+): string {
+  const qty = formatCartLineQuantity(cantidad)
+  const unit = String(unitOfMeasure ?? "").trim() || "unidad"
+  if (unit === "unidad") return `${qty}x`
+  return `${qty}${shortUnitOfMeasure(unit)}`
 }
 
 export const cartLineRowGridColumnsClass =

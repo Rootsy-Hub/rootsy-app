@@ -44,7 +44,7 @@ export const ROOTSY_LAYOUTS_MODULE_HEADER = {
   heightClass: "h-17",
   heightToken: "space.800 + space.050",
   innerGridClass:
-    "grid h-full min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6",
+    "grid h-full min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-3 px-3 sm:gap-4 sm:px-4",
   chromeFundamentalsClass: "MenuHeaderEntity",
   chromeFundamentalsToken: "universo exterior · noche · estrellas · horizonte",
   chromeFundamentalsSupportsToken: "menu-header-entity-body · blur 10 · saturate 1.01",

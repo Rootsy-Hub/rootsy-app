@@ -1,14 +1,13 @@
 "use client"
 
 import {
-  layoutsOperarTicketProposalActionDiscardClass,
-  layoutsOperarTicketProposalActionSellClass,
-} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
-import {
-  layoutsOperarSummaryActionConfirmColClass,
-  layoutsOperarSummaryActionDiscardColClass,
+  layoutsOperarTicketActionCircleRadius,
+  layoutsOperarTicketActionConfirmIconPx,
+  layoutsOperarTicketActionConfirmSizePx,
+  layoutsOperarTicketActionDiscardIconPx,
+  layoutsOperarTicketActionDiscardSizePx,
 } from "@/app/library/layouts/layoutsOperarStyles"
-import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   saleOpActionConfirmClass,
   saleOpActionDiscardClass,
@@ -18,9 +17,19 @@ import {
   saleOpActionsBarShellClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
-import { CircleDollarSign, Loader2, X } from "lucide-react"
+import { CircleDollarSign, HandCoins, Loader2, X } from "lucide-react"
 
-const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
+const ticketActionDiscardStyle = {
+  borderRadius: layoutsOperarTicketActionCircleRadius,
+  width: layoutsOperarTicketActionDiscardSizePx,
+  height: layoutsOperarTicketActionDiscardSizePx,
+} as const
+
+const ticketActionConfirmStyle = {
+  borderRadius: layoutsOperarTicketActionCircleRadius,
+  width: layoutsOperarTicketActionConfirmSizePx,
+  height: layoutsOperarTicketActionConfirmSizePx,
+} as const
 
 export type SaleOperationActionsBarProps = {
   discardDisabled?: boolean
@@ -31,7 +40,7 @@ export type SaleOperationActionsBarProps = {
   onDiscard: () => void
   onConfirm: () => void
   flush?: boolean
-  /** Grid operar 1.2.3 — dos columnas hermanas (Descartar | Vender). */
+  /** Ticket operar — umbral circular Descartar · Cobrar. */
   variant?: "default" | "operar"
   className?: string
 }
@@ -49,91 +58,40 @@ export function SaleOperationActionsBar({
   className,
 }: SaleOperationActionsBarProps) {
   const confirmInactive = confirmDisabled || confirmLoading
-  const isOperar = variant === "operar"
-
-  const discardButton = (
-    <button
-      type="button"
-      disabled={discardDisabled}
-      onClick={onDiscard}
-      className={cn(
-        isOperar
-          ? cn(
-              layoutsOperarTicketProposalActionDiscardClass(TICKET_PROPOSAL),
-              "h-full w-full border-0 bg-transparent shadow-none transition-[color,opacity] duration-150",
-              "hover:text-rose-800 active:text-rose-900",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-rose-400/35",
-              "disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:text-slate-400",
-            )
-          : cn(saleOpActionDiscardClass, !flush && "rounded-xl"),
-      )}
-    >
-      {isOperar ? (
-        "Descartar"
-      ) : (
-        <>
-          <span
-            className={cn(
-              saleOpActionIconWrapDiscardClass,
-              discardDisabled && "bg-slate-200/60 text-slate-500",
-            )}
-            aria-hidden
-          >
-            <X className="size-4 stroke-[2.5]" />
-          </span>
-          Descartar
-        </>
-      )}
-    </button>
-  )
-
-  const confirmButton = (
-    <button
-      type="button"
-      disabled={confirmInactive}
-      onClick={onConfirm}
-      title={confirmTitle}
-      className={cn(
-        isOperar
-          ? cn(
-              layoutsOperarTicketProposalActionSellClass(TICKET_PROPOSAL),
-              "h-full w-full border-0 shadow-none transition-[background-color,opacity] duration-150",
-              "hover:bg-[var(--rootsy-savia-500)] active:bg-[var(--rootsy-savia-700)]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-300)_55%,transparent)]",
-              "disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[var(--rootsy-savia-600)] disabled:active:bg-[var(--rootsy-savia-600)]",
-            )
-          : cn(saleOpActionConfirmClass, !flush && "rounded-xl"),
-      )}
-    >
-      {isOperar ? (
-        confirmLoading ? "Procesando…" : confirmLabel
-      ) : (
-        <>
-          <span
-            className={cn(
-              confirmInactive
-                ? saleOpActionIconWrapConfirmDisabledClass
-                : saleOpActionIconWrapConfirmClass,
-            )}
-            aria-hidden
-          >
-            {confirmLoading ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <CircleDollarSign className="size-4" />
-            )}
-          </span>
-          {confirmLoading ? "Procesando…" : confirmLabel}
-        </>
-      )}
-    </button>
-  )
 
   if (variant === "operar") {
     return (
       <>
-        <div className={layoutsOperarSummaryActionDiscardColClass}>{discardButton}</div>
-        <div className={layoutsOperarSummaryActionConfirmColClass}>{confirmButton}</div>
+        <RootsIconButton
+          label="Descartar"
+          theme="workspace"
+          emphasis="outlined"
+          size="large"
+          sizeChildren={false}
+          disabled={discardDisabled}
+          onClick={onDiscard}
+          style={ticketActionDiscardStyle}
+        >
+          <X
+            size={layoutsOperarTicketActionDiscardIconPx}
+            strokeWidth={2.5}
+            aria-hidden
+          />
+        </RootsIconButton>
+        <RootsIconButton
+          label={confirmLoading ? "Procesando" : confirmLabel}
+          theme="pos"
+          emphasis="primary"
+          size="large"
+          sizeChildren={false}
+          loading={confirmLoading}
+          disabled={confirmDisabled}
+          title={confirmTitle}
+          onClick={onConfirm}
+          style={ticketActionConfirmStyle}
+        >
+          <HandCoins size={layoutsOperarTicketActionConfirmIconPx} aria-hidden />
+        </RootsIconButton>
       </>
     )
   }
@@ -147,8 +105,46 @@ export function SaleOperationActionsBar({
         className,
       )}
     >
-      {discardButton}
-      {confirmButton}
+      <button
+        type="button"
+        disabled={discardDisabled}
+        onClick={onDiscard}
+        className={cn(saleOpActionDiscardClass, !flush && "rounded-xl")}
+      >
+        <span
+          className={cn(
+            saleOpActionIconWrapDiscardClass,
+            discardDisabled && "bg-slate-200/60 text-slate-500",
+          )}
+          aria-hidden
+        >
+          <X className="size-4 stroke-[2.5]" />
+        </span>
+        Descartar
+      </button>
+      <button
+        type="button"
+        disabled={confirmInactive}
+        onClick={onConfirm}
+        title={confirmTitle}
+        className={cn(saleOpActionConfirmClass, !flush && "rounded-xl")}
+      >
+        <span
+          className={cn(
+            confirmInactive
+              ? saleOpActionIconWrapConfirmDisabledClass
+              : saleOpActionIconWrapConfirmClass,
+          )}
+          aria-hidden
+        >
+          {confirmLoading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <CircleDollarSign className="size-4" />
+          )}
+        </span>
+        {confirmLoading ? "Procesando…" : confirmLabel}
+      </button>
     </div>
   )
 }

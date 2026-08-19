@@ -1,22 +1,27 @@
 "use client"
 
 import "@/app/library/layouts/layoutsOperarTheme.css"
+import "@/app/library/libraryColorTheme.css"
 import "@/app/library/radius/rootsyRadiusSystem.css"
 import { getLayoutsOperarGridCssVariables } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import {
   layoutsOperarBodyScopeClass,
   layoutsOperarCatalogRailItemClass,
-  layoutsOperarCatalogRailItemDiscountSelectedClass,
-  layoutsOperarCatalogRailItemPromoSelectedClass,
   layoutsOperarCatalogRailItemSelectedClass,
   layoutsOperarCatalogRailItemWithIconClass,
   layoutsOperarCatalogRailListClass,
   layoutsOperarCatalogRailListItemClass,
   layoutsOperarCatalogRailNavClass,
+  layoutsOperarCatalogRailSectionGroupClass,
+  layoutsOperarCatalogRailSectionGroupDividerClass,
   layoutsOperarCatalogRailSectionLabelClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarOpenClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  libraryNavItemIconClass,
+  libraryNavItemLabelClass,
+} from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 import { Percent, Tag } from "lucide-react"
 import { useState } from "react"
@@ -78,13 +83,13 @@ export function LayoutsOperarCatalogRailDemoShell({
   )
 }
 
-/** Rail categorías — lista clara canónica. */
+/** Rail categorías — library-nav · superficie oscura. */
 export function LayoutsOperarCatalogRailProposal() {
   const [vistaCatalogo, setVistaCatalogo] = useState<DemoCatalogView>(DEMO_CATALOG_VIEW_DEFAULT)
 
   return (
     <nav className={layoutsOperarCatalogRailNavClass} aria-label="Filtros del catálogo">
-      <div>
+      <div className={layoutsOperarCatalogRailSectionGroupClass}>
         <p className={layoutsOperarCatalogRailSectionLabelClass}>Categorías</p>
         <ul className={layoutsOperarCatalogRailListClass} role="list">
           <li className={layoutsOperarCatalogRailListItemClass}>
@@ -103,7 +108,7 @@ export function LayoutsOperarCatalogRailProposal() {
                   layoutsOperarCatalogRailItemSelectedClass,
               )}
             >
-              Todos
+              <span className={libraryNavItemLabelClass}>Todos</span>
             </button>
           </li>
           {LAYOUTS_OPERAR_DEMO_CATALOG_CATEGORIES.map((name) => {
@@ -122,7 +127,7 @@ export function LayoutsOperarCatalogRailProposal() {
                     seleccionado && layoutsOperarCatalogRailItemSelectedClass,
                   )}
                 >
-                  {name}
+                  <span className={libraryNavItemLabelClass}>{name}</span>
                 </button>
               </li>
             )
@@ -130,7 +135,12 @@ export function LayoutsOperarCatalogRailProposal() {
         </ul>
       </div>
 
-      <div>
+      <div
+        className={cn(
+          layoutsOperarCatalogRailSectionGroupClass,
+          layoutsOperarCatalogRailSectionGroupDividerClass,
+        )}
+      >
         <p className={layoutsOperarCatalogRailSectionLabelClass}>Listados rápidos</p>
         <ul className={layoutsOperarCatalogRailListClass} role="list">
           <li className={layoutsOperarCatalogRailListItemClass}>
@@ -144,11 +154,11 @@ export function LayoutsOperarCatalogRailProposal() {
                 layoutsOperarCatalogRailItemClass,
                 layoutsOperarCatalogRailItemWithIconClass,
                 vistaCatalogo.modo === "promociones" &&
-                  layoutsOperarCatalogRailItemPromoSelectedClass,
+                  layoutsOperarCatalogRailItemSelectedClass,
               )}
             >
-              <Tag className="size-4 shrink-0 opacity-80" aria-hidden />
-              Promociones
+              <Tag className={libraryNavItemIconClass} aria-hidden />
+              <span className={libraryNavItemLabelClass}>Promociones</span>
             </button>
           </li>
           <li className={layoutsOperarCatalogRailListItemClass}>
@@ -162,11 +172,11 @@ export function LayoutsOperarCatalogRailProposal() {
                 layoutsOperarCatalogRailItemClass,
                 layoutsOperarCatalogRailItemWithIconClass,
                 vistaCatalogo.modo === "con_descuento" &&
-                  layoutsOperarCatalogRailItemDiscountSelectedClass,
+                  layoutsOperarCatalogRailItemSelectedClass,
               )}
             >
-              <Percent className="size-4 shrink-0 opacity-80" aria-hidden />
-              Con descuento
+              <Percent className={libraryNavItemIconClass} aria-hidden />
+              <span className={libraryNavItemLabelClass}>Con descuento</span>
             </button>
           </li>
         </ul>

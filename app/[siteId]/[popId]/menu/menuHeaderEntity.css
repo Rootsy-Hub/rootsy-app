@@ -66,17 +66,72 @@
   }
 }
 
+.menu-header-entity-body--floor .menu-header-entity-core {
+  opacity: 0.55;
+  background: radial-gradient(
+    ellipse 130% 90% at 50% 120%,
+    color-mix(in srgb, var(--rootsy-savia-950) 28%, var(--rootsy-sombra-950)) 0%,
+    transparent 70%
+  );
+  animation-duration: 14s;
+}
+
+.menu-header-entity-body--floor .menu-header-entity-sky {
+  opacity: 0.22;
+  background: radial-gradient(
+    ellipse 88% 48% at 50% -18%,
+    color-mix(in srgb, var(--nature-earth-800, #44403c) 18%, transparent) 0%,
+    transparent 58%
+  );
+}
+
 .menu-header-entity-body--floor .menu-header-entity-weight {
-  background: linear-gradient(to top, transparent 40%, rgba(0, 0, 0, 0.28) 100%);
+  background: linear-gradient(
+    to bottom,
+    transparent 22%,
+    color-mix(in srgb, var(--rootsy-sombra-950) 72%, transparent) 100%
+  );
+}
+
+.menu-header-entity-body--floor .menu-header-entity-edge {
+  animation: none;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--nature-earth-800, #44403c) 10%, transparent),
+    inset 0 0 48px color-mix(in srgb, var(--rootsy-sombra-950) 55%, transparent);
 }
 
 .menu-header-entity-body--floor .menu-header-entity-horizon {
   top: 0;
   bottom: auto;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--rootsy-savia-800) 18%, var(--nature-earth-800, #44403c)) 28%,
+    color-mix(in srgb, var(--rootsy-savia-700) 22%, var(--nature-earth-700, #57534e)) 50%,
+    color-mix(in srgb, var(--rootsy-savia-800) 18%, var(--nature-earth-800, #44403c)) 72%,
+    transparent 100%
+  );
+  opacity: 0.55;
 }
 
-.menu-header-entity-body--floor .menu-header-entity-stars {
-  mask-image: linear-gradient(to top, black 0%, transparent 92%);
+.menu-header-entity-body--floor .menu-header-entity-stars,
+.menu-header-entity-body--floor .menu-header-entity-stars--bright {
+  display: none;
+}
+
+.menu-header-entity-soil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image:
+    radial-gradient(circle at 8% 62%, var(--nature-earth-800, #44403c) 0, var(--nature-earth-800, #44403c) 0.55px, transparent 1.3px),
+    radial-gradient(circle at 18% 38%, var(--nature-earth-700, #57534e) 0, var(--nature-earth-700, #57534e) 0.4px, transparent 1.1px),
+    radial-gradient(circle at 31% 74%, var(--nature-earth-800, #44403c) 0, var(--nature-earth-800, #44403c) 0.5px, transparent 1.2px),
+    radial-gradient(circle at 47% 44%, var(--nature-earth-700, #57534e) 0, var(--nature-earth-700, #57534e) 0.45px, transparent 1.15px),
+    radial-gradient(circle at 63% 68%, var(--nature-earth-800, #44403c) 0, var(--nature-earth-800, #44403c) 0.4px, transparent 1.1px),
+    radial-gradient(circle at 78% 36%, var(--nature-earth-700, #57534e) 0, var(--nature-earth-700, #57534e) 0.45px, transparent 1.15px),
+    radial-gradient(circle at 91% 58%, var(--nature-earth-800, #44403c) 0, var(--nature-earth-800, #44403c) 0.5px, transparent 1.2px);
 }
 
 .menu-header-entity-horizon {

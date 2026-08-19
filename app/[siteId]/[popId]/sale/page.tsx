@@ -127,7 +127,10 @@ import {
   formatSaleQuotePaymentLabel,
 } from "@/lib/saleQuoteCheckout"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
-import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
+import {
+  saleOpFmt,
+  saleOpImporteBaseClass,
+} from "@/components/sale-operation/saleOperationStyles"
 import { layoutsOperarSummaryPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
 
 type Producto = MenuCatalogProduct
@@ -141,12 +144,6 @@ type ClienteVentaSeleccionado = {
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
 }
-
-const fmt = new Intl.NumberFormat("es-AR", {
-  style: "currency",
-  currency: "ARS",
-  minimumFractionDigits: 2,
-})
 
 /** Tipografía numérica alineada al workspace (tablas de importes). */
 const ventaImporteBaseClass = saleOpImporteBaseClass
@@ -1102,7 +1099,7 @@ function SalePage() {
   const descuentoToolboxLabel = hayDescuento
     ? modoDescuento === "porcentaje"
       ? `${valorDescuentoPorcentaje}%`
-      : `Fijo ${fmt.format(valorDescuentoFijo)}`
+      : `Fijo ${saleOpFmt.format(valorDescuentoFijo)}`
     : "Sin descuento"
 
   if (!popId || !siteId) {
@@ -1234,7 +1231,7 @@ function SalePage() {
                   aplicarEdicionLineaTicket={aplicarEdicionLineaTicketConFoco}
                   cambiarCantidadPorLinea={cambiarCantidadPorLineaConFoco}
                   quitarQuantityDealApplication={quitarQuantityDealApplicationConFoco}
-                  listTitle="Tu pedido"
+                  listTitle="Pedido"
                   emptyTitle="Pedido vacío"
                   cartScrollHighlight={cartScrollHighlight}
                   actions={{

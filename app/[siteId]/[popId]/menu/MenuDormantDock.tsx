@@ -3,8 +3,10 @@
 import {
   DOCK_EDIT_DIVIDER_HEIGHT_PX,
   DOCK_ICON_SIZE_PX,
+  DOCK_CHROME_INSET_PX,
   DOCK_SHELL_PADDING_X_PX,
   DOCK_SHELL_PADDING_Y_PX,
+  DOCK_SLOT_INSET_X_PX,
   DOCK_SLOT_SHIFT_PX,
   DOCK_TRACK_HEIGHT_PX,
   DOCK_TRACK_INSET_Y_PX,
@@ -33,7 +35,7 @@ export function MenuDormantDock() {
           paddingTop: DOCK_SHELL_PADDING_Y_PX,
           paddingBottom: DOCK_SHELL_PADDING_Y_PX,
           paddingLeft: DOCK_SHELL_PADDING_X_PX,
-          paddingRight: DOCK_SHELL_PADDING_X_PX,
+          paddingRight: DOCK_CHROME_INSET_PX,
           gap: DOCK_SHELL_PADDING_X_PX,
         }}
       >
@@ -72,7 +74,7 @@ export function MenuDormantDock() {
           style={{
             height: DOCK_ICON_SIZE_PX,
             marginBottom: DOCK_TRACK_INSET_Y_PX,
-            gap: DOCK_SHELL_PADDING_X_PX,
+            gap: DOCK_SLOT_INSET_X_PX,
           }}
         >
           <div

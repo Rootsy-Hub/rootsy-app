@@ -7,7 +7,6 @@ import { ArticleImageUploadField } from "@/app/[siteId]/[popId]/articles/Article
 import { ArticleIvaSelect } from "@/app/[siteId]/[popId]/articles/ArticleIvaSelect"
 import type { ArticleItemFormState } from "@/app/[siteId]/[popId]/articles/ArticleItemFormFields"
 import { ArticleItemKindSelector } from "@/app/[siteId]/[popId]/articles/ArticleItemKindSelector"
-import { ArticleSupplierPickerField } from "@/app/[siteId]/[popId]/articles/ArticleSupplierPickerField"
 import { ArticleUnitOfMeasureField } from "@/app/[siteId]/[popId]/articles/ArticleUnitOfMeasureField"
 import {
   ArticleCostEditor,
@@ -76,7 +75,6 @@ type Props = {
   supplierOptions: { id: string; name: string }[]
   costLines: ArticleCostFormLine[]
   onCostLinesChange: (lines: ArticleCostFormLine[]) => void
-  suppliersLoading?: boolean
   canPostInitialStock?: boolean
   mode: "create" | "edit"
   step: ArticleUpsertWizardStep
@@ -324,6 +322,8 @@ export function ArticleUpsertFormFields({
             onChange={onCostLinesChange}
             saleUnitOfMeasure={form.unitOfMeasure}
             disabled={disabled}
+            popId={popId}
+            supplierOptions={supplierOptions}
             embedded
           />
         </WizardSection>
@@ -380,14 +380,6 @@ export function ArticleUpsertFormFields({
         disabled={disabled}
         autoComplete="off"
         labelInfo={SKU_LABEL_INFO}
-      />
-
-      <ArticleSupplierPickerField
-        popId={popId}
-        value={form.supplierIds}
-        onChange={(supplierIds) => onChange({ supplierIds })}
-        knownSuppliers={supplierOptions}
-        disabled={disabled}
       />
 
       <RootsFormSwitchField

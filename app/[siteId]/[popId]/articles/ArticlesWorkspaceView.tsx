@@ -199,7 +199,6 @@ function catalogFieldsFromRow(row: ArticleTableRow): ArticleCatalogExtraFormStat
     discountMode: row.discountMode ?? "",
     discountValue:
       row.discountValue != null ? String(row.discountValue) : "",
-    supplierIds: row.suppliers.map((s) => s.id),
   }
 }
 
@@ -208,7 +207,6 @@ function parseCatalogFieldsForSubmit(form: ArticleFormState):
       brand: string
       discountMode: ReturnType<typeof parseArticleDiscountInput>["discountMode"]
       discountValue: ReturnType<typeof parseArticleDiscountInput>["discountValue"]
-      supplierIds: string[]
     }
   | { error: string } {
   const discount = parseArticleDiscountInput(
@@ -223,7 +221,6 @@ function parseCatalogFieldsForSubmit(form: ArticleFormState):
     brand: form.brand.trim(),
     discountMode: discount.discountMode,
     discountValue: discount.discountValue,
-    supplierIds: form.supplierIds,
   }
 }
 
@@ -344,7 +341,6 @@ export function ArticlesWorkspaceView() {
   const [supplierOptions, setSupplierOptions] = useState<
     { id: string; name: string }[]
   >([])
-  const [suppliersLoading, setSuppliersLoading] = useState(false)
 
   const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [categoriesRows, setCategoriesRows] = useState<ArticleCategoryOption[]>(
@@ -542,10 +538,8 @@ export function ArticlesWorkspaceView() {
     if (!popId || (!createOpen && !editRow)) return
     let cancelled = false
     ;(async () => {
-      setSuppliersLoading(true)
       const res = await getPopArticleSupplierOptions(popId)
       if (cancelled) return
-      setSuppliersLoading(false)
       if (res.success) {
         setSupplierOptions(res.suppliers)
       } else {
@@ -1059,16 +1053,6 @@ export function ArticlesWorkspaceView() {
         : {}),
     }))
   }, [])
-
-  const supplierPickerOptions = useMemo(() => {
-    const byId = new Map(supplierOptions.map((supplier) => [supplier.id, supplier]))
-    if (editRow) {
-      for (const supplier of editRow.suppliers) {
-        byId.set(supplier.id, { id: supplier.id, name: supplier.name })
-      }
-    }
-    return [...byId.values()]
-  }, [supplierOptions, editRow])
 
   if (!popId || !siteId) {
     return (
@@ -1670,10 +1654,9 @@ export function ArticlesWorkspaceView() {
         onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))}
         onItemKindChange={handleEditItemKindChange}
         categories={editCategories}
-        supplierOptions={supplierPickerOptions}
+        supplierOptions={supplierOptions}
         costLines={editCostLines}
         onCostLinesChange={setEditCostLines}
-        suppliersLoading={suppliersLoading}
         disabled={editSaving}
       />
 
@@ -1710,10 +1693,9 @@ export function ArticlesWorkspaceView() {
         onChange={(patch) => setCreateForm((f) => ({ ...f, ...patch }))}
         onItemKindChange={handleCreateItemKindChange}
         categories={createCategories}
-        supplierOptions={supplierPickerOptions}
+        supplierOptions={supplierOptions}
         costLines={createCostLines}
         onCostLinesChange={setCreateCostLines}
-        suppliersLoading={suppliersLoading}
         canPostInitialStock={canPostInitialStock}
         disabled={createSaving}
       />

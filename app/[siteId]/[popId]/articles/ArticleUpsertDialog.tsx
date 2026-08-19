@@ -44,7 +44,6 @@ type FormFieldsProps = {
   supplierOptions: { id: string; name: string }[]
   costLines: ArticleCostFormLine[]
   onCostLinesChange: (lines: ArticleCostFormLine[]) => void
-  suppliersLoading?: boolean
   canPostInitialStock?: boolean
   disabled?: boolean
 }
@@ -214,7 +213,6 @@ export function ArticleUpsertDialog({
                       onCostLinesChange={formProps.onCostLinesChange}
                       canPostInitialStock={canPostInitialStock}
                       disabled={formProps.disabled}
-                      suppliersLoading={formProps.suppliersLoading}
                     />
                   </div>
                 </div>

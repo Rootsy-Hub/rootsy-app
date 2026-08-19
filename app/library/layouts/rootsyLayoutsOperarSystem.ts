@@ -10,6 +10,7 @@ import {
   LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX,
   LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_TOKEN,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import { ROOTSY_LAYOUTS_EARTH_FLOOR } from "@/app/library/layouts/rootsyLayoutsEarthFloor"
 import { ROOTSY_LAYOUTS_MODULE_HEADER } from "@/app/library/layouts/rootsyLayoutsModuleSystem"
 import { COLOR_NEW_GRADIENTS } from "@/app/library/color/rootsyNaturePalette"
 import { rootsyColorHex, rootsySpacePx } from "@/lib/design-system"
@@ -43,12 +44,12 @@ export const ROOTSY_LAYOUTS_OPERAR_PRINCIPLES = [
   {
     title: "Catálogo · dosel denso",
     detail:
-      "Sidebar 288px (6× space.600) · rail sombra-950 (fundido con shell) · canvas sombra-800 · cards sombra-600 · toolbox sombra-950 · hairline sombra-border · pairing pos-core.",
+      "Sidebar w-64 (256px) · library-sidebar + library-nav (paridad Library / Estadísticas / Ajustes) · canvas sombra-800 · cards sombra-600 · toolbox tierra empapada · hairline sombra-border · pairing pos-core.",
   },
   {
-    title: "Ticket · bruma + savia",
+    title: "Ticket · bruma-50",
     detail:
-      "Panel y carrito bruma-100 (plano) · acciones white · hairline bruma-200 · split sombra-700 · totales gradiente pos-totals (savia-975→990).",
+      "Panel, carrito y total bruma-50 (mismo piso que cuentas/cajas) · hairline bruma-200 · split sombra-700 · el total solo aparece con ítems.",
   },
 ] as const
 
@@ -83,12 +84,13 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
   toolboxMinHeightClass: `min-h-[${OPERAR_FOOTER_BAND_MIN_PX}px] sm:min-h-[${OPERAR_FOOTER_BAND_MIN_SM_PX}px]`,
   toolboxMinHeightSmClass: `sm:min-h-[${OPERAR_FOOTER_BAND_MIN_SM_PX}px]`,
   ticketHeaderHeightPx: 40,
-  ticketActionsHeightPx: 52,
+  /** space.1000 — aire para círculo Cobrar space.800 (64) + Descartar space.600 (48). */
+  ticketActionsHeightPx: 80,
   /** Totales — misma altura mínima que toolbox para cerrar el grid en una sola línea base. */
   ticketTotalMinHeightPx: OPERAR_FOOTER_BAND_MIN_PX,
   ticketTotalMinHeightSmPx: OPERAR_FOOTER_BAND_MIN_SM_PX,
-  productCardHeightPx: 318,
-  productCardMediaHeightPx: 152,
+  productCardHeightPx: 256,
+  productCardMediaHeightPx: 80,
   catalogGridColsDesktop: 3,
   toolboxSlots: ["Cliente", "Comprobante", "Pago", "Descuento"] as const,
 } as const
@@ -100,14 +102,17 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
 export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
   shell: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
   header: { token: "sombra-950→900", css: "linear-gradient chrome" },
-  rail: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
+  rail: { token: "sombra-700 · library-sidebar", css: "var(--rootsy-sombra-700)" },
   canvas: { token: "sombra-800", css: "var(--rootsy-sombra-800)" },
   productCard: { token: "sombra-600", css: "var(--rootsy-sombra-600)" },
-  footer: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
-  lightPanel: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
-  lightContent: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
-  lightActions: { token: "white", css: "#ffffff" },
-  lightTotals: { token: "savia-975→990", css: "pos-totals gradient" },
+  footer: {
+    token: ROOTSY_LAYOUTS_EARTH_FLOOR.chromeToken,
+    css: ROOTSY_LAYOUTS_EARTH_FLOOR.background,
+  },
+  lightPanel: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
+  lightContent: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
+  lightActions: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
+  lightTotals: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
 } as const
 
 /**
@@ -171,9 +176,9 @@ export function getLayoutsOperarWireframeHeaderStyle() {
   } as const
 }
 
-/** Toolbox dosel continuo — sombra-950 opaco (no depende del fondo del contenedor). */
+/** Toolbox — mismo suelo empapado que el footer de tablas. */
 export function getLayoutsOperarDoselContinuoToolboxBandBackground() {
-  return hx("sombra", "950")
+  return ROOTSY_LAYOUTS_EARTH_FLOOR.background
 }
 
 /** @deprecated Alias — usar getLayoutsOperarDoselContinuoToolboxBandBackground */
@@ -214,11 +219,11 @@ export const ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS: LayoutsOperarToolboxPropos
     letter: "A",
     title: "Dosel continuo",
     pairingId: "pos-core",
-    pairingLabel: "Sombra 950 + Savia 600",
+    pairingLabel: "Tierra empapada + Savia viva",
     summary:
-      "Banda inset sombra-950 · slots space.1000 pill · borde darkDefault · savia en configurado.",
+      "Banda inset tierra empapada · slots en relieve · savia brota al configurar.",
     uxNote:
-      "La barra desaparece en el shell — la configuración no compite con el catálogo. Alineada al grid dosel denso y totales ticket.",
+      "Los slots son piedras sobre el barro. Al cargar, la savia sale como raíz y hoja — la vida del mundo, no un accent.",
     recommended: true,
     bandLayout: "inset",
     bandMinHeightPx: ROOTSY_LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx,
@@ -355,11 +360,11 @@ export const ROOTSY_LAYOUTS_OPERAR_TICKET_PROPOSALS: LayoutsOperarTicketProposal
     letter: "A",
     title: "Bruma savia",
     pairingId: "pos-core",
-    pairingLabel: "Bruma 100 + Savia pos-totals",
+    pairingLabel: "Bruma 50 · módulo cuentas",
     summary:
-      "Cart bruma-100 · dividers bruma-200 · banners wash savia · totales gradiente pos-totals con desglose.",
+      "Cart bruma-50 · hairlines bruma-200 · total en el mismo piso · aparece con ítems.",
     uxNote:
-      "Canónico del grid — la columna clara respira sobre el dosel denso y cierra con la barra savia de cobro.",
+      "Canónico del grid — la columna del pedido es el mundo de cuentas/cajas. El total no es otra capa: solo se muestra cuando hay líneas.",
     recommended: true,
     totalsLayout: "gradiente",
   },

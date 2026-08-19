@@ -1,9 +1,7 @@
 import {
   layoutsOperarCatalogToolbarControlFocusClass,
-  layoutsOperarCatalogToolbarControlShellClass,
-  layoutsOperarCatalogToolbarIconAccentClass,
   layoutsOperarCatalogToolbarIconMutedClass,
-  layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass,
+  layoutsOperarCatalogToolbarViewToggleButtonActiveClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   operarCanvasToolbarCountPillOpenClass,
@@ -42,17 +40,15 @@ export const mesasSalonCountPillTotalIdleClass = operarCanvasToolbarCountPillTot
 
 export const mesasFloorFloatingBtnClass = cn(
   "relative z-10 flex size-10 items-center justify-center rounded-full",
-  layoutsOperarCatalogToolbarControlShellClass,
+  "border border-transparent bg-[var(--rootsy-sombra-700)] shadow-none",
   layoutsOperarCatalogToolbarControlFocusClass,
 )
 
 export const mesasFloorFloatingBtnIdleClass =
   layoutsOperarCatalogToolbarIconMutedClass
 
-export const mesasFloorFloatingBtnActiveClass = cn(
-  layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass,
-  layoutsOperarCatalogToolbarIconAccentClass,
-)
+export const mesasFloorFloatingBtnActiveClass =
+  layoutsOperarCatalogToolbarViewToggleButtonActiveClass
 
 export const mesasFloorEditRingClass =
   "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]"

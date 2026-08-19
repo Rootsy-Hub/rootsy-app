@@ -1,7 +1,7 @@
 "use client"
 
 import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
-import { menuHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import { menuModuleHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import {
   dataWorkspaceHeaderRoleLabelClass,
@@ -92,7 +92,7 @@ export function ModuleWorkspaceHeader({
   return (
     <>
       <MenuHeaderEntity size="module">
-        <div className={menuHeaderRowClass}>
+        <div className={menuModuleHeaderRowClass}>
           <div className="flex min-w-0 items-center gap-3">
             {showBack || showFullscreenButton || showSidebarToggle ? (
               <div className="flex items-center gap-0.5">

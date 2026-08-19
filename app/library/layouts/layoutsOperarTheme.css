@@ -7,9 +7,16 @@
  * - anidado:   .rootsy-theme-pos … .layouts-operar-body (grid / preview)
  */
 
+@import "./rootsyLayoutsEarthFloor.css";
+
+/* Rail categorías — mismo --color-shell que library-sidebar (Estadísticas / Ajustes). */
+.rootsy-theme-pos .library-sidebar {
+  --color-shell: var(--rootsy-sombra-700);
+}
+
 .rootsy-theme-pos.layouts-operar-body,
 .rootsy-theme-pos .layouts-operar-body {
-  /* Rail catálogo — sombra-950 */
+  /* Rail catálogo — tokens legacy (el nav reutiliza library-nav) */
   --layouts-operar-rail-section-label: color-mix(
     in srgb,
     var(--rootsy-sombra-400) 88%,
@@ -42,37 +49,37 @@
   --layouts-operar-rail-discount-text: color-mix(in srgb, #fde68a 90%, white);
   --layouts-operar-rail-discount-accent: #fbbf24;
 
-  /* Toolbox slots — sombra-950 */
-  --layouts-operar-footer-slot-hover: color-mix(in srgb, #ffffff 3.5%, transparent);
+  /* Toolbox slots — tierra en relieve · savia brote (rootsyLayoutsEarthFloor.css) */
+  --layouts-operar-footer-slot-hover: color-mix(in srgb, var(--nature-earth-700, #57534e) 22%, transparent);
   --layouts-operar-footer-slot-configured: color-mix(
     in srgb,
-    var(--rootsy-savia-600) 14%,
-    var(--rootsy-sombra-950)
+    var(--rootsy-savia-500) 44%,
+    var(--rootsy-sombra-900)
   );
   --layouts-operar-footer-slot-configured-hover: color-mix(
     in srgb,
-    var(--layouts-operar-footer-slot-configured) 96.5%,
-    #ffffff 3.5%
+    var(--rootsy-savia-400) 52%,
+    var(--rootsy-sombra-900)
   );
-  --layouts-operar-footer-slot-pressed-shadow: inset 0 3px 7px
-    color-mix(in srgb, var(--rootsy-sombra-950) 34%, transparent);
-  --layouts-operar-footer-slot-configured-pressed-shadow: inset 0 3px 8px
-    color-mix(in srgb, var(--rootsy-sombra-950) 40%, transparent);
+  --layouts-operar-footer-slot-pressed-shadow: inset 0 3px 8px
+    color-mix(in srgb, var(--rootsy-sombra-950) 42%, transparent);
+  --layouts-operar-footer-slot-configured-pressed-shadow: inset 0 3px 10px
+    color-mix(in srgb, var(--rootsy-savia-950) 36%, transparent);
   --layouts-operar-footer-slot-pressed-bg: color-mix(
     in srgb,
-    var(--layouts-operar-footer-slot-hover) 82%,
-    var(--rootsy-sombra-950) 18%
+    var(--nature-earth-800, #44403c) 42%,
+    var(--rootsy-sombra-950)
   );
   --layouts-operar-footer-slot-configured-pressed-bg: color-mix(
     in srgb,
-    var(--layouts-operar-footer-slot-configured) 93%,
-    var(--rootsy-sombra-950) 7%
+    var(--rootsy-savia-700) 36%,
+    var(--rootsy-sombra-950)
   );
-  --layouts-operar-footer-slot-highlight: color-mix(in srgb, var(--rootsy-savia-400) 14%, transparent);
-  --layouts-operar-footer-icon-bg: color-mix(in srgb, var(--rootsy-sombra-900) 38%, transparent);
-  --layouts-operar-footer-icon-text: color-mix(in srgb, var(--rootsy-sombra-300) 88%, #ffffff);
-  --layouts-operar-footer-icon-configured-bg: color-mix(in srgb, var(--rootsy-savia-600) 32%, transparent);
-  --layouts-operar-footer-icon-configured-text: color-mix(in srgb, var(--rootsy-savia-200) 92%, white);
+  --layouts-operar-footer-slot-highlight: color-mix(in srgb, var(--rootsy-savia-200) 36%, transparent);
+  --layouts-operar-footer-icon-bg: color-mix(in srgb, var(--nature-earth-900, #292524) 58%, var(--rootsy-sombra-950));
+  --layouts-operar-footer-icon-text: color-mix(in srgb, var(--nature-earth-400, #d6d3d1) 72%, transparent);
+  --layouts-operar-footer-icon-configured-bg: color-mix(in srgb, var(--rootsy-savia-500) 72%, var(--rootsy-savia-700));
+  --layouts-operar-footer-icon-configured-text: var(--rootsy-savia-50);
 
   /* Product cards — sombra-600 sobre canvas sombra-800 */
   --layouts-operar-product-card-shadow:
@@ -169,8 +176,8 @@
   height: 2.5rem;
   min-height: 2.5rem;
   border-radius: 0.5rem;
-  border: 1px solid color-mix(in srgb, var(--rootsy-sombra-border) 45%, transparent);
-  background-color: color-mix(in srgb, var(--rootsy-sombra-950) 55%, transparent);
+  border: 1px solid var(--layouts-operar-border-dark-hairline);
+  background-color: transparent;
   box-shadow: none;
 }
 
@@ -187,19 +194,30 @@
 .rootsy-theme-pos .layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control:hover,
 .rootsy-theme-pos.layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control[data-state="open"],
 .rootsy-theme-pos .layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control[data-state="open"] {
-  background-color: color-mix(in srgb, var(--rootsy-sombra-950) 55%, transparent);
+  background-color: color-mix(in srgb, var(--rootsy-white) 6%, transparent);
+  border-color: var(--layouts-operar-border-dark-default);
 }
 
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-toolbar-control:focus,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-toolbar-control:focus,
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-toolbar-control:focus-visible,
 .rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-toolbar-control:focus-visible {
   outline: none;
-  border-color: color-mix(in srgb, var(--rootsy-savia-400) 45%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rootsy-savia-400) 22%, transparent);
+  border-color: var(--layouts-operar-border-dark-default);
+  background-color: color-mix(in srgb, var(--rootsy-white) 6%, transparent);
+  color: var(--rootsy-bruma-50);
+  box-shadow: none;
 }
 
+.rootsy-theme-pos.layouts-operar-body input.layouts-operar-catalog-toolbar-scan-input:focus,
+.rootsy-theme-pos .layouts-operar-body input.layouts-operar-catalog-toolbar-scan-input:focus,
 .rootsy-theme-pos.layouts-operar-body input.layouts-operar-catalog-toolbar-scan-input:focus-visible,
 .rootsy-theme-pos .layouts-operar-body input.layouts-operar-catalog-toolbar-scan-input:focus-visible {
-  border-color: color-mix(in srgb, var(--rootsy-savia-400) 35%, transparent);
+  outline: none;
+  border-color: var(--layouts-operar-border-dark-default);
+  background-color: color-mix(in srgb, var(--rootsy-white) 6%, transparent);
+  color: var(--rootsy-bruma-50);
+  font-weight: 500;
   box-shadow: none;
 }
 
@@ -214,28 +232,18 @@
   color: #f4f8f6;
 }
 
-/* Especificidad > .rootsy-nature-palette .layouts-operar-body (shell POP en Vender/Mostrador). */
+/* Total del pedido — mismo piso bruma-50 que cuentas/cajas. */
 .rootsy-nature-palette .rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
 .rootsy-theme-pos .layouts-operar-body .layouts-operar-summary-totals,
 .layouts-operar-ticket-shell .layouts-operar-summary-totals {
-  background: linear-gradient(
-    165deg,
-    var(--rootsy-savia-975) 0%,
-    var(--rootsy-savia-960) 48%,
-    var(--rootsy-savia-990) 100%
-  );
-  color: var(--rootsy-savia-50);
+  background: var(--rootsy-bruma-50);
+  color: var(--rootsy-bruma-900);
 }
 
-/** Pedido vacío — ocultar fila acciones y subir totales sin hueco de 52px. */
+/** Pedido vacío — un solo bloque scrolleable; el total aparece con ítems. */
 .layouts-operar-ticket-shell:has([data-ticket-empty="true"]) {
-  --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr)
-    minmax(var(--layouts-operar-toolbox-min-h), auto);
-}
-
-.layouts-operar-ticket-shell:has([data-ticket-empty="true"]) [data-ticket-totals] {
-  grid-row-start: 3;
+  --layouts-operar-ticket-rows: minmax(0, 1fr);
 }
 
 /** Vender servicio — panel derecho con totales como Vender. */
@@ -243,16 +251,14 @@
 .rootsy-theme-pos .layouts-operar-body .service-operate-snapshot-panel,
 .service-operate-snapshot-panel {
   --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr)
-    var(--layouts-operar-ticket-actions-h)
-    minmax(var(--layouts-operar-toolbox-min-h), auto);
+    var(--layouts-operar-ticket-actions-h);
 }
 
 /** Cargo vacío — sin fila de acciones (Descartar / Crear cargo). */
 .rootsy-theme-pos.layouts-operar-body .service-operate-snapshot-panel:has([data-ticket-empty="true"]),
 .rootsy-theme-pos .layouts-operar-body .service-operate-snapshot-panel:has([data-ticket-empty="true"]),
 .service-operate-snapshot-panel:has([data-ticket-empty="true"]) {
-  --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr)
-    minmax(var(--layouts-operar-toolbox-min-h), auto);
+  --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr);
 }
 
 .service-operate-snapshot-panel:has([data-snapshot-tab="config"]) {
@@ -264,9 +270,6 @@
   min-height: 0;
 }
 
-.service-operate-snapshot-panel:has([data-ticket-empty="true"]) [data-ticket-totals] {
-  grid-row-start: 3;
-}
 
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll,
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-scroll-minimal,

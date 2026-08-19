@@ -4,9 +4,9 @@ import { CartLineScrollTarget } from "@/components/sale-operation/CartLineScroll
 import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
 import {
   layoutsOperarTicketProposalLineAmountClass,
-  layoutsOperarTicketProposalLineCommentClass,
   layoutsOperarTicketProposalLineGridClass,
   layoutsOperarTicketProposalLineNameClass,
+  layoutsOperarTicketProposalLineThumbClass,
   layoutsOperarTicketProposalQtyClass,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
@@ -25,7 +25,9 @@ import {
   CartLineQuantityLabel,
   cartLineRowGridClass,
   cartLineRowGridNoPriceClass,
+  formatOperarTicketQuantity,
 } from "@/components/sale-operation/CartLineQuantityLabel"
+import { resolveCatalogCartLinePricing } from "@/components/sale-operation/saleCatalogProduct"
 import {
   saleOpCartLineDividerTopClass,
   saleOpFmt,
@@ -61,6 +63,7 @@ import {
 } from "@/lib/articleItemKind"
 import { cn } from "@/lib/utils"
 import { Banknote, CheckCircle2, Hash, MessageSquare, Percent, Trash2 } from "lucide-react"
+import Image from "next/image"
 import { useId, useRef, useState } from "react"
 
 type Props = {
@@ -147,6 +150,7 @@ export function MostradorCartLineCard({
     CheckoutDiscountMode
   >("porcentaje")
   const [discountDraft, setDiscountDraft] = useState("")
+  const [imageFailed, setImageFailed] = useState(false)
   const quantityFieldId = useId()
   const commentFieldId = useId()
   const discountFieldId = useId()
@@ -175,7 +179,8 @@ export function MostradorCartLineCard({
   const descuentoSuprimido = itemDescuentoSuprimido[row.cartLineId] === true
   const descuentoRaw = itemDescuentoDraft[row.cartLineId] ?? ""
   const tieneComentario = comentario.trim().length > 0
-  const showPrice = !row.hidePrice
+  const isQuantityDeal = Boolean(row.quantityDealApplicationId)
+  const showPrice = !row.hidePrice || (variant === "operar" && isQuantityDeal)
 
   const canChangeQuantity =
     row.variant !== "combo_component" && !row.quantityDealApplicationId
@@ -308,66 +313,164 @@ export function MostradorCartLineCard({
       : "Cantidad en unidad"
 
   const isOperar = variant === "operar"
-  const showLinePrice = showPrice && row.promoGroupVariant !== "discount"
+  const showLinePrice =
+    showPrice && (isOperar || row.promoGroupVariant !== "discount")
   const rowGridLayoutClass = isOperar
     ? layoutsOperarTicketProposalLineGridClass(TICKET_PROPOSAL)
     : showLinePrice || !showPrice
       ? cartLineRowGridClass
       : cartLineRowGridNoPriceClass
+  const hasLineDiscount = showLinePrice && pricing.precioBase > pricing.precioFinal + 0.004
+  const catalogLinePricing = isOperar && hasLineDiscount
+    ? resolveCatalogCartLinePricing(
+        row.producto,
+        row.cantidad,
+        overrides.itemDescuentoSuprimido[row.cartLineId]
+          ? null
+          : overrides.itemDescuentoDraft[row.cartLineId]?.trim()
+            ? {
+                mode: overrides.itemDescuentoModo[row.cartLineId] ?? "porcentaje",
+                draft: overrides.itemDescuentoDraft[row.cartLineId] ?? "",
+              }
+            : null,
+        {
+          suppressCatalogDiscount:
+            row.discountEditingDisabled ||
+            overrides.itemDescuentoSuprimido[row.cartLineId] === true,
+        },
+      )
+    : null
+  const catalogOffPercent =
+    catalogLinePricing?.itemDiscountMode === "porcentaje" &&
+    catalogLinePricing.itemDiscountValue != null
+      ? catalogLinePricing.itemDiscountValue
+      : null
+  const computedOffPercent =
+    pricing.precioBase > 0.004
+      ? Math.round(
+          ((pricing.precioBase - pricing.precioFinal) / pricing.precioBase) * 100,
+        )
+      : null
+  const discountOffPercent = catalogOffPercent ?? computedOffPercent
+  const quantityDealPill = isQuantityDeal
+    ? row.promoGroupLabel?.trim() || undefined
+    : undefined
+  const discountPillLabel =
+    quantityDealPill ??
+    (hasLineDiscount && discountOffPercent != null && discountOffPercent > 0
+      ? `${Number.isInteger(discountOffPercent) ? String(discountOffPercent) : discountOffPercent.toLocaleString("es-AR", { maximumFractionDigits: 2 })}% OFF`
+      : undefined)
 
-  const rowContent = (
+  const paidBadge =
+    paymentStatus.isFullyPaid ? (
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+        <CheckCircle2 className="size-3" aria-hidden />
+        Pagado
+      </span>
+    ) : paymentStatus.isPartiallyPaid ? (
+      <span className="inline-flex rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+        {paymentStatus.paidQuantity} pagado
+      </span>
+    ) : null
+
+  const lineImage = row.producto?.imagen?.trim() ?? ""
+  const showLineImage = lineImage.length > 0 && !imageFailed
+
+  const rowContent = isOperar ? (
     <>
-      <CartLineQuantityLabel
-        cantidad={row.cantidad}
-        className={
-          isOperar ? layoutsOperarTicketProposalQtyClass(TICKET_PROPOSAL) : undefined
-        }
-      />
-
+      <span
+        className={layoutsOperarTicketProposalLineThumbClass(TICKET_PROPOSAL)}
+        aria-hidden
+      >
+        {showLineImage ? (
+          <Image
+            src={lineImage}
+            alt=""
+            fill
+            sizes="56px"
+            unoptimized
+            onError={() => setImageFailed(true)}
+            className="object-cover"
+          />
+        ) : null}
+      </span>
       <span className="min-w-0">
-        <span className="flex items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-1.5">
           <span
             className={cn(
-              isOperar
-                ? layoutsOperarTicketProposalLineNameClass(TICKET_PROPOSAL)
-                : "block text-sm font-semibold leading-snug text-slate-900",
+              layoutsOperarTicketProposalLineNameClass(TICKET_PROPOSAL),
               paymentStatus.isFullyPaid && "line-through decoration-emerald-600/50",
             )}
           >
             {row.nombre}
           </span>
-          {paymentStatus.isFullyPaid ? (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
-              <CheckCircle2 className="size-3" aria-hidden />
-              Pagado
+          {paidBadge}
+        </span>
+        {showLinePrice ? (
+          <span className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5">
+            <span
+              className={cn(
+                layoutsOperarTicketProposalLineAmountClass(TICKET_PROPOSAL),
+                "text-xs font-bold",
+              )}
+            >
+              {saleOpFmt.format(pricing.precioFinal)}
             </span>
-          ) : paymentStatus.isPartiallyPaid ? (
-            <span className="inline-flex rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
-              {paymentStatus.paidQuantity} pagado
-            </span>
-          ) : null}
+            {hasLineDiscount ? (
+              <span className="text-xs font-normal tabular-nums text-[var(--rootsy-bruma-600)] line-through">
+                {saleOpFmt.format(pricing.precioBase)}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+        {discountPillLabel ? (
+          <span className="mt-px inline-flex w-fit max-w-full rounded-full bg-[var(--rootsy-savia-200)] px-1.5 py-px text-[10px] font-bold leading-tight text-[var(--rootsy-savia-900)]">
+            {discountPillLabel}
+          </span>
+        ) : null}
+        {tieneComentario ? (
+          <span className="mt-1 block text-[11px] font-medium leading-snug text-[var(--rootsy-bruma-700)]">
+            <MessageSquare
+              className="mr-1 inline size-3 -translate-y-px text-[var(--rootsy-bruma-600)]"
+              aria-hidden
+            />
+            {comentario.trim()}
+          </span>
+        ) : null}
+      </span>
+      <span
+        className={layoutsOperarTicketProposalQtyClass(TICKET_PROPOSAL)}
+        title={formatOperarTicketQuantity(row.cantidad, unitOfMeasure)}
+      >
+        {formatOperarTicketQuantity(row.cantidad, unitOfMeasure)}
+      </span>
+    </>
+  ) : (
+    <>
+      <CartLineQuantityLabel cantidad={row.cantidad} />
+
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              "block text-sm font-semibold leading-snug text-slate-900",
+              paymentStatus.isFullyPaid && "line-through decoration-emerald-600/50",
+            )}
+          >
+            {row.nombre}
+          </span>
+          {paidBadge}
         </span>
         <CartLineSubtitleRow
           descripcion={productoDescripcion}
           showDescripcion={showDescripcion}
-          className={
-            isOperar
-              ? "mt-0.5 line-clamp-1 text-xs leading-snug text-[var(--layouts-operar-light-cart-line-meta)]"
-              : undefined
-          }
         />
       </span>
 
       {showLinePrice || !showPrice ? (
         <span className="pt-0.5 text-right">
           {showLinePrice ? (
-            <span
-              className={
-                isOperar
-                  ? layoutsOperarTicketProposalLineAmountClass(TICKET_PROPOSAL)
-                  : saleOpImporteCartClass
-              }
-            >
+            <span className={saleOpImporteCartClass}>
               {saleOpFmt.format(pricing.precioFinal)}
             </span>
           ) : (
@@ -422,26 +525,13 @@ export function MostradorCartLineCard({
           </button>
         )}
 
-        {tieneComentario ? (
+        {tieneComentario && !isOperar ? (
           <div
-            className={
-              isOperar
-                ? layoutsOperarTicketProposalLineCommentClass(TICKET_PROPOSAL)
-                : cn(saleOpCartLineDividerTopClass, "bg-slate-50/80 px-3 py-2")
-            }
+            className={cn(saleOpCartLineDividerTopClass, "bg-slate-50/80 px-3 py-2")}
           >
-            <p
-              className={
-                isOperar
-                  ? undefined
-                  : "text-[11px] leading-snug text-slate-600"
-              }
-            >
+            <p className="text-[11px] leading-snug text-slate-600">
               <MessageSquare
-                className={cn(
-                  "mr-1 inline size-3 -translate-y-px",
-                  isOperar ? "text-[var(--layouts-operar-light-cart-line-meta)]" : "text-slate-400",
-                )}
+                className="mr-1 inline size-3 -translate-y-px text-slate-400"
                 aria-hidden
               />
               {comentario.trim()}

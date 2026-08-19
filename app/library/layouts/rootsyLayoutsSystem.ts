@@ -72,7 +72,7 @@ export const ROOTSY_LAYOUTS_VARIANT_CONCEPT: Record<LayoutsHeroVariant, LayoutsC
     why: [
       "Toolbar 92px.",
       "Filas alternadas bruma/savia.",
-      "Footer sombra 3 columnas.",
+      "Footer tierra húmeda · 3 columnas.",
     ],
     closing: "Listados densos.",
   },
@@ -93,7 +93,7 @@ export const ROOTSY_LAYOUTS_VARIANT_CONCEPT: Record<LayoutsHeroVariant, LayoutsC
     lead: "Split POS — catálogo oscuro + toolbox + ticket 400px.",
     why: [
       "Vender · Comprar · Mesas · Mostrador.",
-      "Sidebar 288px (6× space.600) colapsable.",
+      "Sidebar w-64 (256px) colapsable.",
       "Ticket claro con acciones.",
     ],
     closing: "Flujo en vivo bajo el módulo.",

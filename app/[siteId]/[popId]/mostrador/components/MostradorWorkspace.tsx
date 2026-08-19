@@ -160,7 +160,9 @@ export function MostradorWorkspace({
             />
           )
         }
-        toolbox={<SaleOperationToolbox {...checkout.toolbox} />}
+        toolbox={
+          showCatalog ? <SaleOperationToolbox {...checkout.toolbox} /> : null
+        }
         ticket={
           <aside
             className={cn(

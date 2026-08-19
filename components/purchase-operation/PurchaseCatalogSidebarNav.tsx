@@ -1,6 +1,7 @@
 "use client"
 
 import type { PurchaseCatalogCategorySection } from "@/app/[siteId]/[popId]/purchases/actions"
+import { libraryNavItemLabelClass } from "@/app/library/libraryColorTheme"
 import type { PurchaseCatalogView } from "@/components/purchase-operation/purchaseCatalogTypes"
 import {
   layoutsOperarCatalogRailItemClass,
@@ -53,7 +54,7 @@ export function PurchaseCatalogSidebarNav({
                       seleccionado && layoutsOperarCatalogRailItemSelectedClass,
                     )}
                   >
-                    {cat.name}
+                    <span className={libraryNavItemLabelClass}>{cat.name}</span>
                   </button>
                 </li>
               )

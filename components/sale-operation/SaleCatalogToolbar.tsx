@@ -19,7 +19,9 @@ import {
   layoutsOperarCatalogToolbarQtyValueClass,
   layoutsOperarCatalogToolbarQtyValueHoverClass,
   layoutsOperarCatalogToolbarScanInputClass,
-  layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass,
+  layoutsOperarCatalogToolbarViewToggleButtonActiveClass,
+  layoutsOperarCatalogToolbarViewToggleButtonClass,
+  layoutsOperarCatalogToolbarViewToggleButtonIdleClass,
   layoutsOperarCatalogToolbarViewToggleShellClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { Input } from "@/components/ui/input"
@@ -99,14 +101,25 @@ function viewToggleShellClass(variant: ToolbarVariant) {
   return "relative flex h-10 shrink-0 items-center rounded-lg border border-white/12 bg-black/25 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_rgba(16,185,129,0.06)]"
 }
 
-function viewToggleActivePillClass(variant: ToolbarVariant) {
+function viewToggleActivePillClass() {
+  return "pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border border-emerald-300/35 bg-linear-to-b from-emerald-300/22 via-emerald-400/16 to-emerald-500/12 shadow-[0_0_18px_rgba(16,185,129,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] transition-transform duration-300 ease-out"
+}
+
+function viewToggleButtonClass(variant: ToolbarVariant, active: boolean) {
   if (variant === "operar") {
     return cn(
-      "pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border transition-transform duration-300 ease-out",
-      layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass,
+      layoutsOperarCatalogToolbarViewToggleButtonClass,
+      active
+        ? layoutsOperarCatalogToolbarViewToggleButtonActiveClass
+        : layoutsOperarCatalogToolbarViewToggleButtonIdleClass,
     )
   }
-  return "pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border border-emerald-300/35 bg-linear-to-b from-emerald-300/22 via-emerald-400/16 to-emerald-500/12 shadow-[0_0_18px_rgba(16,185,129,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] transition-transform duration-300 ease-out"
+  return cn(
+    "relative z-10 flex h-8 w-10 items-center justify-center rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2",
+    active
+      ? "text-white drop-shadow-[0_0_10px_rgba(110,231,183,0.6)]"
+      : "text-slate-300/80 hover:text-white/95",
+  )
 }
 
 function scanInputClass(variant: ToolbarVariant, hasValue: boolean) {
@@ -159,8 +172,8 @@ function priceListHelpButtonClass(variant: ToolbarVariant) {
     return cn(
       "inline-flex size-8 shrink-0 items-center justify-center rounded-md transition-colors",
       layoutsOperarCatalogToolbarIconMutedClass,
-      "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_48%,transparent)] hover:text-[color-mix(in_srgb,var(--rootsy-bruma-100)_88%,white)]",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+      "hover:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)] hover:text-[var(--rootsy-bruma-50)]",
+      "focus-visible:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[color-mix(in_srgb,var(--rootsy-savia-500)_45%,transparent)]",
     )
   }
   return "inline-flex size-8 shrink-0 items-center justify-center rounded-md text-white/45 transition-colors hover:bg-white/8 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
@@ -221,28 +234,21 @@ export function SaleCatalogToolbar({
   return (
     <div className={cn(variantShellClass(variant), className)}>
       <div className={viewToggleShellClass(variant)}>
-        <span
-          aria-hidden
-          className={viewToggleActivePillClass(variant)}
-          style={{
-            transform: modoVista === "lista" ? "translateX(2.5rem)" : "translateX(0)",
-          }}
-        />
+        {variant === "pos-dark" ? (
+          <span
+            aria-hidden
+            className={viewToggleActivePillClass()}
+            style={{
+              transform: modoVista === "lista" ? "translateX(2.5rem)" : "translateX(0)",
+            }}
+          />
+        ) : null}
         <button
           type="button"
           tabIndex={demo ? -1 : undefined}
           aria-hidden={demo ? true : undefined}
           onClick={() => onModoVistaChange("grid")}
-          className={cn(
-            "relative z-10 flex h-8 w-10 items-center justify-center rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2",
-            variant === "operar"
-              ? modoVista === "grid"
-                ? "text-[#f4f8f6]"
-                : "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]"
-              : modoVista === "grid"
-                ? "text-white drop-shadow-[0_0_10px_rgba(110,231,183,0.6)]"
-                : "text-slate-300/80 hover:text-white/95",
-          )}
+          className={viewToggleButtonClass(variant, modoVista === "grid")}
           aria-label="Vista en grilla"
           aria-pressed={modoVista === "grid"}
         >
@@ -253,16 +259,7 @@ export function SaleCatalogToolbar({
           tabIndex={demo ? -1 : undefined}
           aria-hidden={demo ? true : undefined}
           onClick={() => onModoVistaChange("lista")}
-          className={cn(
-            "relative z-10 flex h-8 w-10 items-center justify-center rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2",
-            variant === "operar"
-              ? modoVista === "lista"
-                ? "text-[#f4f8f6]"
-                : "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]"
-              : modoVista === "lista"
-                ? "text-white drop-shadow-[0_0_10px_rgba(110,231,183,0.6)]"
-                : "text-slate-300/80 hover:text-white/95",
-          )}
+          className={viewToggleButtonClass(variant, modoVista === "lista")}
           aria-label="Vista en columna"
           aria-pressed={modoVista === "lista"}
         >
@@ -275,7 +272,7 @@ export function SaleCatalogToolbar({
           className={cn(
             "pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2",
             variant === "operar"
-              ? layoutsOperarCatalogToolbarIconAccentClass
+              ? layoutsOperarCatalogToolbarIconMutedClass
               : "text-emerald-300/85",
           )}
           aria-hidden
@@ -332,7 +329,7 @@ export function SaleCatalogToolbar({
               variant === "operar"
                 ? cn(
                     layoutsOperarCatalogToolbarIconMutedClass,
-                    "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_48%,transparent)] hover:text-[#f4f8f6]",
+                    "hover:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)] hover:text-[var(--rootsy-bruma-50)]",
                   )
                 : "text-white/50 hover:bg-white/[0.07] hover:text-white/90 focus-visible:ring-emerald-300/70",
             )}

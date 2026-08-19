@@ -49,6 +49,7 @@ import {
 } from "@/app/library/layouts/layoutsTablesHardcodedSpec"
 import {
   ROOTSY_LAYOUTS_TABLES_CHROME,
+  ROOTSY_LAYOUTS_TABLES_FOOTER,
   ROOTSY_LAYOUTS_TABLES_STATUS,
 } from "@/app/library/layouts/rootsyLayoutsTablesSystem"
 import { COLOR_TOKENS } from "@/app/library/color/rootsyColorSystem"
@@ -1028,8 +1029,8 @@ export function LayoutsTablesFooterDemo({ composed = false }: LayoutsTablesDemoP
     <div style={shellStyle}>
       <div style={getLayoutsTablesFooterGridStyle()}>
         <p style={{ ...getLayoutsTablesFooterTextStyle(true), margin: 0 }}>
-          Mostrando <strong style={{ color: ROOTSY_LAYOUTS_TABLES_CHROME.titleColor }}>1–20</strong> de{" "}
-          <strong style={{ color: ROOTSY_LAYOUTS_TABLES_CHROME.titleColor }}>1.248</strong>
+          Mostrando <strong style={{ color: ROOTSY_LAYOUTS_TABLES_FOOTER.textColor }}>1–20</strong> de{" "}
+          <strong style={{ color: ROOTSY_LAYOUTS_TABLES_FOOTER.textColor }}>1.248</strong>
         </p>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button type="button" style={nav} aria-hidden tabIndex={-1}>

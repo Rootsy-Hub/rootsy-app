@@ -4,6 +4,10 @@ import { cn } from "@/lib/utils"
 export const menuHeaderEntityVeilClass =
   "pointer-events-none absolute inset-0 bg-[linear-gradient(168deg,rgba(255,255,255,0.03)_0%,transparent_42%)]"
 
+/** Humedad del suelo — brillo oscuro, casi negro. */
+export const menuFooterEntityVeilClass =
+  "pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--rootsy-savia-800)_8%,transparent)_0%,transparent_40%)]"
+
 /** Banda instalada — el espacio fuera del planeta. */
 export const menuHeaderEntityClass = cn(
   "menu-header-entity relative z-20 w-full shrink-0",
@@ -21,9 +25,11 @@ export const menuHeaderEntityBodyClass = cn(
   "border-b border-[rgba(228,242,248,0.1)]",
 )
 
-/** Misma noche, en el suelo — el horizonte mira a la hoja. */
+/** Tierra empapada — casi negra, con humedad de savia. */
 export const menuFooterEntityBodyClass = cn(
-  menuUniverseEntityBodySurfaceClass,
-  "menu-header-entity-body--floor",
-  "border-t border-[rgba(228,242,248,0.1)]",
+  "menu-header-entity-body menu-header-entity-body--floor relative w-full overflow-hidden",
+  "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--nature-earth-900,#292524)_52%,var(--rootsy-sombra-900))_0%,color-mix(in_srgb,var(--nature-earth-900,#292524)_22%,var(--rootsy-sombra-950))_55%,color-mix(in_srgb,var(--rootsy-savia-990)_38%,var(--rootsy-sombra-950))_100%)]",
+  "backdrop-blur-[8px] backdrop-saturate-[1.04]",
+  "border-t border-[color-mix(in_srgb,var(--nature-earth-800,#44403C)_28%,transparent)]",
+  "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--nature-earth-700,#57534E)_14%,transparent),inset_0_18px_36px_color-mix(in_srgb,var(--rootsy-savia-950)_22%,transparent)]",
 )

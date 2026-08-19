@@ -4,15 +4,22 @@
 import * as React from 'react'
 
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast'
+import {
+  ROOTSY_TOAST_DURATION_MS,
+  ROOTSY_TOAST_EXIT_MS,
+  type RootsyToastIntent,
+} from '@/components/rootsy-toast/rootsyToast'
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = ROOTSY_TOAST_EXIT_MS + 50
 
 type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  intent?: RootsyToastIntent
+  dismissible?: boolean
 }
 
 const actionTypes = {
@@ -154,6 +161,7 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
+      duration: props.duration ?? ROOTSY_TOAST_DURATION_MS,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss()

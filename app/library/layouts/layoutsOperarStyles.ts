@@ -1,13 +1,41 @@
+import {
+  libraryNavGroupClass,
+  libraryNavGroupLabelClass,
+  libraryNavItemActiveClass,
+  libraryNavItemClass,
+  libraryScrollDarkClass,
+  librarySidebarClass,
+} from "@/app/library/libraryColorTheme"
 import { rootsySpacePx } from "@/lib/design-system"
+import "@/app/library/layouts/rootsyLayoutsEarthFloor.css"
+import {
+  rootsyLayoutsEarthFloorBorderClass,
+  rootsyLayoutsEarthFloorShadowClass,
+  rootsyLayoutsEarthFloorSlotClass,
+  rootsyLayoutsEarthFloorSlotConfiguredClass,
+  rootsyLayoutsEarthFloorSlotIconClass,
+  rootsyLayoutsEarthFloorSurfaceClass,
+} from "@/app/library/layouts/rootsyLayoutsEarthFloor"
+import { ROOTSY_RADIUS_TOKENS } from "@/app/library/radius/rootsyRadiusSystem"
 import { cn } from "@/lib/utils"
 
-/** Rail categorías — 6× space.600 (288px) · surco fijo alineado a grilla 8px. */
-export const LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX = rootsySpacePx("600") * 6
+/** radius.full — círculos del umbral Descartar / Cobrar. */
+export const layoutsOperarTicketActionCircleRadius =
+  ROOTSY_RADIUS_TOKENS.find((item) => item.id === "full")!.value
+
+/** Descartar · space.600. Cobrar · space.800 — el umbral de la venta. */
+export const layoutsOperarTicketActionDiscardSizePx = rootsySpacePx("600")
+export const layoutsOperarTicketActionConfirmSizePx = rootsySpacePx("800")
+export const layoutsOperarTicketActionDiscardIconPx = rootsySpacePx("300")
+export const layoutsOperarTicketActionConfirmIconPx = rootsySpacePx("400")
+
+/** Rail categorías — w-64 · 4× space.800 (256px) · paridad Library / Estadísticas / Ajustes. */
+export const LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX = rootsySpacePx("800") * 4
 
 /** Columna ticket bruma — 10× space.500 (400px) · carrito + stepper + totales. */
 export const LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX = rootsySpacePx("500") * 10
 
-export const LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_TOKEN = "6× space.600"
+export const LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_TOKEN = "w-64 · 4× space.800"
 export const LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_TOKEN = "10× space.500"
 
 /** Clases Tailwind derivadas — producción POS (sale, compras, mesas). */
@@ -62,11 +90,12 @@ export const layoutsOperarCatalogColumnInMainGridClass = cn(
   "border-b border-[var(--layouts-operar-border-dark-default)]",
 )
 
-/** Rail catálogo — dosel denso sombra-950. */
+/** Rail catálogo — mismo sidebar oscuro que Library / Estadísticas / Ajustes. */
 export const layoutsOperarCatalogSidebarClass = cn(
-  "relative shrink-0 overflow-hidden bg-[var(--rootsy-sombra-950)]",
+  "relative shrink-0 overflow-hidden",
   "border-r border-[var(--layouts-operar-border-dark-hairline)]",
   "transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
+  librarySidebarClass,
 )
 
 export const layoutsOperarCatalogSidebarOpenClass =
@@ -103,50 +132,69 @@ export const layoutsOperarCatalogCanvasClass = cn(
 )
 
 export const layoutsOperarCatalogToolbarClass = cn(
-  "flex min-w-0 shrink-0 items-center gap-3 border-b border-[var(--layouts-operar-border-dark-hairline)] px-4",
+  "flex min-w-0 shrink-0 items-center gap-3 px-4",
+  "bg-[var(--rootsy-sombra-700)]",
+  "border-b border-[var(--layouts-operar-border-dark-hairline)]",
   "[height:var(--layouts-operar-catalog-toolbar-h)]",
 )
 
-/** Shell compartido — toggle vista, escaneo, cantidad y lista de precio. */
+/** Campo al ras — hairline del rail, mismo plano que library-nav-item. */
 export const layoutsOperarCatalogToolbarControlShellClass = cn(
   "layouts-operar-catalog-toolbar-control",
   "h-10 shrink-0 rounded-lg",
-  "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]",
-  "dark:border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)]",
-  "dark:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]",
+  "border border-[var(--layouts-operar-border-dark-hairline)]",
+  "bg-transparent",
   "shadow-none",
+  "hover:border-[var(--layouts-operar-border-dark-default)]",
+  "hover:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)]",
 )
 
+/** Focus — mismo gesto que library-nav-item--active: hairline firme + velo, sin savia. */
 export const layoutsOperarCatalogToolbarControlFocusClass = cn(
   "outline-none",
-  "focus-visible:border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
-  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)]",
-  "focus-visible:ring-offset-0",
+  "focus-visible:border-[var(--layouts-operar-border-dark-default)]",
+  "focus-visible:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)]",
+  "focus-visible:text-[var(--rootsy-bruma-50)]",
+  "focus-visible:ring-0 focus-visible:ring-offset-0",
 )
 
-/** Superficie activa — pill toggle grid/lista · focus input escaneo. */
+/** Selección firme — mismo peso que library-nav-item--active. */
 export const layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass = cn(
-  "border-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_15%,transparent)]",
+  "border-transparent",
+  "bg-transparent",
 )
 
 export const layoutsOperarCatalogToolbarScanInputFocusClass = cn(
   "layouts-operar-catalog-toolbar-scan-input outline-none",
-  "focus-visible:ring-0 focus-visible:ring-offset-0",
-  "focus-visible:border-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)]",
+  layoutsOperarCatalogToolbarControlFocusClass,
+  "focus:border-[var(--layouts-operar-border-dark-default)]",
+  "focus:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)]",
+  "focus:text-[var(--rootsy-bruma-50)]",
+  "focus:font-medium",
 )
 
-export const layoutsOperarCatalogToolbarViewToggleShellClass = cn(
-  layoutsOperarCatalogToolbarControlShellClass,
-  "relative flex items-center p-1",
+export const layoutsOperarCatalogToolbarViewToggleShellClass =
+  "relative flex items-center gap-0.5"
+
+export const layoutsOperarCatalogToolbarViewToggleButtonClass = cn(
+  "relative flex h-8 w-10 items-center justify-center rounded-lg",
+  layoutsOperarCatalogToolbarControlFocusClass,
+)
+
+export const layoutsOperarCatalogToolbarViewToggleButtonActiveClass =
+  "font-medium text-[var(--rootsy-bruma-50)]"
+
+export const layoutsOperarCatalogToolbarViewToggleButtonIdleClass = cn(
+  "text-[var(--rootsy-sombra-300)]",
+  "hover:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)]",
+  "hover:text-[var(--rootsy-bruma-50)]",
 )
 
 export const layoutsOperarCatalogToolbarScanInputClass = cn(
   layoutsOperarCatalogToolbarControlShellClass,
   layoutsOperarCatalogToolbarScanInputFocusClass,
-  "w-full min-w-0 pl-10 pr-10 text-sm text-[#f4f8f6]",
-  "placeholder:text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]",
+  "w-full min-w-0 pl-10 pr-10 text-sm font-normal text-[var(--rootsy-sombra-300)]",
+  "placeholder:text-[var(--rootsy-sombra-300)]",
 )
 
 /** Placeholder e ícono — form controls dark operar (paridad toolbar). */
@@ -226,37 +274,49 @@ export const layoutsOperarCatalogToolbarQtyShellClass = cn(
 export const layoutsOperarCatalogToolbarPriceListClass = cn(
   layoutsOperarCatalogToolbarControlShellClass,
   layoutsOperarCatalogToolbarControlFocusClass,
-  "flex min-w-[9.5rem] items-center justify-start gap-2 px-3 text-sm text-[#f4f8f6]",
-  "dark:hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]",
+  "flex min-w-[9.5rem] items-center justify-start gap-2 px-3 text-sm font-medium text-[var(--rootsy-bruma-50)]",
   "[&>svg:last-child]:hidden",
 )
 
 export const layoutsOperarCatalogToolbarIconAccentClass =
-  "text-[color-mix(in_srgb,var(--rootsy-savia-400)_82%,white)]"
+  "text-[var(--rootsy-sombra-300)]"
 
 export const layoutsOperarCatalogToolbarIconMutedClass =
-  "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
+  "text-[var(--rootsy-sombra-300)]"
 
-export const layoutsOperarCatalogToolbarQtyButtonClass = cn(
-  "inline-flex size-8 items-center justify-center rounded-md",
-  "text-[color-mix(in_srgb,var(--rootsy-bruma-100)_88%,white)] transition-colors",
-  "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_48%,transparent)]",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+const layoutsOperarCatalogToolbarQtyHitClass = cn(
+  "inline-flex size-8 items-center justify-center rounded-md bg-transparent",
+  "hover:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)]",
+  "hover:text-[var(--rootsy-bruma-50)]",
 )
 
-export const layoutsOperarCatalogToolbarQtyValueClass =
-  "min-w-8 px-1 text-center text-sm font-semibold tabular-nums text-[#f4f8f6]"
+export const layoutsOperarCatalogToolbarQtyButtonClass = cn(
+  layoutsOperarCatalogToolbarQtyHitClass,
+  "text-[var(--rootsy-sombra-300)]",
+  layoutsOperarCatalogToolbarControlFocusClass,
+)
+
+export const layoutsOperarCatalogToolbarQtyValueClass = cn(
+  layoutsOperarCatalogToolbarQtyHitClass,
+  "text-center text-sm font-medium tabular-nums text-[var(--rootsy-bruma-50)]",
+  layoutsOperarCatalogToolbarControlFocusClass,
+)
 
 export const layoutsOperarCatalogToolbarQtyValueHoverClass =
-  "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_48%,transparent)]"
+  layoutsOperarCatalogToolbarQtyHitClass
 
 export const layoutsOperarScrollMinimalClass = "layouts-operar-scroll-minimal"
-export const layoutsOperarCatalogRailScrollClass = "layouts-operar-catalog-rail-scroll"
+/** @deprecated Usar libraryScrollDarkClass — el rail reutiliza el scroll de Library. */
+export const layoutsOperarCatalogRailScrollClass = libraryScrollDarkClass
 
 export const layoutsOperarCatalogCanvasScrollClass = cn(
   layoutsOperarScrollMinimalClass,
   "min-h-0 flex-1 overflow-y-auto p-3",
 )
+
+/** Fila del canvas que envuelve el scroll. */
+export const layoutsOperarCatalogCanvasBodyClass =
+  "relative min-h-0 h-full overflow-hidden"
 
 /** Canvas formularios operar (pasos wizard) — scroll horizontal + top; el aire final va en el wrapper interno. */
 export const layoutsOperarFormCanvasScrollClass = cn(
@@ -270,7 +330,7 @@ export const layoutsOperarFormCanvasScrollEndClass =
   "pb-10 sm:pb-12 lg:pb-14"
 
 /** Grilla demo — sale usa grid-cols-3 en desktop. */
-export const layoutsOperarCatalogGridClass = "grid grid-cols-2 gap-3 xl:grid-cols-3"
+export const layoutsOperarCatalogGridClass = "grid grid-cols-2 gap-4 xl:grid-cols-3"
 
 /** Empty catálogo — mascota + burbuja de diálogo (bruma sobre dosel). */
 export const layoutsOperarCatalogEmptyMascotShellClass =
@@ -299,14 +359,14 @@ export const layoutsOperarCatalogSkeletonGhostClass =
   "animate-pulse bg-[color-mix(in_srgb,var(--rootsy-sombra-700)_38%,var(--rootsy-sombra-800))]"
 
 export const layoutsOperarProductCardClass = cn(
-  "layouts-operar-product-card group relative grid h-[318px] w-full grid-rows-[152px_1fr] overflow-hidden rounded-2xl text-left",
+  "layouts-operar-product-card group relative grid h-[256px] w-full grid-rows-[120px_1fr] overflow-hidden rounded-2xl text-left",
   "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-600)]",
   "transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5",
 )
 
 /** Tarjeta horizontal — vista lista · sale `modoVista === "lista"`. */
 export const layoutsOperarProductCardListClass = cn(
-  "layouts-operar-product-card group relative flex min-h-[152px] w-full items-stretch overflow-hidden rounded-2xl text-left",
+  "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-2xl text-left",
   "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-600)]",
   "transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5",
 )
@@ -324,13 +384,13 @@ export const layoutsOperarProductCardListSkeletonShellClass = cn(
 )
 
 export const layoutsOperarProductCardListMediaClass =
-  "relative h-[152px] w-48 shrink-0 overflow-hidden bg-[var(--layouts-operar-product-card-media-bg)]"
+  "relative h-20 w-20 shrink-0 overflow-hidden bg-[var(--layouts-operar-product-card-media-bg)]"
 
 export const layoutsOperarProductCardGridBodyClass =
-  "grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2 p-5"
+  "grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-1.5 p-3"
 
 export const layoutsOperarProductCardListBodyClass =
-  "flex min-h-0 min-w-0 flex-1 flex-col justify-between gap-2 p-5"
+  "flex min-h-0 min-w-0 flex-1 items-center justify-between gap-3 px-3 py-2"
 
 /** Canvas oscuro para demos de artículo aislado. */
 export const layoutsOperarCatalogArticleCanvasClass = cn(
@@ -367,7 +427,7 @@ export const layoutsOperarProductCardDescClass =
   "line-clamp-2 text-xs leading-relaxed text-[var(--layouts-operar-product-card-desc)]"
 
 export const layoutsOperarProductCardPriceClass =
-  "text-lg font-bold tabular-nums text-[var(--layouts-operar-product-card-price)]"
+  "text-base font-bold tabular-nums text-[var(--layouts-operar-product-card-price)]"
 
 export const layoutsOperarProductCardOfferClass =
   "absolute left-2 top-2 z-10 rounded-md bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
@@ -445,7 +505,7 @@ export const layoutsOperarStepContextBackButtonClass =
   layoutsOperarStepContextNavButtonClass
 
 /** Toolbox — fila 1.1.2 dentro de la columna operación. */
-export const layoutsOperarToolboxRowClass = "row-start-2 min-h-0 shrink-0"
+export const layoutsOperarToolboxRowClass = "row-start-2 z-[1] min-h-0 shrink-0 overflow-visible"
 
 /** Banda toolbox aislada — altura mínima desde anatomía. */
 export const layoutsOperarToolboxBandClass = cn(
@@ -471,18 +531,20 @@ export const layoutsOperarToolboxDemoShellClass = cn(
   "overflow-hidden",
 )
 
-/** Barra toolbox standalone — incluye superficie sombra-950. */
+/** Barra toolbox — tierra empapada, paridad footer de tablas. */
 export const layoutsOperarToolboxBarClass = cn(
   layoutsOperarToolboxBarGridClass,
-  "border-t border-[var(--layouts-operar-border-dark-default)]",
-  "bg-[var(--rootsy-sombra-950)]",
+  rootsyLayoutsEarthFloorBorderClass,
+  rootsyLayoutsEarthFloorSurfaceClass,
+  rootsyLayoutsEarthFloorShadowClass,
 )
 
 /** Barra toolbox wizard de 3 pasos. */
 export const layoutsOperarToolboxBar3Class = cn(
   layoutsOperarToolboxBarGrid3Class,
-  "border-t border-[var(--layouts-operar-border-dark-default)]",
-  "bg-[var(--rootsy-sombra-950)]",
+  rootsyLayoutsEarthFloorBorderClass,
+  rootsyLayoutsEarthFloorSurfaceClass,
+  rootsyLayoutsEarthFloorShadowClass,
 )
 
 /** Anillo savia — focus teclado y paso activo en toolbox wizard. */
@@ -491,39 +553,28 @@ export const layoutsOperarToolboxSlotFocusRingClass =
 
 export function layoutsOperarToolboxSlotClass(configured: boolean, active = false) {
   return cn(
+    rootsyLayoutsEarthFloorSlotClass,
     "group flex h-full min-h-[var(--layouts-operar-toolbox-slot-min-h)] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left sm:min-h-[var(--layouts-operar-toolbox-slot-min-h-sm)] sm:gap-3 sm:px-3",
-    "transition-[background-color,box-shadow] duration-150 ease-out",
     "focus-visible:outline-none",
+    configured && rootsyLayoutsEarthFloorSlotConfiguredClass,
     active
       ? layoutsOperarToolboxSlotFocusRingClass
       : "focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-sombra-950)]",
-    configured
-      ? cn(
-          "bg-[var(--layouts-operar-footer-slot-configured)] shadow-[inset_0_1px_0_var(--layouts-operar-footer-slot-highlight)]",
-          "hover:bg-[var(--layouts-operar-footer-slot-configured-hover)]",
-          "enabled:active:bg-[var(--layouts-operar-footer-slot-configured-pressed-bg)] enabled:active:shadow-[var(--layouts-operar-footer-slot-configured-pressed-shadow)]",
-        )
-      : cn(
-          "bg-white/[0.02] hover:bg-[var(--layouts-operar-footer-slot-hover)]",
-          "enabled:active:bg-[var(--layouts-operar-footer-slot-pressed-bg)] enabled:active:shadow-[var(--layouts-operar-footer-slot-pressed-shadow)]",
-        ),
   )
 }
 
-export function layoutsOperarToolboxIconWrapClass(configured: boolean) {
+export function layoutsOperarToolboxIconWrapClass(_configured: boolean) {
   return cn(
+    rootsyLayoutsEarthFloorSlotIconClass,
     "flex size-10 shrink-0 items-center justify-center rounded-lg",
-    configured
-      ? "bg-[var(--layouts-operar-footer-icon-configured-bg)] text-[var(--layouts-operar-footer-icon-configured-text)]"
-      : "bg-[var(--layouts-operar-footer-icon-bg)] text-[var(--layouts-operar-footer-icon-text)]",
   )
 }
 
-/** Superficie ticket — filas 1.2.1–1.2.4 desde anatomía. */
+/** Superficie ticket — bloque scrolleable (pedido + ítems + totales) · acciones. */
 export const layoutsOperarSummaryPanelSurfaceClass = cn(
   "layouts-operar-ticket-shell rootsy-app-light grid min-h-0 overflow-hidden",
   "[grid-template-rows:var(--layouts-operar-ticket-rows)]",
-  "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-900)]",
+  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
 )
 
 /** Grid ticket interno — sin placement en grid principal (p. ej. dentro de tabs mostrador). */
@@ -535,7 +586,7 @@ export const layoutsOperarSummaryPanelInnerGridClass = cn(
 /** Cuerpo bajo tabs Mesa/Datos — flex, sin grid 1.2.x (sesión / formulario channel). */
 export const layoutsOperarSummaryPanelTabBodyClass = cn(
   "row-start-2 flex min-h-0 flex-col overflow-hidden",
-  "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-900)]",
+  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
   "rootsy-app-light layouts-operar-ticket-shell h-full min-h-0 w-full",
 )
 
@@ -567,15 +618,27 @@ export const layoutsOperarCatalogSectionShellClass = cn(
   "flex h-full min-h-0 flex-col overflow-hidden",
 )
 
+export const layoutsOperarTicketScrollColumnClass = cn(
+  "layouts-operar-scroll-minimal row-start-1 flex h-full min-h-0 flex-col overflow-y-auto",
+)
+
 export const layoutsOperarSummaryHeaderRowClass =
-  "flex items-center justify-between gap-2 border-b border-[var(--layouts-operar-border-light)] px-3 py-2"
+  "flex shrink-0 items-center justify-between gap-2 px-3 py-2"
 
 export const layoutsOperarSummaryCartRowClass =
-  "relative flex min-h-0 flex-col bg-[var(--rootsy-bruma-100)]"
+  "relative flex min-h-0 flex-col bg-[var(--rootsy-bruma-50)]"
 
 export const layoutsOperarSummaryActionsRowClass = cn(
-  "row-start-3 grid shrink-0 grid-cols-2 overflow-hidden",
-  "border-t border-[var(--layouts-operar-border-light)] bg-white",
+  "row-start-2 grid shrink-0 grid-cols-2 overflow-hidden",
+  "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-50)]",
+  "[height:var(--layouts-operar-ticket-actions-h)]",
+)
+
+/** 1.2.3 — umbral circular Descartar + Cobrar (ticket operar). */
+export const layoutsOperarTicketCircleActionsRowClass = cn(
+  "row-start-2 flex shrink-0 items-center justify-center",
+  "gap-[var(--rootsy-space-300)]",
+  "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-50)]",
   "[height:var(--layouts-operar-ticket-actions-h)]",
 )
 
@@ -594,14 +657,14 @@ export const layoutsOperarSummaryActionsCellClass = layoutsOperarSummaryActionsR
 
 export const layoutsOperarSummaryTotalRowClass = cn(
   "layouts-operar-summary-totals flex items-center justify-between px-4 py-3",
-  "border-t border-[var(--layouts-operar-border-totals)]",
+  "border-t border-[var(--layouts-operar-border-light)]",
   "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
 )
 
-/** Fondo y texto del total — tokens globales savia (no dependen del scope operar). */
+/** Total en el mundo del módulo — bruma-50, mismo piso que cuentas/cajas. */
 export const layoutsOperarSummaryTotalsSurfaceClass = cn(
-  "[background:linear-gradient(165deg,var(--rootsy-savia-975)_0%,var(--rootsy-savia-960)_48%,var(--rootsy-savia-990)_100%)]",
-  "text-[var(--rootsy-savia-50)]",
+  "bg-[var(--rootsy-bruma-50)]",
+  "text-[var(--rootsy-bruma-900)]",
 )
 
 /** Celdas ticket — placement explícito en grid 1.2.x. */
@@ -615,11 +678,8 @@ export const layoutsOperarSummaryCartCellClass = cn(
   "row-start-2 min-h-0 overflow-hidden",
 )
 
-/** 1.2.4 — placement en grid ticket (shell en SaleOperationTotalBar tone operar). */
-export const layoutsOperarSummaryTotalsPlacementClass = cn(
-  "row-start-4 shrink-0",
-  "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
-)
+/** Totales al piso del pedido cuando sobra aire; si hay overflow, van al final del scroll. */
+export const layoutsOperarSummaryTotalsPlacementClass = "mt-auto shrink-0"
 
 /** @deprecated Usar layoutsOperarSummaryTotalsPlacementClass + TotalBar tone operar. */
 export const layoutsOperarSummaryTotalsCellClass = cn(
@@ -627,10 +687,16 @@ export const layoutsOperarSummaryTotalsCellClass = cn(
   layoutsOperarSummaryTotalsPlacementClass,
 )
 
-export const layoutsOperarSummaryCartListSurfaceClass = "bg-[var(--rootsy-bruma-100)]"
+export const layoutsOperarSummaryCartListSurfaceClass = "bg-[var(--rootsy-bruma-50)]"
 
 export const layoutsOperarSummaryCartHeadingClass =
   "text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--layouts-operar-light-cart-heading)]"
+
+export const layoutsOperarSummaryCartTitleClass =
+  "font-canopy text-base font-bold text-[var(--rootsy-bruma-900)]"
+
+/** Misma letra que Pedido — Por cobrar. */
+export const layoutsOperarSummarySectionTitleClass = layoutsOperarSummaryCartTitleClass
 
 export const layoutsOperarSummaryCartMetaClass =
   "shrink-0 text-[11px] font-medium tabular-nums text-[var(--layouts-operar-light-cart-meta)]"
@@ -659,56 +725,46 @@ export const layoutsOperarSummaryEmptyTitleClass =
   "text-sm font-semibold text-[var(--layouts-operar-light-empty-title)]"
 
 export const layoutsOperarSummaryTotalsLabelClass =
-  "m-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--layouts-operar-light-totals-label)]"
+  "m-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--rootsy-bruma-500)]"
 
 export const layoutsOperarSummaryTotalsAmountClass =
-  "m-0 text-xl font-bold tabular-nums tracking-tight text-[var(--layouts-operar-light-totals-amount)] sm:text-2xl"
+  "m-0 text-xl font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)] sm:text-2xl"
 
-/** Nav rail catálogo — categorías. */
+/** Nav rail catálogo — library-nav (mismo activo que Library: texto, sin pastilla). */
 export const layoutsOperarCatalogRailNavClass = cn(
-  layoutsOperarCatalogRailScrollClass,
-  "flex h-full min-h-0 w-full flex-col gap-0 overflow-y-auto py-4",
+  "library-nav",
+  libraryScrollDarkClass,
+  "flex h-full min-h-0 w-full flex-col overflow-y-auto p-4",
 )
 
 /** Bloque de un tipo de categoría (p. ej. Recetas / Productos). */
-export const layoutsOperarCatalogRailSectionGroupClass = "flex flex-col"
+export const layoutsOperarCatalogRailSectionGroupClass = libraryNavGroupClass
 
-/** Separador compacto entre tipos de categoría — solo aire, sin línea extra (evita doble borde con el ítem anterior). */
-export const layoutsOperarCatalogRailSectionGroupDividerClass = "mt-1.5 pt-1"
+/** Separador entre tipos de categoría — mismo surco que library-nav-group. */
+export const layoutsOperarCatalogRailSectionGroupDividerClass = "library-nav-group--separated"
 
-export const layoutsOperarCatalogRailSectionLabelClass = cn(
-  "mb-0.5 px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]",
-  "text-[var(--layouts-operar-rail-section-label)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_38%,transparent)]",
-)
+export const layoutsOperarCatalogRailSectionLabelClass = libraryNavGroupLabelClass
 
-export const layoutsOperarCatalogRailListClass = "flex w-full flex-col gap-0 p-0"
+export const layoutsOperarCatalogRailListClass = "library-nav-list"
 export const layoutsOperarCatalogRailListItemClass = "w-full"
 
-/** Rail categorías — lista clara · legibilidad cajero. */
+/** Ítem de categoría — mismo library-nav-item que Library / Estadísticas / Ajustes. */
 export const layoutsOperarCatalogRailItemClass = cn(
-  "relative flex min-h-12 w-full items-center rounded-none px-4 text-left text-[15px] font-medium leading-snug transition-colors duration-150",
-  "border-b border-[var(--layouts-operar-rail-item-border)] text-[var(--layouts-operar-rail-item-text)]",
-  "hover:bg-[var(--layouts-operar-rail-item-hover)] hover:text-[var(--layouts-operar-rail-item-text-hover)]",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--layouts-operar-rail-focus-ring)]",
+  libraryNavItemClass,
+  "w-full cursor-pointer text-left",
 )
 
-export const layoutsOperarCatalogRailItemSelectedClass = cn(
-  "bg-[var(--layouts-operar-rail-item-selected)] font-semibold text-[var(--layouts-operar-rail-item-text-selected)]",
-  "shadow-[inset_3px_0_0_0_var(--layouts-operar-rail-accent)]",
-)
+export const layoutsOperarCatalogRailItemSelectedClass = libraryNavItemActiveClass
 
-export const layoutsOperarCatalogRailItemWithIconClass = "gap-2.5"
+export const layoutsOperarCatalogRailItemWithIconClass = "gap-2"
 
-export const layoutsOperarCatalogRailItemPromoSelectedClass = cn(
-  "bg-[var(--layouts-operar-rail-promo-selected)] font-semibold text-[var(--layouts-operar-rail-promo-text)]",
-  "shadow-[inset_3px_0_0_0_var(--layouts-operar-rail-promo-accent)]",
-)
+/** @deprecated Usar layoutsOperarCatalogRailItemSelectedClass — mismo activo que library-nav. */
+export const layoutsOperarCatalogRailItemPromoSelectedClass =
+  layoutsOperarCatalogRailItemSelectedClass
 
-export const layoutsOperarCatalogRailItemDiscountSelectedClass = cn(
-  "bg-[var(--layouts-operar-rail-discount-selected)] font-semibold text-[var(--layouts-operar-rail-discount-text)]",
-  "shadow-[inset_3px_0_0_0_var(--layouts-operar-rail-discount-accent)]",
-)
+/** @deprecated Usar layoutsOperarCatalogRailItemSelectedClass — mismo activo que library-nav. */
+export const layoutsOperarCatalogRailItemDiscountSelectedClass =
+  layoutsOperarCatalogRailItemSelectedClass
 
 /** @deprecated alias — usar layoutsOperarBodyScopeClass */
 export const layoutsOperationsBodyScopeClass = layoutsOperarBodyScopeClass

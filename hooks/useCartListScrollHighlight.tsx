@@ -21,10 +21,25 @@ export type CartListScrollHighlightValue = {
 const CartListScrollHighlightContext =
   createContext<CartListScrollHighlightValue | null>(null)
 
+function isLastCartLine(root: HTMLElement, el: HTMLElement) {
+  const lines = root.querySelectorAll("[data-cart-line-id]")
+  return lines.length > 0 && lines[lines.length - 1] === el
+}
+
+function scrollCartToBlockEnd(root: HTMLDivElement) {
+  root.scrollTo({ top: root.scrollHeight, behavior: "smooth" })
+}
+
 function scrollCartToAffectedLine(root: HTMLDivElement, lineId: string) {
   const escaped = CSS.escape(lineId)
   const el = root.querySelector<HTMLElement>(`[data-cart-line-id="${escaped}"]`)
   if (!el) return false
+
+  // Un ítem nuevo va al final: hay que revelar el bloque hasta Por cobrar / total.
+  if (isLastCartLine(root, el)) {
+    scrollCartToBlockEnd(root)
+    return true
+  }
 
   const padding = 10
   const rootRect = root.getBoundingClientRect()
@@ -73,7 +88,7 @@ export function useCartListScrollHighlight(): CartListScrollHighlightValue {
       const root = scrollRef.current
       if (root && scrollCartToAffectedLine(root, pulse.lineId)) return
       if (attempts >= 12) {
-        root?.scrollTo({ top: root.scrollHeight, behavior: "smooth" })
+        if (root) scrollCartToBlockEnd(root)
         return
       }
       attempts += 1
@@ -85,7 +100,7 @@ export function useCartListScrollHighlight(): CartListScrollHighlightValue {
       const root = scrollRef.current
       if (!root) return
       if (!scrollCartToAffectedLine(root, pulse.lineId)) {
-        root.scrollTo({ top: root.scrollHeight, behavior: "smooth" })
+        scrollCartToBlockEnd(root)
       }
     }, 150)
     const clearHighlight = window.setTimeout(() => setPulse(null), 1300)

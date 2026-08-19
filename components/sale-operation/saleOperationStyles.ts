@@ -10,11 +10,29 @@ import {
 import { cn } from "@/lib/utils"
 import { importeBaseClass } from "@/lib/typography"
 
-export const saleOpFmt = new Intl.NumberFormat("es-AR", {
+const saleOpFmtWhole = new Intl.NumberFormat("es-AR", {
+  style: "currency",
+  currency: "ARS",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+})
+
+const saleOpFmtCents = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
   minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 })
+
+function isWholePesos(n: number) {
+  return Math.round(Math.abs(n) * 100) % 100 === 0
+}
+
+export const saleOpFmt = {
+  format(n: number) {
+    return isWholePesos(n) ? saleOpFmtWhole.format(n) : saleOpFmtCents.format(n)
+  },
+}
 
 export const saleOpImporteBaseClass = importeBaseClass
 

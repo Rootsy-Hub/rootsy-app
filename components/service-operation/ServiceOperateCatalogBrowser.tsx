@@ -3,6 +3,7 @@
 import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
 import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
 import {
+  layoutsOperarCatalogCanvasBodyClass,
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
@@ -175,9 +176,10 @@ export function ServiceOperateCatalogBrowser({
               onBusquedaChange={setBusqueda}
             />
 
+            <div className={layoutsOperarCatalogCanvasBodyClass}>
             <div
               className={cn(
-                "min-h-0",
+                "min-h-0 h-full",
                 loading && !error
                   ? layoutsOperarCatalogCanvasScrollClass
                   : error
@@ -220,6 +222,7 @@ export function ServiceOperateCatalogBrowser({
                   ))}
                 </div>
               )}
+            </div>
             </div>
           </section>
         </>

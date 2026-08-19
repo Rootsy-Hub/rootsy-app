@@ -12,9 +12,10 @@ import {
   layoutsOperarProductCardOfferClass,
   layoutsOperarProductCardPriceClass,
   layoutsOperarProductCardTitleClass,
-  layoutsOperarSummaryActionsRowClass,
+  layoutsOperarTicketCircleActionsRowClass,
   layoutsOperarSummaryCartHeadingClass,
   layoutsOperarSummaryCartMetaClass,
+  layoutsOperarSummarySectionTitleClass,
   layoutsOperarSummaryCartRowClass,
   layoutsOperarSummaryHeaderRowClass,
   layoutsOperarSummaryPanelClass,
@@ -44,7 +45,15 @@ import {
   type LayoutsOperarToolboxProposal,
   type LayoutsOperarToolboxProposalId,
 } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
-import { ROOTSY_COLOR_SEMANTIC, rootsyColorHex } from "@/lib/design-system"
+import {
+  ROOTSY_LAYOUTS_EARTH_FLOOR,
+  rootsyLayoutsEarthFloorSlotClass,
+  rootsyLayoutsEarthFloorSlotConfiguredClass,
+  rootsyLayoutsEarthFloorSlotIconClass,
+  rootsyLayoutsEarthFloorSlotLabelClass,
+  rootsyLayoutsEarthFloorSlotValueClass,
+} from "@/app/library/layouts/rootsyLayoutsEarthFloor"
+import { rootsyColorHex } from "@/lib/design-system"
 import { cn } from "@/lib/utils"
 import type { CSSProperties } from "react"
 
@@ -71,7 +80,7 @@ export function getLayoutsOperarGridCssVariables(): CSSProperties {
     ["--layouts-operar-toolbox-band-py-sm" as string]: `${a.toolboxBandPaddingYSmPx}px`,
     ["--layouts-operar-ticket-w" as string]: `${a.summaryPanelWidthPx}px`,
     ["--layouts-operar-ticket-header-h" as string]: `${a.ticketHeaderHeightPx}px`,
-    ["--layouts-operar-ticket-rows" as string]: `${a.ticketHeaderHeightPx}px minmax(0, 1fr) ${a.ticketActionsHeightPx}px minmax(var(--layouts-operar-toolbox-min-h), auto)`,
+    ["--layouts-operar-ticket-rows" as string]: `minmax(0, 1fr) ${a.ticketActionsHeightPx}px`,
     ["--layouts-operar-ticket-actions-h" as string]: `${a.ticketActionsHeightPx}px`,
     ["--layouts-operar-ticket-total-min-h" as string]: `${a.ticketTotalMinHeightPx}px`,
     ["--layouts-operar-ticket-total-min-h-sm" as string]: `${a.ticketTotalMinHeightSmPx}px`,
@@ -166,7 +175,7 @@ export function getLayoutsOperarWireframeZoneStyle(zone: LayoutsOperarWireframeZ
       return { backgroundColor: surfaces.canvas.css }
     case "toolbar":
       return {
-        backgroundColor: surfaces.canvas.css,
+        backgroundColor: surfaces.rail.css,
         borderBottom: `1px solid ${border("darkHairline")}`,
       }
     case "card":
@@ -177,12 +186,12 @@ export function getLayoutsOperarWireframeZoneStyle(zone: LayoutsOperarWireframeZ
       }
     case "toolbox":
       return {
-        backgroundColor: surfaces.footer.css,
-        borderTop: `1px solid ${border("darkDefault")}`,
+        background: surfaces.footer.css,
+        borderTop: ROOTSY_LAYOUTS_EARTH_FLOOR.borderTop,
       }
     case "toolbox-slot":
       return {
-        backgroundColor: `color-mix(in srgb, ${surfaces.footer.css} 32%, transparent)`,
+        backgroundColor: `color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.baseCss} 32%, transparent)`,
         borderRight: `1px solid ${border("darkHairline")}`,
       }
     case "ticket-header":
@@ -199,14 +208,14 @@ export function getLayoutsOperarWireframeZoneStyle(zone: LayoutsOperarWireframeZ
       return { backgroundColor: surfaces.lightContent.css }
     case "ticket-actions":
       return {
-        backgroundColor: ROOTSY_COLOR_SEMANTIC.white,
+        backgroundColor: surfaces.lightPanel.css,
         borderTop: `1px solid ${border("lightHairline")}`,
         borderBottom: `1px solid ${border("lightHairline")}`,
       }
     case "ticket-total":
       return {
-        background: getLayoutsOperarPosTotalsGradient(),
-        borderTop: `1px solid ${border("totalsEdge")}`,
+        backgroundColor: surfaces.lightPanel.css,
+        borderTop: `1px solid ${border("lightHairline")}`,
       }
   }
 }
@@ -280,8 +289,9 @@ export function getLayoutsOperarToolboxProposalBandStyle(
   switch (id) {
     case "dosel-continuo":
       return {
-        backgroundColor: getLayoutsOperarDoselContinuoToolboxBandBackground(),
-        borderTop: `1px solid ${getLayoutsOperarBorderCss("darkDefault")}`,
+        background: getLayoutsOperarDoselContinuoToolboxBandBackground(),
+        borderTop: ROOTSY_LAYOUTS_EARTH_FLOOR.borderTop,
+        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.mutedColor} 14%, transparent), inset 0 18px 36px color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.moistureColor} 18%, transparent)`,
       }
     case "cubiertas-sombra":
       return {
@@ -420,13 +430,12 @@ export function layoutsOperarToolboxProposalSlotClass(
 
   return cn(
     slotAnatomy,
-    "group rounded-xl border-0 transition-[background-color,box-shadow] duration-150",
+    rootsyLayoutsEarthFloorSlotClass,
+    "group rounded-xl border-0",
     slotSpacing,
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]/45",
     "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-sombra-950)]",
-    configured
-      ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_14%,var(--rootsy-sombra-950))] shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,var(--rootsy-sombra-950))]"
-      : "bg-white/[0.02] hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_32%,transparent)]",
+    configured && rootsyLayoutsEarthFloorSlotConfiguredClass,
   )
 }
 
@@ -453,10 +462,8 @@ export function layoutsOperarToolboxProposalIconWrapClass(
   }
 
   return cn(
-    "flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
-    configured
-      ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_32%,transparent)] text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]"
-      : "bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_38%,transparent)] text-[color-mix(in_srgb,var(--rootsy-sombra-300)_88%,white)] group-hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_52%,transparent)] group-hover:text-[color-mix(in_srgb,var(--rootsy-bruma-100)_92%,white)]",
+    rootsyLayoutsEarthFloorSlotIconClass,
+    "flex size-10 shrink-0 items-center justify-center rounded-lg",
   )
 }
 
@@ -467,7 +474,10 @@ export function layoutsOperarToolboxProposalSlotLabelClass(id: LayoutsOperarTool
   if (id === "cubiertas-sombra") {
     return "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-sombra-400)_82%,transparent)]"
   }
-  return "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
+  return cn(
+    rootsyLayoutsEarthFloorSlotLabelClass,
+    "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em]",
+  )
 }
 
 export function layoutsOperarToolboxProposalSlotValueClass(
@@ -489,8 +499,8 @@ export function layoutsOperarToolboxProposalSlotValueClass(
     )
   }
   return cn(
+    rootsyLayoutsEarthFloorSlotValueClass,
     "block truncate text-sm font-semibold leading-snug",
-    configured ? "text-[#f4f8f6]" : "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]",
   )
 }
 
@@ -509,14 +519,14 @@ export function layoutsOperarProductCardProposalGridShellClass(id: LayoutsOperar
 
   if (id === "losa-sombra") {
     return cn(
-      "layouts-operar-product-card group relative grid h-[318px] w-full grid-rows-[152px_1fr] overflow-hidden rounded-xl text-left",
+      "layouts-operar-product-card group relative grid h-[256px] w-full grid-rows-[120px_1fr] overflow-hidden rounded-xl text-left",
       "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-700)]",
       "shadow-none transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_38%,var(--rootsy-sombra-700))]",
     )
   }
 
   return cn(
-    "layouts-operar-product-card group relative grid h-[318px] w-full grid-rows-[152px_1fr] overflow-hidden rounded-2xl text-left",
+    "layouts-operar-product-card group relative grid h-[256px] w-full grid-rows-[120px_1fr] overflow-hidden rounded-2xl text-left",
     "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_65%,transparent)] bg-[var(--rootsy-sombra-600)]",
     "shadow-[inset_0_1px_0_color-mix(in_srgb,#ffffff_6%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
@@ -531,14 +541,14 @@ export function layoutsOperarProductCardProposalListShellClass(id: LayoutsOperar
 
   if (id === "losa-sombra") {
     return cn(
-      "layouts-operar-product-card group relative flex min-h-[152px] w-full items-stretch overflow-hidden rounded-xl text-left",
+      "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-xl text-left",
       "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-700)]",
       "shadow-none transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_38%,var(--rootsy-sombra-700))]",
     )
   }
 
   return cn(
-    "layouts-operar-product-card group relative flex min-h-[152px] w-full items-stretch overflow-hidden rounded-2xl text-left",
+    "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-2xl text-left",
     "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_65%,transparent)] bg-[var(--rootsy-sombra-600)]",
     "shadow-[inset_0_1px_0_color-mix(in_srgb,#ffffff_6%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
@@ -558,7 +568,7 @@ export function layoutsOperarProductCardProposalMediaClass(
   const base = "relative shrink-0 overflow-hidden"
 
   if (variant === "list") {
-    return cn(base, "h-[152px] w-48")
+    return cn(base, "h-20 w-20")
   }
 
   return cn(base, "min-h-0")
@@ -590,9 +600,12 @@ export function layoutsOperarProductCardProposalBodyClass(
     return variant === "grid" ? layoutsOperarProductCardGridBodyClass : layoutsOperarProductCardListBodyClass
   }
 
-  const pad = variant === "grid" ? "p-5" : "flex min-h-0 min-w-0 flex-1 flex-col justify-between gap-2 p-5"
+  const pad =
+    variant === "grid"
+      ? "p-3"
+      : "flex min-h-0 min-w-0 flex-1 items-center justify-between gap-3 px-3 py-2"
   return variant === "grid"
-    ? cn("grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2", pad)
+    ? cn("grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-1.5", pad)
     : pad
 }
 
@@ -800,24 +813,29 @@ export function layoutsOperarTicketProposalCartListClass(id: LayoutsOperarTicket
     return "divide-y divide-[var(--layouts-operar-light-cart-divider)]"
   }
 
-  return "divide-y divide-[var(--layouts-operar-light-cart-divider)]"
+  return ""
 }
 
 export function layoutsOperarTicketProposalLineGridClass(id: LayoutsOperarTicketProposalId) {
   return cn(
-    "grid w-full grid-cols-[minmax(0,2.25rem)_minmax(0,1fr)_auto] items-start gap-x-2 px-3 py-2.5 text-left",
+    "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 px-3 py-2.5 text-left",
     id === "bruma-plana" && "py-2",
   )
 }
 
+export function layoutsOperarTicketProposalLineThumbClass(id: LayoutsOperarTicketProposalId) {
+  void id
+  return "relative size-14 shrink-0 overflow-hidden rounded-lg border border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-200)]"
+}
+
 export function layoutsOperarTicketProposalQtyClass(id: LayoutsOperarTicketProposalId) {
   void id
-  return "block min-w-0 truncate pt-0.5 text-sm font-bold tabular-nums text-[var(--layouts-operar-light-cart-line-text)]"
+  return "shrink-0 text-right text-sm font-bold tabular-nums text-[var(--rootsy-bruma-700)]"
 }
 
 export function layoutsOperarTicketProposalLineNameClass(id: LayoutsOperarTicketProposalId) {
   void id
-  return "block text-sm font-semibold leading-snug text-[var(--layouts-operar-light-cart-line-text)]"
+  return "block text-sm font-normal leading-snug text-[var(--rootsy-bruma-900)]"
 }
 
 export function layoutsOperarTicketProposalLineMetaClass(id: LayoutsOperarTicketProposalId) {
@@ -914,12 +932,12 @@ export function layoutsOperarTicketProposalPromoBadgeClass(
 export function layoutsOperarTicketProposalActionsClass(id: LayoutsOperarTicketProposalId) {
   if (id === "bruma-plana") {
     return cn(
-      layoutsOperarSummaryActionsRowClass,
+      layoutsOperarTicketCircleActionsRowClass,
       "border-t border-[color-mix(in_srgb,var(--rootsy-bruma-200)_92%,transparent)] bg-[var(--rootsy-bruma-50)]",
     )
   }
 
-  return layoutsOperarSummaryActionsRowClass
+  return layoutsOperarTicketCircleActionsRowClass
 }
 
 export function layoutsOperarTicketProposalActionDiscardClass(id: LayoutsOperarTicketProposalId) {
@@ -957,14 +975,21 @@ export function layoutsOperarTicketProposalTotalsShellClass(id: LayoutsOperarTic
   }
 
   return cn(
-    layoutsOperarSummaryTotalRowClass,
     layoutsOperarSummaryTotalsSurfaceClass,
-    "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center px-4 py-3",
+    "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center gap-2 px-4 py-3",
   )
 }
 
+export function layoutsOperarTicketProposalTotalsHeadingClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-savia") {
+    return cn(layoutsOperarSummarySectionTitleClass, "m-0")
+  }
+
+  return cn(layoutsOperarSummaryCartHeadingClass, "m-0")
+}
+
 export function layoutsOperarTicketProposalTotalsGridClass(id: LayoutsOperarTicketProposalId) {
-  return "relative z-10 grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-0.5"
+  return "relative z-10 grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1"
 }
 
 export function layoutsOperarTicketProposalTotalsDividerClass(id: LayoutsOperarTicketProposalId) {
@@ -976,7 +1001,7 @@ export function layoutsOperarTicketProposalTotalsDividerClass(id: LayoutsOperarT
     return "col-span-2 mt-1.5 border-t border-[color-mix(in_srgb,var(--rootsy-savia-300)_24%,transparent)] pt-2"
   }
 
-  return "col-span-2 mt-1.5 border-t border-[var(--layouts-operar-light-totals-divider)] pt-2.5"
+  return "col-span-2 mt-1.5 border-t border-[var(--layouts-operar-border-light)] pt-2.5"
 }
 
 export function layoutsOperarTicketProposalTotalsBreakdownLabelClass(
@@ -987,7 +1012,7 @@ export function layoutsOperarTicketProposalTotalsBreakdownLabelClass(
   }
 
   if (id === "bruma-savia") {
-    return "self-center text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--layouts-operar-light-totals-breakdown-label)]"
+    return "self-center text-sm font-normal text-[var(--rootsy-bruma-700)]"
   }
 
   return "self-center text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--layouts-operar-light-totals-breakdown-label)]"
@@ -998,16 +1023,16 @@ export function layoutsOperarTicketProposalTotalsBreakdownAmountClass(
   kind: "normal" | "discount" = "normal",
 ) {
   if (id === "bruma-savia") {
-    const base = "m-0 min-w-[6.5rem] text-right text-xs font-medium tabular-nums"
+    const base = "m-0 min-w-[6.5rem] text-right text-sm font-normal tabular-nums"
 
     if (kind === "discount") {
-      return cn(base, "text-[var(--layouts-operar-light-totals-breakdown-discount)]")
+      return cn(base, "text-[var(--rootsy-bruma-600)]")
     }
 
-    return cn(base, "text-[var(--layouts-operar-light-totals-breakdown-amount)]")
+    return cn(base, "text-[var(--rootsy-bruma-900)]")
   }
 
-  const base = "m-0 min-w-[6.5rem] text-right text-sm font-semibold tabular-nums"
+  const base = "m-0 min-w-[6.5rem] text-right text-sm font-normal tabular-nums"
 
   if (kind === "discount") {
     if (id === "bruma-plana") {
@@ -1026,16 +1051,17 @@ export function layoutsOperarTicketProposalTotalsBreakdownAmountClass(
 
 export function layoutsOperarTicketProposalTotalsMainLabelClass(id: LayoutsOperarTicketProposalId) {
   if (id === "bruma-savia") {
-    return cn(
-      layoutsOperarSummaryTotalsLabelClass,
-      "m-0 self-center text-[11px] font-bold tracking-[0.18em] text-[var(--rootsy-savia-100)]",
-    )
+    return "m-0 self-center text-sm font-bold text-[var(--rootsy-bruma-900)]"
   }
 
   return cn(layoutsOperarSummaryTotalsLabelClass, "m-0 self-center")
 }
 
 export function layoutsOperarTicketProposalTotalsMainAmountClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-savia") {
+    return "m-0 self-center min-w-[6.5rem] text-right text-sm font-bold tabular-nums leading-none text-[var(--rootsy-bruma-900)]"
+  }
+
   return cn(
     layoutsOperarSummaryTotalsAmountClass,
     "m-0 self-center min-w-[6.5rem] text-right leading-none",

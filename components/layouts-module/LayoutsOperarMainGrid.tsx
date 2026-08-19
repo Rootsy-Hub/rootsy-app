@@ -12,8 +12,8 @@ import type { ReactNode } from "react"
 type Props = {
   /** 1.1.1 — sidebar categorías + canvas productos */
   catalog: ReactNode
-  /** 1.1.2 — banda toolbox (4 slots) */
-  toolbox: ReactNode
+  /** 1.1.2 — banda toolbox (4 slots). `null` oculta la fila (Mesas/Mostrador fuera de Pedido). */
+  toolbox?: ReactNode
   /** 1.2 — panel ticket (4 filas) */
   ticket: ReactNode
   /** Ubicación de la banda toolbox dentro de la columna operación. */
@@ -34,6 +34,7 @@ export function LayoutsOperarMainGrid({
   toolboxPosition = "bottom",
   className,
 }: Props) {
+  const showToolbox = toolbox != null
   const toolboxOnTop = toolboxPosition === "top"
 
   return (
@@ -43,20 +44,27 @@ export function LayoutsOperarMainGrid({
       <div
         className={cn(
           layoutsOperarOperationColumnClass,
-          toolboxOnTop &&
+          !showToolbox && "[grid-template-rows:minmax(0,1fr)]",
+          showToolbox &&
+            toolboxOnTop &&
             "sm:[grid-template-rows:minmax(var(--layouts-operar-toolbox-min-h-sm),auto)_minmax(0,1fr)] [grid-template-rows:minmax(var(--layouts-operar-toolbox-min-h),auto)_minmax(0,1fr)]",
         )}
       >
         <div
-          className={cn(layoutsOperarCatalogRowClass, toolboxOnTop && "row-start-2")}
+          className={cn(
+            layoutsOperarCatalogRowClass,
+            showToolbox && toolboxOnTop && "row-start-2",
+          )}
         >
           {catalog}
         </div>
-        <div
-          className={cn(layoutsOperarToolboxRowClass, toolboxOnTop && "row-start-1")}
-        >
-          {toolbox}
-        </div>
+        {showToolbox ? (
+          <div
+            className={cn(layoutsOperarToolboxRowClass, toolboxOnTop && "row-start-1")}
+          >
+            {toolbox}
+          </div>
+        ) : null}
       </div>
       {ticket}
     </main>

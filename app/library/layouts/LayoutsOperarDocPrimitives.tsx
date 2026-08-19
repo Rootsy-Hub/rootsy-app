@@ -20,12 +20,8 @@ import {
   layoutsOperarCatalogSectionShellClass,
   layoutsOperarHeaderGridClass,
   layoutsOperarHeaderScopeClass,
-  layoutsOperarSummaryCartHeadingClass,
-  layoutsOperarSummaryCartMetaClass,
+  layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryCartRowClass,
-  layoutsOperarSummaryActionsRowClass,
-  layoutsOperarSummaryActionDiscardColClass,
-  layoutsOperarSummaryActionConfirmColClass,
   layoutsOperarSummaryHeaderRowClass,
   layoutsOperarSummaryTotalRowClass,
   layoutsOperarSummaryTotalsAmountClass,
@@ -48,6 +44,7 @@ import {
   getLayoutsOperarWireframeZoneLabel,
   getLayoutsOperarWireframeSurfaceToken,
   getLayoutsOperarWireframeZoneStyle,
+  layoutsOperarTicketProposalActionsClass,
   LAYOUTS_OPERAR_ANATOMY,
   type LayoutsOperarWireframeZone,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
@@ -75,6 +72,7 @@ import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/r
 import { LayoutsModuleShellWithContent } from "@/app/library/layouts/LayoutsModuleDocPrimitives"
 import { ROOTSY_LAYOUTS_MODULE_HEADER } from "@/app/library/layouts/rootsyLayoutsModuleSystem"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
 import {
   dataWorkspaceHeaderChromeButtonClass,
@@ -374,7 +372,7 @@ function LayoutsOperarCatalogColumn({
         aria-label="Filtros del catálogo"
       >
         {wireframe ? (
-          <LayoutHeightBadge label={`${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px · sombra-950`} onDark />
+          <LayoutHeightBadge label={`${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px · library-sidebar`} onDark />
         ) : composed ? (
           <LayoutsOperarCatalogRailProposal />
         ) : null}
@@ -394,8 +392,7 @@ function LayoutsOperarCatalogColumn({
 function LayoutsOperarSummaryCartHeader() {
   return (
     <>
-      <h2 className={layoutsOperarSummaryCartHeadingClass}>Tu pedido</h2>
-      <span className={layoutsOperarSummaryCartMetaClass}>0 líneas</span>
+      <h2 className={layoutsOperarSummaryCartTitleClass}>Pedido</h2>
     </>
   )
 }
@@ -435,7 +432,7 @@ function LayoutsOperarSummaryPanel({
       aria-label="Carrito de la venta"
     >
       {wireframe ? (
-        <LayoutHeightBadge label={`${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px · bruma-100`} />
+        <LayoutHeightBadge label={`${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px · bruma-50`} />
       ) : null}
       {showDraftCart ? (
         <>
@@ -445,17 +442,12 @@ function LayoutsOperarSummaryPanel({
           <div className={layoutsOperarSummaryCartRowClass}>
             <LayoutsOperarSummaryEmptyOrder />
           </div>
-          <div className={layoutsOperarSummaryActionsRowClass}>
-            <div className={layoutsOperarSummaryActionDiscardColClass}>
-              <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-rose-700">
-                Descartar
-              </div>
-            </div>
-            <div className={layoutsOperarSummaryActionConfirmColClass}>
-              <div className="flex h-full w-full items-center justify-center bg-[var(--rootsy-savia-600)] text-sm font-semibold text-white">
-                Vender
-              </div>
-            </div>
+          <div className={layoutsOperarTicketProposalActionsClass(LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL)}>
+            <SaleOperationActionsBar
+              variant="operar"
+              onDiscard={() => {}}
+              onConfirm={() => {}}
+            />
           </div>
           <div className={layoutsOperarSummaryTotalRowClass}>
             <span className={layoutsOperarSummaryTotalsLabelClass}>Total a cobrar</span>
@@ -779,7 +771,7 @@ export function LayoutsOperarCatalogSectionDemo() {
         <div className="space-y-6">
           <LayoutsOperarDocSubsection title="2.1.a · Grilla · tarjeta vertical">
             <p className="text-sm text-[var(--rootsy-bruma-500)]">
-              Vista grilla (<code className="text-[11px]">modoVista grid</code>) — mosaico 318×152+ cuerpo.
+              Vista grilla (<code className="text-[11px]">modoVista grid</code>) — mosaico 256×120+ cuerpo.
             </p>
             <LayoutsOperarCatalogArticleCanvas>
               <div className="max-w-xs">
@@ -790,7 +782,7 @@ export function LayoutsOperarCatalogSectionDemo() {
 
           <LayoutsOperarDocSubsection title="2.1.b · Lista · fila horizontal">
             <p className="text-sm text-[var(--rootsy-bruma-500)]">
-              Vista lista (<code className="text-[11px]">modoVista lista</code>) — fila min 152px · imagen 192px.
+              Vista lista (<code className="text-[11px]">modoVista lista</code>) — fila min 80px · imagen 80px.
             </p>
             <LayoutsOperarCatalogArticleCanvas>
               <LayoutsOperarProductCardProposalList product={LAYOUTS_OPERAR_DEMO_ARTICLE} />

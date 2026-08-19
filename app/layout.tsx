@@ -5,7 +5,7 @@ import { AuthProvider } from '@/context/AuthContextSupabase'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { getInitialAuthUser } from '@/lib/getInitialAuthUser'
 import { ROOTSY_BRAND_TITLE } from '@/lib/rootsyBrand'
-import { Toaster } from '@/components/ui/toaster'
+import { RootsyToaster } from '@/components/rootsy-toast'
 import './globals.css'
 
 // Fuente principal del proyecto
@@ -69,7 +69,7 @@ export default async function RootLayout({
             {children}
           </QueryProvider>
         </AuthProvider>
-        <Toaster />
+        <RootsyToaster />
         <Analytics />
       </body>
     </html>

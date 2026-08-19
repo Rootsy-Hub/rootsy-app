@@ -25,8 +25,13 @@ export function MostradorCartTicketGroup({
   const hasPromoHeader = Boolean(group.promoLabel?.trim())
   const promoVariant = group.promoVariant ?? "promotion"
   const isDiscount = promoVariant === "discount"
+  const hideOperarPromoBanner =
+    lineVariant === "operar" &&
+    (promoVariant === "discount" ||
+      (group.rows.length > 0 &&
+        group.rows.every((row) => Boolean(row.quantityDealApplicationId))))
 
-  if (!hasPromoHeader) {
+  if (!hasPromoHeader || hideOperarPromoBanner) {
     return (
       <>
         {group.rows.map((row) => (

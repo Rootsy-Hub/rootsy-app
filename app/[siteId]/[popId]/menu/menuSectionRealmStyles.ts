@@ -5,13 +5,23 @@ import {
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 
-/** Rail de mundos — cristal tenue, tipografía precisa. */
-export const menuSectionRealmRailClass = cn(
-  "inline-flex items-stretch overflow-hidden rounded-lg border",
+/** Radio del selector de reinado — rounded-lg, como antes. */
+export const menuSectionRealmRadiusClass = "rounded-lg"
+
+/** Cristal del selector de reinado — mismo material para el dock. */
+export const menuSectionRealmSurfaceClass = cn(
+  "border",
   "border-[rgba(228,242,248,0.11)]",
   "bg-[linear-gradient(165deg,rgba(255,255,255,0.035)_0%,rgba(8,28,38,0.05)_100%)]",
   "backdrop-blur-[6px] backdrop-saturate-[1.06]",
   "shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+)
+
+/** Rail de mundos — cristal tenue, tipografía precisa. */
+export const menuSectionRealmRailClass = cn(
+  "inline-flex items-stretch overflow-hidden",
+  menuSectionRealmRadiusClass,
+  menuSectionRealmSurfaceClass,
 )
 
 export const menuSectionRealmTabClass = cn(
