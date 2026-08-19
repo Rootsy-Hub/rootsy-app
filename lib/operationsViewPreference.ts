@@ -1,4 +1,10 @@
-export type OperationsViewId = "sales" | "tables" | "counter" | "purchases" | "expenses"
+export type OperationsViewId =
+  | "sales"
+  | "tables"
+  | "counter"
+  | "purchases"
+  | "expenses"
+  | "services"
 
 const VALID_VIEWS = new Set<OperationsViewId>([
   "sales",
@@ -6,6 +12,7 @@ const VALID_VIEWS = new Set<OperationsViewId>([
   "counter",
   "purchases",
   "expenses",
+  "services",
 ])
 
 const STORAGE_PREFIX = "rootsy:operations-view:"

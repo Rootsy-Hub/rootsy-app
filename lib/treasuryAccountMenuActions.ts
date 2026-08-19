@@ -4,6 +4,8 @@ export type TreasuryAccountMenuActionId =
   | "add_pos"
   | "add_corporate_card"
   | "edit"
+  | "deactivate"
+  | "activate"
   | "delete"
 
 export type TreasuryAccountMenuAction = {
@@ -24,10 +26,14 @@ export function getTreasuryAccountMenuActions(
     hasPos?: boolean
     hasCard?: boolean
   },
+  account?: {
+    isActive?: boolean
+  },
 ): TreasuryAccountMenuAction[] {
   const actions: TreasuryAccountMenuAction[] = []
+  const isActive = account?.isActive !== false
 
-  if (permissions.canCreate) {
+  if (permissions.canCreate && isActive) {
     if (kind === "bank" || kind === "wallet") {
       if (!integrations?.hasPos) {
         actions.push({
@@ -49,6 +55,10 @@ export function getTreasuryAccountMenuActions(
       id: "edit",
       label: "Editar",
       separatorBefore: actions.length > 0,
+    })
+    actions.push({
+      id: isActive ? "deactivate" : "activate",
+      label: isActive ? "Inactivar" : "Activar",
     })
   }
 

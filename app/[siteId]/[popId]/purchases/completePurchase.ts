@@ -19,6 +19,7 @@ import {
   timezoneForPopLedger,
 } from "@/lib/entryDateTimezone"
 import { createClient } from "@/utils/supabase/server"
+import { ensurePopDefaultInventoryLocationId } from "@/lib/inventory/inventoryLocations"
 import type {
   CreatePurchaseInput,
 } from "@/app/[siteId]/[popId]/purchases/actions"
@@ -235,6 +236,7 @@ export async function completePurchase(
         itemDiscountMode: l.itemDiscountMode,
         itemDiscountDraft: l.itemDiscountDraft,
         comment: l.comment,
+        expiresOn: l.expiresOn,
         updateArticleCost: l.updateArticleCost,
       })
       if ("error" in resolved) {
@@ -358,12 +360,22 @@ export async function completePurchase(
       }
     }
 
+    const inboundLocation = await ensurePopDefaultInventoryLocationId(
+      supabase,
+      popId,
+    )
+    if (!inboundLocation.success) {
+      await rollbackCompletePurchase(supabase, purchaseId, movementIds)
+      return { success: false, error: inboundLocation.error }
+    }
+
     for (const l of fiscalLines) {
       const note = `Compra — ${l.name} (${l.costUnitLabel})`
       const { data: movIns, error: movErr } = await supabase
         .from("inventory_movements")
         .insert({
           pop_id: popId,
+          location_id: inboundLocation.locationId,
           article_id: l.articleId,
           quantity_delta: l.saleQty,
           movement_type: "purchase_receipt",
@@ -393,11 +405,13 @@ export async function completePurchase(
           : 0
       const { error: layerErr } = await supabase.from("inventory_cost_layers").insert({
         pop_id: popId,
+        location_id: inboundLocation.locationId,
         article_id: l.articleId,
         source_movement_id: movementId,
         quantity_received: l.saleQty,
         quantity_remaining: l.saleQty,
         unit_cost: layerUnitCost,
+        expires_at: l.expiresOn,
       })
       if (layerErr) {
         await rollbackCompletePurchase(supabase, purchaseId, movementIds)

@@ -17,9 +17,10 @@ function parseDockItemIds(raw: unknown): MenuDockItemId[] {
   const out: MenuDockItemId[] = []
   const seen = new Set<MenuDockItemId>()
   for (const entry of raw) {
-    if (!isMenuDockItemId(entry) || seen.has(entry)) continue
-    seen.add(entry)
-    out.push(entry)
+    const id = entry === "active-services" ? "operations" : entry
+    if (!isMenuDockItemId(id) || seen.has(id)) continue
+    seen.add(id)
+    out.push(id)
     if (out.length >= MAX_MENU_DOCK_ITEMS) break
   }
   return out

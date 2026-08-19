@@ -23,16 +23,13 @@ import {
 import {
   availableBillingScopesForService,
   billingPeriodRequiresManualPeriodEnd,
-  chargeMatchesViewFilter,
   computeChargeAmount,
   computeChargeDueDate,
   resolveChargePeriodRange,
   deriveStoredStatusFromPayments,
-  isActiveServicesViewFilter,
   isServiceChargeBillingScope,
   resolveServiceChargeEffectiveStatus,
   roundServiceChargeMoney,
-  type ActiveServicesViewFilter,
   type ServiceChargeBillingScope,
   type ServiceChargeEffectiveStatus,
   type ServiceChargePaymentMode,
@@ -172,7 +169,6 @@ export type CreateServiceChargeInput = {
 }
 
 export type GetActiveServicesInput = {
-  view?: ActiveServicesViewFilter
   clientQ?: string
 }
 
@@ -552,7 +548,7 @@ function computeStats(rows: ServiceChargeListRow[]): ActiveServicesStats {
 
 export async function getActiveServicesPageData(
   popId: string,
-  input: GetActiveServicesInput = {},
+  _input: GetActiveServicesInput = {},
 ): Promise<
   | {
       success: true
@@ -578,8 +574,6 @@ export async function getActiveServicesPageData(
       return { success: false, error: "Sin permiso para ver servicios activos." }
     }
 
-    const view = isActiveServicesViewFilter(input.view) ? input.view : "clients"
-    const clientQ = input.clientQ?.trim() ?? ""
     const supabase = await createClient()
     const today = new Date().toISOString().slice(0, 10)
 
@@ -613,22 +607,10 @@ export async function getActiveServicesPageData(
       }
     }
 
-    const allRows = (chargeRows ?? []).map((row) =>
+    const charges = (chargeRows ?? []).map((row) =>
       mapChargeRow(row as Record<string, unknown>, paidByChargeId, today),
     )
-    const stats = computeStats(allRows)
-    let charges = allRows.filter((row) =>
-      chargeMatchesViewFilter(row.effectiveStatus, view),
-    )
-    if (clientQ) {
-      const q = clientQ.toLowerCase()
-      charges = charges.filter(
-        (row) =>
-          row.clientName.toLowerCase().includes(q) ||
-          row.serviceName.toLowerCase().includes(q) ||
-          row.notes.toLowerCase().includes(q),
-      )
-    }
+    const stats = computeStats(charges)
 
     const treasuryRes = await getTreasuryPaymentContext(popId)
     const paymentMethods = treasuryRes.success

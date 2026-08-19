@@ -76,7 +76,7 @@ export const ROOTS_SHARED_MODULES: Record<
   RootsModuleDefinition[]
 > = {
   operar: [
-    { key: "active_services", label: "Servicios activos" },
+    { key: "active_services", label: "Vender servicio" },
     { key: "current_accounts", label: "Cuentas corrientes" },
     { key: "expenses", label: "Gastos" },
   ],

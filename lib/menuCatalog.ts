@@ -56,7 +56,6 @@ export type MenuItemLink =
   | "inventory"
   | "recipes"
   | "services"
-  | "active-services"
   | "cobrar-servicios"
   | "promotions"
   | "reports"
@@ -111,7 +110,6 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Mostrador", icon: Monitor, link: "mostrador" },
       { name: "Mesas", icon: UtensilsCrossed, link: "mesas" },
       { name: "Vender servicio", icon: Banknote, link: "cobrar-servicios" },
-      { name: "Servicios activos", icon: Activity, link: "active-services" },
       { name: "Comprar", icon: ShoppingBag, link: "purchases" },
       { name: "Gastos", icon: Receipt, link: "expenses" },
       { name: "Inventario", icon: ClipboardList, link: "inventory" },

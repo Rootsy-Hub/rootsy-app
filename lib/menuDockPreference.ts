@@ -29,10 +29,11 @@ export function sanitizeMenuDockIds(
   const out: MenuDockItemId[] = []
   const seen = new Set<MenuDockItemId>()
   for (const entry of raw) {
-    if (!isMenuDockItemId(entry) || seen.has(entry)) continue
-    if (!canUseMenuDockItemFromPopAccess(entry, enabledModules)) continue
-    seen.add(entry)
-    out.push(entry)
+    const id = entry === "active-services" ? "operations" : entry
+    if (!isMenuDockItemId(id) || seen.has(id)) continue
+    if (!canUseMenuDockItemFromPopAccess(id, enabledModules)) continue
+    seen.add(id)
+    out.push(id)
     if (out.length >= MAX_MENU_DOCK_ITEMS) break
   }
   return out

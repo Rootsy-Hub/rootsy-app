@@ -20,6 +20,7 @@ import {
   dataWorkspaceEntityCardEyebrowClass,
   dataWorkspaceEntityCardHeaderClass,
   dataWorkspaceEntityCardLosetaClass,
+  dataWorkspaceEntityCardLosetaInactiveClass,
   dataWorkspaceEntityCardLosetaGridClass,
   dataWorkspaceEntityCardMenuTriggerClass,
   dataWorkspaceEntityCardSaldoSectionClass,
@@ -27,8 +28,6 @@ import {
   dataWorkspaceEntityCardStatLabelClass,
   dataWorkspaceEntityCardStatValueClass,
   dataWorkspaceEntityCardStatValueLargeClass,
-  dataWorkspaceEntityCardStatusClosedClass,
-  dataWorkspaceEntityCardStatusInactiveClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
@@ -40,9 +39,11 @@ import { treasuryKindLabel } from "@/lib/treasuryAccountKinds"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import {
+  CircleOff,
   CreditCard,
   MoreVertical,
   Pencil,
+  Power,
   ScanLine,
   Trash2,
 } from "lucide-react"
@@ -100,6 +101,10 @@ function treasuryAccountMenuActionIcon(actionId: TreasuryAccountMenuActionId) {
       return CreditCard
     case "edit":
       return Pencil
+    case "deactivate":
+      return CircleOff
+    case "activate":
+      return Power
     case "delete":
       return Trash2
   }
@@ -150,6 +155,7 @@ export function TreasuryAccountCard({
       hasPos: row.hasPosIntegration,
       hasCard: row.hasCardIntegration,
     },
+    { isActive: row.isActive },
   )
 
   const brand = resolveTreasuryAccountBrand({
@@ -161,7 +167,15 @@ export function TreasuryAccountCard({
   const showSettlementStats = row.kind === "bank" || row.kind === "wallet"
 
   return (
-    <article className={dataWorkspaceEntityCardLosetaClass}>
+    <article
+      className={cn(
+        dataWorkspaceEntityCardLosetaClass,
+        !row.isActive && dataWorkspaceEntityCardLosetaInactiveClass,
+      )}
+    >
+      {!row.isActive ? (
+        <span className="sr-only">Cuenta inactiva</span>
+      ) : null}
       <Link
         href={detailHref}
         className={cn(
@@ -180,22 +194,7 @@ export function TreasuryAccountCard({
               size="md"
             />
             <div className="relative min-w-0 flex-1">
-              <span
-                className={cn(
-                  "absolute right-0 top-0",
-                  row.isActive
-                    ? dataWorkspaceEntityCardStatusClosedClass
-                    : dataWorkspaceEntityCardStatusInactiveClass,
-                )}
-              >
-                {row.isActive ? "Activa" : "Inactiva"}
-              </span>
-              <p
-                className={cn(
-                  dataWorkspaceEntityCardEyebrowClass,
-                  "truncate pr-24",
-                )}
-              >
+              <p className={cn(dataWorkspaceEntityCardEyebrowClass, "truncate")}>
                 {treasuryKindLabel(row.kind)}
               </p>
               <TreasuryBrandName
@@ -203,7 +202,7 @@ export function TreasuryAccountCard({
                 name={row.name}
                 textClass="text-[var(--rootsy-bruma-900)]"
                 className={cn(
-                  "mt-0.5 truncate pr-24",
+                  "mt-0.5 truncate",
                   dataWorkspaceEntityCardTitleClass,
                 )}
               />

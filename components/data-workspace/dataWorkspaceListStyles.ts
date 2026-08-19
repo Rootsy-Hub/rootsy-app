@@ -89,16 +89,17 @@ export const dataWorkspaceTablesSheetClass = cn(
 /** Scope raíz — tokens --wt-* (ver rootsyNaturePalette.css). */
 export const workspaceTableNatureScopeClass = "workspace-table-nature"
 
-/** Contenido bloques — bruma-50 lo aporta layout.module.content vía DataWorkspaceModuleLayout. */
-export const dataWorkspaceBlocksContentScopeClass = "min-h-full flex-1"
+/** Contenido bloques — scrollea adentro del valle; el horizonte no se mueve. */
+export const dataWorkspaceBlocksContentScopeClass =
+  "min-h-0 flex-1 overflow-y-auto"
 
 /** Padding estándar del área de grid bloques. */
 export const dataWorkspaceBlocksContentInnerClass =
   "relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8"
 
-/** `<main>` bloques — bruma-50 + susurro del planeta (horizonte, sin detalle). */
+/** `<main>` bloques — recuadro del valle. El scroll lo hace el hijo. */
 export const dataWorkspaceBlocksPageMainClass = cn(
-  "data-workspace-blocks-atmosphere rootsy-app-light min-h-0 overflow-x-hidden overflow-y-auto text-foreground",
+  "data-workspace-blocks-atmosphere rootsy-app-light min-h-0 overflow-hidden overflow-y-hidden text-foreground",
 )
 
 /** Contenedor de grid en listados cuentas / cajas. */
@@ -178,6 +179,12 @@ export const dataWorkspaceEntityCardLosetaClass = cn(
   "hover:border-[var(--rootsy-bruma-300)]",
   rootsyElevationRaisedHoverClass,
   "active:shadow-[0_1px_2px_rgb(5_8_7/0.08)]",
+)
+
+/** Loseta inactiva — misma forma, tono apagado, sin pill de estado. */
+export const dataWorkspaceEntityCardLosetaInactiveClass = cn(
+  "bg-[var(--rootsy-bruma-50)] opacity-[0.72]",
+  "hover:border-[var(--rootsy-bruma-200)]",
 )
 
 /** Cuerpo saldo — fila flexible del grid de tarjeta. */
@@ -296,10 +303,8 @@ export const dataWorkspaceDetailEmptyStateDescriptionClass =
   "font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]"
 
 /** Scope sin padding — detalle cuenta / caja. */
-export const dataWorkspaceBlocksPageScopeClass = cn(
-  dataWorkspaceBlocksContentScopeClass,
-  "min-h-full flex-1",
-)
+export const dataWorkspaceBlocksPageScopeClass =
+  dataWorkspaceBlocksContentScopeClass
 
 /** Tarjeta / panel de detalle — radius.xxlarge · elevation.shadow.raised (paridad loseta, sin hover). */
 export const dataWorkspaceDetailCardClass = cn(

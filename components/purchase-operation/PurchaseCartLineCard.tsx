@@ -26,7 +26,10 @@ import {
   saleOpImporteBaseClass,
   saleOpImporteCartClass,
 } from "@/components/sale-operation/saleOperationStyles"
+import { RootsFormDateField } from "@/components/rootsy-form"
+import { RootsSubtleButton } from "@/components/rootsy-button"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { formatInventoryExpiryDate } from "@/lib/inventory/inventoryExpiry"
 import {
   Dialog,
   DialogContent,
@@ -49,6 +52,7 @@ import {
   MessageSquare,
   Percent,
   RefreshCw,
+  Timer,
   Trash2,
 } from "lucide-react"
 import { useId, useRef, useState } from "react"
@@ -74,6 +78,7 @@ export type PurchaseCartLineOverrides = {
   itemDescuentoModo: Record<string, "porcentaje" | "fijo">
   itemDescuentoDraft: Record<string, string>
   itemComentarios: Record<string, string>
+  itemExpiresAt: Record<string, string>
 }
 
 export type PurchaseLineEditInput = {
@@ -84,11 +89,13 @@ export type PurchaseLineEditInput = {
   discountMode: "porcentaje" | "fijo"
   discountDraft: string
   comment: string
+  expiresAt: string
   hasQuantityEdit: boolean
   hasCostEdit: boolean
   hasUpdateCostEdit: boolean
   hasDiscountEdit: boolean
   hasCommentEdit: boolean
+  hasExpiryEdit: boolean
 }
 
 function parseUnitCost(raw: string, fallback: number): number {
@@ -146,6 +153,7 @@ export function PurchaseCartLineCard({
     itemDescuentoModo,
     itemDescuentoDraft,
     itemComentarios,
+    itemExpiresAt,
   } = overrides
 
   const [open, setOpen] = useState(false)
@@ -158,6 +166,7 @@ export function PurchaseCartLineCard({
   const [discountModeDraft, setDiscountModeDraft] =
     useState<CheckoutDiscountMode>("porcentaje")
   const [discountDraft, setDiscountDraft] = useState("")
+  const [expiresDraft, setExpiresDraft] = useState("")
 
   const baselineCantidadRef = useRef(line.cantidad)
   const initialUnitCostRef = useRef("")
@@ -167,12 +176,14 @@ export function PurchaseCartLineCard({
     mode: "porcentaje" as CheckoutDiscountMode,
     draft: "",
   })
+  const initialExpiresRef = useRef("")
 
   const unitCostRaw = itemUnitCosts[itemId] ?? ""
   const unitCost = parseUnitCost(unitCostRaw, line.fallbackCost)
   const descuentoRaw = itemDescuentoDraft[itemId] ?? ""
   const modoItemDescuento = itemDescuentoModo[itemId] ?? "porcentaje"
   const comentario = itemComentarios[itemId] ?? ""
+  const venceEl = itemExpiresAt[itemId] ?? ""
 
   const linePricing = resolveSaleLineDiscount({
     listUnitPrice: unitCost,
@@ -191,6 +202,7 @@ export function PurchaseCartLineCard({
   const tieneDescuentoItem = linePricing.itemDiscountAmount > 0
   const descuentoBannerLabel = discountGroupBannerLabelFromPricing(linePricing)
   const tieneComentario = comentario.trim().length > 0
+  const tieneVencimiento = venceEl.length > 0
 
   const descripcionProducto = line.descripcion?.trim() ?? ""
   const showDescripcion =
@@ -212,6 +224,8 @@ export function PurchaseCartLineCard({
     setUpdateCostDraft(itemUpdateArticleCost[itemId] !== false)
     initialCommentRef.current = comentario
     setCommentDraft(comentario)
+    initialExpiresRef.current = venceEl
+    setExpiresDraft(venceEl)
     const mode = itemDescuentoModo[itemId] ?? "porcentaje"
     initialDiscountRef.current = { mode, draft: descuentoRaw }
     setDiscountModeDraft(mode)
@@ -231,6 +245,7 @@ export function PurchaseCartLineCard({
     const hasUpdateCostEdit =
       updateCostDraft !== initialUpdateCostRef.current
     const hasCommentEdit = commentDraft !== initialCommentRef.current
+    const hasExpiryEdit = expiresDraft !== initialExpiresRef.current
     const hasDiscountEdit =
       discountModeDraft !== initialDiscountRef.current.mode ||
       discountDraft !== initialDiscountRef.current.draft
@@ -240,7 +255,8 @@ export function PurchaseCartLineCard({
       hasCostEdit ||
       hasUpdateCostEdit ||
       hasCommentEdit ||
-      hasDiscountEdit
+      hasDiscountEdit ||
+      hasExpiryEdit
     ) {
       onApplyEdits({
         lineId: itemId,
@@ -250,11 +266,13 @@ export function PurchaseCartLineCard({
         discountMode: discountModeDraft,
         discountDraft,
         comment: commentDraft,
+        expiresAt: expiresDraft,
         hasQuantityEdit,
         hasCostEdit,
         hasUpdateCostEdit,
         hasDiscountEdit,
         hasCommentEdit,
+        hasExpiryEdit,
       })
     }
 
@@ -355,6 +373,17 @@ export function PurchaseCartLineCard({
           ) : null}
         </button>
 
+        {tieneVencimiento ? (
+          <div className="border-t border-dashed border-slate-200/80 bg-slate-50/80 px-3 py-2">
+            <p className="text-[11px] leading-snug text-slate-600">
+              <Timer
+                className="mr-1 inline size-3 -translate-y-px text-slate-400"
+                aria-hidden
+              />
+              Vence {formatInventoryExpiryDate(venceEl)}
+            </p>
+          </div>
+        ) : null}
         {tieneComentario ? (
           <div className="border-t border-dashed border-slate-200/80 bg-slate-50/80 px-3 py-2">
             <p className="text-[11px] leading-snug text-slate-600">
@@ -461,6 +490,27 @@ export function PurchaseCartLineCard({
             </CheckoutSectionPanel>
 
             <CheckoutSectionPanel>
+              <div className="space-y-2.5">
+                <RootsFormDateField
+                  label="Vencimiento del lote"
+                  value={expiresDraft}
+                  onChange={setExpiresDraft}
+                  placeholder="Sin fecha"
+                  hint="Opcional. Queda en esta línea, no en la factura."
+                />
+                {expiresDraft ? (
+                  <RootsSubtleButton
+                    type="button"
+                    size="compact"
+                    onClick={() => setExpiresDraft("")}
+                  >
+                    Quitar fecha
+                  </RootsSubtleButton>
+                ) : null}
+              </div>
+            </CheckoutSectionPanel>
+
+            <CheckoutSectionPanel>
               <FieldGroup className="gap-4">
                 <Field>
                   <FieldLabel htmlFor={commentFieldId}>Comentario</FieldLabel>
@@ -468,7 +518,7 @@ export function PurchaseCartLineCard({
                     id={commentFieldId}
                     value={commentDraft}
                     onChange={(e) => setCommentDraft(e.target.value)}
-                    placeholder="Ej: lote vencimiento, bonificación..."
+                    placeholder="Ej: lote, bonificación..."
                     rows={3}
                     className="min-h-22 resize-none rounded-xl"
                   />

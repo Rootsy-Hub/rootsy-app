@@ -5,7 +5,7 @@ import { ReportHubGrid } from "@/components/reports/ReportHubGrid"
 import { VatPositionReportView } from "@/components/reports/VatPositionReportView"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import {
-  dataWorkspaceBlocksContentInnerClass,
+  dataWorkspaceBlocksPageContentClass,
   dataWorkspaceBlocksPageMainClass,
   dataWorkspaceBlocksPageScopeClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -349,8 +349,8 @@ function ReportsPage() {
         className={cn(
           showingInlineDetail
             ? dataWorkspaceBlocksPageScopeClass
-            : dataWorkspaceBlocksContentInnerClass,
-          showingInlineDetail && "flex min-h-full flex-1 flex-col",
+            : dataWorkspaceBlocksPageContentClass,
+          showingInlineDetail && "flex min-h-0 flex-1 flex-col",
         )}
       >
         {bootstrapError ? (

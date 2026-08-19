@@ -303,6 +303,7 @@ function PurchasesPage() {
     Record<string, string>
   >({})
   const [itemComentarios, setItemComentarios] = useState<Record<string, string>>({})
+  const [itemExpiresAt, setItemExpiresAt] = useState<Record<string, string>>({})
   const [descartarConfirmOpen, setDescartarConfirmOpen] = useState(false)
   const [comprarConfirmOpen, setComprarConfirmOpen] = useState(false)
   const [compraSubmitting, setCompraSubmitting] = useState(false)
@@ -417,6 +418,7 @@ function PurchasesPage() {
     if (hayDescuento) return true
     if (hayDescuentoItems) return true
     if (Object.values(itemComentarios).some((c) => c?.trim())) return true
+    if (Object.values(itemExpiresAt).some((c) => c?.trim())) return true
     if (dueDate.trim()) return true
     if (payOnSupplierAccount || metodoPagoSeleccionado != null) return true
     return false
@@ -427,6 +429,7 @@ function PurchasesPage() {
     hayDescuento,
     hayDescuentoItems,
     itemComentarios,
+    itemExpiresAt,
     dueDate,
     payOnSupplierAccount,
     metodoPagoSeleccionado,
@@ -490,6 +493,7 @@ function PurchasesPage() {
     setItemDescuentoModo({})
     setItemDescuentoDraft({})
     setItemComentarios({})
+    setItemExpiresAt({})
     setProveedorSeleccionado(null)
     setManualNombreProveedor("")
     setProveedorTaxId("")
@@ -577,6 +581,7 @@ function PurchasesPage() {
             itemDiscountMode: itemDescuentoModo[i.lineId] ?? "porcentaje",
             itemDiscountDraft: itemDescuentoDraft[i.lineId] ?? "",
             comment: itemComentarios[i.lineId] ?? "",
+            expiresOn: itemExpiresAt[i.lineId] || null,
           }
         }),
       })
@@ -612,6 +617,7 @@ function PurchasesPage() {
     itemDescuentoModo,
     itemDescuentoDraft,
     itemComentarios,
+    itemExpiresAt,
     limpiarCompra,
     queryClient,
   ])
@@ -664,6 +670,7 @@ function PurchasesPage() {
       setItemDescuentoModo({ ...snapshot.itemDescuentoModo })
       setItemDescuentoDraft({ ...snapshot.itemDescuentoDraft })
       setItemComentarios({ ...snapshot.itemComentarios })
+      setItemExpiresAt({ ...snapshot.itemExpiresAt })
       setCompraError(null)
       setOrdenError(null)
     },
@@ -697,6 +704,7 @@ function PurchasesPage() {
         itemDescuentoModo,
         itemDescuentoDraft,
         itemComentarios,
+        itemExpiresAt,
       })
       const res = await createPurchaseOrder(popId, {
         checkoutSnapshot,
@@ -767,6 +775,7 @@ function PurchasesPage() {
     itemDescuentoModo,
     itemDescuentoDraft,
     itemComentarios,
+    itemExpiresAt,
     subtotal,
     descuentoMonto,
     total,
@@ -1031,6 +1040,11 @@ function PurchasesPage() {
       delete next[lineId]
       return next
     })
+    setItemExpiresAt((prev) => {
+      const next = { ...prev }
+      delete next[lineId]
+      return next
+    })
   }
 
   const aplicarEdicionLineaCompra = useCallback((input: PurchaseLineEditInput) => {
@@ -1042,11 +1056,13 @@ function PurchasesPage() {
       discountMode,
       discountDraft,
       comment,
+      expiresAt,
       hasQuantityEdit,
       hasCostEdit,
       hasUpdateCostEdit,
       hasDiscountEdit,
       hasCommentEdit,
+      hasExpiryEdit,
     } = input
 
     if (hasQuantityEdit) {
@@ -1073,6 +1089,15 @@ function PurchasesPage() {
     }
     if (hasCommentEdit) {
       setItemComentarios((prev) => ({ ...prev, [lineId]: comment }))
+    }
+    if (hasExpiryEdit) {
+      setItemExpiresAt((prev) => {
+        const next = { ...prev }
+        const trimmed = expiresAt.trim()
+        if (!trimmed) delete next[lineId]
+        else next[lineId] = trimmed
+        return next
+      })
     }
   }, [])
 
@@ -1106,6 +1131,7 @@ function PurchasesPage() {
       itemDescuentoModo,
       itemDescuentoDraft,
       itemComentarios,
+      itemExpiresAt,
     }),
     [
       itemUnitCosts,
@@ -1113,6 +1139,7 @@ function PurchasesPage() {
       itemDescuentoModo,
       itemDescuentoDraft,
       itemComentarios,
+      itemExpiresAt,
     ],
   )
 

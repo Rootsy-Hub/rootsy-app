@@ -75,7 +75,7 @@ export function statisticsSectionHeadingClassNames() {
   }
 }
 
-/** Resumen intro — paridad ReportHubCategoryLegend. */
+/** Resumen intro del workspace. */
 export const statisticsIntroTextClass = cn(
   dataWorkspaceDetailEmptyStateDescriptionClass,
   "max-w-none text-sm sm:text-[0.9375rem] sm:leading-6",

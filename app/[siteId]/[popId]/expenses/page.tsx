@@ -10,6 +10,7 @@ import {
   listExpensesForMonth,
   recordExpensePayment,
   voidExpense as voidExpenseAction,
+  type ExpenseCategoryFamily,
   type ExpenseCategoryKind,
   type ExpenseCategoryRow,
   type ExpenseListRow,
@@ -22,32 +23,48 @@ import {
 } from "@/app/[siteId]/[popId]/checks/checkFormState"
 import { parseCheckoutCheckDetails } from "@/lib/checkoutCheck"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
+import { ExpenseCategoriesDialog } from "@/app/[siteId]/[popId]/expenses/ExpenseCategoriesDialog"
 import { ExpenseKindCardsPanel } from "@/app/[siteId]/[popId]/expenses/ExpenseKindCards"
+import { ExpensePageSkeleton } from "@/app/[siteId]/[popId]/expenses/ExpensePageSkeleton"
 import { ExpensePeriodToolbar } from "@/app/[siteId]/[popId]/expenses/ExpensePeriodToolbar"
 import { ExpenseSummaryDashboard } from "@/app/[siteId]/[popId]/expenses/ExpenseSummaryDashboard"
+import {
+  EXPENSE_WORLDS,
+  isExpenseOperableKind,
+  type ExpenseOperableKind,
+} from "@/app/[siteId]/[popId]/expenses/expenseWorlds"
+import {
+  dataWorkspaceBlocksPageContentClass,
+  dataWorkspaceBlocksPageMainClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { RootsBanner } from "@/components/rootsy-banner"
+import {
+  RootsConfirmDialog,
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogErrorBanner,
+  RootsDialogForm,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import {
+  RootsFormDateField,
+  RootsFormMoneyField,
+  RootsFormSegmentField,
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  RootsFormTextareaField,
+} from "@/components/rootsy-form"
 import { monthBoundsISO } from "@/lib/expenseMonth"
+import { parseMoneyInput } from "@/lib/moneyInput"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Plus,
-  Tags,
-  Trash2,
-} from "lucide-react"
+import { Dialog } from "@/components/ui/dialog"
+import { Plus, Tags } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -98,10 +115,6 @@ function roundMoneyLocal(n: number): number {
   return Math.round(n * 100) / 100
 }
 
-function shiftMonth(year: number, month1: number, delta: number) {
-  const d = new Date(year, month1 - 1 + delta, 1)
-  return { year: d.getFullYear(), month: d.getMonth() + 1 }
-}
 
 function ExpensesPage() {
   const router = useRouter()
@@ -129,6 +142,9 @@ function ExpensesPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [rows, setRows] = useState<ExpenseListRow[]>([])
+  const [ledgerByCategoryId, setLedgerByCategoryId] = useState<
+    Record<string, number>
+  >({})
   const [listBusy, setListBusy] = useState(false)
   const [totalDue, setTotalDue] = useState(0)
   const [totalPaid, setTotalPaid] = useState(0)
@@ -136,6 +152,7 @@ function ExpensesPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [createSaving, setCreateSaving] = useState(false)
   const [createBanner, setCreateBanner] = useState<string | null>(null)
+  const [createKind, setCreateKind] = useState<ExpenseOperableKind>("variable")
   const [createCategoryId, setCreateCategoryId] = useState("")
   const [createAmount, setCreateAmount] = useState("")
   const [createExpenseDate, setCreateExpenseDate] = useState("")
@@ -160,8 +177,17 @@ function ExpensesPage() {
 
   const [catOpen, setCatOpen] = useState(false)
   const [newCatName, setNewCatName] = useState("")
-  const [newCatKind, setNewCatKind] = useState<ExpenseCategoryKind>("variable")
+  const [newCatKind, setNewCatKind] = useState<ExpenseOperableKind>("variable")
+  const [newCatFamily, setNewCatFamily] =
+    useState<ExpenseCategoryFamily>("comercializacion")
   const [catSaving, setCatSaving] = useState(false)
+  const [catBanner, setCatBanner] = useState<string | null>(null)
+  const [confirmAction, setConfirmAction] = useState<
+    | { kind: "delete-expense"; row: ExpenseListRow }
+    | { kind: "delete-category"; category: ExpenseCategoryRow }
+    | null
+  >(null)
+  const [confirmBusy, setConfirmBusy] = useState(false)
 
   const { start: monthStart, end: monthEnd } = useMemo(
     () => monthBoundsISO(year, month1),
@@ -175,11 +201,6 @@ function ExpensesPage() {
 
   const monthLabel = `${MONTH_NAMES[month1 - 1]} ${year}`
 
-  const isCurrentMonth = useMemo(() => {
-    const today = new Date()
-    return year === today.getFullYear() && month1 === today.getMonth() + 1
-  }, [year, month1])
-
   const reloadList = useCallback(async () => {
     if (!popId) return
     setListBusy(true)
@@ -188,7 +209,10 @@ function ExpensesPage() {
       getExpenseMonthProgress(popId, year, month1),
     ])
     setListBusy(false)
-    if (lr.success) setRows(lr.rows)
+    if (lr.success) {
+      setRows(lr.rows)
+      setLedgerByCategoryId(lr.ledgerByCategoryId)
+    }
     if (pr.success) {
       setTotalDue(pr.progress.totalDue)
       setTotalPaid(pr.progress.totalPaid)
@@ -247,40 +271,56 @@ function ExpensesPage() {
     void reloadList()
   }, [popId, year, month1, loading, error, reloadList])
 
-  const goPrevMonth = () => {
-    const next = shiftMonth(year, month1, -1)
-    setYear(next.year)
-    setMonth1(next.month)
-  }
+  const operableCategories = useMemo(
+    () =>
+      activeCategories.filter((c) => isExpenseOperableKind(c.kind) && !c.readOnly),
+    [activeCategories],
+  )
 
-  const goNextMonth = () => {
-    const next = shiftMonth(year, month1, 1)
-    setYear(next.year)
-    setMonth1(next.month)
-  }
+  const categoriesForCreate = useMemo(
+    () => operableCategories.filter((c) => c.kind === createKind),
+    [operableCategories, createKind],
+  )
 
-  const goToday = () => {
-    const today = new Date()
-    setYear(today.getFullYear())
-    setMonth1(today.getMonth() + 1)
-  }
+  const openCreate = useCallback(
+    (kind?: ExpenseCategoryKind, categoryId?: string) => {
+      const chosen = categoryId
+        ? operableCategories.find((c) => c.id === categoryId)
+        : undefined
+      const nextKind: ExpenseOperableKind = isExpenseOperableKind(chosen?.kind)
+        ? chosen.kind
+        : isExpenseOperableKind(kind)
+          ? kind
+          : operableCategories[0] &&
+              isExpenseOperableKind(operableCategories[0].kind)
+            ? operableCategories[0].kind
+            : "variable"
+      const ofKind = operableCategories.filter((c) => c.kind === nextKind)
+      setCreateKind(nextKind)
+      setCreateBanner(null)
+      setCreateCategoryId(chosen?.id ?? ofKind[0]?.id ?? "")
+      setCreateAmount("")
+      setCreateExpenseDate(defaultDateInMonth(year, month1))
+      setCreateDueDate("")
+      setCreateDescription("")
+      setCreateOpen(true)
+    },
+    [operableCategories, year, month1],
+  )
 
-  const openCreate = useCallback(() => {
-    setCreateBanner(null)
-    setCreateCategoryId(activeCategories[0]?.id ?? "")
-    setCreateAmount("")
-    setCreateExpenseDate(defaultDateInMonth(year, month1))
-    setCreateDueDate("")
-    setCreateDescription("")
-    setCreateOpen(true)
-  }, [activeCategories, year, month1])
+  const onCreateKindChange = (value: string) => {
+    const nextKind = isExpenseOperableKind(value) ? value : "variable"
+    setCreateKind(nextKind)
+    const ofKind = operableCategories.filter((c) => c.kind === nextKind)
+    setCreateCategoryId(ofKind[0]?.id ?? "")
+  }
 
   const submitCreate = async (e: FormEvent) => {
     e.preventDefault()
     if (!popId) return
     setCreateSaving(true)
     setCreateBanner(null)
-    const amount = Number(String(createAmount).replace(",", "."))
+    const amount = parseMoneyInput(createAmount)
     const res = await createExpense(popId, year, month1, {
       categoryId: createCategoryId,
       amount,
@@ -316,7 +356,7 @@ function ExpensesPage() {
     if (!popId || !payExpense) return
     setPaySaving(true)
     setPayBanner(null)
-    const amount = Number(String(payAmount).replace(",", "."))
+    const amount = parseMoneyInput(payAmount)
     const selected = paymentMethods.find(
       (pm) => treasuryPaymentOptionKey(pm) === payMethodKey.trim(),
     )
@@ -372,44 +412,73 @@ function ExpensesPage() {
     await reloadList()
   }
 
-  const onDeleteExpense = async (row: ExpenseListRow) => {
-    if (!popId) return
-    if (!window.confirm("¿Eliminar este gasto? Solo aplica si no tiene pagos.")) {
-      return
-    }
-    const res = await deleteExpense(popId, row.id)
-    if (!res.success) {
-      window.alert(res.error)
-      return
-    }
-    await reloadList()
+  const onDeleteExpense = (row: ExpenseListRow) => {
+    setConfirmAction({ kind: "delete-expense", row })
   }
 
-  const submitNewCategory = async (e: FormEvent) => {
-    e.preventDefault()
+  const runConfirmAction = async () => {
+    if (!popId || !confirmAction) return
+    setConfirmBusy(true)
+    if (confirmAction.kind === "delete-expense") {
+      const res = await deleteExpense(popId, confirmAction.row.id)
+      setConfirmBusy(false)
+      if (!res.success) {
+        setError(res.error)
+        return
+      }
+      setConfirmAction(null)
+      await reloadList()
+      return
+    }
+    const res = await deleteExpenseCategory(popId, confirmAction.category.id)
+    setConfirmBusy(false)
+    if (!res.success) {
+      if (catOpen) setCatBanner(res.error)
+      else setError(res.error)
+      return
+    }
+    setConfirmAction(null)
+    await loadPage()
+  }
+
+  const submitNewCategory = async () => {
     if (!popId) return
     setCatSaving(true)
-    const res = await createExpenseCategory(popId, newCatName, newCatKind)
+    setCatBanner(null)
+    const res = await createExpenseCategory(
+      popId,
+      newCatName,
+      newCatKind,
+      newCatFamily,
+    )
     setCatSaving(false)
     if (!res.success) {
-      window.alert(res.error)
+      setCatBanner(res.error)
       return
     }
     setNewCatName("")
-    setCatOpen(false)
     await loadPage()
   }
 
-  const onDeleteCategory = async (c: ExpenseCategoryRow) => {
-    if (!popId) return
-    if (!window.confirm(`¿Eliminar la categoría «${c.name}»?`)) return
-    const res = await deleteExpenseCategory(popId, c.id)
-    if (!res.success) {
-      window.alert(res.error)
-      return
-    }
-    await loadPage()
+  const onDeleteCategory = (c: ExpenseCategoryRow) => {
+    setConfirmAction({ kind: "delete-category", category: c })
   }
+
+  const confirmCopy =
+    confirmAction?.kind === "delete-expense"
+      ? {
+          title: "Eliminar gasto",
+          description:
+            "Solo se puede si no tiene pagos. Esta acción no se puede deshacer.",
+          confirmLabel: "Eliminar",
+        }
+      : confirmAction?.kind === "delete-category"
+        ? {
+            title: "Eliminar categoría",
+            description: `¿Eliminar «${confirmAction.category.name}»? Si tiene gastos, se archiva.`,
+            confirmLabel: "Eliminar",
+          }
+        : { title: "", description: "", confirmLabel: "Confirmar" }
 
   if (!popId || !siteId) {
     return (
@@ -433,12 +502,12 @@ function ExpensesPage() {
         userRoleLabel={bootstrap?.roleLabel}
         contentFlush
         mainMaxWidthClass="max-w-none"
-        mainClassName="min-h-0 overflow-y-auto"
+        mainClassName={dataWorkspaceBlocksPageMainClass}
         headerActions={
           <>
             {canCreate ? (
               <DataWorkspaceHeaderIconButton
-                label="Nuevo gasto"
+                label="Nueva promesa"
                 headerVariant={dataWorkspaceModuleHeaderVariant}
                 primary
                 onClick={() => openCreate()}
@@ -450,7 +519,10 @@ function ExpensesPage() {
               <DataWorkspaceHeaderIconButton
                 label="Categorías"
                 headerVariant={dataWorkspaceModuleHeaderVariant}
-                onClick={() => setCatOpen(true)}
+                onClick={() => {
+                  setCatBanner(null)
+                  setCatOpen(true)
+                }}
               >
                 <Tags className="size-5" aria-hidden />
               </DataWorkspaceHeaderIconButton>
@@ -458,209 +530,183 @@ function ExpensesPage() {
           </>
         }
       >
-        <div className="relative flex w-full min-h-0 flex-1 flex-col">
-          <ExpensePeriodToolbar
-            monthLabel={monthLabel}
-            loading={pageLoading || listBusy}
-            isCurrentMonth={isCurrentMonth}
-            onPrev={goPrevMonth}
-            onNext={goNextMonth}
-            onToday={goToday}
-          />
+        <div className={dataWorkspaceBlocksPageContentClass}>
+          {headerError ? (
+            <RootsBanner
+              intent="danger"
+              layout="message"
+              message={`Cabecera: ${headerError}`}
+            />
+          ) : null}
 
-          <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-            {headerError ? (
-              <div
-                role="alert"
-                className="rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-              >
-                Cabecera: {headerError}
-              </div>
-            ) : null}
-
-            {loading ? (
-              <p className="text-sm text-muted-foreground">Cargando gastos…</p>
-            ) : error ? (
-              <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            ) : (
-              <>
-                <ExpenseSummaryDashboard
-                  rows={rows}
-                  totalDue={totalDue}
-                  totalPaid={totalPaid}
-                  monthLabel={monthLabel}
-                />
-
-                <ExpenseKindCardsPanel
-                  rows={rows}
-                  listBusy={listBusy}
-                  canCreate={canCreate}
-                  canUpdate={canUpdate}
-                  canDelete={canDelete}
-                  formatDate={formatIsoDate}
-                  onPay={openPay}
-                  onVoid={(row) => {
-                    setVoidTarget(row)
-                    setVoidReason("")
-                    setVoidOpen(true)
+          {pageLoading ? (
+            <ExpensePageSkeleton />
+          ) : error ? (
+            <RootsBanner intent="danger" layout="message" message={error} />
+          ) : (
+            <>
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+                <div className="min-w-0 flex-1">
+                  <ExpenseSummaryDashboard
+                    totalDue={totalDue}
+                    totalPaid={totalPaid}
+                  />
+                </div>
+                <ExpensePeriodToolbar
+                  year={year}
+                  month1={month1}
+                  loading={listBusy}
+                  onChange={({ year: nextYear, month }) => {
+                    setYear(nextYear)
+                    setMonth1(month)
                   }}
-                  onDelete={onDeleteExpense}
-                  onCreate={canCreate ? openCreate : undefined}
                 />
-              </>
-            )}
-          </div>
+              </div>
+
+              <ExpenseKindCardsPanel
+                categories={categories}
+                rows={rows}
+                ledgerByCategoryId={ledgerByCategoryId}
+                listBusy={listBusy}
+                canCreate={canCreate}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
+                formatDate={formatIsoDate}
+                onPay={openPay}
+                onVoid={(row) => {
+                  setVoidTarget(row)
+                  setVoidReason("")
+                  setVoidOpen(true)
+                }}
+                onDelete={onDeleteExpense}
+                onCreate={canCreate ? openCreate : undefined}
+              />
+            </>
+          )}
         </div>
       </DataWorkspaceModuleLayout>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          <form onSubmit={submitCreate}>
-            <DialogHeader>
-              <DialogTitle>Nuevo gasto</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-3 py-2">
+        <RootsDialogContent size="default" showCloseButton={!createSaving}>
+          <RootsDialogForm onSubmit={submitCreate}>
+            <RootsDialogHeader
+              open={createOpen}
+              title={EXPENSE_WORLDS[createKind].createTitle}
+              description={EXPENSE_WORLDS[createKind].createHint(monthLabel)}
+            />
+            <RootsDialogBody className="space-y-4">
               {createBanner ? (
-                <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                  {createBanner}
-                </p>
+                <RootsDialogErrorBanner>{createBanner}</RootsDialogErrorBanner>
               ) : null}
-              <div className="space-y-1">
-                <Label>Categoría</Label>
-                <select
-                  required
-                  className="flex h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
-                  value={createCategoryId}
-                  onChange={(e) => setCreateCategoryId(e.target.value)}
-                >
-                  {activeCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.kind === "fijo" ? "Fijo" : "Variable"})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label>Importe</Label>
-                <Input
-                  required
-                  inputMode="decimal"
-                  className="bg-background"
-                  value={createAmount}
-                  onChange={(e) => setCreateAmount(e.target.value)}
-                  placeholder="0,00"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Fecha del gasto</Label>
-                <Input
-                  required
-                  type="date"
-                  min={monthStart}
-                  max={monthEnd}
-                  className="bg-background"
-                  value={createExpenseDate}
-                  onChange={(e) => setCreateExpenseDate(e.target.value)}
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Solo fechas entre {formatIsoDate(monthStart)} y{" "}
-                  {formatIsoDate(monthEnd)}.
+              <RootsFormSegmentField
+                label="Tipo"
+                value={createKind}
+                onValueChange={onCreateKindChange}
+                hint={EXPENSE_WORLDS[createKind].categoryHint}
+                options={[
+                  { value: "fijo", label: "Fijo" },
+                  { value: "variable", label: "Variable" },
+                ]}
+              />
+              {categoriesForCreate.length === 0 ? (
+                <p className="font-canopy text-xs leading-relaxed text-rootsy-bruma-500">
+                  Todavía no hay categorías{" "}
+                  {createKind === "fijo" ? "fijas" : "variables"}. Creá una
+                  desde Categorías.
                 </p>
-              </div>
-              <div className="space-y-1">
-                <Label>Vencimiento (opcional)</Label>
-                <Input
-                  type="date"
-                  className="bg-background"
-                  value={createDueDate}
-                  onChange={(e) => setCreateDueDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Descripción</Label>
-                <Textarea
-                  className="bg-background"
-                  rows={2}
-                  value={createDescription}
-                  onChange={(e) => setCreateDescription(e.target.value)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createSaving}>
-                {createSaving ? "Guardando…" : "Guardar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+              ) : (
+                <RootsFormSelectField
+                  label="Categoría"
+                  value={createCategoryId}
+                  onValueChange={setCreateCategoryId}
+                >
+                  {categoriesForCreate.map((c) => (
+                    <RootsFormSelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </RootsFormSelectItem>
+                  ))}
+                </RootsFormSelectField>
+              )}
+              <RootsFormMoneyField
+                label="Importe"
+                value={createAmount}
+                onChange={setCreateAmount}
+              />
+              <RootsFormDateField
+                label="Fecha"
+                value={createExpenseDate}
+                onChange={setCreateExpenseDate}
+                hint={`Entre ${formatIsoDate(monthStart)} y ${formatIsoDate(monthEnd)}.`}
+              />
+              <RootsFormDateField
+                label="Vencimiento"
+                value={createDueDate}
+                onChange={setCreateDueDate}
+                hint="Opcional"
+              />
+              <RootsFormTextareaField
+                label="Descripción"
+                value={createDescription}
+                onChange={(event) => setCreateDescription(event.target.value)}
+              />
+            </RootsDialogBody>
+            <RootsDialogDualActionFooter
+              cancelLabel="Cancelar"
+              confirmLabel="Guardar"
+              confirmType="submit"
+              confirmDisabled={categoriesForCreate.length === 0}
+              confirmLoading={createSaving}
+              confirmLoadingLabel="Guardando…"
+              onCancel={() => setCreateOpen(false)}
+            />
+          </RootsDialogForm>
+        </RootsDialogContent>
       </Dialog>
 
       <Dialog open={payOpen} onOpenChange={setPayOpen}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          <form onSubmit={submitPay}>
-            <DialogHeader>
-              <DialogTitle>Registrar pago</DialogTitle>
-            </DialogHeader>
-            {payExpense ? (
-              <p className="text-sm text-muted-foreground">
-                {fmt.format(payExpense.amount)} · pendiente{" "}
-                {fmt.format(
-                  roundMoneyLocal(payExpense.amount - payExpense.paidTotal),
-                )}
-              </p>
-            ) : null}
-            <div className="grid gap-3 py-2">
+        <RootsDialogContent size="default" showCloseButton={!paySaving}>
+          <RootsDialogForm onSubmit={submitPay}>
+            <RootsDialogHeader
+              open={payOpen}
+              title="Registrar pago"
+              description={
+                payExpense
+                  ? `${fmt.format(payExpense.amount)} · pendiente ${fmt.format(roundMoneyLocal(payExpense.amount - payExpense.paidTotal))}`
+                  : undefined
+              }
+            />
+            <RootsDialogBody className="space-y-4">
               {payBanner ? (
-                <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                  {payBanner}
-                </p>
+                <RootsDialogErrorBanner>{payBanner}</RootsDialogErrorBanner>
               ) : null}
-              <div className="space-y-1">
-                <Label>Importe</Label>
-                <Input
-                  required
-                  inputMode="decimal"
-                  className="bg-background"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Fecha de pago</Label>
-                <Input
-                  required
-                  type="date"
-                  className="bg-background"
-                  value={payDate}
-                  onChange={(e) => setPayDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Medio de pago (opcional)</Label>
-                <select
-                  className="flex h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
-                  value={payMethodKey}
-                  onChange={(e) => setPayMethodKey(e.target.value)}
-                >
-                  <option value="">—</option>
-                  {paymentMethods.map((pm) => (
-                    <option key={treasuryPaymentOptionKey(pm)} value={treasuryPaymentOptionKey(pm)}>
-                      {pm.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <RootsFormMoneyField
+                label="Importe"
+                value={payAmount}
+                onChange={setPayAmount}
+              />
+              <RootsFormDateField
+                label="Fecha de pago"
+                value={payDate}
+                onChange={setPayDate}
+              />
+              <RootsFormSelectField
+                label="Medio de pago"
+                value={payMethodKey || "none"}
+                onValueChange={(value) =>
+                  setPayMethodKey(value === "none" ? "" : value)
+                }
+                hint="Opcional"
+              >
+                <RootsFormSelectItem value="none">Sin medio</RootsFormSelectItem>
+                {paymentMethods.map((pm) => (
+                  <RootsFormSelectItem
+                    key={treasuryPaymentOptionKey(pm)}
+                    value={treasuryPaymentOptionKey(pm)}
+                  >
+                    {pm.label}
+                  </RootsFormSelectItem>
+                ))}
+              </RootsFormSelectField>
               {paymentMethods.find(
                 (pm) => treasuryPaymentOptionKey(pm) === payMethodKey.trim(),
               )?.kind === "check" && popId ? (
@@ -672,116 +718,81 @@ function ExpensesPage() {
                   hideAmount
                 />
               ) : null}
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setPayOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={paySaving}>
-                {paySaving ? "Guardando…" : "Registrar pago"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+            </RootsDialogBody>
+            <RootsDialogDualActionFooter
+              cancelLabel="Cancelar"
+              confirmLabel="Registrar pago"
+              confirmType="submit"
+              confirmLoading={paySaving}
+              confirmLoadingLabel="Guardando…"
+              onCancel={() => setPayOpen(false)}
+            />
+          </RootsDialogForm>
+        </RootsDialogContent>
       </Dialog>
 
       <Dialog open={voidOpen} onOpenChange={setVoidOpen}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          <form onSubmit={submitVoid}>
-            <DialogHeader>
-              <DialogTitle>Anular gasto</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              El gasto dejará de contar en totales. Si ya hay pagos registrados,
-              permanecen en el historial.
-            </p>
-            <div className="py-2">
-              <Label>Motivo (opcional)</Label>
-              <Textarea
-                className="mt-1 bg-background"
+        <RootsDialogContent size="default" showCloseButton={!voidSaving}>
+          <RootsDialogForm onSubmit={submitVoid}>
+            <RootsDialogHeader
+              open={voidOpen}
+              title="Anular gasto"
+              description="Deja de contar en los totales. Si ya hay pagos, quedan en el historial."
+            />
+            <RootsDialogBody>
+              <RootsFormTextareaField
+                label="Motivo"
                 value={voidReason}
-                onChange={(e) => setVoidReason(e.target.value)}
-                rows={2}
+                onChange={(event) => setVoidReason(event.target.value)}
+                hint="Opcional"
               />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setVoidOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" variant="destructive" disabled={voidSaving}>
-                {voidSaving ? "Anulando…" : "Anular"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+            </RootsDialogBody>
+            <RootsDialogDualActionFooter
+              cancelLabel="Cancelar"
+              confirmLabel="Anular"
+              confirmType="submit"
+              destructive
+              confirmLoading={voidSaving}
+              confirmLoadingLabel="Anulando…"
+              onCancel={() => setVoidOpen(false)}
+            />
+          </RootsDialogForm>
+        </RootsDialogContent>
       </Dialog>
 
-      <Dialog open={catOpen} onOpenChange={setCatOpen}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          className="border-border bg-card text-foreground sm:max-w-lg"
-        >
-          <DialogHeader>
-            <DialogTitle>Categorías</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={submitNewCategory} className="space-y-3 border-b border-border pb-4">
-            <p className="text-sm text-muted-foreground">
-              Las categorías con gastos asociados se archivan (etiqueta eliminada)
-              en lugar de borrarse.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Input
-                placeholder="Nombre"
-                className="max-w-[200px] bg-background"
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-              />
-              <select
-                className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-                value={newCatKind}
-                onChange={(e) =>
-                  setNewCatKind(e.target.value as ExpenseCategoryKind)
-                }
-              >
-                <option value="variable">Variable</option>
-                <option value="fijo">Fijo</option>
-              </select>
-              <Button type="submit" size="sm" disabled={catSaving}>
-                Agregar
-              </Button>
-            </div>
-          </form>
-          <ul className="max-h-64 space-y-2 overflow-y-auto py-2">
-            {categories
-              .filter((c) => c.deletedAt == null)
-              .map((c) => (
-                <li
-                  key={c.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm"
-                >
-                  <span>
-                    {c.name}{" "}
-                    <span className="text-muted-foreground">
-                      ({c.kind === "fijo" ? "Fijo" : "Variable"})
-                    </span>
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => void onDeleteCategory(c)}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </li>
-              ))}
-          </ul>
-        </DialogContent>
-      </Dialog>
+      <ExpenseCategoriesDialog
+        open={catOpen}
+        onOpenChange={(open) => {
+          setCatOpen(open)
+          if (!open) setCatBanner(null)
+        }}
+        categories={categories}
+        name={newCatName}
+        kind={newCatKind}
+        family={newCatFamily}
+        saving={catSaving}
+        banner={catBanner}
+        canDelete={canDelete}
+        onNameChange={setNewCatName}
+        onKindChange={setNewCatKind}
+        onFamilyChange={setNewCatFamily}
+        onSubmit={() => void submitNewCategory()}
+        onDelete={onDeleteCategory}
+      />
+
+      <RootsConfirmDialog
+        open={confirmAction !== null}
+        onOpenChange={(open) => {
+          if (!open && !confirmBusy) setConfirmAction(null)
+        }}
+        title={confirmCopy.title}
+        description={confirmCopy.description}
+        confirmLabel={confirmCopy.confirmLabel}
+        busy={confirmBusy}
+        busyConfirmLabel="Procesando…"
+        destructive
+        onConfirm={() => void runConfirmAction()}
+      />
     </>
   )
 }

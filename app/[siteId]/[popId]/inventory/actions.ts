@@ -27,6 +27,23 @@ import {
   resolveArticleReferenceUnitCost,
   resolveArticleReferenceUnitCostsByArticleId,
 } from "@/lib/articleReferenceUnitCost"
+import {
+  INVENTORY_RECOMMENDATION_LOOKBACK_DAYS,
+  classifyInventoryAttention,
+  recommendMinFromDailyOutflow,
+  suggestedMaxFromMin,
+  suggestedPurchaseQty,
+  type InventoryAttention,
+} from "@/lib/inventory/inventoryStockLevels"
+import { applyInventoryFefoOrder, parseInventoryExpiresAt } from "@/lib/inventory/inventoryExpiry"
+import {
+  buildInventoryLocationRows,
+  ensurePopDefaultInventoryLocationId,
+  resolvePopInventoryLocationId,
+  type InventoryLocationRow,
+} from "@/lib/inventory/inventoryLocations"
+
+export type { InventoryLocationRow } from "@/lib/inventory/inventoryLocations"
 
 export type InventoryMovementType =
   | "sale"
@@ -61,6 +78,110 @@ export type InventoryBalanceRow = {
   onHand: number
 }
 
+export type InventoryArticleRow = {
+  articleId: string
+  name: string
+  unitOfMeasure: string
+  onHand: number
+  minLevel: number | null
+  unitCost: number
+  inventoryValue: number
+  attention: InventoryAttention
+  suggestedMin: number | null
+  suggestedMax: number | null
+  qtyToBuy: number
+}
+
+export type InventoryUnitStock = {
+  unitOfMeasure: string
+  quantity: number
+  articleCount: number
+}
+
+export type InventoryMetrics = {
+  articleCount: number
+  articlesWithStock: number
+  unitsInStock: number
+  unitsByMeasure: InventoryUnitStock[]
+  inventoryValue: number
+  redCount: number
+  negativeCount: number
+  emptyCount: number
+  belowMinCount: number
+  overstockCount: number
+  purchaseCount: number
+  recommendationCount: number
+}
+
+const UNIT_ORDER: Record<string, number> = {
+  unidad: 0,
+  caja: 1,
+  kg: 2,
+  g: 3,
+  lt: 4,
+  ml: 5,
+  m: 6,
+  cm: 7,
+}
+
+function emptyInventoryMetrics(): InventoryMetrics {
+  return {
+    articleCount: 0,
+    articlesWithStock: 0,
+    unitsInStock: 0,
+    unitsByMeasure: [],
+    inventoryValue: 0,
+    redCount: 0,
+    negativeCount: 0,
+    emptyCount: 0,
+    belowMinCount: 0,
+    overstockCount: 0,
+    purchaseCount: 0,
+    recommendationCount: 0,
+  }
+}
+
+function buildInventoryMetrics(rows: InventoryArticleRow[]): InventoryMetrics {
+  const metrics = emptyInventoryMetrics()
+  metrics.articleCount = rows.length
+  const byUnit = new Map<string, { quantity: number; articleCount: number }>()
+  for (const row of rows) {
+    if (row.onHand > 1e-6) {
+      metrics.articlesWithStock += 1
+      metrics.unitsInStock = roundMoney(metrics.unitsInStock + row.onHand)
+      metrics.inventoryValue = roundMoney(
+        metrics.inventoryValue + row.inventoryValue,
+      )
+      const unit = row.unitOfMeasure.trim() || "unidad"
+      const prev = byUnit.get(unit) ?? { quantity: 0, articleCount: 0 }
+      prev.quantity = Math.round((prev.quantity + row.onHand) * 1e6) / 1e6
+      prev.articleCount += 1
+      byUnit.set(unit, prev)
+    }
+    if (row.attention === "negative") metrics.negativeCount += 1
+    if (row.attention === "empty") metrics.emptyCount += 1
+    if (row.attention === "below_min") metrics.belowMinCount += 1
+    if (row.attention === "overstock") metrics.overstockCount += 1
+    if (row.qtyToBuy > 0) metrics.purchaseCount += 1
+    if (row.suggestedMin != null) metrics.recommendationCount += 1
+  }
+  metrics.redCount =
+    metrics.negativeCount + metrics.emptyCount + metrics.belowMinCount
+  metrics.unitsByMeasure = [...byUnit.entries()]
+    .map(([unitOfMeasure, value]) => ({
+      unitOfMeasure,
+      quantity: value.quantity,
+      articleCount: value.articleCount,
+    }))
+    .sort((a, b) => {
+      const orderA = UNIT_ORDER[a.unitOfMeasure] ?? 50
+      const orderB = UNIT_ORDER[b.unitOfMeasure] ?? 50
+      if (orderA !== orderB) return orderA - orderB
+      return a.unitOfMeasure.localeCompare(b.unitOfMeasure, "es")
+    })
+  return metrics
+}
+
 export type InventoryCostLayerRow = {
   id: string
   articleId: string
@@ -70,6 +191,10 @@ export type InventoryCostLayerRow = {
   quantityRemaining: number
   unitCost: number
   receivedAt: string
+  expiresAt: string | null
+  locationId: string
+  locationName: string
+  unitOfMeasure: string
 }
 
 export type InventoryLayerAllocationRow = {
@@ -106,12 +231,17 @@ async function sumInventoryOnHandForArticle(
   supabase: Awaited<ReturnType<typeof createClient>>,
   popId: string,
   articleId: string,
+  locationId?: string,
 ): Promise<{ success: true; onHand: number } | { success: false; error: string }> {
-  const { data: rows, error } = await supabase
+  let query = supabase
     .from("inventory_movements")
     .select("quantity_delta")
     .eq("pop_id", popId)
     .eq("article_id", articleId)
+  if (locationId) {
+    query = query.eq("location_id", locationId)
+  }
+  const { data: rows, error } = await query
   if (error) {
     return { success: false, error: error.message || "No se pudo leer el stock." }
   }
@@ -134,12 +264,16 @@ export type CreateInventoryAdjustmentInput = {
   quantityDelta: number
   note: string
   siteId: string
+  locationId?: string
+  expiresAt?: string | null
 }
 
 export type GetArticleInventoryBalanceInput = {
   articleId: string
   siteId: string
+  locationId?: string
 }
+
 
 export async function createInventoryAdjustment(
   popId: string,
@@ -188,6 +322,8 @@ export async function createInventoryAdjustment(
     if (note.length < 1) {
       return { success: false, error: "Indicá un motivo o detalle del ajuste." }
     }
+    const inboundExpiresAt =
+      delta > 0 ? parseInventoryExpiresAt(input.expiresAt) : null
 
     const supabase = await createClient()
     const {
@@ -195,6 +331,13 @@ export async function createInventoryAdjustment(
     } = await supabase.auth.getUser()
     if (!user?.id) {
       return { success: false, error: "Sesión requerida." }
+    }
+
+    const location = input.locationId?.trim()
+      ? await resolvePopInventoryLocationId(supabase, popId, input.locationId)
+      : await ensurePopDefaultInventoryLocationId(supabase, popId)
+    if (!location.success) {
+      return { success: false, error: location.error }
     }
 
     const { data: artRow, error: artErr } = await supabase
@@ -214,7 +357,12 @@ export async function createInventoryAdjustment(
     const isIncrease = delta > 0
 
     if (!isIncrease) {
-      const oh = await sumInventoryOnHandForArticle(supabase, popId, input.articleId)
+      const oh = await sumInventoryOnHandForArticle(
+        supabase,
+        popId,
+        input.articleId,
+        location.locationId,
+      )
       if (!oh.success) {
         return { success: false, error: oh.error }
       }
@@ -241,13 +389,15 @@ export async function createInventoryAdjustment(
       valuationUnitForLayer = u
       amount = roundMoney(delta * u)
     } else {
-      const { data: layerRows, error: lrErr } = await supabase
-        .from("inventory_cost_layers")
-        .select("id, quantity_remaining, unit_cost, received_at")
-        .eq("pop_id", popId)
-        .eq("article_id", input.articleId)
-        .gt("quantity_remaining", 0)
-        .order("received_at", { ascending: true })
+      const { data: layerRows, error: lrErr } = await applyInventoryFefoOrder(
+        supabase
+          .from("inventory_cost_layers")
+          .select("id, quantity_remaining, unit_cost, received_at, expires_at")
+          .eq("pop_id", popId)
+          .eq("article_id", input.articleId)
+          .eq("location_id", location.locationId)
+          .gt("quantity_remaining", 0),
+      )
       if (lrErr) {
         return { success: false, error: lrErr.message || "No se pudieron leer capas de costo." }
       }
@@ -353,6 +503,7 @@ export async function createInventoryAdjustment(
       .from("inventory_movements")
       .insert({
         pop_id: popId,
+        location_id: location.locationId,
         article_id: input.articleId,
         quantity_delta: delta,
         movement_type: "adjustment",
@@ -369,11 +520,13 @@ export async function createInventoryAdjustment(
     if (isIncrease && valuationUnitForLayer != null) {
       const { error: posLayerErr } = await supabase.from("inventory_cost_layers").insert({
         pop_id: popId,
+        location_id: location.locationId,
         article_id: input.articleId,
         source_movement_id: movementId,
         quantity_received: delta,
         quantity_remaining: delta,
         unit_cost: valuationUnitForLayer,
+        expires_at: inboundExpiresAt,
       })
       if (posLayerErr) {
         await supabase.from("inventory_movements").delete().eq("id", movementId)
@@ -525,6 +678,7 @@ export type CreateInitialStockLedgerInput = {
   quantity: number
   siteId: string
   unitCostSaleUom: number
+  expiresAt?: string | null
 }
 
 export async function createInitialStockLedgerForArticle(
@@ -574,6 +728,11 @@ export async function createInitialStockLedgerForArticle(
     } = await supabase.auth.getUser()
     if (!user?.id) {
       return { success: false, error: "Sesión requerida." }
+    }
+
+    const location = await ensurePopDefaultInventoryLocationId(supabase, popId)
+    if (!location.success) {
+      return { success: false, error: location.error }
     }
 
     const { data: artRow, error: artErr } = await supabase
@@ -640,6 +799,7 @@ export async function createInitialStockLedgerForArticle(
       .from("inventory_movements")
       .insert({
         pop_id: popId,
+        location_id: location.locationId,
         article_id: input.articleId,
         quantity_delta: delta,
         movement_type: "initial",
@@ -655,11 +815,13 @@ export async function createInitialStockLedgerForArticle(
 
     const { error: posLayerErr } = await supabase.from("inventory_cost_layers").insert({
       pop_id: popId,
+      location_id: location.locationId,
       article_id: input.articleId,
       source_movement_id: movementId,
       quantity_received: delta,
       quantity_remaining: delta,
       unit_cost: articleCostRef,
+      expires_at: parseInventoryExpiresAt(input.expiresAt),
     })
     if (posLayerErr) {
       await undoAfterMovementFailure(movementId)
@@ -788,7 +950,101 @@ export async function getArticleInventoryBalance(
     if (!user?.id) {
       return { success: false, error: "Sesión requerida." }
     }
-    return await sumInventoryOnHandForArticle(supabase, popId, input.articleId)
+    const location = input.locationId?.trim()
+      ? await resolvePopInventoryLocationId(supabase, popId, input.locationId)
+      : await ensurePopDefaultInventoryLocationId(supabase, popId)
+    if (!location.success) {
+      return { success: false, error: location.error }
+    }
+    return await sumInventoryOnHandForArticle(
+      supabase,
+      popId,
+      input.articleId,
+      location.locationId,
+    )
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export type InventoryArticleSearchHit = {
+  id: string
+  name: string
+  unitOfMeasure: string
+  sku: string | null
+  barcode: string | null
+}
+
+function escapeInventoryIlikeToken(raw: string): string {
+  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")
+}
+
+export async function searchInventoryArticles(
+  popId: string,
+  query: string,
+): Promise<
+  | { success: true; articles: InventoryArticleSearchHit[] }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    const canSearch =
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.INVENTORY_READ.resource,
+        POP_PERMS.INVENTORY_READ.action,
+      ) ||
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.INVENTORY_CREATE.resource,
+        POP_PERMS.INVENTORY_CREATE.action,
+      )
+    if (!canSearch) {
+      return { success: false, error: "Sin permiso para consultar inventario." }
+    }
+
+    const trimmed = query.trim().replace(/,/g, " ").trim()
+    if (trimmed.length < 2) {
+      return { success: true, articles: [] }
+    }
+
+    const supabase = await createClient()
+    const pattern = `%${escapeInventoryIlikeToken(trimmed)}%`
+    const { data, error } = await supabase
+      .from("articles")
+      .select("id, name, unit_of_measure, sku, barcode")
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .or(
+        `name.ilike.${pattern},sku.ilike.${pattern},barcode.ilike.${pattern}`,
+      )
+      .order("name", { ascending: true })
+      .limit(12)
+    if (error) {
+      return { success: false, error: error.message || "No se pudo buscar." }
+    }
+
+    return {
+      success: true,
+      articles: (data || []).map((row) => ({
+        id: String(row.id),
+        name: String(row.name ?? ""),
+        unitOfMeasure: String(row.unit_of_measure ?? ""),
+        sku:
+          row.sku != null && String(row.sku).trim()
+            ? String(row.sku).trim()
+            : null,
+        barcode:
+          row.barcode != null && String(row.barcode).trim()
+            ? String(row.barcode).trim()
+            : null,
+      })),
+    }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }
@@ -830,6 +1086,87 @@ export async function deleteInventoryMovement(
   }
 }
 
+export type ApplyInventoryMinStockRecommendationsInput = {
+  siteId: string
+  articleIds?: string[]
+}
+
+export async function applyInventoryMinStockRecommendations(
+  popId: string,
+  input: ApplyInventoryMinStockRecommendationsInput,
+): Promise<
+  | { success: true; applied: number }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.ARTICLE_UPDATE.resource,
+        POP_PERMS.ARTICLE_UPDATE.action,
+      )
+    ) {
+      return {
+        success: false,
+        error: "Sin permiso para actualizar mínimos de stock.",
+      }
+    }
+    const popRes = await getPopById(popId)
+    if (!popRes.success || !popRes.pop) {
+      return { success: false, error: popRes.error || "No se pudo validar el punto de venta." }
+    }
+    if (!siteIdsMatchClientRoute(input.siteId, popRes.pop.siteId)) {
+      return {
+        success: false,
+        error: "El sitio de la URL no coincide con el punto de venta.",
+      }
+    }
+
+    const page = await getPopInventoryPageData(popId)
+    if (!page.success) {
+      return { success: false, error: page.error }
+    }
+
+    const wanted = input.articleIds?.length
+      ? new Set(input.articleIds)
+      : null
+    const pending = page.articleRows.filter((row) => {
+      if (row.suggestedMin == null) return false
+      if (wanted && !wanted.has(row.articleId)) return false
+      return true
+    })
+    if (pending.length === 0) {
+      return { success: false, error: "No hay recomendaciones para aplicar." }
+    }
+
+    const supabase = await createClient()
+    let applied = 0
+    for (const row of pending) {
+      const { error } = await supabase
+        .from("articles")
+        .update({ min_stock_level: row.suggestedMin })
+        .eq("id", row.articleId)
+        .eq("pop_id", popId)
+      if (error) {
+        return {
+          success: false,
+          error: error.message || "No se pudieron guardar los mínimos.",
+        }
+      }
+      applied += 1
+    }
+    return { success: true, applied }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
 export async function getPopInventoryPageData(popId: string): Promise<
   | {
       success: true
@@ -837,12 +1174,16 @@ export async function getPopInventoryPageData(popId: string): Promise<
       ledgerTimeZone: string
       movements: InventoryMovementRow[]
       balances: InventoryBalanceRow[]
+      articleRows: InventoryArticleRow[]
+      metrics: InventoryMetrics
+      locations: InventoryLocationRow[]
       costLayers: InventoryCostLayerRow[]
       layerAllocations: InventoryLayerAllocationRow[]
       articles: InventoryArticleOption[]
       canCreate: boolean
       canPostAdjustmentAccounting: boolean
       canUpdate: boolean
+      canUpdateArticles: boolean
       canDelete: boolean
     }
   | {
@@ -853,24 +1194,32 @@ export async function getPopInventoryPageData(popId: string): Promise<
       ledgerTimeZone?: string
       movements: InventoryMovementRow[]
       balances: InventoryBalanceRow[]
+      articleRows: InventoryArticleRow[]
+      metrics: InventoryMetrics
+      locations: InventoryLocationRow[]
       costLayers: InventoryCostLayerRow[]
       layerAllocations: InventoryLayerAllocationRow[]
       articles: InventoryArticleOption[]
       canCreate: boolean
       canPostAdjustmentAccounting: boolean
       canUpdate: boolean
+      canUpdateArticles: boolean
       canDelete: boolean
     }
 > {
   const empty = {
     movements: [] as InventoryMovementRow[],
     balances: [] as InventoryBalanceRow[],
+    articleRows: [] as InventoryArticleRow[],
+    metrics: emptyInventoryMetrics(),
+    locations: [] as InventoryLocationRow[],
     costLayers: [] as InventoryCostLayerRow[],
     layerAllocations: [] as InventoryLayerAllocationRow[],
     articles: [] as InventoryArticleOption[],
     canCreate: false,
     canPostAdjustmentAccounting: false,
     canUpdate: false,
+    canUpdateArticles: false,
     canDelete: false,
     ledgerTimeZone: "",
   }
@@ -915,6 +1264,11 @@ export async function getPopInventoryPageData(popId: string): Promise<
       POP_PERMS.INVENTORY_DELETE.resource,
       POP_PERMS.INVENTORY_DELETE.action,
     )
+    const canUpdateArticles = permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.ARTICLE_UPDATE.resource,
+      POP_PERMS.ARTICLE_UPDATE.action,
+    )
     const popRes = await getPopById(popId)
     const popName =
       popRes.success && popRes.pop ? String(popRes.pop.name ?? "") : ""
@@ -926,7 +1280,7 @@ export async function getPopInventoryPageData(popId: string): Promise<
 
     const { data: artRows, error: artErr } = await supabase
       .from("articles")
-      .select("id, name")
+      .select("id, name, min_stock_level, unit_of_measure, track_stock")
       .eq("pop_id", popId)
       .eq("is_active", true)
       .order("name", { ascending: true })
@@ -998,9 +1352,26 @@ export async function getPopInventoryPageData(popId: string): Promise<
       }
     })
 
+    const { data: locRows, error: locErr } = await supabase
+      .from("inventory_locations")
+      .select("id, name, is_default, is_sellable, sort_order")
+      .eq("pop_id", popId)
+      .is("archived_at", null)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true })
+    if (locErr) {
+      return {
+        success: false,
+        error: locErr.message || "No se pudieron cargar los depósitos.",
+        ...empty,
+        popName,
+        ledgerTimeZone,
+      }
+    }
+
     const { data: sumRows, error: sumErr } = await supabase
       .from("inventory_movements")
-      .select("article_id, quantity_delta")
+      .select("article_id, location_id, quantity_delta")
       .eq("pop_id", popId)
     if (sumErr) {
       return {
@@ -1012,10 +1383,19 @@ export async function getPopInventoryPageData(popId: string): Promise<
       }
     }
     const deltaByArticle = new Map<string, number>()
+    const onHandByLocationArticle = new Map<string, number>()
     for (const r of sumRows || []) {
       const aid = String(r.article_id)
       const d = parseQty(r.quantity_delta)
       deltaByArticle.set(aid, (deltaByArticle.get(aid) ?? 0) + d)
+      const locId = r.location_id ? String(r.location_id) : ""
+      if (locId) {
+        const key = `${locId}:${aid}`
+        onHandByLocationArticle.set(
+          key,
+          (onHandByLocationArticle.get(key) ?? 0) + d,
+        )
+      }
     }
     const balances: InventoryBalanceRow[] = articles.map((a) => ({
       articleId: a.id,
@@ -1023,6 +1403,68 @@ export async function getPopInventoryPageData(popId: string): Promise<
       onHand: Math.round((deltaByArticle.get(a.id) ?? 0) * 1e6) / 1e6,
     }))
     balances.sort((a, b) => a.articleName.localeCompare(b.articleName, "es"))
+
+    const since = new Date()
+    since.setUTCDate(since.getUTCDate() - INVENTORY_RECOMMENDATION_LOOKBACK_DAYS)
+    const { data: saleRows } = await supabase
+      .from("inventory_movements")
+      .select("article_id, quantity_delta")
+      .eq("pop_id", popId)
+      .eq("movement_type", "sale")
+      .gte("created_at", since.toISOString())
+
+    const outflowByArticle = new Map<string, number>()
+    for (const row of saleRows || []) {
+      const aid = String(row.article_id)
+      const qty = Math.abs(parseQty(row.quantity_delta))
+      outflowByArticle.set(aid, (outflowByArticle.get(aid) ?? 0) + qty)
+    }
+
+    const articleMeta = new Map(
+      (artRows || []).map((row) => {
+        const minRaw = row.min_stock_level
+        return [
+          String(row.id),
+          {
+            minLevel:
+              minRaw != null && Number.isFinite(Number(minRaw))
+                ? Number(minRaw)
+                : null,
+            unitOfMeasure: String(row.unit_of_measure ?? ""),
+          },
+        ] as const
+      }),
+    )
+
+    const articleRows: InventoryArticleRow[] = balances.map((balance) => {
+      const meta = articleMeta.get(balance.articleId)
+      const minLevel = meta?.minLevel ?? null
+      const unitCost = referenceUnitCosts.get(balance.articleId) ?? 0
+      const attention = classifyInventoryAttention(balance.onHand, minLevel)
+      const avgDailyOutflow =
+        (outflowByArticle.get(balance.articleId) ?? 0) /
+        INVENTORY_RECOMMENDATION_LOOKBACK_DAYS
+      const suggestedMin = recommendMinFromDailyOutflow(
+        avgDailyOutflow,
+        minLevel,
+        balance.onHand,
+      )
+      const suggestedMax = suggestedMaxFromMin(suggestedMin ?? minLevel)
+      return {
+        articleId: balance.articleId,
+        name: balance.articleName,
+        unitOfMeasure: meta?.unitOfMeasure ?? "",
+        onHand: balance.onHand,
+        minLevel,
+        unitCost,
+        inventoryValue: roundMoney(Math.max(0, balance.onHand) * unitCost),
+        attention,
+        suggestedMin,
+        suggestedMax,
+        qtyToBuy: suggestedPurchaseQty(balance.onHand, minLevel, suggestedMin),
+      }
+    })
+    const metrics = buildInventoryMetrics(articleRows)
 
     const { data: layerRows, error: layerErr } = await supabase
       .from("inventory_cost_layers")
@@ -1035,7 +1477,9 @@ export async function getPopInventoryPageData(popId: string): Promise<
         quantity_remaining,
         unit_cost,
         received_at,
-        articles ( name )
+        expires_at,
+        location_id,
+        articles ( name, unit_of_measure )
       `,
       )
       .eq("pop_id", popId)
@@ -1049,9 +1493,38 @@ export async function getPopInventoryPageData(popId: string): Promise<
         ledgerTimeZone,
       }
     }
+    const remainingValueByLocation = new Map<string, number>()
+    for (const r of layerRows || []) {
+      const locId = r.location_id ? String(r.location_id) : ""
+      if (!locId) continue
+      const rem = parseQty(r.quantity_remaining)
+      const uc = parseQty(r.unit_cost)
+      remainingValueByLocation.set(
+        locId,
+        (remainingValueByLocation.get(locId) ?? 0) + rem * uc,
+      )
+    }
+    const locations = buildInventoryLocationRows({
+      locations: (locRows || []).map((row) => ({
+        id: String(row.id),
+        name: String(row.name ?? ""),
+        is_default: Boolean(row.is_default),
+        is_sellable: Boolean(row.is_sellable),
+      })),
+      onHandByKey: onHandByLocationArticle,
+      remainingValueByLocation,
+    })
+
+    const locationNameById = new Map(
+      (locRows || []).map((row) => [String(row.id), String(row.name ?? "")]),
+    )
     const costLayers: InventoryCostLayerRow[] = (layerRows || []).map((r) => {
-      const art = r.articles as unknown as { name?: string } | null
+      const art = r.articles as unknown as {
+        name?: string
+        unit_of_measure?: string
+      } | null
       const aid = String(r.article_id)
+      const locId = r.location_id ? String(r.location_id) : ""
       return {
         id: String(r.id),
         articleId: aid,
@@ -1064,6 +1537,13 @@ export async function getPopInventoryPageData(popId: string): Promise<
         quantityRemaining: parseQty(r.quantity_remaining),
         unitCost: parseQty(r.unit_cost),
         receivedAt: String(r.received_at ?? ""),
+        expiresAt: parseInventoryExpiresAt(r.expires_at),
+        locationId: locId,
+        locationName: locationNameById.get(locId) || "Depósito",
+        unitOfMeasure:
+          art?.unit_of_measure != null
+            ? String(art.unit_of_measure)
+            : "",
       }
     })
 
@@ -1126,12 +1606,16 @@ export async function getPopInventoryPageData(popId: string): Promise<
       ledgerTimeZone,
       movements,
       balances,
+      articleRows,
+      metrics,
+      locations,
       costLayers,
       layerAllocations,
       articles,
       canCreate,
       canPostAdjustmentAccounting,
       canUpdate,
+      canUpdateArticles,
       canDelete,
     }
   } catch (e: unknown) {

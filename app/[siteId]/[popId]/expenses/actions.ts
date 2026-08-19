@@ -22,8 +22,19 @@ import {
 } from "@/lib/entryDateTimezone"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { createClient } from "@/utils/supabase/server"
+import {
+  EXPENSE_CHART_FAMILY_PREFIX,
+  isExpenseDefaultChartCode,
+  isExpenseSystemViewOnlyCode,
+  nextExpenseChartCode,
+  parseExpenseCategoryKind,
+} from "@/lib/expenseCategoryChart"
 
-export type ExpenseCategoryKind = "fijo" | "variable"
+export type ExpenseCategoryKind = "fijo" | "variable" | "otro"
+export type ExpenseCategoryFamily =
+  | "administracion"
+  | "comercializacion"
+  | "financiera"
 
 export type ExpenseCategoryRow = {
   id: string
@@ -31,6 +42,10 @@ export type ExpenseCategoryRow = {
   kind: ExpenseCategoryKind
   sortOrder: number
   deletedAt: string | null
+  chartAccountId: string | null
+  accountCode: string | null
+  readOnly: boolean
+  canDelete: boolean
 }
 
 export type ExpenseStatus = "pending" | "partial" | "paid" | "voided"
@@ -75,6 +90,43 @@ export type MonthProgress = {
 
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
+}
+
+function mapExpenseCategoryRow(r: {
+  id: unknown
+  name?: unknown
+  kind?: unknown
+  sort_order?: unknown
+  deleted_at?: unknown
+  accounting_chart_account_id?: unknown
+  accounting_chart_of_accounts?: unknown
+}): ExpenseCategoryRow {
+  const chart = r.accounting_chart_of_accounts as
+    | { code?: string; metadata?: { user_created?: boolean } }
+    | { code?: string; metadata?: { user_created?: boolean } }[]
+    | null
+  const chartRow = Array.isArray(chart) ? chart[0] : chart
+  const accountCode =
+    chartRow?.code != null ? String(chartRow.code) : null
+  const userCreated = chartRow?.metadata?.user_created === true
+  const readOnly = accountCode
+    ? isExpenseSystemViewOnlyCode(accountCode)
+    : false
+  const seeded = accountCode ? isExpenseDefaultChartCode(accountCode) : false
+  return {
+    id: String(r.id),
+    name: String(r.name ?? ""),
+    kind: parseExpenseCategoryKind(r.kind),
+    sortOrder: Number(r.sort_order ?? 0),
+    deletedAt: r.deleted_at != null ? String(r.deleted_at) : null,
+    chartAccountId:
+      r.accounting_chart_account_id != null
+        ? String(r.accounting_chart_account_id)
+        : null,
+    accountCode,
+    readOnly,
+    canDelete: userCreated && !readOnly && !seeded,
+  }
 }
 
 function parseMoney(v: unknown): number {
@@ -132,22 +184,23 @@ export async function getExpensesPageData(popId: string): Promise<
     const popRes = await getPopById(popId)
     const popName =
       popRes.success && popRes.pop ? String(popRes.pop.name ?? "") : ""
+    await supabase.rpc("ensure_pop_expense_categories_from_chart", {
+      p_pop_id: popId,
+    })
     const { data: catRows, error: catErr } = await supabase
       .from("expense_categories")
-      .select("id, name, kind, sort_order, deleted_at")
+      .select(
+        "id, name, kind, sort_order, deleted_at, accounting_chart_account_id, accounting_chart_of_accounts ( code, metadata )",
+      )
       .eq("pop_id", popId)
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true })
     if (catErr) {
       return { success: false, error: catErr.message || "No se pudieron cargar categorías." }
     }
-    const categories: ExpenseCategoryRow[] = (catRows || []).map((r) => ({
-      id: String(r.id),
-      name: String(r.name ?? ""),
-      kind: r.kind === "variable" ? "variable" : "fijo",
-      sortOrder: Number(r.sort_order ?? 0),
-      deletedAt: r.deleted_at != null ? String(r.deleted_at) : null,
-    }))
+    const categories: ExpenseCategoryRow[] = (catRows || []).map((r) =>
+      mapExpenseCategoryRow(r),
+    )
     const treasuryRes = await getTreasuryPaymentContext(popId)
     if (!treasuryRes.success) {
       return { success: false, error: treasuryRes.error }
@@ -173,7 +226,11 @@ export async function listExpensesForMonth(
   year: number,
   month1: number,
 ): Promise<
-  | { success: true; rows: ExpenseListRow[] }
+  | {
+      success: true
+      rows: ExpenseListRow[]
+      ledgerByCategoryId: Record<string, number>
+    }
   | { success: false; error: string }
 > {
   try {
@@ -254,13 +311,55 @@ export async function listExpensesForMonth(
         voidReason: e.void_reason != null ? String(e.void_reason) : null,
         categoryId: cat?.id != null ? String(cat.id) : String(e.category_id),
         categoryName: cat?.name ? String(cat.name) : "—",
-        categoryKind: cat?.kind === "variable" ? "variable" : "fijo",
+        categoryKind: parseExpenseCategoryKind(cat?.kind),
         categoryDeletedAt:
           cat?.deleted_at != null ? String(cat.deleted_at) : null,
         paidTotal: roundMoney(paidByExpense.get(id) ?? 0),
       }
     })
-    return { success: true, rows }
+    const { data: catLedgerRows } = await supabase
+      .from("expense_categories")
+      .select("id, accounting_chart_account_id")
+      .eq("pop_id", popId)
+      .eq("kind", "otro")
+      .is("deleted_at", null)
+    const accountToCategory = new Map<string, string>()
+    for (const row of catLedgerRows || []) {
+      if (row.accounting_chart_account_id == null) continue
+      accountToCategory.set(
+        String(row.accounting_chart_account_id),
+        String(row.id),
+      )
+    }
+    const ledgerByCategoryId: Record<string, number> = {}
+    const accountIds = [...accountToCategory.keys()]
+    if (accountIds.length > 0) {
+      const { data: lineRows, error: lineErr } = await supabase
+        .from("accounting_entry_lines")
+        .select("account_id, debit_amount, credit_amount, accounting_entries!inner ( pop_id, status, entry_date )")
+        .in("account_id", accountIds)
+        .eq("accounting_entries.pop_id", popId)
+        .eq("accounting_entries.status", "posted")
+        .gte("accounting_entries.entry_date", start)
+        .lte("accounting_entries.entry_date", end)
+      if (lineErr) {
+        return {
+          success: false,
+          error: lineErr.message || "No se pudieron leer los movimientos del mes.",
+        }
+      }
+      for (const line of lineRows || []) {
+        const categoryId = accountToCategory.get(String(line.account_id))
+        if (!categoryId) continue
+        const debit = parseMoney(line.debit_amount)
+        const credit = parseMoney(line.credit_amount)
+        ledgerByCategoryId[categoryId] = roundMoney(
+          (ledgerByCategoryId[categoryId] ?? 0) + debit - credit,
+        )
+      }
+    }
+
+    return { success: true, rows, ledgerByCategoryId }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }
@@ -373,13 +472,19 @@ export async function createExpense(
     const supabase = await createClient()
     const { data: catOk, error: catErr } = await supabase
       .from("expense_categories")
-      .select("id")
+      .select("id, kind")
       .eq("id", input.categoryId.trim())
       .eq("pop_id", popId)
       .is("deleted_at", null)
       .maybeSingle()
     if (catErr || !catOk) {
       return { success: false, error: "Categoría inválida o eliminada." }
+    }
+    if (String(catOk.kind) === "otro") {
+      return {
+        success: false,
+        error: "Esa cuenta la registra otro módulo. Acá solo se mira.",
+      }
     }
     const { data: ins, error } = await supabase
       .from("expenses")
@@ -664,6 +769,24 @@ export async function deleteExpenseCategory(
       return { success: false, error: "Sin permiso para gestionar categorías." }
     }
     const supabase = await createClient()
+    const { data: existing, error: existingErr } = await supabase
+      .from("expense_categories")
+      .select("id, kind, accounting_chart_account_id, accounting_chart_of_accounts ( code, metadata )")
+      .eq("id", categoryId.trim())
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (existingErr || !existing) {
+      return { success: false, error: "Categoría no encontrada." }
+    }
+    const mapped = mapExpenseCategoryRow(existing)
+    if (!mapped.canDelete) {
+      return {
+        success: false,
+        error: mapped.readOnly
+          ? "Esa cuenta la usa otro módulo."
+          : "Las cuentas del plan no se eliminan desde acá.",
+      }
+    }
     const { count, error: cErr } = await supabase
       .from("expenses")
       .select("id", { count: "exact", head: true })
@@ -691,6 +814,20 @@ export async function deleteExpenseCategory(
     if (dErr) {
       return { success: false, error: dErr.message || "No se pudo eliminar la categoría." }
     }
+    const chartId = mapped.chartAccountId
+    if (chartId) {
+      const { count: lineCount } = await supabase
+        .from("accounting_entry_lines")
+        .select("id", { count: "exact", head: true })
+        .eq("account_id", chartId)
+      if ((lineCount ?? 0) === 0) {
+        await supabase
+          .from("accounting_chart_of_accounts")
+          .delete()
+          .eq("id", chartId)
+          .eq("pop_id", popId)
+      }
+    }
     return { success: true }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
@@ -702,6 +839,7 @@ export async function createExpenseCategory(
   popId: string,
   name: string,
   kind: ExpenseCategoryKind,
+  family: ExpenseCategoryFamily,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const access = await validatePopAccess(popId)
@@ -722,14 +860,67 @@ export async function createExpenseCategory(
     if (!n) {
       return { success: false, error: "El nombre es obligatorio." }
     }
+    if (kind !== "fijo" && kind !== "variable") {
+      return { success: false, error: "Elegí si es fijo o variable." }
+    }
+    const prefix = EXPENSE_CHART_FAMILY_PREFIX[family]
+    if (!prefix) {
+      return { success: false, error: "Elegí si es de administración, comercialización o financieros." }
+    }
     const supabase = await createClient()
+    const { data: existingCodes, error: codesErr } = await supabase
+      .from("accounting_chart_of_accounts")
+      .select("code")
+      .eq("pop_id", popId)
+      .like("code", `${prefix}.%`)
+    if (codesErr) {
+      return { success: false, error: codesErr.message || "No se pudo leer el plan de cuentas." }
+    }
+    const code = nextExpenseChartCode(
+      prefix,
+      (existingCodes || []).map((row) => String(row.code ?? "")),
+    )
+    const { data: parent } = await supabase
+      .from("accounting_chart_of_accounts")
+      .select("id")
+      .eq("pop_id", popId)
+      .eq("code", prefix)
+      .maybeSingle()
+    const { data: chart, error: chartErr } = await supabase
+      .from("accounting_chart_of_accounts")
+      .insert({
+        pop_id: popId,
+        code,
+        name: n,
+        account_type: "gastos",
+        nature: "deudora",
+        level: 4,
+        is_movement_account: true,
+        parent_id: parent?.id ? String(parent.id) : null,
+        metadata: { user_created: true, expense_category: true },
+      })
+      .select("id")
+      .single()
+    if (chartErr || !chart?.id) {
+      return {
+        success: false,
+        error: chartErr?.message || "No se pudo crear la cuenta contable.",
+      }
+    }
+    const suffix = Number.parseInt(code.slice(prefix.length + 1), 10)
     const { error } = await supabase.from("expense_categories").insert({
       pop_id: popId,
       name: n,
       kind,
-      sort_order: 1000,
+      sort_order: Number.isFinite(suffix) ? suffix : 1000,
+      accounting_chart_account_id: String(chart.id),
     })
     if (error) {
+      await supabase
+        .from("accounting_chart_of_accounts")
+        .delete()
+        .eq("id", String(chart.id))
+        .eq("pop_id", popId)
       return { success: false, error: error.message || "No se pudo crear la categoría." }
     }
     return { success: true }

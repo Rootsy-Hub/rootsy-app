@@ -1,13 +1,12 @@
 /**
  * Aire de bloques — bruma adelante, planeta atrás.
  * El valle se siente; no se estudia. El trabajo queda en las losetas.
- * La capa del planeta vive adentro del recuadro: no agranda el scroll.
+ * Esta capa pinta el recuadro visible. El scroll vive en el hijo, no acá.
  * @see layoutsBlocksHardcodedSpec · /images/rootsyplanet.jpeg
  */
 .data-workspace-blocks-atmosphere {
   position: relative;
   isolation: isolate;
-  overflow-x: hidden;
   background-color: var(--rootsy-bruma-50);
   background-image:
     radial-gradient(

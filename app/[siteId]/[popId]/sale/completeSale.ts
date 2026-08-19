@@ -20,6 +20,8 @@ import {
 } from "@/lib/entryDateTimezone"
 import { resolveOpenCashSession, assertCashSessionStillOpen } from "@/lib/cashRegisterSession"
 import { createClient } from "@/utils/supabase/server"
+import { applyInventoryFefoOrder } from "@/lib/inventory/inventoryExpiry"
+import { getPopSellableInventoryLocationId } from "@/lib/inventory/inventoryLocations"
 import {
   articleReferenceCostError,
   resolveArticleReferenceUnitCost,
@@ -93,12 +95,14 @@ async function sumInventoryOnHandForArticle(
   supabase: Awaited<ReturnType<typeof createClient>>,
   popId: string,
   articleId: string,
+  locationId: string,
 ): Promise<{ success: true; onHand: number } | { success: false; error: string }> {
   const { data: rows, error } = await supabase
     .from("inventory_movements")
     .select("quantity_delta")
     .eq("pop_id", popId)
     .eq("article_id", articleId)
+    .eq("location_id", locationId)
   if (error) {
     return { success: false, error: error.message || "No se pudo leer el stock." }
   }
@@ -320,9 +324,57 @@ async function collectStockDeductionNeeds(
   return { success: true, needs }
 }
 
+async function assertStockForSaleNeeds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  locationId: string,
+  needs: StockDeductionNeed[],
+): Promise<{ success: true } | { success: false; error: string }> {
+  if (needs.length === 0) return { success: true }
+
+  const articleIds = [...new Set(needs.map((need) => need.articleId))]
+  const { data: flagRows, error: flagErr } = await supabase
+    .from("articles")
+    .select("id, allow_negative_stock")
+    .eq("pop_id", popId)
+    .in("id", articleIds)
+  if (flagErr) {
+    return {
+      success: false,
+      error: flagErr.message || "No se pudo leer si los artículos permiten stock negativo.",
+    }
+  }
+
+  const allowNegativeById = new Map<string, boolean>()
+  for (const row of flagRows ?? []) {
+    allowNegativeById.set(String(row.id), Boolean(row.allow_negative_stock))
+  }
+
+  for (const need of needs) {
+    if (allowNegativeById.get(need.articleId)) continue
+    const oh = await sumInventoryOnHandForArticle(
+      supabase,
+      popId,
+      need.articleId,
+      locationId,
+    )
+    if (!oh.success) {
+      return { success: false, error: oh.error }
+    }
+    if (need.qty > oh.onHand + 1e-6) {
+      return {
+        success: false,
+        error: `Stock insuficiente para «${need.label || "Insumo"}».`,
+      }
+    }
+  }
+  return { success: true }
+}
+
 async function deductArticleStockForSale(
   supabase: Awaited<ReturnType<typeof createClient>>,
   popId: string,
+  locationId: string,
   saleId: string,
   userId: string,
   need: StockDeductionNeed,
@@ -343,13 +395,15 @@ async function deductArticleStockForSale(
     await resolveArticleReferenceUnitCost(supabase, popId, need.articleId),
   )
 
-  const { data: layerRows, error: lrErr } = await supabase
-    .from("inventory_cost_layers")
-    .select("id, quantity_remaining, unit_cost, received_at")
-    .eq("pop_id", popId)
-    .eq("article_id", need.articleId)
-    .gt("quantity_remaining", 0)
-    .order("received_at", { ascending: true })
+  const { data: layerRows, error: lrErr } = await applyInventoryFefoOrder(
+    supabase
+      .from("inventory_cost_layers")
+      .select("id, quantity_remaining, unit_cost, received_at, expires_at")
+      .eq("pop_id", popId)
+      .eq("article_id", need.articleId)
+      .eq("location_id", locationId)
+      .gt("quantity_remaining", 0),
+  )
   if (lrErr) {
     return { success: false, error: lrErr.message || "No se pudieron leer capas de costo." }
   }
@@ -411,6 +465,7 @@ async function deductArticleStockForSale(
     .from("inventory_movements")
     .insert({
       pop_id: popId,
+      location_id: locationId,
       article_id: need.articleId,
       quantity_delta: delta,
       movement_type: "sale",
@@ -1311,17 +1366,22 @@ export async function completeSale(
       return { success: false, error: stockNeedsRes.error }
     }
 
-    for (const need of stockNeedsRes.needs) {
-      const oh = await sumInventoryOnHandForArticle(supabase, popId, need.articleId)
-      if (!oh.success) {
-        return { success: false, error: oh.error }
-      }
-      if (need.qty > oh.onHand + 1e-6) {
-        return {
-          success: false,
-          error: `Stock insuficiente para «${need.label || "Insumo"}».`,
-        }
-      }
+    const sellableLocation = await getPopSellableInventoryLocationId(
+      supabase,
+      popId,
+    )
+    if (!sellableLocation.success) {
+      return { success: false, error: sellableLocation.error }
+    }
+
+    const stockGuard = await assertStockForSaleNeeds(
+      supabase,
+      popId,
+      sellableLocation.locationId,
+      stockNeedsRes.needs,
+    )
+    if (!stockGuard.success) {
+      return { success: false, error: stockGuard.error }
     }
 
     const soldAtIso = new Date().toISOString()
@@ -1415,6 +1475,7 @@ export async function completeSale(
       const deductRes = await deductArticleStockForSale(
         supabase,
         popId,
+        sellableLocation.locationId,
         saleId,
         user.id,
         need,

@@ -31,6 +31,8 @@ export function usePopOperationsList(
     pageSize: params.pageSize,
     sort: params.sort,
     ord: params.ord,
+    fiscalOnly: params.fiscalOnly,
+    filters: params.filters,
   }
 
   return useQuery({

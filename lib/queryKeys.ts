@@ -1,3 +1,5 @@
+import type { OperationsListFiltersInput } from "@/app/[siteId]/[popId]/operations/operationsFilters"
+
 export function popWorkspaceBootstrapQueryKey(
   siteId: string,
   popId: string,
@@ -177,6 +179,9 @@ export type PopOperationsQueryParams = {
   pageSize: number
   sort: string | null
   ord: "asc" | "desc"
+  filtersKey?: string
+  fiscalOnly?: boolean
+  filters?: OperationsListFiltersInput
 }
 
 export function popOperationsQueryKey(
@@ -194,6 +199,8 @@ export function popOperationsQueryKey(
     params.pageSize,
     params.sort,
     params.ord,
+    params.filtersKey ?? "",
+    params.fiscalOnly ? "1" : "",
   ] as const
 }
 

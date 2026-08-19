@@ -186,15 +186,6 @@ export const POP_PAGES = {
       delete: "services:delete",
     },
   },
-  "active-services": {
-    path: "active-services",
-    permissions: {
-      read: "service_charges:read",
-      create: "service_charges:create",
-      update: "service_charges:update",
-      delete: "service_charges:delete",
-    },
-  },
   "cobrar-servicios": {
     path: "cobrar-servicios",
     permissions: {

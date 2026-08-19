@@ -26,7 +26,6 @@ const MODULE_TITLES: Record<string, string> = {
   recipes: "Recetas",
   promotions: "Promociones",
   services: "Servicios",
-  "active-services": "Servicios activos",
   "current-accounts": "Cuentas corrientes",
   quotes: "Presupuestos",
   "purchase-orders": "Órdenes de compra",

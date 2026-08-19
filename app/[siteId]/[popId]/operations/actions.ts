@@ -23,6 +23,12 @@ import {
   groupChannelOperationSales,
   parseChannelSaleMetadata,
 } from "@/lib/channelOperationSales"
+import {
+  counterSaleMatchesOperationsFilters,
+  saleMatchesOperationsFilters,
+  tableSaleMatchesOperationsFilters,
+  type OperationsListFiltersInput,
+} from "@/app/[siteId]/[popId]/operations/operationsFilters"
 import { buildChannelCheckoutTicketDisplay } from "@/lib/buildChannelCheckoutTicketDisplay"
 import { getMenuCatalog } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import { readCheckoutFromSessionMetadata } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
@@ -49,6 +55,23 @@ import {
   saleComprobanteLabel,
   saleHasComprobante,
 } from "@/lib/operationSaleComprobante"
+import {
+  isServiceBillingPeriod,
+  isServiceDiscountMode,
+  type ServiceBillingPeriod,
+  type ServiceDiscountMode,
+} from "@/lib/serviceCatalogTypes"
+import {
+  billingPeriodDisplayForCharge,
+  isServiceChargeBillingScope,
+  resolveServiceChargeEffectiveStatus,
+  roundServiceChargeMoney,
+  todayIsoDateOnly,
+  type ServiceChargeBillingScope,
+  type ServiceChargeEffectiveStatus,
+  type ServiceChargePaymentMode,
+  type ServiceChargeStoredStatus,
+} from "@/lib/serviceChargeTypes"
 
 export type OperationSaleLineItem = {
   articleId: string | null
@@ -227,6 +250,45 @@ export type OperationExpenseLedgerRow = {
   description: string
   paymentMethodLabel: string
   recordedByName: string | null
+}
+
+export type OperationServiceChargePaymentRow = {
+  id: string
+  amount: number
+  paidAt: string
+  paymentKind: string | null
+  notes: string
+}
+
+export type OperationServiceChargeRow = {
+  id: string
+  createdAt: string
+  dueDate: string
+  clientId: string
+  clientName: string
+  serviceTypeId: string
+  serviceName: string
+  billingPeriod: ServiceBillingPeriod
+  billingPeriodLabel: string | null
+  billingScope: ServiceChargeBillingScope
+  paymentMode: ServiceChargePaymentMode
+  periodCount: number
+  sequenceIndex: number
+  periodStart: string | null
+  periodEnd: string | null
+  periodDisplay: string
+  unitPrice: number
+  discountMode: ServiceDiscountMode
+  discountValue: number | null
+  discountAmount: number
+  amount: number
+  paidTotal: number
+  balance: number
+  storedStatus: ServiceChargeStoredStatus
+  effectiveStatus: ServiceChargeEffectiveStatus
+  cancelledAt: string | null
+  notes: string
+  payments: OperationServiceChargePaymentRow[]
 }
 
 export type OperationPurchaseLineItem = {
@@ -599,6 +661,7 @@ export type OperationsListView =
   | "counter"
   | "purchases"
   | "expenses"
+  | "services"
 
 export type GetOperationsListInput = {
   view: OperationsListView
@@ -609,6 +672,7 @@ export type GetOperationsListInput = {
   pageSize: number
   /** Compras con crédito fiscal (Factura A/B). */
   fiscalOnly?: boolean
+  filters?: OperationsListFiltersInput
   sort?: string | null
   ord?: "asc" | "desc"
 }
@@ -639,6 +703,16 @@ const OPERATIONS_EXPENSES_LIST_SORT = {
   defaultAscending: false,
 }
 
+const OPERATIONS_SERVICES_LIST_SORT = {
+  allowed: {
+    due_date: "due_date",
+    created_at: "created_at",
+    total: "amount",
+  },
+  defaultColumn: "created_at" as const,
+  defaultAscending: false,
+}
+
 function resolveOperationsSalesListOrder(input: GetOperationsListInput) {
   return resolveWorkspaceTableListOrder(
     { sort: input.sort ?? null, ord: input.ord ?? "asc" },
@@ -657,6 +731,13 @@ function resolveOperationsExpensesListOrder(input: GetOperationsListInput) {
   return resolveWorkspaceTableListOrder(
     { sort: input.sort ?? null, ord: input.ord ?? "asc" },
     OPERATIONS_EXPENSES_LIST_SORT,
+  )
+}
+
+function resolveOperationsServicesListOrder(input: GetOperationsListInput) {
+  return resolveWorkspaceTableListOrder(
+    { sort: input.sort ?? null, ord: input.ord ?? "asc" },
+    OPERATIONS_SERVICES_LIST_SORT,
   )
 }
 
@@ -773,6 +854,321 @@ function appendExpensesDateFilter<
   if (dateFrom) x = x.gte("entry_date", dateFrom)
   if (dateTo) x = x.lte("entry_date", dateTo)
   return x
+}
+
+function appendServiceChargesDateFilter<
+  Q extends {
+    gte: (col: string, val: string) => Q
+    lt: (col: string, val: string) => Q
+  },
+>(
+  q: Q,
+  dateFrom: string | null,
+  dateTo: string | null,
+  timeZone: string,
+): Q {
+  let x = q
+  if (dateFrom) x = x.gte("created_at", dateTimeStart(dateFrom, timeZone))
+  if (dateTo) x = x.lt("created_at", dateTimeExclusiveEnd(dateTo, timeZone))
+  return x
+}
+
+const SERVICE_CHARGE_STATUS_SEARCH: Record<string, ServiceChargeEffectiveStatus> =
+  {
+    pendiente: "pending",
+    pending: "pending",
+    parcial: "partial",
+    partial: "partial",
+    pagado: "paid",
+    paid: "paid",
+    vencido: "overdue",
+    vencidos: "overdue",
+    overdue: "overdue",
+    cancelado: "cancelled",
+    cancelados: "cancelled",
+    cancelled: "cancelled",
+  }
+
+const SERVICE_CHARGE_LIST_SELECT = `
+  id,
+  client_id,
+  service_type_id,
+  sequence_index,
+  billing_scope,
+  period_count,
+  payment_mode,
+  period_start,
+  period_end,
+  unit_price,
+  discount_mode,
+  discount_value,
+  amount,
+  due_date,
+  status,
+  cancelled_at,
+  notes,
+  created_at,
+  clients ( name ),
+  service_types ( name, billing_period, billing_period_label )
+`
+
+function parseServiceChargeMoney(v: unknown): number {
+  return roundServiceChargeMoney(Number(v ?? 0) || 0)
+}
+
+async function resolveServiceChargeSearchIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  search: string,
+): Promise<{
+  chargeId?: string
+  status?: ServiceChargeEffectiveStatus
+  clientIds?: string[]
+  serviceTypeIds?: string[]
+  notesPattern?: string
+}> {
+  const term = search.trim()
+  if (!term) return {}
+  if (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(term)
+  ) {
+    return { chargeId: term }
+  }
+
+  const status = SERVICE_CHARGE_STATUS_SEARCH[term.toLowerCase()]
+  if (status) return { status }
+
+  const pattern = `%${escapeIlikeToken(term)}%`
+  const [{ data: clients }, { data: services }] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("id")
+      .eq("pop_id", popId)
+      .ilike("name", pattern)
+      .limit(80),
+    supabase
+      .from("service_types")
+      .select("id")
+      .eq("pop_id", popId)
+      .ilike("name", pattern)
+      .limit(80),
+  ])
+
+  return {
+    clientIds: (clients ?? []).map((row) => String(row.id)),
+    serviceTypeIds: (services ?? []).map((row) => String(row.id)),
+    notesPattern: pattern,
+  }
+}
+
+function applyServiceChargeStatusFilter<
+  Q extends {
+    eq: (col: string, val: string) => Q
+    in: (col: string, val: string[]) => Q
+    or: (filters: string) => Q
+    lt: (col: string, val: string) => Q
+    is: (col: string, val: null) => Q
+  },
+>(query: Q, status: ServiceChargeEffectiveStatus, today: string): Q {
+  if (status === "overdue") {
+    return query
+      .lt("due_date", today)
+      .in("status", ["pending", "partial"])
+      .is("cancelled_at", null)
+  }
+  if (status === "cancelled") {
+    return query.or("status.eq.cancelled,cancelled_at.not.is.null")
+  }
+  if (status === "paid") return query.eq("status", "paid")
+  if (status === "partial") return query.eq("status", "partial")
+  if (status === "pending") {
+    return query.eq("status", "pending").is("cancelled_at", null)
+  }
+  return query
+}
+
+function applyServiceChargeToolbarFilters<
+  Q extends {
+    eq: (col: string, val: string) => Q
+    in: (col: string, val: string[]) => Q
+    or: (filters: string) => Q
+    lt: (col: string, val: string) => Q
+    is: (col: string, val: null) => Q
+  },
+>(
+  query: Q,
+  filters: OperationsListFiltersInput | undefined,
+  today: string,
+): Q {
+  if (!filters) return query
+  if (filters.serviceStatus) {
+    query = applyServiceChargeStatusFilter(query, filters.serviceStatus, today)
+  }
+  if (filters.serviceScope) {
+    query = query.eq("billing_scope", filters.serviceScope)
+  }
+  return query
+}
+
+function applySalesListToolbarFilters<
+  Q extends {
+    eq: (col: string, val: string) => Q
+    gt: (col: string, val: number) => Q
+  },
+>(query: Q, filters: OperationsListFiltersInput | undefined): Q {
+  if (!filters) return query
+  if (filters.saleStatus) query = query.eq("status", filters.saleStatus)
+  if (filters.saleWithDiscount) query = query.gt("discount_total", 0)
+  return query
+}
+
+function applyPurchasesListToolbarFilters<
+  Q extends { eq: (col: string, val: string) => Q },
+>(query: Q, filters: OperationsListFiltersInput | undefined): Q {
+  if (filters?.purchaseKind) {
+    return query.eq("purchase_kind", filters.purchaseKind)
+  }
+  return query
+}
+
+function applyServiceChargeSearchFilter<
+  Q extends {
+    eq: (col: string, val: string) => Q
+    in: (col: string, val: string[]) => Q
+    or: (filters: string) => Q
+    lt: (col: string, val: string) => Q
+    is: (col: string, val: null) => Q
+  },
+>(
+  query: Q,
+  search: Awaited<ReturnType<typeof resolveServiceChargeSearchIds>>,
+  today: string,
+): Q {
+  const hasSearch =
+    Boolean(search.chargeId) ||
+    Boolean(search.status) ||
+    Boolean(search.notesPattern) ||
+    (search.clientIds != null && search.clientIds.length > 0) ||
+    (search.serviceTypeIds != null && search.serviceTypeIds.length > 0)
+  if (!hasSearch) return query
+  if (search.chargeId) return query.eq("id", search.chargeId)
+  if (search.status) {
+    return applyServiceChargeStatusFilter(query, search.status, today)
+  }
+
+  const parts: string[] = []
+  if (search.notesPattern) {
+    parts.push(`notes.ilike.${search.notesPattern}`)
+  }
+  if (search.clientIds && search.clientIds.length > 0) {
+    parts.push(`client_id.in.(${search.clientIds.join(",")})`)
+  }
+  if (search.serviceTypeIds && search.serviceTypeIds.length > 0) {
+    parts.push(`service_type_id.in.(${search.serviceTypeIds.join(",")})`)
+  }
+  if (parts.length === 0) {
+    return query.eq("id", "00000000-0000-0000-0000-000000000000")
+  }
+  return query.or(parts.join(","))
+}
+
+function mapOperationServiceChargeRow(
+  row: Record<string, unknown>,
+  paidByChargeId: Map<string, number>,
+  paymentsByChargeId: Map<string, OperationServiceChargePaymentRow[]>,
+  today: string,
+): OperationServiceChargeRow {
+  const client = row.clients as { name?: string } | null
+  const service = row.service_types as {
+    name?: string
+    billing_period?: string
+    billing_period_label?: string | null
+  } | null
+  const billingPeriodRaw = String(service?.billing_period ?? "monthly")
+  const billingPeriod: ServiceBillingPeriod = isServiceBillingPeriod(
+    billingPeriodRaw,
+  )
+    ? billingPeriodRaw
+    : "monthly"
+  const billingPeriodLabel =
+    typeof service?.billing_period_label === "string" &&
+    service.billing_period_label.trim()
+      ? service.billing_period_label.trim()
+      : null
+  const amount = parseServiceChargeMoney(row.amount)
+  const paidTotal = roundServiceChargeMoney(
+    paidByChargeId.get(String(row.id)) ?? 0,
+  )
+  const unitPrice = parseServiceChargeMoney(row.unit_price)
+  const discountMode = (
+    isServiceDiscountMode(String(row.discount_mode ?? "none"))
+      ? String(row.discount_mode)
+      : "none"
+  ) as ServiceDiscountMode
+  const discountValue =
+    row.discount_value == null || row.discount_value === ""
+      ? null
+      : parseServiceChargeMoney(row.discount_value)
+  const cancelledAt =
+    typeof row.cancelled_at === "string" ? row.cancelled_at : null
+  const storedStatus = String(row.status ?? "pending") as ServiceChargeStoredStatus
+  const dueDate = String(row.due_date ?? "")
+  const sequenceIndex = Number(row.sequence_index ?? 0) || 0
+  const periodCount = Number(row.period_count ?? 1) || 1
+  const periodStart =
+    typeof row.period_start === "string" ? row.period_start : null
+  const periodEnd = typeof row.period_end === "string" ? row.period_end : null
+  const billingScopeRaw = String(row.billing_scope ?? "one_period")
+  const billingScope = isServiceChargeBillingScope(billingScopeRaw)
+    ? billingScopeRaw
+    : "one_period"
+
+  return {
+    id: String(row.id),
+    createdAt: String(row.created_at ?? ""),
+    dueDate,
+    clientId: String(row.client_id),
+    clientName: String(client?.name ?? "—"),
+    serviceTypeId: String(row.service_type_id),
+    serviceName: String(service?.name ?? "—"),
+    billingPeriod,
+    billingPeriodLabel,
+    billingScope,
+    paymentMode: (String(row.payment_mode ?? "one_time") === "subscription"
+      ? "subscription"
+      : "one_time") as ServiceChargePaymentMode,
+    periodCount,
+    sequenceIndex,
+    periodStart,
+    periodEnd,
+    periodDisplay: billingPeriodDisplayForCharge(
+      billingPeriod,
+      billingPeriodLabel,
+      periodStart,
+      periodEnd,
+      sequenceIndex,
+      periodCount,
+    ),
+    unitPrice,
+    discountMode,
+    discountValue,
+    discountAmount: roundServiceChargeMoney(Math.max(0, unitPrice - amount)),
+    amount,
+    paidTotal,
+    balance: roundServiceChargeMoney(Math.max(0, amount - paidTotal)),
+    storedStatus,
+    effectiveStatus: resolveServiceChargeEffectiveStatus({
+      storedStatus,
+      cancelledAt,
+      amount,
+      paidTotal,
+      dueDate,
+      today,
+    }),
+    cancelledAt,
+    notes: String(row.notes ?? ""),
+    payments: paymentsByChargeId.get(String(row.id)) ?? [],
+  }
 }
 
 const SALE_LIST_SELECT = `
@@ -1913,6 +2309,7 @@ export async function getOperationsList(
       sales: OperationSaleRow[]
       expenseLedger: OperationExpenseLedgerRow[]
       purchases: OperationPurchaseRow[]
+      serviceCharges?: OperationServiceChargeRow[]
     }
   | {
       success: false
@@ -1924,6 +2321,7 @@ export async function getOperationsList(
       sales: OperationSaleRow[]
       expenseLedger: OperationExpenseLedgerRow[]
       purchases: OperationPurchaseRow[]
+      serviceCharges?: OperationServiceChargeRow[]
     }
 > {
   const emptySales: OperationSaleRow[] = []
@@ -1983,7 +2381,7 @@ export async function getOperationsList(
 
     const supabase = await createClient()
 
-    const { dateFrom, dateTo, search, view } = input
+    const { dateFrom, dateTo, search, view, filters: listFilters } = input
     const searchTerm = search.trim()
     const uuidSearch =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -2050,6 +2448,9 @@ export async function getOperationsList(
           const orClause = buildSalesSearchOrClause(search)
           if (orClause) countQuery = countQuery.or(orClause)
         }
+        if (view === "sales" || view === "sales-report") {
+          countQuery = applySalesListToolbarFilters(countQuery, listFilters)
+        }
 
         const { count: countRaw, error: countErr } = await countQuery
         if (countErr) {
@@ -2096,6 +2497,9 @@ export async function getOperationsList(
       } else {
         const orClause = buildSalesSearchOrClause(search)
         if (orClause) dataQuery = dataQuery.or(orClause)
+      }
+      if (view === "sales" || view === "sales-report") {
+        dataQuery = applySalesListToolbarFilters(dataQuery, listFilters)
       }
       const salesListOrder = resolveOperationsSalesListOrder(input)
       dataQuery = dataQuery.order(salesListOrder.column, {
@@ -2192,6 +2596,9 @@ export async function getOperationsList(
         )
       }
       if (useOperationalDayFilter && !isChannelGroupedView) {
+        sales = sales.filter((sale) =>
+          saleMatchesOperationsFilters(sale, listFilters),
+        )
         totalCount = sales.length
         const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
         safePage = Math.min(Math.max(1, reqPage), totalPages)
@@ -2210,6 +2617,14 @@ export async function getOperationsList(
           sales,
           view === "tables" ? "table" : "counter",
         )
+        sales =
+          view === "tables"
+            ? sales.filter((sale) =>
+                tableSaleMatchesOperationsFilters(sale, listFilters),
+              )
+            : sales.filter((sale) =>
+                counterSaleMatchesOperationsFilters(sale, listFilters),
+              )
         totalCount = sales.length
         const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
         safePage = Math.min(Math.max(1, reqPage), totalPages)
@@ -2262,6 +2677,7 @@ export async function getOperationsList(
       )
       const orClause = buildPurchasesSearchOrClause(search)
       if (orClause) countQuery = countQuery.or(orClause)
+      countQuery = applyPurchasesListToolbarFilters(countQuery, listFilters)
 
       const { count: countRaw, error: countErr } = await countQuery
       if (countErr) {
@@ -2298,6 +2714,7 @@ export async function getOperationsList(
         ledgerTimeZone,
       )
       if (orClause) dataQuery = dataQuery.or(orClause)
+      dataQuery = applyPurchasesListToolbarFilters(dataQuery, listFilters)
       const purchasesListOrder = resolveOperationsPurchasesListOrder(input)
       dataQuery = dataQuery
         .order(purchasesListOrder.column, {
@@ -2349,11 +2766,177 @@ export async function getOperationsList(
       }
     }
 
+    if (view === "services") {
+      const today = todayIsoDateOnly()
+      const searchResolved = await resolveServiceChargeSearchIds(
+        supabase,
+        popId,
+        search,
+      )
+
+      let countQuery = supabase
+        .from("service_charges")
+        .select("id", { count: "exact", head: true })
+        .eq("pop_id", popId)
+      countQuery = appendServiceChargesDateFilter(
+        countQuery,
+        dateFrom,
+        dateTo,
+        ledgerTimeZone,
+      )
+      countQuery = applyServiceChargeSearchFilter(
+        countQuery,
+        searchResolved,
+        today,
+      )
+      countQuery = applyServiceChargeToolbarFilters(
+        countQuery,
+        listFilters,
+        today,
+      )
+
+      const { count: countRaw, error: countErr } = await countQuery
+      if (countErr) {
+        return {
+          success: false,
+          error: countErr.message || "No se pudieron cargar los servicios.",
+          popName,
+          totalCount: 0,
+          page: reqPage,
+          sales: emptySales,
+          expenseLedger: emptyExpenseLedger,
+          purchases: emptyPurchases,
+          serviceCharges: [],
+        }
+      }
+
+      const totalCount = countRaw ?? 0
+      const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+      const safePage = Math.min(Math.max(1, reqPage), totalPages)
+      const from = (safePage - 1) * pageSize
+      const to = from + pageSize - 1
+
+      let dataQuery = supabase
+        .from("service_charges")
+        .select(SERVICE_CHARGE_LIST_SELECT)
+        .eq("pop_id", popId)
+      dataQuery = appendServiceChargesDateFilter(
+        dataQuery,
+        dateFrom,
+        dateTo,
+        ledgerTimeZone,
+      )
+      dataQuery = applyServiceChargeSearchFilter(
+        dataQuery,
+        searchResolved,
+        today,
+      )
+      dataQuery = applyServiceChargeToolbarFilters(
+        dataQuery,
+        listFilters,
+        today,
+      )
+      const servicesListOrder = resolveOperationsServicesListOrder(input)
+      dataQuery = dataQuery
+        .order(servicesListOrder.column, {
+          ascending: servicesListOrder.ascending,
+        })
+        .range(from, to)
+
+      const { data: chargeRows, error: chargeErr } = await dataQuery
+      if (chargeErr) {
+        return {
+          success: false,
+          error: chargeErr.message || "No se pudieron cargar los servicios.",
+          popName,
+          totalCount,
+          page: safePage,
+          sales: emptySales,
+          expenseLedger: emptyExpenseLedger,
+          purchases: emptyPurchases,
+          serviceCharges: [],
+        }
+      }
+
+      const chargeIds = (chargeRows ?? []).map((row) => String(row.id))
+      const paidByChargeId = new Map<string, number>()
+      const paymentsByChargeId = new Map<
+        string,
+        OperationServiceChargePaymentRow[]
+      >()
+
+      if (chargeIds.length > 0) {
+        const { data: paymentRows, error: paymentErr } = await supabase
+          .from("service_charge_payments")
+          .select("id, service_charge_id, amount, paid_at, payment_kind, notes")
+          .eq("pop_id", popId)
+          .in("service_charge_id", chargeIds)
+          .order("paid_at", { ascending: false })
+        if (paymentErr) {
+          return {
+            success: false,
+            error: paymentErr.message || "No se pudieron cargar los cobros.",
+            popName,
+            totalCount,
+            page: safePage,
+            sales: emptySales,
+            expenseLedger: emptyExpenseLedger,
+            purchases: emptyPurchases,
+            serviceCharges: [],
+          }
+        }
+        for (const payment of paymentRows ?? []) {
+          const chargeId = String(payment.service_charge_id)
+          const amount = parseServiceChargeMoney(payment.amount)
+          paidByChargeId.set(
+            chargeId,
+            roundServiceChargeMoney((paidByChargeId.get(chargeId) ?? 0) + amount),
+          )
+          const list = paymentsByChargeId.get(chargeId) ?? []
+          list.push({
+            id: String(payment.id),
+            amount,
+            paidAt: String(payment.paid_at ?? ""),
+            paymentKind:
+              payment.payment_kind != null
+                ? String(payment.payment_kind)
+                : null,
+            notes: String(payment.notes ?? ""),
+          })
+          paymentsByChargeId.set(chargeId, list)
+        }
+      }
+
+      const serviceCharges = (chargeRows ?? []).map((row) =>
+        mapOperationServiceChargeRow(
+          row as Record<string, unknown>,
+          paidByChargeId,
+          paymentsByChargeId,
+          today,
+        ),
+      )
+
+      return {
+        success: true,
+        popName,
+        totalCount,
+        page: safePage,
+        sales: emptySales,
+        expenseLedger: emptyExpenseLedger,
+        purchases: emptyPurchases,
+        serviceCharges,
+      }
+    }
+
+    const expenseSourceTypes = listFilters?.expenseSource
+      ? [listFilters.expenseSource]
+      : (["expense_payment", "expense_void"] as const)
+
     let countQuery = supabase
       .from("accounting_entries")
       .select("id", { count: "exact", head: true })
       .eq("pop_id", popId)
-      .in("source_type", ["expense_payment", "expense_void"])
+      .in("source_type", [...expenseSourceTypes])
       .eq("status", "posted")
     countQuery = appendExpensesDateFilter(countQuery, dateFrom, dateTo)
     const expenseOrClause = buildExpensesSearchOrClause(search)
@@ -2385,7 +2968,7 @@ export async function getOperationsList(
         "id, entry_date, description, source_type, source_id, status, created_at, posted_at, created_by",
       )
       .eq("pop_id", popId)
-      .in("source_type", ["expense_payment", "expense_void"])
+      .in("source_type", [...expenseSourceTypes])
       .eq("status", "posted")
     dataQuery = appendExpensesDateFilter(dataQuery, dateFrom, dateTo)
     if (expenseOrClause) dataQuery = dataQuery.or(expenseOrClause)

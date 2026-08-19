@@ -1,35 +1,8 @@
-import { CHART_GASTOS_GENERALES_CODES } from "@/lib/argV3DefaultChartAccounts"
 import { resolveLedgerAccountForTreasuryPayment } from "@/lib/treasuryPaymentLedger"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-const PAYMENT_KIND_ACCOUNT_FALLBACK: Record<string, readonly string[]> = {
-  cash: ["1.1.1.01"],
-  transfer: ["1.1.1.02"],
-  card_debit: ["1.1.1.03"],
-  card_credit: ["1.1.1.03"],
-  check: ["1.1.2.02", "2.1.1.02"],
-  other: ["1.1.1.04", "1.1.1.01"],
-}
-
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
-}
-
-async function resolveAccountId(
-  supabase: SupabaseClient,
-  popId: string,
-  codes: readonly string[],
-): Promise<string | null> {
-  for (const code of codes) {
-    const { data: row } = await supabase
-      .from("accounting_chart_of_accounts")
-      .select("id")
-      .eq("pop_id", popId)
-      .eq("code", code)
-      .maybeSingle()
-    if (row?.id) return String(row.id)
-  }
-  return null
 }
 
 async function nextEntryNumber(
@@ -79,7 +52,7 @@ export async function postExpensePaymentLedger(
       id,
       description,
       status,
-      expense_categories ( name )
+      expense_categories ( name, kind, accounting_chart_account_id )
     `,
     )
     .eq("id", String(payRow.expense_id))
@@ -90,9 +63,27 @@ export async function postExpensePaymentLedger(
     return { success: false, error: expErr?.message || "Gasto no encontrado." }
   }
 
-  const cat = expRow.expense_categories as unknown as { name?: string } | null
+  const catRaw = expRow.expense_categories as unknown as
+    | {
+        name?: string
+        kind?: string
+        accounting_chart_account_id?: string | null
+      }
+    | {
+        name?: string
+        kind?: string
+        accounting_chart_account_id?: string | null
+      }[]
+    | null
+  const cat = Array.isArray(catRaw) ? catRaw[0] : catRaw
   if (String(expRow.status ?? "") === "voided") {
     return { success: false, error: "El gasto está anulado." }
+  }
+  if (String(cat?.kind ?? "") === "otro") {
+    return {
+      success: false,
+      error: "Esa cuenta la registra otro módulo. Acá solo se mira.",
+    }
   }
 
   const amt = roundMoney(Number(payRow.amount ?? 0))
@@ -125,16 +116,14 @@ export async function postExpensePaymentLedger(
     }
   }
 
-  const expenseAccountId = await resolveAccountId(
-    supabase,
-    popId,
-    CHART_GASTOS_GENERALES_CODES,
-  )
+  const expenseAccountId =
+    cat?.accounting_chart_account_id != null
+      ? String(cat.accounting_chart_account_id)
+      : null
   if (!expenseAccountId) {
     return {
       success: false,
-      error:
-        "No hay cuenta «Gastos generales» (6.2.1.99 u homónimas) en el plan de cuentas.",
+      error: "Esta categoría no tiene cuenta en el plan de cuentas.",
     }
   }
 
