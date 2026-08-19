@@ -80,7 +80,7 @@ export function SaleCatalogProductCard({
             onError={() => setImageFailed(true)}
             className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
             unoptimized
-            sizes={isList ? "192px" : "33vw"}
+            sizes={isList ? "80px" : "33vw"}
           />
         )}
         {showOfferOverlay ? (
@@ -101,11 +101,21 @@ export function SaleCatalogProductCard({
         ) : null}
       </div>
       <div className={layoutsOperarProductCardProposalBodyClass(proposalId, layoutVariant)}>
-        <div className="min-h-0 self-start">
-          <h3 className={layoutsOperarProductCardProposalTitleClass(proposalId)}>
+        <div className={cn("min-h-0 min-w-0", !isList && "self-start")}>
+          <h3
+            className={cn(
+              layoutsOperarProductCardProposalTitleClass(proposalId),
+              isList && "line-clamp-1",
+            )}
+          >
             {product.nombre}
           </h3>
-          <p className={layoutsOperarProductCardProposalDescClass(proposalId)}>
+          <p
+            className={cn(
+              layoutsOperarProductCardProposalDescClass(proposalId),
+              isList && "line-clamp-1",
+            )}
+          >
             {product.descripcion}
           </p>
         </div>

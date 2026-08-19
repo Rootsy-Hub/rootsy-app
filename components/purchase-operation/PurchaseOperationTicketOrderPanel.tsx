@@ -2,9 +2,8 @@
 
 import {
   layoutsOperarSummaryCartCellClass,
-  layoutsOperarSummaryCartHeadingClass,
   layoutsOperarSummaryCartListSurfaceClass,
-  layoutsOperarSummaryCartMetaClass,
+  layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
@@ -70,45 +69,47 @@ export function PurchaseOperationTicketOrderPanel({
         )}
       >
         <div className="min-w-0">
-          <h2 className={layoutsOperarSummaryCartHeadingClass}>{listTitle}</h2>
+          <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
         </div>
-        <span className={layoutsOperarSummaryCartMetaClass}>
-          {ticketLineCount} {ticketLineCount === 1 ? "línea" : "líneas"}
-        </span>
       </div>
 
-      <div
-        ref={cartScrollContainerRef}
-        className={cn(
-          layoutsOperarSummaryCartCellClass,
-          "layouts-operar-scroll-minimal overflow-y-auto",
-        )}
-        role="region"
-        aria-label="Ítems agregados"
-      >
-        {ticketLineCount === 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
-            <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
+      <div className={cn(layoutsOperarSummaryCartCellClass, "flex min-h-0 flex-col")}>
+        <div
+          ref={cartScrollContainerRef}
+          className="layouts-operar-scroll-minimal min-h-0 flex-1 overflow-y-auto"
+          role="region"
+          aria-label="Ítems agregados"
+        >
+          {ticketLineCount === 0 ? (
+            <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
+              <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
+            </div>
+          ) : (
+            <div
+              className={cn(
+                layoutsOperarSummaryCartListSurfaceClass,
+                layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+              )}
+            >
+              {lines.map((line) => (
+                <PurchaseCartLineCard
+                  key={line.lineId}
+                  line={line}
+                  overrides={overrides}
+                  canUpdateArticles={canUpdateArticles}
+                  onApplyEdits={onApplyLineEdits}
+                  onRemove={() => onRemoveLine(line.lineId)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {hasTicketItems ? (
+          <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
+            <SaleOperationTotalBar {...totalBar} tone="operar" className="w-full" />
           </div>
-        ) : (
-          <div
-            className={cn(
-              layoutsOperarSummaryCartListSurfaceClass,
-              layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
-            )}
-          >
-            {lines.map((line) => (
-              <PurchaseCartLineCard
-                key={line.lineId}
-                line={line}
-                overrides={overrides}
-                canUpdateArticles={canUpdateArticles}
-                onApplyEdits={onApplyLineEdits}
-                onRemove={() => onRemoveLine(line.lineId)}
-              />
-            ))}
-          </div>
-        )}
+        ) : null}
       </div>
 
       {hasTicketItems ? (
@@ -116,10 +117,6 @@ export function PurchaseOperationTicketOrderPanel({
           <SaleOperationActionsBar {...actions} variant="operar" />
         </div>
       ) : null}
-
-      <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
-        <SaleOperationTotalBar {...totalBar} tone="operar" className="h-full w-full" />
-      </div>
     </>
   )
 

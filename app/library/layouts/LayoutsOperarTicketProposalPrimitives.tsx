@@ -18,7 +18,6 @@ import {
   layoutsOperarTicketProposalLineAmountClass,
   layoutsOperarTicketProposalLineCommentClass,
   layoutsOperarTicketProposalLineGridClass,
-  layoutsOperarTicketProposalLineMetaClass,
   layoutsOperarTicketProposalLineNameClass,
   layoutsOperarTicketProposalPanelClass,
   layoutsOperarTicketProposalPromoBadgeClass,
@@ -28,6 +27,7 @@ import {
   layoutsOperarTicketProposalTotalsBreakdownLabelClass,
   layoutsOperarTicketProposalTotalsDividerClass,
   layoutsOperarTicketProposalTotalsGridClass,
+  layoutsOperarTicketProposalTotalsHeadingClass,
   layoutsOperarTicketProposalTotalsMainAmountClass,
   layoutsOperarTicketProposalTotalsMainLabelClass,
   layoutsOperarTicketProposalTotalsShellClass,
@@ -35,15 +35,14 @@ import {
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import {
   layoutsOperarBodyScopeClass,
-  layoutsOperarSummaryCartHeadingClass,
-  layoutsOperarSummaryCartMetaClass,
+  layoutsOperarSummaryCartTitleClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL,
   ROOTSY_LAYOUTS_OPERAR_TICKET_PROPOSALS,
   type LayoutsOperarTicketProposal,
 } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
-import { CartLineQuantityLabel } from "@/components/sale-operation/CartLineQuantityLabel"
+import { formatOperarTicketQuantity } from "@/components/sale-operation/CartLineQuantityLabel"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 import { Banknote, MessageSquare, Percent, Tag } from "lucide-react"
@@ -235,30 +234,25 @@ function LayoutsOperarTicketProposalLine({
   return (
     <div className="w-full">
       <div className={layoutsOperarTicketProposalLineGridClass(proposalId)}>
-        <CartLineQuantityLabel
-          cantidad={line.cantidad}
-          className={layoutsOperarTicketProposalQtyClass(proposalId)}
-        />
         <span className="min-w-0">
           <span className={layoutsOperarTicketProposalLineNameClass(proposalId)}>{line.nombre}</span>
-          {line.descripcion ? (
-            <span className={layoutsOperarTicketProposalLineMetaClass(proposalId)}>
-              {line.descripcion}
-            </span>
-          ) : null}
-        </span>
-        <span className="pt-0.5 text-right">
           {!line.hidePrice ? (
-            <span className={layoutsOperarTicketProposalLineAmountClass(proposalId)}>
+            <span
+              className={cn(
+                "mt-0.5 block",
+                layoutsOperarTicketProposalLineAmountClass(proposalId),
+              )}
+            >
               {saleOpFmt.format(lineTotal)}
             </span>
-          ) : omitHiddenPricePlaceholder ? (
-            <span aria-hidden className="block" />
-          ) : (
-            <span className="text-sm font-medium text-[var(--layouts-operar-light-cart-line-meta)]">
+          ) : omitHiddenPricePlaceholder ? null : (
+            <span className="mt-0.5 block text-sm font-medium text-[var(--layouts-operar-light-cart-line-meta)]">
               —
             </span>
           )}
+        </span>
+        <span className={layoutsOperarTicketProposalQtyClass(proposalId)}>
+          {formatOperarTicketQuantity(line.cantidad, "unidad")}
         </span>
       </div>
       {comment ? (
@@ -321,74 +315,70 @@ function LayoutsOperarTicketProposalTotalsBar({
   const showItemsDiscount = totals.descuentoItemsMonto > 0
   const showPromociones = totals.promocionesAplicadasMonto > 0
   const showGeneralDiscount = totals.descuentoGeneralMonto > 0
-  const showSubtotalBreakdown =
-    showItemsDiscount || showPromociones || showGeneralDiscount
-
   return (
     <div
       role="region"
-      aria-label="Total a cobrar"
+      aria-label="Por cobrar"
       className={layoutsOperarTicketProposalTotalsShellClass(proposalId)}
     >
+      <h3 className={layoutsOperarTicketProposalTotalsHeadingClass(proposalId)}>
+        Por cobrar
+      </h3>
       <div className={layoutsOperarTicketProposalTotalsGridClass(proposalId)}>
-        {showSubtotalBreakdown ? (
+        <span className={layoutsOperarTicketProposalTotalsBreakdownLabelClass(proposalId)}>
+          Subtotal
+        </span>
+        <p className={layoutsOperarTicketProposalTotalsBreakdownAmountClass(proposalId)}>
+          {saleOpFmt.format(totals.subtotalOriginal)}
+        </p>
+        {showItemsDiscount ? (
           <>
             <span className={layoutsOperarTicketProposalTotalsBreakdownLabelClass(proposalId)}>
-              Subtotal
+              Descuento ítems
             </span>
-            <p className={layoutsOperarTicketProposalTotalsBreakdownAmountClass(proposalId)}>
-              {saleOpFmt.format(totals.subtotalOriginal)}
+            <p
+              className={layoutsOperarTicketProposalTotalsBreakdownAmountClass(
+                proposalId,
+                "discount",
+              )}
+            >
+              −{saleOpFmt.format(totals.descuentoItemsMonto)}
             </p>
-            {showItemsDiscount ? (
-              <>
-                <span className={layoutsOperarTicketProposalTotalsBreakdownLabelClass(proposalId)}>
-                  Descuento ítems
-                </span>
-                <p
-                  className={layoutsOperarTicketProposalTotalsBreakdownAmountClass(
-                    proposalId,
-                    "discount",
-                  )}
-                >
-                  −{saleOpFmt.format(totals.descuentoItemsMonto)}
-                </p>
-              </>
-            ) : null}
-            {showPromociones ? (
-              <>
-                <span className={layoutsOperarTicketProposalTotalsBreakdownLabelClass(proposalId)}>
-                  Promociones aplicadas ({totals.promocionesAplicadasCount})
-                </span>
-                <p
-                  className={layoutsOperarTicketProposalTotalsBreakdownAmountClass(
-                    proposalId,
-                    "discount",
-                  )}
-                >
-                  −{saleOpFmt.format(totals.promocionesAplicadasMonto)}
-                </p>
-              </>
-            ) : null}
-            {showGeneralDiscount ? (
-              <>
-                <span className={layoutsOperarTicketProposalTotalsBreakdownLabelClass(proposalId)}>
-                  Descuento general
-                </span>
-                <p
-                  className={layoutsOperarTicketProposalTotalsBreakdownAmountClass(
-                    proposalId,
-                    "discount",
-                  )}
-                >
-                  −{saleOpFmt.format(totals.descuentoGeneralMonto)}
-                </p>
-              </>
-            ) : null}
-            <div className={layoutsOperarTicketProposalTotalsDividerClass(proposalId)} aria-hidden />
           </>
         ) : null}
+        {showPromociones ? (
+          <>
+            <span className={layoutsOperarTicketProposalTotalsBreakdownLabelClass(proposalId)}>
+              Promociones aplicadas ({totals.promocionesAplicadasCount})
+            </span>
+            <p
+              className={layoutsOperarTicketProposalTotalsBreakdownAmountClass(
+                proposalId,
+                "discount",
+              )}
+            >
+              −{saleOpFmt.format(totals.promocionesAplicadasMonto)}
+            </p>
+          </>
+        ) : null}
+        {showGeneralDiscount ? (
+          <>
+            <span className={layoutsOperarTicketProposalTotalsBreakdownLabelClass(proposalId)}>
+              Descuento general
+            </span>
+            <p
+              className={layoutsOperarTicketProposalTotalsBreakdownAmountClass(
+                proposalId,
+                "discount",
+              )}
+            >
+              −{saleOpFmt.format(totals.descuentoGeneralMonto)}
+            </p>
+          </>
+        ) : null}
+        <div className={layoutsOperarTicketProposalTotalsDividerClass(proposalId)} aria-hidden />
         <p className={layoutsOperarTicketProposalTotalsMainLabelClass(proposalId)}>
-          Total a cobrar
+          Total
         </p>
         <p
           className={layoutsOperarTicketProposalTotalsMainAmountClass(proposalId)}
@@ -422,13 +412,10 @@ export function LayoutsOperarTicketProposalPanel({
     >
       {measureBadge}
       <div className={layoutsOperarTicketProposalHeaderClass(proposalId)}>
-        <h2 className={layoutsOperarSummaryCartHeadingClass}>Tu pedido</h2>
-        <span className={layoutsOperarSummaryCartMetaClass}>
-          {lineCount} {lineCount === 1 ? "línea" : "líneas"}
-        </span>
+        <h2 className={layoutsOperarSummaryCartTitleClass}>Pedido</h2>
       </div>
 
-      <div className={layoutsOperarTicketProposalCartRowClass(proposalId)}>
+      <div className={cn(layoutsOperarTicketProposalCartRowClass(proposalId), "row-start-2 min-h-0")}>
         <div
           className={cn(
             "layouts-operar-scroll-minimal min-h-0 flex-1 overflow-y-auto",
@@ -464,6 +451,7 @@ export function LayoutsOperarTicketProposalPanel({
             )
           })}
         </div>
+        <LayoutsOperarTicketProposalTotalsBar proposalId={proposalId} />
       </div>
 
       <div className={layoutsOperarTicketProposalActionsClass(proposalId)}>
@@ -488,8 +476,6 @@ export function LayoutsOperarTicketProposalPanel({
           </div>
         </div>
       </div>
-
-      <LayoutsOperarTicketProposalTotalsBar proposalId={proposalId} />
 
       <p className="sr-only">
         Propuesta {proposal.letter} · totales {proposal.totalsLayout} · {lineCount} líneas demo

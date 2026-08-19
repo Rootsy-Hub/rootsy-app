@@ -47,9 +47,9 @@ export const ROOTSY_LAYOUTS_OPERAR_PRINCIPLES = [
       "Sidebar w-64 (256px) · library-sidebar + library-nav (paridad Library / Estadísticas / Ajustes) · canvas sombra-800 · cards sombra-600 · toolbox tierra empapada · hairline sombra-border · pairing pos-core.",
   },
   {
-    title: "Ticket · bruma + savia",
+    title: "Ticket · bruma-50",
     detail:
-      "Panel y carrito bruma-100 (plano) · acciones white · hairline bruma-200 · split sombra-700 · totales gradiente pos-totals (savia-975→990).",
+      "Panel, carrito y total bruma-50 (mismo piso que cuentas/cajas) · hairline bruma-200 · split sombra-700 · el total solo aparece con ítems.",
   },
 ] as const
 
@@ -88,8 +88,8 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
   /** Totales — misma altura mínima que toolbox para cerrar el grid en una sola línea base. */
   ticketTotalMinHeightPx: OPERAR_FOOTER_BAND_MIN_PX,
   ticketTotalMinHeightSmPx: OPERAR_FOOTER_BAND_MIN_SM_PX,
-  productCardHeightPx: 318,
-  productCardMediaHeightPx: 152,
+  productCardHeightPx: 256,
+  productCardMediaHeightPx: 80,
   catalogGridColsDesktop: 3,
   toolboxSlots: ["Cliente", "Comprobante", "Pago", "Descuento"] as const,
 } as const
@@ -108,10 +108,10 @@ export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
     token: ROOTSY_LAYOUTS_EARTH_FLOOR.chromeToken,
     css: ROOTSY_LAYOUTS_EARTH_FLOOR.background,
   },
-  lightPanel: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
-  lightContent: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
-  lightActions: { token: "white", css: "#ffffff" },
-  lightTotals: { token: "savia-975→990", css: "pos-totals gradient" },
+  lightPanel: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
+  lightContent: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
+  lightActions: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
+  lightTotals: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
 } as const
 
 /**
@@ -359,11 +359,11 @@ export const ROOTSY_LAYOUTS_OPERAR_TICKET_PROPOSALS: LayoutsOperarTicketProposal
     letter: "A",
     title: "Bruma savia",
     pairingId: "pos-core",
-    pairingLabel: "Bruma 100 + Savia pos-totals",
+    pairingLabel: "Bruma 50 · módulo cuentas",
     summary:
-      "Cart bruma-100 · dividers bruma-200 · banners wash savia · totales gradiente pos-totals con desglose.",
+      "Cart bruma-50 · hairlines bruma-200 · total en el mismo piso · aparece con ítems.",
     uxNote:
-      "Canónico del grid — la columna clara respira sobre el dosel denso y cierra con la barra savia de cobro.",
+      "Canónico del grid — la columna del pedido es el mundo de cuentas/cajas. El total no es otra capa: solo se muestra cuando hay líneas.",
     recommended: true,
     totalsLayout: "gradiente",
   },

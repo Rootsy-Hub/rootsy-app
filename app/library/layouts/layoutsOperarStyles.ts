@@ -315,7 +315,7 @@ export const layoutsOperarFormCanvasScrollEndClass =
   "pb-10 sm:pb-12 lg:pb-14"
 
 /** Grilla demo — sale usa grid-cols-3 en desktop. */
-export const layoutsOperarCatalogGridClass = "grid grid-cols-2 gap-3 xl:grid-cols-3"
+export const layoutsOperarCatalogGridClass = "grid grid-cols-2 gap-4 xl:grid-cols-3"
 
 /** Empty catálogo — mascota + burbuja de diálogo (bruma sobre dosel). */
 export const layoutsOperarCatalogEmptyMascotShellClass =
@@ -344,14 +344,14 @@ export const layoutsOperarCatalogSkeletonGhostClass =
   "animate-pulse bg-[color-mix(in_srgb,var(--rootsy-sombra-700)_38%,var(--rootsy-sombra-800))]"
 
 export const layoutsOperarProductCardClass = cn(
-  "layouts-operar-product-card group relative grid h-[318px] w-full grid-rows-[152px_1fr] overflow-hidden rounded-2xl text-left",
+  "layouts-operar-product-card group relative grid h-[256px] w-full grid-rows-[120px_1fr] overflow-hidden rounded-2xl text-left",
   "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-600)]",
   "transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5",
 )
 
 /** Tarjeta horizontal — vista lista · sale `modoVista === "lista"`. */
 export const layoutsOperarProductCardListClass = cn(
-  "layouts-operar-product-card group relative flex min-h-[152px] w-full items-stretch overflow-hidden rounded-2xl text-left",
+  "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-2xl text-left",
   "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-600)]",
   "transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5",
 )
@@ -369,13 +369,13 @@ export const layoutsOperarProductCardListSkeletonShellClass = cn(
 )
 
 export const layoutsOperarProductCardListMediaClass =
-  "relative h-[152px] w-48 shrink-0 overflow-hidden bg-[var(--layouts-operar-product-card-media-bg)]"
+  "relative h-20 w-20 shrink-0 overflow-hidden bg-[var(--layouts-operar-product-card-media-bg)]"
 
 export const layoutsOperarProductCardGridBodyClass =
-  "grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2 p-5"
+  "grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-1.5 p-3"
 
 export const layoutsOperarProductCardListBodyClass =
-  "flex min-h-0 min-w-0 flex-1 flex-col justify-between gap-2 p-5"
+  "flex min-h-0 min-w-0 flex-1 items-center justify-between gap-3 px-3 py-2"
 
 /** Canvas oscuro para demos de artículo aislado. */
 export const layoutsOperarCatalogArticleCanvasClass = cn(
@@ -412,7 +412,7 @@ export const layoutsOperarProductCardDescClass =
   "line-clamp-2 text-xs leading-relaxed text-[var(--layouts-operar-product-card-desc)]"
 
 export const layoutsOperarProductCardPriceClass =
-  "text-lg font-bold tabular-nums text-[var(--layouts-operar-product-card-price)]"
+  "text-base font-bold tabular-nums text-[var(--layouts-operar-product-card-price)]"
 
 export const layoutsOperarProductCardOfferClass =
   "absolute left-2 top-2 z-10 rounded-md bg-amber-500/90 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
@@ -555,11 +555,11 @@ export function layoutsOperarToolboxIconWrapClass(_configured: boolean) {
   )
 }
 
-/** Superficie ticket — filas 1.2.1–1.2.4 desde anatomía. */
+/** Superficie ticket — header · listado+totales · acciones. */
 export const layoutsOperarSummaryPanelSurfaceClass = cn(
   "layouts-operar-ticket-shell rootsy-app-light grid min-h-0 overflow-hidden",
   "[grid-template-rows:var(--layouts-operar-ticket-rows)]",
-  "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-900)]",
+  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
 )
 
 /** Grid ticket interno — sin placement en grid principal (p. ej. dentro de tabs mostrador). */
@@ -571,7 +571,7 @@ export const layoutsOperarSummaryPanelInnerGridClass = cn(
 /** Cuerpo bajo tabs Mesa/Datos — flex, sin grid 1.2.x (sesión / formulario channel). */
 export const layoutsOperarSummaryPanelTabBodyClass = cn(
   "row-start-2 flex min-h-0 flex-col overflow-hidden",
-  "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-900)]",
+  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
   "rootsy-app-light layouts-operar-ticket-shell h-full min-h-0 w-full",
 )
 
@@ -604,14 +604,14 @@ export const layoutsOperarCatalogSectionShellClass = cn(
 )
 
 export const layoutsOperarSummaryHeaderRowClass =
-  "flex items-center justify-between gap-2 border-b border-[var(--layouts-operar-border-light)] px-3 py-2"
+  "flex items-center justify-between gap-2 px-3 py-2"
 
 export const layoutsOperarSummaryCartRowClass =
-  "relative flex min-h-0 flex-col bg-[var(--rootsy-bruma-100)]"
+  "relative flex min-h-0 flex-col bg-[var(--rootsy-bruma-50)]"
 
 export const layoutsOperarSummaryActionsRowClass = cn(
   "row-start-3 grid shrink-0 grid-cols-2 overflow-hidden",
-  "border-t border-[var(--layouts-operar-border-light)] bg-white",
+  "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-50)]",
   "[height:var(--layouts-operar-ticket-actions-h)]",
 )
 
@@ -630,14 +630,14 @@ export const layoutsOperarSummaryActionsCellClass = layoutsOperarSummaryActionsR
 
 export const layoutsOperarSummaryTotalRowClass = cn(
   "layouts-operar-summary-totals flex items-center justify-between px-4 py-3",
-  "border-t border-[var(--layouts-operar-border-totals)]",
+  "border-t border-[var(--layouts-operar-border-light)]",
   "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
 )
 
-/** Fondo y texto del total — tokens globales savia (no dependen del scope operar). */
+/** Total en el mundo del módulo — bruma-50, mismo piso que cuentas/cajas. */
 export const layoutsOperarSummaryTotalsSurfaceClass = cn(
-  "[background:linear-gradient(165deg,var(--rootsy-savia-975)_0%,var(--rootsy-savia-960)_48%,var(--rootsy-savia-990)_100%)]",
-  "text-[var(--rootsy-savia-50)]",
+  "bg-[var(--rootsy-bruma-50)]",
+  "text-[var(--rootsy-bruma-900)]",
 )
 
 /** Celdas ticket — placement explícito en grid 1.2.x. */
@@ -651,11 +651,8 @@ export const layoutsOperarSummaryCartCellClass = cn(
   "row-start-2 min-h-0 overflow-hidden",
 )
 
-/** 1.2.4 — placement en grid ticket (shell en SaleOperationTotalBar tone operar). */
-export const layoutsOperarSummaryTotalsPlacementClass = cn(
-  "row-start-4 shrink-0",
-  "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
-)
+/** Totales al pie del listado — no scrollean con los ítems. */
+export const layoutsOperarSummaryTotalsPlacementClass = "shrink-0"
 
 /** @deprecated Usar layoutsOperarSummaryTotalsPlacementClass + TotalBar tone operar. */
 export const layoutsOperarSummaryTotalsCellClass = cn(
@@ -663,10 +660,16 @@ export const layoutsOperarSummaryTotalsCellClass = cn(
   layoutsOperarSummaryTotalsPlacementClass,
 )
 
-export const layoutsOperarSummaryCartListSurfaceClass = "bg-[var(--rootsy-bruma-100)]"
+export const layoutsOperarSummaryCartListSurfaceClass = "bg-[var(--rootsy-bruma-50)]"
 
 export const layoutsOperarSummaryCartHeadingClass =
   "text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--layouts-operar-light-cart-heading)]"
+
+export const layoutsOperarSummaryCartTitleClass =
+  "font-canopy text-base font-bold text-[var(--rootsy-bruma-900)]"
+
+/** Misma letra que Pedido — Por cobrar. */
+export const layoutsOperarSummarySectionTitleClass = layoutsOperarSummaryCartTitleClass
 
 export const layoutsOperarSummaryCartMetaClass =
   "shrink-0 text-[11px] font-medium tabular-nums text-[var(--layouts-operar-light-cart-meta)]"
@@ -695,10 +698,10 @@ export const layoutsOperarSummaryEmptyTitleClass =
   "text-sm font-semibold text-[var(--layouts-operar-light-empty-title)]"
 
 export const layoutsOperarSummaryTotalsLabelClass =
-  "m-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--layouts-operar-light-totals-label)]"
+  "m-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--rootsy-bruma-500)]"
 
 export const layoutsOperarSummaryTotalsAmountClass =
-  "m-0 text-xl font-bold tabular-nums tracking-tight text-[var(--layouts-operar-light-totals-amount)] sm:text-2xl"
+  "m-0 text-xl font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)] sm:text-2xl"
 
 /** Nav rail catálogo — library-nav (mismo activo que Library: texto, sin pastilla). */
 export const layoutsOperarCatalogRailNavClass = cn(

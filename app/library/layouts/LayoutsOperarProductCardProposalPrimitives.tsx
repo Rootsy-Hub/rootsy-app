@@ -172,9 +172,23 @@ function LayoutsOperarProductCardProposalBody({
 }) {
   return (
     <div className={layoutsOperarProductCardProposalBodyClass(proposalId, variant)}>
-      <div className="min-h-0 self-start">
-        <h3 className={layoutsOperarProductCardProposalTitleClass(proposalId)}>{product.name}</h3>
-        <p className={layoutsOperarProductCardProposalDescClass(proposalId)}>{product.description}</p>
+      <div className={cn("min-h-0 min-w-0", variant === "grid" && "self-start")}>
+        <h3
+          className={cn(
+            layoutsOperarProductCardProposalTitleClass(proposalId),
+            variant === "list" && "line-clamp-1",
+          )}
+        >
+          {product.name}
+        </h3>
+        <p
+          className={cn(
+            layoutsOperarProductCardProposalDescClass(proposalId),
+            variant === "list" && "line-clamp-1",
+          )}
+        >
+          {product.description}
+        </p>
       </div>
       <div className={variant === "grid" ? "self-end" : "shrink-0"}>
         <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>

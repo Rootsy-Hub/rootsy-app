@@ -25,7 +25,10 @@ import {
   CartLineQuantityLabel,
   cartLineRowGridClass,
   cartLineRowGridNoPriceClass,
+  formatOperarTicketQuantity,
 } from "@/components/sale-operation/CartLineQuantityLabel"
+import { formatArticleDiscountBadge } from "@/lib/articleDiscount"
+import { resolveCatalogCartLinePricing } from "@/components/sale-operation/saleCatalogProduct"
 import {
   saleOpCartLineDividerTopClass,
   saleOpFmt,
@@ -314,60 +317,116 @@ export function MostradorCartLineCard({
     : showLinePrice || !showPrice
       ? cartLineRowGridClass
       : cartLineRowGridNoPriceClass
+  const hasLineDiscount = showLinePrice && pricing.precioBase > pricing.precioFinal + 0.004
+  const catalogLinePricing = isOperar && hasLineDiscount
+    ? resolveCatalogCartLinePricing(
+        row.producto,
+        row.cantidad,
+        overrides.itemDescuentoSuprimido[row.cartLineId]
+          ? null
+          : overrides.itemDescuentoDraft[row.cartLineId]?.trim()
+            ? {
+                mode: overrides.itemDescuentoModo[row.cartLineId] ?? "porcentaje",
+                draft: overrides.itemDescuentoDraft[row.cartLineId] ?? "",
+              }
+            : null,
+        {
+          suppressCatalogDiscount:
+            row.discountEditingDisabled ||
+            overrides.itemDescuentoSuprimido[row.cartLineId] === true,
+        },
+      )
+    : null
+  const discountPillLabel = hasLineDiscount
+    ? catalogLinePricing?.descuentoCatalogoLabel ??
+      (catalogLinePricing?.itemDiscountMode &&
+      catalogLinePricing.itemDiscountValue != null
+        ? formatArticleDiscountBadge(
+            catalogLinePricing.itemDiscountMode,
+            catalogLinePricing.itemDiscountValue,
+          )
+        : formatArticleDiscountBadge("fijo", pricing.precioBase - pricing.precioFinal))
+    : undefined
 
-  const rowContent = (
+  const paidBadge =
+    paymentStatus.isFullyPaid ? (
+      <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+        <CheckCircle2 className="size-3" aria-hidden />
+        Pagado
+      </span>
+    ) : paymentStatus.isPartiallyPaid ? (
+      <span className="inline-flex rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+        {paymentStatus.paidQuantity} pagado
+      </span>
+    ) : null
+
+  const rowContent = isOperar ? (
     <>
-      <CartLineQuantityLabel
-        cantidad={row.cantidad}
-        className={
-          isOperar ? layoutsOperarTicketProposalQtyClass(TICKET_PROPOSAL) : undefined
-        }
-      />
-
       <span className="min-w-0">
-        <span className="flex items-center gap-1.5">
+        <span className="flex min-w-0 items-center gap-1.5">
           <span
             className={cn(
-              isOperar
-                ? layoutsOperarTicketProposalLineNameClass(TICKET_PROPOSAL)
-                : "block text-sm font-semibold leading-snug text-slate-900",
+              layoutsOperarTicketProposalLineNameClass(TICKET_PROPOSAL),
               paymentStatus.isFullyPaid && "line-through decoration-emerald-600/50",
             )}
           >
             {row.nombre}
           </span>
-          {paymentStatus.isFullyPaid ? (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
-              <CheckCircle2 className="size-3" aria-hidden />
-              Pagado
+          {paidBadge}
+        </span>
+        {showLinePrice ? (
+          <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+            {hasLineDiscount ? (
+              <span className="text-xs tabular-nums text-[var(--rootsy-bruma-400)] line-through">
+                {saleOpFmt.format(pricing.precioBase)}
+              </span>
+            ) : null}
+            <span className={layoutsOperarTicketProposalLineAmountClass(TICKET_PROPOSAL)}>
+              {saleOpFmt.format(pricing.precioFinal)}
             </span>
-          ) : paymentStatus.isPartiallyPaid ? (
-            <span className="inline-flex rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
-              {paymentStatus.paidQuantity} pagado
-            </span>
-          ) : null}
+          </span>
+        ) : null}
+        {discountPillLabel ? (
+          <span
+            className="mt-1.5 inline-flex w-fit max-w-full rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums text-[var(--rootsy-savia-800)] bg-[color-mix(in_srgb,var(--rootsy-savia-500)_14%,transparent)]"
+          >
+            {discountPillLabel}
+          </span>
+        ) : null}
+      </span>
+      <span
+        className={layoutsOperarTicketProposalQtyClass(TICKET_PROPOSAL)}
+        title={formatOperarTicketQuantity(row.cantidad, unitOfMeasure)}
+      >
+        {formatOperarTicketQuantity(row.cantidad, unitOfMeasure)}
+      </span>
+    </>
+  ) : (
+    <>
+      <CartLineQuantityLabel cantidad={row.cantidad} />
+
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              "block text-sm font-semibold leading-snug text-slate-900",
+              paymentStatus.isFullyPaid && "line-through decoration-emerald-600/50",
+            )}
+          >
+            {row.nombre}
+          </span>
+          {paidBadge}
         </span>
         <CartLineSubtitleRow
           descripcion={productoDescripcion}
           showDescripcion={showDescripcion}
-          className={
-            isOperar
-              ? "mt-0.5 line-clamp-1 text-xs leading-snug text-[var(--layouts-operar-light-cart-line-meta)]"
-              : undefined
-          }
         />
       </span>
 
       {showLinePrice || !showPrice ? (
         <span className="pt-0.5 text-right">
           {showLinePrice ? (
-            <span
-              className={
-                isOperar
-                  ? layoutsOperarTicketProposalLineAmountClass(TICKET_PROPOSAL)
-                  : saleOpImporteCartClass
-              }
-            >
+            <span className={saleOpImporteCartClass}>
               {saleOpFmt.format(pricing.precioFinal)}
             </span>
           ) : (

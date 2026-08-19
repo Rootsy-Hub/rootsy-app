@@ -145,10 +145,15 @@ export function ServiceOperateTicketPanel({
       <div
         className={cn(
           layoutsOperarSummaryCartListSurfaceClass,
-          layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
-          "row-start-2 min-h-0 overflow-y-auto overscroll-contain",
+          "row-start-2 flex min-h-0 flex-col overflow-hidden",
         )}
       >
+        <div
+          className={cn(
+            layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+            "min-h-0 flex-1 overflow-y-auto overscroll-contain",
+          )}
+        >
         {!selectedService ? (
           <DataWorkspaceDetailEmptyState
             icon={Sparkles}
@@ -307,17 +312,20 @@ export function ServiceOperateTicketPanel({
             </div>
           </div>
         )}
-      </div>
+        </div>
 
-      <div className={layoutsOperarSummaryTotalsPlacementClass}>
-        <SaleOperationTotalBar
-          tone="operar"
-          total={amount}
-          subtotal={unitPrice}
-          descuentoMonto={Math.max(0, unitPrice - amount)}
-          hayDescuento={hayDescuento}
-          totalLabel="Monto del cargo"
-        />
+        {selectedService ? (
+          <div className={layoutsOperarSummaryTotalsPlacementClass}>
+            <SaleOperationTotalBar
+              tone="operar"
+              total={amount}
+              subtotal={unitPrice}
+              descuentoMonto={Math.max(0, unitPrice - amount)}
+              hayDescuento={hayDescuento}
+              totalLabel="Monto del cargo"
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className={layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL)}>

@@ -5,6 +5,7 @@ import {
   layoutsOperarTicketProposalTotalsBreakdownLabelClass,
   layoutsOperarTicketProposalTotalsDividerClass,
   layoutsOperarTicketProposalTotalsGridClass,
+  layoutsOperarTicketProposalTotalsHeadingClass,
   layoutsOperarTicketProposalTotalsMainAmountClass,
   layoutsOperarTicketProposalTotalsMainLabelClass,
   layoutsOperarTicketProposalTotalsShellClass,
@@ -102,11 +103,16 @@ export function SaleOperationTotalBar({
   const subtotalDisplay =
     subtotalOriginal > 0 ? subtotalOriginal : subtotal
   const showSubtotalBreakdown =
-    subtotalDisplay > 0 &&
-    (showItemsDiscount ||
-      showGeneralDiscount ||
-      showPromociones ||
-      showPagado)
+    isOperar ||
+    (subtotalDisplay > 0 &&
+      (showItemsDiscount ||
+        showGeneralDiscount ||
+        showPromociones ||
+        showPagado))
+  const operarSectionTitle = /pagar/i.test(totalLabel)
+    ? "Por pagar"
+    : "Por cobrar"
+  const displayedTotalLabel = isOperar ? "Total" : totalLabel
 
   const subtotalAmountClass = isModal
     ? modalAmountCellClass
@@ -139,7 +145,7 @@ export function SaleOperationTotalBar({
   return (
     <div
       role="region"
-      aria-label={totalAriaLabel ?? totalLabel}
+      aria-label={totalAriaLabel ?? (isOperar ? operarSectionTitle : totalLabel)}
       className={cn(
         "relative box-border flex w-full shrink-0 flex-col justify-center",
         isOperar
@@ -176,6 +182,17 @@ export function SaleOperationTotalBar({
             aria-hidden
           />
         </>
+      ) : null}
+
+      {isOperar ? (
+        <h3
+          className={cn(
+            "relative z-10",
+            layoutsOperarTicketProposalTotalsHeadingClass(ticketProposalId),
+          )}
+        >
+          {operarSectionTitle}
+        </h3>
       ) : null}
 
       <div
@@ -270,7 +287,7 @@ export function SaleOperationTotalBar({
           </>
         ) : null}
         <p className={cn(totalLabelClass, "m-0", isModal && modalSummaryLabelClass)}>
-          {totalLabel}
+          {displayedTotalLabel}
         </p>
         <p
           className={cn(totalAmountClass, "m-0")}

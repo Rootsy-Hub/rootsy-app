@@ -4,7 +4,7 @@ import { ROOTSY_LAYOUTS_OPERAR_ANATOMY } from "@/app/library/layouts/rootsyLayou
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { Fragment, useEffect, useState, type ReactNode } from "react"
 
-const GRID_GAP_PX = 12
+const GRID_GAP_PX = 16
 const LIST_GAP_PX = 8
 const FOOTER_SIZE_PX = 56
 const XL_MQ = "(min-width: 1280px)"
@@ -101,7 +101,7 @@ export function SaleCatalogVirtualGrid<T>({
               isFooter
                 ? undefined
                 : modoVista === "grid"
-                  ? "grid gap-3"
+                  ? "grid gap-4"
                   : "flex flex-col"
             }
             style={{

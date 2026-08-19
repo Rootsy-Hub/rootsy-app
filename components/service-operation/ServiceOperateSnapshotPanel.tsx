@@ -123,29 +123,45 @@ export function ServiceOperateSnapshotPanel({
       <div
         className={cn(
           layoutsOperarSummaryPanelTabBodyClass,
-          "row-start-2 min-h-0 *:min-h-0 *:flex-1",
+          "row-start-2 min-h-0",
         )}
         data-snapshot-tab-body
         role="region"
         aria-label="Resumen del cargo"
       >
-        {!selectedService ? (
-          <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
-            <DataWorkspaceDetailEmptyState icon={Receipt} title="Cargo vacío" />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {!selectedService ? (
+            <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
+              <DataWorkspaceDetailEmptyState icon={Receipt} title="Cargo vacío" />
+            </div>
+          ) : (
+            <ServiceOperateChargeSnapshotContent
+              view={snapshotView}
+              form={form}
+              fieldErrors={fieldErrors}
+              popId={popId}
+              selectedService={selectedService}
+              treasuryPaymentContext={treasuryPaymentContext}
+              suggestedComprobante={suggestedComprobante}
+              disabled={disabled || saving}
+              onFormChange={onFormChange}
+            />
+          )}
+        </div>
+
+        {showCargoFooter ? (
+          <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
+            <SaleOperationTotalBar
+              tone="operar"
+              className="w-full"
+              total={amount}
+              subtotal={subtotalWithAddons}
+              descuentoMonto={Math.max(0, subtotalWithAddons - amount)}
+              hayDescuento={hayDescuento}
+              totalLabel="Total del cargo"
+            />
           </div>
-        ) : (
-          <ServiceOperateChargeSnapshotContent
-            view={snapshotView}
-            form={form}
-            fieldErrors={fieldErrors}
-            popId={popId}
-            selectedService={selectedService}
-            treasuryPaymentContext={treasuryPaymentContext}
-            suggestedComprobante={suggestedComprobante}
-            disabled={disabled || saving}
-            onFormChange={onFormChange}
-          />
-        )}
+        ) : null}
       </div>
 
       {showCargoFooter ? (
@@ -159,20 +175,6 @@ export function ServiceOperateSnapshotPanel({
             confirmTitle={confirmTitle}
             onDiscard={onDiscard}
             onConfirm={onConfirm}
-          />
-        </div>
-      ) : null}
-
-      {showCargoFooter ? (
-        <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
-          <SaleOperationTotalBar
-            tone="operar"
-            className="h-full w-full"
-            total={amount}
-            subtotal={subtotalWithAddons}
-            descuentoMonto={Math.max(0, subtotalWithAddons - amount)}
-            hayDescuento={hayDescuento}
-            totalLabel="Total del cargo"
           />
         </div>
       ) : null}

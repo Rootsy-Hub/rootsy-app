@@ -69,11 +69,11 @@ export const DOCK_ICON_SIZE_PX = 48
 export const DOCK_ICON_GAP_PX = 16
 export const DOCK_SLOT_SHIFT_PX = DOCK_ICON_SIZE_PX + DOCK_ICON_GAP_PX
 export const DOCK_SLOT_INSET_X_PX = DOCK_ICON_GAP_PX / 2
-/** Padding del pill — vertical más compacto que horizontal. */
-export const DOCK_SHELL_PADDING_X_PX = DOCK_SLOT_INSET_X_PX
-export const DOCK_SHELL_PADDING_Y_PX = 4
+/** Padding del bloque de cristal — compacto, el dock abraza los íconos. */
+export const DOCK_SHELL_PADDING_X_PX = 4
+export const DOCK_SHELL_PADDING_Y_PX = 2
 /** Inset vertical dentro del track (badges arriba + alinear fila de íconos). */
-export const DOCK_TRACK_INSET_Y_PX = 6
+export const DOCK_TRACK_INSET_Y_PX = 4
 export const DOCK_TRACK_HEIGHT_PX =
   DOCK_ICON_SIZE_PX + DOCK_TRACK_INSET_Y_PX * 2
 export const DOCK_EDIT_DIVIDER_HEIGHT_PX = 32

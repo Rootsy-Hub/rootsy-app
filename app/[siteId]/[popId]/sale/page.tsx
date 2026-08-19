@@ -1234,7 +1234,7 @@ function SalePage() {
                   aplicarEdicionLineaTicket={aplicarEdicionLineaTicketConFoco}
                   cambiarCantidadPorLinea={cambiarCantidadPorLineaConFoco}
                   quitarQuantityDealApplication={quitarQuantityDealApplicationConFoco}
-                  listTitle="Tu pedido"
+                  listTitle="Pedido"
                   emptyTitle="Pedido vacío"
                   cartScrollHighlight={cartScrollHighlight}
                   actions={{

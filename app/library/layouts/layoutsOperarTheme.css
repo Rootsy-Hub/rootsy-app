@@ -232,28 +232,18 @@
   color: #f4f8f6;
 }
 
-/* Especificidad > .rootsy-nature-palette .layouts-operar-body (shell POP en Vender/Mostrador). */
+/* Total del pedido — mismo piso bruma-50 que cuentas/cajas. */
 .rootsy-nature-palette .rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
 .rootsy-theme-pos .layouts-operar-body .layouts-operar-summary-totals,
 .layouts-operar-ticket-shell .layouts-operar-summary-totals {
-  background: linear-gradient(
-    165deg,
-    var(--rootsy-savia-975) 0%,
-    var(--rootsy-savia-960) 48%,
-    var(--rootsy-savia-990) 100%
-  );
-  color: var(--rootsy-savia-50);
+  background: var(--rootsy-bruma-50);
+  color: var(--rootsy-bruma-900);
 }
 
-/** Pedido vacío — ocultar fila acciones y subir totales sin hueco de 52px. */
+/** Pedido vacío — solo header + carrito; el total aparece con ítems. */
 .layouts-operar-ticket-shell:has([data-ticket-empty="true"]) {
-  --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr)
-    minmax(var(--layouts-operar-toolbox-min-h), auto);
-}
-
-.layouts-operar-ticket-shell:has([data-ticket-empty="true"]) [data-ticket-totals] {
-  grid-row-start: 3;
+  --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr);
 }
 
 /** Vender servicio — panel derecho con totales como Vender. */
@@ -261,16 +251,14 @@
 .rootsy-theme-pos .layouts-operar-body .service-operate-snapshot-panel,
 .service-operate-snapshot-panel {
   --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr)
-    var(--layouts-operar-ticket-actions-h)
-    minmax(var(--layouts-operar-toolbox-min-h), auto);
+    var(--layouts-operar-ticket-actions-h);
 }
 
 /** Cargo vacío — sin fila de acciones (Descartar / Crear cargo). */
 .rootsy-theme-pos.layouts-operar-body .service-operate-snapshot-panel:has([data-ticket-empty="true"]),
 .rootsy-theme-pos .layouts-operar-body .service-operate-snapshot-panel:has([data-ticket-empty="true"]),
 .service-operate-snapshot-panel:has([data-ticket-empty="true"]) {
-  --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr)
-    minmax(var(--layouts-operar-toolbox-min-h), auto);
+  --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr);
 }
 
 .service-operate-snapshot-panel:has([data-snapshot-tab="config"]) {
@@ -282,9 +270,6 @@
   min-height: 0;
 }
 
-.service-operate-snapshot-panel:has([data-ticket-empty="true"]) [data-ticket-totals] {
-  grid-row-start: 3;
-}
 
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll,
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-scroll-minimal,

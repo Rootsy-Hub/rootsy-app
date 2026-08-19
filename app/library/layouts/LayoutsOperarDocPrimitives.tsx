@@ -20,8 +20,7 @@ import {
   layoutsOperarCatalogSectionShellClass,
   layoutsOperarHeaderGridClass,
   layoutsOperarHeaderScopeClass,
-  layoutsOperarSummaryCartHeadingClass,
-  layoutsOperarSummaryCartMetaClass,
+  layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryCartRowClass,
   layoutsOperarSummaryActionsRowClass,
   layoutsOperarSummaryActionDiscardColClass,
@@ -394,8 +393,7 @@ function LayoutsOperarCatalogColumn({
 function LayoutsOperarSummaryCartHeader() {
   return (
     <>
-      <h2 className={layoutsOperarSummaryCartHeadingClass}>Tu pedido</h2>
-      <span className={layoutsOperarSummaryCartMetaClass}>0 líneas</span>
+      <h2 className={layoutsOperarSummaryCartTitleClass}>Pedido</h2>
     </>
   )
 }
@@ -435,7 +433,7 @@ function LayoutsOperarSummaryPanel({
       aria-label="Carrito de la venta"
     >
       {wireframe ? (
-        <LayoutHeightBadge label={`${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px · bruma-100`} />
+        <LayoutHeightBadge label={`${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px · bruma-50`} />
       ) : null}
       {showDraftCart ? (
         <>
@@ -779,7 +777,7 @@ export function LayoutsOperarCatalogSectionDemo() {
         <div className="space-y-6">
           <LayoutsOperarDocSubsection title="2.1.a · Grilla · tarjeta vertical">
             <p className="text-sm text-[var(--rootsy-bruma-500)]">
-              Vista grilla (<code className="text-[11px]">modoVista grid</code>) — mosaico 318×152+ cuerpo.
+              Vista grilla (<code className="text-[11px]">modoVista grid</code>) — mosaico 256×120+ cuerpo.
             </p>
             <LayoutsOperarCatalogArticleCanvas>
               <div className="max-w-xs">
@@ -790,7 +788,7 @@ export function LayoutsOperarCatalogSectionDemo() {
 
           <LayoutsOperarDocSubsection title="2.1.b · Lista · fila horizontal">
             <p className="text-sm text-[var(--rootsy-bruma-500)]">
-              Vista lista (<code className="text-[11px]">modoVista lista</code>) — fila min 152px · imagen 192px.
+              Vista lista (<code className="text-[11px]">modoVista lista</code>) — fila min 80px · imagen 80px.
             </p>
             <LayoutsOperarCatalogArticleCanvas>
               <LayoutsOperarProductCardProposalList product={LAYOUTS_OPERAR_DEMO_ARTICLE} />

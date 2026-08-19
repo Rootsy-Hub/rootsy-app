@@ -69,7 +69,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Ticket",
     component: "SaleOperationTicketOrderPanel",
-    token: "bg bruma-100 · row-span-2",
+    token: "bg bruma-50 · row-span-2",
     source: "sale/page.tsx · aside carrito",
   },
   {

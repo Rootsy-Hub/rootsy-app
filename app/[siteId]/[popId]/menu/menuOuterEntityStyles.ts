@@ -57,5 +57,5 @@ export const menuOuterEntityFootFloatingChromeClass = cn(
 )
 
 export const menuOuterEntityFootFloatingContentClass = cn(
-  "relative z-[1] flex items-center justify-center overflow-visible pointer-events-auto py-1",
+  "relative z-[1] flex items-center justify-center overflow-visible pointer-events-auto",
 )
