@@ -56,6 +56,7 @@ type Props = {
   onOpenChange: (open: boolean) => void
   siteId: string
   popId: string
+  nested?: boolean
 }
 
 export function OperationSaleInvoiceDialog({
@@ -64,6 +65,7 @@ export function OperationSaleInvoiceDialog({
   onOpenChange,
   siteId,
   popId,
+  nested = false,
 }: Props) {
   const { emitter, loading, error } = useSaleComprobanteEmitterContext(
     popId,
@@ -87,6 +89,7 @@ export function OperationSaleInvoiceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <RootsDialogContent
         size="wide"
+        nested={nested}
         className={cn("rootsy-theme-pos", layoutsOperarBodyScopeClass)}
       >
         <RootsDialogHeader

@@ -9,10 +9,18 @@ import { cn } from "@/lib/utils"
 /** z-index elevación — blanket 500 · panel 510. */
 export const rootsDialogOverlayZClass = "z-[500]"
 export const rootsDialogContentZClass = "z-[510]"
+/** Segunda capa — el velo cubre el modal de abajo. */
+export const rootsDialogOverlayNestedZClass = "z-[520]"
+export const rootsDialogContentNestedZClass = "z-[530]"
 
 /** Scrim sombra-950 40% — velo suave, sin universo. */
 export const rootsDialogOverlayClass = cn(
   rootsDialogOverlayZClass,
+  "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_40%,transparent)]",
+)
+
+export const rootsDialogOverlayNestedClass = cn(
+  rootsDialogOverlayNestedZClass,
   "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_40%,transparent)]",
 )
 

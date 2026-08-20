@@ -2,7 +2,9 @@
 
 import {
   rootsDialogOverlayClass,
+  rootsDialogOverlayNestedClass,
   rootsDialogContentZClass,
+  rootsDialogContentNestedZClass,
   rootsDialogSurfaceDefaultClass,
   rootsDialogSurfaceTwoColClass,
   rootsDialogSurfaceWideClass,
@@ -21,10 +23,13 @@ const surfaceClassBySize: Record<RootsDialogSize, string> = {
 
 type Props = Omit<ComponentProps<typeof DialogContent>, "overlayClassName"> & {
   size?: RootsDialogSize
+  /** Abrí este diálogo encima de otro: el velo cubre el modal de abajo. */
+  nested?: boolean
 }
 
 export function RootsDialogContent({
   size = "default",
+  nested = false,
   className,
   children,
   showCloseButton = true,
@@ -32,8 +37,15 @@ export function RootsDialogContent({
 }: Props) {
   return (
     <DialogContent
-      className={cn(surfaceClassBySize[size], rootsDialogContentZClass, "min-h-0", className)}
-      overlayClassName={rootsDialogOverlayClass}
+      className={cn(
+        surfaceClassBySize[size],
+        nested ? rootsDialogContentNestedZClass : rootsDialogContentZClass,
+        "min-h-0",
+        className,
+      )}
+      overlayClassName={
+        nested ? rootsDialogOverlayNestedClass : rootsDialogOverlayClass
+      }
       showCloseButton={showCloseButton}
       {...props}
     >

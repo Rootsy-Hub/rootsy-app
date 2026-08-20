@@ -316,6 +316,7 @@ export function OperationSaleDetailDialog({
         }}
         siteId={siteId}
         popId={popId}
+        nested
       />
     </>
   )
