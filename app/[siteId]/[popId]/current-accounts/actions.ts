@@ -396,7 +396,7 @@ function currentAccountPaymentDescription(
   const kindLabel = operationPaymentKindLabel(paymentKind)
   const account = treasuryName.trim()
   const base =
-    kindLabel && account ? `${kindLabel} ${account}` : kindLabel || account
+    kindLabel && account ? `${kindLabel} · ${account}` : kindLabel || account
   const extra = notes?.trim() ?? ""
   if (
     extra &&

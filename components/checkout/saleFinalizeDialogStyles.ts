@@ -32,7 +32,7 @@ export const saleFinalizeDialogOverlayClass = cn(
 )
 
 export const saleFinalizeDialogTotalsZoneClass = cn(
-  "rounded-t-[1.375rem] overflow-hidden",
+  "shrink-0 rounded-t-[1.375rem] overflow-hidden",
 )
 
 export const saleFinalizeDialogHeaderRowClass =
@@ -58,8 +58,9 @@ export const saleFinalizeDialogDiscountWhisperClass = cn(
   "mt-2 font-canopy text-[11px] tabular-nums",
 )
 
-export const saleFinalizeDialogFactsZoneClass =
-  "bg-[var(--rootsy-bruma-50)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-400)] text-[var(--rootsy-bruma-900)]"
+export const saleFinalizeDialogFactsZoneClass = cn(
+  "min-h-0 flex-1 bg-[var(--rootsy-bruma-50)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-400)] text-[var(--rootsy-bruma-900)]",
+)
 
 export const saleFinalizeDialogFactsListClass =
   "divide-y divide-[color-mix(in_srgb,var(--rootsy-bruma-200)_70%,transparent)]"
@@ -83,9 +84,13 @@ export const saleFinalizeDialogOptionLabelClass =
 export const saleFinalizeDialogShellWideClass =
   "sm:max-w-[min(92vw,56rem)]"
 
+/** Cuerpo entre cielo y footer — scrollea cuando el modal se achica. */
+export const saleFinalizeDialogBodyClass = cn(
+  "flex min-h-0 flex-1 flex-col overflow-hidden",
+)
+
 /** Cuerpo en dos columnas cuando hay cobro parcial (md+). */
 export const saleFinalizeDialogSplitBodyClass = cn(
-  "min-h-0 flex-1 overflow-hidden",
   "md:grid md:grid-cols-2 md:grid-rows-1 md:[grid-template-rows:minmax(0,1fr)]",
 )
 
@@ -163,9 +168,6 @@ export const saleFinalizeDialogFactValueClass =
 
 export const saleFinalizeDialogFactValueMutedClass =
   "min-w-0 truncate text-right font-canopy text-sm font-normal text-[var(--rootsy-bruma-400)]"
-
-export const saleFinalizeDialogErrorClass =
-  "mx-[var(--rootsy-space-400)] mb-[var(--rootsy-space-150)] whitespace-pre-line rounded-lg border border-[#dc2626]/30 bg-[#dc2626]/5 px-3 py-2.5 font-canopy text-sm text-[#dc2626]"
 
 /** Misma gramática que la barra Descartar | Vender del ticket operar §1.2.3. */
 export const saleFinalizeDialogActionsClass = cn(

@@ -75,6 +75,13 @@ function formatShortageCompact(item: StockShortage): string {
   return `«${article}»${formatSourcesSuffix(sources)}: ${formatShortageDetail(item)}`
 }
 
+export function isStockShortageMessage(error: string): boolean {
+  return (
+    error.includes("No hay stock suficiente") ||
+    error.includes("sin stock suficiente")
+  )
+}
+
 export function formatStockShortageMessage(shortages: StockShortage[]): string {
   if (shortages.length === 0) {
     return "No hay stock suficiente para completar el cobro."

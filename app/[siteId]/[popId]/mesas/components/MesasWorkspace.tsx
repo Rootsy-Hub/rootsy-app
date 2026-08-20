@@ -424,7 +424,7 @@ export function MesasWorkspace({
                   sessionTables={sessionTables}
                   waiters={waiters}
                   mergeCandidates={mergeCandidates}
-                  sessionError={sessionError ?? checkout.submitError}
+                  sessionError={sessionError}
                   onOpenSession={handleOpenSession}
                   onUpdateSession={updateSession}
                   onCloseSession={() => checkout.cerrarMesa()}
@@ -462,21 +462,12 @@ export function MesasWorkspace({
                 />
               </div>
             ) : (
-              <div className={layoutsOperarSummaryPanelTabBodyClass}>
-                {checkout.submitError ? (
-                  <div className="shrink-0 px-3 pt-3 sm:px-3.5">
-                    <p className="whitespace-pre-line rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
-                      {checkout.submitError}
-                    </p>
-                  </div>
-                ) : null}
-                <div className={cn(layoutsOperarSummaryPanelInnerGridClass, "min-h-0 flex-1")}>
-                  <MesasOrderPanel
-                    checkout={checkout}
-                    tableLabel={mesaLabel}
-                    cartScrollHighlight={cartScrollHighlight}
-                  />
-                </div>
+              <div className={cn(layoutsOperarSummaryPanelTabBodyClass, layoutsOperarSummaryPanelInnerGridClass)}>
+                <MesasOrderPanel
+                  checkout={checkout}
+                  tableLabel={mesaLabel}
+                  cartScrollHighlight={cartScrollHighlight}
+                />
               </div>
             )}
           </aside>

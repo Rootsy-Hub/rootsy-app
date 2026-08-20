@@ -13,13 +13,13 @@ import {
 import type { SaleFinalizeChannelCheckoutConfig } from "@/components/checkout/saleChannelCheckoutTypes"
 import {
   saleFinalizeDialogActionsClass,
+  saleFinalizeDialogBodyClass,
   saleFinalizeDialogCancelActionClass,
   saleFinalizeDialogCancelShortcutClass,
   saleFinalizeDialogConfirmActionClass,
   saleFinalizeDialogConfirmBusyClass,
   saleFinalizeDialogConfirmPayActionClass,
   saleFinalizeDialogConfirmShortcutClass,
-  saleFinalizeDialogErrorClass,
   saleFinalizeDialogFactLabelClass,
   saleFinalizeDialogFactsZoneClass,
   saleFinalizeDialogHeaderRowClass,
@@ -40,13 +40,22 @@ import {
 } from "@/components/checkout/saleFinalizeDialogStyles"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import { RootsFormSwitch } from "@/components/rootsy-form/RootsFormSwitch"
+import {
+  RootsAlertDialogContent,
+  RootsAlertDialogFooter,
+  RootsAlertDialogPanel,
+  rootsAlertDialogBodyTextClass,
+  useFrozenWhileClosing,
+} from "@/components/rootsy-dialog"
+import { AlertDialog } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { CornerDownLeft, Loader2, X } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { menuRealmTitleClass } from "@/lib/menu/menuHoloStyles"
+import { isStockShortageMessage } from "@/lib/stockShortageMessage"
 import { cn } from "@/lib/utils"
-import { useEffect } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 export type { SaleFinalizeChannelCheckoutConfig } from "@/components/checkout/saleChannelCheckoutTypes"
 
@@ -148,10 +157,36 @@ export function SaleFinalizeDialog({
       channelCheckout.partialSelection,
     )
 
+  const [errorAcked, setErrorAcked] = useState(false)
+  const errorAlertOpen = Boolean(open && submitError && !errorAcked)
+  const stockError = Boolean(submitError && isStockShortageMessage(submitError))
+  const frozenError = useFrozenWhileClosing(errorAlertOpen, submitError)
+  const frozenErrorTitle = useFrozenWhileClosing(
+    errorAlertOpen,
+    stockError ? "Stock insuficiente" : "No se pudo completar",
+  )
+
+  useEffect(() => {
+    setErrorAcked(false)
+  }, [submitError])
+
+  const dismissSubmitError = useCallback(() => {
+    setErrorAcked(true)
+    if (stockError) onOpenChange(false)
+  }, [stockError, onOpenChange])
+
   useEffect(() => {
     if (!open) return
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (errorAlertOpen) {
+        if (event.key === "Enter" || event.key === "Escape") {
+          event.preventDefault()
+          dismissSubmitError()
+        }
+        return
+      }
+
       if (event.key === "Enter") {
         if (submitting || !canConfirm) return
         event.preventDefault()
@@ -170,9 +205,18 @@ export function SaleFinalizeDialog({
 
     window.addEventListener("keydown", onKeyDown, true)
     return () => window.removeEventListener("keydown", onKeyDown, true)
-  }, [open, submitting, canConfirm, onConfirm, onOpenChange])
+  }, [
+    open,
+    submitting,
+    canConfirm,
+    onConfirm,
+    onOpenChange,
+    errorAlertOpen,
+    dismissSubmitError,
+  ])
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
@@ -223,7 +267,10 @@ export function SaleFinalizeDialog({
         </MenuHeaderEntity>
 
         <div
-          className={cn(partialPayment && saleFinalizeDialogSplitBodyClass)}
+          className={cn(
+            saleFinalizeDialogBodyClass,
+            partialPayment && saleFinalizeDialogSplitBodyClass,
+          )}
         >
           <section
             className={cn(
@@ -296,12 +343,6 @@ export function SaleFinalizeDialog({
           ) : null}
         </div>
 
-        {submitError ? (
-          <p role="alert" className={saleFinalizeDialogErrorClass}>
-            {submitError}
-          </p>
-        ) : null}
-
         <div className={saleFinalizeDialogActionsClass}>
           <button
             type="button"
@@ -345,5 +386,30 @@ export function SaleFinalizeDialog({
         </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog
+      open={errorAlertOpen}
+      onOpenChange={(next) => {
+        if (!next) dismissSubmitError()
+      }}
+    >
+      <RootsAlertDialogContent nested>
+        <RootsAlertDialogPanel
+          title={frozenErrorTitle}
+          description={
+            frozenError ? (
+              <span className="whitespace-pre-line">{frozenError}</span>
+            ) : undefined
+          }
+          descriptionClassName={rootsAlertDialogBodyTextClass}
+        />
+        <RootsAlertDialogFooter
+          hideCancel
+          confirmLabel={stockError ? "Volver al pedido" : "Entendido"}
+          onConfirm={dismissSubmitError}
+        />
+      </RootsAlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }
