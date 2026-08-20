@@ -314,6 +314,8 @@ export function OperationSaleDetailDialog({
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setInvoiceSale(null)
         }}
+        siteId={siteId}
+        popId={popId}
       />
     </>
   )

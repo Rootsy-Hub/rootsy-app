@@ -24,9 +24,12 @@ type Props = {
   previewInput: Omit<BuildSaleComprobantePreviewInput, "emitter" | "issuedAt"> | null
   emitter: BuildSaleComprobantePreviewInput["emitter"]
   previewComprobanteLabel?: string | null
+  issuedAt?: Date
   loading?: boolean
   error?: string | null
   className?: string
+  /** `false` deja solo el ticket, sin card ni título “Vista previa”. */
+  framed?: boolean
 }
 
 function TicketSeparator() {
@@ -446,9 +449,11 @@ export function SaleComprobanteTicketPreview({
   previewInput,
   emitter,
   previewComprobanteLabel,
+  issuedAt,
   loading = false,
   error = null,
   className,
+  framed = true,
 }: Props) {
   const resolvedComprobanteLabel =
     previewComprobanteLabel !== undefined
@@ -472,8 +477,53 @@ export function SaleComprobanteTicketPreview({
       ...previewInput,
       comprobanteLabel: resolvedComprobanteLabel,
       emitter,
+      issuedAt,
     })
-  }, [previewInput, emitter, resolvedComprobanteLabel, isSinComprobante, needsValidFiscalCuit])
+  }, [
+    previewInput,
+    emitter,
+    issuedAt,
+    resolvedComprobanteLabel,
+    isSinComprobante,
+    needsValidFiscalCuit,
+  ])
+
+  const content =
+    loading && !isSinComprobante ? (
+      <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-3 py-8">
+        <RootsSpinner size="default" label="Cargando datos fiscales" />
+        <span className="text-sm text-[var(--rootsy-bruma-500)]">
+          Cargando datos fiscales…
+        </span>
+      </div>
+    ) : error && !isSinComprobante ? (
+      <div className="flex min-h-[280px] w-full items-center justify-center px-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
+        {error}
+      </div>
+    ) : isSinComprobante ? (
+      <TicketNoComprobantePlaceholder />
+    ) : needsValidFiscalCuit && emitter && !emitter.hasValidFiscalCuit ? (
+      <TicketMissingFiscalCuitPlaceholder />
+    ) : model ? (
+      <TicketPreviewBody model={model} />
+    ) : (
+      <div className="flex min-h-[280px] w-full items-center justify-center px-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
+        Configurá los datos fiscales del local para ver la vista previa.
+      </div>
+    )
+
+  if (!framed) {
+    return (
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 items-start justify-center",
+          className,
+        )}
+      >
+        {content}
+      </div>
+    )
+  }
 
   return (
     <div
@@ -487,28 +537,7 @@ export function SaleComprobanteTicketPreview({
       </p>
 
       <div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto overscroll-contain bg-[var(--rootsy-bruma-50)] p-3">
-        {loading && !isSinComprobante ? (
-          <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-3 py-8">
-            <RootsSpinner size="default" label="Cargando datos fiscales" />
-            <span className="text-sm text-[var(--rootsy-bruma-500)]">
-              Cargando datos fiscales…
-            </span>
-          </div>
-        ) : error && !isSinComprobante ? (
-          <div className="flex min-h-[280px] w-full items-center justify-center px-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
-            {error}
-          </div>
-        ) : isSinComprobante ? (
-          <TicketNoComprobantePlaceholder />
-        ) : needsValidFiscalCuit && emitter && !emitter.hasValidFiscalCuit ? (
-          <TicketMissingFiscalCuitPlaceholder />
-        ) : model ? (
-          <TicketPreviewBody model={model} />
-        ) : (
-          <div className="flex min-h-[280px] w-full items-center justify-center px-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
-            Configurá los datos fiscales del local para ver la vista previa.
-          </div>
-        )}
+        {content}
       </div>
     </div>
   )
