@@ -5,6 +5,7 @@ import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInput
 import {
   layoutsOperarTicketProposalLineAmountClass,
   layoutsOperarTicketProposalLineGridClass,
+  layoutsOperarTicketProposalLineMetaClass,
   layoutsOperarTicketProposalLineNameClass,
   layoutsOperarTicketProposalLineThumbClass,
   layoutsOperarTicketProposalQtyClass,
@@ -49,6 +50,7 @@ import {
   resolveMostradorCartRowComment,
   type MostradorCartDisplayRow,
 } from "@/lib/mostradorCartDisplay"
+import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import {
   normalizeCartLineDiscountDraftForApply,
   type MostradorCartLineEditInput,
@@ -101,6 +103,21 @@ function parseQuantityDraft(raw: string, fallback: number, unit: string): number
     return Math.max(1, Math.round(n))
   }
   return Math.round(n * 1000) / 1000
+}
+
+function promoContentsLabel(
+  selections: PromotionCartSelection[] | undefined,
+): string {
+  if (!selections?.length) return ""
+  return selections
+    .map((selection) => {
+      const name = selection.name.trim()
+      if (!name) return ""
+      if (selection.slotQuantity > 1) return `${selection.slotQuantity}× ${name}`
+      return name
+    })
+    .filter(Boolean)
+    .join(" · ")
 }
 
 function unitOfMeasureForRow(row: MostradorCartDisplayRow): string {
@@ -380,6 +397,8 @@ export function MostradorCartLineCard({
       ? row.promotionMeta?.imageUrl?.trim() || ""
       : row.producto?.imagen?.trim() ?? ""
   const showLineImage = lineImage.length > 0 && !imageFailed
+  const promoContents =
+    row.kind === "promotion" ? promoContentsLabel(row.promotionSelections) : ""
 
   const rowContent = isOperar ? (
     <>
@@ -411,6 +430,14 @@ export function MostradorCartLineCard({
           </span>
           {paidBadge}
         </span>
+        {promoContents ? (
+          <span
+            className={layoutsOperarTicketProposalLineMetaClass(TICKET_PROPOSAL)}
+            title={promoContents}
+          >
+            {promoContents}
+          </span>
+        ) : null}
         {showLinePrice || discountPillLabel ? (
           <span className="mt-0.5 flex flex-col items-start gap-0.5 leading-none">
             {showLinePrice ? (
