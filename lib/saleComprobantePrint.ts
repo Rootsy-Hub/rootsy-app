@@ -54,6 +54,17 @@ function printPageCss(format: SaleComprobantePrintFormat): string {
       width: 100% !important;
       max-width: none !important;
       margin: 0 !important;
+    }
+    .arqueo-print-page-break {
+      break-before: page;
+      page-break-before: always;
+    }
+    .arqueo-print-table thead {
+      display: table-header-group;
+    }
+    .arqueo-print-table tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
     }`
     }
   `

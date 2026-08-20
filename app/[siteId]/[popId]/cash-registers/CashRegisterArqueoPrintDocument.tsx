@@ -1,11 +1,16 @@
 "use client"
 
-import type { CashRegisterSessionArqueoDetail } from "@/app/[siteId]/[popId]/cash-registers/actions"
+import type {
+  CashRegisterSessionArqueoDetail,
+  CashRegisterSessionOperationRow,
+} from "@/app/[siteId]/[popId]/cash-registers/actions"
+import { formatTreasuryMovementTime } from "@/app/[siteId]/[popId]/accounts/treasuryAccountUiUtils"
 import {
   formatArqueoDifferenceDisplay,
   formatCashRegisterDateTime,
   formatCashRegisterMoney,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
+import { toPopCalendarDate } from "@/lib/popTimezone"
 import { saleComprobantePrintSurfaceClass } from "@/lib/saleComprobantePrint"
 import { cn } from "@/lib/utils"
 
@@ -87,6 +92,49 @@ function PrintAmountRow({
       </span>
     </div>
   )
+}
+
+function formatOperationPrintAmount(row: CashRegisterSessionOperationRow): string {
+  const formatted = formatCashRegisterMoney(row.amount)
+  return row.kind === "withdrawal" ? `−${formatted}` : formatted
+}
+
+function formatOperationPrintTitle(row: CashRegisterSessionOperationRow): string {
+  if (row.kind === "sale") {
+    return row.customerLabel && row.customerLabel !== "—"
+      ? `${row.operationLabel} · ${row.customerLabel}`
+      : row.operationLabel
+  }
+  return row.operationLabel
+}
+
+function groupOperationsByDate(
+  operations: CashRegisterSessionOperationRow[],
+  timeZone: string,
+): { dateKey: string; dateLabel: string; rows: CashRegisterSessionOperationRow[] }[] {
+  const groups = new Map<string, CashRegisterSessionOperationRow[]>()
+  const chronological = [...operations].sort(
+    (a, b) => new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime(),
+  )
+
+  for (const operation of chronological) {
+    const dateKey = toPopCalendarDate(operation.occurredAt, timeZone)
+    const list = groups.get(dateKey) ?? []
+    list.push(operation)
+    groups.set(dateKey, list)
+  }
+
+  return [...groups.entries()].map(([dateKey, rows]) => ({
+    dateKey,
+    dateLabel: formatOperationGroupDate(dateKey),
+    rows,
+  }))
+}
+
+function formatOperationGroupDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-")
+  if (!year || !month || !day) return isoDate
+  return `${day}/${month}/${year}`
 }
 
 function SignatureSlot({ label }: { label: string }) {
@@ -357,6 +405,131 @@ export function CashRegisterArqueoPrintDocument({
       <footer className="mt-8 border-t border-[var(--rootsy-bruma-200)] pt-2 text-[9px] text-[var(--rootsy-bruma-400)]">
         Documento interno de control de caja · Generado por Rootsy
       </footer>
+
+      <ArqueoOperationsAnnex
+        operations={detail.operations}
+        registerName={registerName}
+        arqueoNumber={session.arqueoNumber}
+        timeZone={timeZone}
+      />
     </div>
+  )
+}
+
+function ArqueoOperationsAnnex({
+  operations,
+  registerName,
+  arqueoNumber,
+  timeZone,
+}: {
+  operations: CashRegisterSessionOperationRow[]
+  registerName: string
+  arqueoNumber: number
+  timeZone: string
+}) {
+  const groups = groupOperationsByDate(operations, timeZone)
+
+  return (
+    <section className="arqueo-print-page-break mt-0 pt-2">
+      <div className="flex items-end justify-between gap-4 border-b-2 border-[var(--rootsy-bruma-900)] pb-2">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
+            Anexo
+          </p>
+          <h3 className="mt-0.5 text-base font-semibold tracking-[-0.02em]">
+            Operaciones del turno
+          </h3>
+        </div>
+        <p className="text-[10px] text-[var(--rootsy-bruma-500)]">
+          {registerName} · Arqueo #{arqueoNumber || "—"} · {operations.length}{" "}
+          {operations.length === 1 ? "operación" : "operaciones"}
+        </p>
+      </div>
+
+      {operations.length === 0 ? (
+        <p className="mt-4 text-xs text-[var(--rootsy-bruma-500)]">
+          Sin operaciones en este arqueo.
+        </p>
+      ) : (
+        groups.map((group) => (
+          <div key={group.dateKey} className="mt-4">
+            {groups.length > 1 ? (
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)]">
+                {group.dateLabel}
+              </p>
+            ) : null}
+            <table className="arqueo-print-table w-full border-collapse text-[11px]">
+              <thead>
+                <tr className="border-b border-[var(--rootsy-bruma-200)] text-left text-[10px] uppercase tracking-[0.06em] text-[var(--rootsy-bruma-500)]">
+                  <th className="w-14 py-1.5 font-medium">Hora</th>
+                  <th className="py-1.5 font-medium">Operación</th>
+                  <th className="w-40 py-1.5 font-medium">Medio</th>
+                  <th className="w-24 py-1.5 text-right font-medium">Importe</th>
+                </tr>
+              </thead>
+              <tbody>
+                {group.rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-b border-[var(--rootsy-bruma-100)] align-top"
+                  >
+                    <td className="py-1.5 font-numeric tabular-nums text-[var(--rootsy-bruma-500)]">
+                      {formatTreasuryMovementTime(row.occurredAt, timeZone)}
+                    </td>
+                    <td className="py-1.5 pr-3">
+                      <p className="text-[var(--rootsy-bruma-900)]">
+                        {formatOperationPrintTitle(row)}
+                      </p>
+                      {row.showLines && row.lines.length > 0 ? (
+                        <ul className="mt-1 space-y-0.5">
+                          {row.lines.map((line, index) => (
+                            <li
+                              key={`${row.id}-${line.name}-${index}`}
+                              className="flex items-baseline justify-between gap-3 text-[10px] text-[var(--rootsy-bruma-500)]"
+                            >
+                              <span className="min-w-0">
+                                {line.quantity} × {line.name}
+                                {line.discountLabel
+                                  ? ` · ${line.discountLabel}`
+                                  : null}
+                                {line.extras ? ` · ${line.extras}` : null}
+                                {line.comment ? ` · ${line.comment}` : null}
+                              </span>
+                              <span className="shrink-0 font-numeric tabular-nums">
+                                {formatCashRegisterMoney(line.lineTotal)}
+                              </span>
+                            </li>
+                          ))}
+                          {row.generalDiscountAmount > 0 ? (
+                            <li className="flex items-baseline justify-between gap-3 text-[10px] text-[var(--rootsy-bruma-500)]">
+                              <span>Descuento general</span>
+                              <span className="font-numeric tabular-nums">
+                                −{formatCashRegisterMoney(row.generalDiscountAmount)}
+                              </span>
+                            </li>
+                          ) : null}
+                        </ul>
+                      ) : row.kind !== "sale" &&
+                        row.detail &&
+                        row.detail !== "—" ? (
+                        <p className="mt-0.5 text-[10px] text-[var(--rootsy-bruma-500)]">
+                          {row.detail}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="py-1.5 pr-3 text-[var(--rootsy-bruma-700)]">
+                      {row.paymentMethodLabel}
+                    </td>
+                    <td className="py-1.5 text-right font-numeric tabular-nums text-[var(--rootsy-bruma-900)]">
+                      {formatOperationPrintAmount(row)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))
+      )}
+    </section>
   )
 }

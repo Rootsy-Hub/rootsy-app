@@ -140,7 +140,12 @@ async function buildSaleQuotePdfDocument(
   const tableStartY = Math.max(metaY + 4, 68)
 
   autoTable(doc, {
-    head: [["Producto", "Cant.", "Precio unit.", "Subtotal"]],
+    head: [[
+      { content: "Producto" },
+      { content: "Cant.", styles: { halign: "right" } },
+      { content: "Precio unit.", styles: { halign: "right" } },
+      { content: "Subtotal", styles: { halign: "right" } },
+    ]],
     body,
     startY: tableStartY,
     styles: { font: "helvetica", fontSize: 9, cellPadding: 2 },
