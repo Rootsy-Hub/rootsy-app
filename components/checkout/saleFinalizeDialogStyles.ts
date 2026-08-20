@@ -59,7 +59,7 @@ export const saleFinalizeDialogDiscountWhisperClass = cn(
 )
 
 export const saleFinalizeDialogFactsZoneClass =
-  "bg-[var(--rootsy-bruma-50)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-400)]"
+  "bg-[var(--rootsy-bruma-50)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-400)] text-[var(--rootsy-bruma-900)]"
 
 export const saleFinalizeDialogFactsListClass =
   "divide-y divide-[color-mix(in_srgb,var(--rootsy-bruma-200)_70%,transparent)]"
@@ -78,7 +78,7 @@ export const saleFinalizeDialogOptionRowClass = cn(
 )
 
 export const saleFinalizeDialogOptionLabelClass =
-  "min-w-0 font-canopy text-sm font-normal text-[var(--rootsy-bruma-800)]"
+  "min-w-0 font-canopy text-sm font-normal text-[var(--rootsy-bruma-900)]"
 
 export const saleFinalizeDialogShellWideClass =
   "sm:max-w-[min(92vw,56rem)]"
@@ -139,7 +139,7 @@ export const saleFinalizeDialogConfirmActionClass = cn(
   "font-canopy text-sm font-semibold text-white transition-colors",
   "hover:bg-[var(--rootsy-savia-700)] active:bg-[var(--rootsy-savia-800)]",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]",
-  "disabled:pointer-events-none disabled:bg-[var(--rootsy-bruma-300)] disabled:text-[var(--rootsy-bruma-50)]",
+  "disabled:pointer-events-none disabled:opacity-50",
 )
 
 export const saleFinalizeDialogConfirmPayActionClass = cn(
@@ -147,8 +147,12 @@ export const saleFinalizeDialogConfirmPayActionClass = cn(
   "font-canopy text-sm font-semibold text-white transition-colors",
   "hover:bg-[#F59E0B] active:bg-[#B45309]",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#F59E0B]/45",
-  "disabled:pointer-events-none disabled:bg-[var(--rootsy-bruma-300)] disabled:text-[var(--rootsy-bruma-50)]",
+  "disabled:pointer-events-none disabled:opacity-50",
 )
+
+/** Cobrando / pagando — sigue el color, no se apaga a gris. */
+export const saleFinalizeDialogConfirmBusyClass =
+  "pointer-events-none opacity-[0.92]"
 
 export const saleFinalizeDialogActionShortcutClass = cn(
   "inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded px-1",

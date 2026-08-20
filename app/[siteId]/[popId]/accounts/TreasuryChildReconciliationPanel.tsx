@@ -29,21 +29,16 @@ import {
   dataWorkspaceDetailKpiStripClass,
   dataWorkspaceDetailKpiStripTwoColClass,
   dataWorkspaceDetailToolbarClass,
-  dataWorkspaceEntityCardEyebrowClass,
-  dataWorkspaceEntityCardTitleClass,
   dataWorkspaceFlushBottomPanelBodyClass,
   dataWorkspaceFlushBottomPanelChromeClass,
   dataWorkspaceFlushBottomPanelClass,
-  dataWorkspaceIntegrationChipBaseClass,
-  dataWorkspaceIntegrationChipEyebrowClass,
-  dataWorkspaceIntegrationChipIsotypeClass,
-  dataWorkspaceIntegrationChipIsotypeSelectedClass,
-  dataWorkspaceIntegrationChipSelectedClass,
-  dataWorkspaceIntegrationChipSurfaceClass,
-  dataWorkspaceIntegrationChipTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
-import { RootsPrimaryButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
+import {
+  RootsDefaultButton,
+  RootsPrimaryButton,
+  rootsButtonCompactSizeClass,
+} from "@/components/rootsy-button"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
 import {
@@ -453,65 +448,34 @@ export function ChildIntegrationChip({
   className?: string
 }) {
   const isPos = child.childRole === "pos"
+  const kindLabel = isPos ? "Terminal POS" : "Tarjeta corporativa"
 
   return (
-    <button
+    <RootsDefaultButton
       type="button"
+      withIcon
       aria-pressed={selected}
+      aria-label={`${kindLabel}: ${child.name}`}
       onClick={() => onToggle(child)}
       className={cn(
-        dataWorkspaceIntegrationChipBaseClass,
-        compact ? "shrink-0" : "min-w-0",
-        compact
-          ? "w-auto shrink-0 gap-3 rounded-xl px-4 py-2.5"
-          : "w-full min-w-0 gap-3 rounded-xl px-3 py-3",
-        compact
-          ? cn(
-              dataWorkspaceIntegrationChipSurfaceClass,
-              selected && dataWorkspaceIntegrationChipSelectedClass,
-            )
-          : cn(
-              "rounded-xl border hover:shadow-[0_2px_4px_rgb(5_8_7/0.1),0_8px_20px_rgb(5_8_7/0.12)]",
-              dataWorkspaceIntegrationChipSurfaceClass,
-              selected
-                ? dataWorkspaceIntegrationChipSelectedClass
-                : "hover:border-[var(--rootsy-bruma-300)]",
-            ),
+        compact ? "shrink-0" : "w-full min-w-0 justify-start",
         className,
       )}
+      style={
+        selected
+          ? {
+              backgroundColor: "var(--rootsy-bruma-100)",
+              border: "1px solid var(--rootsy-bruma-300)",
+            }
+          : undefined
+      }
     >
-      <div
-        className={cn(
-          dataWorkspaceIntegrationChipIsotypeClass,
-          selected && dataWorkspaceIntegrationChipIsotypeSelectedClass,
-        )}
-      >
-        {isPos ? (
-          <Wifi className="size-4" aria-hidden />
-        ) : (
-          <CreditCard className="size-4" aria-hidden />
-        )}
-      </div>
-      <div className={cn(compact ? "pr-0.5" : "min-w-0 flex-1")}>
-        <p
-          className={cn(
-            compact
-              ? dataWorkspaceIntegrationChipEyebrowClass
-              : cn(dataWorkspaceEntityCardEyebrowClass, "text-[10px] font-semibold tracking-wide"),
-          )}
-        >
-          {isPos ? "Terminal POS" : "Tarjeta corporativa"}
-        </p>
-        <p
-          className={cn(
-            compact
-              ? dataWorkspaceIntegrationChipTitleClass
-              : cn(dataWorkspaceEntityCardTitleClass, "mt-0.5 truncate text-sm"),
-          )}
-        >
-          {child.name}
-        </p>
-      </div>
-    </button>
+      {isPos ? (
+        <Wifi className="size-4" aria-hidden />
+      ) : (
+        <CreditCard className="size-4" aria-hidden />
+      )}
+      {child.name}
+    </RootsDefaultButton>
   )
 }

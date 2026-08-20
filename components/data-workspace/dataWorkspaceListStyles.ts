@@ -51,16 +51,17 @@ export const dataWorkspaceFlushBottomShellCard = cn(
 /** Panel flush — columna chrome + cuerpo pegado al piso. */
 export const dataWorkspaceFlushBottomPanelClass = "flex min-h-0 flex-1 flex-col"
 
-/** Chrome superior — radio y borde arriba/laterales; separa toolbar y KPIs del listado. */
+/** Chrome superior — misma loseta que el detalle (bruma-200 · raised · radius.xxlarge). */
 export const dataWorkspaceFlushBottomPanelChromeClass = cn(
   dataWorkspaceBlocksCardSurfaceClass,
-  "shrink-0 overflow-hidden rounded-t-2xl border border-b-0 border-border/60 shadow-sm",
+  "shrink-0 overflow-hidden rounded-t-[1.375rem] border border-b-0 border-[var(--rootsy-bruma-200)]",
+  rootsyElevationRaisedRestClass,
 )
 
-/** Cuerpo inferior — sin borde inferior; laterales opcionales vía hermano chrome. */
+/** Cuerpo inferior — laterales bruma-200, sin borde de piso. */
 export const dataWorkspaceFlushBottomPanelBodyClass = cn(
   dataWorkspaceBlocksCardSurfaceClass,
-  "flex min-h-0 flex-1 flex-col border-x border-border/60",
+  "flex min-h-0 flex-1 flex-col border-x border-[var(--rootsy-bruma-200)]",
 )
 
 /**
@@ -232,42 +233,6 @@ export const dataWorkspaceEntityCardBodyClass = cn(
 
 export const dataWorkspaceEntityCardIsotypeClass =
   "flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-500)] shadow-xs"
-
-/** Loseta compacta — terminal POS / tarjeta en cabecera de detalle cuenta. */
-export const dataWorkspaceIntegrationChipBaseClass = cn(
-  "group flex items-center text-left outline-none",
-  rootsyElevationInteractiveMotionClass,
-  "cursor-pointer focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)] focus-visible:ring-offset-2",
-)
-
-export const dataWorkspaceIntegrationChipSurfaceClass = cn(
-  "border border-[var(--rootsy-bruma-200)] bg-white",
-  rootsyElevationRaisedRestClass,
-  "hover:border-[var(--rootsy-bruma-300)]",
-  rootsyElevationRaisedHoverClass,
-)
-
-export const dataWorkspaceIntegrationChipSelectedClass = cn(
-  "border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))]",
-  "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_6%,white)]",
-  "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,transparent)]",
-  "hover:border-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,var(--rootsy-bruma-200))]",
-  "hover:shadow-[0_2px_4px_rgb(5_8_7/0.1),0_8px_20px_rgb(5_8_7/0.12)]",
-)
-
-export const dataWorkspaceIntegrationChipIsotypeClass =
-  "flex size-9 shrink-0 items-center justify-center rounded-lg border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-500)] transition-colors group-hover:bg-[var(--rootsy-bruma-50)]"
-
-export const dataWorkspaceIntegrationChipIsotypeSelectedClass =
-  "border-[color-mix(in_srgb,var(--rootsy-savia-600)_20%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] text-[var(--rootsy-savia-700)] group-hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,white)]"
-
-export const dataWorkspaceIntegrationChipEyebrowClass = cn(
-  dataWorkspaceEntityCardEyebrowClass,
-  "whitespace-nowrap text-[10px] tracking-[0.1em]",
-)
-
-export const dataWorkspaceIntegrationChipTitleClass =
-  "mt-1 truncate font-canopy text-[13px] font-semibold leading-snug text-[var(--rootsy-bruma-900)]"
 
 /** Shell skeleton — misma superficie que la tarjeta final, sin hover. */
 export const dataWorkspaceEntityCardSkeletonShellClass = cn(

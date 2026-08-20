@@ -932,7 +932,7 @@ export function TreasuryAccountDetailView({
                 </div>
 
                 {!isMother && account.isCardPayable && canSettle ? (
-                  <div className="border-t border-[color:var(--wt-border)] bg-card px-4 py-3 sm:px-6 lg:px-8">
+                  <div className="border-t border-[var(--rootsy-bruma-200)] bg-white px-4 py-3 sm:px-6 lg:px-8">
                     <Button
                       type="button"
                       size="sm"
@@ -960,7 +960,7 @@ export function TreasuryAccountDetailView({
                 (account.ledgerBalance ?? 0) > 0 &&
                 canUpdate &&
                 parentAccount ? (
-                  <div className="border-t border-[color:var(--wt-border)] bg-card px-4 py-3 sm:px-6 lg:px-8">
+                  <div className="border-t border-[var(--rootsy-bruma-200)] bg-white px-4 py-3 sm:px-6 lg:px-8">
                     <Button
                       type="button"
                       size="sm"

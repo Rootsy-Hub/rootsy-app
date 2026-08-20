@@ -63,15 +63,10 @@ function TreasuryDetailBannerSkeleton({
               {Array.from({ length: 2 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-10 w-36 max-w-full rounded-xl border border-[var(--rootsy-bruma-200)] bg-white px-3 py-2 shadow-xs"
+                  className="flex h-10 w-36 max-w-full items-center gap-2 rounded-lg border border-[var(--rootsy-bruma-200)] bg-white px-4"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div className={cn("size-7 shrink-0 rounded-lg", sk.box)} />
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className={cn("h-2 w-14", sk.pill)} />
-                      <div className={cn("h-3 w-20", sk.barSm)} />
-                    </div>
-                  </div>
+                  <div className={cn("size-4 shrink-0 rounded-sm", sk.box)} />
+                  <div className={cn("h-3 w-20", sk.barSm)} />
                 </div>
               ))}
             </div>

@@ -16,8 +16,8 @@ export function SaleFinalizeDialogAtmosphere() {
         ))}
       </div>
       <div className="sale-finalize-dialog-atmosphere-well" />
+      <div className="sale-finalize-dialog-atmosphere-planet" />
       <div className="sale-finalize-dialog-atmosphere-mist" />
-      <div className="sale-finalize-dialog-atmosphere-horizon" />
     </div>
   )
 }

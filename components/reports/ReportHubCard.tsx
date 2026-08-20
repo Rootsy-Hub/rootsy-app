@@ -6,7 +6,6 @@ import {
   dataWorkspaceEntityCardLosetaClass,
   dataWorkspaceEntityCardLosetaSurfaceClass,
   dataWorkspaceEntityCardTitleClass,
-  dataWorkspaceIntegrationChipSelectedClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
@@ -112,7 +111,9 @@ function ReportHubCardShell({
   const surfaceClass = cn(
     isInteractive ? dataWorkspaceEntityCardLosetaClass : dataWorkspaceEntityCardLosetaSurfaceClass,
     "flex min-h-0 w-full flex-col p-3 text-left outline-none sm:p-4",
-    selected && isInteractive && dataWorkspaceIntegrationChipSelectedClass,
+    selected &&
+      isInteractive &&
+      "border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_6%,white)] ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,transparent)] hover:border-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,var(--rootsy-bruma-200))]",
     !isInteractive && "cursor-not-allowed",
     !categoryActive && !planned && "opacity-[0.48] saturate-[0.82]",
     planned && !categoryActive && "opacity-55",

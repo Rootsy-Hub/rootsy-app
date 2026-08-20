@@ -16,6 +16,7 @@ import {
   saleFinalizeDialogCancelActionClass,
   saleFinalizeDialogCancelShortcutClass,
   saleFinalizeDialogConfirmActionClass,
+  saleFinalizeDialogConfirmBusyClass,
   saleFinalizeDialogConfirmPayActionClass,
   saleFinalizeDialogConfirmShortcutClass,
   saleFinalizeDialogErrorClass,
@@ -133,6 +134,12 @@ export function SaleFinalizeDialog({
 
   const isPay = tone === "pay"
   const resolvedAmountLabel = amountLabel ?? (isPay ? "A pagar" : "A cobrar")
+  const busyLabel =
+    resolvedAmountLabel === "Total"
+      ? "Generando…"
+      : isPay
+        ? "Pagando…"
+        : "Cobrando…"
   const partialPayment = channelCheckout?.partialPayment === true
   const canConfirm =
     !channelCheckout ||
@@ -309,19 +316,22 @@ export function SaleFinalizeDialog({
           </button>
           <button
             type="button"
-            disabled={submitting || !canConfirm}
+            disabled={!canConfirm && !submitting}
+            aria-busy={submitting}
+            aria-disabled={submitting || !canConfirm}
             onClick={() => void onConfirm()}
-            className={
+            className={cn(
               isPay
                 ? saleFinalizeDialogConfirmPayActionClass
-                : saleFinalizeDialogConfirmActionClass
-            }
+                : saleFinalizeDialogConfirmActionClass,
+              submitting && saleFinalizeDialogConfirmBusyClass,
+            )}
             aria-keyshortcuts="Enter"
           >
             {submitting ? (
               <>
                 <Loader2 className="size-4 animate-spin" aria-hidden />
-                Procesando…
+                <span>{busyLabel}</span>
               </>
             ) : (
               <>
