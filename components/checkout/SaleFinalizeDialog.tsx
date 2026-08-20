@@ -1,6 +1,7 @@
 "use client"
 
 import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
+import { SaleFinalizeDialogAtmosphere } from "@/components/checkout/SaleFinalizeDialogAtmosphere"
 import {
   SaleFinalizeFacts,
   SaleFinalizeTotals,
@@ -29,6 +30,7 @@ import {
   saleFinalizeDialogPartialListClass,
   saleFinalizeDialogPartialListMobileClass,
   saleFinalizeDialogShellClass,
+  saleFinalizeDialogShellInnerClass,
   saleFinalizeDialogShellWideClass,
   saleFinalizeDialogSkyInnerClass,
   saleFinalizeDialogSplitBodyClass,
@@ -169,6 +171,7 @@ export function SaleFinalizeDialog({
       <DialogContent
         showCloseButton={false}
         overlayClassName={saleFinalizeDialogOverlayClass}
+        overlayChildren={<SaleFinalizeDialogAtmosphere />}
         className={cn(
           saleFinalizeDialogShellClass,
           partialPayment && saleFinalizeDialogShellWideClass,
@@ -178,6 +181,7 @@ export function SaleFinalizeDialog({
           if (submitting) event.preventDefault()
         }}
       >
+        <div className={saleFinalizeDialogShellInnerClass}>
         <MenuHeaderEntity
           size="dialog"
           className={saleFinalizeDialogTotalsZoneClass}
@@ -328,6 +332,7 @@ export function SaleFinalizeDialog({
               </>
             )}
           </button>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

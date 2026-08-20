@@ -3,29 +3,32 @@ import {
   rootsDialogOverlayZClass,
 } from "@/components/rootsy-dialog/rootsDialogProductStyles"
 import { cn } from "@/lib/utils"
+import "@/components/checkout/saleFinalizeDialogOverlay.css"
 
-/** Shell — shadow.overlay · radius.xxlarge · sin borde ni fondo blanco (evita halo en esquinas). */
+/**
+ * Cascarón — overflow visible para que el halo de luz no se recorte.
+ * El mundo vive en el inner.
+ */
 export const saleFinalizeDialogShellClass = cn(
   rootsDialogContentZClass,
-  "flex flex-col gap-0 overflow-hidden p-0",
-  "border-0 bg-transparent ring-0 outline-none",
+  "sale-finalize-dialog-halo",
+  "flex flex-col gap-0 overflow-visible p-0",
+  "border-0 bg-transparent ring-0 outline-none shadow-none",
   "rounded-[1.375rem]",
-  "[--elevation-shadow-overlay:0_28px_84px_-14px_rgb(5_8_7/0.38)]",
-  "shadow-[var(--elevation-shadow-overlay)]",
   "fixed top-1/2 left-1/2 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 sm:max-w-[22.5rem]",
   "data-[state=open]:animate-in data-[state=closed]:animate-out",
   "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
   "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 duration-200",
 )
 
-/**
- * Scrim POS — sombra-950 sin backdrop-blur (modalsUiOverlaySpec).
- * Más denso que el 40% workspace: catálogo operar tiene alto contraste.
- * Viñeta radial concentra foco en el terminal de cobro.
- */
+export const saleFinalizeDialogShellInnerClass = cn(
+  "flex min-h-0 flex-col overflow-hidden rounded-[1.375rem]",
+)
+
+/** Noche del universo — el cielo del header continúa afuera. */
 export const saleFinalizeDialogOverlayClass = cn(
   rootsDialogOverlayZClass,
-  "bg-[radial-gradient(ellipse_92%_88%_at_50%_44%,color-mix(in_srgb,var(--rootsy-sombra-950)_46%,transparent),color-mix(in_srgb,var(--rootsy-sombra-950)_74%,transparent))]",
+  "sale-finalize-dialog-overlay bg-transparent",
 )
 
 export const saleFinalizeDialogTotalsZoneClass = cn(
