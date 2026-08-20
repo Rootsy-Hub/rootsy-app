@@ -17,10 +17,11 @@ import type { ReactNode } from "react"
 
 type Props = {
   children: ReactNode
-  /** home = 80px · module = 68px, más aire para datos. */
-  size?: "home" | "module"
+  /** home = 80px · module = 68px · dialog = alto por contenido. */
+  size?: "home" | "module" | "dialog"
   /** header = cielo · footer = tierra húmeda. */
   as?: "header" | "footer"
+  className?: string
 }
 
 /** Cielo arriba, tierra abajo — el umbral del mundo Rootsy. */
@@ -28,14 +29,20 @@ export function MenuHeaderEntity({
   children,
   size = "home",
   as = "header",
+  className,
 }: Props) {
   const Tag = as
   const isFooter = as === "footer"
+  const isDialog = size === "dialog"
   const heightClass =
-    size === "module" ? menuModuleHeaderHeightClass : menuHeaderHeightClass
+    isDialog
+      ? "min-h-0 w-full"
+      : size === "module"
+        ? menuModuleHeaderHeightClass
+        : menuHeaderHeightClass
 
   return (
-    <Tag className={menuHeaderEntityClass}>
+    <Tag className={cn(menuHeaderEntityClass, className)}>
       <div
         className={isFooter ? menuFooterEntityBodyClass : menuHeaderEntityBodyClass}
       >
@@ -64,7 +71,9 @@ export function MenuHeaderEntity({
           </>
         )}
         <div aria-hidden className="menu-header-entity-horizon" />
-        {isFooter ? null : <div aria-hidden className="menu-header-entity-bridge" />}
+        {isFooter || isDialog ? null : (
+          <div aria-hidden className="menu-header-entity-bridge" />
+        )}
         <div className={cn(heightClass, "relative z-[1]")}>{children}</div>
       </div>
     </Tag>

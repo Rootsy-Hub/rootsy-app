@@ -9,6 +9,7 @@ import { validatePopAccess } from "@/lib/popHelpers"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
+import { loadPriceListOverrideMap } from "@/app/[siteId]/[popId]/articles/priceListActions"
 import {
   mapSaleCatalogArticleRow,
   SALE_CATALOG_ARTICLE_SELECT,
@@ -328,9 +329,17 @@ export async function getSaleCatalogItemsPage(
 
     const rows = (data ?? []) as Record<string, unknown>[]
     const hasMore = rows.length > OPERATE_CATALOG_PAGE_SIZE
-    const items = rows
-      .slice(0, OPERATE_CATALOG_PAGE_SIZE)
-      .map(mapSaleCatalogArticleRow)
+    const pageRows = rows.slice(0, OPERATE_CATALOG_PAGE_SIZE)
+    const overrides = await loadPriceListOverrideMap(
+      supabase,
+      popId,
+      filter.priceListId,
+      "article",
+      pageRows.map((row) => String(row.id)),
+    )
+    const items = pageRows.map((row) =>
+      mapSaleCatalogArticleRow(row, overrides.get(String(row.id))),
+    )
     return {
       success: true,
       page: {
@@ -364,11 +373,10 @@ export async function getSaleCatalogArticlesByIds(
       .eq("is_active", true)
       .in("id", unique)
     if (error) return { success: false, error: error.message }
+    const rows = (data ?? []) as Record<string, unknown>[]
     return {
       success: true,
-      articles: ((data ?? []) as Record<string, unknown>[]).map(
-        mapSaleCatalogArticleRow,
-      ),
+      articles: rows.map((row) => mapSaleCatalogArticleRow(row)),
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"

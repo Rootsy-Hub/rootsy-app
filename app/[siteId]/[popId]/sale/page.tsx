@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
+import { getSalePriceListSession } from "@/lib/salePriceListSession"
 import { createSaleQuote } from "@/app/[siteId]/[popId]/quotes/actions"
 import { getSaleQuoteDetail } from "@/app/[siteId]/[popId]/quotes/actions"
 import {
@@ -547,6 +548,7 @@ function SalePage() {
         : null
       const res = await completeSale(popId, {
         siteId,
+        priceListId: getSalePriceListSession(popId),
         lines: buildCompleteSaleLinesFromCart({
           carrito,
           quantityDealApplications,
@@ -1405,6 +1407,7 @@ function SalePage() {
         }}
         title="Generar presupuesto"
         confirmLabel="Generar presupuesto"
+        amountLabel="Total"
         submitting={presupuestoSubmitting}
         submitError={presupuestoError}
         total={total}

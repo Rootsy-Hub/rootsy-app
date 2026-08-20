@@ -38,7 +38,6 @@ import {
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { RootsBanner } from "@/components/rootsy-banner"
-import { RootsFormSegmentField } from "@/components/rootsy-form"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
@@ -56,37 +55,10 @@ import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type FormEvent,
 } from "react"
-
-type RegisterFilter = "todas" | "abiertas" | "cerradas" | "inactivas"
-
-const REGISTER_FILTER_OPTIONS = [
-  { value: "todas", label: "Todas" },
-  { value: "abiertas", label: "Abiertas" },
-  { value: "cerradas", label: "Cerradas" },
-  { value: "inactivas", label: "Inactivas" },
-] as const
-
-function registerMatchesFilter(row: CashRegisterRow, filter: RegisterFilter) {
-  const isOpen = Boolean(row.openSessionId)
-  if (filter === "abiertas") return row.isActive && isOpen
-  if (filter === "cerradas") return row.isActive && !isOpen
-  if (filter === "inactivas") return !row.isActive
-  return true
-}
-
-function registerFilterEmptyCopy(filter: RegisterFilter, canCreate: boolean) {
-  if (filter === "abiertas") return "Ninguna caja está abierta ahora."
-  if (filter === "cerradas") return "No hay cajas cerradas."
-  if (filter === "inactivas") return "Ninguna caja está desactivada."
-  return canCreate
-    ? "Todavía no hay cajas. Creá la primera."
-    : "Todavía no hay cajas configuradas."
-}
 
 function formatDateTime(iso: string) {
   return formatLocaleDateTime(iso)
@@ -115,7 +87,6 @@ function CashRegistersPage() {
   const [canDelete, setCanDelete] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [registerFilter, setRegisterFilter] = useState<RegisterFilter>("todas")
   const [popFiscalCuit, setPopFiscalCuit] = useState<string | null>(null)
   const [popFiscalRazonSocial, setPopFiscalRazonSocial] = useState<string | null>(
     null,
@@ -218,10 +189,6 @@ function CashRegistersPage() {
   const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
   const headerError = bootstrapError
-  const visibleRegisters = useMemo(
-    () => registers.filter((row) => registerMatchesFilter(row, registerFilter)),
-    [registerFilter, registers],
-  )
 
   const openCreate = () => {
     setCreateBanner(null)
@@ -489,26 +456,15 @@ function CashRegistersPage() {
               <RootsBanner intent="danger" layout="message" message={error} />
             ) : (
               <DataWorkspaceBlocksSection>
-                <RootsFormSegmentField
-                  label="Ver cajas"
-                  aria-label="Filtrar cajas"
-                  layout="inline"
-                  className="[&>span:first-child]:sr-only"
-                  groupClassName="border-0"
-                  value={registerFilter}
-                  onValueChange={(value) =>
-                    setRegisterFilter(value as RegisterFilter)
-                  }
-                  options={REGISTER_FILTER_OPTIONS}
-                />
-
-                {visibleRegisters.length === 0 ? (
+                {registers.length === 0 ? (
                   <p className={dataWorkspaceBlocksEmptyStateClass}>
-                    {registerFilterEmptyCopy(registerFilter, canCreate)}
+                    {canCreate
+                      ? "Todavía no hay cajas. Creá la primera."
+                      : "Todavía no hay cajas configuradas."}
                   </p>
                 ) : (
                   <div className={dataWorkspaceEntityCardsGridClass}>
-                    {visibleRegisters.map((r) => (
+                    {registers.map((r) => (
                       <CashRegisterCard
                         key={r.id}
                         row={r}

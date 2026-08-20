@@ -19,6 +19,8 @@ import {
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
 import { rootsFormEarthDividerClass } from "@/components/rootsy-form/rootsFormEarthTokens"
+import { SalePriceListExtraFields } from "@/components/sale-operation/SalePriceListExtraFields"
+import type { SalePriceList } from "@/lib/salePriceLists"
 import { cn } from "@/lib/utils"
 import type { Dispatch, ReactNode, SetStateAction } from "react"
 
@@ -59,6 +61,7 @@ type Props = {
   form: RecipeFormState
   setForm: Dispatch<SetStateAction<RecipeFormState>>
   categories: RecipeCategoryOption[]
+  priceLists?: SalePriceList[]
   ingredientOptions: RecipeIngredientOption[]
   disabled?: boolean
 }
@@ -69,6 +72,7 @@ export function RecipeUpsertFormFields({
   form,
   setForm,
   categories,
+  priceLists = [],
   ingredientOptions,
   disabled = false,
 }: Props) {
@@ -150,6 +154,18 @@ export function RecipeUpsertFormFields({
                 disabled={disabled}
               />
             </div>
+            <SalePriceListExtraFields
+              idPrefix={idPrefix}
+              lists={priceLists}
+              values={form.listPrices ?? {}}
+              onChange={(listId, value) =>
+                setForm((f) => ({
+                  ...f,
+                  listPrices: { ...f.listPrices, [listId]: value },
+                }))
+              }
+              disabled={disabled}
+            />
           </FormSection>
         </div>
 

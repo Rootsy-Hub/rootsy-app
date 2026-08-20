@@ -1,5 +1,6 @@
 "use client"
 
+import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import {
   SaleFinalizeFacts,
   SaleFinalizeTotals,
@@ -13,36 +14,41 @@ import {
   saleFinalizeDialogActionsClass,
   saleFinalizeDialogCancelActionClass,
   saleFinalizeDialogCancelShortcutClass,
-  saleFinalizeDialogCloseClass,
   saleFinalizeDialogConfirmActionClass,
+  saleFinalizeDialogConfirmPayActionClass,
   saleFinalizeDialogConfirmShortcutClass,
   saleFinalizeDialogErrorClass,
   saleFinalizeDialogFactLabelClass,
   saleFinalizeDialogFactsZoneClass,
+  saleFinalizeDialogHeaderRowClass,
+  saleFinalizeDialogOptionLabelClass,
+  saleFinalizeDialogOptionRowClass,
   saleFinalizeDialogOptionsBlockClass,
   saleFinalizeDialogOverlayClass,
-  saleFinalizeDialogHeaderRowClass,
   saleFinalizeDialogPartialColumnClass,
   saleFinalizeDialogPartialListClass,
   saleFinalizeDialogPartialListMobileClass,
   saleFinalizeDialogShellClass,
   saleFinalizeDialogShellWideClass,
+  saleFinalizeDialogSkyInnerClass,
   saleFinalizeDialogSplitBodyClass,
   saleFinalizeDialogSplitMainColumnClass,
   saleFinalizeDialogTitleClass,
-  saleFinalizeDialogTotalsGlowClass,
-  saleFinalizeDialogTotalsGradientStyle,
   saleFinalizeDialogTotalsZoneClass,
 } from "@/components/checkout/saleFinalizeDialogStyles"
-import { CheckoutToggleCard } from "@/components/checkout/CheckoutFormFields"
+import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
+import { RootsFormSwitch } from "@/components/rootsy-form/RootsFormSwitch"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { CornerDownLeft, DoorOpen, Loader2, Printer, Split, X } from "lucide-react"
+import { CornerDownLeft, Loader2, X } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { menuRealmTitleClass } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
 import { useEffect } from "react"
 
 export type { SaleFinalizeChannelCheckoutConfig } from "@/components/checkout/saleChannelCheckoutTypes"
+
+export type SaleFinalizeTone = "charge" | "pay"
 
 export type SaleFinalizeDialogProps = {
   open: boolean
@@ -60,13 +66,45 @@ export type SaleFinalizeDialogProps = {
   partyIcon?: LucideIcon
   comprobanteLabel: string
   paymentLabel: string
+  /** charge = A cobrar · savia. pay = A pagar · otoño. */
+  tone?: SaleFinalizeTone
+  /** Sobreescribe el whisper del cielo — p. ej. "Total" en presupuesto. */
+  amountLabel?: string
   channelCheckout?: SaleFinalizeChannelCheckoutConfig
   onConfirm: () => void | Promise<void>
 }
 
+function FinalizeOptionRow({
+  label,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  disabled?: boolean
+  onChange: (next: boolean) => void
+}) {
+  return (
+    <label
+      className={cn(
+        saleFinalizeDialogOptionRowClass,
+        disabled && "cursor-not-allowed opacity-45",
+      )}
+    >
+      <span className={saleFinalizeDialogOptionLabelClass}>{label}</span>
+      <RootsFormSwitch
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onChange}
+        aria-label={label}
+      />
+    </label>
+  )
+}
+
 /**
- * Terminal de cierre — modal POS dedicado para finalizar venta/compra.
- * Gramática: pos-totals · hechos en bruma-50 · acciones espejo del ticket.
+ * Terminal de cierre — cielo del universo arriba, pantallazo de hechos abajo.
  */
 export function SaleFinalizeDialog({
   open,
@@ -84,11 +122,15 @@ export function SaleFinalizeDialog({
   partyIcon: _partyIcon,
   comprobanteLabel,
   paymentLabel,
+  tone = "charge",
+  amountLabel,
   channelCheckout,
   onConfirm,
 }: SaleFinalizeDialogProps) {
   void _partyIcon
 
+  const isPay = tone === "pay"
+  const resolvedAmountLabel = amountLabel ?? (isPay ? "A pagar" : "A cobrar")
   const partialPayment = channelCheckout?.partialPayment === true
   const canConfirm =
     !channelCheckout ||
@@ -136,32 +178,39 @@ export function SaleFinalizeDialog({
           if (submitting) event.preventDefault()
         }}
       >
-        <section
-          aria-label={title}
+        <MenuHeaderEntity
+          size="dialog"
           className={saleFinalizeDialogTotalsZoneClass}
-          style={saleFinalizeDialogTotalsGradientStyle}
         >
-          <div className={saleFinalizeDialogTotalsGlowClass} aria-hidden />
-
-          <div className="relative z-10">
+          <div className={saleFinalizeDialogSkyInnerClass}>
             <div className={saleFinalizeDialogHeaderRowClass}>
-              <DialogTitle className={saleFinalizeDialogTitleClass}>
+              <DialogTitle
+                className={cn(saleFinalizeDialogTitleClass, menuRealmTitleClass)}
+              >
                 {title}
               </DialogTitle>
-              <DialogPrimitive.Close className={saleFinalizeDialogCloseClass}>
-                <X className="size-4" aria-hidden />
-                <span className="sr-only">Cerrar</span>
+              <DialogPrimitive.Close asChild>
+                <RootsIconButton
+                  tone="ghost"
+                  surface="dark"
+                  size="default"
+                  label="Cerrar"
+                >
+                  <X />
+                </RootsIconButton>
               </DialogPrimitive.Close>
             </div>
 
             <SaleFinalizeTotals
+              className="mt-5"
               total={total}
               subtotal={subtotal}
               descuentoMonto={descuentoMonto}
               hayDescuento={hayDescuento}
+              amountLabel={resolvedAmountLabel}
             />
           </div>
-        </section>
+        </MenuHeaderEntity>
 
         <div
           className={cn(partialPayment && saleFinalizeDialogSplitBodyClass)}
@@ -171,7 +220,7 @@ export function SaleFinalizeDialog({
               saleFinalizeDialogFactsZoneClass,
               saleFinalizeDialogSplitMainColumnClass,
             )}
-            aria-label="Datos del cobro"
+            aria-label="Datos a confirmar"
           >
             <SaleFinalizeFacts
               embedded
@@ -183,41 +232,29 @@ export function SaleFinalizeDialog({
 
             {channelCheckout ? (
               <div className={saleFinalizeDialogOptionsBlockClass}>
-                <p className={saleFinalizeDialogFactLabelClass}>Opciones</p>
-                <div className="space-y-2">
-                  <CheckoutToggleCard
-                    title="Cobro parcial"
-                    selected={channelCheckout.partialPayment}
-                    onClick={() =>
-                      channelCheckout.onPartialPaymentChange(!channelCheckout.partialPayment)
-                    }
-                    icon={Split}
+                <FinalizeOptionRow
+                  label="Cobro parcial"
+                  checked={channelCheckout.partialPayment}
+                  onChange={channelCheckout.onPartialPaymentChange}
+                />
+                {channelCheckout.hasComprobante ? (
+                  <FinalizeOptionRow
+                    label="Imprimir comprobante"
+                    checked={channelCheckout.imprimirComprobante}
+                    onChange={channelCheckout.onImprimirComprobanteChange}
                   />
-                  {channelCheckout.hasComprobante ? (
-                    <CheckoutToggleCard
-                      title="Imprimir comprobante"
-                      selected={channelCheckout.imprimirComprobante}
-                      onClick={() =>
-                        channelCheckout.onImprimirComprobanteChange(
-                          !channelCheckout.imprimirComprobante,
-                        )
-                      }
-                      icon={Printer}
-                    />
-                  ) : null}
-                  <CheckoutToggleCard
-                    title={channelCheckout.closeOnCompleteLabel}
-                    selected={channelCheckout.closeOnComplete && !channelCheckout.partialPayment}
-                    disabled={channelCheckout.partialPayment}
-                    onClick={() =>
-                      channelCheckout.onCloseOnCompleteChange(!channelCheckout.closeOnComplete)
-                    }
-                    icon={DoorOpen}
-                  />
-                </div>
+                ) : null}
+                <FinalizeOptionRow
+                  label={channelCheckout.closeOnCompleteLabel}
+                  checked={
+                    channelCheckout.closeOnComplete && !channelCheckout.partialPayment
+                  }
+                  disabled={channelCheckout.partialPayment}
+                  onChange={channelCheckout.onCloseOnCompleteChange}
+                />
 
                 {partialPayment ? (
-                  <div className="space-y-2 pt-1 md:hidden">
+                  <div className="space-y-2 pt-2 md:hidden">
                     <p className={saleFinalizeDialogFactLabelClass}>Ítems a cobrar</p>
                     <div className={saleFinalizeDialogPartialListMobileClass}>
                       <SaleFinalizePartialPaymentList
@@ -270,7 +307,11 @@ export function SaleFinalizeDialog({
             type="button"
             disabled={submitting || !canConfirm}
             onClick={() => void onConfirm()}
-            className={saleFinalizeDialogConfirmActionClass}
+            className={
+              isPay
+                ? saleFinalizeDialogConfirmPayActionClass
+                : saleFinalizeDialogConfirmActionClass
+            }
             aria-keyshortcuts="Enter"
           >
             {submitting ? (

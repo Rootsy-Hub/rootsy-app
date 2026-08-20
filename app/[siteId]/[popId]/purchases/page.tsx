@@ -1269,7 +1269,8 @@ function PurchasesPage() {
                       setCompraError(null)
                       setComprarConfirmOpen(true)
                     },
-                    confirmLabel: "Comprar",
+                    confirmLabel: "Pagar",
+                    confirmTone: "pay",
                     confirmTitle: !hayItemsEnPedido
                       ? "Agregá artículos a la compra."
                       : !payOnSupplierAccount && !metodoPagoSeleccionado
@@ -1422,6 +1423,7 @@ function PurchasesPage() {
         }}
         title="Confirmar compra"
         confirmLabel="Confirmar compra"
+        tone="pay"
         submitting={compraSubmitting}
         submitError={compraError}
         total={total}
@@ -1444,6 +1446,7 @@ function PurchasesPage() {
         }}
         title="Generar orden de compra"
         confirmLabel="Generar orden de compra"
+        amountLabel="Total"
         submitting={ordenSubmitting}
         submitError={ordenError}
         total={total}

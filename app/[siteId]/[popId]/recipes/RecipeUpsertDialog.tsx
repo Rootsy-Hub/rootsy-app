@@ -6,6 +6,7 @@ import type {
   RecipeCategoryOption,
   RecipeIngredientOption,
 } from "@/app/[siteId]/[popId]/recipes/actions"
+import type { SalePriceList } from "@/lib/salePriceLists"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -31,6 +32,7 @@ type FormFieldsProps = {
   form: RecipeFormState
   setForm: Dispatch<SetStateAction<RecipeFormState>>
   categories: RecipeCategoryOption[]
+  priceLists?: SalePriceList[]
   ingredientOptions: RecipeIngredientOption[]
   disabled?: boolean
 }

@@ -6,6 +6,8 @@ export type OperateCatalogItemsFilter = {
   /** sale/menu: products | recipes | promotions | discounts | all. compra: merchandise | raw_material | supply */
   section: string
   categoryId: string | null
+  /** Lista de precios de venta. Vacío / principal = sale_price. */
+  priceListId?: string
 }
 
 export type OperateCatalogItemsPage<T> = {
@@ -18,7 +20,7 @@ export function sanitizeCatalogIlike(raw: string): string {
 }
 
 export function operateCatalogFilterKey(filter: OperateCatalogItemsFilter): string {
-  return `${filter.section}:${filter.categoryId ?? ""}:${filter.search}`
+  return `${filter.section}:${filter.categoryId ?? ""}:${filter.search}:${filter.priceListId ?? ""}`
 }
 
 export function purchaseCatalogViewToItemsFilter(

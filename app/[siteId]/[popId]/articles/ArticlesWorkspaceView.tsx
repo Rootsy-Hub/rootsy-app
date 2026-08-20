@@ -7,6 +7,11 @@ import {
 import { ArticleDeleteDialog } from "@/app/[siteId]/[popId]/articles/ArticleDeleteDialog"
 import { ArticleCategoriesDialog } from "@/app/[siteId]/[popId]/articles/ArticleCategoriesDialog"
 import { ArticleCategoryDeleteDialog } from "@/app/[siteId]/[popId]/articles/ArticleCategoryDeleteDialog"
+import { ArticlePriceListsDialog } from "@/app/[siteId]/[popId]/articles/ArticlePriceListsDialog"
+import {
+  getItemPriceListAmounts,
+  getPopPriceLists,
+} from "@/app/[siteId]/[popId]/articles/priceListActions"
 import { ArticleItemKindToolbarFilter, articleItemKindFilterToQuery, resolveArticleItemKindFilterId } from "@/app/[siteId]/[popId]/articles/ArticleItemKindToolbarFilter"
 import {
   createPopArticle,
@@ -142,6 +147,12 @@ import {
   parseArticleDiscountInput,
 } from "@/lib/articleDiscount"
 import {
+  extraPriceLists,
+  parseListPriceFormValues,
+  type SalePriceList,
+} from "@/lib/salePriceLists"
+import {
+  DollarSign,
   FolderTree,
   Pencil,
   Plus,
@@ -190,6 +201,7 @@ function defaultCreateFormState(): ArticleFormState {
     itemKind: "merchandise",
     ...defaultItemFormFields("merchandise"),
     ...defaultArticleCatalogExtraFormState(),
+    listPrices: {},
   }
 }
 
@@ -320,6 +332,7 @@ export function ArticlesWorkspaceView() {
     itemKind: "merchandise",
     ...defaultItemFormFields("merchandise"),
     ...defaultArticleCatalogExtraFormState(),
+    listPrices: {},
   }))
   const [editBanner, setEditBanner] = useState<string | null>(null)
   const [editCostLines, setEditCostLines] = useState<ArticleCostFormLine[]>([])
@@ -342,6 +355,8 @@ export function ArticlesWorkspaceView() {
     { id: string; name: string }[]
   >([])
 
+  const [priceLists, setPriceLists] = useState<SalePriceList[]>([])
+  const [priceListsOpen, setPriceListsOpen] = useState(false)
   const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [categoriesRows, setCategoriesRows] = useState<ArticleCategoryOption[]>(
     [],
@@ -508,6 +523,16 @@ export function ArticlesWorkspaceView() {
     }
   }, [popId, siteId])
 
+  const refreshPriceLists = useCallback(async () => {
+    if (!popId) return
+    const res = await getPopPriceLists(popId)
+    if (res.success) setPriceLists(res.lists)
+  }, [popId])
+
+  useEffect(() => {
+    void refreshPriceLists()
+  }, [refreshPriceLists])
+
   useEffect(() => {
     if (workspaceParsed.view !== "new-article") return
     replaceWorkspaceQuery({ view: "list" })
@@ -593,11 +618,13 @@ export function ArticlesWorkspaceView() {
       minStockLevel:
         row.minStockLevel != null ? String(row.minStockLevel) : "",
       ...catalogFieldsFromRow(row),
+      listPrices: {},
     })
     setEditLoading(true)
-    const [catRes, costsRes] = await Promise.all([
+    const [catRes, costsRes, listAmountsRes] = await Promise.all([
       getPopArticleCategories(popId),
       getPopArticleCosts(popId, row.id),
+      getItemPriceListAmounts(popId, "article", row.id),
     ])
     setEditLoading(false)
     if (catRes.success) {
@@ -617,6 +644,17 @@ export function ArticlesWorkspaceView() {
     } else {
       setEditBanner((prev) => prev ?? costsRes.error)
       setEditCostLines([createEmptyArticleCostLine()])
+    }
+    if (listAmountsRes.success) {
+      setEditForm((f) => ({
+        ...f,
+        listPrices: Object.fromEntries(
+          Object.entries(listAmountsRes.amounts).map(([id, amount]) => [
+            id,
+            formatMoneyInputForField(amount),
+          ]),
+        ),
+      }))
     }
   }
 
@@ -700,6 +738,10 @@ export function ArticlesWorkspaceView() {
       ...itemFields,
       ...catalogFields,
       siteId,
+      listPrices: parseListPriceFormValues(
+        createForm.listPrices,
+        extraPriceLists(priceLists),
+      ),
       costs: articleCostLinesToInput(createCostLines, createForm.unitOfMeasure),
       initialStockQuantity:
         initialNum != null && Number.isFinite(initialNum) && initialNum > 0
@@ -883,6 +925,10 @@ export function ArticlesWorkspaceView() {
       itemKind: editForm.itemKind,
       ...itemFields,
       ...catalogFields,
+      listPrices: parseListPriceFormValues(
+        editForm.listPrices,
+        extraPriceLists(priceLists),
+      ),
       costs: articleCostLinesToInput(editCostLines, editForm.unitOfMeasure),
     })
     setEditSaving(false)
@@ -1097,6 +1143,13 @@ export function ArticlesWorkspaceView() {
               }}
             >
               <FolderTree className="size-5" aria-hidden />
+            </DataWorkspaceHeaderTooltipIconButton>
+            <DataWorkspaceHeaderTooltipIconButton
+              label="Listas de precios"
+              headerVariant={dataWorkspaceTableListHeaderVariant}
+              onClick={() => setPriceListsOpen(true)}
+            >
+              <DollarSign className="size-5" aria-hidden />
             </DataWorkspaceHeaderTooltipIconButton>
           </>
         ),
@@ -1654,6 +1707,7 @@ export function ArticlesWorkspaceView() {
         onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))}
         onItemKindChange={handleEditItemKindChange}
         categories={editCategories}
+        priceLists={priceLists}
         supplierOptions={supplierOptions}
         costLines={editCostLines}
         onCostLinesChange={setEditCostLines}
@@ -1693,11 +1747,22 @@ export function ArticlesWorkspaceView() {
         onChange={(patch) => setCreateForm((f) => ({ ...f, ...patch }))}
         onItemKindChange={handleCreateItemKindChange}
         categories={createCategories}
+        priceLists={priceLists}
         supplierOptions={supplierOptions}
         costLines={createCostLines}
         onCostLinesChange={setCreateCostLines}
         canPostInitialStock={canPostInitialStock}
         disabled={createSaving}
+      />
+
+      <ArticlePriceListsDialog
+        open={priceListsOpen}
+        onOpenChange={setPriceListsOpen}
+        popId={popId}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        onChanged={() => void refreshPriceLists()}
       />
 
       <ArticleCategoriesDialog

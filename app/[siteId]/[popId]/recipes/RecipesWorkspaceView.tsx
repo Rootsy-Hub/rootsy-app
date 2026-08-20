@@ -99,7 +99,17 @@ import { recipesSkeletonColumns } from "@/components/data-workspace/workspaceTab
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { usePopRecipesTable } from "@/hooks/usePopRecipesTable"
+import {
+  getItemPriceListAmounts,
+  getPopPriceLists,
+} from "@/app/[siteId]/[popId]/articles/priceListActions"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
+import { formatMoneyInputForField } from "@/lib/moneyInput"
+import {
+  extraPriceLists,
+  parseListPriceFormValues,
+  type SalePriceList,
+} from "@/lib/salePriceLists"
 import { popRecipesQueryRoot } from "@/lib/queryKeys"
 import { useQueryClient } from "@tanstack/react-query"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -167,6 +177,7 @@ export function RecipesWorkspaceView() {
   const [formError, setFormError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<RecipeFormState>(defaultRecipeFormState())
+  const [priceLists, setPriceLists] = useState<SalePriceList[]>([])
 
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<RecipeTableRow | null>(null)
@@ -262,6 +273,12 @@ export function RecipesWorkspaceView() {
     if (res.success) setIngredientOptions(res.ingredients)
   }, [popId])
 
+  const loadPriceLists = useCallback(async () => {
+    if (!popId) return
+    const res = await getPopPriceLists(popId)
+    if (res.success) setPriceLists(res.lists)
+  }, [popId])
+
   useEffect(() => {
     const res = recipesQuery.data
     if (!res || res.success || !("redirect" in res) || !res.redirect) return
@@ -275,7 +292,8 @@ export function RecipesWorkspaceView() {
   useEffect(() => {
     void loadCategories()
     void loadIngredientOptions()
-  }, [loadCategories, loadIngredientOptions])
+    void loadPriceLists()
+  }, [loadCategories, loadIngredientOptions, loadPriceLists])
 
   useEffect(() => {
     setSearchInput(ws.q)
@@ -385,12 +403,20 @@ export function RecipesWorkspaceView() {
       setFormError(res.error)
       return
     }
-    setForm(
-      recipeFormFromDetail(
-        res.recipe,
-        ingredientLinesFromDetail(res.recipe.ingredients),
-      ),
+    const amountsRes = await getItemPriceListAmounts(popId, "recipe", row.id)
+    const next = recipeFormFromDetail(
+      res.recipe,
+      ingredientLinesFromDetail(res.recipe.ingredients),
     )
+    if (amountsRes.success) {
+      next.listPrices = Object.fromEntries(
+        Object.entries(amountsRes.amounts).map(([id, amount]) => [
+          id,
+          formatMoneyInputForField(amount),
+        ]),
+      )
+    }
+    setForm(next)
   }
 
   const closeForm = () => {
@@ -410,7 +436,13 @@ export function RecipesWorkspaceView() {
     if (formSaving || formDetailLoading) return
     setFormSaving(true)
     setFormError(null)
-    const payload = recipeFormToPayload(form)
+    const payload = {
+      ...recipeFormToPayload(form),
+      listPrices: parseListPriceFormValues(
+        form.listPrices,
+        extraPriceLists(priceLists),
+      ),
+    }
     const res = editingId
       ? await updatePopRecipe(popId, editingId, payload)
       : await createPopRecipe(popId, payload)
@@ -855,6 +887,7 @@ export function RecipesWorkspaceView() {
         setForm={setForm}
         siteId={siteId}
         categories={categories}
+        priceLists={priceLists}
         ingredientOptions={ingredientOptions}
         disabled={formDetailLoading || formSaving}
       />

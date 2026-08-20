@@ -22,6 +22,9 @@ import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSi
 import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
 import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
 import { SALE_CATALOG_DEFAULT_PRICE_LIST_ID } from "@/components/sale-operation/saleCatalogPriceLists"
+import { getPopPriceLists } from "@/app/[siteId]/[popId]/articles/priceListActions"
+import { defaultPriceList, type SalePriceList } from "@/lib/salePriceLists"
+import { setSalePriceListSession } from "@/lib/salePriceListSession"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import {
@@ -125,6 +128,7 @@ export function SaleCatalogBrowser({
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
   const [cantidadIngreso, setCantidadIngreso] = useState(1)
+  const [priceLists, setPriceLists] = useState<SalePriceList[]>([])
   const [priceListId, setPriceListId] = useState(SALE_CATALOG_DEFAULT_PRICE_LIST_ID)
   const busquedaInputRef = useRef<HTMLInputElement>(null)
   const vistaAntesBusquedaRef = useRef<SaleCatalogViewPersisted | null>(null)
@@ -172,16 +176,37 @@ export function SaleCatalogBrowser({
     busqueda,
     OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
   )
-  const itemsFilter = useMemo(
-    () =>
-      saleCatalogViewToItemsFilter(
-        vistaCatalogo,
-        debouncedSearch,
-        categories,
-        categorySections,
-      ),
-    [categories, categorySections, debouncedSearch, vistaCatalogo],
-  )
+  const itemsFilter = useMemo(() => {
+    const base = saleCatalogViewToItemsFilter(
+      vistaCatalogo,
+      debouncedSearch,
+      categories,
+      categorySections,
+    )
+    return { ...base, priceListId }
+  }, [categories, categorySections, debouncedSearch, priceListId, vistaCatalogo])
+
+  useEffect(() => {
+    let cancelled = false
+    void getPopPriceLists(popId).then((res) => {
+      if (cancelled || !res.success) return
+      setPriceLists(res.lists)
+      const fallback = defaultPriceList(res.lists)
+      setPriceListId((current) => {
+        if (fallback && !res.lists.some((list) => list.id === current)) {
+          return fallback.id
+        }
+        return current
+      })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [popId])
+
+  useEffect(() => {
+    setSalePriceListSession(popId, priceListId)
+  }, [popId, priceListId])
 
   const saleItems = useSaleCatalogItems(
     popId,
@@ -408,6 +433,11 @@ export function SaleCatalogBrowser({
           priceListId={priceListId}
           onPriceListChange={setPriceListId}
           onPriceListSelectClosed={refocusScan}
+          priceLists={
+            priceLists.length > 0
+              ? priceLists.map((list) => ({ id: list.id, label: list.name }))
+              : undefined
+          }
         />
 
         <div className={layoutsOperarCatalogCanvasBodyClass}>

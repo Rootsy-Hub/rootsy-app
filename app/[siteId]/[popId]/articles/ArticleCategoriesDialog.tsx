@@ -16,7 +16,6 @@ import {
   RootsDialogErrorBanner,
   RootsDialogHeader,
   RootsDialogLoadingState,
-  rootsDialogBodyCompactClass,
 } from "@/components/rootsy-dialog"
 import { RootsFormTextField } from "@/components/rootsy-form"
 import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
@@ -74,12 +73,12 @@ export function ArticleCategoriesDialog({
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <RootsDialogContent size="wide" className="h-auto max-h-[min(90vh,560px)]">
+      <RootsDialogContent size="wide">
         <RootsDialogHeader
           title="Categorías"
           description="Ordená las categorías y elegí cuáles se muestran en ventas."
         />
-        <RootsDialogBody className={rootsDialogBodyCompactClass}>
+        <RootsDialogBody>
           {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
           {canCreate ? (
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">

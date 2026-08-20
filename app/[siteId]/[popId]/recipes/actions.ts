@@ -16,6 +16,8 @@ import { resolveWorkspaceTableListOrder } from "@/lib/workspaceTableSort"
 import { computeRecipeCostPrice } from "@/lib/recipeCost"
 import { resolveArticleReferenceUnitCostsByArticleId } from "@/lib/articleReferenceUnitCost"
 import { createClient } from "@/utils/supabase/server"
+import { syncItemPriceListAmounts } from "@/app/[siteId]/[popId]/articles/priceListActions"
+import type { SalePriceListAmountInput } from "@/lib/salePriceLists"
 import type { ArticleItemKind } from "@/lib/articleItemKind"
 import {
   isArticleItemKind,
@@ -91,6 +93,7 @@ export type CreateRecipeInput = {
   iva: number
   isActive: boolean
   ingredients: RecipeIngredientInput[]
+  listPrices?: SalePriceListAmountInput[]
 }
 
 export type UpdateRecipeInput = CreateRecipeInput
@@ -969,6 +972,18 @@ export async function createPopRecipe(
       return { success: false, error: sync.error }
     }
 
+    const syncLists = await syncItemPriceListAmounts(
+      supabase,
+      popId,
+      "recipe",
+      recipeId,
+      input.listPrices ?? [],
+    )
+    if (!syncLists.ok) {
+      await supabase.from("recipes").delete().eq("id", recipeId).eq("pop_id", popId)
+      return { success: false, error: syncLists.error }
+    }
+
     return { success: true, id: recipeId }
   } catch (e: unknown) {
     return {
@@ -1054,6 +1069,15 @@ export async function updatePopRecipe(
       input.ingredients,
     )
     if (!sync.ok) return { success: false, error: sync.error }
+
+    const syncLists = await syncItemPriceListAmounts(
+      supabase,
+      popId,
+      "recipe",
+      recipeId,
+      input.listPrices ?? [],
+    )
+    if (!syncLists.ok) return { success: false, error: syncLists.error }
 
     return { success: true }
   } catch (e: unknown) {

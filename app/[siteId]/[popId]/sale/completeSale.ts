@@ -44,6 +44,8 @@ import { SALE_COMPROBANTE_RECIBO_X_LABEL, saleComprobanteAccruesOutputVat } from
 import { siteIdFromPopRow } from "@/lib/popRoutes"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { consumptionQuantity, effectiveWastePct } from "@/lib/recipeCost"
+import { loadPriceListOverrideMap } from "@/app/[siteId]/[popId]/articles/priceListActions"
+import { applyOverrideMap } from "@/lib/salePriceLists"
 import { priceComboPromotion, type PromotionCartSelection } from "@/lib/promotionPricing"
 import {
   hasSaleLineManualDiscount,
@@ -575,6 +577,8 @@ export type CompleteSaleInput = {
   channelPaidAccumulated?: number
   /** Cobro parcial de mesa/mostrador (no cierra sesión/pedido). */
   isPartialChannelPayment?: boolean
+  /** Lista de precios de esta sesión de Operar. Vacío = Principal. */
+  priceListId?: string | null
 }
 
 export async function completeSale(
@@ -631,6 +635,40 @@ export async function completeSale(
     }
 
     const supabase = await createClient()
+    const articleIdsForList = [
+      ...linesIn.map((line) => line.articleId).filter(Boolean),
+      ...linesIn.flatMap(
+        (line) =>
+          line.promotionSelections
+            ?.filter((sel) => sel.kind === "article")
+            .map((sel) => sel.refId) ?? [],
+      ),
+    ] as string[]
+    const recipeIdsForList = [
+      ...linesIn.map((line) => line.recipeId).filter(Boolean),
+      ...linesIn.flatMap(
+        (line) =>
+          line.promotionSelections
+            ?.filter((sel) => sel.kind === "recipe")
+            .map((sel) => sel.refId) ?? [],
+      ),
+    ] as string[]
+    const [articleListOverrides, recipeListOverrides] = await Promise.all([
+      loadPriceListOverrideMap(
+        supabase,
+        popId,
+        input.priceListId,
+        "article",
+        articleIdsForList,
+      ),
+      loadPriceListOverrideMap(
+        supabase,
+        popId,
+        input.priceListId,
+        "recipe",
+        recipeIdsForList,
+      ),
+    ])
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -935,7 +973,11 @@ export async function completeSale(
               }
             }
             selName = String(art.name ?? "")
-            listUnitPrice = roundMoney(Number(art.sale_price ?? 0))
+            listUnitPrice = applyOverrideMap(
+              roundMoney(Number(art.sale_price ?? 0)),
+              String(art.id),
+              articleListOverrides,
+            )
             iva = Number(art.iva ?? 0) || 0
           } else {
             const { data: recipe } = await supabase
@@ -952,7 +994,11 @@ export async function completeSale(
               }
             }
             selName = String(recipe.name ?? "")
-            listUnitPrice = roundMoney(Number(recipe.sale_price ?? 0))
+            listUnitPrice = applyOverrideMap(
+              roundMoney(Number(recipe.sale_price ?? 0)),
+              String(recipe.id),
+              recipeListOverrides,
+            )
             iva = Number(recipe.iva ?? 0) || 0
           }
 
@@ -1045,7 +1091,11 @@ export async function completeSale(
         lineKind = "recipe"
         resolvedRecipeId = String(recipe.id)
         name = String(recipe.name ?? "")
-        unitPrice = roundMoney(Number(recipe.sale_price ?? 0))
+        unitPrice = applyOverrideMap(
+          roundMoney(Number(recipe.sale_price ?? 0)),
+          String(recipe.id),
+          recipeListOverrides,
+        )
         ivaPct = Math.max(0, Number(recipe.iva ?? 0) || 0)
 
         const lineDiscount = resolveSaleLineDiscount({
@@ -1073,7 +1123,11 @@ export async function completeSale(
         lineKind = "article"
         resolvedArticleId = String(art.id)
         name = String(art.name ?? "")
-        unitPrice = roundMoney(Number(art.sale_price ?? 0))
+        unitPrice = applyOverrideMap(
+          roundMoney(Number(art.sale_price ?? 0)),
+          String(art.id),
+          articleListOverrides,
+        )
         ivaPct = Math.max(0, Number(art.iva ?? 0) || 0)
 
         const rawDiscountMode = art.discount_mode

@@ -14,6 +14,7 @@ export type RecipeFormState = {
   iva: string
   isActive: boolean
   ingredients: RecipeIngredientFormLine[]
+  listPrices: Record<string, string>
 }
 
 export function defaultRecipeFormState(): RecipeFormState {
@@ -26,6 +27,7 @@ export function defaultRecipeFormState(): RecipeFormState {
     iva: "21",
     isActive: true,
     ingredients: [createEmptyIngredientLine()],
+    listPrices: {},
   }
 }
 
@@ -43,6 +45,7 @@ export function recipeFormFromDetail(
     isActive: row.isActive,
     ingredients:
       ingredients.length > 0 ? ingredients : [createEmptyIngredientLine()],
+    listPrices: {},
   }
 }
 

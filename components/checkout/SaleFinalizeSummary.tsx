@@ -3,18 +3,19 @@
 import {
   saleFinalizeDialogAmountClass,
   saleFinalizeDialogAmountLabelClass,
-  saleFinalizeDialogBreakdownAmountClass,
-  saleFinalizeDialogBreakdownClass,
-  saleFinalizeDialogBreakdownDiscountClass,
-  saleFinalizeDialogBreakdownLabelClass,
-  saleFinalizeDialogBreakdownRowClass,
+  saleFinalizeDialogDiscountWhisperClass,
   saleFinalizeDialogFactLabelClass,
   saleFinalizeDialogFactRowClass,
+  saleFinalizeDialogFactsListClass,
   saleFinalizeDialogFactsZoneClass,
   saleFinalizeDialogFactValueClass,
   saleFinalizeDialogFactValueMutedClass,
 } from "@/components/checkout/saleFinalizeDialogStyles"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
+import {
+  menuRealmLightMutedClass,
+  menuRealmLightStaticClass,
+} from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
 
 export type SaleFinalizeFactsProps = {
@@ -32,6 +33,8 @@ export type SaleFinalizeTotalsProps = {
   subtotal?: number
   descuentoMonto?: number
   hayDescuento?: boolean
+  /** Whisper bajo el monto — p. ej. A cobrar, A pagar, Total. */
+  amountLabel?: string
   className?: string
 }
 
@@ -40,50 +43,37 @@ function isUnsetFact(value: string) {
   return (
     normalized === "sin cliente" ||
     normalized === "sin comprobante" ||
-    normalized === "sin proveedor"
+    normalized === "sin proveedor" ||
+    normalized === "sin forma de pago"
   )
 }
 
 export function SaleFinalizeTotals({
   total,
-  subtotal,
   descuentoMonto = 0,
   hayDescuento = false,
+  amountLabel = "A cobrar",
   className,
 }: SaleFinalizeTotalsProps) {
-  const showGeneralDiscount = hayDescuento && descuentoMonto > 0
-  const showSubtotalBreakdown =
-    subtotal != null && showGeneralDiscount && subtotal > total
+  const showDiscountWhisper = hayDescuento && descuentoMonto > 0
 
   return (
     <div className={cn("text-center", className)}>
-      {showSubtotalBreakdown ? (
-        <div className={saleFinalizeDialogBreakdownClass}>
-          <div className={saleFinalizeDialogBreakdownRowClass}>
-            <span className={saleFinalizeDialogBreakdownLabelClass}>Subtotal</span>
-            <span className={saleFinalizeDialogBreakdownAmountClass}>
-              {saleOpFmt.format(subtotal)}
-            </span>
-          </div>
-          <div className={saleFinalizeDialogBreakdownRowClass}>
-            <span className={saleFinalizeDialogBreakdownLabelClass}>
-              Descuento general
-            </span>
-            <span className={saleFinalizeDialogBreakdownDiscountClass}>
-              −{saleOpFmt.format(descuentoMonto)}
-            </span>
-          </div>
-        </div>
-      ) : null}
-
       <p
-        className={saleFinalizeDialogAmountClass}
+        className={cn(saleFinalizeDialogAmountClass, menuRealmLightStaticClass)}
         aria-live="polite"
         aria-atomic="true"
       >
         {saleOpFmt.format(total)}
       </p>
-      <p className={saleFinalizeDialogAmountLabelClass}>Total a cobrar ahora</p>
+      <p className={cn(saleFinalizeDialogAmountLabelClass, menuRealmLightMutedClass)}>
+        {amountLabel}
+      </p>
+      {showDiscountWhisper ? (
+        <p className={cn(saleFinalizeDialogDiscountWhisperClass, menuRealmLightMutedClass)}>
+          Incluye {saleOpFmt.format(descuentoMonto)} de descuento
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -106,24 +96,26 @@ export function SaleFinalizeFacts({
 
   return (
     <Tag
-      aria-label={embedded ? undefined : "Datos del cobro"}
+      aria-label={embedded ? undefined : "Datos a confirmar"}
       className={cn(!embedded && saleFinalizeDialogFactsZoneClass, className)}
     >
-      {facts.map((fact) => (
-        <div key={fact.key} className={saleFinalizeDialogFactRowClass}>
-          <span className={saleFinalizeDialogFactLabelClass}>{fact.label}</span>
-          <span
-            className={cn(
-              isUnsetFact(fact.value)
-                ? saleFinalizeDialogFactValueMutedClass
-                : saleFinalizeDialogFactValueClass,
-            )}
-            title={fact.value}
-          >
-            {fact.value}
-          </span>
-        </div>
-      ))}
+      <div className={saleFinalizeDialogFactsListClass}>
+        {facts.map((fact) => (
+          <div key={fact.key} className={saleFinalizeDialogFactRowClass}>
+            <span className={saleFinalizeDialogFactLabelClass}>{fact.label}</span>
+            <span
+              className={cn(
+                isUnsetFact(fact.value)
+                  ? saleFinalizeDialogFactValueMutedClass
+                  : saleFinalizeDialogFactValueClass,
+              )}
+              title={fact.value}
+            >
+              {fact.value}
+            </span>
+          </div>
+        ))}
+      </div>
     </Tag>
   )
 }

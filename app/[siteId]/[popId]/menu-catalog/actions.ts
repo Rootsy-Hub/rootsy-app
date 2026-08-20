@@ -25,6 +25,7 @@ import type {
   SaleCatalogClient,
   SaleOpenCashSession,
 } from "@/app/[siteId]/[popId]/sale/actions"
+import { loadPriceListOverrideMap } from "@/app/[siteId]/[popId]/articles/priceListActions"
 import {
   mapSaleCatalogArticleRow,
   SALE_CATALOG_ARTICLE_SELECT,
@@ -651,14 +652,21 @@ const MENU_RECIPE_SELECT = `
   recipe_categories ( id, name )
 ` as const
 
-function mapMenuRecipeRow(row: Record<string, unknown>): MenuCatalogRecipe {
+function mapMenuRecipeRow(
+  row: Record<string, unknown>,
+  listPriceOverride?: number,
+): MenuCatalogRecipe {
   const cat = row.recipe_categories as { name?: string } | null
   const rawImg = row.image_url
+  const principal = Number(row.sale_price ?? 0) || 0
   return {
     id: String(row.id),
     name: String(row.name ?? ""),
     description: String(row.description ?? ""),
-    salePrice: Number(row.sale_price ?? 0) || 0,
+    salePrice:
+      listPriceOverride != null && Number.isFinite(listPriceOverride)
+        ? listPriceOverride
+        : principal,
     iva: Number(row.iva ?? 0) || 0,
     categoryId: String(row.category_id ?? ""),
     categoryName: cat?.name ? String(cat.name) : "—",
@@ -802,9 +810,17 @@ export async function getMenuCatalogItemsPage(
       if (error) return { success: false, error: error.message }
       const rows = (data ?? []) as Record<string, unknown>[]
       articleHasMore = rows.length > OPERATE_CATALOG_PAGE_SIZE
-      articles = rows
-        .slice(0, OPERATE_CATALOG_PAGE_SIZE)
-        .map(mapSaleCatalogArticleRow)
+      const pageRows = rows.slice(0, OPERATE_CATALOG_PAGE_SIZE)
+      const overrides = await loadPriceListOverrideMap(
+        supabase,
+        popId,
+        filter.priceListId,
+        "article",
+        pageRows.map((row) => String(row.id)),
+      )
+      articles = pageRows.map((row) =>
+        mapSaleCatalogArticleRow(row, overrides.get(String(row.id))),
+      )
     }
 
     if (wantRecipes && visibleRecipeIds.length > 0) {
@@ -827,7 +843,17 @@ export async function getMenuCatalogItemsPage(
       if (error) return { success: false, error: error.message }
       const rows = (data ?? []) as Record<string, unknown>[]
       recipeHasMore = rows.length > OPERATE_CATALOG_PAGE_SIZE
-      recipes = rows.slice(0, OPERATE_CATALOG_PAGE_SIZE).map(mapMenuRecipeRow)
+      const pageRows = rows.slice(0, OPERATE_CATALOG_PAGE_SIZE)
+      const overrides = await loadPriceListOverrideMap(
+        supabase,
+        popId,
+        filter.priceListId,
+        "recipe",
+        pageRows.map((row) => String(row.id)),
+      )
+      recipes = pageRows.map((row) =>
+        mapMenuRecipeRow(row, overrides.get(String(row.id))),
+      )
     }
 
     return {

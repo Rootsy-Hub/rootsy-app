@@ -11,9 +11,12 @@ import {
   layoutsOperarFormDarkMutedTextClass,
   layoutsOperarFormDarkSecondaryButtonClass,
   layoutsOperarFormDarkSectionLabelClass,
-  layoutsOperarFormDarkSurfaceClass,
+  layoutsOperarProductCardDescClass,
+  layoutsOperarProductCardPriceClass,
+  layoutsOperarProductCardTitleClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { ServiceOperateSelectedServiceDetailSkeleton } from "@/components/service-operation/ServiceOperateSelectedServiceDetailSkeleton"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import {
   SERVICE_LATE_INTEREST_TYPE_LABELS,
   SERVICE_PAYMENT_TIMING_LABELS,
@@ -22,18 +25,7 @@ import {
   serviceDetailsGridHasContent,
 } from "@/lib/serviceCatalogTypes"
 import { cn } from "@/lib/utils"
-import {
-  Check,
-  FileText,
-  Percent,
-  Plus,
-} from "lucide-react"
-
-const priceFmt = new Intl.NumberFormat("es-AR", {
-  style: "currency",
-  currency: "ARS",
-  minimumFractionDigits: 2,
-})
+import { Check, FileText, Plus } from "lucide-react"
 
 type Props = {
   service: ServiceTypeChargeOption
@@ -43,12 +35,19 @@ type Props = {
   className?: string
 }
 
+const catalogPanelClass = cn(
+  "rounded-2xl border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-600)]",
+)
+
+const catalogRowDividerClass =
+  "border-b border-[var(--layouts-operar-border-dark-hairline)] last:border-b-0"
+
 function formatCatalogDiscount(detail: ServiceTypeChargeDetail): string | null {
   if (detail.discountMode === "porcentaje") {
-    return `${detail.discountValue ?? 0} % de descuento en el plan`
+    return `${detail.discountValue ?? 0}% off`
   }
   if (detail.discountMode === "fijo") {
-    return `${priceFmt.format(detail.discountValue ?? 0)} de descuento en el plan`
+    return `${saleOpFmt.format(detail.discountValue ?? 0)} off`
   }
   return null
 }
@@ -57,7 +56,7 @@ function formatLateInterest(detail: ServiceTypeChargeDetail): string | null {
   if (detail.lateInterestType === "simple_percent") {
     const value = detail.lateInterestValue ?? 0
     if (value <= 0) return null
-    return `${value} % de interés por mora`
+    return `${value}% mora`
   }
   if (detail.lateInterestType !== "none") {
     return SERVICE_LATE_INTEREST_TYPE_LABELS[detail.lateInterestType]
@@ -70,7 +69,12 @@ function SectionHeader({ title, hint }: { title: string; hint?: string }) {
     <h3 className={layoutsOperarFormDarkSectionLabelClass}>
       {title}
       {hint ? (
-        <span className={cn("ml-1 font-normal normal-case", layoutsOperarFormDarkMutedTextClass)}>
+        <span
+          className={cn(
+            "ml-1 font-normal normal-case tracking-normal",
+            layoutsOperarFormDarkMutedTextClass,
+          )}
+        >
           ({hint})
         </span>
       ) : null}
@@ -78,7 +82,7 @@ function SectionHeader({ title, hint }: { title: string; hint?: string }) {
   )
 }
 
-function GridPanel({
+function CatalogPanel({
   title,
   hint,
   children,
@@ -90,62 +94,10 @@ function GridPanel({
   className?: string
 }) {
   return (
-    <section
-      className={cn(
-        "flex h-full min-h-0 flex-col gap-3 rounded-2xl p-4",
-        layoutsOperarFormDarkSurfaceClass,
-        className,
-      )}
-    >
+    <section className={cn("flex min-h-0 flex-col gap-3", className)}>
       {title ? <SectionHeader title={title} hint={hint} /> : null}
-      <div className="min-h-0 flex-1">{children}</div>
+      <div className={cn(catalogPanelClass, "overflow-hidden")}>{children}</div>
     </section>
-  )
-}
-
-function LooseSection({
-  title,
-  hint,
-  children,
-  className,
-}: {
-  title: string
-  hint?: string
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <section className={cn("flex flex-col gap-2.5", className)}>
-      <SectionHeader title={title} hint={hint} />
-      {children}
-    </section>
-  )
-}
-
-function PlanPriceColumn({
-  displayPrice,
-  billingLabel,
-  className,
-}: {
-  displayPrice: number
-  billingLabel: string
-  className?: string
-}) {
-  return (
-    <div
-      className={cn(
-        "flex shrink-0 flex-col items-end justify-center gap-0.5 text-right",
-        className,
-      )}
-    >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/38">
-        Precio base
-      </p>
-      <p className="font-canopy text-2xl font-bold tabular-nums leading-none tracking-tight text-[color-mix(in_srgb,var(--rootsy-savia-300)_96%,white)] sm:text-[1.75rem]">
-        {priceFmt.format(displayPrice)}
-      </p>
-      <p className="text-[11px] text-white/45">/ {billingLabel.toLowerCase()}</p>
-    </div>
   )
 }
 
@@ -159,31 +111,15 @@ function PlanHeroMedia({
   imageUrl: string | null
 }) {
   return (
-    <div className="relative shrink-0">
-      <div
-        className="pointer-events-none absolute -inset-3 rounded-full opacity-70 blur-2xl"
-        style={{
-          background:
-            "radial-gradient(ellipse at center, color-mix(in srgb, var(--rootsy-savia-400) 24%, transparent), transparent 72%)",
-        }}
-        aria-hidden
-      />
-      <div className="relative size-16 overflow-hidden rounded-2xl sm:size-[5.25rem]">
-        <div
-          className="pointer-events-none absolute -inset-px rounded-[inherit] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--rootsy-savia-400)_32%,transparent),color-mix(in_srgb,var(--rootsy-savia-700)_6%,transparent))]"
-          aria-hidden
+    <div className="relative size-[7.5rem] shrink-0 overflow-hidden rounded-2xl border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-700)]">
+      {imageUrl ? (
+        <img src={imageUrl} alt={name} className="size-full object-cover" loading="lazy" />
+      ) : (
+        <LayoutsOperarProductCardMediaEmptyState
+          seed={serviceId}
+          className="size-full rounded-none"
         />
-        <div className="relative size-full overflow-hidden rounded-2xl">
-          {imageUrl ? (
-            <img src={imageUrl} alt={name} className="size-full object-cover" loading="lazy" />
-          ) : (
-            <LayoutsOperarProductCardMediaEmptyState
-              seed={serviceId}
-              className="size-full rounded-none"
-            />
-          )}
-        </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -200,8 +136,6 @@ function PlanHeroPanel({
   lateInterestLabel,
   hasContract,
   onOpenContract,
-  loadingDetail,
-  className,
 }: {
   serviceId: string
   name: string
@@ -214,117 +148,115 @@ function PlanHeroPanel({
   lateInterestLabel: string | null
   hasContract: boolean
   onOpenContract?: () => void
-  loadingDetail: boolean
-  className?: string
 }) {
-  const showMeta = !loadingDetail && (discountLabel || lateInterestLabel || hasContract)
+  const whisper = [discountLabel, lateInterestLabel].filter(Boolean).join(" · ")
 
   return (
-    <section
-      className={cn(
-        "relative flex h-full min-h-0 items-center overflow-hidden rounded-2xl p-4 sm:p-[1.125rem]",
-        layoutsOperarFormDarkSurfaceClass,
-        className,
-      )}
-    >
-      <div
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,color-mix(in_srgb,var(--rootsy-savia-400)_10%,transparent)_0%,transparent_42%,color-mix(in_srgb,var(--rootsy-savia-400)_6%,transparent)_100%)]"
-        aria-hidden
-      />
-
-      <div className="relative flex w-full flex-col gap-3.5 sm:flex-row sm:items-center sm:gap-5">
+    <section className={cn(catalogPanelClass, "p-4")}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <PlanHeroMedia serviceId={serviceId} name={name} imageUrl={imageUrl} />
 
-        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <span className="inline-flex w-fit rounded-full bg-[color-mix(in_srgb,var(--rootsy-savia-400)_10%,transparent)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--rootsy-savia-300)_90%,white)]">
-              {category}
-            </span>
-
-            <div className="space-y-1">
-              <h2
-                className="font-canopy text-xl font-bold leading-[1.15] tracking-tight text-[#f4f8f6] sm:text-2xl"
-                title={name}
-              >
-                {name}
-              </h2>
-              {description ? (
-                <p className="max-w-prose text-[13px] leading-relaxed text-white/52 sm:text-sm">
-                  {description}
-                </p>
-              ) : (
-                <p className={cn("text-[13px] italic sm:text-sm", layoutsOperarFormDarkMutedTextClass)}>
-                  Sin descripción
-                </p>
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <p className={layoutsOperarFormDarkSectionLabelClass}>{category}</p>
+            <h2
+              className={cn(
+                layoutsOperarProductCardTitleClass,
+                "line-clamp-none text-xl font-bold tracking-tight",
               )}
-            </div>
-
-            {showMeta ? (
-              <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                {discountLabel ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_28%,transparent)] px-2 py-1 text-[11px] text-white/78">
-                    <Percent className="size-3 shrink-0 opacity-70" aria-hidden />
-                    {discountLabel}
-                  </span>
-                ) : null}
-                {lateInterestLabel ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_28%,transparent)] px-2 py-1 text-[11px] text-white/78">
-                    <Percent className="size-3 shrink-0 opacity-70" aria-hidden />
-                    {lateInterestLabel}
-                  </span>
-                ) : null}
-                {hasContract && onOpenContract ? (
-                  <button
-                    type="button"
-                    className={cn(layoutsOperarFormDarkSecondaryButtonClass, "ml-auto text-[11px]")}
-                    onClick={onOpenContract}
-                  >
-                    <FileText className="size-3.5 shrink-0 opacity-80" aria-hidden />
-                    Ver contrato
-                  </button>
-                ) : null}
-              </div>
+              title={name}
+            >
+              {name}
+            </h2>
+            {description ? (
+              <p className={cn(layoutsOperarProductCardDescClass, "line-clamp-3 max-w-prose")}>
+                {description}
+              </p>
+            ) : null}
+            {whisper ? (
+              <p className={cn("text-xs leading-snug", layoutsOperarFormDarkMutedTextClass)}>
+                {whisper}
+              </p>
+            ) : null}
+            {hasContract && onOpenContract ? (
+              <button
+                type="button"
+                className={cn(layoutsOperarFormDarkSecondaryButtonClass, "mt-1 h-8 text-xs")}
+                onClick={onOpenContract}
+              >
+                <FileText className="size-3.5 shrink-0 opacity-80" aria-hidden />
+                Ver contrato
+              </button>
             ) : null}
           </div>
 
-          <PlanPriceColumn displayPrice={displayPrice} billingLabel={billingLabel} />
+          <div className="shrink-0 text-left sm:pt-5 sm:text-right">
+            <p className={cn(layoutsOperarFormDarkSectionLabelClass, "mb-1")}>
+              Precio base
+            </p>
+            <p className={cn(layoutsOperarProductCardPriceClass, "text-2xl")}>
+              {saleOpFmt.format(displayPrice)}
+            </p>
+            <p className={cn("mt-0.5 text-xs", layoutsOperarFormDarkMutedTextClass)}>
+              / {billingLabel.toLowerCase()}
+            </p>
+          </div>
         </div>
       </div>
     </section>
   )
 }
 
-function StatRow({ label, value }: { label: string; value: string }) {
+function PlanFacts({
+  period,
+  payment,
+  due,
+}: {
+  period: string
+  payment: string
+  due: string
+}) {
+  const facts = [
+    { label: "Período", value: period },
+    { label: "Pago", value: payment },
+    { label: "Vence", value: due },
+  ]
+
   return (
-    <div
-      className={cn(
-        "flex items-center justify-between gap-3 rounded-2xl px-3.5 py-3",
-        layoutsOperarFormDarkSurfaceClass,
-      )}
-    >
-      <span className={layoutsOperarFormDarkSectionLabelClass}>{label}</span>
-      <span className="shrink-0 text-sm font-medium leading-snug text-[#f4f8f6]">{value}</span>
-    </div>
+    <dl className={cn(catalogPanelClass, "grid grid-cols-1 sm:grid-cols-3")}>
+      {facts.map((fact, index) => (
+        <div
+          key={fact.label}
+          className={cn(
+            "flex items-baseline justify-between gap-3 px-4 py-3 sm:flex-col sm:items-start sm:justify-center sm:gap-1",
+            index > 0 &&
+              "border-t border-[var(--layouts-operar-border-dark-hairline)] sm:border-l sm:border-t-0",
+          )}
+        >
+          <dt className={layoutsOperarFormDarkSectionLabelClass}>{fact.label}</dt>
+          <dd className="text-sm font-medium leading-snug text-[var(--layouts-operar-product-card-title)]">
+            {fact.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
 function AddonRow({ addon }: { addon: ServiceTypeChargeAddonOption }) {
   return (
-    <li
-      className={cn(
-        "flex items-center justify-between gap-3 rounded-2xl px-3.5 py-3",
-        layoutsOperarFormDarkSurfaceClass,
-      )}
-    >
+    <li className={cn("flex items-center justify-between gap-3 px-4 py-3", catalogRowDividerClass)}>
       <div className="flex min-w-0 items-center gap-2.5">
         <Plus
-          className="size-4 shrink-0 text-[color-mix(in_srgb,var(--rootsy-savia-300)_88%,white)]"
+          className="size-3.5 shrink-0 text-[var(--layouts-operar-product-card-price)]"
           aria-hidden
         />
-        <span className="text-sm text-[#f4f8f6]">{addon.name}</span>
+        <span className="truncate text-sm text-[var(--layouts-operar-product-card-title)]">
+          {addon.name}
+        </span>
       </div>
-      <span className="shrink-0 text-sm font-semibold tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-300)_95%,white)]">
-        +{priceFmt.format(addon.price)}
+      <span className={cn(layoutsOperarProductCardPriceClass, "shrink-0 text-sm")}>
+        +{saleOpFmt.format(addon.price)}
       </span>
     </li>
   )
@@ -332,19 +264,16 @@ function AddonRow({ addon }: { addon: ServiceTypeChargeAddonOption }) {
 
 function ArticleRow({ line }: { line: ServiceTypeChargeDetailArticle }) {
   return (
-    <li
-      className={cn(
-        "flex items-center justify-between gap-3 rounded-2xl px-3.5 py-3",
-        layoutsOperarFormDarkSurfaceClass,
-      )}
-    >
+    <li className={cn("flex items-center justify-between gap-3 px-4 py-3", catalogRowDividerClass)}>
       <div className="flex min-w-0 items-center gap-2.5">
         <Check
-          className="size-4 shrink-0 text-[color-mix(in_srgb,var(--rootsy-savia-300)_92%,white)]"
+          className="size-3.5 shrink-0 text-[var(--layouts-operar-product-card-price)]"
           strokeWidth={2.5}
           aria-hidden
         />
-        <span className="text-sm font-medium text-[#f4f8f6]">{line.articleName}</span>
+        <span className="truncate text-sm font-medium text-[var(--layouts-operar-product-card-title)]">
+          {line.articleName}
+        </span>
       </div>
       <span className={cn("shrink-0 text-sm tabular-nums", layoutsOperarFormDarkMutedTextClass)}>
         {line.quantity} {line.unitOfMeasure}
@@ -357,16 +286,17 @@ function PlanDetailTable({ detail }: { detail: ServiceTypeChargeDetail }) {
   const { columns, rows } = detail.detailsGrid
 
   return (
-    <div className="overflow-hidden rounded-2xl">
+    <div className={cn(catalogPanelClass, "overflow-hidden")}>
       <table className="w-full border-separate border-spacing-0 text-left text-sm">
         <thead>
-          <tr className={layoutsOperarFormDarkSurfaceClass}>
+          <tr>
             {columns.map((column, index) => (
               <th
                 key={`${column}-${index}`}
                 className={cn(
-                  "px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em]",
+                  "px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em]",
                   layoutsOperarFormDarkMutedTextClass,
+                  index > 0 && "border-l border-[var(--layouts-operar-border-dark-hairline)]",
                 )}
               >
                 {column || `Col ${index + 1}`}
@@ -376,17 +306,19 @@ function PlanDetailTable({ detail }: { detail: ServiceTypeChargeDetail }) {
         </thead>
         <tbody>
           {rows.map((row, rowIndex) => (
-            <tr key={rowIndex}>
+            <tr
+              key={rowIndex}
+              className="border-t border-[var(--layouts-operar-border-dark-hairline)]"
+            >
               {row.map((cell, cellIndex) => (
                 <td
                   key={cellIndex}
                   className={cn(
-                    "px-3.5 py-3",
-                    rowIndex % 2 === 0
-                      ? "bg-[var(--layouts-operar-form-dark-table-row)]"
-                      : layoutsOperarFormDarkSurfaceClass,
+                    "px-4 py-3",
+                    rowIndex === 0 ? "border-t border-[var(--layouts-operar-border-dark-hairline)]" : null,
+                    cellIndex > 0 && "border-l border-[var(--layouts-operar-border-dark-hairline)]",
                     cellIndex === 0
-                      ? "font-medium text-[var(--layouts-operar-form-dark-text)]"
+                      ? "font-medium text-[var(--layouts-operar-product-card-title)]"
                       : layoutsOperarFormDarkMutedTextClass,
                   )}
                 >
@@ -439,34 +371,26 @@ export function ServiceOperateSelectedServiceMarketingDetail({
       : `${dueDaysAfter} día${dueDaysAfter === 1 ? "" : "s"} después`
 
   return (
-    <div className={cn("flex flex-col gap-6", className)}>
-      {/* Row 1 — plan (8) | período / pago / vence (4) */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-stretch">
-        <PlanHeroPanel
-          className="h-full md:col-span-8"
-          serviceId={service.id}
-          name={name}
-          category={category}
-          description={description}
-          imageUrl={imageUrl}
-          displayPrice={displayPrice}
-          billingLabel={billingLabel}
-          discountLabel={discountLabel}
-          lateInterestLabel={lateInterestLabel}
-          hasContract={hasContract}
-          onOpenContract={onOpenContract}
-          loadingDetail={loadingDetail}
-        />
+    <div className={cn("flex flex-col gap-4", className)}>
+      <PlanHeroPanel
+        serviceId={service.id}
+        name={name}
+        category={category}
+        description={description}
+        imageUrl={imageUrl}
+        displayPrice={displayPrice}
+        billingLabel={billingLabel}
+        discountLabel={discountLabel}
+        lateInterestLabel={lateInterestLabel}
+        hasContract={hasContract}
+        onOpenContract={onOpenContract}
+      />
 
-        <div className="flex h-full flex-col justify-center gap-2.5 md:col-span-4">
-          <StatRow label="Período" value={billingLabel} />
-          <StatRow
-            label="Pago"
-            value={SERVICE_PAYMENT_TIMING_LABELS[paymentTiming]}
-          />
-          <StatRow label="Vence" value={dueLabel} />
-        </div>
-      </div>
+      <PlanFacts
+        period={billingLabel}
+        payment={SERVICE_PAYMENT_TIMING_LABELS[paymentTiming]}
+        due={dueLabel}
+      />
 
       {loadingDetail ? (
         <ServiceOperateSelectedServiceDetailSkeleton
@@ -476,42 +400,41 @@ export function ServiceOperateSelectedServiceMarketingDetail({
       ) : (
         <>
           {showRow2 ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
               {hasAddons ? (
-                <LooseSection
+                <CatalogPanel
                   title="Adicionales"
                   hint="En Configuración"
                   className={row2TwoCols ? "md:col-span-6" : "md:col-span-12"}
                 >
-                  <ul className="flex flex-col gap-2.5">
+                  <ul>
                     {addons.map((addon) => (
                       <AddonRow key={addon.id} addon={addon} />
                     ))}
                   </ul>
-                </LooseSection>
+                </CatalogPanel>
               ) : null}
 
               {hasArticles ? (
-                <LooseSection
+                <CatalogPanel
                   title="Qué incluye"
                   className={row2TwoCols ? "md:col-span-6" : "md:col-span-12"}
                 >
-                  <ul className="flex flex-col gap-2.5">
+                  <ul>
                     {detail!.articles.map((line, index) => (
                       <ArticleRow key={`${line.articleName}-${index}`} line={line} />
                     ))}
                   </ul>
-                </LooseSection>
+                </CatalogPanel>
               ) : null}
             </div>
           ) : null}
 
           {detail && hasGrid ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
-              <LooseSection title="Detalle del plan" className="md:col-span-12">
-                <PlanDetailTable detail={detail} />
-              </LooseSection>
-            </div>
+            <section className="flex flex-col gap-3">
+              <SectionHeader title="Detalle del plan" />
+              <PlanDetailTable detail={detail} />
+            </section>
           ) : null}
         </>
       )}

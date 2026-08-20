@@ -1,4 +1,3 @@
-import { getLayoutsOperarPosTotalsGradient } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import {
   rootsDialogContentZClass,
   rootsDialogOverlayZClass,
@@ -29,63 +28,54 @@ export const saleFinalizeDialogOverlayClass = cn(
   "bg-[radial-gradient(ellipse_92%_88%_at_50%_44%,color-mix(in_srgb,var(--rootsy-sombra-950)_46%,transparent),color-mix(in_srgb,var(--rootsy-sombra-950)_74%,transparent))]",
 )
 
-export const saleFinalizeDialogTotalsGradientStyle = {
-  background: getLayoutsOperarPosTotalsGradient(),
-} as const
-
 export const saleFinalizeDialogTotalsZoneClass = cn(
-  "relative overflow-hidden rounded-t-[1.375rem]",
-  "px-[var(--rootsy-space-400)] pt-[var(--rootsy-space-400)] pb-[var(--rootsy-space-300)]",
+  "rounded-t-[1.375rem] overflow-hidden",
 )
-
-export const saleFinalizeDialogTotalsGlowClass =
-  "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-15%,color-mix(in_srgb,var(--rootsy-savia-400)_34%,transparent),transparent_58%)]"
 
 export const saleFinalizeDialogHeaderRowClass =
-  "mb-[var(--rootsy-space-200)] flex min-h-8 items-center justify-between gap-3"
+  "flex min-h-8 items-center justify-between gap-3"
 
 export const saleFinalizeDialogTitleClass = cn(
-  "min-w-0 flex-1 font-canopy text-[length:var(--rootsy-text-heading-small-size)] leading-[var(--rootsy-text-heading-small-lh)]",
-  "font-bold tracking-[-0.01em] text-[var(--rootsy-savia-50)]",
+  "min-w-0 flex-1 font-canopy text-sm leading-snug",
 )
 
-export const saleFinalizeDialogCloseClass = cn(
-  "inline-flex size-8 shrink-0 items-center justify-center rounded-full",
-  "text-[color-mix(in_srgb,var(--rootsy-savia-50)_72%,transparent)] transition-colors",
-  "hover:text-[var(--rootsy-savia-50)] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-50)_10%,transparent)]",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+export const saleFinalizeDialogSkyInnerClass = cn(
+  "relative z-[1] px-[var(--rootsy-space-400)] pt-[var(--rootsy-space-300)] pb-[var(--rootsy-space-400)]",
 )
 
-export const saleFinalizeDialogAmountClass =
-  "font-numeric text-[2.375rem] font-bold tabular-nums tracking-tight text-[var(--rootsy-savia-50)]"
+export const saleFinalizeDialogAmountClass = cn(
+  "font-numeric text-[2rem] font-semibold tabular-nums tracking-tight leading-none",
+)
 
-export const saleFinalizeDialogAmountLabelClass =
-  "mt-1 font-canopy text-[10px] font-semibold uppercase tracking-[0.18em] text-[color-mix(in_srgb,var(--rootsy-savia-100)_78%,white)]"
+export const saleFinalizeDialogAmountLabelClass = cn(
+  "mt-2 font-canopy text-[10px] font-semibold uppercase tracking-[0.2em]",
+)
 
-export const saleFinalizeDialogBreakdownClass =
-  "mb-4 space-y-1 border-b border-[color-mix(in_srgb,var(--rootsy-savia-50)_14%,transparent)] pb-3"
-
-export const saleFinalizeDialogBreakdownRowClass =
-  "flex items-center justify-between gap-3 font-canopy text-[11px] leading-snug"
-
-export const saleFinalizeDialogBreakdownLabelClass =
-  "font-medium uppercase tracking-[0.1em] text-[color-mix(in_srgb,var(--rootsy-savia-50)_48%,transparent)]"
-
-export const saleFinalizeDialogBreakdownAmountClass =
-  "font-numeric font-medium tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-50)_82%,transparent)]"
-
-export const saleFinalizeDialogBreakdownDiscountClass =
-  "font-numeric font-medium tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-200)_88%,white)]"
+export const saleFinalizeDialogDiscountWhisperClass = cn(
+  "mt-2 font-canopy text-[11px] tabular-nums",
+)
 
 export const saleFinalizeDialogFactsZoneClass =
-  "bg-[var(--rootsy-bruma-50)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-150)]"
+  "bg-[var(--rootsy-bruma-50)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-400)]"
 
-/** Bloque de opciones dentro de la zona bruma — separador suave, sin caja extra. */
+export const saleFinalizeDialogFactsListClass =
+  "divide-y divide-[color-mix(in_srgb,var(--rootsy-bruma-200)_70%,transparent)]"
+
+/** Bloque de opciones — mismas filas que los hechos, sin cards. */
 export const saleFinalizeDialogOptionsBlockClass = cn(
-  "mt-[var(--rootsy-space-150)] space-y-2",
-  "border-t border-[color-mix(in_srgb,var(--rootsy-bruma-300)_38%,transparent)]",
-  "pt-[var(--rootsy-space-200)]",
+  "mt-[var(--rootsy-space-300)]",
+  "border-t border-[color-mix(in_srgb,var(--rootsy-bruma-200)_70%,transparent)]",
+  "pt-1",
 )
+
+export const saleFinalizeDialogOptionRowClass = cn(
+  "flex min-h-11 cursor-pointer items-center justify-between gap-6",
+  "py-2.5 first:pt-3 last:pb-0",
+  "disabled:cursor-not-allowed",
+)
+
+export const saleFinalizeDialogOptionLabelClass =
+  "min-w-0 font-canopy text-sm font-normal text-[var(--rootsy-bruma-800)]"
 
 export const saleFinalizeDialogShellWideClass =
   "sm:max-w-[min(92vw,56rem)]"
@@ -113,16 +103,16 @@ export const saleFinalizeDialogPartialListMobileClass =
   "max-h-[min(40vh,18rem)] overflow-y-auto overscroll-contain md:hidden"
 
 export const saleFinalizeDialogFactRowClass =
-  "flex min-h-11 items-center justify-between gap-4 py-[var(--rootsy-space-100)]"
+  "flex items-baseline justify-between gap-6 py-3 first:pt-0 last:pb-0"
 
 export const saleFinalizeDialogFactLabelClass =
-  "shrink-0 font-canopy text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--rootsy-bruma-500)]"
+  "shrink-0 font-canopy text-[11px] font-medium text-[var(--rootsy-bruma-500)]"
 
 export const saleFinalizeDialogFactValueClass =
-  "min-w-0 truncate text-right font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]"
+  "min-w-0 truncate text-right font-canopy text-sm font-medium text-[var(--rootsy-bruma-900)]"
 
 export const saleFinalizeDialogFactValueMutedClass =
-  "min-w-0 truncate text-right font-canopy text-sm font-medium text-[var(--rootsy-bruma-400)]"
+  "min-w-0 truncate text-right font-canopy text-sm font-normal text-[var(--rootsy-bruma-400)]"
 
 export const saleFinalizeDialogErrorClass =
   "mx-[var(--rootsy-space-400)] mb-[var(--rootsy-space-150)] rounded-lg border border-[#dc2626]/30 bg-[#dc2626]/5 px-3 py-2.5 font-canopy text-sm text-[#dc2626]"
@@ -146,6 +136,14 @@ export const saleFinalizeDialogConfirmActionClass = cn(
   "font-canopy text-sm font-semibold text-white transition-colors",
   "hover:bg-[var(--rootsy-savia-700)] active:bg-[var(--rootsy-savia-800)]",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]",
+  "disabled:pointer-events-none disabled:bg-[var(--rootsy-bruma-300)] disabled:text-[var(--rootsy-bruma-50)]",
+)
+
+export const saleFinalizeDialogConfirmPayActionClass = cn(
+  "flex items-center justify-center gap-2 bg-[#D97706]",
+  "font-canopy text-sm font-semibold text-white transition-colors",
+  "hover:bg-[#F59E0B] active:bg-[#B45309]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#F59E0B]/45",
   "disabled:pointer-events-none disabled:bg-[var(--rootsy-bruma-300)] disabled:text-[var(--rootsy-bruma-50)]",
 )
 

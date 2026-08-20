@@ -14,10 +14,12 @@ import {
   saleOpActionIconWrapConfirmClass,
   saleOpActionIconWrapConfirmDisabledClass,
   saleOpActionIconWrapDiscardClass,
+  saleOpActionPayClass,
   saleOpActionsBarShellClass,
+  saleOpTicketActionPayClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
-import { CircleDollarSign, HandCoins, Loader2, X } from "lucide-react"
+import { Banknote, CircleDollarSign, HandCoins, Loader2, X } from "lucide-react"
 
 const ticketActionDiscardStyle = {
   borderRadius: layoutsOperarTicketActionCircleRadius,
@@ -37,10 +39,12 @@ export type SaleOperationActionsBarProps = {
   confirmLoading?: boolean
   confirmLabel?: string
   confirmTitle?: string
+  /** Cobrar entra plata (savia). Pagar sale plata (otoño). */
+  confirmTone?: "charge" | "pay"
   onDiscard: () => void
   onConfirm: () => void
   flush?: boolean
-  /** Ticket operar — umbral circular Descartar · Cobrar. */
+  /** Ticket operar — umbral circular Descartar · Cobrar / Pagar. */
   variant?: "default" | "operar"
   className?: string
 }
@@ -49,8 +53,9 @@ export function SaleOperationActionsBar({
   discardDisabled = false,
   confirmDisabled = false,
   confirmLoading = false,
-  confirmLabel = "Vender",
+  confirmLabel,
   confirmTitle,
+  confirmTone = "charge",
   onDiscard,
   onConfirm,
   flush = false,
@@ -58,6 +63,9 @@ export function SaleOperationActionsBar({
   className,
 }: SaleOperationActionsBarProps) {
   const confirmInactive = confirmDisabled || confirmLoading
+  const isPay = confirmTone === "pay"
+  const resolvedConfirmLabel = confirmLabel ?? (isPay ? "Pagar" : "Vender")
+  const ConfirmIcon = isPay ? Banknote : HandCoins
 
   if (variant === "operar") {
     return (
@@ -79,7 +87,7 @@ export function SaleOperationActionsBar({
           />
         </RootsIconButton>
         <RootsIconButton
-          label={confirmLoading ? "Procesando" : confirmLabel}
+          label={confirmLoading ? "Procesando" : resolvedConfirmLabel}
           theme="pos"
           emphasis="primary"
           size="large"
@@ -88,9 +96,10 @@ export function SaleOperationActionsBar({
           disabled={confirmDisabled}
           title={confirmTitle}
           onClick={onConfirm}
+          className={isPay ? saleOpTicketActionPayClass : undefined}
           style={ticketActionConfirmStyle}
         >
-          <HandCoins size={layoutsOperarTicketActionConfirmIconPx} aria-hidden />
+          <ConfirmIcon size={layoutsOperarTicketActionConfirmIconPx} aria-hidden />
         </RootsIconButton>
       </>
     )
@@ -127,7 +136,10 @@ export function SaleOperationActionsBar({
         disabled={confirmInactive}
         onClick={onConfirm}
         title={confirmTitle}
-        className={cn(saleOpActionConfirmClass, !flush && "rounded-xl")}
+        className={cn(
+          isPay ? saleOpActionPayClass : saleOpActionConfirmClass,
+          !flush && "rounded-xl",
+        )}
       >
         <span
           className={cn(
@@ -139,11 +151,13 @@ export function SaleOperationActionsBar({
         >
           {confirmLoading ? (
             <Loader2 className="size-4 animate-spin" />
+          ) : isPay ? (
+            <Banknote className="size-4" />
           ) : (
             <CircleDollarSign className="size-4" />
           )}
         </span>
-        {confirmLoading ? "Procesando…" : confirmLabel}
+        {confirmLoading ? "Procesando…" : resolvedConfirmLabel}
       </button>
     </div>
   )

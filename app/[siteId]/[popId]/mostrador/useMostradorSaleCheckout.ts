@@ -29,6 +29,7 @@ import {
 } from "@/lib/saleCheckoutPayment"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
+import { getSalePriceListSession } from "@/lib/salePriceListSession"
 import {
   buildMenuProductMap,
   computeMenuQuantityDealApplications,
@@ -1340,6 +1341,7 @@ export function useMostradorSaleCheckout(
 
         const res = await completeSale(popId, {
           siteId,
+          priceListId: getSalePriceListSession(popId),
           lines: buildCompleteSaleLinesFromCart({
             carrito: carritoToSell,
             quantityDealApplications:

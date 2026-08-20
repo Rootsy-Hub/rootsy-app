@@ -1,6 +1,7 @@
 "use client"
 
 import type { ArticleCategoryOption } from "@/app/[siteId]/[popId]/articles/actions"
+import type { SalePriceList } from "@/lib/salePriceLists"
 import {
   ArticleUpsertFormFields,
   ARTICLE_UPSERT_WIZARD_STEPS,
@@ -41,6 +42,7 @@ type FormFieldsProps = {
   onChange: (patch: Partial<ArticleUpsertFormState>) => void
   onItemKindChange: (kind: ArticleItemKind) => void
   categories: ArticleCategoryOption[]
+  priceLists?: SalePriceList[]
   supplierOptions: { id: string; name: string }[]
   costLines: ArticleCostFormLine[]
   onCostLinesChange: (lines: ArticleCostFormLine[]) => void
@@ -98,6 +100,7 @@ export function ArticleUpsertDialog({
   onChange,
   onItemKindChange,
   categories,
+  priceLists,
   supplierOptions,
   costLines,
   canPostInitialStock,
@@ -208,6 +211,7 @@ export function ArticleUpsertDialog({
                       onChange={handleFormChange}
                       onItemKindChange={onItemKindChange}
                       categories={categories}
+                      priceLists={priceLists}
                       supplierOptions={supplierOptions}
                       costLines={costLines}
                       onCostLinesChange={formProps.onCostLinesChange}

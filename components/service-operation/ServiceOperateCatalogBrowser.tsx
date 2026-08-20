@@ -12,9 +12,8 @@ import {
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
   layoutsOperarCatalogSidebarOpenClass,
-  layoutsOperarCatalogToolbarClass,
   layoutsOperarFormDarkMutedTextClass,
-  layoutsOperarFormDarkSecondaryButtonClass,
+  layoutsOperarScrollMinimalClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   RootsAlertDialogContent,
@@ -35,7 +34,7 @@ import type {
 } from "@/lib/serviceOperateCatalog"
 import { cn } from "@/lib/utils"
 import { ChevronLeft } from "lucide-react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 const ALL_CATEGORY_NAME = "Todos"
 
@@ -83,6 +82,12 @@ export function ServiceOperateCatalogBrowser({
 
   const showSelectedDetail = Boolean(selectedService && popId?.trim())
 
+  useEffect(() => {
+    const categoryName = selectedService?.categoryName.trim()
+    if (!categoryName) return
+    setVistaCatalogo({ modo: "categoria", categoria: categoryName })
+  }, [selectedService?.id, selectedService?.categoryName])
+
   const handleConfirmClearService = () => {
     setClearServiceConfirmOpen(false)
     onClearSelectedService?.()
@@ -116,33 +121,8 @@ export function ServiceOperateCatalogBrowser({
 
   return (
     <>
-      <div
-        className={cn(
-          layoutsOperarCatalogColumnClass,
-          showSelectedDetail && "flex-col",
-        )}
-      >
-      {showSelectedDetail ? (
-        <>
-          <div className={cn(layoutsOperarCatalogToolbarClass, "justify-start")}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => setClearServiceConfirmOpen(true)}
-              className={layoutsOperarFormDarkSecondaryButtonClass}
-            >
-              <ChevronLeft className="size-4 shrink-0 opacity-80" aria-hidden />
-              Elegir otro servicio
-            </button>
-          </div>
-          <ServiceOperateSelectedServiceDetail
-            popId={popId!}
-            service={selectedService!}
-            className="min-h-0 flex-1"
-          />
-        </>
-      ) : (
-        <>
+      <div className={layoutsOperarCatalogColumnClass}>
+        {showSelectedDetail ? null : (
           <aside
             id="data-workspace-sidebar"
             className={cn(
@@ -167,69 +147,117 @@ export function ServiceOperateCatalogBrowser({
               )}
             </div>
           </aside>
+        )}
 
-          <section className={layoutsOperarCatalogCanvasClass}>
-            <ServiceOperateCatalogToolbar
-              modoVista={modoVista}
-              onModoVistaChange={setModoVista}
-              busqueda={busqueda}
-              onBusquedaChange={setBusqueda}
-            />
-
+        <section
+          className={cn(
+            layoutsOperarCatalogCanvasClass,
+            showSelectedDetail && "[grid-template-rows:minmax(0,1fr)]",
+          )}
+        >
+          {showSelectedDetail ? (
             <div className={layoutsOperarCatalogCanvasBodyClass}>
-            <div
-              className={cn(
-                "min-h-0 h-full",
-                loading && !error
-                  ? layoutsOperarCatalogCanvasScrollClass
-                  : error
-                    ? "flex flex-1 flex-col p-6"
-                    : cn(layoutsOperarCatalogCanvasScrollClass),
-              )}
-            >
-              {loading && !error ? (
-                <SaleCatalogBrowserSkeleton variant={modoVista} />
-              ) : error ? (
-                <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
-                  <p className="max-w-md text-sm text-rose-300">{error}</p>
+              <div
+                className={cn(
+                  layoutsOperarScrollMinimalClass,
+                  "h-full min-h-0 overflow-y-auto overscroll-contain",
+                  "px-6 py-5 sm:px-8 sm:py-6",
+                )}
+              >
+                <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => setClearServiceConfirmOpen(true)}
+                    className={cn(
+                      "inline-flex w-fit items-center gap-1 text-xs font-medium",
+                      layoutsOperarFormDarkMutedTextClass,
+                      "transition-colors hover:text-[var(--layouts-operar-product-card-title)]",
+                      "focus-visible:outline-none focus-visible:text-[var(--layouts-operar-product-card-title)]",
+                      "disabled:pointer-events-none disabled:opacity-45",
+                    )}
+                  >
+                    <ChevronLeft className="size-3.5 shrink-0" aria-hidden />
+                    Elegir otro servicio
+                  </button>
+                  <ServiceOperateSelectedServiceDetail
+                    popId={popId!}
+                    service={selectedService!}
+                  />
                 </div>
-              ) : visibleItems.length === 0 ? (
-                <div className="flex min-h-[16rem] flex-col items-center justify-center gap-2 px-6 text-center">
-                  <p className="text-sm font-medium text-[color-mix(in_srgb,var(--rootsy-bruma-100)_88%,transparent)]">
-                    No hay servicios para mostrar
-                  </p>
-                  <p className={cn("max-w-xs text-xs", layoutsOperarFormDarkMutedTextClass)}>
-                    Activá servicios en el catálogo o probá otra búsqueda.
-                  </p>
-                </div>
-              ) : (
+              </div>
+            </div>
+          ) : (
+            <>
+              <ServiceOperateCatalogToolbar
+                modoVista={modoVista}
+                onModoVistaChange={setModoVista}
+                busqueda={busqueda}
+                onBusquedaChange={setBusqueda}
+              />
+
+              <div className={layoutsOperarCatalogCanvasBodyClass}>
                 <div
-                  className={
-                    modoVista === "grid"
-                      ? layoutsOperarCatalogGridClass
-                      : "flex flex-col gap-2"
-                  }
+                  className={cn(
+                    "min-h-0 h-full",
+                    loading && !error
+                      ? layoutsOperarCatalogCanvasScrollClass
+                      : error
+                        ? "flex flex-1 flex-col p-6"
+                        : layoutsOperarCatalogCanvasScrollClass,
+                  )}
                 >
-                  {visibleItems.map((service) => (
-                    <ServiceOperateServiceCard
-                      key={service.id}
-                      service={service}
-                      variant={modoVista}
-                      selected={selectedServiceId === service.id}
-                      disabled={disabled}
-                      onClick={() => onSelectService(service.id)}
-                    />
-                  ))}
+                  {loading && !error ? (
+                    <SaleCatalogBrowserSkeleton variant={modoVista} />
+                  ) : error ? (
+                    <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
+                      <p className="max-w-md text-sm text-rose-300">{error}</p>
+                    </div>
+                  ) : visibleItems.length === 0 ? (
+                    <div className="flex min-h-[16rem] flex-col items-center justify-center gap-2 px-6 text-center">
+                      <p className="text-sm font-medium text-[color-mix(in_srgb,var(--rootsy-bruma-100)_88%,transparent)]">
+                        No hay servicios para mostrar
+                      </p>
+                      <p
+                        className={cn(
+                          "max-w-xs text-xs",
+                          layoutsOperarFormDarkMutedTextClass,
+                        )}
+                      >
+                        Activá servicios en el catálogo o probá otra búsqueda.
+                      </p>
+                    </div>
+                  ) : (
+                    <div
+                      className={
+                        modoVista === "grid"
+                          ? layoutsOperarCatalogGridClass
+                          : "flex flex-col gap-2"
+                      }
+                    >
+                      {visibleItems.map((service) => (
+                        <ServiceOperateServiceCard
+                          key={service.id}
+                          service={service}
+                          variant={modoVista}
+                          selected={selectedServiceId === service.id}
+                          disabled={disabled}
+                          onClick={() => onSelectService(service.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            </div>
-          </section>
-        </>
-      )}
+              </div>
+            </>
+          )}
+        </section>
       </div>
 
-      <AlertDialog open={clearServiceConfirmOpen} onOpenChange={setClearServiceConfirmOpen}>
+      <AlertDialog
+        open={clearServiceConfirmOpen}
+        onOpenChange={setClearServiceConfirmOpen}
+      >
         <RootsAlertDialogContent>
           <RootsAlertDialogPanel
             title="¿Elegir otro servicio?"

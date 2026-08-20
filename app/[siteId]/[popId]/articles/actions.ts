@@ -38,6 +38,8 @@ import {
   validateArticleBarcodeInput,
 } from "@/lib/articleIdentifiers"
 import { syncArticleCosts } from "@/app/[siteId]/[popId]/articles/articleCostsActions"
+import { syncItemPriceListAmounts } from "@/app/[siteId]/[popId]/articles/priceListActions"
+import type { SalePriceListAmountInput } from "@/lib/salePriceLists"
 import {
   ARTICLE_TABLE_PAGE_SIZES,
   DEFAULT_ARTICLE_TABLE_PAGE_SIZE,
@@ -112,6 +114,7 @@ export type UpdatePopArticleInput = {
   discountValue: number | null
   allowNegativeStock: boolean
   costs?: ArticleCostLineInput[]
+  listPrices?: SalePriceListAmountInput[]
 } & ArticleItemFieldsInput
 
 export type CreatePopArticleInput = UpdatePopArticleInput & {
@@ -522,6 +525,19 @@ export async function updatePopArticle(
       }
     }
 
+    if (input.itemKind === "merchandise") {
+      const syncLists = await syncItemPriceListAmounts(
+        supabase,
+        popId,
+        "article",
+        articleId,
+        input.listPrices ?? [],
+      )
+      if (!syncLists.ok) {
+        return { success: false, error: syncLists.error }
+      }
+    }
+
     return { success: true }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
@@ -665,6 +681,20 @@ export async function createPopArticle(
     if (!syncCosts.ok) {
       await supabase.from("articles").delete().eq("id", articleId).eq("pop_id", popId)
       return { success: false, error: syncCosts.error }
+    }
+
+    if (input.itemKind === "merchandise") {
+      const syncLists = await syncItemPriceListAmounts(
+        supabase,
+        popId,
+        "article",
+        articleId,
+        input.listPrices ?? [],
+      )
+      if (!syncLists.ok) {
+        await supabase.from("articles").delete().eq("id", articleId).eq("pop_id", popId)
+        return { success: false, error: syncLists.error }
+      }
     }
 
     if (wantsInitial && initialUnitCostSaleUom != null) {
