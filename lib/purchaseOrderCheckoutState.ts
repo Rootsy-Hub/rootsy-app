@@ -15,6 +15,7 @@ export type PurchaseSupplierSelection = {
   taxId: string
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
+  currentAccountEnabled?: boolean
 }
 
 export type PurchaseCheckoutSnapshot = {
@@ -105,6 +106,7 @@ function parseSupplier(v: unknown): PurchaseSupplierSelection | null {
       typeof v.defaultInvoiceTypeLabel === "string"
         ? v.defaultInvoiceTypeLabel
         : null,
+    currentAccountEnabled: v.currentAccountEnabled === true,
   }
 }
 

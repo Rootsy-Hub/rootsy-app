@@ -12,6 +12,7 @@ import {
 export async function registerAccountWithEmail(input: {
   email: string
   password: string
+  next?: string
 }): Promise<
   | { success: true; needsConfirmation: true; resent?: boolean }
   | { success: false; error: string }
@@ -32,6 +33,7 @@ export async function registerAccountWithEmail(input: {
     email,
     password: input.password,
     firstName,
+    next: input.next,
   })
 
   if (!result.sent) {
@@ -56,6 +58,7 @@ export async function checkSignupEmailStatus(input: {
 
 export async function resendSignupConfirmationEmail(input: {
   email: string
+  next?: string
 }): Promise<{ success: true } | { success: false; error: string }> {
   const email = formatEmailInput(input.email)
   const emailError = validateEmailField(email)
@@ -63,7 +66,10 @@ export async function resendSignupConfirmationEmail(input: {
     return { success: false, error: emailError }
   }
 
-  const result = await resendSignupConfirmationViaResend({ email })
+  const result = await resendSignupConfirmationViaResend({
+    email,
+    next: input.next,
+  })
   if (!result.sent) {
     return { success: false, error: result.error }
   }

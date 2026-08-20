@@ -74,6 +74,7 @@ import {
 import { resolveCatalogProductImage } from "@/lib/menuCatalogProduct"
 import { resolveSaleLineDiscount } from "@/lib/saleLineDiscount"
 import { SUPPLIER_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
+import { partyCanOperateOnCurrentAccount } from "@/lib/currentAccounts"
 import {
   getPurchaseComprobanteDisplayLabel,
   getPurchaseComprobantePickerOptions,
@@ -134,6 +135,7 @@ type ProveedorCompraSeleccionado = {
   taxId: string
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
+  currentAccountEnabled?: boolean
 }
 
 const IVA_LABEL_BY_VALUE = Object.fromEntries(
@@ -442,13 +444,13 @@ function PurchasesPage() {
       hayItemsEnPedido &&
       canCreate &&
       (payOnSupplierAccount
-        ? Boolean(proveedorSeleccionado?.id)
+        ? partyCanOperateOnCurrentAccount(proveedorSeleccionado)
         : canReadPaymentMethods && metodoPagoSeleccionado != null),
     [
       hayItemsEnPedido,
       canCreate,
       payOnSupplierAccount,
-      proveedorSeleccionado?.id,
+      proveedorSeleccionado,
       canReadPaymentMethods,
       metodoPagoSeleccionado?.treasuryAccountId,
     ],
@@ -838,7 +840,9 @@ function PurchasesPage() {
       taxId: s.taxId,
       ivaCondition: null,
       defaultInvoiceTypeLabel: null,
+      currentAccountEnabled: s.currentAccountEnabled === true,
     })
+    if (!s.currentAccountEnabled) setPayOnSupplierAccount(false)
     setManualNombreProveedor(s.name)
     setProveedorTaxId(s.taxId ?? "")
     setProveedorModalAbierto(false)
@@ -857,7 +861,9 @@ function PurchasesPage() {
       taxId: payload.taxId || "",
       ivaCondition: payload.ivaCondition || null,
       defaultInvoiceTypeLabel: null,
+      currentAccountEnabled: false,
     })
+    setPayOnSupplierAccount(false)
   }
 
   const compraIvaLabel = useMemo(
@@ -1275,8 +1281,11 @@ function PurchasesPage() {
                       ? "Agregá artículos a la compra."
                       : !payOnSupplierAccount && !metodoPagoSeleccionado
                         ? "Elegí cómo vas a pagar o usá cuenta corriente."
-                        : payOnSupplierAccount && !proveedorSeleccionado?.id
-                          ? "Elegí un proveedor del catálogo para comprar a cuenta corriente."
+                        : payOnSupplierAccount &&
+                            !partyCanOperateOnCurrentAccount(proveedorSeleccionado)
+                          ? proveedorSeleccionado?.id
+                            ? "Este proveedor no está dado de alta en Cuentas corrientes."
+                            : "Elegí un proveedor del catálogo para comprar a cuenta corriente."
                           : !canCreate
                             ? "No tenés permiso para registrar compras."
                             : undefined,
@@ -1328,6 +1337,7 @@ function PurchasesPage() {
             id: party.id,
             name: party.name,
             taxId: party.taxId ?? "",
+            currentAccountEnabled: party.currentAccountEnabled === true,
           })
         }
         onConfirmManual={(payload) => confirmarProveedorManual(payload)}
@@ -1373,6 +1383,7 @@ function PurchasesPage() {
             setCardInstallments("1")
           }
         }}
+        hideAccountOption={!partyCanOperateOnCurrentAccount(proveedorSeleccionado)}
         onSelectSupplierAccount={() => {
           setPayOnSupplierAccount(true)
           setMetodoPagoSeleccionado(null)

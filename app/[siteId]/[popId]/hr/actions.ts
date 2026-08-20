@@ -372,24 +372,16 @@ export async function inviteUserToPop(
     return { success: false, error: "Correo electrónico no válido." }
   }
 
-  const { data: inviteeId, error: lookErr } = await supabase.rpc(
+  if (user.email && user.email.trim().toLowerCase() === email) {
+    return { success: false, error: "No podés invitarte a vos mismo." }
+  }
+
+  const { data: inviteeId } = await supabase.rpc(
     "lookup_auth_user_id_for_pop_owner_invite",
     { p_pop_id: popId, p_email: email },
   )
 
-  if (lookErr) {
-    return { success: false, error: lookErr.message }
-  }
-
-  if (!inviteeId) {
-    return {
-      success: false,
-      error:
-        "No hay una cuenta registrada con ese correo. El usuario debe crear una cuenta en Rootsy primero.",
-    }
-  }
-
-  if (sameUserId(user.uid, inviteeId as string)) {
+  if (inviteeId && sameUserId(user.uid, inviteeId as string)) {
     return { success: false, error: "No podés invitarte a vos mismo." }
   }
 
@@ -412,18 +404,20 @@ export async function inviteUserToPop(
     return { success: false, error: "Ese rol no pertenece a este POP." }
   }
 
-  const { data: existingMember } = await supabase
-    .from("user_pop_roles")
-    .select("id")
-    .eq("pop_id", popId)
-    .eq("user_id", inviteeId)
-    .eq("is_active", true)
-    .maybeSingle()
+  if (inviteeId) {
+    const { data: existingMember } = await supabase
+      .from("user_pop_roles")
+      .select("id")
+      .eq("pop_id", popId)
+      .eq("user_id", inviteeId)
+      .eq("is_active", true)
+      .maybeSingle()
 
-  if (existingMember) {
-    return {
-      success: false,
-      error: "Ese usuario ya es miembro activo de este punto de venta.",
+    if (existingMember) {
+      return {
+        success: false,
+        error: "Ese usuario ya es miembro activo de este punto de venta.",
+      }
     }
   }
 

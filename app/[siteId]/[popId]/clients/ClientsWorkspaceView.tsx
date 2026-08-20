@@ -90,6 +90,7 @@ import {
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePopClientsTable } from "@/hooks/usePopClientsTable"
 import { popClientsQueryRoot } from "@/lib/queryKeys"
+import { formatMoneyInputForField } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { useQueryClient } from "@tanstack/react-query"
@@ -125,6 +126,9 @@ function emptyForm(): UpsertPopClientInput {
     addressLine: "",
     defaultInvoiceTypeLabel: "",
     isActive: true,
+    currentAccountEnabled: false,
+    currentAccountCreditLimit: "",
+    currentAccountTermDays: "30",
   }
 }
 
@@ -499,6 +503,11 @@ export function ClientsWorkspaceView() {
       addressLine: row.addressLine,
       defaultInvoiceTypeLabel: row.defaultInvoiceTypeLabel ?? "",
       isActive: row.isActive,
+      currentAccountEnabled: row.currentAccountEnabled,
+      currentAccountCreditLimit: row.currentAccountCreditLimit
+        ? formatMoneyInputForField(row.currentAccountCreditLimit)
+        : "",
+      currentAccountTermDays: String(row.currentAccountTermDays),
     })
   }
 

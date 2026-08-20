@@ -30,6 +30,7 @@ type Props = {
   popId?: string
   defaultPartyName?: string
   defaultPartyId?: string
+  hideAccountOption?: boolean
 }
 
 export function SalePaymentMethodDialog({
@@ -47,6 +48,7 @@ export function SalePaymentMethodDialog({
   popId,
   defaultPartyName,
   defaultPartyId,
+  hideAccountOption,
 }: Props) {
   return (
     <PaymentMethodDialog
@@ -66,6 +68,7 @@ export function SalePaymentMethodDialog({
       popId={popId}
       defaultPartyName={defaultPartyName}
       defaultPartyId={defaultPartyId}
+      hideAccountOption={hideAccountOption}
     />
   )
 }

@@ -9,6 +9,8 @@ import {
   CurrentAccountDetailSkeleton,
 } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountDetailSkeleton"
 import { CurrentAccountSettleDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountSettleDialog"
+import { CurrentAccountTermsDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountTermsDialog"
+import { setPopCurrentAccountEnrollment } from "@/app/[siteId]/[popId]/current-accounts/actions"
 import {
   CurrentAccountLedgerDateCell,
   CurrentAccountLedgerDocCell,
@@ -41,6 +43,7 @@ import {
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { RootsIconButton } from "@/components/rootsy-button"
+import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { Table, TableBody } from "@/components/ui/table"
 import { usePopCurrentAccountLedger } from "@/hooks/usePopCurrentAccountLedger"
 import {
@@ -94,7 +97,10 @@ export function CurrentAccountDetailView({
   const queryClient = useQueryClient()
   const [settleOpen, setSettleOpen] = useState(false)
   const [applyOpen, setApplyOpen] = useState(false)
+  const [unenrollOpen, setUnenrollOpen] = useState(false)
+  const [termsOpen, setTermsOpen] = useState(false)
   const [pdfBusy, setPdfBusy] = useState(false)
+  const [enrollmentBusy, setEnrollmentBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const ledgerQuery = usePopCurrentAccountLedger(popId, direction, partyId, {
@@ -113,6 +119,10 @@ export function CurrentAccountDetailView({
   const openDocuments = ledger?.openDocuments ?? []
   const lines = ledger?.lines ?? []
   const canCreate = ledger?.canCreate ?? false
+  const enrolled = ledger?.enrolled ?? false
+  const creditLimit = ledger?.creditLimit ?? null
+  const termDays = ledger?.termDays ?? 30
+  const availableCredit = ledger?.availableCredit ?? null
   const unappliedCredit = ledger?.unappliedCredit ?? 0
   const viewingOpen = view === "open"
   const tableError =
@@ -146,6 +156,8 @@ export function CurrentAccountDetailView({
   useEffect(() => {
     setSettleOpen(false)
     setApplyOpen(false)
+    setUnenrollOpen(false)
+    setTermsOpen(false)
     setActionError(null)
   }, [direction, partyId])
 
@@ -205,8 +217,21 @@ export function CurrentAccountDetailView({
                 overdueAmount={overdueAmount}
                 unappliedCredit={unappliedCredit}
                 canCreate={canCreate}
+                enrolled={enrolled}
+                enrollmentBusy={enrollmentBusy}
+                creditLimit={creditLimit}
+                availableCredit={availableCredit}
+                termDays={termDays}
                 onSettle={() => setSettleOpen(true)}
                 onApply={() => setApplyOpen(true)}
+                onEditTerms={() => setTermsOpen(true)}
+                onToggleEnrollment={() => {
+                  if (enrolled) {
+                    setUnenrollOpen(true)
+                    return
+                  }
+                  setTermsOpen(true)
+                }}
               />
             </div>
 
@@ -346,6 +371,7 @@ export function CurrentAccountDetailView({
                           >
                             <CurrentAccountLedgerDateCell
                               value={document.date}
+                              occurredAt={document.occurredAt}
                             />
                             <CurrentAccountLedgerDocCell
                               label={document.documentLabel}
@@ -434,7 +460,10 @@ export function CurrentAccountDetailView({
                       <TableBody>
                         {lines.map((line, index) => (
                           <WorkspaceTableBodyRow key={line.id} index={index}>
-                            <CurrentAccountLedgerDateCell value={line.date} />
+                            <CurrentAccountLedgerDateCell
+                              value={line.date}
+                              occurredAt={line.occurredAt}
+                            />
                             <CurrentAccountLedgerDocCell
                               label={line.documentLabel}
                               description={line.description}
@@ -480,6 +509,47 @@ export function CurrentAccountDetailView({
             unappliedCredit={unappliedCredit}
             documents={openDocuments}
             onApplied={() => void refreshLedger()}
+          />
+          <CurrentAccountTermsDialog
+            open={termsOpen}
+            onOpenChange={setTermsOpen}
+            popId={popId}
+            direction={direction}
+            partyId={partyId}
+            partyName={partyName}
+            creditLimit={creditLimit}
+            termDays={termDays}
+            onSaved={() => void refreshLedger()}
+          />
+          <RootsConfirmDialog
+            open={unenrollOpen}
+            onOpenChange={setUnenrollOpen}
+            title="Deshabilitar cuenta corriente"
+            description={
+              direction === "payable"
+                ? "Ya no se podrá comprar a cuenta de este proveedor. El saldo y el extracto se mantienen."
+                : "Ya no se podrá vender a cuenta de este cliente. El saldo y el extracto se mantienen."
+            }
+            confirmLabel="Deshabilitar"
+            busy={enrollmentBusy}
+            onConfirm={() => {
+              void (async () => {
+                setEnrollmentBusy(true)
+                setActionError(null)
+                const result = await setPopCurrentAccountEnrollment(popId, {
+                  direction,
+                  partyId,
+                  enabled: false,
+                })
+                setEnrollmentBusy(false)
+                if (!result.success) {
+                  setActionError(result.error)
+                  return
+                }
+                setUnenrollOpen(false)
+                await refreshLedger()
+              })()
+            }}
           />
         </>
       ) : null}

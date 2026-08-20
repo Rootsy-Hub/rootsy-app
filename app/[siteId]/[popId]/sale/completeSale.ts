@@ -29,7 +29,12 @@ import {
 import {
   addIsoCalendarDays,
   CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS,
+  currentAccountNotEnrolledMessage,
 } from "@/lib/currentAccounts"
+import {
+  assertPartyCurrentAccountCredit,
+  loadPartyCurrentAccountEnabled,
+} from "@/lib/currentAccountEnrollment"
 import { toPopCalendarDate } from "@/lib/popTimezone"
 import { resolveLedgerAccountForTreasuryPayment } from "@/lib/treasuryPaymentLedger"
 import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
@@ -855,6 +860,19 @@ export async function completeSale(
       }
     }
 
+    if (payOnClientAccount && input.clientId?.trim()) {
+      const enrolled = await loadPartyCurrentAccountEnabled(supabase, {
+        direction: "receivable",
+        partyId: input.clientId.trim(),
+      })
+      if (!enrolled) {
+        return {
+          success: false,
+          error: currentAccountNotEnrolledMessage("receivable"),
+        }
+      }
+    }
+
     let paymentAccountId: string | null = null
     if (!payOnClientAccount && paymentKind && treasuryAccountId) {
       paymentAccountId = await resolveLedgerAccountForTreasuryPayment(
@@ -1311,6 +1329,19 @@ export async function completeSale(
       return { success: false, error: "El total de la venta debe ser mayor que cero." }
     }
 
+    let accountTermDays = CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS
+    if (payOnClientAccount && input.clientId?.trim()) {
+      const gate = await assertPartyCurrentAccountCredit(supabase, popId, {
+        direction: "receivable",
+        partyId: input.clientId.trim(),
+        addAmount: total,
+      })
+      if (!gate.ok) {
+        return { success: false, error: gate.error }
+      }
+      accountTermDays = gate.termDays
+    }
+
     const scale =
       subtotalAfterItems > 0 ? roundMoney(total / subtotalAfterItems) : 1
     type FiscalLine = BuiltLine & { lineFinal: number; taxPart: number; netPart: number }
@@ -1541,7 +1572,7 @@ export async function completeSale(
       payOnClientAccount
         ? /^\d{4}-\d{2}-\d{2}$/.test(dueDateInput)
           ? dueDateInput
-          : addIsoCalendarDays(soldDate, CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS)
+          : addIsoCalendarDays(soldDate, accountTermDays)
         : soldDate
 
     const { data: saleIns, error: saleErr } = await supabase

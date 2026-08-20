@@ -32,6 +32,7 @@ function mapCheckoutClientRow(c: {
   email?: string | null
   iva_condition: string | null
   default_invoice_type_label: string | null
+  current_account_enabled?: boolean | null
 }): OperationPartyCatalogItem {
   return {
     id: String(c.id),
@@ -47,6 +48,7 @@ function mapCheckoutClientRow(c: {
       String(c.default_invoice_type_label).trim() !== ""
         ? String(c.default_invoice_type_label).trim()
         : null,
+    currentAccountEnabled: c.current_account_enabled === true,
   }
 }
 
@@ -101,7 +103,7 @@ export async function searchCheckoutClients(
     const { data, error } = await supabase
       .from("clients")
       .select(
-        "id, name, tax_id, email, iva_condition, default_invoice_type_label, is_active",
+        "id, name, tax_id, email, iva_condition, default_invoice_type_label, is_active, current_account_enabled",
       )
       .eq("pop_id", popId)
       .eq("is_active", true)
@@ -167,7 +169,7 @@ export async function createCheckoutClient(
         is_active: true,
       })
       .select(
-        "id, name, tax_id, email, iva_condition, default_invoice_type_label",
+        "id, name, tax_id, email, iva_condition, default_invoice_type_label, current_account_enabled",
       )
       .single()
 
@@ -224,7 +226,7 @@ export async function searchCheckoutSuppliers(
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("suppliers")
-      .select("id, name, tax_id")
+      .select("id, name, tax_id, current_account_enabled")
       .eq("pop_id", popId)
       .or(orClause)
       .order("name", { ascending: true })
@@ -242,6 +244,7 @@ export async function searchCheckoutSuppliers(
         taxId: s.tax_id != null ? String(s.tax_id) : null,
         ivaCondition: null,
         defaultInvoiceTypeLabel: null,
+        currentAccountEnabled: s.current_account_enabled === true,
       })),
     }
   } catch (e: unknown) {

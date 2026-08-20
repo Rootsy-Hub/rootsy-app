@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { partyCanOperateOnCurrentAccount } from "@/lib/currentAccounts"
 import { getSaleComprobanteDisplayLabel, hasConfiguredSaleComprobante } from "@/lib/saleComprobantePicker"
 import { saleOpAlertDialogContent } from "@/components/sale-operation/saleOperationStyles"
 import { useMemo } from "react"
@@ -120,6 +121,7 @@ export function MesasCheckoutModals({
             taxId: party.taxId ?? null,
             ivaCondition: party.ivaCondition ?? null,
             defaultInvoiceTypeLabel: party.defaultInvoiceTypeLabel ?? null,
+            currentAccountEnabled: party.currentAccountEnabled === true,
           })
         }
         onConfirmManual={m.confirmarClienteManual}
@@ -162,6 +164,7 @@ export function MesasCheckoutModals({
           m.setMetodoPagoSeleccionado(null)
         }}
         clientAccountDescription="Registrá la deuda en Cuentas por cobrar para esta operación."
+        hideAccountOption={!partyCanOperateOnCurrentAccount(m.clienteSeleccionado)}
       />
 
       <GeneralDiscountDialog

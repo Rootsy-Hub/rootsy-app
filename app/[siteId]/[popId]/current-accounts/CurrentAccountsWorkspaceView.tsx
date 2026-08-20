@@ -3,6 +3,7 @@
 import { CurrentAccountAgingToolbarFilter } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountAgingToolbarFilter"
 import { CurrentAccountDetailView } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountDetailView"
 import { CurrentAccountDirectionToolbarFilter } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountDirectionToolbarFilter"
+import { CurrentAccountEnrollDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountEnrollDialog"
 import {
   CurrentAccountCountCell,
   CurrentAccountMoneyCell,
@@ -30,6 +31,7 @@ import {
   DataWorkspaceTableListPage,
   DataWorkspaceTableListPaginationFooter,
   DataWorkspaceTableListShell,
+  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
@@ -58,6 +60,7 @@ import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { TableBody } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePopCurrentAccountParties } from "@/hooks/usePopCurrentAccountParties"
@@ -66,8 +69,11 @@ import {
   currentAccountDirectionLabel,
   type CurrentAccountDirection,
 } from "@/lib/currentAccounts"
+import { popCurrentAccountPartiesQueryRoot } from "@/lib/queryKeys"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
+import { useQueryClient } from "@tanstack/react-query"
+import { Truck, UserPlus } from "lucide-react"
 import {
   nextWorkspaceTableSortState,
   workspaceTableSortDisplayDirection,
@@ -96,8 +102,12 @@ export function CurrentAccountsWorkspaceView() {
   const searchInputId = useId()
   const pageSizeLabelId = useId()
   const { bootstrap, loading: bootstrapLoading, popAccess } = usePopWorkspace()
+  const queryClient = useQueryClient()
 
   const [searchInput, setSearchInput] = useState(ws.q)
+  const [enrollOpen, setEnrollOpen] = useState(false)
+  const [enrollDirection, setEnrollDirection] =
+    useState<CurrentAccountDirection>("receivable")
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const viewingParty = Boolean(ws.partyId)
@@ -152,6 +162,9 @@ export function CurrentAccountsWorkspaceView() {
 
   const parties = partiesQuery.data?.parties ?? []
   const totalCount = partiesQuery.data?.totalCount ?? 0
+  const canCreate = partiesQuery.data?.success
+    ? partiesQuery.data.canCreate
+    : false
   const loading =
     partiesQuery.isPending ||
     (partiesQuery.isFetching && !partiesQuery.isFetched)
@@ -244,11 +257,23 @@ export function CurrentAccountsWorkspaceView() {
     pushWs({ direction, partyId: "", page: 1 })
   }
 
-  const openParty = (partyId: string) => {
-    const next = mergeCurrentAccountsWorkspaceUrl(searchParams, { partyId })
+  const openParty = (
+    partyId: string,
+    direction: CurrentAccountDirection = ws.direction,
+  ) => {
+    const next = mergeCurrentAccountsWorkspaceUrl(searchParams, {
+      partyId,
+      direction,
+      page: 1,
+    })
     const qs = next.toString()
     const href = qs ? `${pathname}?${qs}` : pathname
     router.push(href, { scroll: false })
+  }
+
+  const openEnroll = (direction: CurrentAccountDirection) => {
+    setEnrollDirection(direction)
+    setEnrollOpen(true)
   }
 
   if (!popId || !siteId) {
@@ -295,6 +320,7 @@ export function CurrentAccountsWorkspaceView() {
   }
 
   return (
+    <>
     <DataWorkspaceTableListPage
       layout={{
         siteId,
@@ -304,6 +330,27 @@ export function CurrentAccountsWorkspaceView() {
         loading: bootstrapLoading,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
+        userRoleLabel: bootstrap?.roleLabel,
+        headerActions: canCreate ? (
+          <>
+            <DataWorkspaceHeaderTooltipIconButton
+              label="Dar de alta un cliente"
+              headerVariant={dataWorkspaceTableListHeaderVariant}
+              primary
+              onClick={() => openEnroll("receivable")}
+            >
+              <UserPlus className="size-5" aria-hidden />
+            </DataWorkspaceHeaderTooltipIconButton>
+            <DataWorkspaceHeaderTooltipIconButton
+              label="Dar de alta un proveedor"
+              headerVariant={dataWorkspaceTableListHeaderVariant}
+              primary
+              onClick={() => openEnroll("payable")}
+            >
+              <Truck className="size-5" aria-hidden />
+            </DataWorkspaceHeaderTooltipIconButton>
+          </>
+        ) : null,
       }}
       error={error}
     >
@@ -491,5 +538,18 @@ export function CurrentAccountsWorkspaceView() {
         </DataWorkspaceTableListShell>
       </DataWorkspaceTableListNatureShell>
     </DataWorkspaceTableListPage>
+    <CurrentAccountEnrollDialog
+      open={enrollOpen}
+      onOpenChange={setEnrollOpen}
+      popId={popId}
+      direction={enrollDirection}
+      onEnrolled={(partyId) => {
+        void queryClient.invalidateQueries({
+          queryKey: popCurrentAccountPartiesQueryRoot(popId),
+        })
+        openParty(partyId, enrollDirection)
+      }}
+    />
+    </>
   )
 }

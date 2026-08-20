@@ -78,6 +78,7 @@ import { usePopSuppliersTable } from "@/hooks/usePopSuppliersTable"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { popSuppliersQueryRoot } from "@/lib/queryKeys"
 import { useQueryClient } from "@tanstack/react-query"
+import { formatMoneyInputForField } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
 import {
   nextWorkspaceTableSortState,
@@ -114,6 +115,9 @@ function emptyForm(): UpsertPopSupplierInput {
     ivaCondition: "",
     addressLine: "",
     isActive: true,
+    currentAccountEnabled: false,
+    currentAccountCreditLimit: "",
+    currentAccountTermDays: "30",
   }
 }
 
@@ -391,6 +395,11 @@ export function SuppliersWorkspaceView() {
       ivaCondition: row.ivaCondition ?? "",
       addressLine: row.addressLine,
       isActive: row.isActive,
+      currentAccountEnabled: row.currentAccountEnabled,
+      currentAccountCreditLimit: row.currentAccountCreditLimit
+        ? formatMoneyInputForField(row.currentAccountCreditLimit)
+        : "",
+      currentAccountTermDays: String(row.currentAccountTermDays),
     })
   }
 

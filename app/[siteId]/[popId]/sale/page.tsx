@@ -127,6 +127,7 @@ import {
   formatSaleQuoteDiscountLabel,
   formatSaleQuotePaymentLabel,
 } from "@/lib/saleQuoteCheckout"
+import { partyCanOperateOnCurrentAccount } from "@/lib/currentAccounts"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
 import {
   saleOpFmt,
@@ -144,6 +145,7 @@ type ClienteVentaSeleccionado = {
   email?: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
+  currentAccountEnabled?: boolean
 }
 
 /** Tipografía numérica alineada al workspace (tablas de importes). */
@@ -468,7 +470,7 @@ function SalePage() {
       hayItemsEnPedido &&
       pagoConfigurado &&
       (payOnClientAccount
-        ? Boolean(clienteSeleccionado?.id)
+        ? partyCanOperateOnCurrentAccount(clienteSeleccionado)
         : metodoPagoSeleccionado != null) &&
       canCreateSale &&
       canReadCashRegisters &&
@@ -477,7 +479,7 @@ function SalePage() {
       hayItemsEnPedido,
       pagoConfigurado,
       payOnClientAccount,
-      clienteSeleccionado?.id,
+      clienteSeleccionado,
       metodoPagoSeleccionado?.treasuryAccountId,
       canCreateSale,
       canReadCashRegisters,
@@ -1010,7 +1012,9 @@ function SalePage() {
       taxId: c.taxId,
       ivaCondition: c.ivaCondition,
       defaultInvoiceTypeLabel: c.defaultInvoiceTypeLabel,
+      currentAccountEnabled: c.currentAccountEnabled === true,
     })
+    if (!c.currentAccountEnabled) setPayOnClientAccount(false)
     setManualNombreCliente(c.name)
     setFiscalDocVenta(c.taxId ?? "")
     setVentaIvaCondition(c.ivaCondition ?? "")
@@ -1027,6 +1031,7 @@ function SalePage() {
     setVentaEmail(payload.email)
     setVentaIvaCondition(payload.ivaCondition)
     setClienteSeleccionado(buildOperationPartyManualSelection(payload))
+    setPayOnClientAccount(false)
     if (payload.ivaCondition) {
       aplicarComprobanteDesdeIva(payload.ivaCondition as ClientIvaConditionValue)
     }
@@ -1250,8 +1255,11 @@ function SalePage() {
                       ? "Agregá productos al pedido."
                       : !pagoConfigurado
                         ? "Elegí una forma de pago o usá cuenta corriente del cliente."
-                        : payOnClientAccount && !clienteSeleccionado?.id
-                          ? "Elegí un cliente del catálogo para vender a cuenta corriente."
+                        : payOnClientAccount &&
+                            !partyCanOperateOnCurrentAccount(clienteSeleccionado)
+                          ? clienteSeleccionado?.id
+                            ? "Este cliente no está dado de alta en Cuentas corrientes."
+                            : "Elegí un cliente del catálogo para vender a cuenta corriente."
                           : !canCreateSale
                             ? "No tenés permiso para registrar ventas."
                             : !canReadCashRegisters
@@ -1324,6 +1332,7 @@ function SalePage() {
             taxId: party.taxId ?? null,
             ivaCondition: party.ivaCondition ?? null,
             defaultInvoiceTypeLabel: party.defaultInvoiceTypeLabel ?? null,
+            currentAccountEnabled: party.currentAccountEnabled === true,
           })
         }
         onConfirmManual={confirmarClienteManual}
@@ -1368,6 +1377,7 @@ function SalePage() {
           setPayOnClientAccount(true)
           setMetodoPagoSeleccionado(null)
         }}
+        hideAccountOption={!partyCanOperateOnCurrentAccount(clienteSeleccionado)}
       />
 
       <GeneralDiscountDialog

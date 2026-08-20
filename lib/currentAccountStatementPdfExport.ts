@@ -11,6 +11,7 @@ import {
   type CurrentAccountDirection,
 } from "@/lib/currentAccounts"
 import { applyReportPdfBrandingFooters } from "@/lib/reportExportBranding"
+import { formatLocaleTime } from "@/lib/popTimezone"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { drawReportPdfPopBrandHeader } from "@/lib/reportPdfPopBrand"
 import { printJsPdfDocument } from "@/lib/reportPdfPrint"
@@ -38,6 +39,14 @@ function formatIsoDate(iso: string): string {
   const date = new Date(`${iso}T12:00:00`)
   if (Number.isNaN(date.getTime())) return iso
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short" }).format(date)
+}
+
+function formatLedgerDate(isoDate: string, occurredAt?: string | null): string {
+  const date = formatIsoDate(isoDate)
+  if (!occurredAt) return date
+  const instant = new Date(occurredAt)
+  if (Number.isNaN(instant.getTime())) return date
+  return `${date} ${formatLocaleTime(instant)}`
 }
 
 function slugPartyName(name: string): string {
@@ -128,8 +137,10 @@ async function buildCurrentAccountStatementPdf(
   autoTable(doc, {
     head: [["Fecha", "Comprobante", "Debe", "Haber", "Saldo"]],
     body: input.lines.map((line) => [
-      formatIsoDate(line.date),
-      line.documentLabel,
+      formatLedgerDate(line.date, line.occurredAt),
+      line.paymentKindLabel
+        ? `${line.documentLabel}\n${line.paymentKindLabel}`
+        : line.documentLabel,
       line.debit > 0.009 ? formatReportMoneyAr(line.debit) : "—",
       line.credit > 0.009 ? formatReportMoneyAr(line.credit) : "—",
       formatReportMoneyAr(line.balance),

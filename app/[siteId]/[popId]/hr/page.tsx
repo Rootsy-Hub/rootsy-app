@@ -767,10 +767,7 @@ function HrPage() {
                 />
               ) : null}
 
-              <DataWorkspaceBlocksSection
-                title="Equipo del local"
-                description="Quién trabaja acá. Cargar a alguien no le da acceso a Rootsy."
-              >
+              <DataWorkspaceBlocksSection>
                 <RootsFormSegmentField
                   label="Ver personas"
                   aria-label="Filtrar personas"

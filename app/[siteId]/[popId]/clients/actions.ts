@@ -21,6 +21,11 @@ import {
 } from "@/app/[siteId]/[popId]/clients/workspaceUrl"
 import { isAllowedSaleComprobanteLabel } from "@/lib/saleComprobantePicker"
 import { hasValidPopFiscalCuit } from "@/lib/popFiscalCuit"
+import {
+  normalizeCurrentAccountCreditLimit,
+  normalizeCurrentAccountTermDays,
+} from "@/lib/currentAccountEnrollment"
+import { parseMoneyInput } from "@/lib/moneyInput"
 
 function normalizeIvaCondition(raw: string): string | null {
   const t = raw.trim()
@@ -115,6 +120,9 @@ export type ClientTableRow = {
   addressLine: string
   defaultInvoiceTypeLabel: string | null
   isActive: boolean
+  currentAccountEnabled: boolean
+  currentAccountCreditLimit: number | null
+  currentAccountTermDays: number
   lastSaleAt: string | null
   completedSalesCount: number
   totalSpentArs: number
@@ -130,6 +138,9 @@ export type UpsertPopClientInput = {
   addressLine: string
   defaultInvoiceTypeLabel: string
   isActive: boolean
+  currentAccountEnabled: boolean
+  currentAccountCreditLimit: string
+  currentAccountTermDays: string
 }
 
 export async function createPopClient(
@@ -171,6 +182,15 @@ export async function createPopClient(
       address_line: input.addressLine.trim() || null,
       default_invoice_type_label: defaultInvoiceTypeLabel,
       is_active: input.isActive,
+      current_account_enabled: input.currentAccountEnabled,
+      current_account_credit_limit: input.currentAccountEnabled
+        ? normalizeCurrentAccountCreditLimit(
+            parseMoneyInput(input.currentAccountCreditLimit, 0),
+          )
+        : undefined,
+      current_account_term_days: input.currentAccountEnabled
+        ? normalizeCurrentAccountTermDays(input.currentAccountTermDays)
+        : undefined,
     })
     if (error) {
       return { success: false, error: error.message || "Could not create." }
@@ -223,6 +243,15 @@ export async function updatePopClient(
         address_line: input.addressLine.trim() || null,
         default_invoice_type_label: defaultInvoiceTypeLabel,
         is_active: input.isActive,
+        current_account_enabled: input.currentAccountEnabled,
+        current_account_credit_limit: input.currentAccountEnabled
+          ? normalizeCurrentAccountCreditLimit(
+              parseMoneyInput(input.currentAccountCreditLimit, 0),
+            )
+          : undefined,
+        current_account_term_days: input.currentAccountEnabled
+          ? normalizeCurrentAccountTermDays(input.currentAccountTermDays)
+          : undefined,
       })
       .eq("id", clientId)
       .eq("pop_id", popId)
@@ -345,7 +374,7 @@ function buildClientsSearchOrClause(raw: string): string | null {
 }
 
 const CLIENT_LIST_SELECT =
-  "id, name, email, phone, tax_id, notes, iva_condition, address_line, default_invoice_type_label, is_active"
+  "id, name, email, phone, tax_id, notes, iva_condition, address_line, default_invoice_type_label, is_active, current_account_enabled, current_account_credit_limit, current_account_term_days"
 
 function appendClientListFilters<
   Q extends {
@@ -550,6 +579,13 @@ export async function getPopClientsTable(
             ? String(r.default_invoice_type_label).trim()
             : null,
         isActive: Boolean(r.is_active ?? true),
+        currentAccountEnabled: r.current_account_enabled === true,
+        currentAccountCreditLimit: normalizeCurrentAccountCreditLimit(
+          r.current_account_credit_limit,
+        ),
+        currentAccountTermDays: normalizeCurrentAccountTermDays(
+          r.current_account_term_days,
+        ),
         lastSaleAt: a?.lastSaleAt ?? null,
         completedSalesCount: a?.count ?? 0,
         totalSpentArs: a?.totalSpentArs ?? 0,

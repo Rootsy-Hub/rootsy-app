@@ -67,6 +67,7 @@ export type SaleCatalogClient = {
   taxId: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
+  currentAccountEnabled?: boolean
 }
 
 export type SaleCatalogPaymentMethod = SaleCatalogPaymentOption

@@ -20,6 +20,7 @@ export type MesasClienteSeleccionado = {
   email?: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
+  currentAccountEnabled?: boolean
 }
 
 export type TableSessionCheckoutSnapshot = {
@@ -148,6 +149,7 @@ function parseCliente(v: unknown): MesasClienteSeleccionado | null {
       typeof v.defaultInvoiceTypeLabel === "string"
         ? v.defaultInvoiceTypeLabel
         : null,
+    currentAccountEnabled: v.currentAccountEnabled === true,
   }
 }
 

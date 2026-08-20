@@ -19,6 +19,7 @@ import {
   type OperationPartyManualConfirmOptions,
   type OperationPartyManualConfirmPayload,
 } from "@/lib/operationPartyPicker"
+import { partyCanOperateOnCurrentAccount } from "@/lib/currentAccounts"
 import {
   generalDiscountToolbarLabel,
   healLegacyLockedGeneralDiscount,
@@ -847,7 +848,7 @@ export function useMesasSaleCheckout(
       hayItemsEnPedido &&
       pagoConfigurado &&
       (payOnClientAccount
-        ? Boolean(clienteSeleccionado?.id)
+        ? partyCanOperateOnCurrentAccount(clienteSeleccionado)
         : metodoPagoSeleccionado != null) &&
       canCreateSale &&
       canReadCashRegisters &&
@@ -857,7 +858,7 @@ export function useMesasSaleCheckout(
       hayItemsEnPedido,
       pagoConfigurado,
       payOnClientAccount,
-      clienteSeleccionado?.id,
+      clienteSeleccionado,
       metodoPagoSeleccionado,
       canCreateSale,
       canReadCashRegisters,
@@ -917,6 +918,7 @@ export function useMesasSaleCheckout(
       setVentaEmail(payload.email)
       setVentaIvaCondition(payload.ivaCondition)
       setClienteSeleccionado(buildOperationPartyManualSelection(payload))
+      setPayOnClientAccount(false)
       if (payload.ivaCondition && hasValidPopFiscalCuit) {
         const suggested = suggestSaleComprobanteForClientIva(
           payload.ivaCondition as ClientIvaConditionValue,
@@ -1843,7 +1845,9 @@ export function useMesasSaleCheckout(
           taxId: c.taxId,
           ivaCondition: c.ivaCondition,
           defaultInvoiceTypeLabel: c.defaultInvoiceTypeLabel,
+          currentAccountEnabled: c.currentAccountEnabled === true,
         })
+        if (!c.currentAccountEnabled) setPayOnClientAccount(false)
         setManualNombreCliente(c.name)
         setFiscalDocVenta(c.taxId ?? "")
         setVentaIvaCondition(c.ivaCondition ?? "")

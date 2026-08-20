@@ -198,6 +198,8 @@ export function CurrentAccountApplyDialog({
                             <RootsFormMoneyField
                               id={`ca-apply-amount-${document.id}`}
                               label="Imputar"
+                              hint={`Hasta ${moneyFormatter.format(document.remaining)}`}
+                              max={document.remaining}
                               value={draft.amounts[document.id] ?? ""}
                               onChange={(value) =>
                                 setDraft((current) => ({

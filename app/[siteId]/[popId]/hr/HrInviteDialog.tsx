@@ -127,7 +127,7 @@ export function HrInviteDialog({
             <RootsDialogHeader
               open={open}
               title="Dar acceso a Rootsy"
-              description="Esto no la carga al negocio: es para que pueda abrir Rootsy en este local. Tiene que tener cuenta."
+              description="Esto no la carga al negocio: es para que pueda abrir Rootsy en este local. Si no tiene cuenta, la crea con el mismo enlace."
             />
             <RootsDialogBody className="space-y-4">
               {roles.length === 0 ? (

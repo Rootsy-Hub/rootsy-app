@@ -42,6 +42,11 @@ import {
   isValidOperationPaymentKind,
   operationPaymentKindLabel,
 } from "@/lib/operationPaymentKinds"
+import {
+  currentAccountAvailableCredit,
+  normalizeCurrentAccountCreditLimit,
+  normalizeCurrentAccountTermDays,
+} from "@/lib/currentAccountEnrollment"
 import { getPopSiteId, validatePopAccess } from "@/lib/popHelpers"
 import {
   POP_PERMS,
@@ -49,13 +54,14 @@ import {
 } from "@/lib/popPermissionConstants"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { popMenuHref } from "@/lib/popRoutes"
-import { toPopCalendarDate } from "@/lib/popTimezone"
+import { isCalendarDateOnly, toPopCalendarDate } from "@/lib/popTimezone"
 import { loadPopLedgerTimeZone } from "@/lib/popTimezoneServer"
 import { createClient } from "@/utils/supabase/server"
 
 export type CurrentAccountPartyRow = {
   partyId: string
   partyName: string
+  enrolled: boolean
   openCount: number
   overdueAmount: number
   aging: CurrentAccountAgingTotals
@@ -65,8 +71,10 @@ export type CurrentAccountPartyRow = {
 export type CurrentAccountLedgerLine = {
   id: string
   date: string
+  occurredAt: string | null
   documentLabel: string
   description: string
+  paymentKindLabel: string | null
   debit: number
   credit: number
   balance: number
@@ -75,6 +83,7 @@ export type CurrentAccountLedgerLine = {
 export type CurrentAccountOpenDocument = {
   id: string
   date: string
+  occurredAt: string | null
   dueDate: string
   documentLabel: string
   remaining: number
@@ -108,6 +117,7 @@ function emptyParties() {
     parties: [] as CurrentAccountPartyRow[],
     totalCount: 0,
     page: 1,
+    canCreate: false,
   }
 }
 
@@ -211,8 +221,36 @@ type DocumentOpenItem = {
   remaining: number
   dueDate: string
   date: string
+  occurredAt: string | null
   documentNumber: string
   includedInLedger: boolean
+}
+
+function ledgerOccurredAt(raw: unknown): string | null {
+  const value = String(raw ?? "").trim()
+  if (!value || isCalendarDateOnly(value)) return null
+  const ms = Date.parse(value)
+  if (!Number.isFinite(ms)) return null
+  return new Date(ms).toISOString()
+}
+
+function compareLedgerWhen(
+  a: { date: string; occurredAt: string | null; id: string },
+  b: { date: string; occurredAt: string | null; id: string },
+): number {
+  const byDate = a.date.localeCompare(b.date)
+  if (byDate !== 0) return byDate
+  const timeA = a.occurredAt ?? ""
+  const timeB = b.occurredAt ?? ""
+  if (timeA && timeB) {
+    const byTime = timeA.localeCompare(timeB)
+    if (byTime !== 0) return byTime
+  } else if (timeA) {
+    return 1
+  } else if (timeB) {
+    return -1
+  }
+  return a.id.localeCompare(b.id)
 }
 
 async function loadOpenDocuments(
@@ -260,6 +298,7 @@ async function loadOpenDocuments(
           remaining,
           dueDate,
           date,
+          occurredAt: ledgerOccurredAt(row.sold_at),
           documentNumber: "",
           includedInLedger: true,
         },
@@ -318,6 +357,7 @@ async function loadOpenDocuments(
         remaining,
         dueDate,
         date,
+        occurredAt: ledgerOccurredAt(row.created_at),
         documentNumber: String(row.document_number ?? "").trim(),
         includedInLedger: true,
       },
@@ -412,15 +452,52 @@ function currentAccountPaymentDescription(
 function emptyPartyRow(
   partyId: string,
   partyName: string,
+  enrolled = false,
 ): CurrentAccountPartyRow {
   return {
     partyId,
     partyName,
+    enrolled,
     openCount: 0,
     overdueAmount: 0,
     aging: emptyCurrentAccountAgingTotals(),
     balance: 0,
   }
+}
+
+async function loadEnrolledParties(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  direction: CurrentAccountDirection,
+): Promise<{ id: string; name: string }[]> {
+  const table = direction === "receivable" ? "clients" : "suppliers"
+  const { data } = await supabase
+    .from(table)
+    .select("id, name")
+    .eq("pop_id", popId)
+    .eq("current_account_enabled", true)
+    .order("name", { ascending: true })
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    name: String(row.name ?? "").trim(),
+  }))
+}
+
+function mergeEnrolledParties(
+  parties: CurrentAccountPartyRow[],
+  enrolled: { id: string; name: string }[],
+): CurrentAccountPartyRow[] {
+  const byId = new Map(parties.map((row) => [row.partyId, row]))
+  for (const row of enrolled) {
+    const current = byId.get(row.id)
+    if (current) {
+      current.enrolled = true
+      if (!current.partyName.trim() && row.name) current.partyName = row.name
+      continue
+    }
+    byId.set(row.id, emptyPartyRow(row.id, row.name || "—", true))
+  }
+  return [...byId.values()]
 }
 
 function groupParties(
@@ -519,6 +596,7 @@ export async function getPopCurrentAccountParties(
       page: number
       popName: string
       direction: CurrentAccountDirection
+      canCreate: boolean
     }
   | {
       success: false
@@ -529,6 +607,7 @@ export async function getPopCurrentAccountParties(
       page: number
       popName?: string
       direction: CurrentAccountDirection
+      canCreate: boolean
     }
 > {
   const empty = emptyParties()
@@ -577,7 +656,11 @@ export async function getPopCurrentAccountParties(
       timeZone,
     )
     const unapplied = await loadUnappliedByParty(supabase, popId, direction)
-    let parties = groupParties(documents, today, unapplied)
+    const enrolled = await loadEnrolledParties(supabase, popId, direction)
+    let parties = mergeEnrolledParties(
+      groupParties(documents, today, unapplied),
+      enrolled,
+    )
     await fillMissingPartyNames(supabase, direction, parties)
     if (q) {
       parties = parties.filter((row) =>
@@ -611,6 +694,7 @@ export async function getPopCurrentAccountParties(
       page,
       popName: String(popRow?.name ?? ""),
       direction,
+      canCreate: access.canCreate,
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
@@ -621,6 +705,133 @@ export async function getPopCurrentAccountParties(
       popName: "",
       direction,
     }
+  }
+}
+
+export type CurrentAccountEnrollmentCandidate = {
+  id: string
+  name: string
+  taxId: string | null
+}
+
+function escapeIlikeToken(raw: string): string {
+  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")
+}
+
+export async function searchPopCurrentAccountEnrollmentCandidates(
+  popId: string,
+  input: { direction: CurrentAccountDirection; q?: string },
+): Promise<
+  | { success: true; parties: CurrentAccountEnrollmentCandidate[] }
+  | { success: false; error: string; parties: CurrentAccountEnrollmentCandidate[] }
+> {
+  const empty = { parties: [] as CurrentAccountEnrollmentCandidate[] }
+  try {
+    const access = await requireCurrentAccountWrite(popId)
+    if (!access.ok) {
+      return { success: false, error: access.error, ...empty }
+    }
+    if (!isCurrentAccountDirection(input.direction)) {
+      return { success: false, error: "Dirección inválida.", ...empty }
+    }
+    const table = input.direction === "receivable" ? "clients" : "suppliers"
+    const q = input.q?.trim() ?? ""
+    if (!q) {
+      return { success: true, ...empty }
+    }
+    const supabase = await createClient()
+    const pattern = `%${escapeIlikeToken(q)}%`
+    const query = supabase
+      .from(table)
+      .select("id, name, tax_id")
+      .eq("pop_id", popId)
+      .eq("current_account_enabled", false)
+      .eq("is_active", true)
+      .or(`name.ilike.${pattern},tax_id.ilike.${pattern}`)
+      .order("name", { ascending: true })
+      .limit(30)
+    const { data, error } = await query
+    if (error) {
+      return { success: false, error: error.message, ...empty }
+    }
+    return {
+      success: true,
+      parties: (data ?? []).map((row) => ({
+        id: String(row.id),
+        name: String(row.name ?? "").trim() || "—",
+        taxId:
+          row.tax_id != null && String(row.tax_id).trim()
+            ? String(row.tax_id).trim()
+            : null,
+      })),
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message, ...empty }
+  }
+}
+
+export async function setPopCurrentAccountEnrollment(
+  popId: string,
+  input: {
+    direction: CurrentAccountDirection
+    partyId: string
+    enabled: boolean
+    creditLimit?: number | null
+    termDays?: number
+  },
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const access = await requireCurrentAccountWrite(popId)
+    if (!access.ok) {
+      return { success: false, error: access.error }
+    }
+    if (!isCurrentAccountDirection(input.direction)) {
+      return { success: false, error: "Dirección inválida." }
+    }
+    const partyId = input.partyId.trim()
+    if (!/^[0-9a-f-]{36}$/i.test(partyId)) {
+      return { success: false, error: "Cuenta inválida." }
+    }
+    const table = input.direction === "receivable" ? "clients" : "suppliers"
+    const supabase = await createClient()
+    const patch: Record<string, unknown> = {
+      current_account_enabled: input.enabled,
+    }
+    if (input.enabled) {
+      if (input.creditLimit !== undefined) {
+        patch.current_account_credit_limit =
+          normalizeCurrentAccountCreditLimit(input.creditLimit)
+      }
+      if (input.termDays !== undefined) {
+        patch.current_account_term_days = normalizeCurrentAccountTermDays(
+          input.termDays,
+        )
+      }
+    }
+    const { data, error } = await supabase
+      .from(table)
+      .update(patch)
+      .eq("id", partyId)
+      .eq("pop_id", popId)
+      .select("id")
+      .maybeSingle()
+    if (error) {
+      return { success: false, error: error.message }
+    }
+    if (!data) {
+      return {
+        success: false,
+        error:
+          input.direction === "receivable"
+            ? "No se encontró el cliente."
+            : "No se encontró el proveedor.",
+      }
+    }
+    return { success: true }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
   }
 }
 
@@ -639,6 +850,10 @@ export async function getPopCurrentAccountLedger(
       openDocuments: CurrentAccountOpenDocument[]
       unappliedCredit: number
       canCreate: boolean
+      enrolled: boolean
+      creditLimit: number | null
+      termDays: number
+      availableCredit: number | null
       popName: string
     }
   | {
@@ -654,6 +869,10 @@ export async function getPopCurrentAccountLedger(
       openDocuments: CurrentAccountOpenDocument[]
       unappliedCredit: number
       canCreate: boolean
+      enrolled: boolean
+      creditLimit: number | null
+      termDays: number
+      availableCredit: number | null
       popName?: string
     }
 > {
@@ -666,6 +885,10 @@ export async function getPopCurrentAccountLedger(
     openDocuments: [] as CurrentAccountOpenDocument[],
     unappliedCredit: 0,
     canCreate: false,
+    enrolled: false,
+    creditLimit: null,
+    termDays: 30,
+    availableCredit: null,
   }
   try {
     const access = await requireCurrentAccountAccess(popId)
@@ -710,14 +933,23 @@ export async function getPopCurrentAccountLedger(
     )
     const grouped = groupParties(documents, today, unapplied)
     await fillMissingPartyNames(supabase, input.direction, grouped)
+    const table = input.direction === "receivable" ? "clients" : "suppliers"
+    const { data: partyRow } = await supabase
+      .from(table)
+      .select(
+        "id, name, current_account_enabled, current_account_credit_limit, current_account_term_days",
+      )
+      .eq("id", partyId)
+      .maybeSingle()
+    const enrolled = partyRow?.current_account_enabled === true
+    const creditLimit = normalizeCurrentAccountCreditLimit(
+      partyRow?.current_account_credit_limit,
+    )
+    const termDays = normalizeCurrentAccountTermDays(
+      partyRow?.current_account_term_days,
+    )
     let summary = grouped[0]
     if (!summary) {
-      const table = input.direction === "receivable" ? "clients" : "suppliers"
-      const { data: partyRow } = await supabase
-        .from(table)
-        .select("id, name")
-        .eq("id", partyId)
-        .maybeSingle()
       if (!partyRow) {
         return {
           success: false,
@@ -732,7 +964,13 @@ export async function getPopCurrentAccountLedger(
       summary = emptyPartyRow(
         partyId,
         String(partyRow.name ?? "").trim() || "—",
+        enrolled,
       )
+    } else {
+      summary.enrolled = enrolled
+      if (!summary.partyName.trim() && partyRow?.name) {
+        summary.partyName = String(partyRow.name).trim()
+      }
     }
     const partyName = summary.partyName || "—"
 
@@ -763,14 +1001,14 @@ export async function getPopCurrentAccountLedger(
         ? supabase
             .from("current_account_receipts")
             .select(
-              "id, amount, paid_at, payment_kind, notes, treasury_account_id, treasury_accounts ( name )",
+              "id, amount, paid_at, created_at, payment_kind, notes, treasury_account_id, treasury_accounts ( name )",
             )
             .eq("pop_id", popId)
             .eq("client_id", partyId)
         : supabase
             .from("current_account_receipts")
             .select(
-              "id, amount, paid_at, payment_kind, notes, treasury_account_id, treasury_accounts ( name )",
+              "id, amount, paid_at, created_at, payment_kind, notes, treasury_account_id, treasury_accounts ( name )",
             )
             .eq("pop_id", popId)
             .eq("supplier_id", partyId)
@@ -785,8 +1023,10 @@ export async function getPopCurrentAccountLedger(
       drafts.push({
         id: `doc-${doc.id}`,
         date: doc.date,
+        occurredAt: doc.occurredAt,
         documentLabel: label,
         description: label,
+        paymentKindLabel: null,
         debit: isReceivable ? doc.total : 0,
         credit: isReceivable ? 0 : doc.total,
       })
@@ -803,11 +1043,17 @@ export async function getPopCurrentAccountLedger(
       drafts.push({
         id: `pay-${String(raw[paymentFk])}-${paidAt}-${amount}`,
         date: paidAt,
+        occurredAt: ledgerOccurredAt(raw.created_at ?? raw.paid_at),
         documentLabel: kind === "sale" ? "Cobro" : "Pago",
         description: currentAccountPaymentDescription(
           String(raw.payment_kind ?? ""),
           treasuryAccountNameFromRel(raw.treasury_accounts),
         ),
+        paymentKindLabel: isValidOperationPaymentKind(
+          String(raw.payment_kind ?? ""),
+        )
+          ? operationPaymentKindLabel(String(raw.payment_kind ?? ""))
+          : null,
         debit: isReceivable ? 0 : amount,
         credit: isReceivable ? amount : 0,
       })
@@ -820,6 +1066,9 @@ export async function getPopCurrentAccountLedger(
       drafts.push({
         id: `receipt-${String(row.id)}`,
         date: toPopCalendarDate(String(row.paid_at ?? ""), timeZone),
+        occurredAt: ledgerOccurredAt(
+          (row as { created_at?: unknown }).created_at,
+        ),
         documentLabel: input.direction === "receivable" ? "Recibo" : "Orden de pago",
         description: currentAccountPaymentDescription(
           String(row.payment_kind ?? ""),
@@ -828,39 +1077,39 @@ export async function getPopCurrentAccountLedger(
           ),
           notes,
         ),
+        paymentKindLabel: isValidOperationPaymentKind(
+          String(row.payment_kind ?? ""),
+        )
+          ? operationPaymentKindLabel(String(row.payment_kind ?? ""))
+          : null,
         debit: isReceivable ? 0 : amount,
         credit: isReceivable ? amount : 0,
       })
     }
 
-    drafts.sort((a, b) => {
-      const byDate = a.date.localeCompare(b.date)
-      if (byDate !== 0) return byDate
-      return a.id.localeCompare(b.id)
-    })
+    drafts.sort(compareLedgerWhen)
 
     let running = 0
-    const lines: CurrentAccountLedgerLine[] = drafts.map((line) => {
-      running = roundMoney(running + line.debit - line.credit)
-      return { ...line, balance: running }
-    })
+    const lines: CurrentAccountLedgerLine[] = drafts
+      .map((line) => {
+        running = roundMoney(running + line.debit - line.credit)
+        return { ...line, balance: running }
+      })
+      .reverse()
 
     const openDocuments: CurrentAccountOpenDocument[] = documents
       .filter((doc) => doc.remaining > 0.009)
       .map((doc) => ({
         id: doc.id,
         date: doc.date,
+        occurredAt: doc.occurredAt,
         dueDate: doc.dueDate,
         documentLabel: currentAccountDocumentLabel(kind, doc.documentNumber),
         remaining: doc.remaining,
         daysOverdue: currentAccountDaysOverdue(doc.dueDate, today),
         agingBucket: currentAccountAgingBucket(doc.dueDate, today),
       }))
-      .sort((a, b) => {
-        const byDate = a.date.localeCompare(b.date)
-        if (byDate !== 0) return byDate
-        return a.id.localeCompare(b.id)
-      })
+      .sort((a, b) => compareLedgerWhen(b, a))
 
     return {
       success: true,
@@ -873,6 +1122,13 @@ export async function getPopCurrentAccountLedger(
       openDocuments,
       unappliedCredit: unapplied.get(partyId) ?? 0,
       canCreate: access.canCreate,
+      enrolled,
+      creditLimit,
+      termDays,
+      availableCredit: currentAccountAvailableCredit(
+        creditLimit,
+        summary?.balance ?? 0,
+      ),
       popName: String(popRow?.name ?? ""),
     }
   } catch (e: unknown) {

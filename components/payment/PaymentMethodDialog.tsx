@@ -91,6 +91,8 @@ type Props = {
    * Evita un click accidental en Efectivo.
    */
   confirmLabel?: string
+  /** Flecha de volver en el menú (p. ej. volver al cobro de cuenta corriente). */
+  showMenuBack?: boolean
 }
 
 function kindIcon(kind: OperationPaymentKind) {
@@ -199,6 +201,7 @@ export function PaymentMethodDialog({
   defaultPartyId = "",
   busy = false,
   confirmLabel,
+  showMenuBack = false,
 }: Props) {
   const [step, setStep] = useState<PaymentCheckoutStep>(() =>
     initialDestinationKind ? "destination" : "menu",
@@ -330,6 +333,11 @@ export function PaymentMethodDialog({
 
   const handleBack = useCallback(() => {
     setStagedSelection(null)
+    if (step === "menu" && showMenuBack) {
+      onOpenChange(false)
+      setStepError(null)
+      return
+    }
     if (initialDestinationKind) {
       onOpenChange(false)
       setStepError(null)
@@ -361,7 +369,15 @@ export function PaymentMethodDialog({
     setStep("menu")
     setPendingKind(null)
     setStepError(null)
-  }, [flow, initialDestinationKind, onOpenChange, pendingKind, step, treasuryContext])
+  }, [
+    flow,
+    initialDestinationKind,
+    onOpenChange,
+    pendingKind,
+    showMenuBack,
+    step,
+    treasuryContext,
+  ])
 
   const destinationItems = useMemo(() => {
     if (!treasuryContext || !pendingKind || step !== "destination") return []
@@ -416,7 +432,7 @@ export function PaymentMethodDialog({
       }}
     >
       <RootsDialogContent className="flex flex-col">
-        {step === "menu" ? (
+        {step === "menu" && !showMenuBack ? (
           <RootsDialogHeader
             title="Formas de pago"
             description={

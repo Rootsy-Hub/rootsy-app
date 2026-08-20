@@ -14,7 +14,13 @@ import {
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { workspaceTableLayoutBodyCellClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import {
+  workspaceTableLayoutBodyCellClass,
+  workspaceTableLayoutCellSecondaryTextClass,
+  workspaceTableLayoutCellStackClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { formatPopTime } from "@/lib/popTimezone"
 import { currentAccountAgingPillVariant } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountAgingStrip"
 import { RootsNaturePill } from "@/components/rootsy-pill"
 import {
@@ -131,7 +137,15 @@ export function CurrentAccountOverdueCell({
   )
 }
 
-export function CurrentAccountLedgerDateCell({ value }: { value: string }) {
+export function CurrentAccountLedgerDateCell({
+  value,
+  occurredAt,
+}: {
+  value: string
+  occurredAt?: string | null
+}) {
+  const timeZone = usePopTimeZone()
+  const time = occurredAt ? formatPopTime(occurredAt, timeZone) : ""
   return (
     <TableCell
       className={cn(
@@ -139,9 +153,27 @@ export function CurrentAccountLedgerDateCell({ value }: { value: string }) {
         currentAccountLedgerDateColumnClass,
       )}
     >
-      <span className={cn("whitespace-nowrap", workspaceTableNatureTextSecondaryClass)}>
-        {formatIsoDate(value)}
-      </span>
+      <div className={workspaceTableLayoutCellStackClass}>
+        <span
+          className={cn(
+            "whitespace-nowrap",
+            workspaceTableNatureTextSecondaryClass,
+          )}
+        >
+          {formatIsoDate(value)}
+        </span>
+        {time ? (
+          <span
+            className={cn(
+              "whitespace-nowrap",
+              workspaceTableLayoutCellSecondaryTextClass,
+              workspaceTableNatureTextSecondaryClass,
+            )}
+          >
+            {time}
+          </span>
+        ) : null}
+      </div>
     </TableCell>
   )
 }

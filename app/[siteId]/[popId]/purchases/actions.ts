@@ -216,6 +216,7 @@ export type PurchaseCatalogSupplier = {
   id: string
   name: string
   taxId: string
+  currentAccountEnabled?: boolean
 }
 
 export type PurchaseCatalogCategory = {

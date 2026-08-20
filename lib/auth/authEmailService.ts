@@ -22,8 +22,10 @@ function authCallbackUrl(next?: string): string {
   return url.toString()
 }
 
-function confirmationCallbackUrl(): string {
-  return authCallbackUrl(POP_CREATE_PATH)
+function confirmationCallbackUrl(next?: string): string {
+  const safeNext =
+    next && next.startsWith("/") && !next.startsWith("//") ? next : POP_CREATE_PATH
+  return authCallbackUrl(safeNext)
 }
 
 function isAlreadyRegisteredError(message: string): boolean {
@@ -45,15 +47,18 @@ function mapSignupLinkError(message: string): string | null {
   return null
 }
 
-function confirmationUrlFromLink(properties: {
-  action_link?: string | null
-  hashed_token?: string | null
-  verification_type?: string | null
-} | null | undefined): string | null {
+function confirmationUrlFromLink(
+  properties: {
+    action_link?: string | null
+    hashed_token?: string | null
+    verification_type?: string | null
+  } | null | undefined,
+  next?: string,
+): string | null {
   const hashedToken = properties?.hashed_token?.trim()
   const verificationType = properties?.verification_type?.trim()
   if (hashedToken && verificationType) {
-    const url = new URL(confirmationCallbackUrl())
+    const url = new URL(confirmationCallbackUrl(next))
     url.searchParams.set("token_hash", hashedToken)
     url.searchParams.set("type", verificationType)
     return url.toString()
@@ -156,6 +161,7 @@ async function deliverConfirmationEmail(input: {
 
 async function sendConfirmationForExistingUser(
   email: string,
+  next?: string,
 ): Promise<
   | { sent: true; userId: string; resent: true }
   | { sent: false; error: string; userFacing?: boolean }
@@ -165,7 +171,7 @@ async function sendConfirmationForExistingUser(
     type: "magiclink",
     email,
     options: {
-      redirectTo: confirmationCallbackUrl(),
+      redirectTo: confirmationCallbackUrl(next),
     },
   })
 
@@ -177,7 +183,7 @@ async function sendConfirmationForExistingUser(
     }
   }
 
-  const confirmationUrl = confirmationUrlFromLink(data.properties)
+  const confirmationUrl = confirmationUrlFromLink(data.properties, next)
   const userId = data.user?.id
   if (!confirmationUrl || !userId) {
     return { sent: false, error: "No se pudo generar el enlace de confirmación." }
@@ -195,6 +201,7 @@ export async function sendSignupConfirmationViaResend(input: {
   email: string
   password: string
   firstName: string
+  next?: string
   isPreview?: boolean
 }): Promise<
   | { sent: true; userId: string; resent?: boolean }
@@ -235,7 +242,7 @@ export async function sendSignupConfirmationViaResend(input: {
     }
   }
   if (existing && !existing.emailConfirmed) {
-    return sendConfirmationForExistingUser(input.email)
+    return sendConfirmationForExistingUser(input.email, input.next)
   }
 
   const supabase = createServiceRoleClient()
@@ -244,7 +251,7 @@ export async function sendSignupConfirmationViaResend(input: {
     email: input.email,
     password: input.password,
     options: {
-      redirectTo: confirmationCallbackUrl(),
+      redirectTo: confirmationCallbackUrl(input.next),
       data: {
         first_name: input.firstName,
         last_name: "",
@@ -256,7 +263,7 @@ export async function sendSignupConfirmationViaResend(input: {
     if (isAlreadyRegisteredError(error.message)) {
       const leftover = await findAuthUserByEmail(input.email)
       if (leftover && !leftover.emailConfirmed) {
-        return sendConfirmationForExistingUser(input.email)
+        return sendConfirmationForExistingUser(input.email, input.next)
       }
       return {
         sent: false,
@@ -273,7 +280,7 @@ export async function sendSignupConfirmationViaResend(input: {
     }
   }
 
-  const confirmationUrl = confirmationUrlFromLink(data.properties)
+  const confirmationUrl = confirmationUrlFromLink(data.properties, input.next)
   const userId = data.user?.id
   if (!confirmationUrl || !userId) {
     return {
@@ -299,6 +306,7 @@ export async function sendSignupConfirmationViaResend(input: {
 
 export async function resendSignupConfirmationViaResend(input: {
   email: string
+  next?: string
 }): Promise<
   | { sent: true }
   | { sent: false; error: string; alreadyConfirmed?: boolean }
@@ -322,7 +330,7 @@ export async function resendSignupConfirmationViaResend(input: {
     }
   }
 
-  const result = await sendConfirmationForExistingUser(input.email)
+  const result = await sendConfirmationForExistingUser(input.email, input.next)
   if (!result.sent) {
     return { sent: false, error: result.error }
   }

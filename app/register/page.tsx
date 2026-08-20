@@ -29,7 +29,9 @@ import {
   validateSignupPassword,
 } from "@/lib/authValidation"
 import {
-  getAuthCallbackUrl,
+  authPathWithNext,
+  getAuthCallbackUrlWithNext,
+  resolveAuthNextFromSearch,
   setAuthNextPath,
 } from "@/lib/authCallbackRedirect"
 import {
@@ -52,14 +54,24 @@ function RegisterPage() {
     () => resolveSignupIntent(searchParams),
     [searchParams],
   )
-  const createPopHref = signupIntentHref(POP_CREATE_PATH, signupIntent)
-  const loginHref = signupIntentHref(LOGIN_PATH, signupIntent)
+  const afterAuthHref = resolveAuthNextFromSearch(
+    searchParams,
+    signupIntentHref(POP_CREATE_PATH, signupIntent),
+  )
+  const createPopHref = afterAuthHref
+  const loginHref = authPathWithNext(
+    signupIntentHref(LOGIN_PATH, signupIntent),
+    afterAuthHref,
+    searchParams.get("email") ?? undefined,
+  )
 
   useEffect(() => {
     persistSignupIntent(signupIntent)
   }, [signupIntent])
 
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState(
+    () => searchParams.get("email")?.trim() ?? "",
+  )
   const [password, setPassword] = useState("")
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [fieldErrors, setFieldErrors] = useState({
@@ -103,6 +115,7 @@ function RegisterPage() {
       const result = await registerAccountWithEmail({
         email: cleanEmail,
         password,
+        next: afterAuthHref,
       })
 
       if (!result.success) {
@@ -151,7 +164,7 @@ function RegisterPage() {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: getAuthCallbackUrl(origin),
+          redirectTo: getAuthCallbackUrlWithNext(origin, afterAuthHref),
         },
       })
       if (oauthError) throw oauthError
@@ -176,7 +189,11 @@ function RegisterPage() {
       {error ? (
         <div className="mt-5">
           {isSuccess ? (
-            <AuthResendConfirmation email={formatEmailInput(email)} message={error} />
+            <AuthResendConfirmation
+              email={formatEmailInput(email)}
+              message={error}
+              next={afterAuthHref}
+            />
           ) : (
             <RootsBanner
               intent="danger"

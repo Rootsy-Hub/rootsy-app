@@ -22,7 +22,7 @@ export const ROOTSY_EMAIL_CATALOG: RootsyEmailDefinition[] = [
     id: "pop_invitation",
     name: "Invitación a un POP",
     description:
-      "Se envía cuando el dueño invita a un usuario registrado a unirse a su punto de venta.",
+      "Se envía cuando el dueño invita a un correo a unirse a su punto de venta. Si no tiene cuenta, la crea con el mismo enlace.",
     provider: "resend",
     subjectExample: "Te invitaron a {nombre del POP}",
     trigger: "RRHH → Invitar usuario (`inviteUserToPop`)",

@@ -20,7 +20,9 @@ import { RootsFormToneProvider } from "@/components/rootsy-form"
 import { formatEmailInput, validateEmailField } from "@/lib/authValidation"
 import { withGuestAuth } from "@/hoc/withGuestAuth"
 import {
-  getAuthCallbackUrl,
+  authPathWithNext,
+  getAuthCallbackUrlWithNext,
+  resolveAuthNextFromSearch,
   setAuthNextPath,
 } from "@/lib/authCallbackRedirect"
 import { checkSignupEmailStatus } from "@/app/auth/actions"
@@ -40,7 +42,7 @@ function LoginPage() {
   const searchParams = useSearchParams()
   const supabase = useMemo(() => createClient(), [])
 
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState(() => searchParams.get("email")?.trim() ?? "")
   const [password, setPassword] = useState("")
   const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" })
   const [error, setError] = useState("")
@@ -53,8 +55,15 @@ function LoginPage() {
     () => resolveSignupIntent(searchParams),
     [searchParams],
   )
-  const registerHref = signupIntentHref(REGISTER_PATH, signupIntent)
-  const afterAuthHref = signupContinueHref(searchParams)
+  const afterAuthHref = resolveAuthNextFromSearch(
+    searchParams,
+    signupContinueHref(searchParams),
+  )
+  const registerHref = authPathWithNext(
+    signupIntentHref(REGISTER_PATH, signupIntent),
+    afterAuthHref,
+    searchParams.get("email") ?? email,
+  )
 
   const callbackError = searchParams.get("error")
   const bannerMessage =
@@ -132,7 +141,7 @@ function LoginPage() {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: getAuthCallbackUrl(origin),
+          redirectTo: getAuthCallbackUrlWithNext(origin, afterAuthHref),
         },
       })
       if (oauthError) throw oauthError
@@ -159,6 +168,7 @@ function LoginPage() {
             <AuthResendConfirmation
               email={formatEmailInput(email)}
               message={bannerMessage}
+              next={afterAuthHref}
               intent="warning"
             />
           ) : (

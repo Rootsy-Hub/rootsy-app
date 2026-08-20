@@ -112,8 +112,15 @@ type Props = {
   overdueAmount: number
   unappliedCredit: number
   canCreate: boolean
+  enrolled: boolean
+  enrollmentBusy?: boolean
+  creditLimit: number | null
+  availableCredit: number | null
+  termDays: number
   onSettle: () => void
   onApply: () => void
+  onToggleEnrollment: () => void
+  onEditTerms: () => void
 }
 
 export function CurrentAccountDetailHeaderCard({
@@ -125,12 +132,26 @@ export function CurrentAccountDetailHeaderCard({
   overdueAmount,
   unappliedCredit,
   canCreate,
+  enrolled,
+  enrollmentBusy = false,
+  creditLimit,
+  availableCredit,
+  termDays,
   onSettle,
   onApply,
+  onToggleEnrollment,
+  onEditTerms,
 }: Props) {
   const settleLabel = direction === "payable" ? "Pagar" : "Cobrar"
   const showApply = canCreate && unappliedCredit > 0.009
   const showUnapplied = unappliedCredit > 0.009
+  const showLimit = enrolled && creditLimit != null
+  const statsCols =
+    showUnapplied && showLimit
+      ? "sm:grid-cols-5"
+      : showUnapplied || showLimit
+        ? "sm:grid-cols-4"
+        : "sm:grid-cols-3"
 
   return (
     <article className={dataWorkspaceDetailCardClass}>
@@ -171,11 +192,38 @@ export function CurrentAccountDetailHeaderCard({
                     openCount={openCount}
                     balance={balance}
                   />
+                  {!enrolled ? (
+                    <span className={dataWorkspaceEntityCardStatusClosedClass}>
+                      Sin alta
+                    </span>
+                  ) : (
+                    <span className={dataWorkspaceEntityCardStatusClosedClass}>
+                      {showLimit
+                        ? `${formatMoney(creditLimit ?? 0)} · ${termDays} días`
+                        : `Sin tope · ${termDays} días`}
+                    </span>
+                  )}
                 </div>
               </div>
 
               {canCreate ? (
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {enrolled ? (
+                    <RootsDefaultButton
+                      type="button"
+                      disabled={enrollmentBusy}
+                      onClick={onEditTerms}
+                    >
+                      Condiciones
+                    </RootsDefaultButton>
+                  ) : null}
+                  <RootsDefaultButton
+                    type="button"
+                    disabled={enrollmentBusy}
+                    onClick={onToggleEnrollment}
+                  >
+                    {enrolled ? "Deshabilitar" : "Dar de alta"}
+                  </RootsDefaultButton>
                   {showApply ? (
                     <RootsDefaultButton
                       type="button"
@@ -202,10 +250,7 @@ export function CurrentAccountDetailHeaderCard({
       </div>
 
       <div
-        className={cn(
-          dataWorkspaceDetailCardStatsClass,
-          showUnapplied ? "sm:grid-cols-4" : "sm:grid-cols-3",
-        )}
+        className={cn(dataWorkspaceDetailCardStatsClass, statsCols)}
       >
         <HeaderKpiStat label="Saldo" value={formatMoney(balance)} />
         <HeaderKpiStat
@@ -215,6 +260,12 @@ export function CurrentAccountDetailHeaderCard({
         <HeaderKpiStat label="Vencido" value={formatMoney(overdueAmount)} />
         {showUnapplied ? (
           <HeaderKpiStat label="A cuenta" value={formatMoney(unappliedCredit)} />
+        ) : null}
+        {showLimit ? (
+          <HeaderKpiStat
+            label="Disponible"
+            value={formatMoney(availableCredit ?? 0)}
+          />
         ) : null}
       </div>
     </article>

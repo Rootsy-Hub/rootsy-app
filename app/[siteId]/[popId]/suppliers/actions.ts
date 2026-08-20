@@ -14,6 +14,11 @@ import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
 import { supplierDeleteConfirmPhrase } from "@/app/[siteId]/[popId]/suppliers/supplierConstants"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import {
+  normalizeCurrentAccountCreditLimit,
+  normalizeCurrentAccountTermDays,
+} from "@/lib/currentAccountEnrollment"
+import { parseMoneyInput } from "@/lib/moneyInput"
 
 function normalizeIvaCondition(raw: string): string | null {
   const t = raw.trim()
@@ -33,6 +38,9 @@ export type SupplierTableRow = {
   ivaCondition: string | null
   addressLine: string
   isActive: boolean
+  currentAccountEnabled: boolean
+  currentAccountCreditLimit: number | null
+  currentAccountTermDays: number
 }
 
 export type UpsertPopSupplierInput = {
@@ -44,6 +52,9 @@ export type UpsertPopSupplierInput = {
   ivaCondition: string
   addressLine: string
   isActive: boolean
+  currentAccountEnabled: boolean
+  currentAccountCreditLimit: string
+  currentAccountTermDays: string
 }
 
 function mapSupplierRow(r: {
@@ -56,6 +67,9 @@ function mapSupplierRow(r: {
   iva_condition: unknown
   address_line: unknown
   is_active: unknown
+  current_account_enabled: unknown
+  current_account_credit_limit: unknown
+  current_account_term_days: unknown
 }): SupplierTableRow {
   return {
     id: String(r.id),
@@ -70,11 +84,18 @@ function mapSupplierRow(r: {
         : null,
     addressLine: String(r.address_line ?? ""),
     isActive: r.is_active !== false,
+    currentAccountEnabled: r.current_account_enabled === true,
+    currentAccountCreditLimit: normalizeCurrentAccountCreditLimit(
+      r.current_account_credit_limit,
+    ),
+    currentAccountTermDays: normalizeCurrentAccountTermDays(
+      r.current_account_term_days,
+    ),
   }
 }
 
 const SUPPLIER_SELECT =
-  "id, name, email, phone, tax_id, notes, iva_condition, address_line, is_active"
+  "id, name, email, phone, tax_id, notes, iva_condition, address_line, is_active, current_account_enabled, current_account_credit_limit, current_account_term_days"
 
 export async function createPopSupplier(
   popId: string,
@@ -110,6 +131,15 @@ export async function createPopSupplier(
       iva_condition: normalizeIvaCondition(input.ivaCondition),
       address_line: input.addressLine.trim() || null,
       is_active: input.isActive,
+      current_account_enabled: input.currentAccountEnabled,
+      current_account_credit_limit: input.currentAccountEnabled
+        ? normalizeCurrentAccountCreditLimit(
+            parseMoneyInput(input.currentAccountCreditLimit, 0),
+          )
+        : undefined,
+      current_account_term_days: input.currentAccountEnabled
+        ? normalizeCurrentAccountTermDays(input.currentAccountTermDays)
+        : undefined,
     })
     if (error) {
       return { success: false, error: error.message || "No se pudo crear." }
@@ -157,6 +187,15 @@ export async function updatePopSupplier(
         iva_condition: normalizeIvaCondition(input.ivaCondition),
         address_line: input.addressLine.trim() || null,
         is_active: input.isActive,
+        current_account_enabled: input.currentAccountEnabled,
+        current_account_credit_limit: input.currentAccountEnabled
+          ? normalizeCurrentAccountCreditLimit(
+              parseMoneyInput(input.currentAccountCreditLimit, 0),
+            )
+          : undefined,
+        current_account_term_days: input.currentAccountEnabled
+          ? normalizeCurrentAccountTermDays(input.currentAccountTermDays)
+          : undefined,
       })
       .eq("id", supplierId)
       .eq("pop_id", popId)

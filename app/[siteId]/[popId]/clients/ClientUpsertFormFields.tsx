@@ -1,6 +1,7 @@
 "use client"
 
 import type { UpsertPopClientInput } from "@/app/[siteId]/[popId]/clients/actions"
+import { CurrentAccountTermsFields } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountTermsFields"
 import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import type { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import type { SaleComprobantePickerOption } from "@/lib/saleComprobantePicker"
@@ -269,6 +270,30 @@ export function ClientUpsertFormFields({
             setForm((f) => ({ ...f, isActive: checked }))
           }
         />
+
+        <RootsFormSwitchField
+          label="Cuenta corriente"
+          description="Solo con alta se puede vender a cuenta. También se habilita desde Cuentas corrientes."
+          id={`${idPrefix}-current-account`}
+          checked={form.currentAccountEnabled}
+          onCheckedChange={(checked) =>
+            setForm((f) => ({ ...f, currentAccountEnabled: checked }))
+          }
+        />
+
+        {form.currentAccountEnabled ? (
+          <CurrentAccountTermsFields
+            idPrefix={`${idPrefix}-cc`}
+            creditLimit={form.currentAccountCreditLimit}
+            termDays={form.currentAccountTermDays}
+            onCreditLimitChange={(value) =>
+              setForm((f) => ({ ...f, currentAccountCreditLimit: value }))
+            }
+            onTermDaysChange={(value) =>
+              setForm((f) => ({ ...f, currentAccountTermDays: value }))
+            }
+          />
+        ) : null}
 
         <RootsFormTextareaField
           label="Notas internas"
