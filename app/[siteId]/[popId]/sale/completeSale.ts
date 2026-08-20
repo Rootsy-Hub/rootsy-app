@@ -180,6 +180,7 @@ type StockDeductionNeed = {
   articleId: string
   qty: number
   label: string
+  allowNegativeQty: number
 }
 
 async function collectStockDeductionNeeds(
@@ -203,12 +204,62 @@ async function collectStockDeductionNeeds(
   | { success: true; needs: StockDeductionNeed[] }
   | { success: false; error: string }
 > {
-  const byArticle = new Map<string, { qty: number; labels: Set<string> }>()
+  const byArticle = new Map<
+    string,
+    { qty: number; allowNegativeQty: number; labels: Set<string> }
+  >()
 
-  const addNeed = (articleId: string, qty: number, label: string) => {
+  const recipeIds = new Set<string>()
+  for (const line of built) {
+    if (line.lineKind === "recipe" && line.recipeId) {
+      recipeIds.add(line.recipeId)
+    }
+    if (line.lineKind === "promotion" && line.promotionComponents?.length) {
+      for (const comp of line.promotionComponents) {
+        if (comp.kind === "recipe" && comp.recipeId) {
+          recipeIds.add(comp.recipeId)
+        }
+      }
+    }
+  }
+
+  const recipeAllowNegative = new Map<string, boolean>()
+  if (recipeIds.size > 0) {
+    const { data: recipeFlagRows, error: recipeFlagErr } = await supabase
+      .from("recipes")
+      .select("id, allow_negative_stock")
+      .eq("pop_id", popId)
+      .in("id", [...recipeIds])
+    if (recipeFlagErr) {
+      return {
+        success: false,
+        error:
+          recipeFlagErr.message ||
+          "No se pudo leer si las recetas permiten stock negativo.",
+      }
+    }
+    for (const row of recipeFlagRows ?? []) {
+      recipeAllowNegative.set(
+        String(row.id),
+        Boolean(row.allow_negative_stock),
+      )
+    }
+  }
+
+  const addNeed = (
+    articleId: string,
+    qty: number,
+    label: string,
+    allowNegative = false,
+  ) => {
     if (qty <= 0) return
-    const prev = byArticle.get(articleId) ?? { qty: 0, labels: new Set<string>() }
+    const prev = byArticle.get(articleId) ?? {
+      qty: 0,
+      allowNegativeQty: 0,
+      labels: new Set<string>(),
+    }
     prev.qty += qty
+    if (allowNegative) prev.allowNegativeQty += qty
     prev.labels.add(label)
     byArticle.set(articleId, prev)
   }
@@ -261,6 +312,7 @@ async function collectStockDeductionNeeds(
               String(art.id),
               consumo,
               `${line.name} — ${comp.name} — ${String(art.name ?? "Ingrediente")}`,
+              recipeAllowNegative.get(comp.recipeId) === true,
             )
           }
         }
@@ -311,7 +363,12 @@ async function collectStockDeductionNeeds(
         line.qty,
       )
       const ingLabel = String(art.name ?? "Ingrediente")
-      addNeed(String(art.id), consumo, `${line.name} — ${ingLabel}`)
+      addNeed(
+        String(art.id),
+        consumo,
+        `${line.name} — ${ingLabel}`,
+        recipeAllowNegative.get(line.recipeId) === true,
+      )
     }
   }
 
@@ -320,6 +377,7 @@ async function collectStockDeductionNeeds(
     needs.push({
       articleId,
       qty: parseQty(entry.qty),
+      allowNegativeQty: parseQty(entry.allowNegativeQty),
       label: [...entry.labels].join(", "),
     })
   }
@@ -354,6 +412,8 @@ async function assertStockForSaleNeeds(
 
   for (const need of needs) {
     if (allowNegativeById.get(need.articleId)) continue
+    const gatedQty = Math.max(0, need.qty - need.allowNegativeQty)
+    if (gatedQty <= 1e-6) continue
     const oh = await sumInventoryOnHandForArticle(
       supabase,
       popId,
@@ -363,7 +423,7 @@ async function assertStockForSaleNeeds(
     if (!oh.success) {
       return { success: false, error: oh.error }
     }
-    if (need.qty > oh.onHand + 1e-6) {
+    if (gatedQty > oh.onHand + 1e-6) {
       return {
         success: false,
         error: `Stock insuficiente para «${need.label || "Insumo"}».`,

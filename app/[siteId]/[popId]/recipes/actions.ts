@@ -23,6 +23,11 @@ import {
   isArticleItemKind,
   normalizeStoredUnitOfMeasure,
 } from "@/lib/articleItemKind"
+import {
+  RECIPE_IMAGE_STORAGE_BUCKET,
+  buildRecipeImageFileName,
+  buildRecipeImageStoragePath,
+} from "@/lib/recipeImageStorage"
 
 export type RecipeCategoryOption = {
   id: string
@@ -78,6 +83,7 @@ export type RecipeTableRow = {
   iva: number
   ingredientCount: number
   isActive: boolean
+  allowNegativeStock: boolean
 }
 
 export type RecipeDetail = RecipeTableRow & {
@@ -92,6 +98,7 @@ export type CreateRecipeInput = {
   salePrice: number
   iva: number
   isActive: boolean
+  allowNegativeStock: boolean
   ingredients: RecipeIngredientInput[]
   listPrices?: SalePriceListAmountInput[]
 }
@@ -129,6 +136,7 @@ const RECIPE_SELECT = `
   iva,
   image_url,
   is_active,
+  allow_negative_stock,
   recipe_categories ( name )
 `
 
@@ -262,6 +270,7 @@ function mapRecipeTableRow(
     iva: Number(row.iva ?? 0) || 0,
     ingredientCount,
     isActive: Boolean(row.is_active),
+    allowNegativeStock: Boolean(row.allow_negative_stock),
   }
 }
 
@@ -615,7 +624,42 @@ export async function syncRecipeCategoryMenuLayout(
   }
 }
 
-export async function getRecipeIngredientOptions(popId: string): Promise<
+const RECIPE_INGREDIENT_SEARCH_LIMIT = 8
+
+function escapeIngredientIlikeToken(raw: string): string {
+  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")
+}
+
+function mapRecipeIngredientRows(
+  rows: Array<Record<string, unknown>>,
+  referenceUnitCosts: Map<string, number>,
+): RecipeIngredientOption[] {
+  return rows.map((r) => {
+    const id = String(r.id)
+    const rawKind = String(r.item_kind ?? "raw_material")
+    const itemKind = isArticleItemKind(rawKind) ? rawKind : "raw_material"
+    const rawUom = String(r.unit_of_measure ?? "kg")
+    const unitOfMeasure = normalizeStoredUnitOfMeasure(rawUom, "kg")
+    const wasteRaw = r.default_waste_pct
+    return {
+      id,
+      name: String(r.name ?? ""),
+      itemKind,
+      unitOfMeasure,
+      costPrice: referenceUnitCosts.get(id) ?? 0,
+      defaultWastePct:
+        wasteRaw != null && Number.isFinite(Number(wasteRaw))
+          ? Number(wasteRaw)
+          : null,
+    }
+  })
+}
+
+export async function searchRecipeIngredientOptions(
+  popId: string,
+  query: string,
+  excludeIds: string[] = [],
+): Promise<
   | { success: true; ingredients: RecipeIngredientOption[] }
   | { success: false; error: string }
 > {
@@ -628,16 +672,32 @@ export async function getRecipeIngredientOptions(popId: string): Promise<
     if (!perms.canRead) {
       return { success: false, error: "Sin permiso para ver ingredientes." }
     }
+
+    const term = query.trim()
+    if (!term) {
+      return { success: true, ingredients: [] }
+    }
+
     const supabase = await createClient()
-    const { data, error } = await supabase
+    const pattern = `%${escapeIngredientIlikeToken(term)}%`
+    const blocked = excludeIds.map((id) => id.trim()).filter(Boolean)
+    let q = supabase
       .from("articles")
       .select("id, name, item_kind, unit_of_measure, default_waste_pct")
       .eq("pop_id", popId)
       .eq("is_active", true)
-      .in("item_kind", ["raw_material", "supply"])
+      .eq("item_kind", "raw_material")
+      .or(`name.ilike.${pattern},sku.ilike.${pattern}`)
       .order("name", { ascending: true })
+      .limit(RECIPE_INGREDIENT_SEARCH_LIMIT)
+    if (blocked.length > 0) {
+      q = q.not("id", "in", `(${blocked.join(",")})`)
+    }
+    const { data, error } = await q
     if (error) return { success: false, error: error.message }
-    const articleIds = (data ?? []).map((r) => String(r.id))
+
+    const rows = (data ?? []) as Array<Record<string, unknown>>
+    const articleIds = rows.map((r) => String(r.id))
     const referenceUnitCosts = await resolveArticleReferenceUnitCostsByArticleId(
       supabase,
       popId,
@@ -645,25 +705,55 @@ export async function getRecipeIngredientOptions(popId: string): Promise<
     )
     return {
       success: true,
-      ingredients: (data ?? []).map((r) => {
-        const id = String(r.id)
-        const rawKind = String(r.item_kind ?? "raw_material")
-        const itemKind = isArticleItemKind(rawKind) ? rawKind : "raw_material"
-        const rawUom = String(r.unit_of_measure ?? "kg")
-        const unitOfMeasure = normalizeStoredUnitOfMeasure(rawUom, "kg")
-        const wasteRaw = r.default_waste_pct
-        return {
-          id,
-          name: String(r.name ?? ""),
-          itemKind,
-          unitOfMeasure,
-          costPrice: referenceUnitCosts.get(id) ?? 0,
-          defaultWastePct:
-            wasteRaw != null && Number.isFinite(Number(wasteRaw))
-              ? Number(wasteRaw)
-              : null,
-        }
-      }),
+      ingredients: mapRecipeIngredientRows(rows, referenceUnitCosts),
+    }
+  } catch (e: unknown) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Error desconocido",
+    }
+  }
+}
+
+export async function getRecipeIngredientOptionsByIds(
+  popId: string,
+  articleIds: string[],
+): Promise<
+  | { success: true; ingredients: RecipeIngredientOption[] }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const perms = await recipePermissionFlags(popId)
+    if (!perms.canRead) {
+      return { success: false, error: "Sin permiso para ver ingredientes." }
+    }
+
+    const ids = [...new Set(articleIds.map((id) => id.trim()).filter(Boolean))]
+    if (ids.length === 0) {
+      return { success: true, ingredients: [] }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("articles")
+      .select("id, name, item_kind, unit_of_measure, default_waste_pct")
+      .eq("pop_id", popId)
+      .in("id", ids)
+    if (error) return { success: false, error: error.message }
+
+    const rows = (data ?? []) as Array<Record<string, unknown>>
+    const referenceUnitCosts = await resolveArticleReferenceUnitCostsByArticleId(
+      supabase,
+      popId,
+      ids,
+    )
+    return {
+      success: true,
+      ingredients: mapRecipeIngredientRows(rows, referenceUnitCosts),
     }
   } catch (e: unknown) {
     return {
@@ -952,6 +1042,7 @@ export async function createPopRecipe(
         iva: Number(input.iva),
         image_url: imageUrl ? imageUrl : null,
         is_active: input.isActive,
+        allow_negative_stock: Boolean(input.allowNegativeStock),
       })
       .select("id")
       .single()
@@ -1056,6 +1147,7 @@ export async function updatePopRecipe(
         iva: Number(input.iva),
         image_url: imageUrl ? imageUrl : null,
         is_active: input.isActive,
+        allow_negative_stock: Boolean(input.allowNegativeStock),
       })
       .eq("id", recipeId)
       .eq("pop_id", popId)
@@ -1141,5 +1233,83 @@ export async function deletePopRecipe(
       success: false,
       error: e instanceof Error ? e.message : "Error desconocido",
     }
+  }
+}
+
+export async function uploadRecipeImage(
+  popId: string,
+  formData: FormData,
+): Promise<
+  { success: true; imageUrl: string } | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+
+    const snap = await loadPopPermissionsSnapshot(popId)
+    const canUpload =
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.RECIPE_CREATE.resource,
+        POP_PERMS.RECIPE_CREATE.action,
+      ) ||
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.RECIPE_UPDATE.resource,
+        POP_PERMS.RECIPE_UPDATE.action,
+      )
+    if (!canUpload) {
+      return { success: false, error: "Sin permiso para subir imágenes." }
+    }
+
+    const raw = formData.get("file")
+    if (!(raw instanceof File) || raw.size <= 0) {
+      return { success: false, error: "Elegí una imagen para subir." }
+    }
+    if (raw.type !== "image/webp") {
+      return { success: false, error: "La imagen debe estar en formato WebP." }
+    }
+    if (raw.size > 5 * 1024 * 1024) {
+      return {
+        success: false,
+        error: "La imagen comprimida supera el límite de 5 MB.",
+      }
+    }
+
+    const fileName = buildRecipeImageFileName()
+    const storagePath = buildRecipeImageStoragePath(popId, fileName)
+    const bytes = Buffer.from(await raw.arrayBuffer())
+
+    const supabase = await createClient()
+    const { error: uploadError } = await supabase.storage
+      .from(RECIPE_IMAGE_STORAGE_BUCKET)
+      .upload(storagePath, bytes, {
+        contentType: "image/webp",
+        cacheControl: "31536000",
+        upsert: false,
+      })
+
+    if (uploadError) {
+      return {
+        success: false,
+        error: uploadError.message || "No se pudo subir la imagen.",
+      }
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(RECIPE_IMAGE_STORAGE_BUCKET)
+      .getPublicUrl(storagePath)
+
+    const imageUrl = publicUrlData.publicUrl?.trim()
+    if (!imageUrl) {
+      return { success: false, error: "No se pudo obtener la URL pública." }
+    }
+
+    return { success: true, imageUrl }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
   }
 }

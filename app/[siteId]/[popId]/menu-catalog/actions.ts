@@ -873,10 +873,45 @@ export async function getMenuCatalogItemsPage(
   }
 }
 
+async function mapMenuArticlesWithPriceList(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  priceListId: string | undefined,
+  rows: Record<string, unknown>[],
+) {
+  const overrides = await loadPriceListOverrideMap(
+    supabase,
+    popId,
+    priceListId,
+    "article",
+    rows.map((row) => String(row.id)),
+  )
+  return rows.map((row) =>
+    mapSaleCatalogArticleRow(row, overrides.get(String(row.id))),
+  )
+}
+
+async function mapMenuRecipesWithPriceList(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  priceListId: string | undefined,
+  rows: Record<string, unknown>[],
+) {
+  const overrides = await loadPriceListOverrideMap(
+    supabase,
+    popId,
+    priceListId,
+    "recipe",
+    rows.map((row) => String(row.id)),
+  )
+  return rows.map((row) => mapMenuRecipeRow(row, overrides.get(String(row.id))))
+}
+
 export async function getMenuCatalogItemsByIds(
   popId: string,
   articleIds: string[],
   recipeIds: string[],
+  priceListId?: string,
 ): Promise<
   | {
       success: true
@@ -909,14 +944,24 @@ export async function getMenuCatalogItemsByIds(
     ])
     if (artRes.error) return { success: false, error: artRes.error.message }
     if (recipeRes.error) return { success: false, error: recipeRes.error.message }
+    const [articles, recipes] = await Promise.all([
+      mapMenuArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        (artRes.data ?? []) as Record<string, unknown>[],
+      ),
+      mapMenuRecipesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        (recipeRes.data ?? []) as Record<string, unknown>[],
+      ),
+    ])
     return {
       success: true,
-      articles: ((artRes.data ?? []) as Record<string, unknown>[]).map(
-        mapSaleCatalogArticleRow,
-      ),
-      recipes: ((recipeRes.data ?? []) as Record<string, unknown>[]).map(
-        mapMenuRecipeRow,
-      ),
+      articles,
+      recipes,
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
@@ -927,6 +972,7 @@ export async function getMenuCatalogItemsByIds(
 export async function findMenuCatalogItemByScan(
   popId: string,
   rawQuery: string,
+  priceListId?: string,
 ): Promise<
   | {
       success: true
@@ -957,11 +1003,15 @@ export async function findMenuCatalogItemByScan(
       return { success: false, error: barcodeError.message }
     }
     if ((barcodeRows ?? []).length === 1) {
+      const [article] = await mapMenuArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        [barcodeRows![0] as Record<string, unknown>],
+      )
       return {
         success: true,
-        article: mapSaleCatalogArticleRow(
-          barcodeRows![0] as Record<string, unknown>,
-        ),
+        article: article ?? null,
         recipe: null,
       }
     }
@@ -982,11 +1032,15 @@ export async function findMenuCatalogItemByScan(
       return { success: false, error: articleNameError.message }
     }
     if ((articleNameRows ?? []).length === 1) {
+      const [article] = await mapMenuArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        [articleNameRows![0] as Record<string, unknown>],
+      )
       return {
         success: true,
-        article: mapSaleCatalogArticleRow(
-          articleNameRows![0] as Record<string, unknown>,
-        ),
+        article: article ?? null,
         recipe: null,
       }
     }
@@ -1002,10 +1056,16 @@ export async function findMenuCatalogItemByScan(
       return { success: false, error: recipeNameError.message }
     }
     if ((recipeNameRows ?? []).length === 1) {
+      const [recipe] = await mapMenuRecipesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        [recipeNameRows![0] as Record<string, unknown>],
+      )
       return {
         success: true,
         article: null,
-        recipe: mapMenuRecipeRow(recipeNameRows![0] as Record<string, unknown>),
+        recipe: recipe ?? null,
       }
     }
     return { success: true, article: null, recipe: null }

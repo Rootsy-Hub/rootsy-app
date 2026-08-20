@@ -17,6 +17,7 @@ import {
   menuCatalogQueryKey,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { useSalePriceListId } from "@/lib/salePriceListSession"
 import { DEFAULT_SALE_SITE_ID } from "@/lib/saleInvoiceTypes"
 import { useQuery } from "@tanstack/react-query"
 import { useCallback } from "react"
@@ -63,11 +64,12 @@ export function useMenuCatalogLoader(
   })
 
   const payload = catalogQuery.data ?? emptyPayload
+  const priceListId = useSalePriceListId(popId)
   const articleCache = useCatalogItemCache<MenuCatalogArticle>(
-    menuCatalogKnownArticlesQueryKey(popId ?? ""),
+    menuCatalogKnownArticlesQueryKey(popId ?? "", priceListId),
   )
   const recipeCache = useCatalogItemCache<MenuCatalogRecipe>(
-    menuCatalogKnownRecipesQueryKey(popId ?? ""),
+    menuCatalogKnownRecipesQueryKey(popId ?? "", priceListId),
   )
 
   const reloadCatalog = useCallback(async () => {
@@ -94,12 +96,13 @@ export function useMenuCatalogLoader(
         popId,
         missingArticles,
         missingRecipes,
+        priceListId,
       )
       if (!res.success) return
       mergeArticles(res.articles)
       mergeRecipes(res.recipes)
     },
-    [knownArticles, knownRecipes, mergeArticles, mergeRecipes, popId],
+    [knownArticles, knownRecipes, mergeArticles, mergeRecipes, popId, priceListId],
   )
 
   return {

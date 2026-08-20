@@ -51,7 +51,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Catálogo",
     component: "Grilla productos",
-    token: "grid-cols-3 · card h-318",
+    token: "auto-fill · card 200–240 · h-256",
     source: "sale/page.tsx · product card",
   },
   {

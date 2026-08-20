@@ -76,7 +76,7 @@ export function HrPageSkeleton() {
           <PersonCard delay={3} />
         </div>
       </div>
-      <span className="sr-only">Preparando las personas del negocio</span>
+      <span className="sr-only">Preparando el equipo del local</span>
     </div>
   )
 }

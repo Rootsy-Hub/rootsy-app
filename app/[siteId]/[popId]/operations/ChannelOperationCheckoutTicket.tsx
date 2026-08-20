@@ -26,21 +26,9 @@ type Props = {
   siteId: string
   sale: OperationSaleRow
   showHeading?: boolean
-}
-
-function resolveChannelTicketTotals(
-  ticket: ChannelCheckoutTicketDisplay,
-  sale: OperationSaleRow,
-) {
-  const orderTotal = sale.channelOrderTotal ?? ticket.orderTotal
-  const paidFromPayments = sale.payments.reduce(
-    (sum, payment) => sum + payment.amount,
-    0,
-  )
-  const paidFromSale = sale.channelPaidTotal ?? paidFromPayments
-  const paidTotal = Math.max(ticket.paidTotal, paidFromSale, paidFromPayments)
-  const pendingTotal = Math.max(0, orderTotal - paidTotal)
-  return { orderTotal, paidTotal, pendingTotal }
+  ticketTone?: "pos" | "modal" | "operar"
+  className?: string
+  ticketScrollClassName?: string
 }
 
 function PaidBadge() {
@@ -57,6 +45,9 @@ export function ChannelOperationCheckoutTicket({
   siteId,
   sale,
   showHeading = true,
+  ticketTone = "modal",
+  className,
+  ticketScrollClassName,
 }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -98,22 +89,25 @@ export function ChannelOperationCheckoutTicket({
 
   if (loading) {
     return (
-      <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-        Cargando ticket del pedido…
-      </p>
+      <div className="flex h-full min-h-0 flex-1 items-center justify-center px-4 py-8">
+        <p className="text-center font-canopy text-sm text-[var(--rootsy-bruma-500)]">
+          Cargando ticket del pedido…
+        </p>
+      </div>
     )
   }
 
   if (error || !ticket) {
     return (
-      <p className="mx-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-        {error ?? "No se pudo cargar el ticket del pedido."}
-      </p>
+      <div className="flex h-full min-h-0 flex-1 items-center px-4 py-6">
+        <p className="w-full rounded-lg border border-[var(--rootsy-bruma-200)] bg-white px-3 py-2 font-canopy text-sm text-[var(--rootsy-bruma-700)]">
+          {error ?? "No se pudo cargar el ticket del pedido."}
+        </p>
+      </div>
     )
   }
 
-  const totals = resolveChannelTicketTotals(ticket, sale)
-  const hasPending = totals.pendingTotal > 0.009
+  const orderTotal = sale.channelOrderTotal ?? ticket.orderTotal
 
   return (
     <>
@@ -127,7 +121,9 @@ export function ChannelOperationCheckoutTicket({
         groups={groups}
         lineCount={lineCount}
         emptyTitle="Sin líneas en el pedido."
-        totalBarTone="modal"
+        totalBarTone={ticketTone}
+        className={className}
+        ticketScrollClassName={ticketScrollClassName}
         renderRow={(row) => {
           const paymentStatus = getRowPaymentStatus(
             row,
@@ -138,6 +134,7 @@ export function ChannelOperationCheckoutTicket({
             <MostradorCartLineDisplay
               key={row.rowKey}
               row={row}
+              variant={ticketTone === "operar" ? "operar" : "legacy"}
               pricing={{
                 precioBase: pricing.precioBase,
                 precioFinal: pricing.precioFinal,
@@ -154,7 +151,7 @@ export function ChannelOperationCheckoutTicket({
           )
         }}
         totalBar={{
-          total: hasPending ? totals.pendingTotal : totals.orderTotal,
+          total: orderTotal,
           subtotal: ticket.subtotalOriginal,
           subtotalOriginal: ticket.subtotalOriginal,
           promocionesAplicadasMonto: ticket.promocionesAplicadasMonto,
@@ -164,7 +161,7 @@ export function ChannelOperationCheckoutTicket({
           descuentoMonto: ticket.descuentoGeneralMonto,
           hayDescuento: ticket.hayDescuentoGeneral,
           totalPagado: 0,
-          totalLabel: hasPending ? "Total a cobrar" : "Total",
+          totalLabel: "Total",
           flush: true,
         }}
       />

@@ -62,7 +62,7 @@ export function parseListPriceFormValues(
     const amount = parseMoneyInput(raw, Number.NaN)
     return {
       listId: list.id,
-      amount: Number.isFinite(amount) && amount >= 0 ? amount : null,
+      amount: Number.isFinite(amount) && amount > 0 ? amount : null,
     }
   })
 }

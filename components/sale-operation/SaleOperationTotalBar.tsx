@@ -47,6 +47,10 @@ export type SaleOperationTotalBarProps = {
   totalAriaLabel?: string
   /** `pos` = footer verde de ventas/mesas; `modal` = paleta clara para detalle en modal; `operar` = bruma-savia del layout operar */
   tone?: "pos" | "modal" | "operar"
+  /** Oculta el título “Por cobrar / Por pagar” del ticket operar. */
+  hideSectionTitle?: boolean
+  /** Totales al pie de una lista, sin bloque separado. */
+  embedded?: boolean
 }
 
 const breakdownLabelPosClass =
@@ -84,6 +88,8 @@ export function SaleOperationTotalBar({
   totalLabel = "Total a cobrar",
   totalAriaLabel,
   tone = "pos",
+  hideSectionTitle = false,
+  embedded = false,
 }: SaleOperationTotalBarProps) {
   const isModal = tone === "modal"
   const isOperar = tone === "operar"
@@ -148,7 +154,9 @@ export function SaleOperationTotalBar({
       aria-label={totalAriaLabel ?? (isOperar ? operarSectionTitle : totalLabel)}
       className={cn(
         "relative box-border flex w-full shrink-0 flex-col justify-center",
-        isOperar
+        isOperar && embedded
+          ? "border-t border-[var(--rootsy-bruma-200)] bg-transparent px-3 py-2.5"
+          : isOperar
           ? layoutsOperarTicketProposalTotalsShellClass(ticketProposalId)
           : isModal
             ? cn(
@@ -184,7 +192,7 @@ export function SaleOperationTotalBar({
         </>
       ) : null}
 
-      {isOperar ? (
+      {isOperar && !hideSectionTitle ? (
         <h3
           className={cn(
             "relative z-10",
@@ -280,7 +288,11 @@ export function SaleOperationTotalBar({
             ) : null}
             {isOperar ? (
               <div
-                className={layoutsOperarTicketProposalTotalsDividerClass(ticketProposalId)}
+                className={
+                  embedded
+                    ? "col-span-2 mt-1.5 border-t border-[var(--rootsy-bruma-200)] pt-2.5"
+                    : layoutsOperarTicketProposalTotalsDividerClass(ticketProposalId)
+                }
                 aria-hidden
               />
             ) : null}

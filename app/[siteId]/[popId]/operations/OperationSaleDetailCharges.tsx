@@ -29,42 +29,42 @@ export function OperationSaleDetailCharges({
 }: Props) {
   if (loading) {
     return (
-      <p className="text-sm text-muted-foreground">Cargando cobros…</p>
+      <p className="font-canopy text-sm text-[var(--rootsy-bruma-500)]">
+        Cargando cobros…
+      </p>
     )
   }
 
   if (error) {
     return (
-      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-        {error}
-      </p>
+      <p className="font-canopy text-sm text-[var(--rootsy-bruma-700)]">{error}</p>
     )
   }
 
   if (charges.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="font-canopy text-sm text-[var(--rootsy-bruma-500)]">
         No hay cobros registrados.
       </p>
     )
   }
 
   return (
-    <ul className="divide-y divide-border/45 rounded-lg border border-border/60 bg-background">
+    <ul className="flex flex-col gap-4">
       {charges.map((charge) => (
-        <li key={charge.saleId} className="px-3 py-3">
+        <li key={charge.saleId}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium leading-snug text-foreground">
+              <p className="font-canopy text-sm leading-snug text-[var(--rootsy-bruma-900)]">
                 {charge.methodName}
               </p>
-              <p className="mt-1 text-xs leading-snug text-muted-foreground">
+              <p className="mt-1 font-canopy text-xs leading-snug text-[var(--rootsy-bruma-500)]">
                 {formatOperationDetailTimestamp(charge.soldAt, timeZone)}
               </p>
             </div>
             <span
               className={cn(
-                "shrink-0 pt-0.5 text-sm font-semibold text-foreground",
+                "shrink-0 pt-0.5 text-sm font-semibold text-[var(--rootsy-bruma-900)]",
                 saleOpImporteBaseClass,
               )}
             >
@@ -75,7 +75,7 @@ export function OperationSaleDetailCharges({
             <button
               type="button"
               onClick={() => onOpenComprobante(charge)}
-              className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+              className="mt-2 inline-flex items-center gap-1.5 font-canopy text-xs font-medium text-[var(--rootsy-savia-700)] hover:underline"
             >
               <FileText className="size-3.5 shrink-0" aria-hidden />
               <span>

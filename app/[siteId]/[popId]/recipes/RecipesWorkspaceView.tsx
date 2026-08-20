@@ -7,12 +7,10 @@ import {
   deleteRecipeCategory,
   getPopRecipeCategories,
   getPopRecipeDetail,
-  getRecipeIngredientOptions,
   syncRecipeCategoryMenuLayout,
   updatePopRecipe,
   updateRecipeCategory,
   type RecipeCategoryOption,
-  type RecipeIngredientOption,
   type RecipeTableRow,
 } from "@/app/[siteId]/[popId]/recipes/actions"
 import { ingredientLinesFromDetail } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientEditor"
@@ -160,10 +158,6 @@ export function RecipesWorkspaceView() {
   const [actionError, setError] = useState<string | null>(null)
 
   const [categories, setCategories] = useState<RecipeCategoryOption[]>([])
-  const [ingredientOptions, setIngredientOptions] = useState<
-    RecipeIngredientOption[]
-  >([])
-
   const [searchInput, setSearchInput] = useState(ws.q)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
@@ -267,12 +261,6 @@ export function RecipesWorkspaceView() {
     if (res.success) setCategories(res.categories)
   }, [popId])
 
-  const loadIngredientOptions = useCallback(async () => {
-    if (!popId) return
-    const res = await getRecipeIngredientOptions(popId)
-    if (res.success) setIngredientOptions(res.ingredients)
-  }, [popId])
-
   const loadPriceLists = useCallback(async () => {
     if (!popId) return
     const res = await getPopPriceLists(popId)
@@ -291,9 +279,8 @@ export function RecipesWorkspaceView() {
 
   useEffect(() => {
     void loadCategories()
-    void loadIngredientOptions()
     void loadPriceLists()
-  }, [loadCategories, loadIngredientOptions, loadPriceLists])
+  }, [loadCategories, loadPriceLists])
 
   useEffect(() => {
     setSearchInput(ws.q)
@@ -886,9 +873,9 @@ export function RecipesWorkspaceView() {
         form={form}
         setForm={setForm}
         siteId={siteId}
+        popId={popId}
         categories={categories}
         priceLists={priceLists}
-        ingredientOptions={ingredientOptions}
         disabled={formDetailLoading || formSaving}
       />
 

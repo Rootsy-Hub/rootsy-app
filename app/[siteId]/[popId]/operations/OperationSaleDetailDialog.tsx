@@ -16,24 +16,28 @@ import { OperationSaleInvoiceDialog } from "@/app/[siteId]/[popId]/operations/Op
 import {
   operationSaleDetailTitle,
   resolveOperationSaleChannel,
+  resolveOperationSaleOutstanding,
 } from "@/app/[siteId]/[popId]/operations/operationSaleDetailUi"
 import { SaleDetailTicketView } from "@/app/[siteId]/[popId]/operations/SaleDetailTicketView"
+import "@/app/library/layouts/layoutsOperarTheme.css"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  opsDialogHeader,
-  opsDialogSectionTitle,
-  opsDialogSurfaceMd,
-} from "@/app/[siteId]/[popId]/operations/operationDialogStyles"
-import {
-  LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX,
-  layoutsOperarSummaryPanelMaxWidthClass,
+  layoutsOperarBodyScopeClass,
+  layoutsOperarScrollMinimalClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogErrorBanner,
+  RootsDialogHeader,
+  RootsDialogLoadingState,
+  rootsDialogPanelPaddingXClass,
+} from "@/components/rootsy-dialog"
+import {
+  saleOpFmt,
+  saleOpImporteBaseClass,
+} from "@/components/sale-operation/saleOperationStyles"
+import { Dialog } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 
 type Props = {
@@ -58,6 +62,14 @@ function isChannelOperationSale(sale: OperationSaleRow): boolean {
       sale.status === "partial",
   )
 }
+
+const sectionTitleClass =
+  "mb-3 font-canopy text-xs font-semibold tracking-[0.01em] text-[var(--rootsy-bruma-500)]"
+
+const columnScrollClass = cn(
+  layoutsOperarScrollMinimalClass,
+  "h-full min-h-0 overflow-y-auto overscroll-contain",
+)
 
 export function OperationSaleDetailDialog({
   sale,
@@ -120,6 +132,8 @@ export function OperationSaleDetailDialog({
     void getOperationSaleDetailCharges(popId, {
       saleId: sale.id,
       groupedSaleIds: sale.groupedSaleIds,
+      tableSessionId: sale.tableSessionId,
+      counterOrderId: sale.counterOrderId,
     }).then((res) => {
       if (cancelled) return
       setChargesLoading(false)
@@ -134,7 +148,15 @@ export function OperationSaleDetailDialog({
     return () => {
       cancelled = true
     }
-  }, [open, sale?.id, sale?.groupedSaleIds, popId, contextProp])
+  }, [
+    open,
+    sale?.id,
+    sale?.groupedSaleIds,
+    sale?.tableSessionId,
+    sale?.counterOrderId,
+    popId,
+    contextProp,
+  ])
 
   const channel = sale
     ? (context?.channel ??
@@ -146,43 +168,58 @@ export function OperationSaleDetailDialog({
     : "pos"
   const title = operationSaleDetailTitle(channel)
   const isChannelOperation = sale ? isChannelOperationSale(sale) : false
+  const outstandingAmount = sale
+    ? resolveOperationSaleOutstanding(sale, charges)
+    : 0
+  const description =
+    channel === "table"
+      ? "Mesa · operación y pedido"
+      : channel === "counter"
+        ? "Mostrador · operación y pedido"
+        : "Venta · operación y pedido"
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className={opsDialogSurfaceMd}>
-          <DialogHeader className={opsDialogHeader}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              {title}
-            </DialogTitle>
-            {loading || error || !sale ? (
-              <DialogDescription className="sr-only">
-                {loading ? loadingMessage : (error ?? "Venta no disponible")}
-              </DialogDescription>
-            ) : (
-              <DialogDescription className="sr-only">{title}</DialogDescription>
-            )}
-          </DialogHeader>
+        <RootsDialogContent
+          size="twoCol"
+          className="sm:max-w-[min(92vw,calc(21rem+400px))]"
+        >
+          <RootsDialogHeader
+            open={open}
+            title={title}
+            description={description}
+          />
 
           {loading ? (
-            <div className="px-6 py-8">
-              <p className="text-center text-sm text-muted-foreground">
-                {loadingMessage}
-              </p>
-            </div>
+            <RootsDialogBody>
+              <RootsDialogLoadingState message={loadingMessage} />
+            </RootsDialogBody>
           ) : error ? (
-            <div className="px-6 py-4">
-              <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                {error}
-              </p>
-            </div>
+            <RootsDialogBody>
+              <RootsDialogErrorBanner>{error}</RootsDialogErrorBanner>
+            </RootsDialogBody>
           ) : sale ? (
-            <div className={`grid min-h-0 flex-1 items-start lg:grid-cols-[minmax(17rem,21rem)_minmax(${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px,1fr)]`}>
-              <div className="min-h-0 overflow-y-auto overscroll-contain border-b border-border/50 bg-muted/20 px-5 py-4 lg:border-b-0 lg:border-r">
+            <div
+              className={cn(
+                "rootsy-theme-pos",
+                layoutsOperarBodyScopeClass,
+                "grid min-h-0 flex-1 overflow-y-auto",
+                "lg:h-0 lg:grid-cols-[minmax(17rem,1fr)_400px] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden",
+              )}
+            >
+              <aside className="flex h-full min-h-0 flex-col overflow-hidden">
+                <div
+                  className={cn(
+                    columnScrollClass,
+                    rootsDialogPanelPaddingXClass,
+                    "py-[var(--rootsy-space-200)] lg:pr-[var(--rootsy-space-300)]",
+                  )}
+                >
                 <section>
-                  <h3 className={opsDialogSectionTitle}>Detalles</h3>
+                  <h3 className={sectionTitleClass}>Detalles</h3>
                   {contextLoading ? (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-canopy text-sm text-[var(--rootsy-bruma-500)]">
                       Cargando datos…
                     </p>
                   ) : context ? (
@@ -192,19 +229,17 @@ export function OperationSaleDetailDialog({
                       timeZone={timeZone}
                     />
                   ) : contextError ? (
-                    <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                      {contextError}
-                    </p>
+                    <RootsDialogErrorBanner>{contextError}</RootsDialogErrorBanner>
                   ) : null}
                 </section>
 
                 <section className="mt-6">
-                  <h3 className={opsDialogSectionTitle}>
+                  <h3 className={sectionTitleClass}>
                     Cobros
                     {sale.groupedSaleIds && sale.groupedSaleIds.length > 1
-                      ? ` (${sale.groupedSaleIds.length})`
+                      ? ` · ${sale.groupedSaleIds.length}`
                       : charges.length > 1
-                        ? ` (${charges.length})`
+                        ? ` · ${charges.length}`
                         : ""}
                   </h3>
                   <OperationSaleDetailCharges
@@ -217,29 +252,60 @@ export function OperationSaleDetailDialog({
                     }
                   />
                 </section>
-              </div>
 
-              <div className="px-5 py-4 lg:pl-4">
-                <div className={`mx-auto w-full ${layoutsOperarSummaryPanelMaxWidthClass}`}>
+                {!chargesLoading && outstandingAmount > 0.009 ? (
+                  <section className="mt-6">
+                    <h3 className={sectionTitleClass}>Por cobrar</h3>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-canopy text-sm leading-snug text-[var(--rootsy-bruma-900)]">
+                        Pendiente
+                      </p>
+                      <span
+                        className={cn(
+                          "shrink-0 text-sm font-semibold text-[var(--rootsy-bruma-900)]",
+                          saleOpImporteBaseClass,
+                        )}
+                      >
+                        {saleOpFmt.format(outstandingAmount)}
+                      </span>
+                    </div>
+                  </section>
+                ) : null}
+                </div>
+              </aside>
+
+              <section
+                className={cn(
+                  "rootsy-app-light layouts-operar-ticket-shell",
+                  "flex h-full min-h-0 min-w-0 flex-col overflow-hidden",
+                  "border-t border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]",
+                  "lg:border-t-0 lg:border-l",
+                )}
+              >
+                <div className={columnScrollClass}>
                   {isChannelOperation ? (
                     <ChannelOperationCheckoutTicket
                       popId={popId}
                       siteId={siteId}
                       sale={sale}
                       showHeading={false}
+                      ticketTone="operar"
+                      ticketScrollClassName="overflow-visible"
                     />
                   ) : (
                     <SaleDetailTicketView
                       sale={sale}
                       showPaymentDetails={false}
                       showHeading={false}
+                      ticketTone="operar"
+                      ticketScrollClassName="overflow-visible"
                     />
                   )}
                 </div>
-              </div>
+              </section>
             </div>
           ) : null}
-        </DialogContent>
+        </RootsDialogContent>
       </Dialog>
 
       <OperationSaleInvoiceDialog

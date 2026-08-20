@@ -329,8 +329,43 @@ export const layoutsOperarFormCanvasScrollClass = cn(
 export const layoutsOperarFormCanvasScrollEndClass =
   "pb-10 sm:pb-12 lg:pb-14"
 
-/** Grilla demo — sale usa grid-cols-3 en desktop. */
-export const layoutsOperarCatalogGridClass = "grid grid-cols-2 gap-4 xl:grid-cols-3"
+/**
+ * Card de catálogo operar — ancho anclado al ritmo space.500.
+ * 5×40 = 200 (piso) · 6×40 = 240 (techo). La grilla suma columnas (1…n)
+ * en vez de estirar o comprimir la card.
+ */
+export const LAYOUTS_OPERAR_CATALOG_CARD_MIN_WIDTH_PX = rootsySpacePx("500") * 5
+export const LAYOUTS_OPERAR_CATALOG_CARD_MAX_WIDTH_PX = rootsySpacePx("500") * 6
+/** gap-4 · space.200 */
+export const LAYOUTS_OPERAR_CATALOG_GRID_GAP_PX = rootsySpacePx("200")
+export const LAYOUTS_OPERAR_CATALOG_GRID_COLS_MIN = 1
+
+/** Columnas según el ancho real del canvas, no del viewport. */
+export function layoutsOperarCatalogColumnCount(containerWidthPx: number): number {
+  const min = LAYOUTS_OPERAR_CATALOG_CARD_MIN_WIDTH_PX
+  const max = LAYOUTS_OPERAR_CATALOG_CARD_MAX_WIDTH_PX
+  const gap = LAYOUTS_OPERAR_CATALOG_GRID_GAP_PX
+  const colsMin = LAYOUTS_OPERAR_CATALOG_GRID_COLS_MIN
+
+  if (!Number.isFinite(containerWidthPx) || containerWidthPx <= 0) {
+    return 2
+  }
+
+  const maxFit = Math.max(colsMin, Math.floor((containerWidthPx + gap) / (min + gap)))
+  const minNeeded = Math.max(colsMin, Math.ceil((containerWidthPx + gap) / (max + gap)))
+
+  return Math.min(maxFit, minNeeded)
+}
+
+/** Grilla fluida — piso 200px, las columnas se reparte el resto (1fr). */
+export const layoutsOperarCatalogGridClass = "grid w-full min-w-0 gap-4"
+export const layoutsOperarCatalogGridStyle = {
+  gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${LAYOUTS_OPERAR_CATALOG_CARD_MIN_WIDTH_PX}px), 1fr))`,
+} as const
+
+export function layoutsOperarCatalogGridTemplate(columns: number): string {
+  return `repeat(${columns}, minmax(0, 1fr))`
+}
 
 /** Empty catálogo — mascota + burbuja de diálogo (bruma sobre dosel). */
 export const layoutsOperarCatalogEmptyMascotShellClass =

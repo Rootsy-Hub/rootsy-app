@@ -184,10 +184,16 @@ export function SaleDetailTicketView({
   sale,
   showPaymentDetails = true,
   showHeading = true,
+  ticketTone = "modal",
+  className,
+  ticketScrollClassName,
 }: {
   sale: OperationSaleRow
   showPaymentDetails?: boolean
   showHeading?: boolean
+  ticketTone?: "pos" | "modal" | "operar"
+  className?: string
+  ticketScrollClassName?: string
 }) {
   const cartDisplayRows = useMemo(
     () => buildSaleDetailCartDisplayRows(sale.lineItems),
@@ -219,15 +225,11 @@ export function SaleDetailTicketView({
       : itemDiscountTotal <= 0
         ? sale.discountInfo.itemDiscountTotal
         : 0
-  const channelOrderTotal = sale.channelOrderTotal
   const channelPaidTotal = sale.channelPaidTotal
   const isPartialChannel =
-    channelOrderTotal != null &&
+    sale.channelOrderTotal != null &&
     channelPaidTotal != null &&
-    channelPaidTotal + 0.009 < channelOrderTotal
-  const ticketTotal = isPartialChannel
-    ? roundMoney(channelOrderTotal - channelPaidTotal)
-    : totals.total
+    channelPaidTotal + 0.009 < sale.channelOrderTotal
 
   return (
     <>
@@ -241,13 +243,16 @@ export function SaleDetailTicketView({
         groups={cartDisplayGroups}
         lineCount={lineCount}
         emptyTitle="Sin líneas registradas."
-        totalBarTone="modal"
+        totalBarTone={ticketTone}
+        className={className}
+        ticketScrollClassName={ticketScrollClassName}
         renderRow={(row) => {
           const pricing = pricingForMostradorRow(row, EMPTY_CART_OVERRIDES)
           return (
             <MostradorCartLineDisplay
               key={row.rowKey}
               row={row}
+              variant={ticketTone === "operar" ? "operar" : "legacy"}
               pricing={{
                 precioBase: pricing.precioBase,
                 precioFinal: pricing.precioFinal,
@@ -257,7 +262,7 @@ export function SaleDetailTicketView({
           )
         }}
         totalBar={{
-          total: ticketTotal,
+          total: totals.total,
           subtotal: totals.listSubtotal,
           subtotalOriginal: totals.listSubtotal,
           promocionesAplicadasMonto: totals.promoDiscount,
@@ -268,7 +273,7 @@ export function SaleDetailTicketView({
           hayDescuento: totals.generalDiscount > 0,
           totalPagado:
             showPaymentDetails && isPartialChannel ? channelPaidTotal : 0,
-          totalLabel: isPartialChannel ? "Total a cobrar" : "Total",
+          totalLabel: "Total",
           flush: true,
         }}
       />

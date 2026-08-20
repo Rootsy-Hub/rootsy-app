@@ -353,9 +353,28 @@ export async function getSaleCatalogItemsPage(
   }
 }
 
+async function mapSaleArticlesWithPriceList(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  priceListId: string | undefined,
+  rows: Record<string, unknown>[],
+) {
+  const overrides = await loadPriceListOverrideMap(
+    supabase,
+    popId,
+    priceListId,
+    "article",
+    rows.map((row) => String(row.id)),
+  )
+  return rows.map((row) =>
+    mapSaleCatalogArticleRow(row, overrides.get(String(row.id))),
+  )
+}
+
 export async function getSaleCatalogArticlesByIds(
   popId: string,
   ids: string[],
+  priceListId?: string,
 ): Promise<
   | { success: true; articles: SaleCatalogArticle[] }
   | { success: false; error: string }
@@ -376,7 +395,12 @@ export async function getSaleCatalogArticlesByIds(
     const rows = (data ?? []) as Record<string, unknown>[]
     return {
       success: true,
-      articles: rows.map((row) => mapSaleCatalogArticleRow(row)),
+      articles: await mapSaleArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        rows,
+      ),
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
@@ -387,6 +411,7 @@ export async function getSaleCatalogArticlesByIds(
 export async function findSaleCatalogArticleByScan(
   popId: string,
   rawQuery: string,
+  priceListId?: string,
 ): Promise<
   | { success: true; article: SaleCatalogArticle | null }
   | { success: false; error: string }
@@ -420,11 +445,15 @@ export async function findSaleCatalogArticleByScan(
       return { success: false, error: barcodeError.message }
     }
     if ((barcodeRows ?? []).length === 1) {
+      const [article] = await mapSaleArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        [barcodeRows![0] as Record<string, unknown>],
+      )
       return {
         success: true,
-        article: mapSaleCatalogArticleRow(
-          barcodeRows![0] as Record<string, unknown>,
-        ),
+        article: article ?? null,
       }
     }
     if ((barcodeRows ?? []).length > 1) {
@@ -442,11 +471,15 @@ export async function findSaleCatalogArticleByScan(
       return { success: false, error: nameError.message }
     }
     if ((nameRows ?? []).length === 1) {
+      const [article] = await mapSaleArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        [nameRows![0] as Record<string, unknown>],
+      )
       return {
         success: true,
-        article: mapSaleCatalogArticleRow(
-          nameRows![0] as Record<string, unknown>,
-        ),
+        article: article ?? null,
       }
     }
     return { success: true, article: null }

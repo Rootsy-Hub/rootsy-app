@@ -34,7 +34,11 @@ import {
   operationPaymentKindLabel,
   type OperationPaymentKind,
 } from "@/lib/operationPaymentKinds"
-import { formatCashRegisterSaleDetail } from "@/lib/cashRegisterOperationDetail"
+import {
+  formatCashRegisterSaleDetail,
+  parseCashRegisterSaleTicket,
+  type CashRegisterOperationSaleLine,
+} from "@/lib/cashRegisterOperationDetail"
 import {
   formatCashRegisterSaleOperationLabel,
   loadCashRegisterSaleContextLabels,
@@ -211,6 +215,9 @@ export type CashRegisterSessionOperationRow = {
   detail: string
   paymentMethodLabel: string
   amount: number
+  lines: CashRegisterOperationSaleLine[]
+  showLines: boolean
+  generalDiscountAmount: number
 }
 
 export type CashRegisterSessionArqueoDetail = {
@@ -2223,6 +2230,10 @@ export async function getCashRegisterSessionArqueoDetail(
             : row.client_id
               ? "Cliente registrado"
               : "Consumidor final"
+        const ticket = parseCashRegisterSaleTicket(
+          row.line_items,
+          parseAmount(row.discount_total),
+        )
         const detail = formatCashRegisterSaleDetail(
           row.line_items,
           parseAmount(row.discount_total),
@@ -2256,6 +2267,9 @@ export async function getCashRegisterSessionArqueoDetail(
             detail,
             paymentMethodLabel: "—",
             amount: parseAmount(row.total),
+            lines: ticket.lines,
+            showLines: true,
+            generalDiscountAmount: ticket.generalDiscountAmount,
           })
         } else {
           for (const [index, payment] of payList.entries()) {
@@ -2272,6 +2286,9 @@ export async function getCashRegisterSessionArqueoDetail(
               detail,
               paymentMethodLabel: formatTreasuryPaymentLabelFromRow(payment),
               amount,
+              lines: ticket.lines,
+              showLines: index === 0,
+              generalDiscountAmount: ticket.generalDiscountAmount,
             })
           }
         }
@@ -2316,6 +2333,9 @@ export async function getCashRegisterSessionArqueoDetail(
               : "Retiro del cajón",
         paymentMethodLabel: "Efectivo",
         amount: parseAmount(m.amount),
+        lines: [],
+        showLines: false,
+        generalDiscountAmount: 0,
       })
     }
 

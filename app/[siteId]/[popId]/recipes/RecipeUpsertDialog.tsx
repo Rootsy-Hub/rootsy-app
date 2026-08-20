@@ -2,10 +2,7 @@
 
 import { RecipeUpsertFormFields } from "@/app/[siteId]/[popId]/recipes/RecipeUpsertFormFields"
 import type { RecipeFormState } from "@/app/[siteId]/[popId]/recipes/recipeFormState"
-import type {
-  RecipeCategoryOption,
-  RecipeIngredientOption,
-} from "@/app/[siteId]/[popId]/recipes/actions"
+import type { RecipeCategoryOption } from "@/app/[siteId]/[popId]/recipes/actions"
 import type { SalePriceList } from "@/lib/salePriceLists"
 import {
   RootsDialogBody,
@@ -29,11 +26,11 @@ import {
 type FormFieldsProps = {
   idPrefix: string
   siteId: string
+  popId: string
   form: RecipeFormState
   setForm: Dispatch<SetStateAction<RecipeFormState>>
   categories: RecipeCategoryOption[]
   priceLists?: SalePriceList[]
-  ingredientOptions: RecipeIngredientOption[]
   disabled?: boolean
 }
 

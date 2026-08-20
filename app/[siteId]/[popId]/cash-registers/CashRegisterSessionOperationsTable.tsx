@@ -1,6 +1,7 @@
 "use client"
 
 import type { CashRegisterSessionOperationRow } from "@/app/[siteId]/[popId]/cash-registers/actions"
+import { CashRegisterOperationSaleLines } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterOperationSaleLines"
 import {
   TreasuryInfiniteScrollFooter,
   useTreasuryInfiniteScroll,
@@ -173,6 +174,17 @@ export function CashRegisterSessionOperationsTable({
               row.timeLabel,
             ),
             subtitle: row.paymentMethodLabel,
+            detail:
+              row.showLines && row.lines.length > 0 ? (
+                <CashRegisterOperationSaleLines
+                  lines={row.lines}
+                  generalDiscountAmount={row.generalDiscountAmount}
+                />
+              ) : row.kind !== "sale" && row.detail && row.detail !== "—" ? (
+                <p className="mt-1 font-canopy text-xs leading-4 text-[var(--rootsy-bruma-500)]">
+                  {row.detail}
+                </p>
+              ) : null,
             amount: formatOperationAmount(row),
             onClick:
               row.kind === "sale" && row.saleId

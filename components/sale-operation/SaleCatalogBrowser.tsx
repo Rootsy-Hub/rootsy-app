@@ -285,7 +285,7 @@ export function SaleCatalogBrowser({
 
       void (async () => {
         if (source === "sale") {
-          const res = await findSaleCatalogArticleByScan(popId, query)
+          const res = await findSaleCatalogArticleByScan(popId, query, priceListId)
           if (!res.success || !res.article) return
           const article = res.article
           flushSync(() => {
@@ -295,7 +295,7 @@ export function SaleCatalogBrowser({
           setBusqueda("")
           return
         }
-        const res = await findMenuCatalogItemByScan(popId, query)
+        const res = await findMenuCatalogItemByScan(popId, query, priceListId)
         if (!res.success) return
         if (res.article) {
           const article = res.article
@@ -322,6 +322,7 @@ export function SaleCatalogBrowser({
       mergeCatalogArticles,
       mergeCatalogRecipes,
       popId,
+      priceListId,
       products,
       productosFiltrados,
       source,

@@ -8,6 +8,7 @@ import {
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
   layoutsOperarCatalogGridClass,
+  layoutsOperarCatalogGridStyle,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
@@ -233,6 +234,11 @@ export function ServiceOperateCatalogBrowser({
                         modoVista === "grid"
                           ? layoutsOperarCatalogGridClass
                           : "flex flex-col gap-2"
+                      }
+                      style={
+                        modoVista === "grid"
+                          ? layoutsOperarCatalogGridStyle
+                          : undefined
                       }
                     >
                       {visibleItems.map((service) => (

@@ -8,6 +8,7 @@ import {
   RootsDialogErrorBanner,
   RootsDialogForm,
   RootsDialogHeader,
+  RootsDialogSingleActionFooter,
 } from "@/components/rootsy-dialog"
 import {
   RootsFormDateField,
@@ -63,6 +64,7 @@ export function personFormFromEmployee(person: EmployeeRow): HrPersonFormState {
 type Props = {
   open: boolean
   person: EmployeeRow | null
+  readOnly?: boolean
   saving: boolean
   error: string | null
   onOpenChange: (open: boolean) => void
@@ -72,6 +74,7 @@ type Props = {
 export function HrPersonDialog({
   open,
   person,
+  readOnly = false,
   saving,
   error,
   onOpenChange,
@@ -79,6 +82,7 @@ export function HrPersonDialog({
 }: Props) {
   const [form, setForm] = useState(emptyPersonForm)
   const isEdit = person != null
+  const locked = readOnly && isEdit
 
   useEffect(() => {
     if (!open) {
@@ -92,7 +96,7 @@ export function HrPersonDialog({
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    if (!canSubmit) return
+    if (locked || !canSubmit) return
     void onSubmit({
       id: person?.id,
       ...form,
@@ -105,11 +109,19 @@ export function HrPersonDialog({
         <RootsDialogForm onSubmit={handleSubmit}>
           <RootsDialogHeader
             open={open}
-            title={isEdit ? "Persona del negocio" : "Nueva persona"}
+            title={
+              locked
+                ? "Persona del local"
+                : isEdit
+                  ? "Persona del local"
+                  : "Nueva persona"
+            }
             description={
-              isEdit
-                ? "Sueldo, CUIL e ingreso. No hace falta que entre a Rootsy."
-                : "Cargala aunque no use Rootsy. Después podés marcarle la entrada o invitarla."
+              locked
+                ? "Solo lectura. Estos datos no se pueden cambiar desde acá."
+                : isEdit
+                  ? "Sueldo, CUIL e ingreso. No le da acceso a Rootsy."
+                  : "Cargala aunque no use Rootsy. El acceso al sistema se da aparte."
             }
           />
           <RootsDialogBody className="space-y-4">
@@ -121,8 +133,9 @@ export function HrPersonDialog({
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, firstName: event.target.value }))
                 }
-                autoFocus
+                autoFocus={!locked}
                 required
+                disabled={locked}
               />
               <RootsFormTextField
                 label="Apellido"
@@ -131,16 +144,19 @@ export function HrPersonDialog({
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, lastName: event.target.value }))
                 }
+                disabled={locked}
               />
             </div>
             <RootsFormTextField
-              label="Qué hace"
+              label="Puesto en el local"
               id="hr-person-job"
               value={form.jobTitle}
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, jobTitle: event.target.value }))
               }
               placeholder="Mozo, cocina, administración…"
+              hint="Qué hace acá. No es el rol de Rootsy."
+              disabled={locked}
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <RootsFormTextField
@@ -152,12 +168,14 @@ export function HrPersonDialog({
                 }
                 placeholder="20-12345678-3"
                 hint="Para lo legal. Si no lo tenés ahora, lo cargás después."
+                disabled={locked}
               />
               <RootsFormDateField
                 label="Ingreso"
                 id="hr-person-hired"
                 value={form.hiredAt}
                 onChange={(value) => setForm((prev) => ({ ...prev, hiredAt: value }))}
+                disabled={locked}
               />
             </div>
             <RootsFormMoneyField
@@ -166,6 +184,7 @@ export function HrPersonDialog({
               value={form.monthlySalary}
               onChange={(value) => setForm((prev) => ({ ...prev, monthlySalary: value }))}
               hint="Lo que le pagás. Queda acá, a la vista."
+              disabled={locked}
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <RootsFormTextField
@@ -177,6 +196,7 @@ export function HrPersonDialog({
                   setForm((prev) => ({ ...prev, email: event.target.value }))
                 }
                 hint="Si más adelante va a entrar a Rootsy."
+                disabled={locked}
               />
               <RootsFormTextField
                 label="Teléfono"
@@ -185,6 +205,7 @@ export function HrPersonDialog({
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, phone: event.target.value }))
                 }
+                disabled={locked}
               />
             </div>
             <RootsFormTextareaField
@@ -195,17 +216,25 @@ export function HrPersonDialog({
                 setForm((prev) => ({ ...prev, notes: event.target.value }))
               }
               hint="Opcional. Convenio, horarios, lo que el local necesite acordarse."
+              disabled={locked}
             />
             {error ? <RootsDialogErrorBanner>{error}</RootsDialogErrorBanner> : null}
           </RootsDialogBody>
-          <RootsDialogDualActionFooter
-            onCancel={() => onOpenChange(false)}
-            confirmLabel={isEdit ? "Guardar" : "Cargar persona"}
-            confirmLoadingLabel="Guardando…"
-            confirmType="submit"
-            confirmDisabled={!canSubmit}
-            confirmLoading={saving}
-          />
+          {locked ? (
+            <RootsDialogSingleActionFooter
+              label="Cerrar"
+              onAction={() => onOpenChange(false)}
+            />
+          ) : (
+            <RootsDialogDualActionFooter
+              onCancel={() => onOpenChange(false)}
+              confirmLabel={isEdit ? "Guardar" : "Cargar persona"}
+              confirmLoadingLabel="Guardando…"
+              confirmType="submit"
+              confirmDisabled={!canSubmit}
+              confirmLoading={saving}
+            />
+          )}
         </RootsDialogForm>
       </RootsDialogContent>
     </Dialog>

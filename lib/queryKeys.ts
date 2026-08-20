@@ -39,16 +39,25 @@ export function purchaseCatalogItemsQueryKey(
   return ["purchase-catalog", popId, "items", filterKey] as const
 }
 
-export function saleCatalogKnownArticlesQueryKey(popId: string) {
-  return ["sale-catalog", popId, "known-articles"] as const
+export function saleCatalogKnownArticlesQueryKey(
+  popId: string,
+  priceListId?: string,
+) {
+  return ["sale-catalog", popId, "known-articles", priceListId ?? "principal"] as const
 }
 
-export function menuCatalogKnownArticlesQueryKey(popId: string) {
-  return ["menu-catalog", popId, "known-articles"] as const
+export function menuCatalogKnownArticlesQueryKey(
+  popId: string,
+  priceListId?: string,
+) {
+  return ["menu-catalog", popId, "known-articles", priceListId ?? "principal"] as const
 }
 
-export function menuCatalogKnownRecipesQueryKey(popId: string) {
-  return ["menu-catalog", popId, "known-recipes"] as const
+export function menuCatalogKnownRecipesQueryKey(
+  popId: string,
+  priceListId?: string,
+) {
+  return ["menu-catalog", popId, "known-recipes", priceListId ?? "principal"] as const
 }
 
 export function purchaseCatalogKnownArticlesQueryKey(popId: string) {
