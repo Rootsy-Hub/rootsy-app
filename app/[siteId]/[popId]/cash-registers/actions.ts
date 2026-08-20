@@ -222,6 +222,7 @@ export type CashRegisterSessionOperationRow = {
 
 export type CashRegisterSessionArqueoDetail = {
   registerName: string
+  popName: string
   session: CashRegisterSummarySession
   closingComparison: CashRegisterClosingComparisonLine[]
   hasAccountingEntry: boolean
@@ -2136,6 +2137,9 @@ export async function getCashRegisterSessionArqueoDetail(
       .eq("pop_id", popId)
       .maybeSingle()
     const registerName = String(regRow?.name ?? "")
+    const popRes = await getPopById(popId)
+    const popName =
+      popRes.success && popRes.pop ? String(popRes.pop.name ?? "").trim() : ""
 
     const { data: allSessRows } = await supabase
       .from("cash_register_sessions")
@@ -2367,6 +2371,7 @@ export async function getCashRegisterSessionArqueoDetail(
       success: true,
       data: {
         registerName,
+        popName,
         session,
         closingComparison,
         hasAccountingEntry: Boolean(entryRow?.id),
