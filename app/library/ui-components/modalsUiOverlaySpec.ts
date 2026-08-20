@@ -116,24 +116,24 @@ export function getModalUiOverlaySpecRows(kind: "modal" | "alert" = "modal"): Ov
     ...(kind === "modal"
       ? [
           {
-            role: "Body · valle",
-            token: MODAL_UI_PANEL_SURFACE_SPEC.bodySunkenToken,
+            role: "Clima · claro",
+            token: "dialog.climate.valley",
             value: MODAL_UI_PANEL_SURFACE_SPEC.bodySunkenValue,
-            product: "bruma + savia · valle entre claros",
+            product: "bruma + savia · un solo mundo en todo el bloque",
           } satisfies OverlaySurfaceSpecRow,
           {
-            role: "Divisor header/footer",
-            token: MODAL_UI_PANEL_SURFACE_SPEC.dividerToken,
-            value: MODAL_UI_PANEL_SURFACE_SPEC.dividerCss,
-            product: "header/footer alba · horizonte 1px",
+            role: "Horizonte",
+            token: "dialog.horizon.line",
+            value: "savia-400 18% · bruma-200 · 76%",
+            product: "velo header · suelo footer · sin banda alba",
           } satisfies OverlaySurfaceSpecRow,
         ]
       : [
           {
-            role: "Divisor footer",
-            token: MODAL_UI_PANEL_SURFACE_SPEC.dividerToken,
-            value: MODAL_UI_PANEL_SURFACE_SPEC.dividerCss,
-            product: "border-t footer · sin header separado",
+            role: "Horizonte footer",
+            token: "dialog.horizon.line",
+            value: "savia-400 18% · bruma-200 · 76%",
+            product: "suelo de acompañamiento · mismo clima",
           } satisfies OverlaySurfaceSpecRow,
         ]),
   ]

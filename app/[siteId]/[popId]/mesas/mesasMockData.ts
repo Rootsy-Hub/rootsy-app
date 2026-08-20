@@ -83,19 +83,27 @@ function d(
   y: number,
   width: number,
   height: number,
+  label?: string,
 ): MesaFloorDecor {
-  return { id, salonId, kind, x, y, width, height, rotation: 0 }
+  return { id, salonId, kind, x, y, width, height, rotation: 0, label }
 }
 
 export const MOCK_MESA_FLOOR_DECORS: MesaFloorDecor[] = [
-  d("da-wall-h", "salon-a", "wall_h", 16, 16, 600, 8),
-  d("da-bar", "salon-a", "bar", 520, 280, 120, 48),
-  d("da-plant", "salon-a", "plant", 280, 320, 36, 36),
-  d("db-wall-v", "salon-b", "wall_v", 16, 16, 8, 400),
-  d("db-entrance", "salon-b", "entrance", 200, 320, 80, 24),
-  d("dp-planter", "patio", "planter", 480, 200, 64, 32),
+  d("da-zone", "salon-a", "zone", 24, 24, 220, 160, "VIP"),
+  d("da-wall-h", "salon-a", "wall_h", 16, 16, 600, 6),
+  d("da-window", "salon-a", "window", 200, 16, 96, 12),
+  d("da-bar", "salon-a", "bar", 520, 280, 128, 36),
+  d("da-register", "salon-a", "register", 520, 330, 56, 56),
+  d("da-plant", "salon-a", "plant", 280, 320, 28, 28),
+  d("da-label", "salon-a", "label", 40, 36, 140, 22, "Terraza"),
+  d("db-wall-v", "salon-b", "wall_v", 16, 16, 6, 400),
+  d("db-entrance", "salon-b", "entrance", 200, 320, 72, 28),
+  d("db-restroom", "salon-b", "restroom", 40, 360, 56, 56),
+  d("dp-planter", "patio", "planter", 480, 200, 44, 44),
+  d("dp-kitchen", "patio", "kitchen", 40, 40, 56, 56),
+  d("dp-stairs", "patio", "stairs", 120, 40, 56, 56),
   d("df-wall-h", "frente", "wall_h", 16, 72, 400, 6),
-  d("df-plant", "frente", "plant", 380, 16, 36, 36),
+  d("df-plant", "frente", "plant", 380, 16, 28, 28),
 ]
 
 const reservationArrival = new Date()

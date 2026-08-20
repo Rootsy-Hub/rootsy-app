@@ -53,37 +53,37 @@ export type ModalBodyToneId = "default" | "compact" | "loading"
 export type AlertDialogVariantId = "confirm" | "destructive" | "typed-confirmation"
 
 export const ROOTSY_MODAL_MANIFESTO =
-  "Un diálogo es un bloque vivo opaco — header y footer claros, body bruma. Sin vidrio ni borde: lo define elevation.shadow.overlay · radius.xxlarge. Tipografía heading.medium; danger funcional solo en botones."
+  "Un diálogo es un solo mundo. El body es el claro; header y footer lo acompañan — nombran el lugar y marcan el camino. Título heading.small semibold: quieto, con jerarquía. Sin vidrio ni borde: elevation.shadow.overlay · radius.xxlarge. Danger solo en botones."
 
 export const ROOTSY_MODAL_PRINCIPLES = [
   {
-    title: "Chrome claro",
-    detail: "Header y footer blancos — el título y las acciones se leen en el claro.",
+    title: "Un solo mundo",
+    detail: "El clima del valle recorre todo el bloque. Header y footer no son habitaciones aparte.",
   },
   {
-    title: "Body bruma",
-    detail: "Valle con bruma y savia — el formulario vive en el clima, entre dos claros.",
+    title: "Header nombra",
+    detail: "Título quieto y descripción que orienta. Jerarquía por peso y color, no por tamaño de cartel.",
   },
   {
-    title: "Scrim suave",
-    detail: "sombra-950 40% — atenúa la página, no la apaga.",
+    title: "Footer camina",
+    detail: "Las acciones se plantan al borde del claro. Mismo clima, un poco más de suelo.",
   },
   {
     title: "Alert compacto",
-    detail: "Mensaje en el claro · footer alba · radius.xlarge · heading.small.",
+    detail: "Mismo mundo · heading.small semibold · radius.xlarge · danger solo en el botón.",
   },
 ] as const
 
 export const ROOTSY_MODAL_COLOR_TOKENS = [
   {
-    role: "Panel · fondo",
-    token: "elevation.surface.overlay",
-    hex: elevationHex("elevation.surface.overlay"),
+    role: "Panel · clima",
+    token: "dialog.climate.valley",
+    hex: hx("bruma", "50"),
   },
   {
-    role: "Body · fondo",
-    token: "elevation.surface.overlay",
-    hex: elevationHex("elevation.surface.overlay"),
+    role: "Body · claro",
+    token: "dialog.climate.valley",
+    hex: hx("bruma", "50"),
   },
   {
     role: "Scrim",
@@ -91,18 +91,23 @@ export const ROOTSY_MODAL_COLOR_TOKENS = [
     hex: `color-mix(in srgb, ${hx("sombra", "950")} 40%, transparent)`,
   },
   {
-    role: "Chrome · alba",
-    token: "dialog.chrome.alba",
-    hex: hx("bruma", "100"),
+    role: "Header · velo",
+    token: "dialog.horizon.veil",
+    hex: `color-mix(in srgb, ${elevationHex("elevation.surface.overlay")} 52%, transparent)`,
   },
   {
-    role: "Divisor",
-    token: "color.border",
-    hex: borderHex("color.border"),
+    role: "Footer · suelo",
+    token: "dialog.horizon.floor",
+    hex: `color-mix(in srgb, ${elevationHex("elevation.surface.overlay")} 38%, transparent)`,
+  },
+  {
+    role: "Horizonte",
+    token: "dialog.horizon.line",
+    hex: `color-mix(in srgb, ${hx("savia", "400")} 22%, ${hx("bruma", "200")})`,
   },
   {
     role: "Título · modal",
-    token: "font.heading.medium",
+    token: "font.heading.small",
     hex: hx("bruma", "900"),
   },
   {
@@ -262,8 +267,8 @@ export const ROOTSY_DIALOG_KINDS: {
     token: "dialog.modal",
     label: "Modal",
     radiusToken: "radius.xxlarge",
-    titleToken: "font.heading.medium",
-    usage: "Header + body + footer · radius.xxlarge · shadow.overlay.",
+    titleToken: "font.heading.small",
+    usage: "Un solo mundo · header nombra · footer camina · radius.xxlarge.",
   },
   {
     id: "alert",
@@ -271,7 +276,7 @@ export const ROOTSY_DIALOG_KINDS: {
     label: "Alert dialog",
     radiusToken: "radius.xlarge",
     titleToken: "font.heading.small",
-    usage: "Shell compacto · radius.xlarge · una columna de contenido.",
+    usage: "Mismo mundo · radius.xlarge · una columna de contenido.",
   },
 ]
 
@@ -282,9 +287,9 @@ export const ROOTSY_MODAL_ANATOMY = {
   panelPaddingXPx: ROOTSY_MODAL_PANEL_PADDING_X_PX,
   headerPaddingTopToken: "space.400",
   headerPaddingBottomToken: "space.200",
-  headerGapToken: "space.100",
+  headerGapToken: "space.050",
   bodyPaddingYToken: "space.200",
-  footerPaddingYToken: "space.150",
+  footerPaddingYToken: "space.200",
   footerGapToken: "space.150",
   contentGapToken: "space.150",
   closeHitToken: "space.400",
@@ -302,7 +307,8 @@ export const ROOTSY_MODAL_SPECS = {
     shadowToken: "elevation.shadow.overlay",
     surfaceToken: "elevation.surface.overlay",
     bodySurfaceToken: "elevation.surface.overlay",
-    titleToken: "font.heading.medium",
+    titleToken: "font.heading.small",
+    titleWeightToken: "font.weight.semibold",
   },
   alert: {
     radiusToken: "radius.xlarge",
@@ -311,6 +317,7 @@ export const ROOTSY_MODAL_SPECS = {
     surfaceToken: "elevation.surface.overlay",
     maxWidthPx: 448,
     titleToken: "font.heading.small",
+    titleWeightToken: "font.weight.semibold",
   },
   loading: {
     minHeightPx: rootsySpacePx("600") * 4,
@@ -328,7 +335,7 @@ export const MODAL_RELATED_LINKS = [
   { sectionId: "elevation", label: "Elevación", hint: "overlay · shadow.overlay." },
   { sectionId: "radius", label: "Radio", hint: "xxlarge modal · xlarge alert." },
   { sectionId: "spacing", label: "Espaciado", hint: "panel-padding · field-stack." },
-  { sectionId: "typography", label: "Tipografía", hint: "heading.medium · body.small." },
+  { sectionId: "typography", label: "Tipografía", hint: "heading.small semibold · body.small." },
   { sectionId: "motion", label: "Movimiento", hint: "motion.modal.enter 250ms." },
   { sectionId: "ui-components-buttons", label: "Botones UI", hint: "Footers dual y danger." },
   { sectionId: "ui-components-forms", label: "Formulario UI", hint: "Campos en body modal." },

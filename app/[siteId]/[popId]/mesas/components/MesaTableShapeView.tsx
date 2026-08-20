@@ -3,6 +3,7 @@
 import type { MesaTableShape } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { MesaOpenDurationLabel } from "@/app/[siteId]/[popId]/mesas/components/MesaOpenDurationLabel"
 import {
+  mesaSeatsLabel,
   mesaTableDimensions,
   mesaTableHighlightClass,
   mesaStatusClass,
@@ -67,11 +68,11 @@ export function MesaTableShapeView({
           showOpenDuration ? (
             <MesaOpenDurationLabel
               openedAt={openedAt}
-              className={cn("mt-0.5 text-[10px]", mesasTableDurationClass)}
+              className={cn("mt-0.5", mesasTableDurationClass)}
             />
           ) : (
-            <span className={cn("mt-0.5 text-[10px] font-medium", mesasTableMetaClass)}>
-              {seats} pax
+            <span className={cn("mt-0.5", mesasTableMetaClass)}>
+              {mesaSeatsLabel(seats)}
             </span>
           )
         ) : null}

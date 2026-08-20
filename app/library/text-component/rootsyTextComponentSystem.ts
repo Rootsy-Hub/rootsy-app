@@ -118,7 +118,7 @@ export const TEXT_COMPONENT_HEADING_GUIDELINES = [
     dontText: "Dos títulos large compitiendo en la misma vista.",
   },
   {
-    doText: "font.heading.medium en headers de modal y secciones de librería.",
+    doText: "font.heading.small semibold en headers de modal; heading.medium en secciones de librería.",
     dontText: "Bold suelto sin token — rompe consistencia y accesibilidad.",
   },
 ] as const

@@ -162,16 +162,16 @@ export function AlertDialogLiveGallery() {
     <div className="space-y-10">
       <OverlaySurfaceSpecTable
         title="Superficie overlay · alert dialog (producto)"
-        description={`${MODAL_UI_SCRIM_SPEC.note} Mismo scrim que modal. Radio ${MODAL_UI_PANEL_SURFACE_SPEC.radiusAlertToken} · sin body sunken.`}
+        description={`${MODAL_UI_SCRIM_SPEC.note} Mismo scrim que modal. Radio ${MODAL_UI_PANEL_SURFACE_SPEC.radiusAlertToken} · mismo mundo.`}
         rows={getModalUiOverlaySpecRows("alert")}
         pairNote={MODAL_UI_PANEL_SURFACE_SPEC.pairRule}
       />
 
-      <FoundationBrumaStage clip={false} caption="dialog.alert · font.heading.small · radius.xlarge · justify-between.">
+      <FoundationBrumaStage clip={false} caption="dialog.alert · font.heading.small semibold · mismo mundo · radius.xlarge.">
         <div className="space-y-6">
           <DialogGallerySectionHeading
             title="Variantes"
-            description="Confirmación · destructivo · confirmación escrita — shell compacto sin body sunken."
+            description="Confirmación · destructivo · confirmación escrita — mismo mundo, más compacto."
           />
           <DialogGallerySpecBlock title="dialog.alert" hint="RootsAlertDialogContent · Panel · Footer.">
             <DialogVariantRow>

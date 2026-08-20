@@ -1,12 +1,12 @@
 "use client"
 
-import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import type {
+  MenuCatalogPromotion,
+  MenuCatalogPromotionOption,
+  MenuCatalogPromotionSlot,
+} from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
-import {
-  CheckoutFieldHint,
-  CheckoutSectionLabel,
-  CheckoutSectionPanel,
-} from "@/components/checkout/CheckoutFormFields"
+import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -14,21 +14,13 @@ import {
 } from "@/components/rootsy-dialog"
 import { Dialog } from "@/components/ui/dialog"
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import type { PromotionCartSelection } from "@/lib/promotionPricing"
+  priceComboPromotion,
+  type PromotionCartSelection,
+} from "@/lib/promotionPricing"
 import { cn } from "@/lib/utils"
-import {
-  saleOpChannelFormField,
-  saleOpFmt,
-} from "@/components/sale-operation/saleOperationStyles"
-import { useEffect, useId, useMemo, useState } from "react"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
+import { Check } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 type Props = {
   open: boolean
@@ -37,13 +29,34 @@ type Props = {
   onConfirm: (selections: PromotionCartSelection[]) => void
 }
 
+function optionValue(option: MenuCatalogPromotionOption) {
+  return `${option.kind}:${option.refId}`
+}
+
+function slotHeading(slot: MenuCatalogPromotionSlot) {
+  if (slot.quantity > 1) return `${slot.label} × ${slot.quantity}`
+  return slot.label
+}
+
+function comboDealLabel(promotion: MenuCatalogPromotion) {
+  if (promotion.pricingMode === "fixed_total" && promotion.fixedPrice != null) {
+    return saleOpFmt.format(promotion.fixedPrice)
+  }
+  if (promotion.pricingMode === "percent_off" && promotion.discountValue != null) {
+    return `${promotion.discountValue}% off`
+  }
+  if (promotion.pricingMode === "fixed_off" && promotion.discountValue != null) {
+    return `${saleOpFmt.format(promotion.discountValue)} off`
+  }
+  return promotion.pricingLabel.trim() || null
+}
+
 export function PromotionComboWizard({
   open,
   promotion,
   onOpenChange,
   onConfirm,
 }: Props) {
-  const formId = useId()
   const [selectionBySlot, setSelectionBySlot] = useState<
     Record<string, string>
   >({})
@@ -51,14 +64,19 @@ export function PromotionComboWizard({
   const slots = promotion?.slots ?? []
 
   useEffect(() => {
-    if (!open) {
+    if (!open || !promotion) {
       setSelectionBySlot({})
+      return
     }
-  }, [open])
 
-  useEffect(() => {
-    setSelectionBySlot({})
-  }, [promotion?.id])
+    const next: Record<string, string> = {}
+    for (const slot of promotion.slots) {
+      if (slot.options.length === 1) {
+        next[slot.id] = optionValue(slot.options[0])
+      }
+    }
+    setSelectionBySlot(next)
+  }, [open, promotion])
 
   const selections = useMemo((): PromotionCartSelection[] => {
     if (!promotion) return []
@@ -91,6 +109,14 @@ export function PromotionComboWizard({
   const canConfirm =
     promotion != null && selections.length === slots.length && slots.length > 0
 
+  const pendingSlots = slots.filter((slot) => !selectionBySlot[slot.id])
+  const pricedCombo =
+    promotion && canConfirm
+      ? priceComboPromotion(promotion, selections, 1)
+      : null
+  const dealLabel = promotion ? comboDealLabel(promotion) : null
+  const showOptionPrice = promotion?.pricingMode !== "fixed_total"
+
   const handleOpenChange = (next: boolean) => {
     if (!next) setSelectionBySlot({})
     onOpenChange(next)
@@ -103,88 +129,126 @@ export function PromotionComboWizard({
     onOpenChange(false)
   }
 
+  const confirmHint =
+    pendingSlots.length === 1
+      ? `Elegí ${pendingSlots[0].label} para agregar`
+      : pendingSlots.length > 1
+        ? "Elegí una opción en cada ítem"
+        : undefined
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <RootsDialogContent className="flex flex-col">
-        <RootsDialogHeader title={promotion?.name ?? "Promoción"} />
+      <RootsDialogContent
+        size="wide"
+        className="flex max-h-[min(90vh,720px)] flex-col"
+      >
+        <RootsDialogHeader
+          open={open}
+          title={promotion?.name ?? "Combo"}
+          description={
+            dealLabel
+              ? `Elegí una opción en cada ítem · ${dealLabel}`
+              : "Elegí una opción en cada ítem."
+          }
+        />
 
-        <RootsDialogBody className="space-y-4">
-          <CheckoutFieldHint>
-            Elegí qué producto o receta va en cada ítem del combo.
-          </CheckoutFieldHint>
+        <RootsDialogBody className="space-y-5">
+          {slots.map((slot, index) => {
+            const selectedValue = selectionBySlot[slot.id] ?? ""
+            const selectedOption = slot.options.find(
+              (option) => optionValue(option) === selectedValue,
+            )
+            const done = selectedOption != null
+            const optionsScroll = slot.options.length > 5
 
-          <CheckoutSectionPanel>
-            {slots.map((slot, index) => {
-              const fieldId = `${formId}-slot-${slot.id}`
-              const slotLabel =
-                slot.quantity > 1 ? `${slot.label} × ${slot.quantity}` : slot.label
-
-              return (
-                <div
-                  key={slot.id}
-                  className={cn("space-y-2.5", index > 0 && "pt-1")}
-                >
-                  <CheckoutSectionLabel>{slotLabel}</CheckoutSectionLabel>
-                  <Select
-                    value={selectionBySlot[slot.id] ?? ""}
-                    onValueChange={(v) =>
-                      setSelectionBySlot((prev) => ({ ...prev, [slot.id]: v }))
-                    }
-                  >
-                    <SelectTrigger
-                      id={fieldId}
+            return (
+              <section key={slot.id} className="space-y-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span
+                      aria-hidden
                       className={cn(
-                        saleOpChannelFormField,
-                        "h-11 w-full font-normal data-placeholder:text-muted-foreground/70",
+                        "flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums",
+                        done
+                          ? "bg-[var(--rootsy-savia-600)] text-white"
+                          : "border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-500)]",
                       )}
                     >
-                      <SelectValue placeholder="Elegir opción" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {slot.options.some((o) => o.kind === "article") ? (
-                        <SelectGroup>
-                          <SelectLabel>Productos</SelectLabel>
-                          {slot.options
-                            .filter((o) => o.kind === "article")
-                            .map((o) => (
-                              <SelectItem
-                                key={`article:${o.refId}`}
-                                value={`article:${o.refId}`}
-                              >
-                                {o.name} · {saleOpFmt.format(o.salePrice)}
-                              </SelectItem>
-                            ))}
-                        </SelectGroup>
-                      ) : null}
-                      {slot.options.some((o) => o.kind === "recipe") ? (
-                        <SelectGroup>
-                          <SelectLabel>Recetas</SelectLabel>
-                          {slot.options
-                            .filter((o) => o.kind === "recipe")
-                            .map((o) => (
-                              <SelectItem
-                                key={`recipe:${o.refId}`}
-                                value={`recipe:${o.refId}`}
-                              >
-                                {o.name} · {saleOpFmt.format(o.salePrice)}
-                              </SelectItem>
-                            ))}
-                        </SelectGroup>
-                      ) : null}
-                    </SelectContent>
-                  </Select>
+                      {done ? (
+                        <Check className="size-3.5" strokeWidth={2.5} />
+                      ) : (
+                        index + 1
+                      )}
+                    </span>
+                    <h3 className="truncate font-canopy text-sm font-semibold tracking-[-0.01em] text-[var(--rootsy-bruma-900)]">
+                      {slotHeading(slot)}
+                    </h3>
+                  </div>
+                  <p
+                    className={cn(
+                      "max-w-[46%] truncate text-right text-xs leading-4",
+                      done
+                        ? "font-medium text-[var(--rootsy-savia-700)]"
+                        : "text-[var(--rootsy-bruma-400)]",
+                    )}
+                  >
+                    {selectedOption?.name ?? "Elegí una"}
+                  </p>
                 </div>
-              )
-            })}
-          </CheckoutSectionPanel>
+
+                {slot.options.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-[var(--rootsy-bruma-200)] px-3.5 py-3 text-xs leading-snug text-[var(--rootsy-bruma-500)]">
+                    Este ítem no tiene opciones cargadas.
+                  </p>
+                ) : (
+                  <div
+                    role="listbox"
+                    aria-label={slot.label}
+                    aria-required
+                    className={cn(
+                      "grid gap-2",
+                      optionsScroll &&
+                        "max-h-56 overflow-y-auto overscroll-contain pr-0.5",
+                    )}
+                  >
+                    {slot.options.map((option) => {
+                      const value = optionValue(option)
+                      return (
+                        <CheckoutOptionCard
+                          key={value}
+                          title={option.name}
+                          subtitle={
+                            showOptionPrice
+                              ? saleOpFmt.format(option.salePrice)
+                              : undefined
+                          }
+                          selected={selectedValue === value}
+                          trailing="check"
+                          onClick={() =>
+                            setSelectionBySlot((prev) => ({
+                              ...prev,
+                              [slot.id]: value,
+                            }))
+                          }
+                        />
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
+            )
+          })}
         </RootsDialogBody>
 
         <CheckoutDialogFooter
           onCancel={() => handleOpenChange(false)}
           primary={{
-            label: "Agregar al pedido",
+            label: pricedCombo
+              ? `Agregar · ${saleOpFmt.format(pricedCombo.promoTotal)}`
+              : "Agregar al pedido",
             onClick: handleConfirm,
             disabled: !canConfirm,
+            title: confirmHint,
           }}
         />
       </RootsDialogContent>

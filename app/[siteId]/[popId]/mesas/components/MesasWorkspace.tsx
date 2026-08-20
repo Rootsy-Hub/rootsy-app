@@ -198,13 +198,17 @@ export function MesasWorkspace({
   }, [layoutData, onRegisterLayoutData])
 
   const tableCounts = useMemo(() => {
-    const out: Record<string, { total: number; open: number }> = {}
+    const out: Record<
+      string,
+      { free: number; open: number; paying: number; reserved: number }
+    > = {}
     for (const salon of salons) {
       const inSalon = tables.filter((t) => t.salonId === salon.id)
       out[salon.id] = {
-        total: inSalon.length,
-        open: inSalon.filter((t) => t.status === "open" || t.status === "paying")
-          .length,
+        free: inSalon.filter((t) => t.status === "free").length,
+        open: inSalon.filter((t) => t.status === "open").length,
+        paying: inSalon.filter((t) => t.status === "paying").length,
+        reserved: inSalon.filter((t) => t.status === "reserved").length,
       }
     }
     return out

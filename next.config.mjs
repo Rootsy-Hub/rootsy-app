@@ -6,6 +6,9 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url))
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  // Oculta el indicador "N" de Next Dev Tools (abajo a la izquierda).
+  // Si hay un error de compile/runtime, Next lo vuelve a mostrar.
+  devIndicators: false,
   turbopack: {
     root: projectRoot,
     resolveAlias: {

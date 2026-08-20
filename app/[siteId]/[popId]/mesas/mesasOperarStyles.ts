@@ -2,6 +2,8 @@ import {
   layoutsOperarCatalogToolbarControlFocusClass,
   layoutsOperarCatalogToolbarIconMutedClass,
   layoutsOperarCatalogToolbarViewToggleButtonActiveClass,
+  layoutsOperarProductCardDescClass,
+  layoutsOperarProductCardTitleClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   operarCanvasToolbarCountPillOpenClass,
@@ -85,11 +87,45 @@ export const mesasLayoutErrorBannerClass = cn(
   "text-[color-mix(in_srgb,var(--rootsy-savia-200)_88%,white)]",
 )
 
-export const mesasTableLabelClass =
-  "text-[color-mix(in_srgb,var(--rootsy-bruma-50)_92%,white)]"
+export const mesasTableLabelClass = cn(
+  layoutsOperarProductCardTitleClass,
+  "line-clamp-1",
+)
 
-export const mesasTableMetaClass =
-  "text-[color-mix(in_srgb,var(--rootsy-savia-300)_72%,transparent)]"
+export const mesasTableMetaClass = cn(
+  layoutsOperarProductCardDescClass,
+  "line-clamp-1 text-[10px] font-medium",
+)
 
-export const mesasTableDurationClass =
-  "text-[color-mix(in_srgb,var(--rootsy-bruma-50)_88%,white)]"
+export const mesasTableDurationClass = mesasTableMetaClass
+
+export function mesasSalonStatusCountPillClass(
+  status: "free" | "open" | "paying" | "reserved",
+): string {
+  switch (status) {
+    case "free":
+      return cn(
+        "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)]",
+        "text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]",
+        "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_36%,transparent)]",
+      )
+    case "open":
+      return cn(
+        "bg-[color-mix(in_srgb,var(--destructive)_28%,transparent)]",
+        "text-[color-mix(in_srgb,#fecaca_92%,white)]",
+        "ring-1 ring-[color-mix(in_srgb,var(--destructive)_42%,transparent)]",
+      )
+    case "paying":
+      return cn(
+        "bg-[color-mix(in_srgb,#f59e0b_22%,transparent)]",
+        "text-[color-mix(in_srgb,#fde68a_92%,white)]",
+        "ring-1 ring-[color-mix(in_srgb,#f59e0b_38%,transparent)]",
+      )
+    case "reserved":
+      return cn(
+        "bg-[color-mix(in_srgb,#7c3aed_24%,transparent)]",
+        "text-[color-mix(in_srgb,#ddd6fe_92%,white)]",
+        "ring-1 ring-[color-mix(in_srgb,#7c3aed_40%,transparent)]",
+      )
+  }
+}

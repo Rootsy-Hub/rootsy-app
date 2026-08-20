@@ -9,7 +9,7 @@ export function LayoutAlertDialogLibrarySection() {
     <LibrarySection
       id="modals-alert"
       title="Alert dialog"
-      description="RootsAlertDialog* — mismo scrim/borde/sombra que modal · radius.xlarge · sin body sunken."
+      description="RootsAlertDialog* — mismo mundo que el modal · heading.small semibold · radius.xlarge."
     >
       <AlertDialogLiveGallery />
       <ArticleDeleteAlertLibraryDemo />

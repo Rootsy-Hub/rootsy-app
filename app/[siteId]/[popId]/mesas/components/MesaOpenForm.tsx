@@ -5,6 +5,7 @@ import type {
   MesaTable,
   MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import { mesaSeatsLabel } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import { ChannelDataFormActionsBar } from "@/components/sale-operation/ChannelOperationDataPanel"
 import {
   ChannelDataFormCheckboxOption,
@@ -163,7 +164,7 @@ export function MesaOpenForm({
                     checked={mergedIds.includes(t.id)}
                     onCheckedChange={() => toggleMerge(t.id)}
                     label={`Mesa ${t.label}`}
-                    meta={`${t.seats} pax`}
+                    meta={mesaSeatsLabel(t.seats)}
                     aria-label={`Juntar mesa ${t.label}`}
                   />
                 </li>

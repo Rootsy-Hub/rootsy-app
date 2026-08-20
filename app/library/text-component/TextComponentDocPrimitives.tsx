@@ -150,7 +150,7 @@ export function TextComponentOverviewScale() {
 
 export function TextComponentHeadingsContextDemo() {
   return (
-    <FoundationBrumaStage caption="heading.large en página · heading.medium en modal · heading.small en card compacta.">
+    <FoundationBrumaStage caption="heading.large en página · heading.small semibold en modal · heading.xsmall en card compacta.">
       <div className="grid gap-4 lg:grid-cols-2">
         <FoundationSpecCard className="space-y-3">
           <p className="font-mono text-[10px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
@@ -169,10 +169,10 @@ export function TextComponentHeadingsContextDemo() {
 
         <FoundationSpecCard className="space-y-4">
           <p className="font-mono text-[10px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
-            font.heading.medium
+            font.heading.small · semibold
           </p>
           <p
-            className="font-canopy text-xl font-bold"
+            className="font-canopy text-base font-semibold tracking-tight"
             style={{ color: CONCEPT_TOKENS.bruma900 }}
           >
             Eliminar artículo

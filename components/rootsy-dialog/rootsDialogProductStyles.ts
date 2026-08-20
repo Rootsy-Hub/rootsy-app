@@ -1,5 +1,5 @@
 /**
- * Dialog / alert — tokens Modales UI (alba · claro · bruma).
+ * Dialog / alert — un solo mundo (claro · horizonte · suelo).
  * @see app/.../library/ui-components/modalsUiHardcodedSpec.ts
  */
 
@@ -21,7 +21,7 @@ export const rootsDialogPanelPaddingXClass = "px-[var(--rootsy-space-400)]"
 
 /** Reset primitivo shadcn — flex shell sin grid/p-6/bg-background. */
 export const rootsDialogPrimitiveResetClass = cn(
-  "flex flex-col gap-0 border-0 bg-[var(--rootsy-bruma-50)] p-0 shadow-none",
+  "flex flex-col gap-0 border-0 bg-transparent p-0 shadow-none",
 )
 
 const rootsDialogElevationScopeClass = cn(
@@ -70,8 +70,8 @@ export const rootsDialogSurfaceTwoColClass = cn(
 )
 
 export const rootsDialogHeaderClass = cn(
-  "roots-dialog-dawn-chrome",
-  "flex shrink-0 flex-col gap-[var(--rootsy-space-100)] border-b-0",
+  "roots-dialog-horizon",
+  "flex shrink-0 flex-col gap-[var(--rootsy-space-050)] border-b-0",
   rootsDialogPanelPaddingXClass,
   "pt-[var(--rootsy-space-400)] text-left sm:text-left",
 )
@@ -80,20 +80,18 @@ export const rootsDialogHeaderClass = cn(
 export const rootsDialogHeaderWithDescriptionClass =
   "pb-[var(--rootsy-space-200)]"
 
-/** Header solo título — pb simétrico space.400; alinea banda título + close. */
-export const rootsDialogHeaderCompactClass = "pb-[var(--rootsy-space-400)]"
+/** Header solo título — pb space.300; el título ya no pide una banda alta. */
+export const rootsDialogHeaderCompactClass = "pb-[var(--rootsy-space-300)]"
 
-/** font.heading.medium · bruma-900 · reserva horizontal para close space.400. */
+/** font.heading.small · semibold · bruma-900 — nombra el lugar, no lo grita. */
 export const rootsDialogTitleClass = cn(
-  "font-canopy text-[length:var(--rootsy-text-heading-medium-size)] leading-[var(--rootsy-text-heading-medium-lh)]",
-  "font-bold tracking-[-0.01em] text-[var(--rootsy-bruma-900)]",
+  "font-canopy text-base leading-5 font-semibold tracking-[-0.02em] text-[var(--rootsy-bruma-900)]",
   "pr-[calc(var(--rootsy-space-400)+var(--rootsy-space-400)+var(--rootsy-space-100))]",
 )
 
-/** body.small · bruma-500 */
+/** body.small · bruma-500 — orientación, no subtítulo de cartel. */
 export const rootsDialogDescriptionClass = cn(
-  "font-canopy text-[length:var(--rootsy-text-body-small-size)] leading-[var(--rootsy-text-body-small-lh)]",
-  "font-normal text-[var(--rootsy-bruma-500)]",
+  "font-canopy text-xs leading-4 font-normal tracking-[0.01em] text-[var(--rootsy-bruma-500)]",
 )
 
 /** Valle — bruma viva entre dos claros. */
@@ -117,10 +115,10 @@ export const rootsDialogLoadingBodyClass = cn(
 )
 
 export const rootsDialogFooterClass = cn(
-  "roots-dialog-dawn-chrome roots-dialog-dawn-chrome--floor",
+  "roots-dialog-horizon roots-dialog-horizon--floor",
   "shrink-0 gap-[var(--rootsy-space-150)] border-t-0",
   rootsDialogPanelPaddingXClass,
-  "py-[var(--rootsy-space-150)]",
+  "py-[var(--rootsy-space-200)]",
   "sm:flex-row sm:items-center sm:justify-between",
 )
 
@@ -133,15 +131,14 @@ export const rootsAlertDialogSurfaceClass = cn(
 )
 
 export const rootsAlertDialogContentClass = cn(
-  "flex flex-col gap-[var(--rootsy-space-150)] bg-white text-left",
+  "flex flex-col gap-[var(--rootsy-space-150)] bg-transparent text-left",
   rootsDialogPanelPaddingXClass,
   "pb-[var(--rootsy-space-200)] pt-[var(--rootsy-space-400)]",
 )
 
-/** font.heading.small · bruma-900 */
+/** font.heading.small · semibold · bruma-900 */
 export const rootsAlertDialogTitleClass = cn(
-  "font-canopy text-[length:var(--rootsy-text-heading-small-size)] leading-[var(--rootsy-text-heading-small-lh)]",
-  "font-bold tracking-[-0.01em] text-[var(--rootsy-bruma-900)]",
+  "font-canopy text-base leading-5 font-semibold tracking-[-0.02em] text-[var(--rootsy-bruma-900)]",
 )
 
 export const rootsAlertDialogDescriptionClass = rootsDialogDescriptionClass
@@ -152,9 +149,9 @@ export const rootsAlertDialogBodyTextClass = cn(
 )
 
 export const rootsAlertDialogFooterClass = cn(
-  "roots-dialog-dawn-chrome roots-dialog-dawn-chrome--floor",
+  "roots-dialog-horizon roots-dialog-horizon--floor",
   "flex shrink-0 flex-col-reverse gap-[var(--rootsy-space-150)] border-t-0",
   rootsDialogPanelPaddingXClass,
-  "py-[var(--rootsy-space-150)]",
+  "py-[var(--rootsy-space-200)]",
   "sm:flex-row sm:items-center sm:justify-between",
 )

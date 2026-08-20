@@ -35,6 +35,7 @@ import {
 } from "@/app/[siteId]/[popId]/mesas/mesasLayoutDialogUtils"
 import {
   mesaShapeSizeOptions,
+  mesaSeatsLabel,
   mesaSizeDisplayLabel,
 } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import {
@@ -71,7 +72,7 @@ function tableListLabel(
   salonName: string | undefined,
   showSalon: boolean,
 ): string {
-  const shape = `${row.shape.kind} / ${mesaSizeDisplayLabel(row.shape.size)} · ${row.seats} pax`
+  const shape = `${row.shape.kind} / ${mesaSizeDisplayLabel(row.shape.size)} · ${mesaSeatsLabel(row.seats)}`
   if (showSalon && salonName) {
     return `${row.label} · ${salonName} · ${shape}`
   }

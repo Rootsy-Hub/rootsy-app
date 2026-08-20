@@ -18,9 +18,9 @@ const operarCanvasSkeletonBlockClass = cn(
 )
 
 const operarCanvasSkeletonShellClass = cn(
-  "rounded-xl border px-3 py-3",
-  "border-[color-mix(in_srgb,var(--rootsy-sombra-300)_10%,transparent)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-sombra-700)_12%,var(--rootsy-sombra-800))]",
+  "layouts-operar-product-card rounded-2xl border px-3 py-3",
+  "border-[var(--layouts-operar-border-dark-card)]",
+  "bg-[var(--rootsy-sombra-600)]",
 )
 
 const operarCanvasSkeletonShapeClass = cn(

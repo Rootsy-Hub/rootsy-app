@@ -1,64 +1,55 @@
+import { layoutsOperarProductCardSelectedClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 
+/** Misma loseta que el catálogo — sin la grilla de 256px. */
 const orderCardBaseClass = cn(
-  "w-full cursor-grab rounded-xl border px-3 py-3 text-left transition-[border-color,background-color,box-shadow,transform] duration-200",
-  "active:cursor-grabbing",
-  "shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_4px_14px_rgba(0,0,0,0.28)]",
+  "layouts-operar-product-card relative w-full overflow-hidden rounded-2xl text-left",
+  "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-600)]",
+  "px-3 py-3",
+  "cursor-grab active:cursor-grabbing",
+  "transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5",
 )
 
 export function mostradorOrderCardClass(options?: { selected?: boolean }): string {
   if (options?.selected) {
-    return cn(
-      orderCardBaseClass,
-      "scale-[1.01] z-10",
-      "border-[color-mix(in_srgb,var(--rootsy-savia-400)_90%,transparent)]",
-      "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_38%,var(--rootsy-sombra-800))]",
-      "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-300)_22%,transparent),0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-500)_28%,transparent),0_8px_24px_color-mix(in_srgb,var(--rootsy-savia-600)_28%,transparent)]",
-    )
+    return cn(orderCardBaseClass, layoutsOperarProductCardSelectedClass)
   }
 
-  return cn(
-    orderCardBaseClass,
-    "border-[color-mix(in_srgb,var(--rootsy-sombra-300)_32%,transparent)]",
-    "bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_82%,var(--rootsy-sombra-700))]",
-    "hover:border-[color-mix(in_srgb,var(--rootsy-sombra-300)_48%,transparent)]",
-    "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_92%,var(--rootsy-sombra-700))]",
-  )
+  return orderCardBaseClass
 }
 
 export function mostradorOrderDragOverlayClass(): string {
   return cn(
-    "w-[220px] rounded-xl border px-3 py-3 shadow-xl",
-    "border-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]",
-    "bg-[color-mix(in_srgb,var(--rootsy-sombra-700)_95%,var(--rootsy-sombra-800))]",
-    "shadow-[0_16px_40px_color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]",
+    orderCardBaseClass,
+    layoutsOperarProductCardSelectedClass,
+    "w-[220px] cursor-grabbing",
   )
 }
 
 export function mostradorFulfillmentBadgeClass(): string {
   return cn(
-    "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-    "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_50%,transparent)]",
-    "text-[color-mix(in_srgb,var(--rootsy-bruma-100)_82%,white)]",
-    "ring-1 ring-[color-mix(in_srgb,var(--rootsy-sombra-border)_40%,transparent)]",
+    "rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+    "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]",
+    "text-[var(--layouts-operar-product-card-desc)]",
+    "ring-1 ring-[var(--layouts-operar-border-dark-hairline)]",
   )
 }
 
 export function mostradorPaymentBadgeClass(isPaid: boolean): string {
   if (isPaid) {
     return cn(
-      "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-      "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_18%,transparent)]",
-      "text-[color-mix(in_srgb,var(--rootsy-savia-300)_92%,white)]",
+      "rounded-md px-1.5 py-0.5 text-[10px] font-semibold",
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_16%,transparent)]",
+      "text-[var(--layouts-operar-product-card-price)]",
       "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)]",
     )
   }
 
   return cn(
-    "rounded-full px-2 py-0.5 text-[10px] font-semibold",
-    "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_14%,transparent)]",
-    "text-[color-mix(in_srgb,var(--rootsy-savia-200)_88%,#fcd34d)]",
-    "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-500)_22%,transparent)]",
+    "rounded-md px-1.5 py-0.5 text-[10px] font-semibold",
+    "bg-[color-mix(in_srgb,#f59e0b_14%,transparent)]",
+    "text-[color-mix(in_srgb,#fde68a_88%,white)]",
+    "ring-1 ring-[color-mix(in_srgb,#f59e0b_22%,transparent)]",
   )
 }
 
@@ -68,10 +59,10 @@ export function mostradorBoardDropZoneClass(options: {
   dragging?: boolean
 }): string {
   return cn(
-    "min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-2 transition-colors duration-200",
+    "min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 transition-colors duration-200",
     options.isOver &&
       options.canDrop &&
-      "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_10%,transparent)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_8%,transparent)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)]",
     options.dragging && !options.canDrop && "opacity-60",
   )
 }
