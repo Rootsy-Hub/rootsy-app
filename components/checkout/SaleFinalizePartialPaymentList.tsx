@@ -1,12 +1,16 @@
 "use client"
 
-import type { PartialPaymentSelection, PartialPaymentUnit } from "@/lib/partialCheckoutSelection"
 import {
-  saleOpFmt,
-  saleOpImporteBaseClass,
-  saleOpImporteCartClass,
-} from "@/components/sale-operation/saleOperationStyles"
-import { cn } from "@/lib/utils"
+  saleFinalizeDialogPartialAmountClass,
+  saleFinalizeDialogPartialCheckClass,
+  saleFinalizeDialogPartialNameClass,
+  saleFinalizeDialogPartialRowClass,
+  saleFinalizeDialogPartialStepperButtonClass,
+  saleFinalizeDialogPartialStepperClass,
+  saleFinalizeDialogPartialUnitsClass,
+} from "@/components/checkout/saleFinalizeDialogStyles"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
+import type { PartialPaymentSelection, PartialPaymentUnit } from "@/lib/partialCheckoutSelection"
 import { Minus, Plus } from "lucide-react"
 
 function roundLineTotal(unit: PartialPaymentUnit, qty: number): number {
@@ -40,9 +44,10 @@ function PartialPaymentUnitRow({
   onSetQty: (qty: number) => void
 }) {
   const selected = qty > 0
-  const rowTotal = unit.isAtomic
-    ? unit.lineFinalTotal
-    : roundLineTotal(unit, qty)
+  const rowTotal =
+    unit.isAtomic || qty <= 0
+      ? unit.lineFinalTotal
+      : roundLineTotal(unit, qty)
   const itemTitle = unit.detail?.trim()
     ? `${unit.label} · ${unit.detail.trim()}`
     : unit.label
@@ -61,65 +66,43 @@ function PartialPaymentUnitRow({
           onToggle(!selected)
         }
       }}
-      className={cn(
-        "flex w-full min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5 transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-bruma-50)]",
-        selected
-          ? "border-[color-mix(in_srgb,var(--rootsy-savia-500)_40%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-savia-500)_8%,white)]"
-          : "border-[var(--rootsy-bruma-200)] bg-white hover:border-[var(--rootsy-bruma-300)] hover:bg-[var(--rootsy-bruma-50)]",
-      )}
+      className={saleFinalizeDialogPartialRowClass}
     >
-      <span
-        className={cn(
-          saleOpImporteBaseClass,
-          "flex size-5 shrink-0 items-center justify-center rounded-md border text-[10px] font-bold",
-          selected
-            ? "border-[var(--rootsy-savia-600)] bg-[var(--rootsy-savia-600)] text-white"
-            : "border-[var(--rootsy-bruma-300)] bg-white text-transparent",
-        )}
-        aria-hidden
-      >
+      <span className={saleFinalizeDialogPartialCheckClass(selected)} aria-hidden>
         ✓
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-[var(--rootsy-bruma-900)]">
-          {itemTitle}
-        </p>
-        {showQuantityStepper ? (
-          <div
-            className="mt-1 flex items-center gap-1.5"
-            onClick={(event) => event.stopPropagation()}
+      <span className={saleFinalizeDialogPartialNameClass(selected)} title={itemTitle}>
+        {itemTitle}
+      </span>
+      {showQuantityStepper ? (
+        <div
+          className={saleFinalizeDialogPartialStepperClass}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            aria-label={`Quitar una unidad de ${unit.label}`}
+            disabled={qty <= 0}
+            onClick={() => onSetQty(qty - 1)}
+            className={saleFinalizeDialogPartialStepperButtonClass}
           >
-            <button
-              type="button"
-              aria-label={`Quitar una unidad de ${unit.label}`}
-              disabled={qty <= 0}
-              onClick={() => onSetQty(qty - 1)}
-              className="inline-flex size-7 items-center justify-center rounded-md border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-700)] disabled:opacity-40"
-            >
-              <Minus className="size-3.5" aria-hidden />
-            </button>
-            <span className="min-w-6 text-center text-xs font-semibold tabular-nums text-[var(--rootsy-bruma-900)]">
-              {qty}
-            </span>
-            <button
-              type="button"
-              aria-label={`Agregar una unidad de ${unit.label}`}
-              disabled={qty >= unit.maxSelectable}
-              onClick={() => onSetQty(qty + 1)}
-              className="inline-flex size-7 items-center justify-center rounded-md border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-700)] disabled:opacity-40"
-            >
-              <Plus className="size-3.5" aria-hidden />
-            </button>
-          </div>
-        ) : null}
-      </div>
-      <span
-        className={cn(
-          saleOpImporteCartClass,
-          "w-22 shrink-0 text-right text-sm text-[var(--rootsy-bruma-900)]",
-        )}
-      >
+            <Minus className="size-3.5" aria-hidden />
+          </button>
+          <span className="min-w-5 text-center font-numeric text-xs tabular-nums text-[var(--rootsy-bruma-700)]">
+            {qty}
+          </span>
+          <button
+            type="button"
+            aria-label={`Agregar una unidad de ${unit.label}`}
+            disabled={qty >= unit.maxSelectable}
+            onClick={() => onSetQty(qty + 1)}
+            className={saleFinalizeDialogPartialStepperButtonClass}
+          >
+            <Plus className="size-3.5" aria-hidden />
+          </button>
+        </div>
+      ) : null}
+      <span className={saleFinalizeDialogPartialAmountClass(selected)}>
         {saleOpFmt.format(rowTotal)}
       </span>
     </li>
@@ -159,14 +142,14 @@ export function SaleFinalizePartialPaymentList({
 
   if (units.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-[var(--rootsy-bruma-200)] bg-white px-3.5 py-6 text-center text-sm text-[var(--rootsy-bruma-500)]">
+      <p className="py-2 font-canopy text-sm text-[var(--rootsy-bruma-500)]">
         No hay ítems pendientes de cobro.
       </p>
     )
   }
 
   return (
-    <ul className="space-y-2">
+    <ul className={saleFinalizeDialogPartialUnitsClass}>
       {units.map((unit) => (
         <PartialPaymentUnitRow
           key={unit.selectionKey}

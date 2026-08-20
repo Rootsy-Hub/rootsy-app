@@ -28,7 +28,7 @@ import {
   dataWorkspaceEntityCardStatusOpenClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { RootsDefaultButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
+import { RootsDefaultButton } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
 import {
   Calculator,
@@ -331,8 +331,7 @@ export function CashRegisterCard({
               {showCloseAction ? (
                 <RootsDefaultButton
                   type="button"
-                  size="sm"
-                  className={cn(rootsButtonCompactSizeClass, "shrink-0 px-3 text-xs")}
+                  className="shrink-0"
                   onClick={onClose}
                 >
                   Cerrar
@@ -350,11 +349,11 @@ export function CashRegisterCard({
               {canCreate ? (
                 <RootsDefaultButton
                   type="button"
-                  size="sm"
-                  className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
+                  withIcon
+                  className="shrink-0"
                   onClick={onOpen}
                 >
-                  <DoorOpen className="size-3.5" aria-hidden />
+                  <DoorOpen className="size-4" aria-hidden />
                   Abrir turno
                 </RootsDefaultButton>
               ) : null}

@@ -28,7 +28,6 @@ import {
   saleFinalizeDialogOptionsBlockClass,
   saleFinalizeDialogOverlayClass,
   saleFinalizeDialogPartialColumnClass,
-  saleFinalizeDialogPartialListClass,
   saleFinalizeDialogPartialListMobileClass,
   saleFinalizeDialogShellClass,
   saleFinalizeDialogShellInnerClass,
@@ -285,14 +284,14 @@ export function SaleFinalizeDialog({
               className={saleFinalizeDialogPartialColumnClass}
               aria-label="Ítems a cobrar"
             >
-              <p className={saleFinalizeDialogFactLabelClass}>Ítems a cobrar</p>
-              <div className={cn(saleFinalizeDialogPartialListClass, "mt-2")}>
-                <SaleFinalizePartialPaymentList
-                  units={channelCheckout.partialUnits}
-                  selection={channelCheckout.partialSelection}
-                  onSelectionChange={channelCheckout.onPartialSelectionChange}
-                />
-              </div>
+              <p className={cn(saleFinalizeDialogFactLabelClass, "mb-1")}>
+                Ítems a cobrar
+              </p>
+              <SaleFinalizePartialPaymentList
+                units={channelCheckout.partialUnits}
+                selection={channelCheckout.partialSelection}
+                onSelectionChange={channelCheckout.onPartialSelectionChange}
+              />
             </aside>
           ) : null}
         </div>

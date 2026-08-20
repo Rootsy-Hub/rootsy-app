@@ -34,11 +34,7 @@ import {
   dataWorkspaceFlushBottomPanelClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
-import {
-  RootsDefaultButton,
-  RootsPrimaryButton,
-  rootsButtonCompactSizeClass,
-} from "@/components/rootsy-button"
+import { RootsDefaultButton, RootsPrimaryButton } from "@/components/rootsy-button"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
 import {
@@ -284,8 +280,8 @@ export function TreasuryChildReconciliationPanel({
   const conciliarButton = canConciliar ? (
     <RootsPrimaryButton
       type="button"
-      size="sm"
-      className={cn(rootsButtonCompactSizeClass, "shrink-0 self-end lg:self-auto")}
+      withIcon
+      className="shrink-0 self-end lg:self-auto"
       onClick={onConciliar}
     >
       {isPos ? (

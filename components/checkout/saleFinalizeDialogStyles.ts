@@ -22,7 +22,7 @@ export const saleFinalizeDialogShellClass = cn(
 )
 
 export const saleFinalizeDialogShellInnerClass = cn(
-  "flex min-h-0 flex-col overflow-hidden rounded-[1.375rem]",
+  "flex min-h-0 max-h-[min(90vh,46rem)] flex-col overflow-hidden rounded-[1.375rem]",
 )
 
 /** Noche del universo — el cielo del header continúa afuera. */
@@ -85,25 +85,72 @@ export const saleFinalizeDialogShellWideClass =
 
 /** Cuerpo en dos columnas cuando hay cobro parcial (md+). */
 export const saleFinalizeDialogSplitBodyClass = cn(
-  "min-h-0 md:grid md:grid-cols-2 md:items-stretch",
-  "md:max-h-[min(52vh,26rem)]",
+  "min-h-0 flex-1 overflow-hidden",
+  "md:grid md:grid-cols-2 md:grid-rows-1 md:[grid-template-rows:minmax(0,1fr)]",
 )
 
-export const saleFinalizeDialogSplitMainColumnClass = "min-w-0"
+/** Mismo scroll visible en las dos columnas. */
+export const saleFinalizeDialogColumnScrollClass = cn(
+  "game-scroll min-h-0 min-w-0 overflow-y-auto overscroll-contain",
+  "[scrollbar-gutter:stable]",
+)
 
-/** Columna derecha — ítems a cobrar en cobro parcial. */
+export const saleFinalizeDialogSplitMainColumnClass =
+  saleFinalizeDialogColumnScrollClass
+
+/** Columna derecha — un solo scroll, del título al último ítem. */
 export const saleFinalizeDialogPartialColumnClass = cn(
-  "hidden min-h-0 flex-col overflow-hidden md:flex",
-  "border-t border-[color-mix(in_srgb,var(--rootsy-bruma-300)_38%,transparent)] md:border-t-0",
-  "md:border-l md:border-[color-mix(in_srgb,var(--rootsy-bruma-300)_38%,transparent)]",
-  "bg-[var(--rootsy-bruma-100)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-200)]",
+  saleFinalizeDialogColumnScrollClass,
+  "hidden h-full flex-col md:flex",
+  "border-t border-[color-mix(in_srgb,var(--rootsy-bruma-200)_70%,transparent)] md:border-t-0",
+  "md:border-l md:border-[color-mix(in_srgb,var(--rootsy-bruma-200)_70%,transparent)]",
+  "bg-[var(--rootsy-bruma-50)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-400)]",
 )
 
-export const saleFinalizeDialogPartialListClass =
-  "min-h-0 flex-1 overflow-y-auto overscroll-contain md:max-h-none"
+export const saleFinalizeDialogPartialListMobileClass = cn(
+  "game-scroll max-h-[min(40vh,18rem)] overflow-y-auto overscroll-contain md:hidden",
+)
 
-export const saleFinalizeDialogPartialListMobileClass =
-  "max-h-[min(40vh,18rem)] overflow-y-auto overscroll-contain md:hidden"
+export const saleFinalizeDialogPartialUnitsClass =
+  "divide-y divide-[color-mix(in_srgb,var(--rootsy-bruma-200)_70%,transparent)]"
+
+export const saleFinalizeDialogPartialRowClass = cn(
+  "flex min-h-10 cursor-pointer items-center gap-3 py-2.5 first:pt-0 last:pb-0",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)]",
+)
+
+export const saleFinalizeDialogPartialCheckClass = (selected: boolean) =>
+  cn(
+    "flex size-4 shrink-0 items-center justify-center rounded-[4px] border text-[9px] leading-none",
+    selected
+      ? "border-[var(--rootsy-savia-600)] bg-[var(--rootsy-savia-600)] text-white"
+      : "border-[var(--rootsy-bruma-300)] bg-white text-transparent",
+  )
+
+export const saleFinalizeDialogPartialNameClass = (selected: boolean) =>
+  cn(
+    "min-w-0 flex-1 truncate font-canopy text-sm",
+    selected
+      ? "font-medium text-[var(--rootsy-bruma-900)]"
+      : "font-normal text-[var(--rootsy-bruma-700)]",
+  )
+
+export const saleFinalizeDialogPartialAmountClass = (selected: boolean) =>
+  cn(
+    "shrink-0 text-right font-numeric text-sm tabular-nums tracking-tight",
+    selected
+      ? "text-[var(--rootsy-bruma-900)]"
+      : "text-[var(--rootsy-bruma-500)]",
+  )
+
+export const saleFinalizeDialogPartialStepperClass =
+  "flex shrink-0 items-center gap-0.5"
+
+export const saleFinalizeDialogPartialStepperButtonClass = cn(
+  "inline-flex size-6 items-center justify-center rounded text-[var(--rootsy-bruma-600)]",
+  "hover:bg-[var(--rootsy-bruma-100)] hover:text-[var(--rootsy-bruma-900)]",
+  "disabled:pointer-events-none disabled:opacity-35",
+)
 
 export const saleFinalizeDialogFactRowClass =
   "flex items-baseline justify-between gap-6 py-3 first:pt-0 last:pb-0"
@@ -122,7 +169,7 @@ export const saleFinalizeDialogErrorClass =
 
 /** Misma gramática que la barra Descartar | Vender del ticket operar §1.2.3. */
 export const saleFinalizeDialogActionsClass = cn(
-  "grid min-h-[3.25rem] grid-cols-2 overflow-hidden rounded-b-[1.375rem]",
+  "grid min-h-[3.25rem] shrink-0 grid-cols-2 overflow-hidden rounded-b-[1.375rem]",
   "border-t border-[var(--rootsy-bruma-200)]",
 )
 
