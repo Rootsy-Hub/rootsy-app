@@ -12,6 +12,7 @@ import {
   isInternalSaleComprobante,
   SALE_COMPROBANTE_SIN_LABEL,
 } from "@/lib/saleComprobantePicker"
+import { toCustomerFacingPaymentMethodLabel } from "@/lib/operationPaymentLabels"
 import { roundSaleMoney } from "@/lib/saleLineDiscount"
 import type { PopEmisorIvaCondition } from "@/lib/saleComprobanteRules"
 
@@ -192,6 +193,30 @@ export function formatSaleComprobanteTicketTime(
     second: "2-digit",
     hour12: false,
   }).format(date)
+}
+
+/** Fecha estilo hoja A4 (día/mes/año completo). */
+export function formatSaleComprobanteSheetDate(
+  date: Date,
+  timeZone: string,
+): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    timeZone,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date)
+}
+
+const sheetAmountFmt = new Intl.NumberFormat("es-AR", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  useGrouping: true,
+})
+
+/** Importe estilo hoja A4 (miles con punto, sin símbolo). */
+export function formatSaleComprobanteSheetAmount(value: number): string {
+  return sheetAmountFmt.format(roundSaleMoney(value))
 }
 
 export function formatSaleComprobanteActivityDate(
@@ -831,7 +856,9 @@ export function buildSaleComprobantePreview(
     customerName: input.customerName.trim() || "Consumidor final",
     customerTaxId: input.customerTaxId?.trim() || null,
     customerIvaLabel,
-    paymentMethodLabel: input.paymentMethodLabel?.trim() || null,
+    paymentMethodLabel: toCustomerFacingPaymentMethodLabel(
+      input.paymentMethodLabel,
+    ),
     lineGroups,
     subtotalSinDescuentos,
     discountLines,

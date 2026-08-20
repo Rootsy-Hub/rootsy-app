@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  buildSaleComprobantePreview,
   formatSaleComprobanteActivityDate,
   formatSaleComprobanteCuit,
   formatSaleComprobanteTicketAmount,
@@ -12,13 +11,14 @@ import {
   type SaleComprobantePreviewModel,
 } from "@/lib/saleComprobantePreview"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { useSaleComprobantePreviewModel } from "@/hooks/useSaleComprobantePreviewModel"
 import { SALE_COMPROBANTE_SIN_LABEL } from "@/lib/saleComprobantePicker"
 import { isLegalSaleComprobanteLabel } from "@/lib/saleComprobanteRules"
+import { saleComprobantePrintSurfaceClass } from "@/lib/saleComprobantePrint"
 import { cn } from "@/lib/utils"
 import { saleComprobanteTicketPaperWidthClass } from "@/components/sale-operation/saleOperationStyles"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { QrCode, Receipt } from "lucide-react"
-import { useMemo } from "react"
 
 type Props = {
   previewInput: Omit<BuildSaleComprobantePreviewInput, "emitter" | "issuedAt"> | null
@@ -123,6 +123,7 @@ function TicketMissingFiscalCuitPlaceholder() {
   return (
     <div
       className={cn(
+        saleComprobantePrintSurfaceClass,
         "mx-auto flex w-full flex-col items-center justify-center gap-2 bg-white px-4 py-10 text-center shadow-sm ring-1 ring-[var(--rootsy-bruma-200)]",
         saleComprobanteTicketPaperWidthClass,
       )}
@@ -145,6 +146,7 @@ function TicketNoComprobantePlaceholder() {
   return (
     <div
       className={cn(
+        saleComprobantePrintSurfaceClass,
         "mx-auto flex w-full flex-col items-center justify-center gap-2 bg-white px-4 py-10 text-center shadow-sm ring-1 ring-[var(--rootsy-bruma-200)]",
         saleComprobanteTicketPaperWidthClass,
       )}
@@ -168,6 +170,7 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
   return (
     <div
       className={cn(
+        saleComprobantePrintSurfaceClass,
         "mx-auto w-full bg-white px-2.5 py-3 font-mono text-[var(--rootsy-bruma-900)] shadow-sm ring-1 ring-[var(--rootsy-bruma-200)]",
         saleComprobanteTicketPaperWidthClass,
       )}
@@ -436,7 +439,7 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
       ) : null}
 
       <div
-        className="mt-2 border-t border-dotted border-zinc-300 pt-1 text-center text-[7px] text-zinc-400"
+        className="sale-comprobante-print-tear mt-2 border-t border-dotted border-zinc-300 pt-1 text-center text-[7px] text-zinc-400"
         aria-hidden
       >
         · · · · · · · · · · · · · · · · · · · ·
@@ -460,33 +463,21 @@ export function SaleComprobanteTicketPreview({
       ? previewComprobanteLabel
       : previewInput?.comprobanteLabel ?? null
 
-  const isSinComprobante =
-    previewInput != null &&
-    (resolvedComprobanteLabel == null ||
-      resolvedComprobanteLabel === SALE_COMPROBANTE_SIN_LABEL)
-
-  const needsValidFiscalCuit =
-    previewInput != null &&
-    !isSinComprobante &&
-    isLegalSaleComprobanteLabel(resolvedComprobanteLabel)
-
-  const model = useMemo(() => {
-    if (!previewInput || !emitter || isSinComprobante) return null
-    if (needsValidFiscalCuit && !emitter.hasValidFiscalCuit) return null
-    return buildSaleComprobantePreview({
-      ...previewInput,
-      comprobanteLabel: resolvedComprobanteLabel,
+  const { model, isSinComprobante, missingFiscalCuit } =
+    useSaleComprobantePreviewModel({
+      previewInput,
       emitter,
+      previewComprobanteLabel,
       issuedAt,
     })
-  }, [
-    previewInput,
-    emitter,
-    issuedAt,
-    resolvedComprobanteLabel,
-    isSinComprobante,
-    needsValidFiscalCuit,
-  ])
+
+  const showMissingFiscalCuit =
+    missingFiscalCuit ||
+    (previewInput != null &&
+      !isSinComprobante &&
+      emitter != null &&
+      !emitter.hasValidFiscalCuit &&
+      isLegalSaleComprobanteLabel(resolvedComprobanteLabel))
 
   const content =
     loading && !isSinComprobante ? (
@@ -502,7 +493,7 @@ export function SaleComprobanteTicketPreview({
       </div>
     ) : isSinComprobante ? (
       <TicketNoComprobantePlaceholder />
-    ) : needsValidFiscalCuit && emitter && !emitter.hasValidFiscalCuit ? (
+    ) : showMissingFiscalCuit ? (
       <TicketMissingFiscalCuitPlaceholder />
     ) : model ? (
       <TicketPreviewBody model={model} />
