@@ -226,6 +226,35 @@ export async function markEmployeeLeft(
   return { success: true }
 }
 
+export async function markEmployeeReturned(
+  popId: string,
+  employeeId: string,
+): Promise<{ success: boolean; error?: string }> {
+  const gate = await requireHrWrite(popId, "update")
+  if (!gate.ok) return { success: false, error: gate.error }
+
+  const supabase = await createClient()
+  const { data: employee, error: lookErr } = await supabase
+    .from("pop_employees")
+    .select("id, left_at")
+    .eq("pop_id", popId)
+    .eq("id", employeeId)
+    .maybeSingle()
+  if (lookErr) return { success: false, error: lookErr.message }
+  if (!employee) return { success: false, error: "No encontramos a esa persona." }
+  if (!employee.left_at) {
+    return { success: false, error: "Esa persona ya está en el equipo." }
+  }
+
+  const { error } = await supabase
+    .from("pop_employees")
+    .update({ left_at: null })
+    .eq("pop_id", popId)
+    .eq("id", employeeId)
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
 export async function clockEmployeeIn(
   popId: string,
   employeeId: string,

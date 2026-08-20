@@ -502,6 +502,43 @@ export async function revokePopInvitation(
   return { success: true }
 }
 
+export async function renewPopInvitation(
+  popId: string,
+  invitationId: string,
+): Promise<{ success: boolean; error?: string; inviteUrl?: string }> {
+  const user = await requireAuthenticatedUser()
+  const supabase = await createClient()
+  const popRes = await getPopById(popId, { includeOwnerUserId: true })
+  if (!popRes.success || !popRes.pop) {
+    return { success: false, error: "POP no encontrado" }
+  }
+  const ownerUserId =
+    "ownerUserId" in popRes.pop ? popRes.pop.ownerUserId : null
+  if (!(await isPopOwner(popId, user.uid, ownerUserId ?? null))) {
+    return { success: false, error: "Sin permiso" }
+  }
+
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+  const { data, error } = await supabase
+    .from("pop_invitations")
+    .update({ expires_at: expiresAt })
+    .eq("id", invitationId)
+    .eq("pop_id", popId)
+    .eq("status", "pending")
+    .select("token")
+    .maybeSingle()
+
+  if (error) return { success: false, error: error.message }
+  if (!data) {
+    return { success: false, error: "No encontramos esa invitación." }
+  }
+
+  return {
+    success: true,
+    inviteUrl: data.token ? `${getAppBaseUrl()}/invite/pop/${data.token}` : "",
+  }
+}
+
 export async function deactivatePopMember(
   popId: string,
   memberUserId: string,
@@ -529,6 +566,79 @@ export async function deactivatePopMember(
     .update({ is_active: false })
     .eq("pop_id", popId)
     .eq("user_id", memberUserId)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+export async function updatePopMemberRole(
+  popId: string,
+  memberUserId: string,
+  roleId: string,
+): Promise<{ success: boolean; error?: string }> {
+  const user = await requireAuthenticatedUser()
+  const supabase = await createClient()
+  const popRes = await getPopById(popId, { includeOwnerUserId: true })
+  if (!popRes.success || !popRes.pop) {
+    return { success: false, error: "POP no encontrado" }
+  }
+  const ownerUserId =
+    "ownerUserId" in popRes.pop ? popRes.pop.ownerUserId : null
+  if (!(await isPopOwner(popId, user.uid, ownerUserId ?? null))) {
+    return {
+      success: false,
+      error: "Solo el dueño puede cambiar el rol de Rootsy.",
+    }
+  }
+  if (ownerUserId && sameUserId(memberUserId, ownerUserId)) {
+    return {
+      success: false,
+      error: "El rol del dueño no se cambia desde acá.",
+    }
+  }
+
+  const { data: roleRow, error: roleErr } = await supabase
+    .from("roles")
+    .select("id, name, pop_id")
+    .eq("id", roleId)
+    .single()
+
+  if (roleErr || !roleRow) {
+    return { success: false, error: "Rol no válido." }
+  }
+  if (roleRow.name === "owner") {
+    return {
+      success: false,
+      error: "No se puede asignar el rol de dueño.",
+    }
+  }
+  if (roleRow.pop_id != null && String(roleRow.pop_id) !== String(popId)) {
+    return { success: false, error: "Ese rol no pertenece a este local." }
+  }
+
+  const { data: membership, error: memberErr } = await supabase
+    .from("user_pop_roles")
+    .select("id, role_id")
+    .eq("pop_id", popId)
+    .eq("user_id", memberUserId)
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (memberErr) return { success: false, error: memberErr.message }
+  if (!membership) {
+    return {
+      success: false,
+      error: "Esa persona no tiene acceso activo a Rootsy.",
+    }
+  }
+  if (membership.role_id === roleId) {
+    return { success: true }
+  }
+
+  const { error } = await supabase
+    .from("user_pop_roles")
+    .update({ role_id: roleId })
+    .eq("id", membership.id)
 
   if (error) return { success: false, error: error.message }
   return { success: true }

@@ -36,6 +36,8 @@ import {
   KeyRound,
   MoreVertical,
   NotebookPen,
+  Shield,
+  Undo2,
   UserRound,
   UserX,
 } from "lucide-react"
@@ -131,8 +133,10 @@ type Props = {
   onOpen: () => void
   onClock: () => void
   onInvite: () => void
+  onChangeRole?: () => void
   onRevokeAccess?: () => void
   onLeave: () => void
+  onReturn?: () => void
 }
 
 export function HrPersonCard({
@@ -146,17 +150,22 @@ export function HrPersonCard({
   onOpen,
   onClock,
   onInvite,
+  onChangeRole,
   onRevokeAccess,
   onLeave,
+  onReturn,
 }: Props) {
   const name = personDisplayName(person)
   const salary =
     person.monthlySalary == null ? "—" : salaryFmt.format(person.monthlySalary)
   const showClock = canManagePeople && !person.leftAt
   const showInvite = canManageInvites && !person.userId && !person.leftAt
+  const showChangeRole = Boolean(onChangeRole) && canManageInvites && !isOwner
   const showRevokeAccess = Boolean(onRevokeAccess) && canManageInvites && !isOwner
   const showLeave = canManagePeople && !person.leftAt && !isOwner
-  const showMenu = canManagePeople || showInvite || showRevokeAccess
+  const showReturn = canManagePeople && Boolean(person.leftAt)
+  const showMenu =
+    canManagePeople || showInvite || showChangeRole || showRevokeAccess || showReturn
   const metaLine = person.leftAt
     ? "Quedó en el historial"
     : rootsyRole
@@ -241,6 +250,15 @@ export function HrPersonCard({
                         <span>Dar acceso a Rootsy</span>
                       </RootsDropdownItem>
                     ) : null}
+                    {showChangeRole ? (
+                      <RootsDropdownItem
+                        theme="light"
+                        onSelect={() => onChangeRole?.()}
+                      >
+                        <Shield className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span>Cambiar rol de Rootsy</span>
+                      </RootsDropdownItem>
+                    ) : null}
                     {showRevokeAccess ? (
                       <RootsDropdownItem
                         theme="light"
@@ -248,6 +266,15 @@ export function HrPersonCard({
                       >
                         <UserX className="size-4 shrink-0 opacity-70" aria-hidden />
                         <span>Quitar acceso a Rootsy</span>
+                      </RootsDropdownItem>
+                    ) : null}
+                    {showReturn ? (
+                      <RootsDropdownItem
+                        theme="light"
+                        onSelect={() => onReturn?.()}
+                      >
+                        <Undo2 className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span>Volver al equipo</span>
                       </RootsDropdownItem>
                     ) : null}
                     {showLeave ? (
@@ -317,6 +344,16 @@ export function HrPersonCard({
                   <DoorOpen className="size-3.5" aria-hidden />
                 )}
                 {person.isClockedIn ? "Salió" : "Llegó"}
+              </RootsDefaultButton>
+            ) : showReturn ? (
+              <RootsDefaultButton
+                type="button"
+                size="sm"
+                className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
+                onClick={() => onReturn?.()}
+              >
+                <Undo2 className="size-3.5" aria-hidden />
+                Volver
               </RootsDefaultButton>
             ) : person.leftAt ? (
               <p className="font-canopy text-xs text-[var(--rootsy-bruma-500)]">

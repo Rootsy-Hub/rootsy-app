@@ -8,6 +8,7 @@ import {
   currentAccountSettleTotals,
   emptyCurrentAccountSettleDraft,
   initCurrentAccountSettleDraft,
+  normalizeCurrentAccountSettleDraft,
   type CurrentAccountSettleDraft,
 } from "@/app/[siteId]/[popId]/current-accounts/currentAccountSettleFormState"
 import { PaymentMethodDialog } from "@/components/payment/PaymentMethodDialog"
@@ -88,9 +89,17 @@ export function CurrentAccountSettleDialog({
   const [banner, setBanner] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const settlingRef = useRef(false)
+  const wasOpenRef = useRef(false)
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      wasOpenRef.current = false
+      settlingRef.current = false
+      return
+    }
+    const openedNow = !wasOpenRef.current
+    wasOpenRef.current = true
+    if (!openedNow) return
     setDraft(initCurrentAccountSettleDraft(documents))
     setStep("allocate")
     setBanner(null)
@@ -132,7 +141,10 @@ export function CurrentAccountSettleDialog({
 
   const handleAllocateSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (totals.total <= 0.009) {
+    if (saving || settlingRef.current) return
+    const normalized = normalizeCurrentAccountSettleDraft(draft, documents)
+    const nextTotals = currentAccountSettleTotals(normalized, documents)
+    if (nextTotals.total <= 0.009) {
       setBanner("El cobro o pago tiene que ser mayor a cero.")
       return
     }
@@ -140,46 +152,65 @@ export function CurrentAccountSettleDialog({
       setBanner("No se pudieron cargar los medios de cobro o pago.")
       return
     }
-    setBanner(null)
+    setDraft(normalized)
+    if (nextTotals.surplus > 0.009) {
+      setBanner(
+        `Hay un excedente de ${moneyFormatter.format(nextTotals.surplus)} sobre los comprobantes. Pasa a cuenta.`,
+      )
+    } else {
+      setBanner(null)
+    }
     setStep("payment")
   }
 
   const handlePayment = async (selection: PaymentMethodSelection) => {
+    if (settlingRef.current) return
     settlingRef.current = true
     setSaving(true)
     setBanner(null)
-    const selected = new Set(draft.selectedIds)
+    const normalized = normalizeCurrentAccountSettleDraft(draft, documents)
+    const nextTotals = currentAccountSettleTotals(normalized, documents)
+    const selected = new Set(normalized.selectedIds)
     const applications = openDocuments
       .filter((document) => selected.has(document.id))
       .map((document) => ({
         documentId: document.id,
         amount: Math.min(
-          parseMoneyInput(draft.amounts[document.id] ?? "", 0),
+          parseMoneyInput(normalized.amounts[document.id] ?? "", 0),
           document.remaining,
         ),
       }))
       .filter((row) => row.amount > 0.009)
 
-    const res = await settlePopCurrentAccount(popId, {
-      direction,
-      partyId,
-      paidAt: draft.paidAt,
-      paymentKind: selection.kind,
-      treasuryAccountId: selection.treasuryAccountId,
-      checkDetails: selection.checkDetails,
-      applications,
-      extraAmount: totals.extra,
-      notes: draft.notes,
-    })
-    setSaving(false)
-    if (!res.success) {
+    try {
+      const res = await settlePopCurrentAccount(popId, {
+        direction,
+        partyId,
+        paidAt: normalized.paidAt,
+        paymentKind: selection.kind,
+        treasuryAccountId: selection.treasuryAccountId,
+        checkDetails: selection.checkDetails,
+        applications,
+        extraAmount: nextTotals.onAccount,
+        notes: normalized.notes,
+      })
+      if (!res.success) {
+        settlingRef.current = false
+        setBanner(res.error)
+        setStep("allocate")
+        return
+      }
+      onOpenChange(false)
+      onSettled()
+    } catch (error: unknown) {
       settlingRef.current = false
-      setBanner(res.error)
+      setBanner(
+        error instanceof Error ? error.message : "No se pudo registrar el cobro.",
+      )
       setStep("allocate")
-      return
+    } finally {
+      setSaving(false)
     }
-    onOpenChange(false)
-    onSettled()
   }
 
   const title = isPayable ? "Pagar" : "Cobrar"
@@ -239,6 +270,16 @@ export function CurrentAccountSettleDialog({
                               <RootsFormMoneyField
                                 id={`ca-settle-amount-${document.id}`}
                                 label="Imputar"
+                                hint={`Pendiente ${moneyFormatter.format(document.remaining)}`}
+                                warning={
+                                  parseMoneyInput(
+                                    draft.amounts[document.id] ?? "",
+                                    0,
+                                  ) >
+                                  document.remaining + 0.009
+                                    ? "El excedente pasa a cuenta."
+                                    : undefined
+                                }
                                 value={draft.amounts[document.id] ?? ""}
                                 onChange={(value) =>
                                   setDraft((current) => ({
@@ -285,9 +326,20 @@ export function CurrentAccountSettleDialog({
                   }
                   disabled={saving}
                 />
-                <p className="text-sm font-medium tabular-nums text-rootsy-bruma-800">
-                  Total {moneyFormatter.format(totals.total)}
-                </p>
+                <div className="space-y-1 text-sm tabular-nums text-rootsy-bruma-800">
+                  <p>Imputado {moneyFormatter.format(totals.applied)}</p>
+                  {totals.onAccount > 0.009 ? (
+                    <p>
+                      A cuenta {moneyFormatter.format(totals.onAccount)}
+                      {totals.surplus > 0.009
+                        ? ` · incluye excedente ${moneyFormatter.format(totals.surplus)}`
+                        : ""}
+                    </p>
+                  ) : null}
+                  <p className="font-medium">
+                    Total {moneyFormatter.format(totals.total)}
+                  </p>
+                </div>
               </div>
             </RootsDialogBody>
             <RootsDialogDualActionFooter
@@ -326,6 +378,12 @@ export function CurrentAccountSettleDialog({
         popId={popId}
         defaultPartyName={partyName}
         defaultPartyId={partyId}
+        busy={saving}
+        confirmLabel={
+          isPayable
+            ? `Pagar ${moneyFormatter.format(totals.total)}`
+            : `Cobrar ${moneyFormatter.format(totals.total)}`
+        }
       />
     </>
   )

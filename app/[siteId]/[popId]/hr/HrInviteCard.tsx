@@ -27,7 +27,7 @@ import {
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { RootsDefaultButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
-import { Link2, Mail, MoreVertical, X } from "lucide-react"
+import { Link2, Mail, MoreVertical, RotateCw, X } from "lucide-react"
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-AR", {
@@ -56,11 +56,20 @@ function MenuTrigger({
 type Props = {
   invite: PendingInviteRow
   revokeBusy: boolean
+  renewBusy?: boolean
   onCopy: () => void
   onRevoke: () => void
+  onRenew?: () => void
 }
 
-export function HrInviteCard({ invite, revokeBusy, onCopy, onRevoke }: Props) {
+export function HrInviteCard({
+  invite,
+  revokeBusy,
+  renewBusy = false,
+  onCopy,
+  onRevoke,
+  onRenew,
+}: Props) {
   const expired = new Date(invite.expiresAt).getTime() < Date.now()
 
   return (
@@ -120,6 +129,16 @@ export function HrInviteCard({ invite, revokeBusy, onCopy, onRevoke }: Props) {
                   collisionPadding={{ right: 16 }}
                   className={cn(dataWorkspaceLightDropdownContentClass, "z-[120]")}
                 >
+                  {expired && onRenew ? (
+                    <RootsDropdownItem
+                      theme="light"
+                      disabled={renewBusy}
+                      onSelect={onRenew}
+                    >
+                      <RotateCw className="size-4 shrink-0 opacity-70" aria-hidden />
+                      <span>Renovar 7 días</span>
+                    </RootsDropdownItem>
+                  ) : null}
                   <RootsDropdownItem
                     theme="light"
                     variant="destructive"
@@ -154,7 +173,18 @@ export function HrInviteCard({ invite, revokeBusy, onCopy, onRevoke }: Props) {
             >
               {expired ? "Ya no sirve" : "Listo para compartir"}
             </p>
-            {invite.inviteUrl ? (
+            {expired && onRenew ? (
+              <RootsDefaultButton
+                type="button"
+                size="sm"
+                disabled={renewBusy}
+                className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
+                onClick={onRenew}
+              >
+                <RotateCw className="size-3.5" aria-hidden />
+                Renovar
+              </RootsDefaultButton>
+            ) : invite.inviteUrl ? (
               <RootsDefaultButton
                 type="button"
                 size="sm"
