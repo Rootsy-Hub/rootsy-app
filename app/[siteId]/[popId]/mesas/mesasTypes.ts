@@ -92,15 +92,25 @@ export type MesaOpenSessionInput = {
 export type MesasLeftPanelView = "floor" | "catalog"
 export type MesasRightPanelView = "session" | "cart" | "agenda"
 
-/** Elementos fijos del plano (no mesas): paredes, plantas, barra, etc. */
-export type MesaFloorDecorKind =
-  | "wall_h"
-  | "wall_v"
-  | "plant"
-  | "planter"
-  | "pillar"
-  | "bar"
-  | "entrance"
+/** Elementos fijos del plano (no mesas): arquitectura, amenidades, zonas. */
+export const MESA_FLOOR_DECOR_KINDS = [
+  "wall_h",
+  "wall_v",
+  "pillar",
+  "entrance",
+  "window",
+  "bar",
+  "register",
+  "restroom",
+  "kitchen",
+  "stairs",
+  "plant",
+  "planter",
+  "label",
+  "zone",
+] as const
+
+export type MesaFloorDecorKind = (typeof MESA_FLOOR_DECOR_KINDS)[number]
 
 export type MesaFloorDecor = {
   id: string

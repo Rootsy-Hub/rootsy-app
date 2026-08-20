@@ -207,7 +207,7 @@ function HardcodedModalPanel({
     position: "relative",
     display: "flex",
     flexDirection: "column",
-    gap: rootsySpacePx("100"),
+    gap: rootsySpacePx("050"),
     textAlign: "left",
   }
 
@@ -303,7 +303,7 @@ function HardcodedAlertPanel({
             gap: rootsySpacePx("150"),
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: rootsySpacePx("100") }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: rootsySpacePx("050") }}>
             <p style={{ ...getModalTitleUiStyle("alert"), margin: 0 }}>{copy.title}</p>
             <p style={{ ...MODAL_UI_DESCRIPTION_STYLE, margin: 0 }}>{copy.description}</p>
           </div>
@@ -430,17 +430,17 @@ export function ModalsUiHardcodedGallery() {
         pairNote={MODAL_UI_PANEL_SURFACE_SPEC.pairRule}
       />
 
-      <FoundationBrumaStage clip={false} caption="panel-padding space.400 · font.heading.medium · color.border · elevation.shadow.overlay.">
+      <FoundationBrumaStage clip={false} caption="panel-padding space.400 · font.heading.small semibold · un solo mundo · elevation.shadow.overlay.">
         <div className="space-y-8">
           <DialogGallerySectionHeading
             title="Anatomía"
-            description="Scrim sombra-950 · panel overlay · body sunken · footer dual — close space.400."
+            description="El claro es el bloque. Header nombra · footer camina — close space.400."
           />
           <HardcodedModalPanel size="default" footerVariant="dual" />
         </div>
       </FoundationBrumaStage>
 
-      <FoundationBrumaStage clip={false} caption="dialog.modal · dialog.width · dialog.footer · panel-padding space.400.">
+      <FoundationBrumaStage clip={false} caption="dialog.modal · un solo mundo · header nombra · footer camina.">
         <div className="space-y-8">
           <DialogGallerySectionHeading
             title="Modal"
@@ -454,16 +454,16 @@ export function ModalsUiHardcodedGallery() {
 
       <OverlaySurfaceSpecTable
         title="Superficie overlay · alert dialog"
-        description="Mismo scrim y par surface+shadow que modal. Radio radius.xlarge · sin body sunken."
+        description="Mismo scrim y par surface+shadow que modal. Radio radius.xlarge · mismo mundo."
         rows={getModalUiOverlaySpecRows("alert")}
         pairNote={MODAL_UI_PANEL_SURFACE_SPEC.pairRule}
       />
 
-      <FoundationBrumaStage clip={false} caption="dialog.alert · font.heading.small · status-danger solo en botón · justify-between.">
+      <FoundationBrumaStage clip={false} caption="dialog.alert · font.heading.small semibold · mismo mundo · status-danger solo en botón.">
         <div className="space-y-8">
           <DialogGallerySectionHeading
             title="Alert dialog"
-            description="Confirmación · destructivo · confirmación escrita — shell compacto sin body sunken."
+            description="Confirmación · destructivo · confirmación escrita — mismo mundo, más compacto."
           />
           <AlertDialogVariantsBlock />
         </div>

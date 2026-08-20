@@ -30,6 +30,7 @@ import {
   decorKindOptions,
   defaultDecorForm,
   defaultDecorSize,
+  decorLabelPlaceholder,
   decorRowToForm,
   mesasSortOrderUpdatesFromIds,
   resolveFormSalonId,
@@ -279,7 +280,7 @@ export function MesasDecorsDialog({
           <RootsDialogHeader
             open={open}
             title="Elementos del plano"
-            description='Paredes, barra, ingresos y decoración. El texto es libre (ej. "Salida emergencia", "Barra tragos").'
+            description="Paredes, accesos, amenidades y zonas. Quedan en un segundo plano para no tapar las mesas."
           />
           <RootsDialogBody className="space-y-4">
             {error && !deleteTarget ? (
@@ -359,7 +360,7 @@ export function MesasDecorsDialog({
                           onChange={(e) =>
                             setForm((f) => ({ ...f, label: e.target.value }))
                           }
-                          placeholder="Entrada principal, Barra postres, Salida emergencia…"
+                          placeholder={decorLabelPlaceholder(form.kind)}
                           className={mesasLayoutDialogFormFieldFullClass}
                         />
                         <RootsFormIntegerField

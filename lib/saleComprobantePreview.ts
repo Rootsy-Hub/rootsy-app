@@ -306,11 +306,11 @@ function resolveComprobanteRowPricing(
   }
 
   if (
-    row.variant === "combo_component" &&
     row.promotionMeta &&
-    row.promotionSelections
+    row.promotionSelections &&
+    (row.kind === "promotion" || row.variant === "combo_component")
   ) {
-    if (row.hidePrice) {
+    if (row.variant === "combo_component" && row.hidePrice) {
       return {
         unitListPrice: 0,
         listLineTotal: 0,
@@ -323,7 +323,7 @@ function resolveComprobanteRowPricing(
         ? resolvePromotionCartPricing(
             row.promotionMeta,
             row.promotionSelections,
-            1,
+            row.variant === "combo_component" ? 1 : row.cantidad,
           )
         : null
     if (parentQty) {
@@ -331,7 +331,10 @@ function resolveComprobanteRowPricing(
         Math.max(0, parentQty.precioBase - parentQty.precioFinal),
       )
       return {
-        unitListPrice: parentQty.precioFinal,
+        unitListPrice:
+          row.cantidad > 0
+            ? roundSaleMoney(parentQty.precioBase / row.cantidad)
+            : parentQty.precioUnitario,
         listLineTotal: parentQty.precioBase,
         lineTotal: parentQty.precioFinal,
         discounts:

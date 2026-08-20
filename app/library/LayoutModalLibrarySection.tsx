@@ -9,7 +9,7 @@ export function LayoutModalLibrarySection() {
     <LibrarySection
       id="modals"
       title="Modales"
-      description="RootsDialog* vivos — scrim fixed · elevation.surface.overlay + shadow.overlay · body sunken."
+      description="RootsDialog* vivos — un solo mundo · header nombra · footer camina · heading.small semibold."
     >
       <p className="max-w-3xl font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
         {ROOTSY_MODAL_MANIFESTO}

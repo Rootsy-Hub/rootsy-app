@@ -1,11 +1,8 @@
 import { layoutsOperarCatalogToolbarClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 
-/** Shell toolbar oscuro — salones, columnas Kanban, etc. Dosel sombra-950 sobre canvas sombra-800. */
-export const operarCanvasToolbarShellClass = cn(
-  layoutsOperarCatalogToolbarClass,
-  "bg-[var(--rootsy-sombra-950)]",
-)
+/** Shell toolbar — mismo umbral que el catálogo (sombra-700 sobre canvas sombra-800). */
+export const operarCanvasToolbarShellClass = layoutsOperarCatalogToolbarClass
 
 /** Tipografía unificada — tabs de salón y headers de columnas Kanban. */
 export const operarCanvasToolbarLabelClass =

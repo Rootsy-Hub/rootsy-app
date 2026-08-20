@@ -275,7 +275,9 @@ export function MesasFloorPlan({
                   transformOrigin: "top left",
                 }}
               >
-            {decors.map((decor) => (
+            {[...decors]
+              .sort((a, b) => Number(a.kind !== "zone") - Number(b.kind !== "zone"))
+              .map((decor) => (
               <MesaFloorDecorNode
                 key={decor.id}
                 decor={decor}

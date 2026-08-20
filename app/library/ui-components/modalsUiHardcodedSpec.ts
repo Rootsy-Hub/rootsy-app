@@ -17,7 +17,6 @@ import {
   type ModalFooterVariantId,
   type ModalSurfaceSizeId,
 } from "@/app/library/modal/rootsyModalSystem"
-import { ROOTSY_BORDER_COLOR_TOKENS } from "@/app/library/border/rootsyBorderSystem"
 import {
   ROOTSY_ELEVATION_SHADOW_TOKENS,
   ROOTSY_ELEVATION_SURFACES_LIGHT,
@@ -29,10 +28,6 @@ import { ROOTSY_FONT_WEIGHTS, ROOTSY_TEXT_STYLES } from "@/lib/design-system/tok
 
 const hx = rootsyColorHex
 
-function borderHex(token: string): string {
-  return ROOTSY_BORDER_COLOR_TOKENS.find((item) => item.token === token)!.value
-}
-
 function elevationHex(token: string): string {
   return ROOTSY_ELEVATION_SURFACES_LIGHT.find((item) => item.token === token)!.value
 }
@@ -43,11 +38,6 @@ function elevationShadow(token: string): string {
 
 function radiusPx(id: "full"): number {
   return Number.parseInt(ROOTSY_RADIUS_TOKENS.find((item) => item.id === id)!.value, 10)
-}
-
-function regionDivider(kind: DialogKindId, edge: "top" | "bottom"): string | undefined {
-  if (kind === "alert" && edge === "bottom") return undefined
-  return `1px solid ${borderHex("color.border")}`
 }
 
 export type DialogPanelUiSurface = {
@@ -68,6 +58,10 @@ export type DialogScrimUiStyle = {
 export type DialogRegionUiStyle = {
   backgroundColor: string
   background?: string
+  backgroundImage?: string
+  backgroundSize?: string
+  backgroundPosition?: string
+  backgroundRepeat?: string
   borderBottom?: string
   borderTop?: string
   paddingLeft: number
@@ -83,19 +77,13 @@ export const MODAL_UI_ALERT_VARIANTS = ROOTSY_ALERT_DIALOG_VARIANTS
 export const MODAL_UI_DIALOG_KINDS = ROOTSY_DIALOG_KINDS
 export const MODAL_UI_ANATOMY = ROOTSY_MODAL_ANATOMY
 
-export function getModalTitleUiStyle(kind: DialogKindId = "modal") {
-  const isModal = kind === "modal"
-
+export function getModalTitleUiStyle(_kind: DialogKindId = "modal") {
   return {
     fontFamily: "var(--rootsy-font-ui)",
-    fontSize: isModal
-      ? ROOTSY_TEXT_STYLES["heading.medium"].fontSize
-      : ROOTSY_TEXT_STYLES["heading.small"].fontSize,
-    lineHeight: isModal
-      ? ROOTSY_TEXT_STYLES["heading.medium"].lineHeight
-      : ROOTSY_TEXT_STYLES["heading.small"].lineHeight,
-    fontWeight: ROOTSY_FONT_WEIGHTS.bold.value,
-    letterSpacing: "-0.01em",
+    fontSize: ROOTSY_TEXT_STYLES["heading.small"].fontSize,
+    lineHeight: ROOTSY_TEXT_STYLES["heading.small"].lineHeight,
+    fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
+    letterSpacing: "-0.02em",
     color: hx("bruma", "900"),
   }
 }
@@ -105,6 +93,7 @@ export const MODAL_UI_DESCRIPTION_STYLE = {
   fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
   lineHeight: ROOTSY_TEXT_STYLES["body.small"].lineHeight,
   fontWeight: ROOTSY_FONT_WEIGHTS.regular.value,
+  letterSpacing: "0.01em",
   color: hx("bruma", "500"),
 }
 
@@ -167,7 +156,8 @@ export function getDialogPanelShellUiStyle(
   return {
     width: "100%" as const,
     maxWidth: panel.maxWidthPx,
-    backgroundColor: panel.backgroundColor,
+    backgroundColor: hx("bruma", "50"),
+    backgroundImage: DIALOG_CLIMATE_BACKGROUND,
     border: panel.border,
     boxShadow: panel.boxShadow,
     borderRadius: `${panel.borderRadiusPx}px`,
@@ -181,15 +171,23 @@ export function getDialogPanelShellRadiusClass(kind: DialogKindId = "modal") {
   return kind === "modal" ? "rounded-[1.375rem]" : "rounded-xl"
 }
 
-const DAWN_CHROME_BACKGROUND = elevationHex("elevation.surface.overlay")
-const VALLEY_BODY_BACKGROUND =
-  `linear-gradient(180deg, ${hx("bruma", "100")} 0%, color-mix(in srgb, ${hx("savia", "50")} 28%, ${hx("bruma", "50")}) 100%)`
+const DIALOG_CLIMATE_BACKGROUND = [
+  `linear-gradient(180deg, ${hx("bruma", "100")} 0%, color-mix(in srgb, ${hx("savia", "50")} 28%, ${hx("bruma", "50")}) 100%)`,
+  `radial-gradient(ellipse 90% 42% at 50% -8%, color-mix(in srgb, ${hx("savia", "100")} 42%, ${hx("bruma", "50")}) 0%, transparent 72%)`,
+  `radial-gradient(ellipse 80% 36% at 50% 108%, color-mix(in srgb, ${hx("savia", "200")} 22%, transparent) 0%, transparent 74%)`,
+].join(", ")
 
-export function getDialogHeaderUiStyle(kind: DialogKindId = "modal"): DialogRegionUiStyle {
+const HORIZON_LINE = `linear-gradient(90deg, transparent 0%, color-mix(in srgb, ${hx("savia", "400")} 18%, ${hx("bruma", "200")}) 50%, transparent 100%)`
+const HEADER_VEIL = `linear-gradient(180deg, color-mix(in srgb, ${elevationHex("elevation.surface.overlay")} 52%, transparent) 0%, transparent 100%)`
+const FOOTER_FLOOR = `linear-gradient(180deg, transparent 0%, color-mix(in srgb, ${elevationHex("elevation.surface.overlay")} 38%, transparent) 100%)`
+
+export function getDialogHeaderUiStyle(_kind: DialogKindId = "modal"): DialogRegionUiStyle {
   return {
-    backgroundColor: elevationHex("elevation.surface.overlay"),
-    background: DAWN_CHROME_BACKGROUND,
-    borderBottom: kind === "modal" ? undefined : regionDivider(kind, "bottom"),
+    backgroundColor: "transparent",
+    backgroundImage: `${HORIZON_LINE}, ${HEADER_VEIL}`,
+    backgroundSize: "76% 1px, 100% 100%",
+    backgroundPosition: "center bottom, center",
+    backgroundRepeat: "no-repeat",
     paddingLeft: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingRight: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingTop: rootsySpacePx("400"),
@@ -198,14 +196,11 @@ export function getDialogHeaderUiStyle(kind: DialogKindId = "modal"): DialogRegi
 }
 
 export function getDialogBodyUiStyle(
-  tone: ModalBodyToneId = "default",
+  _tone: ModalBodyToneId = "default",
   kind: DialogKindId = "modal",
 ): DialogRegionUiStyle {
-  const backgroundColor =
-    VALLEY_BODY_BACKGROUND
-
   return {
-    backgroundColor,
+    backgroundColor: "transparent",
     paddingLeft: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingRight: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingTop: rootsySpacePx("200"),
@@ -214,21 +209,25 @@ export function getDialogBodyUiStyle(
   }
 }
 
-export function getDialogFooterUiStyle(kind: DialogKindId = "modal"): DialogRegionUiStyle {
+export function getDialogFooterUiStyle(_kind: DialogKindId = "modal"): DialogRegionUiStyle {
   return {
-    backgroundColor: elevationHex("elevation.surface.overlay"),
-    background: DAWN_CHROME_BACKGROUND,
+    backgroundColor: "transparent",
+    backgroundImage: `${HORIZON_LINE}, ${FOOTER_FLOOR}`,
+    backgroundSize: "76% 1px, 100% 100%",
+    backgroundPosition: "center top, center",
+    backgroundRepeat: "no-repeat",
     borderTop: undefined,
     paddingLeft: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingRight: ROOTSY_MODAL_PANEL_PADDING_X_PX,
-    paddingTop: rootsySpacePx("150"),
-    paddingBottom: rootsySpacePx("150"),
+    paddingTop: rootsySpacePx("200"),
+    paddingBottom: rootsySpacePx("200"),
   }
 }
 
 export function getAlertContentUiStyle(): DialogRegionUiStyle {
   return {
-    backgroundColor: elevationHex("elevation.surface.overlay"),
+    backgroundColor: "transparent",
+    background: HEADER_VEIL,
     paddingLeft: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingRight: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingTop: rootsySpacePx("400"),

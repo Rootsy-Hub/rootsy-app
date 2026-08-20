@@ -259,44 +259,31 @@ export function buildMostradorCartDisplayRows(input: {
 
     if (item.kind === "promotion" && item.promotionSelections?.length) {
       const promoMeta = item.producto?.promotionMeta
-      const promoName = promoMeta?.name ?? item.producto?.nombre ?? "Promoción"
+      const promoName =
+        promoMeta?.name?.trim() || item.producto?.nombre?.trim() || "Promoción"
 
-      for (let comboIdx = 0; comboIdx < item.cantidad; comboIdx++) {
-        const promoGroupKey = `${lineId}@${itemIndex}:combo:${comboIdx}`
-        for (const sel of item.promotionSelections) {
-          const repeats = Math.max(1, Math.round(sel.slotQuantity))
-          for (let r = 0; r < repeats; r++) {
-            const componentKey = `${sel.slotId}:${sel.kind}:${sel.refId}:${comboIdx}:${r}`
-            const componentProduct =
-              input.productosByKey?.get(`${sel.kind}:${sel.refId}`) ?? null
-            rows.push({
-              rowKey: `${lineId}:${componentKey}`,
-              lineId: `${lineId}:${componentKey}`,
-              cartLineId: lineId,
-              variant: "combo_component",
-              productoId: sel.refId,
-              kind: sel.kind,
-              nombre: sel.name,
-              descripcion: componentProduct?.descripcion,
-              cantidad: 1,
-              producto: componentProduct,
-              promotionMeta: promoMeta,
-              promotionSelections: item.promotionSelections,
-              comboGroupId: promoGroupKey,
-              comboComponentKey: componentKey,
-              promoGroupKey,
-              promoGroupLabel: promoName,
-              promoGroupVariant: "promotion",
-              topCloudVariant: "none",
-              hidePrice: true,
-              discountEditingDisabled: true,
-              commentEditingDisabled: false,
-              showGreenBorder: true,
-              paidLocked: itemPaidLocked,
-            })
-          }
-        }
-      }
+      rows.push({
+        rowKey: `${lineId}:promo`,
+        lineId,
+        cartLineId: lineId,
+        cartLineTotalCantidad: item.cantidad,
+        variant: "product",
+        productoId: item.productoId,
+        kind: "promotion",
+        nombre: promoName,
+        descripcion: item.producto?.descripcion,
+        cantidad: item.cantidad,
+        producto: item.producto,
+        promotionMeta: promoMeta,
+        promotionSelections: item.promotionSelections,
+        topCloudVariant: "none",
+        hidePrice: false,
+        discountEditingDisabled: true,
+        commentEditingDisabled: false,
+        showGreenBorder: false,
+        paidLocked: itemPaidLocked,
+        comment: comment || undefined,
+      })
       continue
     }
 
@@ -672,24 +659,27 @@ export function pricingForMostradorRow(
     }
   }
 
-  if (row.variant === "combo_component" && row.promotionMeta && row.promotionSelections) {
-    if (row.hidePrice) {
+  if (
+    row.promotionMeta &&
+    row.promotionSelections?.length &&
+    (row.kind === "promotion" || row.variant === "combo_component")
+  ) {
+    if (row.variant === "combo_component" && row.hidePrice) {
       return {
         precioUnitario: 0,
         precioBase: 0,
         precioFinal: 0,
       }
     }
-    const parentQty =
-      row.promotionSelections.length > 0
-        ? resolvePromotionCartPricing(row.promotionMeta, row.promotionSelections, 1)
-        : null
-    if (parentQty) {
-      return {
-        precioUnitario: parentQty.precioFinal,
-        precioBase: parentQty.precioBase,
-        precioFinal: parentQty.precioFinal,
-      }
+    const priced = resolvePromotionCartPricing(
+      row.promotionMeta,
+      row.promotionSelections,
+      row.variant === "combo_component" ? 1 : row.cantidad,
+    )
+    return {
+      precioUnitario: priced.precioUnitario,
+      precioBase: priced.precioBase,
+      precioFinal: priced.precioFinal,
     }
   }
 

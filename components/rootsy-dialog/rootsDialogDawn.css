@@ -1,46 +1,9 @@
 /**
- * Diálogo invertido — header/footer claros, valle con la bruma viva.
- * Opaco: sin vidrio ni borde. La diferencia es el clima.
+ * Un solo mundo — el claro es el bloque entero.
+ * Header nombra el lugar; footer planta el camino. Mismo clima, distinta densidad.
  */
 
 .roots-dialog-living-block {
-  background-color: var(--rootsy-bruma-50);
-}
-
-.roots-dialog-dawn-chrome {
-  position: relative;
-  overflow: hidden;
-  background: white;
-}
-
-.roots-dialog-dawn-chrome::after {
-  content: "";
-  pointer-events: none;
-  position: absolute;
-  z-index: 1;
-  inset-inline: 10%;
-  bottom: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--rootsy-savia-400) 22%, var(--rootsy-bruma-200)) 50%,
-    transparent 100%
-  );
-  opacity: 0.55;
-}
-
-.roots-dialog-dawn-chrome--floor {
-  background: white;
-}
-
-.roots-dialog-dawn-chrome--floor::after {
-  top: 0;
-  bottom: auto;
-}
-
-/** Valle — la bruma con savia que antes vivía en las albas. */
-.roots-dialog-clearing-body {
   background-color: var(--rootsy-bruma-50);
   background-image:
     linear-gradient(
@@ -58,4 +21,50 @@
       color-mix(in srgb, var(--rootsy-savia-200) 22%, transparent) 0%,
       transparent 74%
     );
+}
+
+/** El body hereda el claro — no pinta un segundo mundo. */
+.roots-dialog-clearing-body {
+  background: transparent;
+}
+
+/** Velo de acompañamiento — niebla al borde del claro. */
+.roots-dialog-horizon {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 52%, transparent) 0%,
+    transparent 100%
+  );
+}
+
+.roots-dialog-horizon::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+  inset-inline: 12%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--rootsy-savia-400) 18%, var(--rootsy-bruma-200)) 50%,
+    transparent 100%
+  );
+  opacity: 0.42;
+}
+
+.roots-dialog-horizon--floor {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, white 38%, transparent) 100%
+  );
+}
+
+.roots-dialog-horizon--floor::after {
+  top: 0;
+  bottom: auto;
 }

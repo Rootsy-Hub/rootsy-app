@@ -9,11 +9,31 @@ import {
   MESAS_FLOOR_PLAN_SURFACE_BG,
   mesasFloorGridPatternStyle,
 } from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
+import {
+  mesasFloorDecorFillClass,
+  mesasFloorDecorInkClass,
+  mesasFloorDecorLabelClass,
+  mesasFloorDecorLabelOnlyClass,
+  mesasFloorDecorShellClass,
+  mesasFloorDecorStrokeClass,
+  mesasFloorDecorWallClass,
+  mesasFloorDecorZoneClass,
+} from "@/app/[siteId]/[popId]/mesas/mesasFloorDecorStyles"
 import { useDraggable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import { mesaDecorHighlightClass } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import { cn } from "@/lib/utils"
-import { DoorOpen, Leaf, TreePine, Wine } from "lucide-react"
+import {
+  Bath,
+  ChefHat,
+  ChevronsUp,
+  CreditCard,
+  DoorOpen,
+  Leaf,
+  TreePine,
+  Wine,
+  type LucideIcon,
+} from "lucide-react"
 
 /** Superficie interior del plano — sombra-700. */
 export const MESAS_FLOOR_PLAN_BG = MESAS_FLOOR_PLAN_SURFACE_BG
@@ -21,11 +41,50 @@ export const MESAS_FLOOR_PLAN_BG = MESAS_FLOOR_PLAN_SURFACE_BG
 const decorAriaLabel: Record<MesaFloorDecorKind, string> = {
   wall_h: "Pared divisoria",
   wall_v: "Pared divisoria",
-  plant: "Planta decorativa",
-  planter: "Macetero",
   pillar: "Columna",
+  entrance: "Puerta / acceso",
+  window: "Ventana",
   bar: "Barra",
-  entrance: "Ingreso",
+  register: "Caja",
+  restroom: "Baños",
+  kitchen: "Cocina",
+  stairs: "Escalera",
+  plant: "Planta",
+  planter: "Macetero",
+  label: "Etiqueta",
+  zone: "Zona",
+}
+
+function uprightStyle(rotation: number): CSSProperties | undefined {
+  return rotation ? { transform: `rotate(${-rotation}deg)` } : undefined
+}
+
+function WhisperMark({
+  icon: Icon,
+  label,
+  rotation = 0,
+  compact = false,
+}: {
+  icon?: LucideIcon
+  label?: string
+  rotation?: number
+  compact?: boolean
+}) {
+  const text = label?.trim()
+  return (
+    <div
+      className="flex max-w-full flex-col items-center justify-center gap-0.5 px-1"
+      style={uprightStyle(rotation)}
+    >
+      {Icon ? (
+        <Icon
+          className={cn(mesasFloorDecorInkClass, compact ? "size-3" : "size-3.5")}
+          strokeWidth={1.5}
+        />
+      ) : null}
+      {text ? <span className={mesasFloorDecorLabelClass}>{text}</span> : null}
+    </div>
+  )
 }
 
 function WallBlock({
@@ -35,23 +94,85 @@ function WallBlock({
   decor: MesaFloorDecor
   selected?: boolean
 }) {
-  const isVertical = decor.kind === "wall_v"
+  return (
+    <div
+      className={cn(mesasFloorDecorWallClass, selected && mesaDecorHighlightClass(true))}
+      aria-hidden
+    />
+  )
+}
+
+function PillarBlock({ selected = false }: { selected?: boolean }) {
   return (
     <div
       className={cn(
-        "relative size-full rounded-sm",
-        "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)]",
-        "bg-linear-to-br from-[color-mix(in_srgb,var(--rootsy-sombra-500)_88%,transparent)] via-[color-mix(in_srgb,var(--rootsy-sombra-600)_95%,transparent)] to-[color-mix(in_srgb,var(--rootsy-sombra-700)_95%,transparent)]",
-        "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-bruma-50)_8%,transparent),0_2px_8px_color-mix(in_srgb,var(--rootsy-sombra-950)_35%,transparent)]",
+        "size-full rounded-sm",
+        mesasFloorDecorStrokeClass,
+        mesasFloorDecorFillClass,
+        selected && mesaDecorHighlightClass(true),
+      )}
+      aria-hidden
+    />
+  )
+}
+
+function WindowBlock({
+  decor,
+  selected = false,
+}: {
+  decor: MesaFloorDecor
+  selected?: boolean
+}) {
+  const vertical = decor.height > decor.width
+  return (
+    <div
+      className={cn(
+        mesasFloorDecorShellClass,
+        "rounded-sm",
         selected && mesaDecorHighlightClass(true),
       )}
       aria-hidden
     >
-      {isVertical ? (
-        <div className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-[color-mix(in_srgb,var(--rootsy-sombra-300)_12%,transparent)]" />
+      {vertical ? (
+        <div className="absolute inset-y-1 left-1/2 w-px -translate-x-1/2 bg-[color-mix(in_srgb,var(--rootsy-sombra-300)_22%,transparent)]" />
       ) : (
-        <div className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-[color-mix(in_srgb,var(--rootsy-sombra-300)_12%,transparent)]" />
+        <div className="absolute inset-x-1 top-1/2 h-px -translate-y-1/2 bg-[color-mix(in_srgb,var(--rootsy-sombra-300)_22%,transparent)]" />
       )}
+    </div>
+  )
+}
+
+function AmenityBlock({
+  decor,
+  icon,
+  fallback,
+  rotation = 0,
+  selected = false,
+  roundedClass = "rounded-md",
+}: {
+  decor: MesaFloorDecor
+  icon: LucideIcon
+  fallback: string
+  rotation?: number
+  selected?: boolean
+  roundedClass?: string
+}) {
+  return (
+    <div
+      className={cn(
+        mesasFloorDecorShellClass,
+        "flex items-center justify-center",
+        roundedClass,
+        selected && mesaDecorHighlightClass(true),
+      )}
+      aria-hidden
+    >
+      <WhisperMark
+        icon={icon}
+        label={decor.label?.trim() || fallback}
+        rotation={rotation}
+        compact={Math.min(decor.width, decor.height) < 40}
+      />
     </div>
   )
 }
@@ -68,105 +189,107 @@ function PlantBlock({
     <div className="flex size-full items-center justify-center" aria-hidden>
       <div
         className={cn(
-          "flex size-full items-center justify-center border",
-          large
-            ? "rounded-2xl border-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)] bg-linear-to-b from-[color-mix(in_srgb,var(--rootsy-savia-900)_50%,transparent)] to-[color-mix(in_srgb,var(--rootsy-savia-950)_70%,transparent)]"
-            : "rounded-full border-[color-mix(in_srgb,var(--rootsy-savia-500)_30%,transparent)] bg-linear-to-b from-[color-mix(in_srgb,var(--rootsy-savia-800)_55%,transparent)] to-[color-mix(in_srgb,var(--rootsy-savia-950)_80%,transparent)]",
-          "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-200)_12%,transparent),0_4px_12px_color-mix(in_srgb,var(--rootsy-sombra-950)_25%,transparent)]",
+          "flex size-full items-center justify-center",
+          large ? "rounded-md" : "rounded-full",
+          mesasFloorDecorStrokeClass,
+          "border bg-[color-mix(in_srgb,var(--rootsy-savia-500)_6%,transparent)]",
           selected && mesaDecorHighlightClass(true),
         )}
       >
         {large ? (
-          <TreePine className="size-[55%] text-[color-mix(in_srgb,var(--rootsy-savia-400)_85%,transparent)]" strokeWidth={1.5} />
+          <TreePine className={cn("size-[46%]", mesasFloorDecorInkClass)} strokeWidth={1.4} />
         ) : (
-          <Leaf className="size-[50%] text-[color-mix(in_srgb,var(--rootsy-savia-300)_90%,transparent)]" strokeWidth={1.75} />
+          <Leaf className={cn("size-[42%]", mesasFloorDecorInkClass)} strokeWidth={1.5} />
         )}
       </div>
     </div>
   )
 }
 
-function PillarBlock({ selected = false }: { selected?: boolean }) {
-  return (
-    <div
-      className={cn(
-        "size-full rounded-md border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_40%,transparent)]",
-        "bg-linear-to-br from-[color-mix(in_srgb,var(--rootsy-sombra-500)_80%,transparent)] to-[color-mix(in_srgb,var(--rootsy-sombra-700)_90%,transparent)]",
-        "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-bruma-50)_10%,transparent),0_3px_10px_color-mix(in_srgb,var(--rootsy-sombra-950)_30%,transparent)]",
-        selected && mesaDecorHighlightClass(true),
-      )}
-      aria-hidden
-    />
-  )
-}
-
-function BarBlock({
+function StairsBlock({
   decor,
-  uprightRotation = 0,
+  rotation = 0,
   selected = false,
 }: {
   decor: MesaFloorDecor
-  uprightRotation?: number
+  rotation?: number
   selected?: boolean
 }) {
+  const steps = 4
   return (
     <div
       className={cn(
-        "size-full rounded-xl border border-[color-mix(in_srgb,var(--rootsy-savia-700)_45%,transparent)]",
+        mesasFloorDecorShellClass,
+        "flex items-center justify-center rounded-md",
         selected && mesaDecorHighlightClass(true),
       )}
       aria-hidden
     >
-      <div className="flex size-full flex-col items-center justify-center overflow-hidden rounded-[inherit] bg-linear-to-b from-[color-mix(in_srgb,var(--rootsy-savia-950)_70%,transparent)] via-[color-mix(in_srgb,var(--rootsy-savia-900)_55%,transparent)] to-[color-mix(in_srgb,var(--rootsy-savia-950)_80%,transparent)] px-2">
-        <div
-          className="flex flex-col items-center"
-          style={
-            uprightRotation
-              ? { transform: `rotate(${-uprightRotation}deg)` }
-              : undefined
-          }
-        >
-          <Wine className="mb-1 size-5 text-[color-mix(in_srgb,var(--rootsy-savia-200)_70%,transparent)]" strokeWidth={1.5} />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[color-mix(in_srgb,var(--rootsy-savia-100)_75%,transparent)]">
-            {decor.label ?? "Barra"}
-          </span>
-        </div>
+      <div className="pointer-events-none absolute inset-1.5 flex flex-col justify-between">
+        {Array.from({ length: steps }, (_, index) => (
+          <div
+            key={index}
+            className="h-px bg-[color-mix(in_srgb,var(--rootsy-sombra-300)_18%,transparent)]"
+          />
+        ))}
       </div>
+      <WhisperMark
+        icon={ChevronsUp}
+        label={decor.label?.trim() || "Escalera"}
+        rotation={rotation}
+        compact
+      />
     </div>
   )
 }
 
-function EntranceBlock({
+function LabelBlock({
   decor,
-  uprightRotation = 0,
+  rotation = 0,
   selected = false,
 }: {
   decor: MesaFloorDecor
-  uprightRotation?: number
+  rotation?: number
   selected?: boolean
 }) {
   return (
     <div
       className={cn(
-        "flex size-full items-center justify-center rounded-lg",
-        "border border-dashed border-[color-mix(in_srgb,var(--rootsy-savia-teal)_35%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-savia-950)_25%,transparent)]",
+        "flex size-full items-center justify-center",
         selected && mesaDecorHighlightClass(true),
       )}
       aria-hidden
     >
-      <div
-        className="flex flex-col items-center gap-1 text-[color-mix(in_srgb,var(--rootsy-savia-teal)_65%,transparent)]"
-        style={
-          uprightRotation
-            ? { transform: `rotate(${-uprightRotation}deg)` }
-            : undefined
-        }
-      >
-        <DoorOpen className="size-5" strokeWidth={1.5} />
-        <span className="text-[9px] font-semibold uppercase tracking-wider">
-          {decor.label ?? "Ingreso"}
+      <span className={mesasFloorDecorLabelOnlyClass} style={uprightStyle(rotation)}>
+        {decor.label?.trim() || "Etiqueta"}
+      </span>
+    </div>
+  )
+}
+
+function ZoneBlock({
+  decor,
+  rotation = 0,
+  selected = false,
+}: {
+  decor: MesaFloorDecor
+  rotation?: number
+  selected?: boolean
+}) {
+  const text = decor.label?.trim()
+  return (
+    <div
+      className={cn(mesasFloorDecorZoneClass, selected && mesaDecorHighlightClass(true))}
+      aria-hidden
+    >
+      {text ? (
+        <span
+          className={cn(mesasFloorDecorLabelClass, "absolute left-2 top-1.5 text-left")}
+          style={uprightStyle(rotation)}
+        >
+          {text}
         </span>
-      </div>
+      ) : null}
     </div>
   )
 }
@@ -183,27 +306,54 @@ function DecorContent({
   if (decor.kind === "wall_h" || decor.kind === "wall_v") {
     return <WallBlock decor={decor} selected={selected} />
   }
-  if (decor.kind === "plant" || decor.kind === "planter") {
-    return <PlantBlock decor={decor} selected={selected} />
-  }
   if (decor.kind === "pillar") {
     return <PillarBlock selected={selected} />
   }
-  if (decor.kind === "bar") {
+  if (decor.kind === "window") {
+    return <WindowBlock decor={decor} selected={selected} />
+  }
+  if (decor.kind === "plant" || decor.kind === "planter") {
+    return <PlantBlock decor={decor} selected={selected} />
+  }
+  if (decor.kind === "stairs") {
     return (
-      <BarBlock decor={decor} uprightRotation={uprightRotation} selected={selected} />
+      <StairsBlock decor={decor} rotation={uprightRotation} selected={selected} />
     )
   }
-  if (decor.kind === "entrance") {
-    return (
-      <EntranceBlock
-        decor={decor}
-        uprightRotation={uprightRotation}
-        selected={selected}
-      />
-    )
+  if (decor.kind === "label") {
+    return <LabelBlock decor={decor} rotation={uprightRotation} selected={selected} />
   }
-  return null
+  if (decor.kind === "zone") {
+    return <ZoneBlock decor={decor} rotation={uprightRotation} selected={selected} />
+  }
+
+  const amenity: Record<
+    Extract<
+      MesaFloorDecorKind,
+      "entrance" | "bar" | "register" | "restroom" | "kitchen"
+    >,
+    { icon: LucideIcon; fallback: string; roundedClass?: string }
+  > = {
+    entrance: { icon: DoorOpen, fallback: "Acceso", roundedClass: "rounded-sm" },
+    bar: { icon: Wine, fallback: "Barra", roundedClass: "rounded-md" },
+    register: { icon: CreditCard, fallback: "Caja" },
+    restroom: { icon: Bath, fallback: "Baños" },
+    kitchen: { icon: ChefHat, fallback: "Cocina" },
+  }
+
+  const spec = amenity[decor.kind as keyof typeof amenity]
+  if (!spec) return null
+
+  return (
+    <AmenityBlock
+      decor={decor}
+      icon={spec.icon}
+      fallback={spec.fallback}
+      rotation={uprightRotation}
+      selected={selected}
+      roundedClass={spec.roundedClass}
+    />
+  )
 }
 
 const PREVIEW_CANVAS_W = 200
@@ -251,10 +401,9 @@ export function MesaFloorDecorPreview({
       <div
         className="relative flex items-center justify-center overflow-hidden rounded-xl border border-[var(--rootsy-bruma-200)]"
         style={{
-          backgroundColor: MESAS_FLOOR_PLAN_SURFACE_BG,
+          backgroundColor: "var(--rootsy-sombra-800)",
           minHeight: PREVIEW_CANVAS_H,
         }}
-        aria-hidden
       >
         <div
           className="pointer-events-none absolute inset-0 opacity-20"
@@ -294,8 +443,9 @@ export function MesaFloorDecorNode({
   layoutSelected,
   onSelectLayout,
 }: Props) {
-  const label = decor.label ?? decorAriaLabel[decor.kind]
+  const label = decor.label?.trim() || decorAriaLabel[decor.kind]
   const rotation = decor.rotation ?? 0
+  const isZone = decor.kind === "zone"
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -306,17 +456,20 @@ export function MesaFloorDecorNode({
   return (
     <div
       ref={setNodeRef}
-      className="absolute touch-none outline-none focus:outline-none focus-visible:outline-none"
+      className={cn(
+        "absolute outline-none focus:outline-none focus-visible:outline-none",
+        layoutEditMode ? "touch-none" : "pointer-events-none",
+      )}
       style={{
         left: decor.x,
         top: decor.y,
         width: decor.width,
         height: decor.height,
         transform: CSS.Translate.toString(transform),
-        zIndex: isDragging ? 40 : layoutSelected ? 35 : 0,
+        zIndex: isDragging ? 40 : layoutSelected ? 35 : isZone ? 0 : 1,
       }}
       aria-label={label}
-      title={label}
+      title={layoutEditMode ? label : undefined}
       {...(layoutEditMode ? { ...listeners, ...attributes } : { role: "img" })}
       onClick={
         layoutEditMode

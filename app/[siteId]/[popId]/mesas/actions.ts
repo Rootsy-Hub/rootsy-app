@@ -1,10 +1,11 @@
 "use server"
 
-import type {
-  MesaFloorDecorKind,
-  MesaReservationInput,
-  MesaReservationStatus,
-  MesaTableShape,
+import {
+  MESA_FLOOR_DECOR_KINDS,
+  type MesaFloorDecorKind,
+  type MesaReservationInput,
+  type MesaReservationStatus,
+  type MesaTableShape,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { readCheckoutFromSessionMetadata, readFloorStatusFromSessionMetadata, floorStatusToSessionMetadataValue, type MesaSessionFloorStatus } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
@@ -165,15 +166,7 @@ function mapMesasDecorRow(data: {
   }
 }
 
-const DECOR_KINDS: MesaFloorDecorKind[] = [
-  "wall_h",
-  "wall_v",
-  "plant",
-  "planter",
-  "pillar",
-  "bar",
-  "entrance",
-]
+const DECOR_KINDS: readonly MesaFloorDecorKind[] = MESA_FLOOR_DECOR_KINDS
 
 const ROUND_SIZES = new Set(["s", "m", "l", "xl"])
 const SQUARE_SIZES = new Set(["s", "m", "l"])

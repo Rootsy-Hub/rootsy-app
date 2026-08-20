@@ -1,5 +1,7 @@
 import {
   layoutsOperarCatalogToolbarIconMutedClass,
+  layoutsOperarProductCardDescClass,
+  layoutsOperarProductCardTitleClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   mesasFloorEmptyHintClass,
@@ -52,18 +54,20 @@ export const mostradorEmptyHintClass = mesasFloorEmptyHintClass
 
 export const mostradorEmptyStrongClass = mesasFloorEmptyStrongClass
 
-/** Texto principal en cards del tablero (número de pedido). */
-export const mostradorOrderNumberClass =
-  "text-sm font-bold text-[color-mix(in_srgb,var(--rootsy-bruma-50)_92%,white)]"
+/** Texto principal en cards del tablero — misma voz que el catálogo. */
+export const mostradorOrderNumberClass = cn(
+  layoutsOperarProductCardTitleClass,
+  "line-clamp-1",
+)
 
-export const mostradorOrderMetaClass =
-  "text-xs text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
+export const mostradorOrderMetaClass = layoutsOperarProductCardDescClass
 
-export const mostradorOrderSubtitleClass =
-  "truncate text-sm text-[color-mix(in_srgb,var(--rootsy-bruma-100)_88%,white)]"
+export const mostradorOrderSubtitleClass = cn(
+  layoutsOperarProductCardDescClass,
+  "truncate text-sm",
+)
 
-export const mostradorOrderDetailClass =
-  "text-xs text-[color-mix(in_srgb,var(--rootsy-sombra-300)_50%,transparent)]"
+export const mostradorOrderDetailClass = layoutsOperarProductCardDescClass
 
 /** Pago en panel claro (ticket). */
 export const mostradorPaymentPaidTextClass =

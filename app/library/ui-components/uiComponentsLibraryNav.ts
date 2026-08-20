@@ -53,7 +53,7 @@ export const UI_COMPONENTS_PAGE_META: Record<string, UiComponentsPageMeta> = {
     id: "ui-components-modals",
     title: "Modales UI",
     description:
-      "Scrim viewport · panel overlay + shadow.overlay + color.border · body sunken · alert compacto — specs tabuladas + previews completos.",
+      "Un solo mundo — el claro es el bloque. Header nombra · footer camina · heading.small semibold · alert compacto.",
   },
   "ui-components-banners": {
     id: "ui-components-banners",

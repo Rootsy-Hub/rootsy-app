@@ -320,11 +320,11 @@ export function ModalsLiveGallery() {
         pairNote={MODAL_UI_PANEL_SURFACE_SPEC.pairRule}
       />
 
-      <FoundationBrumaStage clip={false} caption="panel-padding space.400 · font.heading.medium · elevation.shadow.overlay · radius.xxlarge.">
+      <FoundationBrumaStage clip={false} caption="panel-padding space.400 · font.heading.small semibold · un solo mundo · radius.xxlarge.">
         <div className="space-y-4">
           <DialogGallerySectionHeading
             title="Anatomía"
-            description="Scrim sombra-950 · panel overlay · body sunken · footer dual."
+            description="El claro es el bloque. Header nombra · footer camina."
           />
           <ModalChromePreview
             config={{ size: "default", footerVariant: "dual", bodyTone: "default" }}
@@ -383,7 +383,7 @@ export function ModalsLiveGallery() {
 
       <FoundationBrumaStage clip={false} caption="dialog.body · default sunken · compact · loading.">
         <div className="space-y-6">
-          <DialogGallerySectionHeading title="Body" description="Sunken bruma-50 · overlay compacto · spinner savia." />
+          <DialogGallerySectionHeading title="Body" description="El claro — formulario, compacto o spinner savia." />
           <DialogGallerySpecBlock title="dialog.body" hint="rootsDialogBody* · RootsDialogLoadingState.">
             <DialogVariantRow>
               {MODAL_UI_BODY_TONES.map((tone) => (
