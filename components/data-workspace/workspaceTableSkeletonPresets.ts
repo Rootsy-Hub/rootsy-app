@@ -227,7 +227,7 @@ export function currentAccountsSkeletonColumns(): WorkspaceTableSkeletonColumn[]
 
 export function currentAccountLedgerSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
   return [
-    { kind: "text", className: "w-28" },
+    { kind: "text", className: "w-48" },
     { kind: "text", className: "min-w-[12rem]", lines: 2 },
     { kind: "money" },
     { kind: "money" },
@@ -237,9 +237,9 @@ export function currentAccountLedgerSkeletonColumns(): WorkspaceTableSkeletonCol
 
 export function currentAccountOpenSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
   return [
-    { kind: "text", className: "w-28" },
+    { kind: "text", className: "w-48" },
     { kind: "text", className: "min-w-[12rem]", lines: 2 },
-    { kind: "text", className: "w-28" },
+    { kind: "text", className: "w-48" },
     { kind: "money" },
     { kind: "pill", className: "w-24" },
   ]

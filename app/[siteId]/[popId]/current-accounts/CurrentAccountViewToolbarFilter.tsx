@@ -30,7 +30,7 @@ export function CurrentAccountViewToolbarFilter({
       onValueChange={(next) => onChange(next as CurrentAccountPartyView)}
       options={VIEW_OPTIONS}
       layout="inline"
-      className={cn(dataWorkspaceListFiltersFieldClass(), className)}
+      className={cn(dataWorkspaceListFiltersFieldClass(true), className)}
     />
   )
 }

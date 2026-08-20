@@ -165,7 +165,7 @@ export const saleFinalizeDialogFactValueMutedClass =
   "min-w-0 truncate text-right font-canopy text-sm font-normal text-[var(--rootsy-bruma-400)]"
 
 export const saleFinalizeDialogErrorClass =
-  "mx-[var(--rootsy-space-400)] mb-[var(--rootsy-space-150)] rounded-lg border border-[#dc2626]/30 bg-[#dc2626]/5 px-3 py-2.5 font-canopy text-sm text-[#dc2626]"
+  "mx-[var(--rootsy-space-400)] mb-[var(--rootsy-space-150)] whitespace-pre-line rounded-lg border border-[#dc2626]/30 bg-[#dc2626]/5 px-3 py-2.5 font-canopy text-sm text-[#dc2626]"
 
 /** Misma gramática que la barra Descartar | Vender del ticket operar §1.2.3. */
 export const saleFinalizeDialogActionsClass = cn(

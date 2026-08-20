@@ -465,7 +465,7 @@ export function MesasWorkspace({
               <div className={layoutsOperarSummaryPanelTabBodyClass}>
                 {checkout.submitError ? (
                   <div className="shrink-0 px-3 pt-3 sm:px-3.5">
-                    <p className="rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+                    <p className="whitespace-pre-line rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
                       {checkout.submitError}
                     </p>
                   </div>

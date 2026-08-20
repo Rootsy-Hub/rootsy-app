@@ -381,6 +381,34 @@ async function loadUnappliedByParty(
   return unapplied
 }
 
+function treasuryAccountNameFromRel(raw: unknown): string {
+  if (raw == null) return ""
+  const row = Array.isArray(raw) ? raw[0] : raw
+  if (row == null || typeof row !== "object") return ""
+  return String((row as { name?: unknown }).name ?? "").trim()
+}
+
+function currentAccountPaymentDescription(
+  paymentKind: string,
+  treasuryName: string,
+  notes?: string,
+): string {
+  const kindLabel = operationPaymentKindLabel(paymentKind)
+  const account = treasuryName.trim()
+  const base =
+    kindLabel && account ? `${kindLabel} ${account}` : kindLabel || account
+  const extra = notes?.trim() ?? ""
+  if (
+    extra &&
+    extra !== base &&
+    extra !== kindLabel &&
+    extra !== account
+  ) {
+    return `${base} · ${extra}`
+  }
+  return base || "—"
+}
+
 function emptyPartyRow(
   partyId: string,
   partyName: string,
@@ -716,8 +744,8 @@ export async function getPopCurrentAccountLedger(
 
     const paymentSelect =
       kind === "sale"
-        ? "sale_id, amount, payment_kind, created_at"
-        : "purchase_id, amount, payment_kind, created_at, paid_at"
+        ? "sale_id, amount, payment_kind, created_at, treasury_account_id, treasury_accounts ( name )"
+        : "purchase_id, amount, payment_kind, created_at, paid_at, treasury_account_id, treasury_accounts ( name )"
     const payRows =
       documentIds.length === 0
         ? []
@@ -734,12 +762,16 @@ export async function getPopCurrentAccountLedger(
       input.direction === "receivable"
         ? supabase
             .from("current_account_receipts")
-            .select("id, amount, paid_at, payment_kind, notes")
+            .select(
+              "id, amount, paid_at, payment_kind, notes, treasury_account_id, treasury_accounts ( name )",
+            )
             .eq("pop_id", popId)
             .eq("client_id", partyId)
         : supabase
             .from("current_account_receipts")
-            .select("id, amount, paid_at, payment_kind, notes")
+            .select(
+              "id, amount, paid_at, payment_kind, notes, treasury_account_id, treasury_accounts ( name )",
+            )
             .eq("pop_id", popId)
             .eq("supplier_id", partyId)
     const { data: receiptRows } = await receiptQuery
@@ -764,7 +796,6 @@ export async function getPopCurrentAccountLedger(
       const raw = row as unknown as Record<string, unknown>
       const amount = Number(raw.amount ?? 0) || 0
       if (!(amount > 0)) continue
-      const kindLabel = operationPaymentKindLabel(String(raw.payment_kind ?? ""))
       const paidAt =
         raw.paid_at != null
           ? toPopCalendarDate(String(raw.paid_at), timeZone)
@@ -773,7 +804,10 @@ export async function getPopCurrentAccountLedger(
         id: `pay-${String(raw[paymentFk])}-${paidAt}-${amount}`,
         date: paidAt,
         documentLabel: kind === "sale" ? "Cobro" : "Pago",
-        description: kindLabel,
+        description: currentAccountPaymentDescription(
+          String(raw.payment_kind ?? ""),
+          treasuryAccountNameFromRel(raw.treasury_accounts),
+        ),
         debit: isReceivable ? 0 : amount,
         credit: isReceivable ? amount : 0,
       })
@@ -782,13 +816,18 @@ export async function getPopCurrentAccountLedger(
     for (const row of receiptRows ?? []) {
       const amount = Number(row.amount ?? 0) || 0
       if (!(amount > 0)) continue
-      const kindLabel = operationPaymentKindLabel(String(row.payment_kind ?? ""))
       const notes = String(row.notes ?? "").trim()
       drafts.push({
         id: `receipt-${String(row.id)}`,
         date: toPopCalendarDate(String(row.paid_at ?? ""), timeZone),
         documentLabel: input.direction === "receivable" ? "Recibo" : "Orden de pago",
-        description: notes ? `${kindLabel} · ${notes}` : kindLabel,
+        description: currentAccountPaymentDescription(
+          String(row.payment_kind ?? ""),
+          treasuryAccountNameFromRel(
+            (row as { treasury_accounts?: unknown }).treasury_accounts,
+          ),
+          notes,
+        ),
         debit: isReceivable ? 0 : amount,
         credit: isReceivable ? amount : 0,
       })

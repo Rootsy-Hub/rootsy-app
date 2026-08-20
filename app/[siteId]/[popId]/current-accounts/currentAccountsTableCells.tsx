@@ -139,7 +139,7 @@ export function CurrentAccountLedgerDateCell({ value }: { value: string }) {
         currentAccountLedgerDateColumnClass,
       )}
     >
-      <span className={workspaceTableNatureTextSecondaryClass}>
+      <span className={cn("whitespace-nowrap", workspaceTableNatureTextSecondaryClass)}>
         {formatIsoDate(value)}
       </span>
     </TableCell>

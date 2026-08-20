@@ -58,6 +58,10 @@ import {
   computeSnapshotTotals,
   snapshotTotalsToMetadata,
 } from "@/lib/saleSnapshot"
+import {
+  formatStockShortageMessage,
+  type StockShortage,
+} from "@/lib/stockShortageMessage"
 
 function parseQty(v: unknown): number {
   const n = Number(v)
@@ -179,7 +183,8 @@ async function cancelAccountingEntry(
 type StockDeductionNeed = {
   articleId: string
   qty: number
-  label: string
+  articleName: string
+  sources: string[]
   allowNegativeQty: number
 }
 
@@ -206,7 +211,12 @@ async function collectStockDeductionNeeds(
 > {
   const byArticle = new Map<
     string,
-    { qty: number; allowNegativeQty: number; labels: Set<string> }
+    {
+      qty: number
+      allowNegativeQty: number
+      articleName: string
+      sources: Set<string>
+    }
   >()
 
   const recipeIds = new Set<string>()
@@ -249,18 +259,23 @@ async function collectStockDeductionNeeds(
   const addNeed = (
     articleId: string,
     qty: number,
-    label: string,
+    articleName: string,
+    sourceName: string | null,
     allowNegative = false,
   ) => {
     if (qty <= 0) return
+    const name = articleName.trim() || "Insumo"
     const prev = byArticle.get(articleId) ?? {
       qty: 0,
       allowNegativeQty: 0,
-      labels: new Set<string>(),
+      articleName: name,
+      sources: new Set<string>(),
     }
     prev.qty += qty
     if (allowNegative) prev.allowNegativeQty += qty
-    prev.labels.add(label)
+    if (name) prev.articleName = name
+    const source = sourceName?.trim()
+    if (source) prev.sources.add(source)
     byArticle.set(articleId, prev)
   }
 
@@ -269,7 +284,7 @@ async function collectStockDeductionNeeds(
       for (const comp of line.promotionComponents) {
         const compQty = parseQty(comp.quantity)
         if (comp.kind === "article" && comp.articleId) {
-          addNeed(comp.articleId, compQty, `${line.name} — ${comp.name}`)
+          addNeed(comp.articleId, compQty, comp.name, line.name)
         } else if (comp.kind === "recipe" && comp.recipeId) {
           const { data: ingRows, error: ingErr } = await supabase
             .from("recipe_ingredients")
@@ -311,7 +326,8 @@ async function collectStockDeductionNeeds(
             addNeed(
               String(art.id),
               consumo,
-              `${line.name} — ${comp.name} — ${String(art.name ?? "Ingrediente")}`,
+              String(art.name ?? "Ingrediente"),
+              line.name,
               recipeAllowNegative.get(comp.recipeId) === true,
             )
           }
@@ -320,7 +336,7 @@ async function collectStockDeductionNeeds(
       continue
     }
     if (line.lineKind === "article" && line.articleId) {
-      addNeed(line.articleId, line.qty, line.name)
+      addNeed(line.articleId, line.qty, line.name, null)
       continue
     }
     if (line.lineKind !== "recipe" || !line.recipeId) continue
@@ -362,11 +378,11 @@ async function collectStockDeductionNeeds(
         art.default_waste_pct != null ? Number(art.default_waste_pct) : null,
         line.qty,
       )
-      const ingLabel = String(art.name ?? "Ingrediente")
       addNeed(
         String(art.id),
         consumo,
-        `${line.name} — ${ingLabel}`,
+        String(art.name ?? "Ingrediente"),
+        line.name,
         recipeAllowNegative.get(line.recipeId) === true,
       )
     }
@@ -378,7 +394,8 @@ async function collectStockDeductionNeeds(
       articleId,
       qty: parseQty(entry.qty),
       allowNegativeQty: parseQty(entry.allowNegativeQty),
-      label: [...entry.labels].join(", "),
+      articleName: entry.articleName,
+      sources: [...entry.sources],
     })
   }
   return { success: true, needs }
@@ -395,7 +412,7 @@ async function assertStockForSaleNeeds(
   const articleIds = [...new Set(needs.map((need) => need.articleId))]
   const { data: flagRows, error: flagErr } = await supabase
     .from("articles")
-    .select("id, allow_negative_stock")
+    .select("id, name, allow_negative_stock, unit_of_measure")
     .eq("pop_id", popId)
     .in("id", articleIds)
   if (flagErr) {
@@ -405,13 +422,22 @@ async function assertStockForSaleNeeds(
     }
   }
 
-  const allowNegativeById = new Map<string, boolean>()
+  const articleById = new Map<
+    string,
+    { allowNegative: boolean; name: string; unitOfMeasure: string | null }
+  >()
   for (const row of flagRows ?? []) {
-    allowNegativeById.set(String(row.id), Boolean(row.allow_negative_stock))
+    articleById.set(String(row.id), {
+      allowNegative: Boolean(row.allow_negative_stock),
+      name: String(row.name ?? "").trim(),
+      unitOfMeasure: row.unit_of_measure != null ? String(row.unit_of_measure) : null,
+    })
   }
 
+  const shortages: StockShortage[] = []
   for (const need of needs) {
-    if (allowNegativeById.get(need.articleId)) continue
+    const article = articleById.get(need.articleId)
+    if (article?.allowNegative) continue
     const gatedQty = Math.max(0, need.qty - need.allowNegativeQty)
     if (gatedQty <= 1e-6) continue
     const oh = await sumInventoryOnHandForArticle(
@@ -424,10 +450,19 @@ async function assertStockForSaleNeeds(
       return { success: false, error: oh.error }
     }
     if (gatedQty > oh.onHand + 1e-6) {
-      return {
-        success: false,
-        error: `Stock insuficiente para «${need.label || "Insumo"}».`,
-      }
+      shortages.push({
+        articleName: need.articleName || article?.name || "Insumo",
+        sources: need.sources,
+        needed: gatedQty,
+        onHand: Math.max(0, oh.onHand),
+        unitOfMeasure: article?.unitOfMeasure,
+      })
+    }
+  }
+  if (shortages.length > 0) {
+    return {
+      success: false,
+      error: formatStockShortageMessage(shortages),
     }
   }
   return { success: true }
@@ -452,7 +487,7 @@ async function deductArticleStockForSale(
     .eq("id", need.articleId)
     .eq("pop_id", popId)
     .maybeSingle()
-  const articleName = String(artRow?.name ?? need.label ?? "")
+  const articleName = String(artRow?.name ?? need.articleName ?? "")
   const articleCostRef = roundMoney(
     await resolveArticleReferenceUnitCost(supabase, popId, need.articleId),
   )
