@@ -1,4 +1,7 @@
+"use client"
+
 import { HOME_COPY } from "@/app/home/homeCopy"
+import { useHomeSaludoHover } from "@/app/home/HomeSaludoHover"
 import "@/app/home/homeEter.css"
 import { menuRealmLightMutedClass, menuRealmTitleClass } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
@@ -11,6 +14,8 @@ type HomeGreetingProps = {
 }
 
 export function HomeGreeting({ displayName, namePending = false }: HomeGreetingProps) {
+  const { hello } = useHomeSaludoHover()
+
   return (
     <div className="w-full max-w-xl text-center">
       <div className="flex flex-wrap items-center justify-center gap-3">
@@ -24,10 +29,12 @@ export function HomeGreeting({ displayName, namePending = false }: HomeGreetingP
             HOME_COPY.greeting(displayName)
           )}
         </h1>
-        <button
-          type="button"
-          className="home-rootsy-saludo -translate-y-3 h-20 w-20 rounded-md sm:h-24 sm:w-24"
-          aria-label="Rootsy te saluda"
+        <span
+          className={cn(
+            "home-rootsy-saludo -translate-y-3 h-20 w-20 sm:h-24 sm:w-24",
+            hello && "is-hello",
+          )}
+          aria-hidden
         >
           <img
             src={rootsySaludoInicial.src}
@@ -39,7 +46,7 @@ export function HomeGreeting({ displayName, namePending = false }: HomeGreetingP
             alt=""
             className="home-rootsy-saludo__hello"
           />
-        </button>
+        </span>
       </div>
       <p className={cn("mt-2 text-base sm:text-lg", menuRealmLightMutedClass)}>
         {HOME_COPY.lead}

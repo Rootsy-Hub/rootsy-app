@@ -9,6 +9,7 @@ import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeLoadError } from "@/app/home/HomeLoadError"
 import { HomeGhostPlanet } from "@/app/home/HomePopPickerSkeleton"
 import { HomePopPlanetTile } from "@/app/home/HomePopPlanetTile"
+import { useHomeSaludoHover } from "@/app/home/HomeSaludoHover"
 import type { HomePopListItem } from "@/app/home/homeUserDataTypes"
 import {
   menuRealmChromeShellClass,
@@ -74,6 +75,7 @@ function HomePopPickerCards({
   canCreatePop: boolean
   createPopPending: boolean
 }) {
+  const { setHello } = useHomeSaludoHover()
   const isSoloPop = pops.length === 1
   const showCreateTile =
     pops.length === 0 && (canCreatePop || createPopPending)
@@ -135,12 +137,34 @@ function HomePopPickerCards({
                   {canEnter ? (
                     <Link
                       href={menuHref}
+                      data-home-pop=""
                       className="group flex w-full flex-col items-center focus-visible:outline-none"
+                      onMouseEnter={() => setHello(true)}
+                      onMouseLeave={(event) => {
+                        const next = event.relatedTarget
+                        if (next instanceof Element && next.closest("[data-home-pop]")) return
+                        setHello(false)
+                      }}
+                      onFocus={() => setHello(true)}
+                      onBlur={(event) => {
+                        const next = event.relatedTarget
+                        if (next instanceof Element && next.closest("[data-home-pop]")) return
+                        setHello(false)
+                      }}
                     >
                       {cardInner}
                     </Link>
                   ) : (
-                    <div className="flex w-full cursor-not-allowed flex-col items-center opacity-80">
+                    <div
+                      data-home-pop=""
+                      className="flex w-full cursor-not-allowed flex-col items-center opacity-80"
+                      onMouseEnter={() => setHello(true)}
+                      onMouseLeave={(event) => {
+                        const next = event.relatedTarget
+                        if (next instanceof Element && next.closest("[data-home-pop]")) return
+                        setHello(false)
+                      }}
+                    >
                       {cardInner}
                     </div>
                   )}

@@ -1,6 +1,6 @@
 "use client"
 
-import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
+import type { HomePopListItem, PopAccessModule } from "@/app/home/homeUserDataTypes"
 import {
   canUseMenuDockItemFromPopAccess,
   DEFAULT_MENU_DOCK_IDS,
@@ -18,7 +18,10 @@ import {
   resolveMenuDockIds,
   writeCachedMenuDockIds,
 } from "@/lib/menuDockPreference"
-import { savePopMenuDockPreference } from "@/app/[siteId]/[popId]/menu/menuDockActions"
+import { useAuth } from "@/context/AuthContextSupabase"
+import { userPopsQueryKey } from "@/lib/queryKeys"
+import { savePopDock } from "@/lib/rootsyApi/dockClient"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   menuHoloGlyphClass,
   menuHoloIconShellForSection,
@@ -382,6 +385,9 @@ export function MenuDockDndProvider({
   initialDockIds,
   children,
 }: ProviderProps) {
+  const { user } = useAuth()
+  const userId = user?.id ?? ""
+  const queryClient = useQueryClient()
   const [editing, setEditing] = useState(false)
   const [draggingItem, setDraggingItem] = useState<MenuDockDragItem | null>(null)
   const [activeDragKind, setActiveDragKind] = useState<DragKind | null>(null)
@@ -469,9 +475,18 @@ export function MenuDockDndProvider({
     (next: MenuDockItemId[]) => {
       const persisted = persistMenuDockIds(popId, next, enabledModules)
       setDockIds(persisted)
-      void savePopMenuDockPreference(popId, persisted)
+      if (userId) {
+        queryClient.setQueryData<HomePopListItem[]>(
+          userPopsQueryKey(userId),
+          (prev) =>
+            prev?.map((item) =>
+              item.id === popId ? { ...item, dockItemIds: persisted } : item,
+            ),
+        )
+      }
+      void savePopDock(popId, persisted)
     },
-    [popId, enabledModules],
+    [popId, enabledModules, userId, queryClient],
   )
 
   const removeFromDock = useCallback(

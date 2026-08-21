@@ -193,16 +193,15 @@
   position: relative;
   display: inline-block;
   flex-shrink: 0;
-  appearance: none;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
+  pointer-events: none;
+  transform-origin: 50% 90%;
+  transform: translateY(0);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.home-rootsy-saludo:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.22);
-  outline-offset: 4px;
+.home-rootsy-saludo.is-hello {
+  transform: translateY(-3px);
+  animation: home-rootsy-notice 260ms cubic-bezier(0.22, 1, 0.3, 1);
 }
 
 .home-rootsy-saludo img {
@@ -212,11 +211,15 @@
   height: 100%;
   object-fit: contain;
   pointer-events: none;
-  transition: opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .home-rootsy-saludo__idle {
   z-index: 1;
+  opacity: 1;
+}
+
+.home-rootsy-saludo.is-hello .home-rootsy-saludo__idle {
+  opacity: 0;
 }
 
 .home-rootsy-saludo__hello {
@@ -224,13 +227,27 @@
   opacity: 0;
 }
 
-.home-rootsy-saludo:hover .home-rootsy-saludo__hello,
-.home-rootsy-saludo:focus-visible .home-rootsy-saludo__hello {
+.home-rootsy-saludo.is-hello .home-rootsy-saludo__hello {
   opacity: 1;
 }
 
+@keyframes home-rootsy-notice {
+  0% {
+    transform: translateY(0);
+  }
+  32% {
+    transform: translateY(3px);
+  }
+  100% {
+    transform: translateY(-3px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .home-rootsy-saludo img {
-    transition: opacity 1ms linear;
+  .home-rootsy-saludo,
+  .home-rootsy-saludo.is-hello {
+    animation: none;
+    transition: none;
+    transform: none;
   }
 }

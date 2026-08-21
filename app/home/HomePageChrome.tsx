@@ -13,6 +13,7 @@ import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeGreeting } from "@/app/home/HomeGreeting"
+import { HomeSaludoHoverProvider } from "@/app/home/HomeSaludoHover"
 import { HomeHeaderUserCluster } from "@/app/home/HomeHeaderUserCluster"
 import { HomeSubtleButton } from "@/app/home/HomeSubtleButton"
 import { menuRealmLightMutedClass } from "@/lib/menu/menuHoloStyles"
@@ -65,9 +66,11 @@ export function HomePageChrome({
 
       <main className="relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto">
         <section className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col items-center justify-center px-5 py-6 sm:px-8 sm:py-8 lg:px-10">
-          <HomeGreeting displayName={displayName} namePending={namePending} />
+          <HomeSaludoHoverProvider>
+            <HomeGreeting displayName={displayName} namePending={namePending} />
 
-          <div className="mt-7 w-full sm:mt-8">{children}</div>
+            <div className="mt-7 w-full sm:mt-8">{children}</div>
+          </HomeSaludoHoverProvider>
         </section>
 
         <footer className="relative mt-auto flex w-full shrink-0 justify-center px-4 py-4 sm:px-6 sm:py-5">
