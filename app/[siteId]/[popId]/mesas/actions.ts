@@ -21,7 +21,12 @@ import {
 } from "@/lib/popHelpers"
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
-import { readMesasReservationSettings, type MesasReservationSettings } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
+import {
+  findReservationTableConflict,
+  readMesasReservationSettings,
+  type MesasReservationSettings,
+} from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
+import type { MesaReservation } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { operationalDayCloseTimeFromSettings } from "@/lib/popOperationalDay"
 import { createClient } from "@/utils/supabase/server"
 
@@ -1181,6 +1186,79 @@ export async function getOpenTableSessionById(
   }
 }
 
+function friendlyTableSessionError(message: string): string {
+  if (/ya tiene una sesión abierta/i.test(message)) {
+    return "Una de las mesas ya está abierta con otra cuenta. Liberála o sentá sin juntarla."
+  }
+  if (/inválida o inactiva/i.test(message)) {
+    return "Una de las mesas no está disponible."
+  }
+  return message
+}
+
+async function occupiedTablesOpenError(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  tableIds: string[],
+): Promise<string | null> {
+  const { data: sessions, error } = await supabase
+    .from("table_sessions")
+    .select("dining_table_id, table_session_tables ( dining_table_id )")
+    .eq("pop_id", popId)
+    .eq("status", "open")
+
+  if (error) return null
+
+  const occupied = new Set<string>()
+  for (const session of sessions ?? []) {
+    if (typeof session.dining_table_id === "string") {
+      occupied.add(session.dining_table_id)
+    }
+    for (const extra of session.table_session_tables ?? []) {
+      if (typeof extra.dining_table_id === "string") {
+        occupied.add(extra.dining_table_id)
+      }
+    }
+  }
+
+  const hit = tableIds.filter((id) => occupied.has(id))
+  if (hit.length === 0) return null
+
+  const { data: rows } = await supabase
+    .from("dining_tables")
+    .select("id, label")
+    .in("id", hit)
+
+  const labels = (rows ?? [])
+    .map((row) => row.label)
+    .filter(
+      (label): label is string =>
+        typeof label === "string" && label.trim().length > 0,
+    )
+
+  if (labels.length === 1) {
+    return `La mesa ${labels[0]} ya está abierta. Liberála o sentá sin juntarla.`
+  }
+  if (labels.length > 1) {
+    return `Las mesas ${labels.join(", ")} ya están abiertas. Liberálas o sentá sin juntarlas.`
+  }
+  return "Una de las mesas ya está abierta. Liberála o sentá sin juntarla."
+}
+
+async function markReservationSeatedAfterOpen(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  reservationId: string,
+) {
+  if (!reservationId) return
+  await supabase
+    .from("table_reservations")
+    .update({ status: "seated" })
+    .eq("id", reservationId)
+    .eq("pop_id", popId)
+    .in("status", ["pending", "confirmed"])
+}
+
 export async function openTableSession(
   popId: string,
   routeSiteId: string,
@@ -1220,21 +1298,17 @@ export async function openTableSession(
   const mergedTableIds = tableIds.slice(1)
   const reservationId = input.reservationId?.trim() ?? ""
 
-  if (reservationId) {
-    if (!isUuid(reservationId)) {
-      return { success: false, error: "Reserva inválida." }
-    }
+  if (reservationId && !isUuid(reservationId)) {
+    return { success: false, error: "Reserva inválida." }
+  }
 
-    const { error: reservationSeatErr } = await supabase
-      .from("table_reservations")
-      .update({ status: "seated" })
-      .eq("id", reservationId)
-      .eq("pop_id", popId)
-      .in("status", ["pending", "confirmed"])
-
-    if (reservationSeatErr) {
-      return { success: false, error: reservationSeatErr.message }
-    }
+  const occupiedError = await occupiedTablesOpenError(
+    supabase,
+    popId,
+    tableIds,
+  )
+  if (occupiedError) {
+    return { success: false, error: occupiedError }
   }
 
   const { data: inserted, error: insertErr } = await supabase
@@ -1255,7 +1329,9 @@ export async function openTableSession(
   if (insertErr || !inserted) {
     return {
       success: false,
-      error: insertErr?.message || "No se pudo abrir la mesa.",
+      error: friendlyTableSessionError(
+        insertErr?.message || "No se pudo abrir la mesa.",
+      ),
     }
   }
 
@@ -1271,7 +1347,10 @@ export async function openTableSession(
 
     if (mergeErr) {
       await supabase.from("table_sessions").delete().eq("id", sessionId)
-      return { success: false, error: mergeErr.message }
+      return {
+        success: false,
+        error: friendlyTableSessionError(mergeErr.message),
+      }
     }
 
     const { data: refreshed, error: refreshErr } = await supabase
@@ -1281,11 +1360,14 @@ export async function openTableSession(
       .single()
 
     if (refreshErr || !refreshed) {
+      await supabase.from("table_sessions").delete().eq("id", sessionId)
       return {
         success: false,
         error: refreshErr?.message || "No se pudo leer la sesión creada.",
       }
     }
+
+    await markReservationSeatedAfterOpen(supabase, popId, reservationId)
 
     return {
       success: true,
@@ -1294,6 +1376,8 @@ export async function openTableSession(
       ),
     }
   }
+
+  await markReservationSeatedAfterOpen(supabase, popId, reservationId)
 
   return {
     success: true,
@@ -1884,6 +1968,16 @@ async function syncReservationExtraTables(
   return insertErr?.message ?? null
 }
 
+function reservationWriteErrorMessage(
+  message: string | undefined,
+  fallback: string,
+): string {
+  if (message?.includes("table_reservations_table_arrival_idx")) {
+    return "Esa mesa ya tiene una reserva en el mismo horario."
+  }
+  return message || fallback
+}
+
 export async function getTableReservations(
   popId: string,
   routeSiteId: string,
@@ -1994,6 +2088,48 @@ export async function upsertTableReservation(
   const status = input.status ? parseReservationStatus(input.status) : "confirmed"
 
   const { supabase } = gate
+
+  const assignedTableIds = tableId ? [tableId, ...extraTableIds] : []
+  if (assignedTableIds.length > 0) {
+    const [{ data: popRow }, { data: existingRows, error: existingRowsErr }] =
+      await Promise.all([
+        supabase.from("pops").select("settings").eq("id", popId).maybeSingle(),
+        supabase
+          .from("table_reservations")
+          .select(TABLE_RESERVATION_SELECT)
+          .eq("pop_id", popId)
+          .in("status", ["pending", "confirmed"]),
+      ])
+
+    if (existingRowsErr) {
+      return { success: false, error: existingRowsErr.message }
+    }
+
+    const popSettings =
+      popRow?.settings && typeof popRow.settings === "object"
+        ? (popRow.settings as Record<string, unknown>)
+        : null
+    const conflict = findReservationTableConflict({
+      tableIds: assignedTableIds,
+      arrivalAt,
+      settings: readMesasReservationSettings(popSettings),
+      reservations: (existingRows ?? []).map((row) =>
+        mapTableReservationRow(
+          row as unknown as Parameters<typeof mapTableReservationRow>[0],
+        ),
+      ) as MesaReservation[],
+      excludeReservationId: reservationId || null,
+    })
+
+    if (conflict) {
+      const name = conflict.reservation.clientName.trim() || "otro cliente"
+      return {
+        success: false,
+        error: `Esa mesa ya está reservada para ${name} en un horario que se pisa.`,
+      }
+    }
+  }
+
   const payload = {
     pop_id: popId,
     dining_table_id: tableId,
@@ -2042,7 +2178,10 @@ export async function upsertTableReservation(
     if (error || !data) {
       return {
         success: false,
-        error: error?.message || "No se pudo actualizar la reserva.",
+        error: reservationWriteErrorMessage(
+          error?.message,
+          "No se pudo actualizar la reserva.",
+        ),
       }
     }
 
@@ -2085,7 +2224,10 @@ export async function upsertTableReservation(
   if (error || !data) {
     return {
       success: false,
-      error: error?.message || "No se pudo guardar la reserva.",
+      error: reservationWriteErrorMessage(
+        error?.message,
+        "No se pudo guardar la reserva.",
+      ),
     }
   }
 

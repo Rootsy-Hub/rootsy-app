@@ -1,29 +1,38 @@
 "use client"
 
 import type {
+  ComandaStationOption,
   RecipeCategoryLayoutUpdate,
   RecipeCategoryOption,
 } from "@/app/[siteId]/[popId]/recipes/actions"
 import { RecipeCategoriesMenuBoard } from "@/app/[siteId]/[popId]/recipes/components/RecipeCategoriesMenuBoard"
 import {
+  RootsProgressButton,
+  rootsButtonClassForVariant,
+  rootsButtonVariant,
+} from "@/components/rootsy-button"
+import {
   RootsDialogBody,
   RootsDialogContent,
+  RootsDialogErrorBanner,
   RootsDialogHeader,
-  RootsDialogSingleActionFooter,
 } from "@/components/rootsy-dialog"
 import { RootsFormTextField } from "@/components/rootsy-form"
-import { RootsPrimaryButton } from "@/components/rootsy-button"
+import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
 import { Dialog } from "@/components/ui/dialog"
-import { useEffect, useRef, useState } from "react"
+import { cn } from "@/lib/utils"
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  banner: string | null
   categories: RecipeCategoryOption[]
+  boardKey: number
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
   newCategoryName: string
+  newCategorySaving: boolean
   onNewCategoryNameChange: (value: string) => void
   onCreateCategory: () => void
   categoryBusy: boolean
@@ -35,17 +44,21 @@ type Props = {
   onSaveEdit: () => void
   onDeleteCategory: (id: string, name: string) => void
   onLayoutChange: (updates: RecipeCategoryLayoutUpdate[]) => void | Promise<void>
-  onAfterClose?: () => void
+  stations: ComandaStationOption[]
+  onStationChange: (categoryId: string, stationId: string | null) => void
 }
 
 export function RecipeCategoriesDialog({
   open,
   onOpenChange,
+  banner,
   categories,
+  boardKey,
   canCreate,
   canUpdate,
   canDelete,
   newCategoryName,
+  newCategorySaving,
   onNewCategoryNameChange,
   onCreateCategory,
   categoryBusy,
@@ -57,59 +70,57 @@ export function RecipeCategoriesDialog({
   onSaveEdit,
   onDeleteCategory,
   onLayoutChange,
-  onAfterClose,
+  stations,
+  onStationChange,
 }: Props) {
-  const wasOpenRef = useRef(false)
-  const [mounted, setMounted] = useState(open)
-
-  useEffect(() => {
-    if (open) {
-      wasOpenRef.current = true
-      setMounted(true)
-      return
-    }
-    if (!wasOpenRef.current) return
-    const timer = window.setTimeout(() => {
-      wasOpenRef.current = false
-      setMounted(false)
-      onAfterClose?.()
-    }, 220)
-    return () => window.clearTimeout(timer)
-  }, [open, onAfterClose])
-
-  if (!mounted) return null
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <RootsDialogContent size="wide">
+      <RootsDialogContent
+        size="wide"
+        className="max-h-[min(90vh,720px)] sm:max-w-2xl"
+      >
         <RootsDialogHeader
-          title="Categorías de recetas"
-          description="Organizá el menú de Mesas y Mostrador."
+          title="Categorías"
+          description="Ordená las categorías, cuáles se muestran en el menú y a qué estación va la comanda."
         />
         <RootsDialogBody>
+          {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
           {canCreate ? (
-            <div className="mb-4 flex flex-wrap items-end gap-2">
-              <div className="min-w-[12rem] flex-1">
-                <RootsFormTextField
-                  label="Nueva categoría"
-                  id="recipe-new-category"
-                  value={newCategoryName}
-                  onChange={(e) => onNewCategoryNameChange(e.target.value)}
-                  placeholder="Nombre de la categoría"
-                  disabled={categoryBusy}
-                />
-              </div>
-              <RootsPrimaryButton
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <RootsFormTextField
+                label="Nueva categoría"
+                id="recipe-new-category"
+                value={newCategoryName}
+                onChange={(event) => onNewCategoryNameChange(event.target.value)}
+                placeholder="Nombre"
+                className="min-w-0 flex-1"
+                disabled={newCategorySaving}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault()
+                    onCreateCategory()
+                  }
+                }}
+              />
+              <RootsProgressButton
                 type="button"
-                className="shrink-0"
-                disabled={categoryBusy || !newCategoryName.trim()}
+                variant={rootsButtonVariant.primary}
+                className={cn(
+                  saleOpDialogPrimaryBtn,
+                  rootsButtonClassForVariant("primary"),
+                  "h-11 shrink-0",
+                )}
+                disabled={newCategorySaving || !newCategoryName.trim()}
+                loading={newCategorySaving}
+                loadingLabel="Agregando…"
                 onClick={onCreateCategory}
               >
                 Agregar
-              </RootsPrimaryButton>
+              </RootsProgressButton>
             </div>
           ) : null}
           <RecipeCategoriesMenuBoard
+            key={boardKey}
             categories={categories}
             canUpdate={canUpdate}
             canDelete={canDelete}
@@ -122,12 +133,10 @@ export function RecipeCategoriesDialog({
             onSaveEdit={onSaveEdit}
             onDelete={onDeleteCategory}
             onLayoutChange={onLayoutChange}
+            stations={stations}
+            onStationChange={onStationChange}
           />
         </RootsDialogBody>
-        <RootsDialogSingleActionFooter
-          label="Cerrar"
-          onAction={() => onOpenChange(false)}
-        />
       </RootsDialogContent>
     </Dialog>
   )

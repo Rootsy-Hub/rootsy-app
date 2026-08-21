@@ -20,6 +20,7 @@ import {
   type MesaSessionRow,
 } from "@/app/[siteId]/[popId]/mesas/actions"
 import {
+  isMesaOccupiedNow,
   pickFloorReservation,
   readMesasReservationSettings,
   reservationsForAgendaDay,
@@ -868,7 +869,7 @@ export function useMesasState(popId: string, siteId: string) {
       reservation: MesaReservation,
       input: MesaOpenSessionInput,
     ) => {
-      const tableIds =
+      const requestedIds =
         input.tableIds.length > 0
           ? input.tableIds
           : reservation.tableIds.length > 0
@@ -876,6 +877,11 @@ export function useMesasState(popId: string, siteId: string) {
             : reservation.tableId
               ? [reservation.tableId]
               : []
+      const tableIds = requestedIds.filter((id, index) => {
+        if (index === 0) return true
+        const table = tables.find((item) => item.id === id)
+        return table == null || !isMesaOccupiedNow(table.status)
+      })
       if (tableIds.length === 0) return false
 
       if (reservation.tableIds.length === 0 && !reservation.tableId) {
@@ -900,7 +906,7 @@ export function useMesasState(popId: string, siteId: string) {
       })
       return ok
     },
-    [openSession, saveReservation],
+    [openSession, saveReservation, tables],
   )
 
   return {

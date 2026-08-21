@@ -11,7 +11,11 @@ import type {
   MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import type { MesaReservationWarning } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
-import { mesaOpenInitialFromReservation } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
+import {
+  mesaOpenInitialFromReservation,
+  reservationOccupiedOpenWarning,
+  reservationOccupiedTablesForOpen,
+} from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog/RootsConfirmDialog"
 import {
   mesaStatusBadgeClass,
@@ -35,7 +39,7 @@ import type { ChannelCloseMode } from "@/lib/channelCheckoutClose"
 import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { Clock, Pencil, UtensilsCrossed } from "lucide-react"
+import { ChevronRight, Clock, Pencil, UtensilsCrossed } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 type Props = {
@@ -44,6 +48,7 @@ type Props = {
   floorReservation?: MesaReservation | null
   reservationWarning?: MesaReservationWarning | null
   sessionTables: MesaTable[]
+  tables: MesaTable[]
   waiters: MesaWaiter[]
   mergeCandidates: MesaTable[]
   sessionError?: string | null
@@ -62,7 +67,7 @@ type Props = {
     floorStatus: MesaSessionFloorStatus,
   ) => Promise<boolean> | boolean
   floorStatusLoading?: boolean
-  onCancelReservation?: (reservationId: string) => Promise<boolean> | boolean
+  onOpenReservationDetail?: (reservation: MesaReservation) => void
 }
 
 function sessionTitle(table: MesaTable | null, sessionTables: MesaTable[]): string {
@@ -79,6 +84,7 @@ export function MesaSessionPanel({
   floorReservation = null,
   reservationWarning = null,
   sessionTables,
+  tables,
   waiters,
   mergeCandidates,
   sessionError,
@@ -92,14 +98,12 @@ export function MesaSessionPanel({
   clientLabel,
   onSetFloorStatus,
   floorStatusLoading = false,
-  onCancelReservation,
+  onOpenReservationDetail,
 }: Props) {
   const [editing, setEditing] = useState(false)
   const [closeDialogOpen, setCloseDialogOpen] = useState(false)
   const [closeBusy, setCloseBusy] = useState(false)
   const [floorStatusBusy, setFloorStatusBusy] = useState(false)
-  const [cancelReservationOpen, setCancelReservationOpen] = useState(false)
-  const [cancelReservationBusy, setCancelReservationBusy] = useState(false)
 
   useEffect(() => {
     setEditing(false)
@@ -123,21 +127,34 @@ export function MesaSessionPanel({
     }
   }
 
-  const confirmCancelReservation = async () => {
-    if (!floorReservation || !onCancelReservation || cancelReservationBusy) return
-    setCancelReservationBusy(true)
-    try {
-      const ok = await onCancelReservation(floorReservation.id)
-      if (ok) setCancelReservationOpen(false)
-    } finally {
-      setCancelReservationBusy(false)
-    }
-  }
-
   const waiter = useMemo(
     () => waiters.find((w) => w.id === session?.waiterId),
     [waiters, session?.waiterId],
   )
+
+  const blockedMergeTables = useMemo(() => {
+    if (!floorReservation || !table || table.status !== "reserved") return []
+    return reservationOccupiedTablesForOpen(
+      floorReservation,
+      tables,
+      table.id,
+    )
+  }, [floorReservation, table, tables])
+
+  const blockedMergeWarning = useMemo(
+    () => reservationOccupiedOpenWarning(blockedMergeTables),
+    [blockedMergeTables],
+  )
+
+  const reservationWarningMessage = useMemo(() => {
+    if (!reservationWarning) return null
+    const client = reservationWarning.reservation.clientName.trim() || "Cliente"
+    const time = formatReservationArrival(reservationWarning.reservation.arrivalAt)
+    if (reservationWarning.kind === "overlap") {
+      return `Hay una reserva de ${client} (${time}) y la mesa sigue abierta.`
+    }
+    return `Reserva de ${client} a las ${time.split(" · ").pop()} — entra en ventana en ${reservationWarning.minutesUntilBuffer} min.`
+  }, [reservationWarning])
 
   if (!table) {
     return (
@@ -154,16 +171,6 @@ export function MesaSessionPanel({
   const isPaying = table.status === "paying"
   const title = sessionTitle(table, sessionTables)
   const closeButtonLabel = "Liberar mesa"
-
-  const reservationWarningMessage = useMemo(() => {
-    if (!reservationWarning) return null
-    const client = reservationWarning.reservation.clientName.trim() || "Cliente"
-    const time = formatReservationArrival(reservationWarning.reservation.arrivalAt)
-    if (reservationWarning.kind === "overlap") {
-      return `Hay una reserva de ${client} (${time}) y la mesa sigue abierta.`
-    }
-    return `Reserva de ${client} a las ${time.split(" · ").pop()} — entra en ventana en ${reservationWarning.minutesUntilBuffer} min.`
-  }, [reservationWarning])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -330,6 +337,16 @@ export function MesaSessionPanel({
                     {mesaStatusLabel(table.status)}
                   </ChannelDataStatusBadge>
                 }
+                actions={
+                  isReserved && floorReservation && onOpenReservationDetail ? (
+                    <DataWorkspaceTableIconAction
+                      label="Ver reserva"
+                      icon={ChevronRight}
+                      variant="neutral"
+                      onClick={() => onOpenReservationDetail(floorReservation)}
+                    />
+                  ) : undefined
+                }
               />
             </ChannelDataSection>
           </div>
@@ -337,43 +354,25 @@ export function MesaSessionPanel({
           <MesaOpenForm
             primaryTable={table}
             mergeCandidates={mergeCandidates}
+            blockedMergeTables={blockedMergeTables}
+            blockedMergeWarning={blockedMergeWarning}
             waiters={waiters}
             initial={
               floorReservation
-                ? mesaOpenInitialFromReservation(floorReservation, table.id)
+                ? mesaOpenInitialFromReservation(
+                    floorReservation,
+                    table.id,
+                    tables,
+                  )
                 : undefined
             }
             submitLabel={isReserved ? "Sentar / abrir" : "Abrir mesa"}
             onSubmit={async (input) => {
               await onOpenSession(input)
             }}
-            onCancel={
-              isReserved && floorReservation && onCancelReservation
-                ? () => setCancelReservationOpen(true)
-                : undefined
-            }
-            cancelLabel="Cancelar reserva"
-            cancelDisabled={cancelReservationBusy}
           />
         </>
       ) : null}
-
-      <RootsConfirmDialog
-        open={cancelReservationOpen}
-        onOpenChange={setCancelReservationOpen}
-        title="¿Cancelar la reserva?"
-        description={
-          floorReservation
-            ? `La reserva de ${floorReservation.clientName.trim() || "este cliente"} se cancela y la mesa queda libre.`
-            : "La reserva se cancela y la mesa queda libre."
-        }
-        confirmLabel="Cancelar reserva"
-        cancelLabel="Volver"
-        destructive
-        busy={cancelReservationBusy}
-        busyConfirmLabel="Cancelando…"
-        onConfirm={() => void confirmCancelReservation()}
-      />
 
       {isOpen && editing && session ? (
         <MesaOpenForm

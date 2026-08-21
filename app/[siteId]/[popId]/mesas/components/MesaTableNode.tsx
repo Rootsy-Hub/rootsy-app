@@ -2,6 +2,9 @@
 
 import { MesaTableShapeView } from "@/app/[siteId]/[popId]/mesas/components/MesaTableShapeView"
 import { formatMesaOpenDuration } from "@/app/[siteId]/[popId]/mesas/components/MesaOpenDurationLabel"
+import { formatMesaReservationCountdown } from "@/app/[siteId]/[popId]/mesas/components/MesaReservationCountdownLabel"
+import { useMesaOpenDurationTick } from "@/app/[siteId]/[popId]/mesas/components/useMesaOpenDurationTick"
+import type { MesasReservationSettings } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
 import type { MesaTable } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { mesaStatusLabel } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import { useDraggable } from "@dnd-kit/core"
@@ -15,6 +18,8 @@ type Props = {
   layoutSelected: boolean
   layoutEditMode: boolean
   openedAt?: string | null
+  reservationArrivalAt?: string | null
+  reservationSettings?: MesasReservationSettings | null
   onSelect: (tableId: string) => void
   onSelectLayout: (tableId: string) => void
 }
@@ -25,9 +30,12 @@ export const MesaTableNode = memo(function MesaTableNode({
   layoutSelected,
   layoutEditMode,
   openedAt = null,
+  reservationArrivalAt = null,
+  reservationSettings = null,
   onSelect,
   onSelectLayout,
 }: Props) {
+  useMesaOpenDurationTick()
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: table.id,
@@ -58,11 +66,22 @@ export const MesaTableNode = memo(function MesaTableNode({
           layoutEditMode ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
           isDragging && "opacity-90",
         )}
-        aria-label={
-          openedAt
-            ? `Mesa ${table.label}, ${mesaStatusLabel(table.status)}, abierta ${formatMesaOpenDuration(openedAt)}`
-            : `Mesa ${table.label}, ${mesaStatusLabel(table.status)}`
-        }
+        aria-label={(() => {
+          const status = mesaStatusLabel(table.status)
+          if (openedAt) {
+            return `Mesa ${table.label}, ${status}, abierta ${formatMesaOpenDuration(openedAt)}`
+          }
+          if (table.status === "reserved" && reservationArrivalAt && reservationSettings) {
+            const countdown = formatMesaReservationCountdown(
+              reservationArrivalAt,
+              reservationSettings,
+            )
+            return countdown
+              ? `Mesa ${table.label}, ${status}, ${countdown}`
+              : `Mesa ${table.label}, ${status}`
+          }
+          return `Mesa ${table.label}, ${status}`
+        })()}
         onClick={(e) => {
           e.stopPropagation()
           if (layoutEditMode) {
@@ -82,6 +101,8 @@ export const MesaTableNode = memo(function MesaTableNode({
           layoutSelected={layoutEditMode && layoutSelected}
           uprightRotation={rotation}
           openedAt={openedAt}
+          reservationArrivalAt={reservationArrivalAt}
+          reservationSettings={reservationSettings}
         />
       </button>
     </div>

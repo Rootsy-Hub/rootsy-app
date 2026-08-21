@@ -4,9 +4,9 @@ import { RootsSortableActionListRow } from "@/components/rootsy-list/RootsSortab
 import type { RootsSortableActionListItem } from "@/components/rootsy-list/RootsSortableActionListRow"
 import {
   ROOTS_SORTABLE_LAYOUT_TRANSITION,
-  ROOTS_SORTABLE_ROW_HEIGHT_PX,
-  ROOTS_SORTABLE_SLOT_SHIFT_PX,
   rootsSortableListEmptyClass,
+  rootsSortableRowMetrics,
+  type RootsSortableRowSize,
 } from "@/components/rootsy-list/rootsListStyles"
 import {
   createRootsSortableCollisionDetection,
@@ -34,7 +34,7 @@ import {
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useState, type ReactNode } from "react"
 
 export type { RootsSortableActionListItem } from "@/components/rootsy-list/RootsSortableActionListRow"
 
@@ -52,6 +52,8 @@ type SharedRowProps = {
   onSaveEdit: () => void
   onDelete: (item: RootsSortableActionListItem) => void
   onToggleVisibility: (id: string) => void
+  renderAccessory?: (item: RootsSortableActionListItem) => ReactNode
+  rowSize?: RootsSortableRowSize
 }
 
 type Props = SharedRowProps & {
@@ -60,6 +62,7 @@ type Props = SharedRowProps & {
   onReorder: (items: RootsSortableActionListItem[]) => void
   emptyMessage?: string
   className?: string
+  rowSize?: RootsSortableRowSize
 }
 
 function SortableInsertZone({
@@ -67,11 +70,13 @@ function SortableInsertZone({
   index,
   itemCount,
   active,
+  rowSize,
 }: {
   listId: string
   index: number
   itemCount: number
   active: boolean
+  rowSize: RootsSortableRowSize
 }) {
   const { setNodeRef } = useDroppable({
     id: rootsSortableInsertId(listId, index),
@@ -87,8 +92,8 @@ function SortableInsertZone({
         !active && "pointer-events-none",
       )}
       style={{
-        top: rootsSortableInsertZoneTop(index, itemCount),
-        height: rootsSortableInsertZoneHeight(index, itemCount),
+        top: rootsSortableInsertZoneTop(index, itemCount, rowSize),
+        height: rootsSortableInsertZoneHeight(index, itemCount, rowSize),
       }}
       aria-hidden
     />
@@ -110,6 +115,7 @@ function SortableSlot({
   dragAnimating: boolean
 }) {
   const isEditing = rowProps.editingId === item.id
+  const metrics = rootsSortableRowMetrics(rowProps.rowSize)
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: rootsSortableDragId(listId, item.id),
     data: { itemId: item.id },
@@ -121,8 +127,8 @@ function SortableSlot({
       ref={setNodeRef}
       className="absolute inset-x-0 z-20 w-full"
       style={{
-        top: index * ROOTS_SORTABLE_SLOT_SHIFT_PX,
-        height: ROOTS_SORTABLE_ROW_HEIGHT_PX,
+        top: index * metrics.slotShiftPx,
+        height: metrics.rowHeightPx,
         transform: !isDragging ? `translateY(${shiftY}px)` : undefined,
         transition: dragAnimating ? ROOTS_SORTABLE_LAYOUT_TRANSITION : undefined,
       }}
@@ -148,6 +154,8 @@ function SortableSlot({
           onSaveEdit={rowProps.onSaveEdit}
           onDelete={() => rowProps.onDelete(item)}
           onToggleVisibility={() => rowProps.onToggleVisibility(item.id)}
+          accessory={rowProps.renderAccessory?.(item)}
+          rowSize={rowProps.rowSize}
         />
       </div>
     </div>
@@ -177,6 +185,8 @@ function StaticActionList({
           onSaveEdit={rowProps.onSaveEdit}
           onDelete={() => rowProps.onDelete(item)}
           onToggleVisibility={() => rowProps.onToggleVisibility(item.id)}
+          accessory={rowProps.renderAccessory?.(item)}
+          rowSize={rowProps.rowSize}
         />
       ))}
     </div>
@@ -202,6 +212,8 @@ export function RootsSortableActionList({
   onSaveEdit,
   onDelete,
   onToggleVisibility,
+  renderAccessory,
+  rowSize = "default",
 }: Props) {
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null)
   const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null)
@@ -281,6 +293,8 @@ export function RootsSortableActionList({
     onSaveEdit,
     onDelete,
     onToggleVisibility,
+    renderAccessory,
+    rowSize,
   }
 
   if (items.length === 0) {
@@ -308,7 +322,7 @@ export function RootsSortableActionList({
     >
       <div
         className={cn("relative w-full overflow-visible", className)}
-        style={{ height: rootsSortableListTrackHeight(items.length) }}
+        style={{ height: rootsSortableListTrackHeight(items.length, rowSize) }}
       >
         {Array.from({ length: items.length + 1 }, (_, index) => (
           <SortableInsertZone
@@ -317,6 +331,7 @@ export function RootsSortableActionList({
             index={index}
             itemCount={items.length}
             active={draggingItemId != null}
+            rowSize={rowSize}
           />
         ))}
 
@@ -332,6 +347,7 @@ export function RootsSortableActionList({
               previewItems,
               dropPreviewIndex,
               draggingItemId,
+              rowSize,
             )}
             dragAnimating={draggingItemId != null}
             {...rowProps}
@@ -357,6 +373,8 @@ export function RootsSortableActionList({
               onSaveEdit={() => {}}
               onDelete={() => {}}
               onToggleVisibility={() => {}}
+              accessory={renderAccessory?.(draggingItem)}
+              rowSize={rowSize}
             />
           </div>
         ) : null}

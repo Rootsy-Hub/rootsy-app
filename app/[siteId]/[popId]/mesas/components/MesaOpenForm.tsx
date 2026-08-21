@@ -5,8 +5,15 @@ import type {
   MesaTable,
   MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
-import { mesaSeatsLabel } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
-import { ChannelDataFormActionsBar } from "@/components/sale-operation/ChannelOperationDataPanel"
+import {
+  mesaSeatsLabel,
+  mesaStatusLabel,
+} from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
+import {
+  ChannelDataFormActionsBar,
+  ChannelDataPanel,
+  ChannelDataWarningBanner,
+} from "@/components/sale-operation/ChannelOperationDataPanel"
 import {
   ChannelDataFormCheckboxOption,
   ChannelDataFormGrid,
@@ -16,7 +23,6 @@ import {
   ChannelDataFormSelectItem,
   ChannelDataFormTextareaField,
 } from "@/components/sale-operation/ChannelDataFormFields"
-import { ChannelDataPanel } from "@/components/sale-operation/ChannelOperationDataPanel"
 import { Link2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
@@ -25,6 +31,8 @@ const MESA_GUEST_MAX = 50
 type Props = {
   primaryTable: MesaTable
   mergeCandidates: MesaTable[]
+  blockedMergeTables?: MesaTable[]
+  blockedMergeWarning?: string | null
   waiters: MesaWaiter[]
   initial?: Partial<MesaOpenSessionInput>
   submitLabel?: string
@@ -37,6 +45,8 @@ type Props = {
 export function MesaOpenForm({
   primaryTable,
   mergeCandidates,
+  blockedMergeTables = [],
+  blockedMergeWarning = null,
   waiters,
   initial,
   submitLabel = "Abrir mesa",
@@ -50,9 +60,16 @@ export function MesaOpenForm({
     initial?.guestCount != null ? String(initial.guestCount) : "",
   )
   const [note, setNote] = useState(initial?.note ?? "")
+  const blockedMergeIds = useMemo(
+    () => new Set(blockedMergeTables.map((table) => table.id)),
+    [blockedMergeTables],
+  )
+
   const [mergedIds, setMergedIds] = useState<string[]>(() => {
     const ids = initial?.tableIds ?? [primaryTable.id]
-    return ids.filter((id) => id !== primaryTable.id)
+    return ids.filter(
+      (id) => id !== primaryTable.id && !blockedMergeIds.has(id),
+    )
   })
   const [submitting, setSubmitting] = useState(false)
 
@@ -63,8 +80,10 @@ export function MesaOpenForm({
     )
     setNote(initial?.note ?? "")
     const ids = initial?.tableIds ?? [primaryTable.id]
-    setMergedIds(ids.filter((id) => id !== primaryTable.id))
-  }, [primaryTable.id, initial])
+    setMergedIds(
+      ids.filter((id) => id !== primaryTable.id && !blockedMergeIds.has(id)),
+    )
+  }, [primaryTable.id, initial, blockedMergeIds])
 
   const tableIds = useMemo(
     () => [primaryTable.id, ...mergedIds],
@@ -150,7 +169,13 @@ export function MesaOpenForm({
           />
         </ChannelDataFormSection>
 
-        {mergeCandidates.length > 0 ? (
+        {blockedMergeWarning ? (
+          <ChannelDataFormSection>
+            <ChannelDataWarningBanner>{blockedMergeWarning}</ChannelDataWarningBanner>
+          </ChannelDataFormSection>
+        ) : null}
+
+        {mergeCandidates.length > 0 || blockedMergeTables.length > 0 ? (
           <ChannelDataFormSection
             className="space-y-3"
             title={
@@ -159,7 +184,11 @@ export function MesaOpenForm({
                 Juntar mesas libres
               </span>
             }
-            description="Podés unir otras mesas libres del mismo salón a esta cuenta."
+            description={
+              blockedMergeTables.length > 0
+                ? "Podés unir otras mesas libres del mismo salón. Las que ya están abiertas no se pueden tildar."
+                : "Podés unir otras mesas libres del mismo salón a esta cuenta."
+            }
           >
             <ul className="space-y-2">
               {mergeCandidates.map((t) => (
@@ -170,6 +199,18 @@ export function MesaOpenForm({
                     label={`Mesa ${t.label}`}
                     meta={mesaSeatsLabel(t.seats)}
                     aria-label={`Juntar mesa ${t.label}`}
+                  />
+                </li>
+              ))}
+              {blockedMergeTables.map((t) => (
+                <li key={t.id}>
+                  <ChannelDataFormCheckboxOption
+                    checked={false}
+                    disabled
+                    onCheckedChange={() => {}}
+                    label={`Mesa ${t.label}`}
+                    meta={mesaStatusLabel(t.status)}
+                    aria-label={`Mesa ${t.label} ocupada, no se puede juntar`}
                   />
                 </li>
               ))}

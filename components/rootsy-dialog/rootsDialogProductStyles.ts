@@ -104,14 +104,14 @@ export const rootsDialogDescriptionClass = cn(
 
 /** Valle — bruma viva entre dos claros. */
 export const rootsDialogBodyClass = cn(
-  "roots-dialog-clearing-body min-h-0 flex-1 overflow-y-auto overscroll-contain",
+  "roots-dialog-clearing-body game-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-200)]",
 )
 
 /** Body compacto — mismo claro; min-h-0 para que scrollee si el panel llega al tope. */
 export const rootsDialogBodyCompactClass = cn(
-  "roots-dialog-clearing-body min-h-0 overflow-y-auto overscroll-contain",
+  "roots-dialog-clearing-body game-scroll min-h-0 overflow-y-auto overscroll-contain",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-200)]",
 )

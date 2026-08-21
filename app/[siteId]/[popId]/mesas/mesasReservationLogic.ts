@@ -2,6 +2,7 @@ import type {
   MesaOpenSessionInput,
   MesaReservation,
   MesaReservationStatus,
+  MesaTable,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import {
   DEFAULT_OPERATIONAL_DAY_CLOSE_TIME,
@@ -90,6 +91,43 @@ function formatFloorWindowInstant(instant: Date, referenceDay: Date): string {
   return includeDate ? `${day} · ${time}` : time
 }
 
+function formatReservationCountdownDuration(ms: number): string {
+  const mins = Math.floor(Math.max(0, ms) / 60_000)
+  if (mins < 1) return "<1m"
+  if (mins < 60) return `${mins}m`
+  const hours = Math.floor(mins / 60)
+  const remMins = mins % 60
+  return remMins > 0 ? `${hours}h ${remMins}m` : `${hours}h`
+}
+
+export type ReservationFloorCountdown = {
+  kind: "until_arrival" | "until_expire"
+  label: string
+}
+
+/** Cuenta regresiva en el plano: falta para llegar, o para que venza la gracia. */
+export function reservationFloorCountdown(
+  arrivalAt: string,
+  settings: MesasReservationSettings,
+  now = new Date(),
+): ReservationFloorCountdown | null {
+  const { arrival, end } = reservationFloorWindow(arrivalAt, settings)
+  const nowMs = now.getTime()
+  if (nowMs > end.getTime()) return null
+
+  if (nowMs < arrival.getTime()) {
+    return {
+      kind: "until_arrival",
+      label: `en ${formatReservationCountdownDuration(arrival.getTime() - nowMs)}`,
+    }
+  }
+
+  return {
+    kind: "until_expire",
+    label: `vence ${formatReservationCountdownDuration(end.getTime() - nowMs)}`,
+  }
+}
+
 /** Texto para staff: cuándo la mesa se pinta reservada en el plano. */
 export function describeReservationFloorWindow(
   arrivalAt: string,
@@ -135,6 +173,63 @@ export function reservationIncludesTable(
   tableId: string,
 ): boolean {
   return reservationTableIds(reservation).includes(tableId)
+}
+
+function reservationWindowsOverlap(
+  a: { start: Date; end: Date },
+  b: { start: Date; end: Date },
+): boolean {
+  return a.start.getTime() < b.end.getTime() && b.start.getTime() < a.end.getTime()
+}
+
+export type ReservationTableConflict = {
+  reservation: MesaReservation
+  tableIds: string[]
+}
+
+/** Choque de ventana en plano: misma mesa y horarios que se pisan. */
+export function findReservationTableConflict(input: {
+  tableIds: string[]
+  arrivalAt: string
+  settings: MesasReservationSettings
+  reservations: MesaReservation[]
+  excludeReservationId?: string | null
+}): ReservationTableConflict | null {
+  const wanted = new Set(input.tableIds.filter(Boolean))
+  if (wanted.size === 0) return null
+
+  const draftWindow = reservationFloorWindow(input.arrivalAt, input.settings)
+
+  const conflicts = input.reservations
+    .filter((reservation) => {
+      if (
+        input.excludeReservationId &&
+        reservation.id === input.excludeReservationId
+      ) {
+        return false
+      }
+      if (!ACTIVE_FLOOR_RESERVATION_STATUSES.has(reservation.status)) {
+        return false
+      }
+      const shared = reservationTableIds(reservation).filter((id) =>
+        wanted.has(id),
+      )
+      if (shared.length === 0) return false
+      const other = reservationFloorWindow(reservation.arrivalAt, input.settings)
+      return reservationWindowsOverlap(draftWindow, other)
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.arrivalAt).getTime() - new Date(b.arrivalAt).getTime(),
+    )
+
+  const reservation = conflicts[0]
+  if (!reservation) return null
+
+  return {
+    reservation,
+    tableIds: reservationTableIds(reservation).filter((id) => wanted.has(id)),
+  }
 }
 
 export function reservationShowsOnFloor(
@@ -315,12 +410,63 @@ export function mesaReservationStatusLabel(status: MesaReservationStatus): strin
   }
 }
 
+export function isMesaOccupiedNow(
+  status: MesaTable["status"] | undefined,
+): boolean {
+  return status === "open" || status === "paying"
+}
+
+/** Mesas de la reserva que no se pueden juntar ahora porque ya tienen cuenta. */
+export function reservationOccupiedTablesForOpen(
+  reservation: Pick<MesaReservation, "tableId" | "tableIds">,
+  tables: MesaTable[],
+  primaryTableId: string,
+): MesaTable[] {
+  return reservationTableIds(reservation)
+    .filter((id) => id !== primaryTableId)
+    .map((id) => tables.find((table) => table.id === id))
+    .filter(
+      (table): table is MesaTable =>
+        table != null && isMesaOccupiedNow(table.status),
+    )
+}
+
+export function reservationOccupiedOpenWarning(
+  occupied: Pick<MesaTable, "label" | "status">[],
+): string | null {
+  if (occupied.length === 0) return null
+  const names = occupied.map((table) => table.label).join(", ")
+  if (occupied.length === 1) {
+    const estado = occupied[0].status === "paying" ? "cobrando" : "abierta"
+    return `La mesa ${names} está ${estado} con otra cuenta. No se va a juntar. Liberála primero o sentá sin esa mesa.`
+  }
+  return `Las mesas ${names} están ocupadas con otra cuenta. No se van a juntar. Liberálas primero o sentá sin esas mesas.`
+}
+
+function reservationTableIdsAvailableToOpen(
+  reservedIds: string[],
+  primaryTableId: string,
+  tables?: MesaTable[],
+): string[] {
+  if (!tables) return reservedIds
+  return reservedIds.filter((id) => {
+    if (id === primaryTableId) return true
+    const table = tables.find((item) => item.id === id)
+    return table != null && !isMesaOccupiedNow(table.status)
+  })
+}
+
 /** Valores iniciales para abrir mesa desde una reserva activa en el plano. */
 export function mesaOpenInitialFromReservation(
   reservation: Pick<MesaReservation, "guestCount" | "note" | "tableId" | "tableIds">,
   tableId: string,
+  tables?: MesaTable[],
 ): Partial<MesaOpenSessionInput> {
-  const reservedIds = reservationTableIds(reservation)
+  const reservedIds = reservationTableIdsAvailableToOpen(
+    reservationTableIds(reservation),
+    tableId,
+    tables,
+  )
   const tableIds = reservedIds.includes(tableId)
     ? [tableId, ...reservedIds.filter((id) => id !== tableId)]
     : [tableId, ...reservedIds]

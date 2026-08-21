@@ -7,6 +7,7 @@ import type {
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import {
   describeReservationFloorWindow,
+  findReservationTableConflict,
   mesasReservationSettingsFromDraft,
   reservationTableIds,
   type MesasReservationSettings,
@@ -14,7 +15,7 @@ import {
 import { mesaSeatsLabel } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import { ChannelDataPanel } from "@/components/sale-operation/ChannelOperationDataPanel"
 import { ChannelDataFormActionsBar } from "@/components/sale-operation/ChannelOperationDataPanel"
-import { ChannelDataHint } from "@/components/sale-operation/ChannelOperationDataPanel"
+import { ChannelDataHint, ChannelDataWarningBanner } from "@/components/sale-operation/ChannelOperationDataPanel"
 import { saleOpChannelPanelSection } from "@/components/sale-operation/saleOperationStyles"
 import {
   ChannelDataFormCheckboxOption,
@@ -95,6 +96,7 @@ type Props = {
   canReadClients: boolean
   canCreateClient?: boolean
   reservationSettings: MesasReservationSettings
+  reservations?: MesaReservation[]
   onSaveReservationSettings?: (
     settings: MesasReservationSettings,
   ) => Promise<boolean> | boolean
@@ -111,6 +113,7 @@ export function MesaReservationForm({
   canReadClients,
   canCreateClient = false,
   reservationSettings,
+  reservations = [],
   onSaveReservationSettings,
   initial = null,
   submitLabel = "Guardar reserva",
@@ -258,10 +261,34 @@ export function MesaReservationForm({
     : null
   const arrivalDateAllowed =
     !isCreating || arrivalDate >= minArrivalDate
+  const tableConflict = useMemo(() => {
+    if (!arrivalAt || resolvedTableIds.length === 0) return null
+    return findReservationTableConflict({
+      tableIds: resolvedTableIds,
+      arrivalAt,
+      settings: activeSettings,
+      reservations,
+      excludeReservationId: initial?.id ?? null,
+    })
+  }, [arrivalAt, resolvedTableIds, activeSettings, reservations, initial?.id])
+  const tableConflictMessage = useMemo(() => {
+    if (!tableConflict) return null
+    const labels = tableConflict.tableIds.map(
+      (id) => tables.find((table) => table.id === id)?.label ?? "—",
+    )
+    const mesaLabel =
+      labels.length > 1
+        ? `Las mesas ${labels.join(" + ")}`
+        : `La mesa ${labels[0] ?? "—"}`
+    const who = tableConflict.reservation.clientName.trim() || "otro cliente"
+    const verb = labels.length > 1 ? "están reservadas" : "está reservada"
+    return `${mesaLabel} ya ${verb} para ${who} (${formatReservationArrival(tableConflict.reservation.arrivalAt)}). Cambiá la hora o la mesa.`
+  }, [tableConflict, tables])
   const canSubmit =
     Boolean(clientLabel) &&
     arrivalAt != null &&
     arrivalDateAllowed &&
+    !tableConflict &&
     (guestCountRaw.trim() === "" ||
       (Number.isFinite(guestCount) && guestCount! > 0 && guestCount! <= 50))
 
@@ -348,6 +375,12 @@ export function MesaReservationForm({
 
               {floorWindow ? (
                 <ChannelDataHint icon={Clock3}>{floorWindow.summary}</ChannelDataHint>
+              ) : null}
+
+              {tableConflictMessage ? (
+                <ChannelDataWarningBanner>
+                  {tableConflictMessage}
+                </ChannelDataWarningBanner>
               ) : null}
             </div>
           </ChannelDataFormSection>
@@ -479,6 +512,7 @@ export function MesaReservationForm({
 
         <ChannelDataFormActionsBar
           onCancel={onCancel}
+          cancelDisabled={submitting}
           primary={{
             type: "submit",
             label:

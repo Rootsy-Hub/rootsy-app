@@ -1,8 +1,8 @@
 import type { CollisionDetection } from "@dnd-kit/core"
 import { pointerWithin } from "@dnd-kit/core"
 import {
-  ROOTS_SORTABLE_ROW_HEIGHT_PX,
-  ROOTS_SORTABLE_SLOT_SHIFT_PX,
+  rootsSortableRowMetrics,
+  type RootsSortableRowSize,
 } from "@/components/rootsy-list/rootsListStyles"
 
 export function rootsSortableDragId(listId: string, itemId: string) {
@@ -48,26 +48,40 @@ export function moveRootsSortableItem<T extends { id: string }>(
   return next
 }
 
-export function rootsSortableListTrackHeight(itemCount: number) {
+export function rootsSortableListTrackHeight(
+  itemCount: number,
+  rowSize: RootsSortableRowSize = "default",
+) {
   if (itemCount <= 0) return 0
-  return (itemCount - 1) * ROOTS_SORTABLE_SLOT_SHIFT_PX + ROOTS_SORTABLE_ROW_HEIGHT_PX
+  const { rowHeightPx, slotShiftPx } = rootsSortableRowMetrics(rowSize)
+  return (itemCount - 1) * slotShiftPx + rowHeightPx
 }
 
-export function rootsSortableInsertZoneTop(index: number, itemCount: number) {
+export function rootsSortableInsertZoneTop(
+  index: number,
+  itemCount: number,
+  rowSize: RootsSortableRowSize = "default",
+) {
+  const { slotShiftPx } = rootsSortableRowMetrics(rowSize)
   if (index >= itemCount) {
-    const trackHeight = rootsSortableListTrackHeight(itemCount)
-    return Math.max(0, trackHeight - ROOTS_SORTABLE_SLOT_SHIFT_PX)
+    const trackHeight = rootsSortableListTrackHeight(itemCount, rowSize)
+    return Math.max(0, trackHeight - slotShiftPx)
   }
-  return index * ROOTS_SORTABLE_SLOT_SHIFT_PX
+  return index * slotShiftPx
 }
 
-export function rootsSortableInsertZoneHeight(index: number, itemCount: number) {
+export function rootsSortableInsertZoneHeight(
+  index: number,
+  itemCount: number,
+  rowSize: RootsSortableRowSize = "default",
+) {
+  const { slotShiftPx } = rootsSortableRowMetrics(rowSize)
   if (index >= itemCount) {
-    const trackHeight = rootsSortableListTrackHeight(itemCount)
-    const top = rootsSortableInsertZoneTop(index, itemCount)
-    return Math.min(ROOTS_SORTABLE_SLOT_SHIFT_PX, trackHeight - top)
+    const trackHeight = rootsSortableListTrackHeight(itemCount, rowSize)
+    const top = rootsSortableInsertZoneTop(index, itemCount, rowSize)
+    return Math.min(slotShiftPx, trackHeight - top)
   }
-  return ROOTS_SORTABLE_SLOT_SHIFT_PX
+  return slotShiftPx
 }
 
 export function getRootsSortableShiftY<T extends { id: string }>(
@@ -76,6 +90,7 @@ export function getRootsSortableShiftY<T extends { id: string }>(
   previewItems: T[],
   dropPreviewIndex: number | null,
   draggingItemId: string | null,
+  rowSize: RootsSortableRowSize = "default",
 ): number {
   if (dropPreviewIndex === null || !draggingItemId || itemId === draggingItemId) {
     return 0
@@ -83,7 +98,7 @@ export function getRootsSortableShiftY<T extends { id: string }>(
   const origIdx = items.findIndex((item) => item.id === itemId)
   const previewIdx = previewItems.findIndex((item) => item.id === itemId)
   if (origIdx < 0 || previewIdx < 0) return 0
-  return (previewIdx - origIdx) * ROOTS_SORTABLE_SLOT_SHIFT_PX
+  return (previewIdx - origIdx) * rootsSortableRowMetrics(rowSize).slotShiftPx
 }
 
 export function createRootsSortableCollisionDetection(

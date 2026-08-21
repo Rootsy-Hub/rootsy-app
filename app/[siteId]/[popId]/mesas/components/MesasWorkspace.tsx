@@ -124,6 +124,9 @@ export function MesasWorkspace({
   } = useMesasState(popId, siteId)
 
   const [rightView, setRightView] = useState<MesasRightPanelView>("session")
+  const [agendaReservationId, setAgendaReservationId] = useState<string | null>(
+    null,
+  )
   const [waiters, setWaiters] = useState<MesaWaiter[]>([])
   const showCatalog = rightView === "cart"
   const cartScrollHighlight = useCartListScrollHighlight()
@@ -235,6 +238,23 @@ export function MesasWorkspace({
     return out
   }, [tables, sessions])
 
+  const tableReservationArrivalAt = useMemo(() => {
+    const arrivalByReservation = Object.fromEntries(
+      reservations.map((reservation) => [reservation.id, reservation.arrivalAt]),
+    )
+    const out: Record<string, string> = {}
+    for (const table of tables) {
+      if (
+        table.status === "reserved" &&
+        table.reservationId &&
+        arrivalByReservation[table.reservationId]
+      ) {
+        out[table.id] = arrivalByReservation[table.reservationId]
+      }
+    }
+    return out
+  }, [tables, reservations])
+
   const sessionTables = useMemo(() => {
     if (!selectedSession) return selectedTable ? [selectedTable] : []
     return tables.filter((t) => selectedSession.tableIds.includes(t.id))
@@ -248,7 +268,9 @@ export function MesasWorkspace({
         ? tables.filter(
             (t) =>
               selectedReservation.tableIds.includes(t.id) &&
-              t.id !== selectedTable.id,
+              t.id !== selectedTable.id &&
+              t.status !== "open" &&
+              t.status !== "paying",
           )
         : []
     if (!selectedSession && reservedOthers.length === 0) return free
@@ -402,6 +424,8 @@ export function MesasWorkspace({
                       onMoveTable={handleMoveTable}
                       onMoveDecor={handleMoveDecor}
                       tableOpenedAt={tableOpenedAt}
+                      tableReservationArrivalAt={tableReservationArrivalAt}
+                      reservationSettings={reservationSettings}
                     />
                   )}
                 </div>
@@ -429,7 +453,10 @@ export function MesasWorkspace({
           >
             <MesasRightPanelTabs
               value={rightView}
-              onChange={setRightView}
+              onChange={(view) => {
+                if (view !== "agenda") setAgendaReservationId(null)
+                setRightView(view)
+              }}
               pedidoDisabled={!selectedSession}
             />
 
@@ -443,6 +470,7 @@ export function MesasWorkspace({
                   }
                   reservationWarning={selectedTableReservationWarning}
                   sessionTables={sessionTables}
+                  tables={tables}
                   waiters={waiters}
                   mergeCandidates={mergeCandidates}
                   sessionError={sessionError}
@@ -459,7 +487,10 @@ export function MesasWorkspace({
                   closeSessionMode={checkout.cerrarMesaMode}
                   closeSessionLoading={checkout.submitting}
                   clientLabel={checkout.sessionClientLabel}
-                  onCancelReservation={removeReservation}
+                  onOpenReservationDetail={(reservation) => {
+                    setAgendaReservationId(reservation.id)
+                    setRightView("agenda")
+                  }}
                 />
               </div>
             ) : rightView === "agenda" ? (
@@ -483,6 +514,7 @@ export function MesasWorkspace({
                     return checkInReservation(reservation, input)
                   }}
                   onSelectReservation={handleSelectAgendaReservation}
+                  openReservationId={agendaReservationId}
                 />
               </div>
             ) : (

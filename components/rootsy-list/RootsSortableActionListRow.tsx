@@ -7,6 +7,7 @@ import {
   rootsSortableListRowClass,
   rootsSortableListRowLabelClass,
   rootsSortableListRowLabelMutedClass,
+  type RootsSortableRowSize,
 } from "@/components/rootsy-list/rootsListStyles"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import { Input } from "@/components/ui/input"
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils"
 import type { DraggableAttributes } from "@dnd-kit/core"
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities"
 import { Check, Eye, EyeOff, GripVertical, Pencil, Trash2, X } from "lucide-react"
+import type { ReactNode } from "react"
 
 export type RootsSortableActionListItem = {
   id: string
@@ -43,6 +45,8 @@ type Props = {
   onSaveEdit: () => void
   onDelete: () => void
   onToggleVisibility: () => void
+  accessory?: ReactNode
+  rowSize?: RootsSortableRowSize
 }
 
 export function RootsSortableActionListRow({
@@ -61,13 +65,20 @@ export function RootsSortableActionListRow({
   onSaveEdit,
   onDelete,
   onToggleVisibility,
+  accessory,
+  rowSize = "default",
 }: Props) {
   const visible = item.visible !== false
   const label = item.label || "—"
   const showActions = canEdit || canDelete || canToggleVisibility
 
   return (
-    <div className={rootsSortableListRowClass}>
+    <div
+      className={cn(
+        rootsSortableListRowClass,
+        rowSize === "comfortable" && "h-14",
+      )}
+    >
       {canReorder && dragHandleProps ? (
         <button
           type="button"
@@ -114,6 +125,16 @@ export function RootsSortableActionListRow({
           </p>
         )}
       </div>
+
+      {accessory ? (
+        <div
+          className="shrink-0"
+          onPointerDown={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          {accessory}
+        </div>
+      ) : null}
 
       {showActions ? (
         <div className="flex shrink-0 items-center justify-end gap-0.5">

@@ -9,8 +9,11 @@ import {
 } from "@/app/[siteId]/[popId]/mesas/components/MesaReservationForm"
 import {
   describeReservationFloorWindow,
+  isMesaOccupiedNow,
   mesaOpenInitialFromReservation,
   mesaReservationStatusLabel,
+  reservationOccupiedOpenWarning,
+  reservationOccupiedTablesForOpen,
   reservationTableIds,
   type MesasReservationSettings,
 } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
@@ -38,6 +41,7 @@ import {
   ChannelDataPanel,
   ChannelDataSection,
   ChannelDataStatusBadge,
+  ChannelDataWarningBanner,
 } from "@/components/sale-operation/ChannelOperationDataPanel"
 import {
   ChannelDataFormSelectField,
@@ -72,6 +76,7 @@ type Props = {
     input: MesaOpenSessionInput,
   ) => Promise<boolean> | boolean
   onSelectReservation?: (reservation: MesaReservation) => void
+  openReservationId?: string | null
 }
 
 function agendaTimeLabel(iso: string): string {
@@ -98,9 +103,12 @@ export function MesaAgendaPanel({
   onMarkReservationNoShow,
   onCheckInReservation,
   onSelectReservation,
+  openReservationId = null,
 }: Props) {
-  const [view, setView] = useState<AgendaView>("list")
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [view, setView] = useState<AgendaView>(
+    openReservationId ? "detail" : "list",
+  )
+  const [selectedId, setSelectedId] = useState<string | null>(openReservationId)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
@@ -129,15 +137,22 @@ export function MesaAgendaPanel({
   )
 
   const checkInTable = useMemo(() => {
-    const primaryId = reservedTableIds[0]
-    if (!primaryId) return null
-    return tables.find((t) => t.id === primaryId) ?? null
+    for (const tableId of reservedTableIds) {
+      const table = tables.find((item) => item.id === tableId)
+      if (table && !isMesaOccupiedNow(table.status)) return table
+    }
+    return null
   }, [reservedTableIds, tables])
+
+  const assignedTablesOccupied =
+    reservedTableIds.length > 0 && checkInTable == null
 
   const checkInPrimaryTable = useMemo(() => {
     if (checkInTable) return checkInTable
     if (checkInTablePick === MESA_RESERVATION_UNASSIGNED_TABLE) return null
-    return tables.find((t) => t.id === checkInTablePick) ?? null
+    const picked = tables.find((t) => t.id === checkInTablePick) ?? null
+    if (!picked || isMesaOccupiedNow(picked.status)) return null
+    return picked
   }, [checkInTable, checkInTablePick, tables])
 
   useEffect(() => {
@@ -146,6 +161,12 @@ export function MesaAgendaPanel({
       setView("list")
     }
   }, [reservations, selectedId])
+
+  useEffect(() => {
+    if (!openReservationId) return
+    setSelectedId(openReservationId)
+    setView("detail")
+  }, [openReservationId])
 
   const openDetail = (reservation: MesaReservation) => {
     onSelectReservation?.(reservation)
@@ -197,6 +218,7 @@ export function MesaAgendaPanel({
         canReadClients={canReadClients}
         canCreateClient={canCreateClient}
         reservationSettings={reservationSettings}
+        reservations={reservations}
         onSaveReservationSettings={onSaveReservationSettings}
         submitLabel="Crear reserva"
         onSubmit={async (input) => {
@@ -216,6 +238,7 @@ export function MesaAgendaPanel({
         canReadClients={canReadClients}
         canCreateClient={canCreateClient}
         reservationSettings={reservationSettings}
+        reservations={reservations}
         onSaveReservationSettings={onSaveReservationSettings}
         initial={selectedReservation}
         submitLabel="Guardar cambios"
@@ -232,24 +255,61 @@ export function MesaAgendaPanel({
   }
 
   if (view === "checkin" && selectedReservation) {
-    if (!checkInPrimaryTable) {
+    if (assignedTablesOccupied) {
+      const occupiedLabels = reservedTableIds
+        .map((id) => tables.find((table) => table.id === id)?.label)
+        .filter((label): label is string => Boolean(label))
+        .join(", ")
       return (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <ChannelDataPanel className="flex-1">
-            <ChannelDataFormSelectField
-              label="Mesa para sentar"
-              id="mesa-checkin-table-pick"
-              value={checkInTablePick}
-              onValueChange={setCheckInTablePick}
-              placeholder="Elegí una mesa"
-              labelInfo="Esta reserva no tiene mesa asignada. Elegí dónde sentar al cliente."
-            >
-              {reservationTables.map((table) => (
-                <ChannelDataFormSelectItem key={table.id} value={table.id}>
-                  Mesa {table.label}
-                </ChannelDataFormSelectItem>
-              ))}
-            </ChannelDataFormSelectField>
+            <ChannelDataWarningBanner>
+              {occupiedLabels
+                ? `Las mesas ${occupiedLabels} están ocupadas. Liberá una para sentar esta reserva.`
+                : "Las mesas de esta reserva están ocupadas. Liberá una para sentar."}
+            </ChannelDataWarningBanner>
+          </ChannelDataPanel>
+
+          <ChannelDataOperarFooterBar
+            actions={[
+              {
+                variant: "secondary",
+                label: "Volver",
+                onClick: () => setView("detail"),
+              },
+            ]}
+          />
+        </div>
+      )
+    }
+
+    if (!checkInPrimaryTable) {
+      const freeTables = reservationTables.filter(
+        (table) => table.status === "free",
+      )
+      return (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <ChannelDataPanel className="flex-1">
+            {freeTables.length === 0 ? (
+              <ChannelDataWarningBanner>
+                No hay mesas libres para sentar esta reserva.
+              </ChannelDataWarningBanner>
+            ) : (
+              <ChannelDataFormSelectField
+                label="Mesa para sentar"
+                id="mesa-checkin-table-pick"
+                value={checkInTablePick}
+                onValueChange={setCheckInTablePick}
+                placeholder="Elegí una mesa"
+                labelInfo="Esta reserva no tiene mesa asignada. Elegí una mesa libre."
+              >
+                {freeTables.map((table) => (
+                  <ChannelDataFormSelectItem key={table.id} value={table.id}>
+                    Mesa {table.label}
+                  </ChannelDataFormSelectItem>
+                ))}
+              </ChannelDataFormSelectField>
+            )}
           </ChannelDataPanel>
 
           <ChannelDataOperarFooterBar
@@ -271,18 +331,25 @@ export function MesaAgendaPanel({
         table.salonId === checkInPrimaryTable.salonId &&
         table.id !== checkInPrimaryTable.id &&
         (table.status === "free" || reservedIds.includes(table.id)) &&
-        table.status !== "open" &&
-        table.status !== "paying",
+        !isMesaOccupiedNow(table.status),
+    )
+    const blockedMergeTables = reservationOccupiedTablesForOpen(
+      selectedReservation,
+      tables,
+      checkInPrimaryTable.id,
     )
 
     return (
       <MesaOpenForm
         primaryTable={checkInPrimaryTable}
         mergeCandidates={mergeCandidates}
+        blockedMergeTables={blockedMergeTables}
+        blockedMergeWarning={reservationOccupiedOpenWarning(blockedMergeTables)}
         waiters={waiters}
         initial={mesaOpenInitialFromReservation(
           selectedReservation,
           checkInPrimaryTable.id,
+          tables,
         )}
         submitLabel="Sentar / abrir"
         onSubmit={async (input) => {

@@ -1,22 +1,17 @@
 "use client"
 
 import type {
+  ComandaStationOption,
   RecipeCategoryLayoutUpdate,
   RecipeCategoryOption,
 } from "@/app/[siteId]/[popId]/recipes/actions"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
-import { Input } from "@/components/ui/input"
-import { recipeFormFieldClass } from "@/app/[siteId]/[popId]/recipes/recipeConstants"
-import { cn } from "@/lib/utils"
-import { Check, GripVertical, Pencil, Trash2, X } from "lucide-react"
+import { RecipeCategoryStationSelect } from "@/app/[siteId]/[popId]/recipes/components/RecipeCategoryStationSelect"
+import {
+  RootsSortableActionList,
+  rootsSortableListFooterHintClass,
+  type RootsSortableActionListItem,
+} from "@/components/rootsy-list"
 import { useCallback, useEffect, useRef, useState } from "react"
-
-type ColumnId = "visible" | "hidden"
-
-type DragState = {
-  id: string
-  source: ColumnId
-}
 
 type Props = {
   categories: RecipeCategoryOption[]
@@ -31,16 +26,12 @@ type Props = {
   onSaveEdit: () => void
   onDelete: (id: string, name: string) => void
   onLayoutChange: (updates: RecipeCategoryLayoutUpdate[]) => void
+  stations: ComandaStationOption[]
+  onStationChange: (categoryId: string, stationId: string | null) => void
 }
 
 function sortByOrder(a: RecipeCategoryOption, b: RecipeCategoryOption) {
   return a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "es")
-}
-
-function layoutFromCategories(categories: RecipeCategoryOption[]) {
-  const visible = categories.filter((c) => c.showInMenu).sort(sortByOrder)
-  const hidden = categories.filter((c) => !c.showInMenu).sort(sortByOrder)
-  return { visible, hidden }
 }
 
 function layoutSignature(categories: RecipeCategoryOption[]): string {
@@ -49,195 +40,51 @@ function layoutSignature(categories: RecipeCategoryOption[]): string {
     .join("|")
 }
 
-function signatureFromColumns(
-  visible: RecipeCategoryOption[],
-  hidden: RecipeCategoryOption[],
-): string {
-  return layoutSignature([
-    ...visible.map((c, i) => ({ ...c, sortOrder: i, showInMenu: true })),
-    ...hidden.map((c, i) => ({ ...c, sortOrder: i, showInMenu: false })),
-  ])
+function categoryIdSetKey(categories: RecipeCategoryOption[]): string {
+  return categories
+    .map((c) => c.id)
+    .sort()
+    .join("|")
 }
 
-function moveCategory(
-  visible: RecipeCategoryOption[],
-  hidden: RecipeCategoryOption[],
-  drag: DragState,
-  target: ColumnId,
-  targetIndex: number,
-): { visible: RecipeCategoryOption[]; hidden: RecipeCategoryOption[] } {
-  let nextVisible = [...visible]
-  let nextHidden = [...hidden]
-  const sourceList = drag.source === "visible" ? nextVisible : nextHidden
-  const fromIndex = sourceList.findIndex((c) => c.id === drag.id)
-  if (fromIndex < 0) {
-    return { visible: nextVisible, hidden: nextHidden }
-  }
-
-  const [moved] = sourceList.splice(fromIndex, 1)
-  if (drag.source === "visible") nextVisible = sourceList
-  else nextHidden = sourceList
-
-  const destList = target === "visible" ? [...nextVisible] : [...nextHidden]
-  let insertAt = Math.max(0, Math.min(targetIndex, destList.length))
-  if (drag.source === target && fromIndex < targetIndex) insertAt -= 1
-  destList.splice(insertAt, 0, moved)
-
-  if (target === "visible") nextVisible = destList
-  else nextHidden = destList
-
-  return { visible: nextVisible, hidden: nextHidden }
+function idsFromLayoutSignature(sig: string): string {
+  return sig
+    .split("|")
+    .map((part) => part.split(":")[0] ?? "")
+    .filter(Boolean)
+    .sort()
+    .join("|")
 }
 
-function columnsWithOrder(
-  visible: RecipeCategoryOption[],
-  hidden: RecipeCategoryOption[],
-) {
-  return {
-    visible: visible.map((c, i) => ({ ...c, sortOrder: i, showInMenu: true })),
-    hidden: hidden.map((c, i) => ({ ...c, sortOrder: i, showInMenu: false })),
-  }
-}
-
-function updatesFromColumns(
-  visible: RecipeCategoryOption[],
-  hidden: RecipeCategoryOption[],
+function updatesFromItems(
+  items: RecipeCategoryOption[],
 ): RecipeCategoryLayoutUpdate[] {
-  const ordered = columnsWithOrder(visible, hidden)
-  return [...ordered.visible, ...ordered.hidden].map((c) => ({
+  return items.map((c, index) => ({
     id: c.id,
-    sortOrder: c.sortOrder,
+    sortOrder: index,
     showInMenu: c.showInMenu,
   }))
 }
 
-function CategoryColumn({
-  title,
-  description,
-  columnId,
-  items,
-  canUpdate,
-  canDelete,
-  editingCategoryId,
-  editingCategoryName,
-  categorySaveBusy,
-  dragOverIndex,
-  onStartEdit,
-  onCancelEdit,
-  onEditingNameChange,
-  onSaveEdit,
-  onDelete,
-  onDragStart,
-  onDragOverIndex,
-  onDropAt,
-  onDragEnd,
-}: {
-  title: string
-  description: string
-  columnId: ColumnId
-  items: RecipeCategoryOption[]
-  canUpdate: boolean
-  canDelete: boolean
-  editingCategoryId: string | null
-  editingCategoryName: string
-  categorySaveBusy: boolean
-  dragOverIndex: number | null
-  onStartEdit: (category: RecipeCategoryOption) => void
-  onCancelEdit: () => void
-  onEditingNameChange: (name: string) => void
-  onSaveEdit: () => void
-  onDelete: (id: string, name: string) => void
-  onDragStart: (id: string, source: ColumnId) => void
-  onDragOverIndex: (index: number) => void
-  onDropAt: (target: ColumnId, targetIndex: number) => void
-  onDragEnd: () => void
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-      <div className="mb-3">
-        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-        <p className="text-xs text-slate-500">{description}</p>
-      </div>
-      <ul className="space-y-1.5">
-        {items.map((category, index) => {
-          const isEditing = editingCategoryId === category.id
-          return (
-            <li
-              key={category.id}
-              draggable={canUpdate && !isEditing}
-              onDragStart={() => onDragStart(category.id, columnId)}
-              onDragOver={(e) => {
-                e.preventDefault()
-                onDragOverIndex(index)
-              }}
-              onDrop={(e) => {
-                e.preventDefault()
-                onDropAt(columnId, index)
-              }}
-              onDragEnd={onDragEnd}
-              className={cn(
-                "flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2",
-                dragOverIndex === index && canUpdate && "ring-2 ring-emerald-400/50",
-              )}
-            >
-              {canUpdate ? (
-                <GripVertical
-                  className="size-4 shrink-0 cursor-grab text-slate-300"
-                  aria-hidden
-                />
-              ) : null}
-              {isEditing ? (
-                <>
-                  <Input
-                    value={editingCategoryName}
-                    onChange={(e) => onEditingNameChange(e.target.value)}
-                    className={cn("h-8 flex-1", recipeFormFieldClass)}
-                    autoFocus
-                  />
-                  <DataWorkspaceTableIconAction
-                    label="Guardar"
-                    icon={Check}
-                    variant="edit"
-                    onClick={onSaveEdit}
-                    disabled={categorySaveBusy}
-                  />
-                  <DataWorkspaceTableIconAction
-                    label="Cancelar"
-                    icon={X}
-                    variant="neutral"
-                    onClick={onCancelEdit}
-                    disabled={categorySaveBusy}
-                  />
-                </>
-              ) : (
-                <>
-                  <span className="min-w-0 flex-1 truncate text-sm text-slate-800">
-                    {category.name}
-                  </span>
-                  {canUpdate ? (
-                    <DataWorkspaceTableIconAction
-                      label={`Editar ${category.name || "categoría"}`}
-                      icon={Pencil}
-                      variant="edit"
-                      onClick={() => onStartEdit(category)}
-                    />
-                  ) : null}
-                  {canDelete ? (
-                    <DataWorkspaceTableIconAction
-                      label={`Eliminar ${category.name || "categoría"}`}
-                      icon={Trash2}
-                      variant="destructive"
-                      onClick={() => onDelete(category.id, category.name)}
-                    />
-                  ) : null}
-                </>
-              )}
-            </li>
-          )
-        })}
-      </ul>
-    </div>
-  )
+function toListItems(
+  categories: RecipeCategoryOption[],
+): RootsSortableActionListItem[] {
+  return categories.map((category) => ({
+    id: category.id,
+    label: category.name,
+    visible: category.showInMenu,
+  }))
+}
+
+function mergeListOrder(
+  categories: RecipeCategoryOption[],
+  orderedIds: string[],
+): RecipeCategoryOption[] {
+  const byId = new Map(categories.map((category) => [category.id, category]))
+  return orderedIds
+    .map((id) => byId.get(id))
+    .filter((category): category is RecipeCategoryOption => category != null)
+    .map((category, sortOrder) => ({ ...category, sortOrder }))
 }
 
 export function RecipeCategoriesMenuBoard({
@@ -253,103 +100,111 @@ export function RecipeCategoriesMenuBoard({
   onSaveEdit,
   onDelete,
   onLayoutChange,
+  stations,
+  onStationChange,
 }: Props) {
-  const [visible, setVisible] = useState(() =>
-    layoutFromCategories(categories).visible,
-  )
-  const [hidden, setHidden] = useState(() =>
-    layoutFromCategories(categories).hidden,
-  )
-  const [drag, setDrag] = useState<DragState | null>(null)
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
-  const [dragOverColumn, setDragOverColumn] = useState<ColumnId | null>(null)
+  const [items, setItems] = useState(() => [...categories].sort(sortByOrder))
   const pendingLayoutSigRef = useRef<string | null>(null)
 
   useEffect(() => {
-    if (drag) return
     const incomingSig = layoutSignature(categories)
     const pending = pendingLayoutSigRef.current
+    const incomingIds = categoryIdSetKey(categories)
+
     if (pending) {
-      if (incomingSig === pending) pendingLayoutSigRef.current = null
-      else return
+      if (incomingSig === pending) {
+        pendingLayoutSigRef.current = null
+      } else if (idsFromLayoutSignature(pending) === incomingIds) {
+        return
+      } else {
+        pendingLayoutSigRef.current = null
+      }
     }
-    const next = layoutFromCategories(categories)
-    setVisible(next.visible)
-    setHidden(next.hidden)
-  }, [categories, drag])
+    setItems([...categories].sort(sortByOrder))
+  }, [categories])
 
-  const clearDrag = useCallback(() => {
-    setDrag(null)
-    setDragOverIndex(null)
-    setDragOverColumn(null)
-  }, [])
+  const persistLayout = useCallback(
+    (nextItems: RecipeCategoryOption[]) => {
+      pendingLayoutSigRef.current = layoutSignature(nextItems)
+      onLayoutChange(updatesFromItems(nextItems))
+    },
+    [onLayoutChange],
+  )
 
-  const handleDropAt = (target: ColumnId, targetIndex: number) => {
-    if (!drag || !canUpdate) return
-    const moved = moveCategory(visible, hidden, drag, target, targetIndex)
-    const ordered = columnsWithOrder(moved.visible, moved.hidden)
-    setVisible(ordered.visible)
-    setHidden(ordered.hidden)
-    pendingLayoutSigRef.current = signatureFromColumns(
-      ordered.visible,
-      ordered.hidden,
-    )
-    onLayoutChange(updatesFromColumns(ordered.visible, ordered.hidden))
-    clearDrag()
-  }
+  const handleReorder = useCallback(
+    (ordered: RootsSortableActionListItem[]) => {
+      const nextItems = mergeListOrder(
+        items,
+        ordered.map((item) => item.id),
+      )
+      setItems(nextItems)
+      persistLayout(nextItems)
+    },
+    [items, persistLayout],
+  )
+
+  const toggleVisibility = useCallback(
+    (id: string) => {
+      if (!canUpdate) return
+      const nextItems = items.map((item) =>
+        item.id === id ? { ...item, showInMenu: !item.showInMenu } : item,
+      )
+      setItems(nextItems)
+      persistLayout(nextItems)
+    },
+    [canUpdate, items, persistLayout],
+  )
+
+  const categoryById = useCallback(
+    (id: string) => items.find((item) => item.id === id) ?? null,
+    [items],
+  )
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <CategoryColumn
-          title="Visibles en menú"
-          description="Aparecen en Mesas y Mostrador, en este orden."
-          columnId="visible"
-          items={visible}
-          canUpdate={canUpdate}
-          canDelete={canDelete}
-          editingCategoryId={editingCategoryId}
-          editingCategoryName={editingCategoryName}
-          categorySaveBusy={categorySaveBusy}
-          dragOverIndex={dragOverColumn === "visible" ? dragOverIndex : null}
-          onStartEdit={onStartEdit}
-          onCancelEdit={onCancelEdit}
-          onEditingNameChange={onEditingNameChange}
-          onSaveEdit={onSaveEdit}
-          onDelete={onDelete}
-          onDragStart={(id, source) => setDrag({ id, source })}
-          onDragOverIndex={(index) => {
-            setDragOverColumn("visible")
-            setDragOverIndex(index)
-          }}
-          onDropAt={handleDropAt}
-          onDragEnd={clearDrag}
-        />
-        <CategoryColumn
-          title="Ocultas en menú"
-          description="No se muestran al armar pedidos."
-          columnId="hidden"
-          items={hidden}
-          canUpdate={canUpdate}
-          canDelete={canDelete}
-          editingCategoryId={editingCategoryId}
-          editingCategoryName={editingCategoryName}
-          categorySaveBusy={categorySaveBusy}
-          dragOverIndex={dragOverColumn === "hidden" ? dragOverIndex : null}
-          onStartEdit={onStartEdit}
-          onCancelEdit={onCancelEdit}
-          onEditingNameChange={onEditingNameChange}
-          onSaveEdit={onSaveEdit}
-          onDelete={onDelete}
-          onDragStart={(id, source) => setDrag({ id, source })}
-          onDragOverIndex={(index) => {
-            setDragOverColumn("hidden")
-            setDragOverIndex(index)
-          }}
-          onDropAt={handleDropAt}
-          onDragEnd={clearDrag}
-        />
-      </div>
+      <RootsSortableActionList
+        listId="recipe-categories"
+        rowSize="comfortable"
+        items={toListItems(items)}
+        onReorder={handleReorder}
+        emptyMessage="Todavía no hay categorías."
+        canReorder={canUpdate}
+        canToggleVisibility={canUpdate}
+        canEdit={canUpdate}
+        canDelete={canDelete}
+        editingId={editingCategoryId}
+        editingValue={editingCategoryName}
+        editSaveBusy={categorySaveBusy}
+        onStartEdit={(item) => {
+          const category = categoryById(item.id)
+          if (category) onStartEdit(category)
+        }}
+        onCancelEdit={onCancelEdit}
+        onEditingValueChange={onEditingNameChange}
+        onSaveEdit={onSaveEdit}
+        onDelete={(item) => onDelete(item.id, item.label)}
+        onToggleVisibility={toggleVisibility}
+        renderAccessory={(item) => {
+          const category = categoryById(item.id)
+          if (!category) return null
+          return (
+            <RecipeCategoryStationSelect
+              categoryId={category.id}
+              categoryName={category.name}
+              value={category.stationId}
+              stations={stations}
+              disabled={!canUpdate || categorySaveBusy}
+              onChange={(stationId) => onStationChange(category.id, stationId)}
+            />
+          )
+        }}
+      />
+      {canUpdate ? (
+        <p className={rootsSortableListFooterHintClass}>
+          Los cambios de orden y visibilidad se guardan al soltar o al tocar el
+          ojo.
+        </p>
+      ) : null}
     </div>
   )
 }

@@ -35,6 +35,15 @@ export type RecipeCategoryOption = {
   sortOrder: number
   showInMenu: boolean
   isActive: boolean
+  stationId: string | null
+  stationName: string | null
+}
+
+export type ComandaStationOption = {
+  id: string
+  name: string
+  sortOrder: number
+  isActive: boolean
 }
 
 export type RecipeCategoryLayoutUpdate = {
@@ -444,20 +453,26 @@ export async function getPopRecipeCategories(popId: string): Promise<
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("recipe_categories")
-      .select("id, name, sort_order, show_in_menu, is_active")
+      .select("id, name, sort_order, show_in_menu, is_active, station_id, comanda_stations ( name )")
       .eq("pop_id", popId)
       .order("sort_order", { ascending: true })
       .order("name", { ascending: true })
     if (error) return { success: false, error: error.message }
     return {
       success: true,
-      categories: (data ?? []).map((r) => ({
-        id: String(r.id),
-        name: String(r.name ?? ""),
-        sortOrder: Number(r.sort_order ?? 0) || 0,
-        showInMenu: Boolean(r.show_in_menu),
-        isActive: Boolean(r.is_active),
-      })),
+      categories: (data ?? []).map((r) => {
+        const stationRel = r.comanda_stations as { name?: string } | { name?: string }[] | null
+        const station = Array.isArray(stationRel) ? stationRel[0] : stationRel
+        return {
+          id: String(r.id),
+          name: String(r.name ?? ""),
+          sortOrder: Number(r.sort_order ?? 0) || 0,
+          showInMenu: Boolean(r.show_in_menu),
+          isActive: Boolean(r.is_active),
+          stationId: r.station_id ? String(r.station_id) : null,
+          stationName: station?.name?.trim() ? String(station.name) : null,
+        }
+      }),
     }
   } catch (e: unknown) {
     return {
@@ -615,6 +630,236 @@ export async function syncRecipeCategoryMenuLayout(
         .eq("pop_id", popId)
       if (error) return { success: false, error: error.message }
     }
+    return { success: true }
+  } catch (e: unknown) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Error desconocido",
+    }
+  }
+}
+
+export async function updateRecipeCategoryStation(
+  popId: string,
+  categoryId: string,
+  stationId: string | null,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const perms = await recipePermissionFlags(popId)
+    if (!perms.canUpdate) {
+      return { success: false, error: "Sin permiso para editar categorías." }
+    }
+    if (!isUuid(categoryId)) return { success: false, error: "Categoría inválida." }
+    if (stationId && !isUuid(stationId)) {
+      return { success: false, error: "Estación inválida." }
+    }
+    const supabase = await createClient()
+    if (stationId) {
+      const { data: station, error: stationErr } = await supabase
+        .from("comanda_stations")
+        .select("id")
+        .eq("id", stationId)
+        .eq("pop_id", popId)
+        .maybeSingle()
+      if (stationErr) return { success: false, error: stationErr.message }
+      if (!station) return { success: false, error: "Esa estación no existe." }
+    }
+    const { error } = await supabase
+      .from("recipe_categories")
+      .update({ station_id: stationId })
+      .eq("id", categoryId)
+      .eq("pop_id", popId)
+    if (error) return { success: false, error: error.message }
+    return { success: true }
+  } catch (e: unknown) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Error desconocido",
+    }
+  }
+}
+
+function stationUniqueNameError(message: string): string {
+  if (/comanda_stations_pop_name_unique/i.test(message)) {
+    return "Ya existe una estación con ese nombre."
+  }
+  return message
+}
+
+export async function getPopComandaStations(popId: string): Promise<
+  | { success: true; stations: ComandaStationOption[] }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const perms = await recipePermissionFlags(popId)
+    if (!perms.canRead) {
+      return { success: false, error: "Sin permiso para ver recetas." }
+    }
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("comanda_stations")
+      .select("id, name, sort_order, is_active")
+      .eq("pop_id", popId)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true })
+    if (error) return { success: false, error: error.message }
+    let rows = data ?? []
+    if (rows.length === 0) {
+      const { error: seedErr } = await supabase.rpc("seed_pop_comanda_stations", {
+        p_pop_id: popId,
+      })
+      if (seedErr) return { success: false, error: seedErr.message }
+      const seeded = await supabase
+        .from("comanda_stations")
+        .select("id, name, sort_order, is_active")
+        .eq("pop_id", popId)
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true })
+      if (seeded.error) return { success: false, error: seeded.error.message }
+      rows = seeded.data ?? []
+    }
+    return {
+      success: true,
+      stations: rows.map((r) => ({
+        id: String(r.id),
+        name: String(r.name ?? ""),
+        sortOrder: Number(r.sort_order ?? 0) || 0,
+        isActive: Boolean(r.is_active),
+      })),
+    }
+  } catch (e: unknown) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Error desconocido",
+    }
+  }
+}
+
+export async function createComandaStation(
+  popId: string,
+  nameRaw: string,
+): Promise<{ success: true; id: string } | { success: false; error: string }> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const perms = await recipePermissionFlags(popId)
+    if (!perms.canCreate) {
+      return { success: false, error: "Sin permiso para crear estaciones." }
+    }
+    const name = nameRaw.trim()
+    if (!name) return { success: false, error: "Indicá el nombre de la estación." }
+    const supabase = await createClient()
+    const { data: maxRow } = await supabase
+      .from("comanda_stations")
+      .select("sort_order")
+      .eq("pop_id", popId)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const sortOrder = (Number(maxRow?.sort_order ?? -1) || -1) + 1
+    const { data, error } = await supabase
+      .from("comanda_stations")
+      .insert({
+        pop_id: popId,
+        name,
+        sort_order: sortOrder,
+        is_active: true,
+      })
+      .select("id")
+      .single()
+    if (error || !data?.id) {
+      return {
+        success: false,
+        error: stationUniqueNameError(
+          error?.message || "No se pudo crear la estación.",
+        ),
+      }
+    }
+    return { success: true, id: String(data.id) }
+  } catch (e: unknown) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Error desconocido",
+    }
+  }
+}
+
+export async function updateComandaStation(
+  popId: string,
+  stationId: string,
+  nameRaw: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const perms = await recipePermissionFlags(popId)
+    if (!perms.canUpdate) {
+      return { success: false, error: "Sin permiso para editar estaciones." }
+    }
+    if (!isUuid(stationId)) return { success: false, error: "Estación inválida." }
+    const name = nameRaw.trim()
+    if (!name) return { success: false, error: "Indicá el nombre de la estación." }
+    const supabase = await createClient()
+    const { error } = await supabase
+      .from("comanda_stations")
+      .update({ name })
+      .eq("id", stationId)
+      .eq("pop_id", popId)
+    if (error) return { success: false, error: stationUniqueNameError(error.message) }
+    return { success: true }
+  } catch (e: unknown) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Error desconocido",
+    }
+  }
+}
+
+export async function deleteComandaStation(
+  popId: string,
+  stationId: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const perms = await recipePermissionFlags(popId)
+    if (!perms.canDelete) {
+      return { success: false, error: "Sin permiso para eliminar estaciones." }
+    }
+    if (!isUuid(stationId)) return { success: false, error: "Estación inválida." }
+    const supabase = await createClient()
+    const { count, error: countErr } = await supabase
+      .from("recipe_categories")
+      .select("id", { count: "exact", head: true })
+      .eq("pop_id", popId)
+      .eq("station_id", stationId)
+    if (countErr) return { success: false, error: countErr.message }
+    if ((count ?? 0) > 0) {
+      return {
+        success: false,
+        error: "No podés eliminar una estación asignada a categorías.",
+      }
+    }
+    const { error } = await supabase
+      .from("comanda_stations")
+      .delete()
+      .eq("id", stationId)
+      .eq("pop_id", popId)
+    if (error) return { success: false, error: error.message }
     return { success: true }
   } catch (e: unknown) {
     return {

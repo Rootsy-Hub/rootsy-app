@@ -4,6 +4,7 @@ import { MesaFloorDecorNode } from "@/app/[siteId]/[popId]/mesas/components/Mesa
 import { MesasFloorGoToTable } from "@/app/[siteId]/[popId]/mesas/components/MesasFloorGoToTable"
 import { MesaSessionConnectors } from "@/app/[siteId]/[popId]/mesas/components/MesaSessionConnectors"
 import { MesaTableNode } from "@/app/[siteId]/[popId]/mesas/components/MesaTableNode"
+import type { MesasReservationSettings } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
 import type { MesaFloorDecor, MesaTable } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { mesaTableDimensions } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import {
@@ -66,6 +67,8 @@ type Props = {
   onMoveTable: (tableId: string, dx: number, dy: number) => void
   onMoveDecor: (decorId: string, dx: number, dy: number) => void
   tableOpenedAt: Record<string, string>
+  tableReservationArrivalAt?: Record<string, string>
+  reservationSettings?: MesasReservationSettings | null
 }
 
 export function MesasFloorPlan({
@@ -82,6 +85,8 @@ export function MesasFloorPlan({
   onMoveTable,
   onMoveDecor,
   tableOpenedAt,
+  tableReservationArrivalAt = {},
+  reservationSettings = null,
 }: Props) {
   const [zoom, setZoom] = useState(ZOOM_DEFAULT)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -308,6 +313,8 @@ export function MesasFloorPlan({
                 }
                 layoutEditMode={layoutEditMode}
                 openedAt={tableOpenedAt[table.id] ?? null}
+                reservationArrivalAt={tableReservationArrivalAt[table.id] ?? null}
+                reservationSettings={reservationSettings}
                 onSelect={handleTableSelect}
                 onSelectLayout={handleTableLayoutSelect}
               />
