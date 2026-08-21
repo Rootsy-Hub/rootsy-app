@@ -40,6 +40,9 @@ export function HomeWorkspaceBackdrop({ className }: HomeWorkspaceBackdropProps)
         <span className="home-eter-star home-eter-star--md" />
       </div>
 
+      <div className="home-eter-world absolute" />
+      <div className="home-eter-world-aura absolute inset-x-0 bottom-0 h-[46%]" />
+
       <div className={cn("absolute inset-0", menuVignetteClass)} />
     </div>
   )

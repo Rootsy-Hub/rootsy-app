@@ -22,12 +22,41 @@
 }
 
 .home-eter-core {
-  opacity: 0.5;
+  opacity: 0.38;
   background: radial-gradient(
     ellipse 120% 80% at 50% 108%,
-    color-mix(in srgb, var(--rootsy-eter-100) 5%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-eter-100) 4%, transparent) 0%,
     transparent 62%
   );
+}
+
+/** El mundo, apenas bajo el umbral — su corona sube al éter. */
+.home-eter-world {
+  left: 50%;
+  bottom: -46%;
+  width: 168%;
+  height: 72%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  opacity: 0.42;
+  background: radial-gradient(
+    ellipse 70% 55% at 50% 28%,
+    color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-eter-200) 8%, transparent) 36%,
+    transparent 72%
+  );
+  filter: blur(52px);
+}
+
+.home-eter-world-aura {
+  opacity: 0.5;
+  background: radial-gradient(
+    ellipse 88% 70% at 50% 112%,
+    color-mix(in srgb, var(--rootsy-eter-100) 14%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-eter-100) 6%, transparent) 38%,
+    transparent 70%
+  );
+  animation: home-eter-world-breathe 16s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
 }
 
 .home-eter-nebula {
@@ -143,8 +172,19 @@
   }
 }
 
+@keyframes home-eter-world-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.58;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .home-eter-star {
+  .home-eter-star,
+  .home-eter-world-aura {
     animation: none !important;
   }
 }

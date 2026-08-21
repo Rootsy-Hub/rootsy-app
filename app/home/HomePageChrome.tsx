@@ -4,8 +4,10 @@ import { Download } from "lucide-react"
 import {
   HomeWorkspaceBackdrop,
 } from "@/components/layouts/HomeWorkspaceBackdrop"
-import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
-import { menuHeaderFlexRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import {
+  menuHeaderFlexRowClass,
+  menuHeaderHeightClass,
+} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
@@ -40,7 +42,7 @@ export function HomePageChrome({
     >
       <HomeWorkspaceBackdrop />
 
-      <MenuHeaderEntity float>
+      <header className={cn("relative z-20 w-full", menuHeaderHeightClass)}>
         <div className={menuHeaderFlexRowClass}>
           <Link
             href="/"
@@ -59,7 +61,7 @@ export function HomePageChrome({
 
           <HomeHeaderUserCluster userId={userId} />
         </div>
-      </MenuHeaderEntity>
+      </header>
 
       <main className="relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto">
         <section className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col items-center justify-center px-5 py-6 sm:px-8 sm:py-8 lg:px-10">
