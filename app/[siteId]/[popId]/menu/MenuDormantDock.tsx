@@ -1,27 +1,17 @@
-"use client"
-
 import {
-  DOCK_EDIT_DIVIDER_HEIGHT_PX,
-  DOCK_ICON_SIZE_PX,
   DOCK_CHROME_INSET_PX,
+  DOCK_ICON_SIZE_PX,
   DOCK_SHELL_PADDING_X_PX,
   DOCK_SHELL_PADDING_Y_PX,
-  DOCK_SLOT_INSET_X_PX,
   DOCK_SLOT_SHIFT_PX,
   DOCK_TRACK_HEIGHT_PX,
   DOCK_TRACK_INSET_Y_PX,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
-import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
-import {
-  menuHoloDormantDockShellClass,
-  menuHoloDormantRimClass,
-  menuRealmDividerClass,
-} from "@/lib/menu/menuHoloStyles"
+import { menuGhostTileClass } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
 import { DEFAULT_MENU_DOCK_IDS } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
-import { Pencil } from "lucide-react"
 
-/** Dock en reposo — misma forma que el dock activo, sin reinados despiertos. */
+/** Dock en fantasma — mismos huecos, sin íconos. */
 export function MenuDormantDock() {
   const dockCount = DEFAULT_MENU_DOCK_IDS.length
   const trackWidth = dockCount * DOCK_SLOT_SHIFT_PX
@@ -36,7 +26,6 @@ export function MenuDormantDock() {
           paddingBottom: DOCK_SHELL_PADDING_Y_PX,
           paddingLeft: DOCK_SHELL_PADDING_X_PX,
           paddingRight: DOCK_CHROME_INSET_PX,
-          gap: DOCK_SHELL_PADDING_X_PX,
         }}
       >
         <div
@@ -54,36 +43,10 @@ export function MenuDormantDock() {
               }}
             >
               <div
-                className={cn(
-                  "relative flex size-12 items-center justify-center rounded-[22%]",
-                  menuHoloDormantDockShellClass,
-                  menuHoloDormantRimClass,
-                )}
-              >
-                <span
-                  aria-hidden
-                  className="size-3 rounded-full bg-[rgba(228,242,248,0.07)] ring-1 ring-[rgba(228,242,248,0.05)]"
-                />
-              </div>
+                className={cn("size-12 rounded-[22%]", menuGhostTileClass)}
+              />
             </div>
           ))}
-        </div>
-
-        <div
-          className="flex shrink-0 items-center self-end opacity-70"
-          style={{
-            height: DOCK_ICON_SIZE_PX,
-            marginBottom: DOCK_TRACK_INSET_Y_PX,
-            gap: DOCK_SLOT_INSET_X_PX,
-          }}
-        >
-          <div
-            className={cn("w-px shrink-0", menuRealmDividerClass)}
-            style={{ height: DOCK_EDIT_DIVIDER_HEIGHT_PX }}
-          />
-          <div className="flex size-8 items-center justify-center rounded-xl opacity-60">
-            <Pencil className="size-4 text-white/50" aria-hidden />
-          </div>
         </div>
       </div>
     </div>

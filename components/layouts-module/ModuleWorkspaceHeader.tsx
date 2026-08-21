@@ -8,11 +8,11 @@ import {
   dataWorkspaceHeaderToolbarClass,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { PopIdentityHeaderCompact } from "@/components/pop-identity/PopIdentityHeaderCompact"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import {
   menuRealmBodyClass,
   menuRealmDividerClass,
-  menuRealmLightMutedClass,
   menuRealmTitleClass,
 } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
@@ -61,7 +61,6 @@ export function ModuleWorkspaceHeader({
   showFullscreen = true,
   popLogoSrc,
   popName,
-  popStreetAddress,
   title,
   loading = false,
   headerVariant = "dark",
@@ -81,7 +80,6 @@ export function ModuleWorkspaceHeader({
   sidebarOpen = true,
   onToggleSidebar,
 }: ModuleWorkspaceHeaderProps) {
-  const resolvedPopStreetAddress = popStreetAddress?.trim() || null
   const resolvedTitle = title?.trim() || null
   const showBack = Boolean(backHref)
   const showFullscreenButton = showFullscreen && Boolean(onToggleFullscreen)
@@ -160,39 +158,12 @@ export function ModuleWorkspaceHeader({
             ) : null}
 
             {showBrand ? (
-              <div className="flex min-w-0 items-center gap-2.5">
-                {popLogoSrc ? (
-                  <div className="size-9 shrink-0 overflow-hidden rounded-xl ring-1 ring-[rgba(228,242,248,0.16)] shadow-[0_2px_10px_rgba(0,0,0,0.16)]">
-                    <img
-                      src={popLogoSrc}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ) : null}
-                {popName || loading ? (
-                  <div className="flex min-w-0 flex-col gap-px">
-                    <span
-                      className={cn(
-                        "truncate text-sm tracking-tight",
-                        menuRealmTitleClass,
-                      )}
-                    >
-                      {popName || (loading ? "…" : "—")}
-                    </span>
-                    {resolvedPopStreetAddress ? (
-                      <span
-                        className={cn(
-                          "truncate text-xs leading-tight",
-                          menuRealmLightMutedClass,
-                        )}
-                      >
-                        {resolvedPopStreetAddress}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
+              <PopIdentityHeaderCompact
+                name={popName || (loading ? "…" : "—")}
+                imageUrl={popLogoSrc}
+                fallbackSeed={popName || "pop"}
+                tone="dark"
+              />
             ) : null}
           </div>
 
@@ -250,6 +221,7 @@ export function ModuleWorkspaceHeader({
                   userAvatarSrc={userAvatarSrc}
                   isOnline={isOnline}
                   headerVariant="dark"
+                  size="compact"
                 />
               </div>
             ) : null}

@@ -10,6 +10,7 @@ import {
   HOME_POP_AVATAR_SIZE_CLASS,
   HOME_POP_TILE_MAX_CLASS,
 } from "@/app/home/homePopTileLayout"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -19,6 +20,7 @@ type Props = {
   address?: string | null
   active?: boolean
   trial?: boolean
+  loading?: boolean
 }
 
 export function HomePopPlanetTile({
@@ -28,6 +30,7 @@ export function HomePopPlanetTile({
   address,
   active = false,
   trial = false,
+  loading = false,
 }: Props) {
   const hasImage = Boolean(imageUrl?.trim())
 
@@ -61,6 +64,11 @@ export function HomePopPlanetTile({
               {initials}
             </span>
           )}
+          {loading ? (
+            <span className="absolute inset-0 flex items-center justify-center bg-black/45">
+              <RootsSpinner size="default" tone="dark" label={HOME_COPY.enteringPop} />
+            </span>
+          ) : null}
         </div>
 
         {trial ? (

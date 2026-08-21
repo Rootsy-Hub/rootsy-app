@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { type ReactNode, useSyncExternalStore } from "react"
+import { type ReactNode, useState, useSyncExternalStore } from "react"
 import { Button } from "@/components/ui/button"
 import { HomeCreatePopTile } from "@/app/home/HomeCreatePopTile"
 import { HOME_POP_TILE_BASIS_CLASS } from "@/app/home/homePopTileLayout"
@@ -76,6 +76,7 @@ function HomePopPickerCards({
   createPopPending: boolean
 }) {
   const { setHello } = useHomeSaludoHover()
+  const [enteringPopId, setEnteringPopId] = useState<string | null>(null)
   const isSoloPop = pops.length === 1
   const showCreateTile =
     pops.length === 0 && (canCreatePop || createPopPending)
@@ -124,6 +125,7 @@ function HomePopPickerCards({
                 address={pop.streetAddress?.trim() || null}
                 active={canEnter}
                 trial={sub.status === "trial"}
+                loading={enteringPopId === pop.id}
               />
             )
 
@@ -140,6 +142,8 @@ function HomePopPickerCards({
                       href={menuHref}
                       data-home-pop=""
                       className="group flex w-full flex-col items-center focus-visible:outline-none"
+                      aria-busy={enteringPopId === pop.id}
+                      onClick={() => setEnteringPopId(pop.id)}
                       onMouseEnter={() => setHello(true)}
                       onMouseLeave={(event) => {
                         const next = event.relatedTarget

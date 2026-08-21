@@ -11,11 +11,10 @@ import {
   MenuSectionNavigator,
   type MenuSectionNavItem,
 } from "@/app/[siteId]/[popId]/menu/MenuSectionNavigator"
-import {
-  MENU_DORMANT_SECTIONS,
-  MenuDormantGrid,
-} from "@/app/[siteId]/[popId]/menu/MenuDormantField"
+import { MenuDormantGrid } from "@/app/[siteId]/[popId]/menu/MenuDormantField"
 import { MenuDormantDock } from "@/app/[siteId]/[popId]/menu/MenuDormantDock"
+import { MenuDormantHeader } from "@/app/[siteId]/[popId]/menu/MenuDormantHeader"
+import { MenuDormantNavigator } from "@/app/[siteId]/[popId]/menu/MenuDormantNavigator"
 import { MenuDormantFirmament } from "@/app/[siteId]/[popId]/menu/MenuDormantFirmament"
 import { MenuOuterEntity } from "@/app/[siteId]/[popId]/menu/MenuOuterEntity"
 import { MenuRootsyPresence } from "@/app/[siteId]/[popId]/menu/MenuRootsyPresence"
@@ -59,6 +58,10 @@ import {
 } from "@/lib/menuCatalog"
 import { formatLocaleTime } from "@/lib/popTimezone"
 import { popScopedHref } from "@/lib/popRoutes"
+import {
+  readMenuSectionPreference,
+  writeMenuSectionPreference,
+} from "@/lib/menuSectionPreference"
 import { cn } from "@/lib/utils"
 import {
   useState,
@@ -187,25 +190,32 @@ function MenuPage() {
     dragFree: false,
   })
 
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return
-    setSelectedIndex(emblaApi.selectedScrollSnap())
-  }, [emblaApi])
-
   useEffect(() => {
-    if (!emblaApi) return
-    onSelect()
+    if (!emblaApi || sections.length === 0) return
+
+    emblaApi.reInit({ loop: true })
+
+    const saved = popId ? readMenuSectionPreference(popId) : null
+    const savedIndex = saved ? sections.indexOf(saved) : -1
+    const startIndex = savedIndex >= 0 ? savedIndex : 0
+
+    emblaApi.scrollTo(startIndex, true)
+    setSelectedIndex(startIndex)
+
+    const onSelect = () => {
+      const next = emblaApi.selectedScrollSnap()
+      setSelectedIndex(next)
+      const section = sections[next]
+      if (popId && section) {
+        writeMenuSectionPreference(popId, section as MenuSectionKey)
+      }
+    }
+
     emblaApi.on("select", onSelect)
     return () => {
       emblaApi.off("select", onSelect)
     }
-  }, [emblaApi, onSelect])
-
-  useEffect(() => {
-    if (emblaApi && sections.length > 0) {
-      emblaApi.reInit({ loop: true })
-    }
-  }, [emblaApi, sections.length, filteredMenuSections])
+  }, [emblaApi, popId, sections, filteredMenuSections])
 
   const scrollTo = useCallback(
     (index: number) => {
@@ -454,6 +464,9 @@ function MenuPage() {
       </div>
 
       <MenuHeaderEntity>
+        {contentPending ? (
+          <MenuDormantHeader />
+        ) : (
           <div className={menuHeaderRowClass}>
           <div className="flex min-w-0 items-center gap-6">
             <RootsIconButton
@@ -466,21 +479,21 @@ function MenuPage() {
               <Home aria-hidden />
             </RootsIconButton>
 
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="size-12 shrink-0 overflow-hidden rounded-2xl ring-2 ring-[rgba(228,242,248,0.18)] shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="size-12 shrink-0 overflow-hidden rounded-lg ring-1 ring-[rgba(228,242,248,0.18)]">
                 <img
                   src={headerPopLogoSrc}
                   alt=""
-                  className="h-full w-full object-cover"
+                  className="size-full object-cover"
                 />
               </div>
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <span className={cn("truncate text-base tracking-tight", menuRealmTitleClass)}>
+              <div className="min-w-0">
+                <p className={cn("truncate text-sm font-semibold", menuRealmTitleClass)}>
                   {headerPopName}
-                </span>
-                <span className={cn("truncate text-sm", menuRealmLightMutedClass)}>
+                </p>
+                <p className={cn("truncate text-xs font-normal", menuRealmLightMutedClass)}>
                   {headerPopAddress}
-                </span>
+                </p>
               </div>
             </div>
           </div>
@@ -612,22 +625,21 @@ function MenuPage() {
             </div>
           </div>
         </div>
+        )}
       </MenuHeaderEntity>
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-14 sm:gap-16">
-          <MenuSectionNavigator
-            className={cn(
-              !menuReady && "pointer-events-none",
-              menuReady && "menu-content-emerge",
-            )}
-            sections={
-              menuReady ? sectionNavItems : [...MENU_DORMANT_SECTIONS]
-            }
-            selectedIndex={menuReady ? selectedIndex : 0}
-            onSelect={menuReady ? scrollTo : () => {}}
-            dormant={!menuReady}
-          />
+          {menuReady ? (
+            <MenuSectionNavigator
+              className="menu-content-emerge"
+              sections={sectionNavItems}
+              selectedIndex={selectedIndex}
+              onSelect={scrollTo}
+            />
+          ) : (
+            <MenuDormantNavigator />
+          )}
 
           {menuReady ? (
             <div className="menu-content-emerge w-full overflow-hidden" ref={emblaRef}>

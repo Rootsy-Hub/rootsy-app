@@ -21,7 +21,11 @@ type HomeHeaderUserClusterProps = {
 export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
   const { logOut } = useAuth()
   const router = useRouter()
-  const { profile, profileFullName, profilePending } = useHomePageData(userId ?? "")
+  const { profile, profileFullName, profilePending, pops } = useHomePageData(userId ?? "")
+  const ownedPop = pops.find((pop) => pop.isOwner)
+  const subscriptionsHref = ownedPop
+    ? `/${ownedPop.siteId}/${ownedPop.id}/subscribe`
+    : null
   const [isOnline, setIsOnline] = useState(true)
   const [photoOpen, setPhotoOpen] = useState(false)
 
@@ -46,6 +50,18 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
 
   return (
     <div className="flex min-w-0 items-center gap-2">
+      {subscriptionsHref ? (
+        <>
+          <HomeSubtleButton onClick={() => router.push(subscriptionsHref)}>
+            {HOME_COPY.subscriptions}
+          </HomeSubtleButton>
+          <span
+            aria-hidden
+            className="mx-1 h-4 w-px shrink-0 bg-[color-mix(in_srgb,var(--rootsy-eter-100)_18%,transparent)]"
+          />
+        </>
+      ) : null}
+
       <HomeSubtleButton onClick={() => router.push("/home")}>
         {HOME_COPY.editProfile}
       </HomeSubtleButton>

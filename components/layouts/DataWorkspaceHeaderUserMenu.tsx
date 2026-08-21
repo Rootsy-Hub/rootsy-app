@@ -11,6 +11,7 @@ import {
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
+import type { RootsIconButtonSize } from "@/components/rootsy-button/rootsButtonStyles"
 import {
   RootsDropdownContent,
   RootsDropdownItem,
@@ -30,6 +31,7 @@ export type DataWorkspaceHeaderUserMenuProps = {
   userAvatarSrc?: string | null
   isOnline: boolean
   headerVariant?: DataWorkspaceHeaderVariant
+  size?: RootsIconButtonSize
 }
 
 export function DataWorkspaceHeaderUserMenu({
@@ -37,6 +39,7 @@ export function DataWorkspaceHeaderUserMenu({
   userAvatarSrc,
   isOnline,
   headerVariant = "default",
+  size = "default",
 }: DataWorkspaceHeaderUserMenuProps) {
   const isTinted = isDataWorkspaceTintedHeader(headerVariant)
   const isTables = isLayoutsTablesHeader(headerVariant)
@@ -68,6 +71,12 @@ export function DataWorkspaceHeaderUserMenu({
 
   const dropdownSeparatorClass = dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
   const dropdownContentClass = dataWorkspaceHeaderUserDropdownContentClassForVariant(headerVariant)
+  const connectionDotClass =
+    size === "compact"
+      ? "bottom-0.5 right-0.5 size-2 ring-1"
+      : size === "large"
+        ? "bottom-1 right-1 size-3 ring-2"
+        : "bottom-1 right-1 size-2.5 ring-2"
 
   return (
     <RootsDropdownMenu>
@@ -76,7 +85,7 @@ export function DataWorkspaceHeaderUserMenu({
           label={`Menú de ${userName}`}
           theme={isTables || isTinted ? "pos" : "workspace"}
           emphasis="ghost"
-          size="default"
+          size={size}
           sizeChildren={false}
           className="relative overflow-hidden p-0"
           aria-haspopup="menu"
@@ -110,7 +119,8 @@ export function DataWorkspaceHeaderUserMenu({
             aria-label={isOnline ? "En línea" : "Sin conexión"}
             title={isOnline ? "En línea" : "Sin conexión"}
             className={cn(
-              "pointer-events-none absolute bottom-1 right-1 size-2.5 rounded-full ring-2",
+              "pointer-events-none absolute rounded-full",
+              connectionDotClass,
               isTables
                 ? "ring-[var(--rootsy-sombra-950)]"
                 : isTinted
