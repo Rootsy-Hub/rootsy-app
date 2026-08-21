@@ -7,7 +7,10 @@ import {
 } from "@/components/rootsy-button/rootsButtonSpecRuntime"
 import type { RootsButtonSemanticVariant } from "@/components/rootsy-button/rootsButtonStyles"
 import { useRootsButtonInteraction } from "@/components/rootsy-button/useRootsButtonInteraction"
-import { getButtonsUiAppearanceSurface } from "@/app/library/ui-components/buttonsUiHardcodedSpec"
+import {
+  getButtonsUiAppearanceSurface,
+  type IconButtonThemeId,
+} from "@/app/library/ui-components/buttonsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react"
@@ -15,6 +18,8 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react"
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   semantic?: RootsButtonSemanticVariant
   size?: RootsButtonSpecSize
+  /** workspace = claro · pos = header nocturno. */
+  theme?: IconButtonThemeId
   loading?: boolean
   loadingLabel?: string
   withIcon?: boolean
@@ -25,6 +30,7 @@ export const RootsSemanticButton = forwardRef<HTMLButtonElement, Props>(function
   {
     semantic = "primary",
     size = "default",
+    theme = "workspace",
     loading = false,
     loadingLabel,
     withIcon = false,
@@ -54,8 +60,9 @@ export const RootsSemanticButton = forwardRef<HTMLButtonElement, Props>(function
   })
   const buttonStyle = getButtonAppearanceStyle(appearance, state, size, {
     withIcon: withIcon || loading,
+    theme,
   })
-  const surface = getButtonsUiAppearanceSurface(appearance, state)
+  const surface = getButtonsUiAppearanceSurface(appearance, state, theme)
 
   return (
     <button

@@ -1,14 +1,12 @@
 "use client"
 
 import { HOME_COPY } from "@/app/home/homeCopy"
+import { RootsIconButton, RootsSubtleButton } from "@/components/rootsy-button"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useHomePageData } from "@/hooks/useHomePageData"
-import {
-  menuRealmLightMutedClass,
-  menuRealmLightStaticClass,
-} from "@/lib/menu/menuHoloStyles"
+import { menuRealmLightStaticClass } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
+import { LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -45,30 +43,15 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-      <div className="flex min-w-0 items-center gap-1 sm:gap-2">
-        <Link
-          href="/home"
-          className={cn(
-            "inline-flex h-8 shrink-0 items-center rounded-md px-2 text-xs transition-colors sm:text-sm",
-            menuRealmLightStaticClass,
-            "hover:text-white",
-          )}
-        >
-          {HOME_COPY.editProfile}
-        </Link>
-        <button
-          type="button"
-          onClick={() => void handleLogOut()}
-          className={cn(
-            "inline-flex h-8 shrink-0 items-center rounded-md px-2 text-xs transition-colors sm:text-sm",
-            menuRealmLightMutedClass,
-            "hover:text-white",
-          )}
-        >
-          {HOME_COPY.logOut}
-        </button>
-      </div>
+    <div className="flex min-w-0 items-center gap-2">
+      <RootsSubtleButton
+        type="button"
+        size="compact"
+        theme="pos"
+        onClick={() => router.push("/home")}
+      >
+        {HOME_COPY.editProfile}
+      </RootsSubtleButton>
 
       <span className="relative inline-flex size-10 shrink-0">
         {profilePending || !userId ? (
@@ -103,6 +86,17 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
           )}
         />
       </span>
+
+      <RootsIconButton
+        type="button"
+        label={HOME_COPY.logOut}
+        theme="workspace"
+        rowIntent="destructive"
+        size="default"
+        onClick={() => void handleLogOut()}
+      >
+        <LogOut />
+      </RootsIconButton>
     </div>
   )
 }

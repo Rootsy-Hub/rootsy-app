@@ -237,10 +237,49 @@ function getButtonsUiDefaultSurface(appearance: ButtonsUiAppearanceId): Hardcode
   }
 }
 
+function getButtonsUiPosSubtleSurface(
+  state: ButtonsUiInteractionState,
+): HardcodedButtonSurface {
+  const base: HardcodedButtonSurface = {
+    backgroundColor: "transparent",
+    color: pos.textSecondary,
+    border: "1px solid transparent",
+    fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+  }
+
+  switch (state) {
+    case "default":
+      return base
+    case "hover":
+      return {
+        ...base,
+        backgroundColor: `color-mix(in srgb, ${elevationSurfaceDark("elevation.surface.sunken")} 48%, transparent)`,
+        color: TEXT_ON_DARK,
+      }
+    case "active":
+      return {
+        ...base,
+        backgroundColor: `color-mix(in srgb, ${pos.shell} 65%, transparent)`,
+        color: WHITE,
+      }
+    case "focus":
+      return { ...base, boxShadow: FOCUS_RING_DARK }
+    case "disabled":
+      return { ...base, opacity: 0.5 }
+    case "loading":
+      return { ...base, loadingLabel: "Cancelando…", opacity: 0.92 }
+  }
+}
+
 export function getButtonsUiAppearanceSurface(
   appearance: ButtonsUiAppearanceId,
   state: ButtonsUiInteractionState = "default",
+  theme: IconButtonThemeId = "workspace",
 ): HardcodedButtonSurface {
+  if (theme === "pos" && appearance === "subtle") {
+    return getButtonsUiPosSubtleSurface(state)
+  }
+
   const base = getButtonsUiDefaultSurface(appearance)
 
   switch (state) {
