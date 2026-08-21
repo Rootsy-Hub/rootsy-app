@@ -15,6 +15,7 @@ import {
   PopIdentityVariantsShowcase,
   RootsyLogomarksGrid,
   RootsyLogoVariantsGrid,
+  UserProfileIdentityShowcase,
 } from "@/app/library/logos/LogosDocPrimitives"
 import {
   ROOTSY_LOGO_MANIFESTO,
@@ -84,6 +85,14 @@ export function LogosOverviewSection() {
 
         <LogosDocSection id="guidelines" title="Guías Do / Don't">
           <LogoGuidelinesGrid />
+        </LogosDocSection>
+
+        <LogosDocSection
+          id="user-profile"
+          title="Persona · bloque de perfil"
+          description="Identidad de quien opera — no del negocio. Mismo lockup en menú y workspace; cambia solo la densidad. Un control, una cara, un menú."
+        >
+          <UserProfileIdentityShowcase />
         </LogosDocSection>
       </div>
     </LibrarySection>

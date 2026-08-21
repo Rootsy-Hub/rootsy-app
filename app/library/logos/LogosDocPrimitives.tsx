@@ -11,8 +11,15 @@ import {
   ROOTSY_LOGO_CONCEPT,
   ROOTSY_LOGO_LOCKUPS,
   ROOTSY_LOGOMARKS,
+  USER_PROFILE_ANATOMY,
+  USER_PROFILE_GUIDELINES,
+  USER_PROFILE_MEASURES,
+  USER_PROFILE_PRINCIPLES,
+  USER_PROFILE_SPECIMEN,
+  USER_PROFILE_VARIANTS,
   type LogoPreviewBg,
   type PopIdentityVariantId,
+  type UserProfileVariantId,
 } from "@/app/library/logos/rootsyLogoSystem"
 import {
   FoundationBrumaStage,
@@ -503,6 +510,195 @@ export function LogoGuidelinesGrid() {
             </li>
           ))}
         </ul>
+      </div>
+    </div>
+  )
+}
+
+function UserProfileBlockDemo({
+  variantId,
+}: {
+  variantId: UserProfileVariantId
+}) {
+  const specimen = USER_PROFILE_SPECIMEN
+  const compact = variantId === "header-workspace"
+  const avatarSizeClass = compact ? "size-8" : "size-10"
+  const connectionDotClass = compact
+    ? "bottom-0.5 right-0.5 size-2 ring-1"
+    : "bottom-1 right-1 size-2.5 ring-2"
+
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-lg">
+      <div className="flex min-w-0 flex-col items-end text-right leading-tight">
+        <span className="truncate text-sm font-normal text-[rgba(255,255,255,0.96)]">
+          {specimen.name}
+        </span>
+        <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-emerald-300/90">
+          {specimen.roleLabel}
+        </span>
+      </div>
+      <span
+        className={cn(
+          "relative shrink-0 overflow-hidden rounded-xl",
+          avatarSizeClass,
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={specimen.imageUrl}
+          alt=""
+          className="size-full object-cover"
+        />
+        <span
+          className={cn(
+            "pointer-events-none absolute rounded-full bg-emerald-500 ring-zinc-900",
+            connectionDotClass,
+          )}
+          aria-hidden
+        />
+      </span>
+    </div>
+  )
+}
+
+export function UserProfileIdentityShowcase() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {USER_PROFILE_PRINCIPLES.map((item) => (
+          <div key={item.title} className="library-doc-card rounded-xl px-4 py-3">
+            <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+              {item.title}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
+              {item.detail}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {USER_PROFILE_VARIANTS.map((variant) => (
+          <div
+            key={variant.id}
+            className="library-doc-panel overflow-hidden rounded-2xl"
+          >
+            <div className="logo-user-header-rail">
+              <span className="mr-auto font-mono text-[10px] uppercase tracking-[0.14em] text-white/35">
+                {variant.id === "header-menu" ? "Header menú" : "Header workspace"}
+              </span>
+              <UserProfileBlockDemo variantId={variant.id} />
+            </div>
+            <div className="space-y-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3">
+              <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+                {variant.label}
+              </p>
+              <p className="text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
+                {variant.usage}
+              </p>
+              <p className="truncate font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
+                {variant.source}
+              </p>
+              <p className="font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
+                {variant.density}
+              </p>
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                {variant.fields.map((field) => (
+                  <span
+                    key={field}
+                    className="rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-0.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]"
+                  >
+                    {field}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {USER_PROFILE_ANATOMY.map((item) => (
+          <div
+            key={item.term}
+            className="library-doc-card rounded-xl px-4 py-3"
+          >
+            <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+              {item.term}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
+              {item.definition}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="library-doc-panel overflow-hidden rounded-2xl">
+        <div className="border-b border-[var(--rootsy-bruma-200)] px-4 py-3">
+          <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+            Medidas
+          </p>
+          <p className="mt-1 text-xs text-[var(--rootsy-bruma-500)]">
+            Tokens de densidad — menú vs workspace. El color del texto sigue el chrome oscuro, no bruma-900.
+          </p>
+        </div>
+        <div className="divide-y divide-[var(--rootsy-bruma-200)]">
+          {USER_PROFILE_MEASURES.map((row) => (
+            <div
+              key={row.token}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-3 px-4 py-2.5 sm:grid-cols-[10rem_5.5rem_minmax(0,1fr)]"
+            >
+              <span className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+                {row.token}
+              </span>
+              <span className="font-mono text-[11px] text-[var(--rootsy-savia-600)]">
+                {row.value}
+              </span>
+              <span className="col-span-2 font-mono text-[10px] text-[var(--rootsy-bruma-500)] sm:col-span-1">
+                {row.note}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
+            Do
+          </p>
+          <ul className="mt-3 space-y-2">
+            {USER_PROFILE_GUIDELINES.do.map((item) => (
+              <li
+                key={item}
+                className="flex gap-2 text-sm text-[var(--rootsy-bruma-900)]"
+              >
+                <span className="text-emerald-600" aria-hidden>
+                  ✓
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-700">
+            Don&apos;t
+          </p>
+          <ul className="mt-3 space-y-2">
+            {USER_PROFILE_GUIDELINES.dont.map((item) => (
+              <li
+                key={item}
+                className="flex gap-2 text-sm text-[var(--rootsy-bruma-900)]"
+              >
+                <span className="text-red-600" aria-hidden>
+                  ✕
+                </span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   )

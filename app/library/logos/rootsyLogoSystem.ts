@@ -226,3 +226,123 @@ export const LOGO_ANATOMY = [
   { term: "Avatar POP", definition: "Foto subida por el tenant (pop.imageUrl) — identidad visual del negocio." },
   { term: "Lockup POP", definition: "Avatar + nombre comercial; opcionalmente dirección u otros metadatos." },
 ] as const
+
+/** Espécimen — persona en chrome de header. No reutilizar el avatar del POP. */
+export const USER_PROFILE_SPECIMEN = {
+  name: "María González",
+  roleLabel: "Administradora",
+  initials: "MG",
+  imageUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=maria-gonzalez",
+  isOnline: true,
+} as const
+
+export type UserProfileVariantId = "header-menu" | "header-workspace"
+
+export type UserProfileVariant = {
+  id: UserProfileVariantId
+  label: string
+  usage: string
+  source: string
+  density: string
+  fields: readonly string[]
+}
+
+export const USER_PROFILE_VARIANTS: UserProfileVariant[] = [
+  {
+    id: "header-menu",
+    label: "Header menú · bloque de perfil",
+    usage:
+      "Cierre derecho del menú del POP. Avatar 40 px — mismo peso visual que el logo del negocio (48 px) sin competir con la búsqueda.",
+    source: "app/[siteId]/[popId]/menu/page.tsx",
+    density: "size-10 · rounded-xl · punto 10 px / ring-2",
+    fields: ["profile.fullName", "profile.imageUrl", "roleLabel", "isOnline"],
+  },
+  {
+    id: "header-workspace",
+    label: "Header workspace · bloque de perfil",
+    usage:
+      "Misma anatomía, densidad compacta. Avatar 32 px — empatado con el avatar cuadrado del POP para que persona y negocio se lean como un par.",
+    source: "components/layouts-module/ModuleWorkspaceHeader.tsx",
+    density: "size-8 · rounded-xl · punto 8 px / ring-1",
+    fields: ["profile.fullName", "profile.imageUrl", "roleLabel", "isOnline"],
+  },
+]
+
+export const USER_PROFILE_ANATOMY = [
+  {
+    term: "Bloque de perfil",
+    definition:
+      "Un solo control: nombre + rol + foto. Todo el bloque abre el dropdown — no cazar el avatar.",
+  },
+  {
+    term: "Nombre",
+    definition:
+      "profile.fullName · text-sm regular · luz del realm. A la izquierda de la foto, alineado a la derecha. Truncar.",
+  },
+  {
+    term: "Rol",
+    definition:
+      "roleLabel · 10 px semibold uppercase tracking-wider. Savia cuando hay rol resuelto; no es un badge.",
+  },
+  {
+    term: "Avatar de persona",
+    definition:
+      "profile.imageUrl · object-cover · rounded-xl. No círculo (home POP) ni rounded-lg (ficha POP).",
+  },
+  {
+    term: "Presencia",
+    definition:
+      "Punto anclado al recorte de la foto. Escala con el bloque. Esmeralda en línea, rojo sin conexión. Sin label.",
+  },
+] as const
+
+export const USER_PROFILE_MEASURES = [
+  { token: "Avatar menú", value: "40 px", note: "size-10 · RootsIconButton default" },
+  { token: "Avatar workspace", value: "32 px", note: "size-8 · empatado al POP compacto" },
+  { token: "Radio avatar", value: "rounded-xl", note: "Más suave que el POP (rounded-lg)" },
+  { token: "Gap texto ↔ foto", value: "12 px", note: "gap-3" },
+  { token: "Punto menú", value: "10 px / ring-2", note: "bottom-1 right-1" },
+  { token: "Punto workspace", value: "8 px / ring-1", note: "bottom-0.5 right-0.5" },
+  { token: "Nombre", value: "14 px / regular", note: "menuRealmBodyClass" },
+  { token: "Rol", value: "10 px / semibold", note: "uppercase · tracking-wider" },
+] as const
+
+export const USER_PROFILE_PRINCIPLES = [
+  {
+    title: "Un hit target",
+    detail:
+      "Nombre, rol y foto disparan el mismo menú. El área grande reduce error y comunica que es una persona, no un ícono suelto.",
+  },
+  {
+    title: "Persona ≠ negocio",
+    detail:
+      "El POP es cuadrado rounded-lg; la persona es rounded-xl. Nunca usar pop.imageUrl como cara del usuario.",
+  },
+  {
+    title: "Densidad según chrome",
+    detail:
+      "El menú puede darse 40 px. El workspace cede espacio al título del módulo: 32 px, mismo peso que el lockup del POP.",
+  },
+  {
+    title: "Presencia proporcional",
+    detail:
+      "El punto vive adentro del recorte (overflow hidden). Si el avatar achica, el punto achica — si no, tapa la cara.",
+  },
+] as const
+
+export const USER_PROFILE_GUIDELINES = {
+  do: [
+    "Abrir el dropdown desde cualquier parte del bloque.",
+    "Escalar el punto de conexión con el tamaño del avatar.",
+    "alt=\"\" en la foto; aria-label en el control («Menú de {nombre}»).",
+    "Ocultar nombre y rol bajo sm — en mobile basta la foto.",
+    "Fallback: iniciales o Dicebear. Nunca el logo Rootsy ni el avatar del POP.",
+  ],
+  dont: [
+    "No separar el click del nombre del click de la foto.",
+    "No usar círculo para la persona en header — el círculo es del picker de home.",
+    "No dejar el punto a 10 px sobre un avatar de 32 px.",
+    "No reemplazar el punto por un badge «En línea».",
+    "No pintar el nombre con bruma-900 sobre chrome oscuro.",
+  ],
+} as const

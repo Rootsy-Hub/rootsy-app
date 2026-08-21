@@ -4,14 +4,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   dataWorkspaceHeaderDropdownLogoutItemClass,
   dataWorkspaceHeaderDropdownSeparatorClassForVariant,
+  dataWorkspaceHeaderRoleLabelClass,
   dataWorkspaceHeaderUserDropdownContentClassForVariant,
   isDarkChromeHeader,
   isDataWorkspaceTintedHeader,
   isLayoutsTablesHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import type { RootsIconButtonSize } from "@/components/rootsy-button/rootsButtonStyles"
+import { menuRealmBodyClass } from "@/lib/menu/menuHoloStyles"
 import {
   RootsDropdownContent,
   RootsDropdownItem,
@@ -32,6 +33,8 @@ export type DataWorkspaceHeaderUserMenuProps = {
   isOnline: boolean
   headerVariant?: DataWorkspaceHeaderVariant
   size?: RootsIconButtonSize
+  roleLabel?: string
+  hasResolvedRole?: boolean
 }
 
 export function DataWorkspaceHeaderUserMenu({
@@ -40,6 +43,8 @@ export function DataWorkspaceHeaderUserMenu({
   isOnline,
   headerVariant = "default",
   size = "default",
+  roleLabel,
+  hasResolvedRole = false,
 }: DataWorkspaceHeaderUserMenuProps) {
   const isTinted = isDataWorkspaceTintedHeader(headerVariant)
   const isTables = isLayoutsTablesHeader(headerVariant)
@@ -77,59 +82,86 @@ export function DataWorkspaceHeaderUserMenu({
       : size === "large"
         ? "bottom-1 right-1 size-3 ring-2"
         : "bottom-1 right-1 size-2.5 ring-2"
+  const avatarSizeClass =
+    size === "compact" ? "size-8" : size === "large" ? "size-12" : "size-10"
+  const resolvedRoleLabel = roleLabel?.trim() || ""
 
   return (
     <RootsDropdownMenu>
       <RootsDropdownTrigger asChild>
-        <RootsIconButton
-          label={`Menú de ${userName}`}
-          theme={isTables || isTinted ? "pos" : "workspace"}
-          emphasis="ghost"
-          size={size}
-          sizeChildren={false}
-          className="relative overflow-hidden p-0"
+        <button
+          type="button"
+          aria-label={`Menú de ${userName}`}
           aria-haspopup="menu"
+          className={cn(
+            "flex min-w-0 items-center gap-3 rounded-lg text-left",
+            "outline-none transition-colors",
+            "hover:bg-white/6",
+            "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/20",
+          )}
         >
-          <Avatar className="size-full rounded-[inherit]">
-            <AvatarImage
-              src={avatarSrc}
-              alt=""
-              className="object-cover"
-              onLoadingStatusChange={(status) => {
-                if (status === "error" && profileAvatarSrc && !profileImageFailed) {
-                  setProfileImageFailed(true)
-                }
-              }}
-            />
-            <AvatarFallback
-              className={cn(
-                "rounded-[inherit] text-[11px] font-semibold",
-                isTables
-                  ? "bg-[var(--rootsy-sombra-800)] text-[var(--rootsy-savia-300)]"
-                  : isTinted && !isTables
-                    ? "bg-zinc-800 text-emerald-300"
-                    : "bg-primary/10 text-primary",
-              )}
-            >
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
+            <span className={cn("truncate text-sm font-normal", menuRealmBodyClass)}>
+              {userName}
+            </span>
+            {resolvedRoleLabel ? (
+              <span
+                className={cn(
+                  "truncate text-[10px] font-semibold uppercase tracking-wider",
+                  dataWorkspaceHeaderRoleLabelClass(headerVariant, hasResolvedRole),
+                )}
+              >
+                {resolvedRoleLabel}
+              </span>
+            ) : null}
+          </div>
           <span
-            role="status"
-            aria-label={isOnline ? "En línea" : "Sin conexión"}
-            title={isOnline ? "En línea" : "Sin conexión"}
             className={cn(
-              "pointer-events-none absolute rounded-full",
-              connectionDotClass,
-              isTables
-                ? "ring-[var(--rootsy-sombra-950)]"
-                : isTinted
-                  ? "ring-zinc-900"
-                  : "ring-secondary",
-              isOnline ? "bg-emerald-500" : "bg-red-500",
+              "relative shrink-0 overflow-hidden rounded-xl",
+              avatarSizeClass,
             )}
-          />
-        </RootsIconButton>
+          >
+            <Avatar className="size-full rounded-[inherit]">
+              <AvatarImage
+                src={avatarSrc}
+                alt=""
+                className="object-cover"
+                onLoadingStatusChange={(status) => {
+                  if (status === "error" && profileAvatarSrc && !profileImageFailed) {
+                    setProfileImageFailed(true)
+                  }
+                }}
+              />
+              <AvatarFallback
+                className={cn(
+                  "rounded-[inherit] text-[11px] font-semibold",
+                  isTables
+                    ? "bg-[var(--rootsy-sombra-800)] text-[var(--rootsy-savia-300)]"
+                    : isTinted && !isTables
+                      ? "bg-zinc-800 text-emerald-300"
+                      : "bg-primary/10 text-primary",
+                )}
+              >
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <span
+              role="status"
+              aria-label={isOnline ? "En línea" : "Sin conexión"}
+              title={isOnline ? "En línea" : "Sin conexión"}
+              className={cn(
+                "pointer-events-none absolute rounded-full",
+                connectionDotClass,
+                isTables
+                  ? "ring-[var(--rootsy-sombra-950)]"
+                  : isTinted
+                    ? "ring-zinc-900"
+                    : "ring-secondary",
+                isOnline ? "bg-emerald-500" : "bg-red-500",
+              )}
+            />
+          </span>
+        </button>
       </RootsDropdownTrigger>
       <RootsDropdownContent
         theme={theme}

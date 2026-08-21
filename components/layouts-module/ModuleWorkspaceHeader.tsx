@@ -4,14 +4,12 @@ import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import { menuModuleHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import {
-  dataWorkspaceHeaderRoleLabelClass,
   dataWorkspaceHeaderToolbarClass,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { PopIdentityHeaderCompact } from "@/components/pop-identity/PopIdentityHeaderCompact"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import {
-  menuRealmBodyClass,
   menuRealmDividerClass,
   menuRealmTitleClass,
 } from "@/lib/menu/menuHoloStyles"
@@ -192,38 +190,15 @@ export function ModuleWorkspaceHeader({
               <div className={cn("h-6 w-px", menuRealmDividerClass)} aria-hidden />
             ) : null}
             {userName ? (
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
-                  <span
-                    className={cn(
-                      "truncate text-sm font-normal",
-                      menuRealmBodyClass,
-                    )}
-                  >
-                    {userName}
-                  </span>
-                  {subline ? (
-                    <span
-                      className={cn(
-                        "truncate text-[10px] font-semibold uppercase tracking-wider",
-                        dataWorkspaceHeaderRoleLabelClass(
-                          "dark",
-                          hasResolvedRole,
-                        ),
-                      )}
-                    >
-                      {subline}
-                    </span>
-                  ) : null}
-                </div>
-                <DataWorkspaceHeaderUserMenu
-                  userName={userName}
-                  userAvatarSrc={userAvatarSrc}
-                  isOnline={isOnline}
-                  headerVariant="dark"
-                  size="compact"
-                />
-              </div>
+              <DataWorkspaceHeaderUserMenu
+                userName={userName}
+                userAvatarSrc={userAvatarSrc}
+                isOnline={isOnline}
+                headerVariant="dark"
+                size="compact"
+                roleLabel={subline}
+                hasResolvedRole={hasResolvedRole}
+              />
             ) : null}
           </div>
         </div>

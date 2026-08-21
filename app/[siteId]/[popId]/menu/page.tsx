@@ -1,7 +1,6 @@
 "use client"
 
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
-import { dataWorkspaceHeaderRoleLabelClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { MenuDock } from "@/app/[siteId]/[popId]/menu/MenuDock"
@@ -31,7 +30,6 @@ import {
   menuHeaderRowClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
-  menuRealmBodyClass,
   menuRealmDividerClass,
   menuRealmLightMutedClass,
   menuRealmTitleClass,
@@ -597,32 +595,14 @@ function MenuPage() {
 
             <div className={cn("h-6 w-px", menuRealmDividerClass)} />
 
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
-                <span className={cn("truncate text-sm font-normal", menuRealmBodyClass)}>
-                  {headerUserName}
-                </span>
-                {headerUserRoleLabel ? (
-                  <span
-                    className={cn(
-                      "truncate text-[10px] font-semibold uppercase tracking-wider",
-                      dataWorkspaceHeaderRoleLabelClass(
-                        "dark",
-                        Boolean(headerUserRoleLabel),
-                      ),
-                    )}
-                  >
-                    {headerUserRoleLabel}
-                  </span>
-                ) : null}
-              </div>
-              <DataWorkspaceHeaderUserMenu
-                userName={headerUserName}
-                userAvatarSrc={headerUserAvatarSrc}
-                isOnline={isOnline}
-                headerVariant="dark"
-              />
-            </div>
+            <DataWorkspaceHeaderUserMenu
+              userName={headerUserName}
+              userAvatarSrc={headerUserAvatarSrc}
+              isOnline={isOnline}
+              headerVariant="dark"
+              roleLabel={headerUserRoleLabel}
+              hasResolvedRole={Boolean(headerUserRoleLabel)}
+            />
           </div>
         </div>
         )}
