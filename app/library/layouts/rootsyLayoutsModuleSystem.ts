@@ -20,13 +20,13 @@ export const ROOTSY_LAYOUTS_MODULE_BACKDROP = {
   imageOpacity: 0.4,
   /** Velo claro sobre la foto — usa --background del scope Nature. */
   scrimClass: "bg-background/32",
-  /** Glow superior — nature-canopy (menuAmbientTopGlowClass). */
-  ambientGlowToken: "nature-canopy-600 / 5%",
+  /** Glow superior — éter-100 (menuAmbientTopGlowClass). */
+  ambientGlowToken: "éter-100 / 6%",
   ambientGlowWidthPx: 1000,
   ambientGlowHeightPx: 400,
   ambientBlurPx: 120,
-  /** Viñeta perimetral — nature-night (menuVignetteClass). */
-  vignetteToken: "nature-night-950 / 50% radial",
+  /** Viñeta perimetral — éter (menuVignetteClass). */
+  vignetteToken: "éter-950 / 62% radial",
 } as const
 
 /** Sin imagen POP — gradiente sombra + bruma + savia (sin Nature). */

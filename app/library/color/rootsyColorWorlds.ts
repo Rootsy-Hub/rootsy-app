@@ -33,7 +33,7 @@ export const ROOTSY_COLOR_WORLDS: RootsyColorWorld[] = [
     name: "Sombra",
     kind: "marca",
     concept: "Carbón verdoso bajo el dosel. El bosque, no el espacio.",
-    usedIn: "Catálogo POS, rail, canvas, cards. Shell oscuro de Operar.",
+    usedIn: "Catálogo POS, rail, canvas, cards. Shell oscuro de Operar. Viñeta secundaria del menú.",
     not: "No es éter (header) ni suelo (footer).",
     token: "--rootsy-sombra-*",
     hexes: [
@@ -63,7 +63,7 @@ export const ROOTSY_COLOR_WORLDS: RootsyColorWorld[] = [
     name: "Savia",
     kind: "marca",
     concept: "Vida que acciona. El único verde con intención.",
-    usedIn: "CTA, foco, lista/entregada en comandas, brote del toolbox.",
+    usedIn: "CTA, foco, lista/entregada en comandas, brote del toolbox. Ícono Operar del menú.",
     not: "No es canopy legacy ni teal de marketing como mundo de comanda.",
     token: "--rootsy-savia-*",
     hexes: [
@@ -78,7 +78,7 @@ export const ROOTSY_COLOR_WORLDS: RootsyColorWorld[] = [
     name: "Suelo",
     kind: "clima",
     concept: "Tierra mojada — humus oliva después de la lluvia.",
-    usedIn: "Footer de listados y toolbox de Operar. MenuHeaderEntity as=footer.",
+    usedIn: "Footer de listados, toolbox de Operar, ícono Configurar del menú.",
     not: "No es earth de pills/forms ni sombra sola.",
     token: "--rootsy-suelo-*",
     hexes: [
@@ -93,7 +93,7 @@ export const ROOTSY_COLOR_WORLDS: RootsyColorWorld[] = [
     name: "Cielo",
     kind: "clima",
     concept: "Azul de naturaleza vivo — cerúleo de siesta.",
-    usedIn: "Comandas · enviada. Mundos diurnos de información.",
+    usedIn: "Comandas · enviada. Ícono Administrar del menú.",
     not: "No es éter (espacio) ni teal de info/marketing ni sky Tailwind.",
     token: "--rootsy-cielo-*",
     hexes: [
@@ -108,7 +108,7 @@ export const ROOTSY_COLOR_WORLDS: RootsyColorWorld[] = [
     name: "Sol",
     kind: "clima",
     concept: "Amarillo sol a través del dosel. Calor de cocina.",
-    usedIn: "Comandas · preparando.",
+    usedIn: "Comandas · preparando. Badge caliente del menú.",
     not: "No es warning ámbar (#D97706) ni otoño de pills.",
     token: "--rootsy-sol-*",
     hexes: [
@@ -123,7 +123,7 @@ export const ROOTSY_COLOR_WORLDS: RootsyColorWorld[] = [
     name: "Éter",
     kind: "clima",
     concept: "Espacio fuera del planeta — noche profunda, estrellas, horizonte frío.",
-    usedIn: "Header reutilizable (menú, módulos, listados). MenuHeaderEntity as=header.",
+    usedIn: "Header reutilizable, backdrop y viñeta del menú. MenuHeaderEntity as=header.",
     not: "No es cielo de día ni sombra del catálogo.",
     token: "--rootsy-eter-*",
     hexes: [

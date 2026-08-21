@@ -196,8 +196,8 @@
     .itile { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.16); font-size: 11px; font-weight: 800; }
     .op-old { background: linear-gradient(to bottom right, var(--canopy-400), var(--canopy-600)); }
     .op-new { background: linear-gradient(to bottom right, var(--savia-400), var(--savia-600)); }
-    .adm { background: linear-gradient(to bottom right, #22d3ee, #0e7490); }
-    .cfg { background: linear-gradient(to bottom right, #a78bfa, #6d28d9); }
+    .adm { background: linear-gradient(to bottom right, var(--cielo-400), var(--cielo-700)); }
+    .cfg { background: linear-gradient(to bottom right, var(--suelo-400), var(--suelo-700)); }
     .cap { margin: 6px 0 0; font-size: 10px; color: #8fa396; text-align: center; }
     .floor { height: 72px; border-radius: 10px; margin-top: 14px; position: relative; }
     .floor-old {
@@ -831,33 +831,33 @@
           <h3>Menú POP — icono Operar vs piso</h3>
           <span class="badge care">por capa</span>
         </div>
-        <p class="file"><b>Hoy</b> <span class="mono">menuNatureStyles.ts</span> · <span class="mono">menuHeaderEntityStyles.ts</span>. Administrar/Configurar (mar, dusk) no tienen familia en la paleta nueva y no hace falta.</p>
+        <p class="file"><b>Alineado</b> <span class="mono">menuNatureStyles.ts</span> · tres mundos: savia · cielo · suelo. Header y viñeta en éter.</p>
         <div class="pair">
           <article class="col">
-            <div class="col-head">Hoy</div>
+            <div class="col-head">Antes <em>canopy · sea · dusk</em></div>
             <div class="stage">
               <div class="menu-dark">
                 <div class="icons">
                   <div><div class="itile op-old">OP</div><p class="cap">canopy</p></div>
-                  <div><div class="itile adm">AD</div><p class="cap">mar · se queda</p></div>
-                  <div><div class="itile cfg">CF</div><p class="cap">dusk · se queda</p></div>
+                  <div><div class="itile" style="background:linear-gradient(to bottom right,#22d3ee,#0e7490)">AD</div><p class="cap">mar</p></div>
+                  <div><div class="itile" style="background:linear-gradient(to bottom right,#a78bfa,#6d28d9)">CF</div><p class="cap">dusk</p></div>
                 </div>
-                <div class="floor floor-old"><span>Piso tierra húmeda</span></div>
+                <div class="floor floor-old"><span>Piso earth</span></div>
               </div>
             </div>
           </article>
           <article class="col">
-            <div class="col-head">Propuesto <em>solo Operar → savia</em></div>
+            <div class="col-head">Ahora <em>savia · cielo · suelo</em></div>
             <div class="stage">
               <div class="menu-dark">
                 <div class="icons">
-                  <div><div class="itile op-new">OP</div><p class="cap">savia-400→600</p></div>
-                  <div><div class="itile adm">AD</div><p class="cap">igual</p></div>
-                  <div><div class="itile cfg">CF</div><p class="cap">igual</p></div>
+                  <div><div class="itile op-new">OP</div><p class="cap">savia</p></div>
+                  <div><div class="itile adm">AD</div><p class="cap">cielo</p></div>
+                  <div><div class="itile cfg">CF</div><p class="cap">suelo</p></div>
                 </div>
-                <div class="floor floor-keep"><span>Piso sin tocar</span></div>
+                <div class="floor floor-suelo"><span>Éter arriba · suelo en footer de módulos</span></div>
               </div>
-              <p class="token-chip">No generar “earth” ni “night” en la paleta nueva. El piso ya mezcla earth con sombra; rediseñarlo es otro ticket.</p>
+              <p class="token-chip">Operar acciona, administrar informa, configurar se planta. Sin sea ni dusk.</p>
             </div>
           </article>
         </div>
@@ -1080,8 +1080,8 @@
             <tr>
               <td>Administrar / Configurar</td>
               <td class="mono">sea / dusk</td>
-              <td>no hay</td>
-              <td>No — clima del menú</td>
+              <td>cielo / suelo</td>
+              <td><b>Sí</b> — mundos del menú</td>
             </tr>
             <tr>
               <td>Footer tablas + toolbox operar (suelo)</td>
