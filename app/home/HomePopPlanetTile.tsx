@@ -18,6 +18,7 @@ type Props = {
   initials: string
   address?: string | null
   active?: boolean
+  trial?: boolean
 }
 
 export function HomePopPlanetTile({
@@ -26,6 +27,7 @@ export function HomePopPlanetTile({
   initials,
   address,
   active = false,
+  trial = false,
 }: Props) {
   const hasImage = Boolean(imageUrl?.trim())
 
@@ -61,9 +63,9 @@ export function HomePopPlanetTile({
           )}
         </div>
 
-        {active ? (
-          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-200">
-            {HOME_COPY.popActive}
+        {trial ? (
+          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
+            {HOME_COPY.popTrial}
           </span>
         ) : null}
       </div>

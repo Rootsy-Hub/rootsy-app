@@ -123,6 +123,7 @@ function HomePopPickerCards({
                 initials={sigla}
                 address={pop.streetAddress?.trim() || null}
                 active={canEnter}
+                trial={sub.status === "trial"}
               />
             )
 

@@ -15,7 +15,7 @@ export const HOME_COPY = {
   retry: "¿Probamos de nuevo?",
   createPop: "Crear negocio",
   activateSubscription: "Activar suscripción",
-  popActive: "Activo",
+  popTrial: "Prueba gratis",
   photoModalTitle: "Tu foto",
   photoModalClose: "Cerrar",
 } as const
