@@ -27,7 +27,8 @@ type Props = {
   onDelete: (id: string, name: string) => void
   onLayoutChange: (updates: RecipeCategoryLayoutUpdate[]) => void
   stations: ComandaStationOption[]
-  onStationChange: (categoryId: string, stationId: string | null) => void
+  editingStationId: string | null
+  onEditingStationChange: (stationId: string | null) => void
 }
 
 function sortByOrder(a: RecipeCategoryOption, b: RecipeCategoryOption) {
@@ -101,7 +102,8 @@ export function RecipeCategoriesMenuBoard({
   onDelete,
   onLayoutChange,
   stations,
-  onStationChange,
+  editingStationId,
+  onEditingStationChange,
 }: Props) {
   const [items, setItems] = useState(() => [...categories].sort(sortByOrder))
   const pendingLayoutSigRef = useRef<string | null>(null)
@@ -160,6 +162,14 @@ export function RecipeCategoriesMenuBoard({
     [items],
   )
 
+  const editingCategory = editingCategoryId
+    ? categoryById(editingCategoryId)
+    : null
+  const editHasChanges =
+    editingCategory != null &&
+    (editingCategoryName.trim() !== editingCategory.name.trim() ||
+      editingStationId !== editingCategory.stationId)
+
   return (
     <div className="space-y-3">
       <RootsSortableActionList
@@ -175,6 +185,7 @@ export function RecipeCategoriesMenuBoard({
         editingId={editingCategoryId}
         editingValue={editingCategoryName}
         editSaveBusy={categorySaveBusy}
+        editHasChanges={editHasChanges}
         onStartEdit={(item) => {
           const category = categoryById(item.id)
           if (category) onStartEdit(category)
@@ -187,15 +198,22 @@ export function RecipeCategoriesMenuBoard({
         renderAccessory={(item) => {
           const category = categoryById(item.id)
           if (!category) return null
+          if (editingCategoryId === category.id) {
+            return (
+              <RecipeCategoryStationSelect
+                id={`recipe-category-station-${category.id}`}
+                label={`Comanda de ${category.name || "categoría"}`}
+                value={editingStationId}
+                stations={stations}
+                disabled={!canUpdate || categorySaveBusy}
+                onChange={onEditingStationChange}
+              />
+            )
+          }
           return (
-            <RecipeCategoryStationSelect
-              categoryId={category.id}
-              categoryName={category.name}
-              value={category.stationId}
-              stations={stations}
-              disabled={!canUpdate || categorySaveBusy}
-              onChange={(stationId) => onStationChange(category.id, stationId)}
-            />
+            <span className="flex w-40 shrink-0 items-center truncate text-sm text-[var(--rootsy-bruma-500)]">
+              {category.stationName || "Sin comanda"}
+            </span>
           )
         }}
       />

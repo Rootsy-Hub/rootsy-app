@@ -46,6 +46,7 @@ type SharedRowProps = {
   editingId: string | null
   editingValue: string
   editSaveBusy: boolean
+  editHasChanges?: boolean
   onStartEdit: (item: RootsSortableActionListItem) => void
   onCancelEdit: () => void
   onEditingValueChange: (value: string) => void
@@ -115,11 +116,12 @@ function SortableSlot({
   dragAnimating: boolean
 }) {
   const isEditing = rowProps.editingId === item.id
+  const dragLocked = rowProps.editingId != null
   const metrics = rootsSortableRowMetrics(rowProps.rowSize)
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: rootsSortableDragId(listId, item.id),
     data: { itemId: item.id },
-    disabled: !rowProps.canReorder || isEditing,
+    disabled: !rowProps.canReorder || dragLocked,
   })
 
   return (
@@ -139,13 +141,14 @@ function SortableSlot({
           isEditing={isEditing}
           editingValue={rowProps.editingValue}
           editSaveBusy={rowProps.editSaveBusy}
+          editHasChanges={rowProps.editHasChanges}
           canReorder={rowProps.canReorder}
           canToggleVisibility={rowProps.canToggleVisibility}
           canEdit={rowProps.canEdit}
           canDelete={rowProps.canDelete}
           dragHandleProps={
-            rowProps.canReorder && !isEditing
-              ? { attributes, listeners }
+            rowProps.canReorder
+              ? { attributes, listeners, disabled: dragLocked }
               : undefined
           }
           onStartEdit={() => rowProps.onStartEdit(item)}
@@ -175,6 +178,7 @@ function StaticActionList({
           isEditing={rowProps.editingId === item.id}
           editingValue={rowProps.editingValue}
           editSaveBusy={rowProps.editSaveBusy}
+          editHasChanges={rowProps.editHasChanges}
           canReorder={rowProps.canReorder}
           canToggleVisibility={rowProps.canToggleVisibility}
           canEdit={rowProps.canEdit}
@@ -206,6 +210,7 @@ export function RootsSortableActionList({
   editingId = null,
   editingValue = "",
   editSaveBusy = false,
+  editHasChanges,
   onStartEdit,
   onCancelEdit,
   onEditingValueChange,
@@ -246,10 +251,11 @@ export function RootsSortableActionList({
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
+      if (editingId) return
       const itemId = parseRootsSortableDragItemId(listId, event.active.id)
       if (itemId) setDraggingItemId(itemId)
     },
-    [listId],
+    [editingId, listId],
   )
 
   const handleDragOver = useCallback(
@@ -287,6 +293,7 @@ export function RootsSortableActionList({
     editingId,
     editingValue,
     editSaveBusy,
+    editHasChanges,
     onStartEdit,
     onCancelEdit,
     onEditingValueChange,

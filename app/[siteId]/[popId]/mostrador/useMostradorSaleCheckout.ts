@@ -56,6 +56,7 @@ import {
   addPromotionToTicketCart,
   applyPartialPaymentCartMaterialization,
   copyTicketLineOverrides,
+  mapMenuCartToDetallados,
 } from "@/lib/menuSaleTicketCart"
 import {
   ensureCartLineIds,
@@ -67,8 +68,11 @@ import {
   type OperationCartLineOverrideState,
 } from "@/components/sale-operation/OperationCartLineRow"
 import {
+  collectCartCatalogEnsureIds,
   menuArticleToProduct,
   menuRecipeToProduct,
+  resolveMenuCartCatalogProduct,
+  snapshotFromCatalogProduct,
   type MenuCatalogProduct,
 } from "@/lib/menuCatalogProduct"
 import {
@@ -191,6 +195,7 @@ export function useMostradorSaleCheckout(
     openCashSession,
     invoiceTypeSiteId,
     catalogLoading,
+    catalogItemsEnsuring,
     catalogError,
     catalogLoadAttempted,
     mergeCatalogArticles,
@@ -568,15 +573,28 @@ export function useMostradorSaleCheckout(
   )
 
   useEffect(() => {
-    const articleIds: string[] = []
-    const recipeIds: string[] = []
-    for (const item of carrito) {
-      const kind = normalizeCartItemKind(item.kind)
-      if (kind === "recipe") recipeIds.push(item.productoId)
-      else if (kind === "article") articleIds.push(item.productoId)
-    }
+    const { articleIds, recipeIds } = collectCartCatalogEnsureIds(carrito)
     void ensureCatalogItems(articleIds, recipeIds)
   }, [carrito, ensureCatalogItems])
+
+  useEffect(() => {
+    setCarrito((prev) => {
+      let changed = false
+      const next = prev.map((item) => {
+        if (item.snapshot?.nombre.trim()) return item
+        const kind = normalizeCartItemKind(item.kind)
+        const producto = resolveMenuCartCatalogProduct(
+          productosByKey,
+          item.productoId,
+          kind,
+        )
+        if (!producto) return item
+        changed = true
+        return { ...item, snapshot: snapshotFromCatalogProduct(producto) }
+      })
+      return changed ? next : prev
+    })
+  }, [productosByKey])
 
   const overrideSnapshot = useMemo(
     () => ({
@@ -629,24 +647,7 @@ export function useMostradorSaleCheckout(
 
   const mapCarritoToDetallados = useCallback(
     (source: MesasCartItem[]) =>
-      source
-        .map((i) => {
-          const kind = normalizeCartItemKind(i.kind)
-          const producto =
-            productosByKey.get(`${kind}:${i.productoId}`) ?? null
-          if (kind === "promotion" && !i.promotionSelections?.length) {
-            return null
-          }
-          if (kind !== "promotion" && !producto) return null
-          return {
-            ...i,
-            kind,
-            lineId: resolveCartLineId({ ...i, kind }),
-            cartLineKey: resolveCartLineId({ ...i, kind }),
-            producto,
-          }
-        })
-        .filter((i): i is NonNullable<typeof i> => i != null),
+      mapMenuCartToDetallados(source, productosByKey),
     [productosByKey],
   )
 
@@ -659,6 +660,9 @@ export function useMostradorSaleCheckout(
     () => mapCarritoToDetallados(unpaidCarrito),
     [unpaidCarrito, mapCarritoToDetallados],
   )
+
+  const orderPanelLoading =
+    carrito.length > 0 && (catalogLoading || catalogItemsEnsuring)
 
   const cartDisplayRows = useMemo(
     () =>
@@ -1033,6 +1037,7 @@ export function useMostradorSaleCheckout(
           promotionId,
           selections,
           paidPartialUnits: checkoutStateRef.current.paidPartialUnits ?? {},
+          snapshot: snapshotFromCatalogProduct(product),
         })
         affectedLineId = result.affectedLineId
         for (const copy of result.overrideCopies) {
@@ -1633,8 +1638,10 @@ export function useMostradorSaleCheckout(
 
   return {
     catalogLoading,
+    catalogItemsEnsuring,
     catalogError,
     catalogLoadAttempted,
+    orderPanelLoading,
     mergeCatalogArticles,
     mergeCatalogRecipes,
     openCashSession,

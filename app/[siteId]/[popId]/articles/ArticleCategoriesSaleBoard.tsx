@@ -158,6 +158,7 @@ export function ArticleCategoriesSaleBoard({
   const list = (
     <RootsSortableActionList
       listId="article-categories"
+      rowSize="comfortable"
       items={toListItems(items)}
       onReorder={handleReorder}
       emptyMessage="Todavía no hay categorías."

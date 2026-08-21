@@ -62,6 +62,7 @@ type Props = {
   closeSessionBlockReason?: string | null
   closeSessionMode?: ChannelCloseMode | null
   closeSessionLoading?: boolean
+  closeSessionError?: string | null
   clientLabel?: string | null
   onSetFloorStatus?: (
     floorStatus: MesaSessionFloorStatus,
@@ -95,6 +96,7 @@ export function MesaSessionPanel({
   closeSessionBlockReason = null,
   closeSessionMode = null,
   closeSessionLoading = false,
+  closeSessionError = null,
   clientLabel,
   onSetFloorStatus,
   floorStatusLoading = false,
@@ -122,6 +124,8 @@ export function MesaSessionPanel({
     try {
       const ok = await onCloseSession()
       if (ok) setCloseDialogOpen(false)
+    } catch {
+      // El error lo muestra el checkout; no dejar el modal en “Liberando…”.
     } finally {
       setCloseBusy(false)
     }
@@ -311,6 +315,7 @@ export function MesaSessionPanel({
         confirmLabel="Liberar mesa"
         busy={closeBusy || closeSessionLoading}
         busyConfirmLabel="Liberando…"
+        error={closeSessionError}
         onConfirm={() => void confirmCloseSession()}
       />
 

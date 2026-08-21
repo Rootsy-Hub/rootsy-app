@@ -37,6 +37,7 @@ export function MostradorOrderPanel({
     cerrarPedido,
     cerrarPedidoMode,
     puedeRegistrar,
+    orderPanelLoading,
   } = checkout
 
   const confirmLabel =
@@ -56,6 +57,7 @@ export function MostradorOrderPanel({
 
   return (
     <SaleOperationTicketOrderPanel
+      loading={orderPanelLoading}
       cartDisplayRows={cartDisplayRows}
       cartLineOverrides={cartLineOverrides}
       paidPartialUnits={paidPartialUnits}

@@ -121,6 +121,7 @@ export function MesasWorkspace({
     markReservationNoShow,
     checkInReservation,
     freeTablesInSalon,
+    removeSession,
   } = useMesasState(popId, siteId)
 
   const [rightView, setRightView] = useState<MesasRightPanelView>("session")
@@ -147,8 +148,9 @@ export function MesasWorkspace({
   )
 
   const handleSessionClose = useCallback(async () => {
-    await Promise.all([reloadSessions(), reloadReservations()])
-  }, [reloadSessions, reloadReservations])
+    if (selectedSession?.id) removeSession(selectedSession.id)
+    void Promise.all([reloadSessions(), reloadReservations()])
+  }, [reloadSessions, reloadReservations, removeSession, selectedSession?.id])
 
   const handleCartLineAdded = useCallback(
     (lineId: string) => {
@@ -486,6 +488,7 @@ export function MesasWorkspace({
                   closeSessionBlockReason={checkout.cerrarMesaBlockReason}
                   closeSessionMode={checkout.cerrarMesaMode}
                   closeSessionLoading={checkout.submitting}
+                  closeSessionError={checkout.submitError}
                   clientLabel={checkout.sessionClientLabel}
                   onOpenReservationDetail={(reservation) => {
                     setAgendaReservationId(reservation.id)

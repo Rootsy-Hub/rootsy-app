@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Cog,
   CreditCard,
+  ChefHat,
   Factory,
   FileBarChart,
   FileCheck,
@@ -39,6 +40,7 @@ export type MenuItemLink =
   | "quotes"
   | "purchase-orders"
   | "mesas"
+  | "comandas"
   | "mostrador"
   | "operations"
   | "purchases"
@@ -109,6 +111,7 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Vender", icon: ShoppingCart, link: "sale" },
       { name: "Mostrador", icon: Monitor, link: "mostrador" },
       { name: "Mesas", icon: UtensilsCrossed, link: "mesas" },
+      { name: "Comandas", icon: ChefHat, link: "comandas" },
       { name: "Vender servicio", icon: Banknote, link: "cobrar-servicios" },
       { name: "Comprar", icon: ShoppingBag, link: "purchases" },
       { name: "Gastos", icon: Receipt, link: "expenses" },

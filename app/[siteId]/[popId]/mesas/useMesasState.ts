@@ -957,5 +957,6 @@ export function useMesasState(popId: string, siteId: string) {
     markReservationNoShow,
     checkInReservation,
     freeTablesInSalon,
+    removeSession,
   }
 }

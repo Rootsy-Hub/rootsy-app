@@ -17,7 +17,11 @@ import {
   RootsDialogErrorBanner,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
-import { RootsFormTextField } from "@/components/rootsy-form"
+import {
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  RootsFormTextField,
+} from "@/components/rootsy-form"
 import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
 import { Dialog } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
@@ -32,8 +36,10 @@ type Props = {
   canUpdate: boolean
   canDelete: boolean
   newCategoryName: string
+  newCategoryStationId: string | null
   newCategorySaving: boolean
   onNewCategoryNameChange: (value: string) => void
+  onNewCategoryStationChange: (stationId: string | null) => void
   onCreateCategory: () => void
   categoryBusy: boolean
   editingCategoryId: string | null
@@ -45,7 +51,8 @@ type Props = {
   onDeleteCategory: (id: string, name: string) => void
   onLayoutChange: (updates: RecipeCategoryLayoutUpdate[]) => void | Promise<void>
   stations: ComandaStationOption[]
-  onStationChange: (categoryId: string, stationId: string | null) => void
+  editingStationId: string | null
+  onEditingStationChange: (stationId: string | null) => void
 }
 
 export function RecipeCategoriesDialog({
@@ -58,8 +65,10 @@ export function RecipeCategoriesDialog({
   canUpdate,
   canDelete,
   newCategoryName,
+  newCategoryStationId,
   newCategorySaving,
   onNewCategoryNameChange,
+  onNewCategoryStationChange,
   onCreateCategory,
   categoryBusy,
   editingCategoryId,
@@ -71,7 +80,8 @@ export function RecipeCategoriesDialog({
   onDeleteCategory,
   onLayoutChange,
   stations,
-  onStationChange,
+  editingStationId,
+  onEditingStationChange,
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -86,14 +96,14 @@ export function RecipeCategoriesDialog({
         <RootsDialogBody>
           {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
           {canCreate ? (
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="mb-4 grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_auto]">
               <RootsFormTextField
                 label="Nueva categoría"
                 id="recipe-new-category"
                 value={newCategoryName}
                 onChange={(event) => onNewCategoryNameChange(event.target.value)}
                 placeholder="Nombre"
-                className="min-w-0 flex-1"
+                className="min-w-0"
                 disabled={newCategorySaving}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
@@ -102,13 +112,30 @@ export function RecipeCategoriesDialog({
                   }
                 }}
               />
+              <RootsFormSelectField
+                label="Comanda"
+                id="recipe-new-category-station"
+                value={newCategoryStationId ?? "__none__"}
+                onValueChange={(value) =>
+                  onNewCategoryStationChange(value === "__none__" ? null : value)
+                }
+                className="min-w-0"
+                disabled={newCategorySaving}
+              >
+                <RootsFormSelectItem value="__none__">Sin comanda</RootsFormSelectItem>
+                {stations.map((station) => (
+                  <RootsFormSelectItem key={station.id} value={station.id}>
+                    {station.name || "—"}
+                  </RootsFormSelectItem>
+                ))}
+              </RootsFormSelectField>
               <RootsProgressButton
                 type="button"
                 variant={rootsButtonVariant.primary}
                 className={cn(
                   saleOpDialogPrimaryBtn,
                   rootsButtonClassForVariant("primary"),
-                  "h-11 shrink-0",
+                  "h-11 w-full shrink-0 sm:w-auto",
                 )}
                 disabled={newCategorySaving || !newCategoryName.trim()}
                 loading={newCategorySaving}
@@ -134,7 +161,8 @@ export function RecipeCategoriesDialog({
             onDelete={onDeleteCategory}
             onLayoutChange={onLayoutChange}
             stations={stations}
-            onStationChange={onStationChange}
+            editingStationId={editingStationId}
+            onEditingStationChange={onEditingStationChange}
           />
         </RootsDialogBody>
       </RootsDialogContent>

@@ -51,51 +51,57 @@ export function MesasLayoutAdminButtons({
   const [tablesOpen, setTablesOpen] = useState(false)
   const [decorsOpen, setDecorsOpen] = useState(false)
 
-  if (!canUpdate) return null
-
   return (
     <>
-      <MesasHeaderTooltipButton
-        label="Salones"
-        icon={MapPin}
-        onClick={() => setSalonsOpen(true)}
-      />
-      <MesasHeaderTooltipButton
-        label="Mesas"
-        icon={LayoutGrid}
-        onClick={() => setTablesOpen(true)}
-      />
-      <MesasHeaderTooltipButton
-        label="Elementos del plano"
-        icon={Shapes}
-        onClick={() => setDecorsOpen(true)}
-      />
+      {canUpdate ? (
+        <>
+          <MesasHeaderTooltipButton
+            label="Salones"
+            icon={MapPin}
+            onClick={() => setSalonsOpen(true)}
+          />
+          <MesasHeaderTooltipButton
+            label="Mesas"
+            icon={LayoutGrid}
+            onClick={() => setTablesOpen(true)}
+          />
+          <MesasHeaderTooltipButton
+            label="Elementos del plano"
+            icon={Shapes}
+            onClick={() => setDecorsOpen(true)}
+          />
+        </>
+      ) : null}
 
-      <MesasSalonsDialog
-        open={salonsOpen}
-        onOpenChange={setSalonsOpen}
-        popId={popId}
-        siteId={siteId}
-        onLayoutChanged={onLayoutChanged}
-      />
-      <MesasTablesDialog
-        open={tablesOpen}
-        onOpenChange={setTablesOpen}
-        popId={popId}
-        siteId={siteId}
-        salons={salons}
-        getLayoutData={getLayoutData}
-        onLayoutChanged={onLayoutChanged}
-      />
-      <MesasDecorsDialog
-        open={decorsOpen}
-        onOpenChange={setDecorsOpen}
-        popId={popId}
-        siteId={siteId}
-        salons={salons}
-        getLayoutData={getLayoutData}
-        onLayoutChanged={onLayoutChanged}
-      />
+      {canUpdate ? (
+        <>
+          <MesasSalonsDialog
+            open={salonsOpen}
+            onOpenChange={setSalonsOpen}
+            popId={popId}
+            siteId={siteId}
+            onLayoutChanged={onLayoutChanged}
+          />
+          <MesasTablesDialog
+            open={tablesOpen}
+            onOpenChange={setTablesOpen}
+            popId={popId}
+            siteId={siteId}
+            salons={salons}
+            getLayoutData={getLayoutData}
+            onLayoutChanged={onLayoutChanged}
+          />
+          <MesasDecorsDialog
+            open={decorsOpen}
+            onOpenChange={setDecorsOpen}
+            popId={popId}
+            siteId={siteId}
+            salons={salons}
+            getLayoutData={getLayoutData}
+            onLayoutChanged={onLayoutChanged}
+          />
+        </>
+      ) : null}
     </>
   )
 }

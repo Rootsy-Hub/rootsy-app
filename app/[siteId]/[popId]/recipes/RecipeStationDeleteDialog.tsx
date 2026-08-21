@@ -10,15 +10,15 @@ import {
 import { AlertDialog } from "@/components/ui/alert-dialog"
 import { Spinner } from "@/components/ui/spinner"
 
-type DeleteTarget = {
+export type RecipeStationDeleteTarget = {
   id: string
   name: string
-  articleCount: number | null
+  categoryCount: number | null
 }
 
 type Props = {
   open: boolean
-  target: DeleteTarget | null
+  target: RecipeStationDeleteTarget | null
   banner: string | null
   busy: boolean
   onOpenChange: (open: boolean) => void
@@ -28,7 +28,7 @@ type Props = {
 
 const nameEmphasisClass = "font-medium text-[var(--rootsy-bruma-900)]"
 
-export function ArticleCategoryDeleteDialog({
+export function RecipeStationDeleteDialog({
   open,
   target,
   banner,
@@ -38,14 +38,14 @@ export function ArticleCategoryDeleteDialog({
   onConfirmDelete,
 }: Props) {
   const blocked =
-    target != null && target.articleCount != null && target.articleCount > 0
-  const ready = target != null && target.articleCount === 0
-  const checking = target != null && target.articleCount === null
-  const categoryName = target?.name || "seleccionada"
-  const articleCountLabel =
-    target?.articleCount === 1
-      ? "1 artículo asociado"
-      : `${target?.articleCount ?? 0} artículos asociados`
+    target != null && target.categoryCount != null && target.categoryCount > 0
+  const ready = target != null && target.categoryCount === 0
+  const checking = target != null && target.categoryCount === null
+  const stationName = target?.name || "seleccionada"
+  const categoryCountLabel =
+    target?.categoryCount === 1
+      ? "1 categoría asociada"
+      : `${target?.categoryCount ?? 0} categorías asociadas`
 
   return (
     <AlertDialog
@@ -57,11 +57,11 @@ export function ArticleCategoryDeleteDialog({
     >
       <RootsAlertDialogContent nested>
         {checking ? (
-          <RootsAlertDialogPanel title="Eliminar categoría">
+          <RootsAlertDialogPanel title="Eliminar estación">
             <div className="flex items-center gap-2">
               <Spinner className="size-4 shrink-0" aria-hidden />
               <RootsAlertDialogBodyText>
-                Verificando artículos relacionados…
+                Verificando categorías relacionadas…
               </RootsAlertDialogBodyText>
             </div>
           </RootsAlertDialogPanel>
@@ -70,25 +70,25 @@ export function ArticleCategoryDeleteDialog({
             title="No se puede eliminar"
             description={
               <>
-                La categoría{" "}
-                <strong className={nameEmphasisClass}>{categoryName}</strong>{" "}
+                La estación{" "}
+                <strong className={nameEmphasisClass}>{stationName}</strong>{" "}
                 tiene{" "}
-                <strong className={nameEmphasisClass}>{articleCountLabel}</strong>.
+                <strong className={nameEmphasisClass}>{categoryCountLabel}</strong>.
               </>
             }
           >
             <RootsAlertDialogBodyText>
-              Para eliminar, desasociá esos artículos primero: cambiáles la
-              categoría.
+              Para eliminar, desasociá esas categorías primero: cambiáles la
+              comanda.
             </RootsAlertDialogBodyText>
           </RootsAlertDialogPanel>
         ) : (
           <RootsAlertDialogPanel
-            title="Eliminar categoría"
+            title="Eliminar estación"
             description={
               <>
-                ¿Eliminar la categoría{" "}
-                <strong className={nameEmphasisClass}>{categoryName}</strong>?
+                ¿Eliminar la estación{" "}
+                <strong className={nameEmphasisClass}>{stationName}</strong>?
                 Esta acción no se puede deshacer.
               </>
             }

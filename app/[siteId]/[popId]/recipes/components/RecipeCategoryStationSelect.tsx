@@ -13,8 +13,8 @@ import { cn } from "@/lib/utils"
 const NONE_VALUE = "__none__"
 
 type Props = {
-  categoryId: string
-  categoryName: string
+  id: string
+  label: string
   value: string | null
   stations: ComandaStationOption[]
   disabled?: boolean
@@ -22,8 +22,8 @@ type Props = {
 }
 
 export function RecipeCategoryStationSelect({
-  categoryId,
-  categoryName,
+  id,
+  label,
   value,
   stations,
   disabled = false,
@@ -41,8 +41,8 @@ export function RecipeCategoryStationSelect({
         disabled={disabled}
       >
         <RootsFormSelectTrigger
-          id={`recipe-category-station-${categoryId}`}
-          aria-label={`Comanda de ${categoryName || "categoría"}`}
+          id={id}
+          aria-label={label}
           className={cn("h-10 min-h-10 px-2.5")}
         >
           <RootsFormSelectValue placeholder="Sin comanda" />

@@ -42,6 +42,7 @@ const MODULE_TITLES: Record<string, string> = {
   sale: "Vender",
   purchases: "Comprar",
   mesas: "Mesas",
+  comandas: "Comandas",
   mostrador: "Mostrador",
   "cobrar-servicios": "Cobrar servicios",
 }

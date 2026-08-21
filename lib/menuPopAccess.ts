@@ -2,7 +2,7 @@ import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 import type { MenuItemDef, MenuItemLink, MenuSectionKey } from "@/lib/menuCatalog"
 import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
 import { ROOTS_MODULE_SECTION_LABELS } from "@/lib/rootsySubscriptionCatalog"
-import { Banknote } from "lucide-react"
+import { Banknote, ChefHat } from "lucide-react"
 
 /** Link del menú → key de módulo en `_pop-access` / catálogo de suscripción. */
 export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
@@ -11,6 +11,7 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   "purchase-orders": "purchase_orders",
   mostrador: "mostrador",
   mesas: "mesas",
+  comandas: "comandas",
   purchases: "purchases",
   expenses: "expenses",
   articles: "stock",
@@ -57,6 +58,7 @@ const MENU_MODULE_KEY_ORDER: Record<MenuModuleSection, readonly string[]> = {
     "sale",
     "mostrador",
     "mesas",
+    "comandas",
     "active_services",
     "purchases",
     "expenses",
@@ -181,6 +183,24 @@ export function buildMenuSectionsFromEnabledModules(
     grouped.set(section, items)
   }
 
+  const hasKitchenOps = enabledModules.some(
+    (mod) =>
+      (mod.key === "mesas" || mod.key === "mostrador") &&
+      mod.permissions?.read,
+  )
+  if (hasKitchenOps) {
+    const operarItems = grouped.get("operar") ?? []
+    if (!operarItems.some((item) => item.link === "comandas")) {
+      operarItems.push({
+        moduleKey: "comandas",
+        name: "Comandas",
+        icon: ChefHat,
+        link: "comandas",
+      })
+      grouped.set("operar", operarItems)
+    }
+  }
+
   const hasActiveServices = enabledModules.some(
     (mod) => mod.key === "active_services" && mod.permissions?.read,
   )
@@ -214,6 +234,13 @@ export function canAccessMenuItemFromPopAccess(
   menuLink?: MenuItemLink,
 ): boolean {
   if (!menuLink || menuLink === "section") return false
+  if (menuLink === "comandas") {
+    return enabledModules.some(
+      (mod) =>
+        (mod.key === "mesas" || mod.key === "mostrador") &&
+        Boolean(mod.permissions?.read),
+    )
+  }
   const moduleKey = MENU_LINK_TO_MODULE_KEY[menuLink]
   if (!moduleKey) return false
   const mod = enabledModules.find((entry) => entry.key === moduleKey)

@@ -485,6 +485,7 @@ export async function getPopRecipeCategories(popId: string): Promise<
 export async function createRecipeCategory(
   popId: string,
   nameRaw: string,
+  stationId: string | null = null,
 ): Promise<{ success: true; id: string } | { success: false; error: string }> {
   try {
     const access = await validatePopAccess(popId)
@@ -497,6 +498,9 @@ export async function createRecipeCategory(
     }
     const name = nameRaw.trim()
     if (!name) return { success: false, error: "Indicá el nombre de la categoría." }
+    if (stationId && !isUuid(stationId)) {
+      return { success: false, error: "Estación inválida." }
+    }
     const supabase = await createClient()
     const { data: maxRow } = await supabase
       .from("recipe_categories")
@@ -511,6 +515,7 @@ export async function createRecipeCategory(
       .insert({
         pop_id: popId,
         name,
+        station_id: stationId,
         sort_order: sortOrder,
         show_in_menu: true,
         is_active: true,
@@ -533,6 +538,7 @@ export async function updateRecipeCategory(
   popId: string,
   categoryId: string,
   nameRaw: string,
+  stationId?: string | null,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const access = await validatePopAccess(popId)
@@ -546,14 +552,50 @@ export async function updateRecipeCategory(
     if (!isUuid(categoryId)) return { success: false, error: "Categoría inválida." }
     const name = nameRaw.trim()
     if (!name) return { success: false, error: "Indicá el nombre de la categoría." }
+    if (stationId && !isUuid(stationId)) {
+      return { success: false, error: "Estación inválida." }
+    }
     const supabase = await createClient()
     const { error } = await supabase
       .from("recipe_categories")
-      .update({ name })
+      .update({
+        name,
+        ...(stationId !== undefined ? { station_id: stationId } : {}),
+      })
       .eq("id", categoryId)
       .eq("pop_id", popId)
     if (error) return { success: false, error: error.message }
     return { success: true }
+  } catch (e: unknown) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Error desconocido",
+    }
+  }
+}
+
+export async function getPopRecipeCategoryRecipeCount(
+  popId: string,
+  categoryId: string,
+): Promise<{ success: true; count: number } | { success: false; error: string }> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const perms = await recipePermissionFlags(popId)
+    if (!perms.canRead) {
+      return { success: false, error: "Sin permiso para ver recetas." }
+    }
+    if (!isUuid(categoryId)) return { success: false, error: "Categoría inválida." }
+    const supabase = await createClient()
+    const { count, error } = await supabase
+      .from("recipes")
+      .select("id", { count: "exact", head: true })
+      .eq("pop_id", popId)
+      .eq("category_id", categoryId)
+    if (error) return { success: false, error: error.message }
+    return { success: true, count: count ?? 0 }
   } catch (e: unknown) {
     return {
       success: false,
@@ -819,6 +861,36 @@ export async function updateComandaStation(
       .eq("pop_id", popId)
     if (error) return { success: false, error: stationUniqueNameError(error.message) }
     return { success: true }
+  } catch (e: unknown) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Error desconocido",
+    }
+  }
+}
+
+export async function getPopComandaStationCategoryCount(
+  popId: string,
+  stationId: string,
+): Promise<{ success: true; count: number } | { success: false; error: string }> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const perms = await recipePermissionFlags(popId)
+    if (!perms.canRead) {
+      return { success: false, error: "Sin permiso para ver estaciones." }
+    }
+    if (!isUuid(stationId)) return { success: false, error: "Estación inválida." }
+    const supabase = await createClient()
+    const { count, error } = await supabase
+      .from("recipe_categories")
+      .select("id", { count: "exact", head: true })
+      .eq("pop_id", popId)
+      .eq("station_id", stationId)
+    if (error) return { success: false, error: error.message }
+    return { success: true, count: count ?? 0 }
   } catch (e: unknown) {
     return {
       success: false,

@@ -1,4 +1,4 @@
-import type { MenuCartItemKind } from "@/lib/menuCart"
+import type { MenuCartItemKind, MenuCartItemSnapshot } from "@/lib/menuCart"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import type { SaleCatalogPaymentOption } from "@/app/[siteId]/[popId]/sale/actions"
 import { healLegacyLockedGeneralDiscount } from "@/lib/generalDiscountLock"
@@ -9,6 +9,7 @@ export type MesasCartItem = {
   cantidad: number
   kind?: MenuCartItemKind
   promotionSelections?: PromotionCartSelection[]
+  snapshot?: MenuCartItemSnapshot
   paidLocked?: boolean
 }
 
@@ -126,13 +127,39 @@ function parseCartItem(v: unknown): MesasCartItem | null {
     typeof v.lineId === "string" && v.lineId.trim()
       ? v.lineId.trim()
       : undefined
+  const snapshot = parseCartItemSnapshot(v.snapshot)
   return {
     ...(lineId ? { lineId } : {}),
     productoId,
     cantidad: Math.round(cantidad),
     ...(kind ? { kind } : {}),
     ...(promotionSelections ? { promotionSelections } : {}),
+    ...(snapshot ? { snapshot } : {}),
     ...(v.paidLocked === true ? { paidLocked: true } : {}),
+  }
+}
+
+function parseCartItemSnapshot(v: unknown): MenuCartItemSnapshot | undefined {
+  if (!isRecord(v)) return undefined
+  const nombre = typeof v.nombre === "string" ? v.nombre.trim() : ""
+  const precio = Number(v.precio)
+  if (!nombre || !Number.isFinite(precio)) return undefined
+  const precioOriginal = Number(v.precioOriginal)
+  const iva = Number(v.iva)
+  return {
+    nombre,
+    precio,
+    ...(Number.isFinite(precioOriginal) ? { precioOriginal } : {}),
+    ...(typeof v.imagen === "string" && v.imagen.trim()
+      ? { imagen: v.imagen.trim() }
+      : {}),
+    ...(typeof v.descripcion === "string" && v.descripcion.trim()
+      ? { descripcion: v.descripcion.trim() }
+      : {}),
+    ...(Number.isFinite(iva) ? { iva } : {}),
+    ...(typeof v.categoria === "string" && v.categoria.trim()
+      ? { categoria: v.categoria.trim() }
+      : {}),
   }
 }
 

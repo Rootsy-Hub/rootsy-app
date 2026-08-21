@@ -69,6 +69,8 @@ export const rootsSortableListDragHandleClass = cn(
   "hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
   "active:cursor-grabbing",
   "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+  "disabled:cursor-not-allowed disabled:opacity-40",
+  "disabled:hover:bg-transparent disabled:hover:text-[var(--rootsy-bruma-500)]",
 )
 
 export const rootsSortableListDragHandleIconClass = "text-[var(--rootsy-bruma-500)]"

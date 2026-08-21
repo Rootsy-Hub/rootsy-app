@@ -7,6 +7,7 @@ import {
   type MesaReservationStatus,
   type MesaTableShape,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import { syncComandasFromTableCheckout } from "@/app/[siteId]/[popId]/comandas/syncComandasFromCheckout"
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { readCheckoutFromSessionMetadata, readFloorStatusFromSessionMetadata, floorStatusToSessionMetadataValue, type MesaSessionFloorStatus } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { buildUnpaidCarrito } from "@/lib/partialCheckoutSelection"
@@ -1599,7 +1600,11 @@ export async function closeTableSession(
   }
 
   if (openSession) {
-    await completeReservationsAfterSessionClose(supabase, popId, openSession)
+    try {
+      await completeReservationsAfterSessionClose(supabase, popId, openSession)
+    } catch {
+      // La mesa ya se liberó; no frenar el cierre por la reserva.
+    }
   }
 
   return { success: true }
@@ -1641,101 +1646,21 @@ export async function closeTableSessionCheckout(
 
   const checkout = readCheckoutFromSessionMetadata(session.metadata)
   const carrito = checkout?.carrito ?? []
-  const totalPagadoAcumulado = checkout?.totalPagadoAcumulado ?? 0
   const paidPartialUnits = checkout?.paidPartialUnits ?? {}
-  const hasPayment =
-    totalPagadoAcumulado > 0 ||
-    Object.values(paidPartialUnits).some((value) => Number(value) > 0)
   const unpaidCarrito = buildUnpaidCarrito({
     carrito,
     paidPartialUnits,
     quantityDealApplications: [],
   })
-  const hasUnpaidItems = unpaidCarrito.length > 0
 
-  const { count: salesCount, error: salesCountErr } = await supabase
-    .from("sales")
-    .select("id", { count: "exact", head: true })
-    .eq("pop_id", popId)
-    .eq("table_session_id", sessionId)
-    .eq("status", "completed")
-
-  if (salesCountErr) {
-    return { success: false, error: salesCountErr.message }
-  }
-
-  const hasSales = (salesCount ?? 0) > 0
-
-  if (hasUnpaidItems) {
+  if (unpaidCarrito.length > 0) {
     return {
       success: false,
       error: "Hay ítems sin cobrar. Cobrá el pedido antes de liberar la mesa.",
     }
   }
 
-  // Mesa vacía: sin ventas ni cobros registrados en el checkout.
-  if (!hasSales && !hasPayment) {
-    return closeTableSession(popId, routeSiteId, sessionId, "closed")
-  }
-
-  // Hay ventas o cobros: verificar que no quede saldo pendiente.
-  if (hasSales) {
-    const { data: salesRows, error: salesErr } = await supabase
-      .from("sales")
-      .select("metadata")
-      .eq("pop_id", popId)
-      .eq("table_session_id", sessionId)
-      .eq("status", "completed")
-      .order("sold_at", { ascending: false })
-
-    if (salesErr) {
-      return { success: false, error: salesErr.message }
-    }
-
-    let maxOrderTotal = 0
-    let maxPaidAccumulated = 0
-    for (const row of salesRows ?? []) {
-      const metadata =
-        row.metadata &&
-        typeof row.metadata === "object" &&
-        !Array.isArray(row.metadata)
-          ? (row.metadata as Record<string, unknown>)
-          : {}
-      const orderTotal = Number(metadata.channel_order_total)
-      const paidAccumulated = Number(metadata.channel_paid_accumulated)
-      if (Number.isFinite(orderTotal)) {
-        maxOrderTotal = Math.max(maxOrderTotal, orderTotal)
-      }
-      if (Number.isFinite(paidAccumulated)) {
-        maxPaidAccumulated = Math.max(maxPaidAccumulated, paidAccumulated)
-      }
-    }
-
-    const paidFromSalesMetadata =
-      maxOrderTotal <= 0 ||
-      maxPaidAccumulated + 0.009 >= maxOrderTotal
-    const paidFromCheckout =
-      maxOrderTotal > 0 && totalPagadoAcumulado + 0.009 >= maxOrderTotal
-
-    if (maxOrderTotal > 0 && !paidFromSalesMetadata && !paidFromCheckout) {
-      return {
-        success: false,
-        error: "La mesa aún tiene saldo pendiente de cobro.",
-      }
-    }
-
-    return closeTableSession(popId, routeSiteId, sessionId, "closed")
-  }
-
-  // Cobros en checkout sin ventas vinculadas (estado inconsistente): permitir si no hay ítems pendientes.
-  if (hasPayment) {
-    return closeTableSession(popId, routeSiteId, sessionId, "closed")
-  }
-
-  return {
-    success: false,
-    error: "No hay cobros registrados para liberar esta mesa.",
-  }
+  return closeTableSession(popId, routeSiteId, sessionId, "closed")
 }
 
 export async function saveTableSessionCheckout(
@@ -1794,6 +1719,8 @@ export async function saveTableSessionCheckout(
       error: error?.message || "No se pudo guardar el pedido de la mesa.",
     }
   }
+
+  await syncComandasFromTableCheckout(supabase, popId, sessionId, checkout)
 
   return { success: true, updatedAt: data.updated_at as string }
 }

@@ -29,6 +29,7 @@ import {
   applyTicketLineEdit,
   addPromotionToTicketCart,
   addProductToTicketCart,
+  mapMenuCartToDetallados,
 } from "@/lib/menuSaleTicketCart"
 import {
   cartLinesMatchPromotion,
@@ -130,24 +131,7 @@ export function useSaleTicketCart(input: {
   )
 
   const itemsDetallados = useMemo(
-    () =>
-      carrito
-        .map((i) => {
-          const kind = normalizeCartItemKind(i.kind)
-          const producto = productosByKey.get(`${kind}:${i.productoId}`) ?? null
-          if (kind === "promotion" && !i.promotionSelections?.length) {
-            return null
-          }
-          if (kind !== "promotion" && !producto) return null
-          return {
-            ...i,
-            kind,
-            lineId: resolveCartLineId({ ...i, kind }),
-            cartLineKey: resolveCartLineId({ ...i, kind }),
-            producto,
-          }
-        })
-        .filter((i): i is NonNullable<typeof i> => i != null),
+    () => mapMenuCartToDetallados(carrito, productosByKey),
     [carrito, productosByKey],
   )
 

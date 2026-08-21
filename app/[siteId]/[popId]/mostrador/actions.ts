@@ -6,6 +6,7 @@ import type {
   CreateCounterOrderInput,
   UpdateCounterOrderInput,
 } from "@/app/[siteId]/[popId]/mostrador/mostradorTypes"
+import { syncComandasFromCounterCheckout } from "@/app/[siteId]/[popId]/comandas/syncComandasFromCheckout"
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { readCheckoutFromSessionMetadata } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
@@ -736,6 +737,8 @@ export async function saveCounterOrderCheckout(
       error: error?.message || "No se pudo guardar el pedido.",
     }
   }
+
+  await syncComandasFromCounterCheckout(supabase, popId, orderId, checkout)
 
   return { success: true, updatedAt: data.updated_at as string }
 }

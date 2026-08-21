@@ -197,13 +197,16 @@ export function dataWorkspaceSectionMenuTriggerClass(
     return cn(
       "group inline-flex h-10 w-auto max-w-[min(100%,13rem)] shrink-0 items-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition-all",
       dataWorkspaceHeaderButtonFocusClass,
-      "border-emerald-500/35 bg-emerald-500/10 text-emerald-100",
-      "shadow-[inset_0_1px_0_rgba(168,235,196,0.08)]",
-      "hover:border-emerald-400/50 hover:bg-emerald-500/16 hover:text-white",
-      "data-[state=open]:border-emerald-400/55 data-[state=open]:bg-emerald-500/18 data-[state=open]:text-white",
+      "border-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-savia-600))]",
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,transparent)] text-[var(--rootsy-savia-300)]",
+      "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-300)_10%,transparent)]",
+      "hover:border-[color-mix(in_srgb,var(--rootsy-white)_16%,var(--rootsy-savia-500))]",
+      "hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,transparent)] hover:text-white",
+      "data-[state=open]:border-[color-mix(in_srgb,var(--rootsy-white)_18%,var(--rootsy-savia-500))]",
+      "data-[state=open]:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_22%,transparent)] data-[state=open]:text-white",
       "data-[state=open]:ring-0 data-[state=open]:outline-none",
-      "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/30",
-      "[&_svg]:text-emerald-300/95",
+      "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-savia-400)_8%)]",
+      "[&_svg]:text-[var(--rootsy-savia-400)]",
     )
   }
   return cn(

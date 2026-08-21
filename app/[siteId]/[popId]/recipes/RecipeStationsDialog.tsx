@@ -1,25 +1,33 @@
 "use client"
 
 import type { ComandaStationOption } from "@/app/[siteId]/[popId]/recipes/actions"
-import { recipeFormFieldClass } from "@/app/[siteId]/[popId]/recipes/recipeConstants"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
-import { dataWorkspaceBlocksEmptyStateClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  RootsProgressButton,
+  rootsButtonClassForVariant,
+  rootsButtonVariant,
+} from "@/components/rootsy-button"
 import {
   RootsDialogBody,
   RootsDialogContent,
+  RootsDialogErrorBanner,
   RootsDialogHeader,
+  RootsDialogLoadingState,
 } from "@/components/rootsy-dialog"
 import { RootsFormTextField } from "@/components/rootsy-form"
-import { RootsPrimaryButton } from "@/components/rootsy-button"
+import {
+  RootsSortableActionList,
+  type RootsSortableActionListItem,
+} from "@/components/rootsy-list"
+import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
 import { Dialog } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { Check, Pencil, Trash2, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  banner: string | null
+  loading?: boolean
   stations: ComandaStationOption[]
   canCreate: boolean
   canUpdate: boolean
@@ -27,7 +35,8 @@ type Props = {
   newStationName: string
   onNewStationNameChange: (value: string) => void
   onCreateStation: () => void
-  stationBusy: boolean
+  newStationSaving: boolean
+  stationSaveBusy: boolean
   editingStationId: string | null
   editingStationName: string
   onEditingStationNameChange: (value: string) => void
@@ -38,9 +47,20 @@ type Props = {
   onAfterClose?: () => void
 }
 
+function toListItems(
+  stations: ComandaStationOption[],
+): RootsSortableActionListItem[] {
+  return stations.map((station) => ({
+    id: station.id,
+    label: station.name,
+  }))
+}
+
 export function RecipeStationsDialog({
   open,
   onOpenChange,
+  banner,
+  loading = false,
   stations,
   canCreate,
   canUpdate,
@@ -48,7 +68,8 @@ export function RecipeStationsDialog({
   newStationName,
   onNewStationNameChange,
   onCreateStation,
-  stationBusy,
+  newStationSaving,
+  stationSaveBusy,
   editingStationId,
   editingStationName,
   onEditingStationNameChange,
@@ -78,113 +99,86 @@ export function RecipeStationsDialog({
 
   if (!mounted) return null
 
+  const editingStation = editingStationId
+    ? stations.find((station) => station.id === editingStationId)
+    : null
+  const editHasChanges =
+    editingStation != null &&
+    editingStationName.trim() !== editingStation.name.trim()
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <RootsDialogContent size="default">
+      <RootsDialogContent
+        size="wide"
+        className="max-h-[min(90vh,720px)] sm:max-w-2xl"
+      >
         <RootsDialogHeader
           title="Estaciones"
           description="Destino de las comandas. Cada categoría elige a cuál mandar."
         />
         <RootsDialogBody>
+          {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
           {canCreate ? (
-            <div className="mb-4 flex flex-wrap items-end gap-2">
-              <div className="min-w-[12rem] flex-1">
-                <RootsFormTextField
-                  label="Nueva estación"
-                  id="recipe-new-station"
-                  value={newStationName}
-                  onChange={(e) => onNewStationNameChange(e.target.value)}
-                  placeholder="Cocina, Barra, Parrilla…"
-                  disabled={stationBusy}
-                />
-              </div>
-              <RootsPrimaryButton
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <RootsFormTextField
+                label="Nueva estación"
+                id="recipe-new-station"
+                value={newStationName}
+                onChange={(event) => onNewStationNameChange(event.target.value)}
+                placeholder="Cocina, Barra, Parrilla…"
+                className="min-w-0 flex-1"
+                disabled={newStationSaving}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault()
+                    onCreateStation()
+                  }
+                }}
+              />
+              <RootsProgressButton
                 type="button"
-                className="shrink-0"
-                disabled={stationBusy || !newStationName.trim()}
+                variant={rootsButtonVariant.primary}
+                className={cn(
+                  saleOpDialogPrimaryBtn,
+                  rootsButtonClassForVariant("primary"),
+                  "h-11 shrink-0",
+                )}
+                disabled={newStationSaving || !newStationName.trim()}
+                loading={newStationSaving}
+                loadingLabel="Agregando…"
                 onClick={onCreateStation}
               >
                 Agregar
-              </RootsPrimaryButton>
+              </RootsProgressButton>
             </div>
           ) : null}
-          {stations.length === 0 ? (
-            <p className={dataWorkspaceBlocksEmptyStateClass}>
-              Todavía no hay estaciones. Agregá Cocina, Barra u otra.
-            </p>
+          {loading ? (
+            <RootsDialogLoadingState message="Cargando estaciones" />
           ) : (
-            <ul className="space-y-1.5">
-              {stations.map((station) => {
-                const isEditing = editingStationId === station.id
-                return (
-                  <li
-                    key={station.id}
-                    className="flex items-center gap-2 rounded-lg border border-[var(--rootsy-bruma-200)] bg-white px-2 py-2"
-                  >
-                    {isEditing ? (
-                      <>
-                        <Input
-                          value={editingStationName}
-                          onChange={(e) =>
-                            onEditingStationNameChange(e.target.value)
-                          }
-                          className={cn("h-8 flex-1", recipeFormFieldClass)}
-                          autoFocus
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              event.preventDefault()
-                              onSaveEdit()
-                            }
-                            if (event.key === "Escape") {
-                              event.preventDefault()
-                              onCancelEdit()
-                            }
-                          }}
-                        />
-                        <DataWorkspaceTableIconAction
-                          label="Guardar"
-                          icon={Check}
-                          variant="edit"
-                          onClick={onSaveEdit}
-                          disabled={stationBusy}
-                        />
-                        <DataWorkspaceTableIconAction
-                          label="Cancelar"
-                          icon={X}
-                          variant="neutral"
-                          onClick={onCancelEdit}
-                          disabled={stationBusy}
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <span className="min-w-0 flex-1 truncate text-sm text-[var(--rootsy-bruma-900)]">
-                          {station.name}
-                        </span>
-                        {canUpdate ? (
-                          <DataWorkspaceTableIconAction
-                            label={`Editar ${station.name || "estación"}`}
-                            icon={Pencil}
-                            variant="edit"
-                            onClick={() => onStartEdit(station)}
-                          />
-                        ) : null}
-                        {canDelete ? (
-                          <DataWorkspaceTableIconAction
-                            label={`Eliminar ${station.name || "estación"}`}
-                            icon={Trash2}
-                            variant="destructive"
-                            onClick={() =>
-                              onDeleteStation(station.id, station.name)
-                            }
-                          />
-                        ) : null}
-                      </>
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
+            <RootsSortableActionList
+              listId="recipe-stations"
+              rowSize="comfortable"
+              items={toListItems(stations)}
+              onReorder={() => {}}
+              emptyMessage="Todavía no hay estaciones. Agregá Cocina, Barra u otra."
+              canReorder={false}
+              canToggleVisibility={false}
+              canEdit={canUpdate}
+              canDelete={canDelete}
+              editingId={editingStationId}
+              editingValue={editingStationName}
+              editSaveBusy={stationSaveBusy}
+              editHasChanges={editHasChanges}
+              onStartEdit={(item) => {
+                const station = stations.find((row) => row.id === item.id)
+                if (station) onStartEdit(station)
+              }}
+              onCancelEdit={onCancelEdit}
+              onEditingValueChange={onEditingStationNameChange}
+              onSaveEdit={onSaveEdit}
+              onDelete={(item) => onDeleteStation(item.id, item.label)}
+              onToggleVisibility={() => {}}
+            />
           )}
         </RootsDialogBody>
       </RootsDialogContent>

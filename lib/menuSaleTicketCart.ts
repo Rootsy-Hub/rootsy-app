@@ -11,7 +11,11 @@ import {
   cartDetailItemsFromCarrito,
   countAppliedPromotions,
 } from "@/lib/mostradorCartDisplay"
-import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
+import {
+  resolveMenuCartCatalogProduct,
+  snapshotFromCatalogProduct,
+  type MenuCatalogProduct,
+} from "@/lib/menuCatalogProduct"
 import {
   computeMenuQuantityDealApplications,
   computeMenuQuantityDealDiscounts,
@@ -45,6 +49,27 @@ import {
 } from "@/lib/partialCheckoutSelection"
 import type { Dispatch, SetStateAction } from "react"
 
+export function mapMenuCartToDetallados<T extends MenuCartItem>(
+  source: T[],
+  productosByKey: Map<string, MenuCatalogProduct>,
+) {
+  return source.map((item) => {
+    const kind = normalizeCartItemKind(item.kind)
+    return {
+      ...item,
+      kind,
+      lineId: resolveCartLineId({ ...item, kind }),
+      cartLineKey: resolveCartLineId({ ...item, kind }),
+      producto: resolveMenuCartCatalogProduct(
+        productosByKey,
+        item.productoId,
+        kind,
+        item.snapshot,
+      ),
+    }
+  })
+}
+
 export function saleProductToMenuCatalogProduct(
   product: SaleCatalogProduct,
 ): MenuCatalogProduct {
@@ -69,21 +94,10 @@ export function buildTicketCartDisplayRows(input: {
     overrides: input.overrides,
   })
 
-  const itemsDetallados = input.carrito
-    .map((i) => {
-      const kind = normalizeCartItemKind(i.kind)
-      const producto = input.productosByKey.get(`${kind}:${i.productoId}`) ?? null
-      if (kind === "promotion" && !i.promotionSelections?.length) return null
-      if (kind !== "promotion" && !producto) return null
-      return {
-        ...i,
-        kind,
-        lineId: resolveCartLineId({ ...i, kind }),
-        cartLineKey: resolveCartLineId({ ...i, kind }),
-        producto,
-      }
-    })
-    .filter((i): i is NonNullable<typeof i> => i != null)
+  const itemsDetallados = mapMenuCartToDetallados(
+    input.carrito,
+    input.productosByKey,
+  )
 
   const cartDisplayRows = buildMostradorCartDisplayRows({
     items: cartDetailItemsFromCarrito(itemsDetallados),
@@ -358,7 +372,15 @@ export function addProductToTicketCart(input: {
     ...materializeTicketCartAfterMutation(
       [
         ...input.carrito,
-        { lineId, productoId: input.productoId, cantidad: quantity, kind },
+        {
+          lineId,
+          productoId: input.productoId,
+          cantidad: quantity,
+          kind,
+          ...(product
+            ? { snapshot: snapshotFromCatalogProduct(product) }
+            : {}),
+        },
       ],
       paidPartialUnits,
     ),
@@ -371,6 +393,7 @@ export function addPromotionToTicketCart(input: {
   promotionId: string
   selections: PromotionCartSelection[]
   paidPartialUnits?: Record<string, number>
+  snapshot?: MenuCartItem["snapshot"]
 }): TicketCartMutationResult {
   const paidPartialUnits = input.paidPartialUnits ?? {}
   const existe = input.carrito.find((i) => {
@@ -403,6 +426,7 @@ export function addPromotionToTicketCart(input: {
           cantidad: 1,
           kind: "promotion" as const,
           promotionSelections: input.selections,
+          ...(input.snapshot ? { snapshot: input.snapshot } : {}),
         },
       ],
       paidPartialUnits,

@@ -57,6 +57,7 @@ import {
   addPromotionToTicketCart,
   applyPartialPaymentCartMaterialization,
   copyTicketLineOverrides,
+  mapMenuCartToDetallados,
 } from "@/lib/menuSaleTicketCart"
 import {
   ensureCartLineIds,
@@ -68,8 +69,11 @@ import {
   type OperationCartLineOverrideState,
 } from "@/components/sale-operation/OperationCartLineRow"
 import {
+  collectCartCatalogEnsureIds,
   menuArticleToProduct,
   menuRecipeToProduct,
+  resolveMenuCartCatalogProduct,
+  snapshotFromCatalogProduct,
   type MenuCatalogProduct,
 } from "@/lib/menuCatalogProduct"
 import {
@@ -188,6 +192,7 @@ export function useMesasSaleCheckout(
     openCashSession,
     invoiceTypeSiteId,
     catalogLoading,
+    catalogItemsEnsuring,
     catalogError,
     catalogLoadAttempted,
     mergeCatalogArticles,
@@ -563,15 +568,28 @@ export function useMesasSaleCheckout(
   )
 
   useEffect(() => {
-    const articleIds: string[] = []
-    const recipeIds: string[] = []
-    for (const item of carrito) {
-      const kind = normalizeCartItemKind(item.kind)
-      if (kind === "recipe") recipeIds.push(item.productoId)
-      else if (kind === "article") articleIds.push(item.productoId)
-    }
+    const { articleIds, recipeIds } = collectCartCatalogEnsureIds(carrito)
     void ensureCatalogItems(articleIds, recipeIds)
   }, [carrito, ensureCatalogItems])
+
+  useEffect(() => {
+    setCarrito((prev) => {
+      let changed = false
+      const next = prev.map((item) => {
+        if (item.snapshot?.nombre.trim()) return item
+        const kind = normalizeCartItemKind(item.kind)
+        const producto = resolveMenuCartCatalogProduct(
+          productosByKey,
+          item.productoId,
+          kind,
+        )
+        if (!producto) return item
+        changed = true
+        return { ...item, snapshot: snapshotFromCatalogProduct(producto) }
+      })
+      return changed ? next : prev
+    })
+  }, [productosByKey])
 
   const overrideSnapshot = useMemo(
     () => ({
@@ -624,24 +642,7 @@ export function useMesasSaleCheckout(
 
   const mapCarritoToDetallados = useCallback(
     (source: MesasCartItem[]) =>
-      source
-        .map((i) => {
-          const kind = normalizeCartItemKind(i.kind)
-          const producto =
-            productosByKey.get(`${kind}:${i.productoId}`) ?? null
-          if (kind === "promotion" && !i.promotionSelections?.length) {
-            return null
-          }
-          if (kind !== "promotion" && !producto) return null
-          return {
-            ...i,
-            kind,
-            lineId: resolveCartLineId({ ...i, kind }),
-            cartLineKey: resolveCartLineId({ ...i, kind }),
-            producto,
-          }
-        })
-        .filter((i): i is NonNullable<typeof i> => i != null),
+      mapMenuCartToDetallados(source, productosByKey),
     [productosByKey],
   )
 
@@ -666,7 +667,8 @@ export function useMesasSaleCheckout(
     [itemsDetallados, quantityDealApplications, overrideSnapshot, productosByKey],
   )
 
-  const orderPanelLoading = catalogLoading && carrito.length > 0
+  const orderPanelLoading =
+    carrito.length > 0 && (catalogLoading || catalogItemsEnsuring)
 
   const comboPromoLineCount = useMemo(
     () =>
@@ -1045,6 +1047,7 @@ export function useMesasSaleCheckout(
           promotionId,
           selections,
           paidPartialUnits: checkoutStateRef.current.paidPartialUnits ?? {},
+          snapshot: snapshotFromCatalogProduct(product),
         })
         affectedLineId = result.affectedLineId
         for (const copy of result.overrideCopies) {
@@ -1275,7 +1278,11 @@ export function useMesasSaleCheckout(
         clearTimeout(persistTimerRef.current)
         persistTimerRef.current = null
       }
-      await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
+      try {
+        await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
+      } catch {
+        // El cierre lee el checkout en server; no frenar si el persist falla.
+      }
 
       const res = await closeTableSessionCheckout(
         popId,
@@ -1288,8 +1295,13 @@ export function useMesasSaleCheckout(
         return false
       }
       limpiarPedido()
-      await onSessionClose?.()
+      void Promise.resolve(onSessionClose?.()).catch(() => {})
       return true
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "No se pudo liberar la mesa.",
+      )
+      return false
     } finally {
       setSubmitting(false)
     }

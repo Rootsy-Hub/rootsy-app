@@ -2,15 +2,13 @@
 
 import {
   rootsSortableListDragHandleClass,
-  rootsSortableListDragHandleIconClass,
-  rootsSortableListInlineEditInputClass,
   rootsSortableListRowClass,
   rootsSortableListRowLabelClass,
   rootsSortableListRowLabelMutedClass,
   type RootsSortableRowSize,
 } from "@/components/rootsy-list/rootsListStyles"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
-import { Input } from "@/components/ui/input"
+import { RootsFormControlInput } from "@/components/rootsy-form"
 import { cn } from "@/lib/utils"
 import type { DraggableAttributes } from "@dnd-kit/core"
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities"
@@ -27,6 +25,7 @@ export type RootsSortableActionListItem = {
 type DragHandleProps = {
   attributes: DraggableAttributes
   listeners: SyntheticListenerMap | undefined
+  disabled?: boolean
 }
 
 type Props = {
@@ -34,6 +33,7 @@ type Props = {
   isEditing: boolean
   editingValue: string
   editSaveBusy: boolean
+  editHasChanges?: boolean
   canReorder: boolean
   canToggleVisibility: boolean
   canEdit: boolean
@@ -54,6 +54,7 @@ export function RootsSortableActionListRow({
   isEditing,
   editingValue,
   editSaveBusy,
+  editHasChanges,
   canReorder,
   canToggleVisibility,
   canEdit,
@@ -71,6 +72,10 @@ export function RootsSortableActionListRow({
   const visible = item.visible !== false
   const label = item.label || "—"
   const showActions = canEdit || canDelete || canToggleVisibility
+  const hasChanges =
+    editHasChanges ?? editingValue.trim() !== item.label.trim()
+  const canSaveEdit =
+    !editSaveBusy && Boolean(editingValue.trim()) && hasChanges
 
   return (
     <div
@@ -79,34 +84,32 @@ export function RootsSortableActionListRow({
         rowSize === "comfortable" && "h-14",
       )}
     >
-      {canReorder && dragHandleProps ? (
+      {canReorder ? (
         <button
           type="button"
           className={rootsSortableListDragHandleClass}
           aria-label={`Reordenar ${label}`}
-          {...dragHandleProps.attributes}
-          {...dragHandleProps.listeners}
+          disabled={Boolean(dragHandleProps?.disabled)}
+          {...(dragHandleProps && !dragHandleProps.disabled
+            ? { ...dragHandleProps.attributes, ...dragHandleProps.listeners }
+            : {})}
         >
           <GripVertical className="size-4" aria-hidden />
         </button>
-      ) : canReorder ? (
-        <GripVertical
-          className={cn("size-4 shrink-0", rootsSortableListDragHandleIconClass)}
-          aria-hidden
-        />
       ) : null}
 
-      <div className="min-w-0 flex-1 basis-0 overflow-hidden">
+      <div className="min-w-0 flex-1 basis-0">
         {isEditing ? (
-          <Input
+          <RootsFormControlInput
             value={editingValue}
             onChange={(event) => onEditingValueChange(event.target.value)}
-            className={rootsSortableListInlineEditInputClass}
+            className="w-full"
             autoFocus
+            aria-label={`Nombre de ${label}`}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault()
-                onSaveEdit()
+                if (canSaveEdit) onSaveEdit()
               }
               if (event.key === "Escape") {
                 event.preventDefault()
@@ -138,8 +141,41 @@ export function RootsSortableActionListRow({
 
       {showActions ? (
         <div className="flex shrink-0 items-center justify-end gap-0.5">
-          {isEditing ? (
-            <>
+          {canToggleVisibility ? (
+            <RootsIconButton
+              label={visible ? `Ocultar ${label}` : `Mostrar ${label}`}
+              rowIntent="neutral"
+              size="compact"
+              disabled={isEditing}
+              onClick={onToggleVisibility}
+            >
+              {visible ? <Eye aria-hidden /> : <EyeOff aria-hidden />}
+            </RootsIconButton>
+          ) : null}
+          {canEdit ? (
+            isEditing ? (
+              <RootsIconButton
+                label={`Guardar ${label}`}
+                rowIntent="edit"
+                size="compact"
+                disabled={!canSaveEdit}
+                onClick={onSaveEdit}
+              >
+                <Check aria-hidden />
+              </RootsIconButton>
+            ) : (
+              <RootsIconButton
+                label={`Editar ${label}`}
+                rowIntent="edit"
+                size="compact"
+                onClick={onStartEdit}
+              >
+                <Pencil aria-hidden />
+              </RootsIconButton>
+            )
+          ) : null}
+          {canDelete || isEditing ? (
+            isEditing ? (
               <RootsIconButton
                 label="Cancelar edición"
                 rowIntent="neutral"
@@ -148,50 +184,17 @@ export function RootsSortableActionListRow({
               >
                 <X aria-hidden />
               </RootsIconButton>
+            ) : (
               <RootsIconButton
-                label={`Guardar ${label}`}
-                rowIntent="edit"
+                label={`Eliminar ${label}`}
+                rowIntent="destructive"
                 size="compact"
-                disabled={editSaveBusy || !editingValue.trim()}
-                onClick={onSaveEdit}
+                onClick={onDelete}
               >
-                <Check aria-hidden />
+                <Trash2 aria-hidden />
               </RootsIconButton>
-            </>
-          ) : (
-            <>
-              {canToggleVisibility ? (
-                <RootsIconButton
-                  label={visible ? `Ocultar ${label}` : `Mostrar ${label}`}
-                  rowIntent="neutral"
-                  size="compact"
-                  onClick={onToggleVisibility}
-                >
-                  {visible ? <Eye aria-hidden /> : <EyeOff aria-hidden />}
-                </RootsIconButton>
-              ) : null}
-              {canEdit ? (
-                <RootsIconButton
-                  label={`Editar ${label}`}
-                  rowIntent="edit"
-                  size="compact"
-                  onClick={onStartEdit}
-                >
-                  <Pencil aria-hidden />
-                </RootsIconButton>
-              ) : null}
-              {canDelete ? (
-                <RootsIconButton
-                  label={`Eliminar ${label}`}
-                  rowIntent="destructive"
-                  size="compact"
-                  onClick={onDelete}
-                >
-                  <Trash2 aria-hidden />
-                </RootsIconButton>
-              ) : null}
-            </>
-          )}
+            )
+          ) : null}
         </div>
       ) : null}
     </div>

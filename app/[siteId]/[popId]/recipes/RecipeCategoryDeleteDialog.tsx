@@ -10,15 +10,15 @@ import {
 import { AlertDialog } from "@/components/ui/alert-dialog"
 import { Spinner } from "@/components/ui/spinner"
 
-type DeleteTarget = {
+export type RecipeCategoryDeleteTarget = {
   id: string
   name: string
-  articleCount: number | null
+  recipeCount: number | null
 }
 
 type Props = {
   open: boolean
-  target: DeleteTarget | null
+  target: RecipeCategoryDeleteTarget | null
   banner: string | null
   busy: boolean
   onOpenChange: (open: boolean) => void
@@ -28,7 +28,7 @@ type Props = {
 
 const nameEmphasisClass = "font-medium text-[var(--rootsy-bruma-900)]"
 
-export function ArticleCategoryDeleteDialog({
+export function RecipeCategoryDeleteDialog({
   open,
   target,
   banner,
@@ -38,14 +38,14 @@ export function ArticleCategoryDeleteDialog({
   onConfirmDelete,
 }: Props) {
   const blocked =
-    target != null && target.articleCount != null && target.articleCount > 0
-  const ready = target != null && target.articleCount === 0
-  const checking = target != null && target.articleCount === null
+    target != null && target.recipeCount != null && target.recipeCount > 0
+  const ready = target != null && target.recipeCount === 0
+  const checking = target != null && target.recipeCount === null
   const categoryName = target?.name || "seleccionada"
-  const articleCountLabel =
-    target?.articleCount === 1
-      ? "1 artículo asociado"
-      : `${target?.articleCount ?? 0} artículos asociados`
+  const recipeCountLabel =
+    target?.recipeCount === 1
+      ? "1 receta asociada"
+      : `${target?.recipeCount ?? 0} recetas asociadas`
 
   return (
     <AlertDialog
@@ -61,7 +61,7 @@ export function ArticleCategoryDeleteDialog({
             <div className="flex items-center gap-2">
               <Spinner className="size-4 shrink-0" aria-hidden />
               <RootsAlertDialogBodyText>
-                Verificando artículos relacionados…
+                Verificando recetas relacionadas…
               </RootsAlertDialogBodyText>
             </div>
           </RootsAlertDialogPanel>
@@ -73,12 +73,12 @@ export function ArticleCategoryDeleteDialog({
                 La categoría{" "}
                 <strong className={nameEmphasisClass}>{categoryName}</strong>{" "}
                 tiene{" "}
-                <strong className={nameEmphasisClass}>{articleCountLabel}</strong>.
+                <strong className={nameEmphasisClass}>{recipeCountLabel}</strong>.
               </>
             }
           >
             <RootsAlertDialogBodyText>
-              Para eliminar, desasociá esos artículos primero: cambiáles la
+              Para eliminar, desasociá esas recetas primero: cambiáles la
               categoría.
             </RootsAlertDialogBodyText>
           </RootsAlertDialogPanel>
