@@ -31,7 +31,7 @@ export function HomeGreeting({ displayName, namePending = false }: HomeGreetingP
         </h1>
         <span
           className={cn(
-            "home-rootsy-saludo -translate-y-3 h-20 w-20 sm:h-24 sm:w-24",
+            "home-rootsy-saludo -translate-y-3",
             hello && "is-hello",
           )}
           aria-hidden
