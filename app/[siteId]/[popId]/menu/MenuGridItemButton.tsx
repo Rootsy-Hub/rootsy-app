@@ -31,6 +31,7 @@ import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
 import Link from "next/link"
+import { useEffect, useRef } from "react"
 
 type Props = {
   item: MenuItemDef
@@ -54,6 +55,7 @@ export function MenuGridItemButton({
     isInDock,
     activeDragKind,
     draggingItemId,
+    isCompactDock,
   } = useMenuDockEdit()
   const dockId = menuLinkToDockId(item.link)
   const draggable = dockId != null && canDragMenuItem(item.link)
@@ -67,10 +69,16 @@ export function MenuGridItemButton({
     data: { kind: "menu" as const, itemId: dockId, menuItem: item },
     disabled: !draggable,
   })
+  const skipClickAfterDrag = useRef(false)
+
+  useEffect(() => {
+    if (isDragging) skipClickAfterDrag.current = true
+  }, [isDragging])
 
   const isThisMenuDrag =
     isDragging && activeDragKind === "menu" && dockId === draggingItemId
-  const showDockPlacedStyle = editing && alreadyInDock && !isThisMenuDrag
+  const showDockPlacedStyle =
+    (editing || isCompactDock) && alreadyInDock && !isThisMenuDrag
   const isDragGhost = isThisMenuDrag
   const isAlive = !showDockPlacedStyle && !isDragGhost
   const lifeSeed = `${sectionKey}-${item.link}-${item.name}`
@@ -135,7 +143,7 @@ export function MenuGridItemButton({
       }}
       className={cn(
         "justify-self-center transition-[opacity,transform] duration-200",
-        editing && draggable && "touch-none",
+        (editing || isDragging) && draggable && "touch-none",
         editing && draggable && "animate-dock-wiggle",
         showDockPlacedStyle && "scale-[0.985]",
         isDragGhost && "scale-[0.96] opacity-55",
@@ -146,6 +154,11 @@ export function MenuGridItemButton({
         <Link
           href={href}
           onClick={(event) => {
+            if (skipClickAfterDrag.current) {
+              event.preventDefault()
+              skipClickAfterDrag.current = false
+              return
+            }
             if (
               event.metaKey ||
               event.ctrlKey ||

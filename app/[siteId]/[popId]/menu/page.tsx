@@ -476,6 +476,9 @@ function MenuPage() {
             userAvatarSrc={headerUserAvatarSrc}
             userRoleLabel={headerUserRoleLabel}
             isOnline={isOnline}
+            subscriptionsHref={
+              popAccess?.isOwner ? `/${siteId}/${popId}/subscribe` : null
+            }
             clockLabel={isMounted && time ? formatLocaleTime(time) : "--:--"}
             dateLabel={
               isMounted && time

@@ -10,6 +10,8 @@ import {
 import { ONE_DAY_MS } from "@/lib/queryStaleTimes"
 
 export const MAX_MENU_DOCK_ITEMS = 8
+/** En mobile el dock solo muestra y acepta los primeros 4 accesos. */
+export const MOBILE_MAX_MENU_DOCK_ITEMS = 4
 export const MIN_MENU_DOCK_ITEMS = 1
 
 const CACHE_PREFIX = "rootsy:menu-dock-cache:"

@@ -27,6 +27,9 @@ import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
+import "@/app/home/homeEter.css"
+import rootsySaludoInicial from "../../../../public/logos/rootsy/rootsy-saludo-inicial.png"
+import rootsySaludo from "../../../../public/logos/rootsy/rootsy-saludo.png"
 
 type Props = {
   sectionKey: MenuSectionKey
@@ -84,7 +87,8 @@ export function MenuRootsyPresence({
   }, [rootsyContext, popAccess, rotationToken])
 
   const displayAdvice = advice ?? instantAdvice
-  const loadingAdvice = open && dataPending && !advice
+  const listening = open || mobileAdviceOpen
+  const loadingAdvice = listening && dataPending && !advice
   const catalogSuggestionId = displayAdvice?.catalogSuggestionId ?? null
 
   useEffect(() => {
@@ -191,9 +195,9 @@ export function MenuRootsyPresence({
           <button
             type="button"
             disabled={disabled}
-            aria-expanded={open || mobileAdviceOpen}
+            aria-expanded={listening}
             aria-controls={open ? panelId : undefined}
-            aria-label={open || mobileAdviceOpen ? "Cerrar Rootsy" : "Escuchar a Rootsy"}
+            aria-label={listening ? "Cerrar Rootsy" : "Escuchar a Rootsy"}
             onClick={() => {
               if (window.matchMedia("(max-width: 767px)").matches) {
                 setOpen(false)
@@ -205,12 +209,31 @@ export function MenuRootsyPresence({
             onMouseDown={(event) => event.preventDefault()}
             className={menuRootsyPresenceTriggerClass}
           >
+            <span className="md:hidden" aria-hidden>
+              <span
+                className={cn(
+                  "home-rootsy-saludo !h-[4.25rem] !w-[4.25rem]",
+                  listening && "is-hello",
+                )}
+              >
+                <img
+                  src={rootsySaludoInicial.src}
+                  alt=""
+                  className="home-rootsy-saludo__idle"
+                />
+                <img
+                  src={rootsySaludo.src}
+                  alt=""
+                  className="home-rootsy-saludo__hello"
+                />
+              </span>
+            </span>
             <Image
-              src={open || mobileAdviceOpen ? "/images/atento.png" : "/images/contento.png"}
+              src={listening ? "/images/atento.png" : "/images/contento.png"}
               alt=""
               width={176}
               height={176}
-              className={menuRootsyPresenceImageClass}
+              className={cn(menuRootsyPresenceImageClass, "hidden md:block")}
               priority
             />
           </button>

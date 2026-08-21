@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 /** Anclado al suelo del planeta — esquina inferior izquierda. */
 export const menuRootsyPresenceHostClass = cn(
   "pointer-events-none absolute z-[28]",
-  "bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-2",
+  "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3",
   "md:bottom-0 md:left-5",
 )
 

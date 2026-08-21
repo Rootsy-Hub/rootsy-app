@@ -9,6 +9,7 @@ import {
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import { menuGhostTileClass } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
 import { DEFAULT_MENU_DOCK_IDS } from "@/lib/menuCatalog"
+import { MOBILE_MAX_MENU_DOCK_ITEMS } from "@/lib/menuDockPreference"
 import { cn } from "@/lib/utils"
 
 /** Dock en fantasma — mismos huecos, sin íconos. */
@@ -29,13 +30,16 @@ export function MenuDormantDock() {
         }}
       >
         <div
-          className="relative shrink-0"
+          className="relative shrink-0 max-md:!w-64"
           style={{ width: trackWidth, height: DOCK_TRACK_HEIGHT_PX }}
         >
           {Array.from({ length: dockCount }, (_, index) => (
             <div
               key={index}
-              className="absolute flex justify-center"
+              className={cn(
+                "absolute flex justify-center",
+                index >= MOBILE_MAX_MENU_DOCK_ITEMS && "max-md:hidden",
+              )}
               style={{
                 bottom: DOCK_TRACK_INSET_Y_PX,
                 left: index * DOCK_SLOT_SHIFT_PX + iconInset,

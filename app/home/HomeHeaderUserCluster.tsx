@@ -135,7 +135,7 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
   )
 }
 
-function HomeHeaderAvatar({
+export function HomeHeaderAvatar({
   pending,
   imageUrl,
   initials,
