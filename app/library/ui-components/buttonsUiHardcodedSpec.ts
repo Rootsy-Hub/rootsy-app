@@ -237,6 +237,49 @@ function getButtonsUiDefaultSurface(appearance: ButtonsUiAppearanceId): Hardcode
   }
 }
 
+export const BUTTONS_UI_POS_TEXT_APPEARANCES = [
+  "default",
+  "subtle",
+  "link",
+] as const satisfies readonly ButtonsUiAppearanceId[]
+
+function getButtonsUiPosDefaultSurface(
+  state: ButtonsUiInteractionState,
+): HardcodedButtonSurface {
+  const base: HardcodedButtonSurface = {
+    backgroundColor: elevationSurfaceDark("elevation.surface"),
+    color: pos.textSecondary,
+    border: `1px solid ${pos.border}`,
+    boxShadow: `inset 0 1px 0 color-mix(in srgb, ${TEXT_ON_DARK} 8%, transparent)`,
+    fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
+  }
+
+  switch (state) {
+    case "default":
+      return base
+    case "hover":
+      return {
+        ...base,
+        backgroundColor: elevationSurfaceDark("elevation.surface.raised"),
+        color: TEXT_ON_DARK,
+        border: `1px solid color-mix(in srgb, ${TEXT_ON_DARK} 12%, ${pos.border} 88%)`,
+      }
+    case "active":
+      return {
+        ...base,
+        backgroundColor: elevationSurfaceDark("elevation.surface.sunken"),
+        color: WHITE,
+        border: `1px solid ${pos.border}`,
+      }
+    case "focus":
+      return { ...base, boxShadow: mergeShadow(base.boxShadow, FOCUS_RING_DARK) }
+    case "disabled":
+      return { ...base, opacity: 0.5 }
+    case "loading":
+      return { ...base, loadingLabel: "Creando…", opacity: 0.92 }
+  }
+}
+
 function getButtonsUiPosSubtleSurface(
   state: ButtonsUiInteractionState,
 ): HardcodedButtonSurface {
@@ -271,13 +314,60 @@ function getButtonsUiPosSubtleSurface(
   }
 }
 
+function getButtonsUiPosLinkSurface(
+  state: ButtonsUiInteractionState,
+): HardcodedButtonSurface {
+  const base: HardcodedButtonSurface = {
+    backgroundColor: "transparent",
+    color: pos.accent,
+    border: "1px solid transparent",
+    fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+    textDecoration: "underline",
+  }
+
+  switch (state) {
+    case "default":
+      return base
+    case "hover":
+      return { ...base, color: hx("savia", "300") }
+    case "active":
+      return { ...base, color: hx("savia", "500") }
+    case "focus":
+      return { ...base, boxShadow: FOCUS_RING_DARK }
+    case "disabled":
+      return { ...base, opacity: 0.5 }
+    case "loading":
+      return { ...base, loadingLabel: "Cargando…", opacity: 0.92 }
+  }
+}
+
+function getButtonsUiPosAppearanceSurface(
+  appearance: (typeof BUTTONS_UI_POS_TEXT_APPEARANCES)[number],
+  state: ButtonsUiInteractionState,
+): HardcodedButtonSurface {
+  switch (appearance) {
+    case "default":
+      return getButtonsUiPosDefaultSurface(state)
+    case "subtle":
+      return getButtonsUiPosSubtleSurface(state)
+    case "link":
+      return getButtonsUiPosLinkSurface(state)
+  }
+}
+
 export function getButtonsUiAppearanceSurface(
   appearance: ButtonsUiAppearanceId,
   state: ButtonsUiInteractionState = "default",
   theme: IconButtonThemeId = "workspace",
 ): HardcodedButtonSurface {
-  if (theme === "pos" && appearance === "subtle") {
-    return getButtonsUiPosSubtleSurface(state)
+  if (
+    theme === "pos" &&
+    (BUTTONS_UI_POS_TEXT_APPEARANCES as readonly string[]).includes(appearance)
+  ) {
+    return getButtonsUiPosAppearanceSurface(
+      appearance as (typeof BUTTONS_UI_POS_TEXT_APPEARANCES)[number],
+      state,
+    )
   }
 
   const base = getButtonsUiDefaultSurface(appearance)
