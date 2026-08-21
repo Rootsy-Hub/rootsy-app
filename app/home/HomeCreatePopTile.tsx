@@ -8,10 +8,10 @@ import { Shop } from "iconsax-reactjs"
 import Link from "next/link"
 
 export const homePopTileTitleClass =
-  "mt-4 text-center text-[0.92rem] font-semibold text-white/78"
+  "mt-3 text-center text-[0.82rem] font-semibold text-white/78 sm:mt-4 sm:text-[0.92rem]"
 
 export const homePopTileTitleMutedClass =
-  "mt-4 text-center text-[0.92rem] font-semibold text-white/50"
+  "mt-3 text-center text-[0.82rem] font-semibold text-white/50 sm:mt-4 sm:text-[0.92rem]"
 
 /** CTA sutil para crear el primer negocio — borde bruma, fondo transparente. */
 export function HomeCreatePopTile() {

@@ -16,7 +16,7 @@ export function HomeLoadError({ onRetry }: HomeLoadErrorProps) {
   return (
     <div
       className={cn(
-        "mx-auto mt-2 max-w-md rounded-2xl px-6 py-5 text-center",
+        "mx-auto mt-2 max-w-md rounded-2xl px-5 py-5 text-center sm:px-6",
         menuRealmChromeShellClass,
       )}
     >

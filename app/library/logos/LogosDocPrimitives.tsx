@@ -12,6 +12,7 @@ import {
   ROOTSY_LOGO_LOCKUPS,
   ROOTSY_LOGOMARKS,
   USER_PROFILE_ANATOMY,
+  USER_PROFILE_CONCEPT,
   USER_PROFILE_GUIDELINES,
   USER_PROFILE_MEASURES,
   USER_PROFILE_PRINCIPLES,
@@ -523,37 +524,29 @@ function UserProfileBlockDemo({
   const specimen = USER_PROFILE_SPECIMEN
   const compact = variantId === "header-workspace"
   const avatarSizeClass = compact ? "size-8" : "size-10"
-  const connectionDotClass = compact
-    ? "bottom-0.5 right-0.5 size-2 ring-1"
-    : "bottom-1 right-1 size-2.5 ring-2"
 
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-lg">
+    <div className="flex min-w-0 items-center gap-3">
       <div className="flex min-w-0 flex-col items-end text-right leading-tight">
-        <span className="truncate text-sm font-normal text-[rgba(255,255,255,0.96)]">
+        <span className="truncate text-sm font-normal text-white">
           {specimen.name}
         </span>
-        <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-emerald-300/90">
+        <span className="truncate text-xs font-normal text-[var(--rootsy-bruma-400)]">
           {specimen.roleLabel}
         </span>
       </div>
       <span
         className={cn(
-          "relative shrink-0 overflow-hidden rounded-xl",
+          "relative flex shrink-0 items-center justify-center overflow-hidden rounded-full",
+          "bg-linear-to-br from-[var(--rootsy-savia-500)] to-[var(--rootsy-savia-700)]",
           avatarSizeClass,
         )}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={specimen.imageUrl}
-          alt=""
-          className="size-full object-cover"
-        />
+        <span className="text-xs font-semibold tracking-tight text-white">
+          {specimen.initials}
+        </span>
         <span
-          className={cn(
-            "pointer-events-none absolute rounded-full bg-emerald-500 ring-zinc-900",
-            connectionDotClass,
-          )}
+          className="pointer-events-none absolute right-0 bottom-0 size-2 rounded-full bg-[var(--rootsy-savia-500)] ring-1 ring-[var(--rootsy-sombra-900)]"
           aria-hidden
         />
       </span>
@@ -564,6 +557,28 @@ function UserProfileBlockDemo({
 export function UserProfileIdentityShowcase() {
   return (
     <div className="space-y-6">
+      <div className="library-doc-card space-y-2 rounded-2xl px-5 py-4">
+        <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+          {USER_PROFILE_CONCEPT.title}
+        </p>
+        <p className="text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
+          {USER_PROFILE_CONCEPT.lead}
+        </p>
+        <ul className="space-y-1.5 pt-1">
+          {USER_PROFILE_CONCEPT.why.map((line) => (
+            <li
+              key={line}
+              className="text-sm leading-relaxed text-[var(--rootsy-bruma-500)]"
+            >
+              {line}
+            </li>
+          ))}
+        </ul>
+        <p className="pt-1 text-sm leading-relaxed text-[var(--rootsy-bruma-900)]">
+          {USER_PROFILE_CONCEPT.closing}
+        </p>
+      </div>
+
       <div className="grid gap-3 sm:grid-cols-2">
         {USER_PROFILE_PRINCIPLES.map((item) => (
           <div key={item.title} className="library-doc-card rounded-xl px-4 py-3">
@@ -585,7 +600,7 @@ export function UserProfileIdentityShowcase() {
           >
             <div className="logo-user-header-rail">
               <span className="mr-auto font-mono text-[10px] uppercase tracking-[0.14em] text-white/35">
-                {variant.id === "header-menu" ? "Header menú" : "Header workspace"}
+                {variant.label}
               </span>
               <UserProfileBlockDemo variantId={variant.id} />
             </div>
@@ -596,11 +611,11 @@ export function UserProfileIdentityShowcase() {
               <p className="text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
                 {variant.usage}
               </p>
-              <p className="truncate font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
-                {variant.source}
+              <p className="font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
+                {variant.context}
               </p>
               <p className="font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
-                {variant.density}
+                {variant.tokens}
               </p>
               <div className="flex flex-wrap gap-1 pt-0.5">
                 {variant.fields.map((field) => (
@@ -639,7 +654,7 @@ export function UserProfileIdentityShowcase() {
             Medidas
           </p>
           <p className="mt-1 text-xs text-[var(--rootsy-bruma-500)]">
-            Tokens de densidad — menú vs workspace. El color del texto sigue el chrome oscuro, no bruma-900.
+            Escala de espacio, radio y tipo — no medidas del código actual.
           </p>
         </div>
         <div className="divide-y divide-[var(--rootsy-bruma-200)]">

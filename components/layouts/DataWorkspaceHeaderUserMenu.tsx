@@ -4,15 +4,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   dataWorkspaceHeaderDropdownLogoutItemClass,
   dataWorkspaceHeaderDropdownSeparatorClassForVariant,
-  dataWorkspaceHeaderRoleLabelClass,
   dataWorkspaceHeaderUserDropdownContentClassForVariant,
   isDarkChromeHeader,
   isDataWorkspaceTintedHeader,
-  isLayoutsTablesHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import type { RootsIconButtonSize } from "@/components/rootsy-button/rootsButtonStyles"
-import { menuRealmBodyClass } from "@/lib/menu/menuHoloStyles"
+import { initialsFromPopName } from "@/lib/popIdentityDisplay"
 import {
   RootsDropdownContent,
   RootsDropdownItem,
@@ -25,17 +23,21 @@ import { cn } from "@/lib/utils"
 import { LogOut, UserCog } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 
 export type DataWorkspaceHeaderUserMenuProps = {
   userName: string
   userAvatarSrc?: string | null
   isOnline: boolean
   headerVariant?: DataWorkspaceHeaderVariant
+  /** `default` = menú (space.500) · `compact` = workspace (space.400). */
   size?: RootsIconButtonSize
   roleLabel?: string
   hasResolvedRole?: boolean
 }
+
+const userAvatarFallbackClass =
+  "bg-linear-to-br from-[var(--rootsy-savia-500)] to-[var(--rootsy-savia-700)] text-xs font-semibold tracking-tight text-white"
 
 export function DataWorkspaceHeaderUserMenu({
   userName,
@@ -44,19 +46,12 @@ export function DataWorkspaceHeaderUserMenu({
   headerVariant = "default",
   size = "default",
   roleLabel,
-  hasResolvedRole = false,
 }: DataWorkspaceHeaderUserMenuProps) {
   const isTinted = isDataWorkspaceTintedHeader(headerVariant)
-  const isTables = isLayoutsTablesHeader(headerVariant)
   const theme = isDarkChromeHeader(headerVariant) ? "dark" : "light"
   const { logOut } = useAuth()
   const router = useRouter()
 
-  const dicebearAvatarSrc = useMemo(
-    () =>
-      `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userName || "u")}`,
-    [userName],
-  )
   const profileAvatarSrc = userAvatarSrc?.trim() || null
   const [profileImageFailed, setProfileImageFailed] = useState(false)
 
@@ -64,27 +59,20 @@ export function DataWorkspaceHeaderUserMenu({
     setProfileImageFailed(false)
   }, [profileAvatarSrc])
 
-  const avatarSrc =
-    profileAvatarSrc && !profileImageFailed ? profileAvatarSrc : dicebearAvatarSrc
-
-  const initials = userName.trim().slice(0, 2).toUpperCase() || "·"
+  const showPhoto = Boolean(profileAvatarSrc) && !profileImageFailed
+  const initials = initialsFromPopName(userName)
+  const resolvedRoleLabel = roleLabel?.trim() || ""
+  const avatarSizeClass = size === "compact" ? "size-8" : "size-10"
 
   const handleLogOut = async () => {
     await logOut()
     router.push("/login")
   }
 
-  const dropdownSeparatorClass = dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
-  const dropdownContentClass = dataWorkspaceHeaderUserDropdownContentClassForVariant(headerVariant)
-  const connectionDotClass =
-    size === "compact"
-      ? "bottom-0.5 right-0.5 size-2 ring-1"
-      : size === "large"
-        ? "bottom-1 right-1 size-3 ring-2"
-        : "bottom-1 right-1 size-2.5 ring-2"
-  const avatarSizeClass =
-    size === "compact" ? "size-8" : size === "large" ? "size-12" : "size-10"
-  const resolvedRoleLabel = roleLabel?.trim() || ""
+  const dropdownSeparatorClass =
+    dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
+  const dropdownContentClass =
+    dataWorkspaceHeaderUserDropdownContentClassForVariant(headerVariant)
 
   return (
     <RootsDropdownMenu>
@@ -94,70 +82,67 @@ export function DataWorkspaceHeaderUserMenu({
           aria-label={`Menú de ${userName}`}
           aria-haspopup="menu"
           className={cn(
-            "flex min-w-0 items-center gap-3 rounded-lg text-left",
-            "outline-none transition-colors",
-            "hover:bg-white/6",
-            "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/20",
+            "group flex min-w-0 items-center gap-3 text-left",
+            "outline-none",
+            "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]/40",
           )}
         >
           <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
-            <span className={cn("truncate text-sm font-normal", menuRealmBodyClass)}>
+            <span className="truncate text-sm font-normal text-white">
               {userName}
             </span>
             {resolvedRoleLabel ? (
               <span
                 className={cn(
-                  "truncate text-[10px] font-semibold uppercase tracking-wider",
-                  dataWorkspaceHeaderRoleLabelClass(headerVariant, hasResolvedRole),
+                  "truncate text-xs font-normal text-[var(--rootsy-bruma-400)]",
+                  "transition-colors duration-[50ms]",
+                  "group-hover:text-[var(--rootsy-bruma-300)]",
+                  "group-data-[state=open]:text-[var(--rootsy-bruma-300)]",
                 )}
               >
                 {resolvedRoleLabel}
               </span>
             ) : null}
           </div>
-          <span
-            className={cn(
-              "relative shrink-0 overflow-hidden rounded-xl",
-              avatarSizeClass,
-            )}
-          >
-            <Avatar className="size-full rounded-[inherit]">
-              <AvatarImage
-                src={avatarSrc}
-                alt=""
-                className="object-cover"
-                onLoadingStatusChange={(status) => {
-                  if (status === "error" && profileAvatarSrc && !profileImageFailed) {
-                    setProfileImageFailed(true)
-                  }
-                }}
-              />
-              <AvatarFallback
-                className={cn(
-                  "rounded-[inherit] text-[11px] font-semibold",
-                  isTables
-                    ? "bg-[var(--rootsy-sombra-800)] text-[var(--rootsy-savia-300)]"
-                    : isTinted && !isTables
-                      ? "bg-zinc-800 text-emerald-300"
-                      : "bg-primary/10 text-primary",
-                )}
-              >
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+          <span className={cn("relative shrink-0", avatarSizeClass)}>
+            <span className="block size-full overflow-hidden rounded-full">
+              <Avatar className="size-full rounded-full">
+                {showPhoto ? (
+                  <AvatarImage
+                    src={profileAvatarSrc!}
+                    alt=""
+                    className="object-cover"
+                    onLoadingStatusChange={(status) => {
+                      if (status === "error" && profileAvatarSrc && !profileImageFailed) {
+                        setProfileImageFailed(true)
+                      }
+                    }}
+                  />
+                ) : null}
+                <AvatarFallback className={cn("rounded-full", userAvatarFallbackClass)}>
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </span>
+            <span
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute inset-0 rounded-full",
+                "ring-1 ring-transparent",
+                "transition-[box-shadow] duration-[50ms]",
+                "group-hover:ring-[color-mix(in_srgb,#ffffff_18%,transparent)]",
+                "group-data-[state=open]:ring-[color-mix(in_srgb,#ffffff_18%,transparent)]",
+              )}
+            />
             <span
               role="status"
               aria-label={isOnline ? "En línea" : "Sin conexión"}
               title={isOnline ? "En línea" : "Sin conexión"}
               className={cn(
-                "pointer-events-none absolute rounded-full",
-                connectionDotClass,
-                isTables
-                  ? "ring-[var(--rootsy-sombra-950)]"
-                  : isTinted
-                    ? "ring-zinc-900"
-                    : "ring-secondary",
-                isOnline ? "bg-emerald-500" : "bg-red-500",
+                "pointer-events-none absolute right-0 bottom-0 size-2 rounded-full ring-1 ring-[var(--rootsy-sombra-900)]",
+                isOnline
+                  ? "bg-[var(--rootsy-savia-500)]"
+                  : "bg-[var(--rootsy-danger)]",
               )}
             />
           </span>

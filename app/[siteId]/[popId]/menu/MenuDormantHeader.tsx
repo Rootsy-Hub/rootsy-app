@@ -63,7 +63,7 @@ export function MenuDormantHeader() {
             <span className={cn(menuGhostBarClass, "h-3.5 w-24")} />
             <span className={cn(menuGhostBarClass, "h-2.5 w-16")} />
           </div>
-          <span className={cn("size-10 rounded-[34%]", menuGhostCircleClass)} />
+          <span className={cn("size-10 rounded-full", menuGhostCircleClass)} />
         </div>
       </div>
     </div>

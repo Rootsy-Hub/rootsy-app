@@ -10,6 +10,9 @@ export const HOME_COPY = {
   editProfile: "Editar perfil",
   subscriptions: "Suscripciones",
   logOut: "Cerrar sesión",
+  accountMenu: "Tu cuenta",
+  online: "En línea",
+  offline: "Sin conexión",
   emptyPops:
     "No veo ningún punto de venta con acceso. Si te tenían que invitar, pedí que activen tu rol.",
   loadError: "No pude cargar tus puntos de venta.",

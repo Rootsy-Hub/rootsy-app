@@ -20,7 +20,7 @@ export function HomeGhostPlanet({ solo = false }: { solo?: boolean }) {
       <span
         aria-hidden
         className={cn(
-          "mt-4 h-[0.92rem] animate-pulse rounded-md bg-white/12",
+          "mt-3 h-[0.82rem] animate-pulse rounded-md bg-white/12 sm:mt-4 sm:h-[0.92rem]",
           solo ? "w-24" : "w-20",
         )}
       />
@@ -30,9 +30,9 @@ export function HomeGhostPlanet({ solo = false }: { solo?: boolean }) {
 
 export function HomePopPickerSkeleton() {
   return (
-    <div className="relative flex w-full flex-col items-center px-4 py-4 sm:px-6">
+    <div className="relative flex w-full flex-col items-center px-0 py-2 sm:px-6 sm:py-4">
       <ul
-        className="mx-auto flex w-full max-w-3xl list-none flex-wrap justify-center gap-x-3 gap-y-6 sm:gap-x-4"
+        className="mx-auto flex w-full max-w-3xl list-none flex-wrap justify-center gap-x-3 gap-y-5 sm:gap-x-4 sm:gap-y-6"
         aria-busy="true"
         aria-label="Cargando puntos de venta"
       >

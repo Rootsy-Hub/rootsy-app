@@ -60,7 +60,7 @@ export function HomePopPlanetTile({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={imageUrl!} alt="" className="size-full object-cover" />
           ) : (
-            <span className="text-[1.72rem] font-black tracking-tight text-white drop-shadow">
+            <span className="text-[1.35rem] font-black tracking-tight text-white drop-shadow sm:text-[1.72rem]">
               {initials}
             </span>
           )}
@@ -88,7 +88,7 @@ export function HomePopPlanetTile({
         {name}
       </span>
       {address ? (
-        <span className="mt-1 line-clamp-2 max-w-40 text-center text-[10px] leading-snug text-white/50">
+        <span className="mt-1 line-clamp-2 max-w-32 text-center text-[10px] leading-snug text-white/50 sm:max-w-40">
           {address}
         </span>
       ) : null}

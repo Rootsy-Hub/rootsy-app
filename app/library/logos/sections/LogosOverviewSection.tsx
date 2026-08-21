@@ -90,7 +90,7 @@ export function LogosOverviewSection() {
         <LogosDocSection
           id="user-profile"
           title="Persona · bloque de perfil"
-          description="Identidad de quien opera — no del negocio. Mismo lockup en menú y workspace; cambia solo la densidad. Un control, una cara, un menú."
+          description="Tercera identidad del producto. Spec desde concepto, tipo, color, radio y espacio — no desde el header que hay hoy."
         >
           <UserProfileIdentityShowcase />
         </LogosDocSection>

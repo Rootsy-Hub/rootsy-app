@@ -4,10 +4,6 @@ import { Download } from "lucide-react"
 import {
   HomeWorkspaceBackdrop,
 } from "@/components/layouts/HomeWorkspaceBackdrop"
-import {
-  menuHeaderFlexRowClass,
-  menuHeaderHeightClass,
-} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
@@ -36,15 +32,15 @@ export function HomePageChrome({
   return (
     <div
       className={cn(
-        "relative flex h-screen flex-col overflow-hidden text-white",
+        "relative flex h-dvh max-h-dvh flex-col overflow-hidden text-white",
         menuNatureShellClass,
         "bg-background",
       )}
     >
       <HomeWorkspaceBackdrop />
 
-      <header className={cn("relative z-20 w-full", menuHeaderHeightClass)}>
-        <div className={menuHeaderFlexRowClass}>
+      <header className="relative z-20 w-full shrink-0 pt-[env(safe-area-inset-top)]">
+        <div className="flex h-16 min-h-0 items-center justify-between px-4 md:h-20 md:px-8">
           <Link
             href="/"
             aria-label="Rootsy — landing"
@@ -56,7 +52,7 @@ export function HomePageChrome({
               width={90}
               height={29}
               priority
-              className="h-9 w-auto sm:h-10"
+              className="h-8 w-auto md:h-10"
             />
           </Link>
 
@@ -65,19 +61,19 @@ export function HomePageChrome({
       </header>
 
       <main className="relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto">
-        <section className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col items-center justify-center px-5 py-6 sm:px-8 sm:py-8 lg:px-10">
+        <section className="mx-auto flex min-h-0 w-full max-w-[81rem] flex-1 flex-col items-center justify-center px-4 py-5 sm:px-8 sm:py-8">
           <HomeSaludoHoverProvider>
             <HomeGreeting displayName={displayName} namePending={namePending} />
 
-            <div className="mt-7 w-full sm:mt-8">{children}</div>
+            <div className="mt-5 w-full sm:mt-8">{children}</div>
           </HomeSaludoHoverProvider>
         </section>
 
-        <footer className="relative mt-auto flex w-full shrink-0 justify-center px-4 py-4 sm:px-6 sm:py-5">
+        <footer className="relative mt-auto flex w-full shrink-0 justify-center px-4 py-3 sm:px-6 sm:py-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="flex flex-nowrap items-center justify-center gap-3 px-1 sm:px-2">
             <p
               className={cn(
-                "hidden shrink-0 whitespace-nowrap text-sm sm:block",
+                "hidden shrink-0 whitespace-nowrap text-sm md:block",
                 menuRealmLightMutedClass,
               )}
             >

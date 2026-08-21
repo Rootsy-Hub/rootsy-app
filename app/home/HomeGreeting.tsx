@@ -18,11 +18,16 @@ export function HomeGreeting({ displayName, namePending = false }: HomeGreetingP
 
   return (
     <div className="w-full max-w-xl text-center">
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <h1 className={cn("text-balance text-3xl sm:text-4xl", menuRealmTitleClass)}>
+      <div className="flex flex-col items-center gap-1 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
+        <h1
+          className={cn(
+            "text-balance text-[1.7rem] leading-tight sm:text-3xl md:text-4xl",
+            menuRealmTitleClass,
+          )}
+        >
           {namePending ? (
             <span
-              className="inline-block h-8 w-44 align-middle animate-pulse rounded-md bg-white/12 sm:h-9 sm:w-56"
+              className="inline-block h-7 w-40 align-middle animate-pulse rounded-md bg-white/12 sm:h-8 sm:w-44 md:h-9 md:w-56"
               aria-hidden
             />
           ) : (
@@ -31,7 +36,7 @@ export function HomeGreeting({ displayName, namePending = false }: HomeGreetingP
         </h1>
         <span
           className={cn(
-            "home-rootsy-saludo -translate-y-3",
+            "home-rootsy-saludo order-first sm:order-0 sm:-translate-y-3",
             hello && "is-hello",
           )}
           aria-hidden
@@ -48,7 +53,7 @@ export function HomeGreeting({ displayName, namePending = false }: HomeGreetingP
           />
         </span>
       </div>
-      <p className={cn("mt-2 text-base sm:text-lg", menuRealmLightMutedClass)}>
+      <p className={cn("mt-1.5 text-[0.95rem] sm:mt-2 sm:text-base md:text-lg", menuRealmLightMutedClass)}>
         {HOME_COPY.lead}
       </p>
     </div>

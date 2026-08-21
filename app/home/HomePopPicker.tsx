@@ -4,7 +4,10 @@ import Link from "next/link"
 import { type ReactNode, useState, useSyncExternalStore } from "react"
 import { Button } from "@/components/ui/button"
 import { HomeCreatePopTile } from "@/app/home/HomeCreatePopTile"
-import { HOME_POP_TILE_BASIS_CLASS } from "@/app/home/homePopTileLayout"
+import {
+  HOME_POP_TILE_BASIS_CLASS,
+  HOME_POP_TILE_MAX_CLASS,
+} from "@/app/home/homePopTileLayout"
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeLoadError } from "@/app/home/HomeLoadError"
 import { HomeGhostPlanet } from "@/app/home/HomePopPickerSkeleton"
@@ -37,7 +40,7 @@ function initialsFromName(name: string): string {
 
 function HomeConstellationStage({ children }: { children: ReactNode }) {
   return (
-    <div className="relative flex w-full flex-col items-center px-4 py-4 sm:px-6">
+    <div className="relative flex w-full flex-col items-center px-0 py-2 sm:px-6 sm:py-4">
       {children}
     </div>
   )
@@ -85,22 +88,22 @@ function HomePopPickerCards({
     <HomeConstellationStage>
       <ul
         className={cn(
-          "mx-auto flex w-full list-none flex-wrap justify-center gap-x-3 gap-y-6 sm:gap-x-4",
-          isSoloPop ? "max-w-[13rem]" : "max-w-3xl",
+          "mx-auto flex w-full list-none flex-wrap justify-center gap-x-3 gap-y-5 sm:gap-x-4 sm:gap-y-6",
+          isSoloPop ? "max-w-[11rem] sm:max-w-[13rem]" : "max-w-3xl",
         )}
       >
         {showCreateTile && createPopPending ? (
-          <li className="w-full max-w-[13rem]" aria-busy="true" aria-label="Cargando">
+          <li className="w-full max-w-[11rem] sm:max-w-[13rem]" aria-busy="true" aria-label="Cargando">
             <HomeGhostPlanet solo />
           </li>
         ) : showCreateTile ? (
-          <li className="w-full max-w-[13rem]">
+          <li className="w-full max-w-[11rem] sm:max-w-[13rem]">
             <HomeCreatePopTile />
           </li>
         ) : pops.length === 0 ? (
             <li
               className={cn(
-                "w-full max-w-md rounded-2xl px-6 py-10 text-center",
+                "w-full max-w-md rounded-2xl px-5 py-8 text-center sm:px-6 sm:py-10",
                 menuRealmChromeShellClass,
               )}
             >
@@ -136,7 +139,7 @@ function HomePopPickerCards({
                   isSoloPop ? "w-full" : HOME_POP_TILE_BASIS_CLASS,
                 )}
               >
-                <div className="mx-auto flex w-full max-w-40 flex-col items-center">
+                <div className={cn("mx-auto flex w-full flex-col items-center", HOME_POP_TILE_MAX_CLASS)}>
                   {canEnter ? (
                     <Link
                       href={menuHref}
