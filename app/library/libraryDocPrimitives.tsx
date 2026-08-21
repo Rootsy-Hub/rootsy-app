@@ -23,26 +23,25 @@ import type { ReactNode } from "react"
  * de cada fundamento re-exportan desde acá para no duplicar estilos.
  */
 
-/* ——— Constantes de marca para demos (espejo de rootsyNaturePalette.css) ——— */
+/* ——— Constantes de marca para demos (espejo de --rootsy-savia-*) ——— */
 
-export const CANOPY = "#1E8F5A"
-export const CANOPY_DARK = "#16704A"
-export const CANOPY_DEEP = "#0F5739"
-export const CANOPY_NIGHT = "#052E1F"
-export const CANOPY_SOFT = "#3FC87E"
-export const CANOPY_LIGHT = "#A8EBC4"
-export const CANOPY_MIST = "#F0FBF4"
-/** @deprecated Usar var(--rootsy-bruma-600) en documentación nueva. */
-export const EARTH = "#78716C"
+export const CANOPY = "#059669"
+export const CANOPY_DARK = "#047857"
+export const CANOPY_DEEP = "#065F46"
+export const CANOPY_NIGHT = "#022C22"
+export const CANOPY_SOFT = "#34D399"
+export const CANOPY_LIGHT = "#A7F3D0"
+export const CANOPY_MIST = "#ECFDF5"
+/** @deprecated Usar var(--rootsy-bruma-500) en documentación nueva. */
+export const EARTH = "#64748B"
 
 /**
- * Receta única del héroe de manifiesto — bosque de noche a brote.
+ * Receta única del héroe de manifiesto — sombra a savia.
  * Todas las secciones comparten ángulo y paradas para leerse como familia.
  */
 const HERO_GRADIENTS = {
   forest: `linear-gradient(160deg, ${CANOPY_NIGHT} 0%, ${CANOPY_DEEP} 35%, ${CANOPY} 70%, ${CANOPY_SOFT} 100%)`,
-  /** Solo para la sección de color — muestra el espectro completo de la paleta. */
-  spectrum: `linear-gradient(160deg, ${CANOPY_NIGHT} 0%, ${CANOPY_DARK} 35%, ${CANOPY_SOFT} 60%, #F59E0B 82%, #8B5CF6 100%)`,
+  spectrum: `linear-gradient(160deg, #050807 0%, ${CANOPY_DARK} 40%, ${CANOPY_SOFT} 72%, #E8B10F 100%)`,
 } as const
 
 export type LibraryHeroTone = keyof typeof HERO_GRADIENTS

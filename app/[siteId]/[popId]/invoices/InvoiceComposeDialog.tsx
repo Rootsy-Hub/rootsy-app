@@ -11,7 +11,7 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
-import { rootsFormEarthTextSecondaryClass } from "@/components/rootsy-form"
+import { rootsFormBrumaTextSecondaryClass } from "@/components/rootsy-form"
 import { cn } from "@/lib/utils"
 import { Dialog } from "@/components/ui/dialog"
 import {
@@ -111,7 +111,7 @@ export function InvoiceComposeDialog({
                 <pre
                   className={cn(
                     "mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-all text-[11px] leading-snug",
-                    rootsFormEarthTextSecondaryClass,
+                    rootsFormBrumaTextSecondaryClass,
                   )}
                 >
                   {debugFecae}

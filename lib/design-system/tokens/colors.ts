@@ -190,4 +190,9 @@ export const ROOTSY_COLOR_SEMANTIC = {
   actionHover: rootsyColorHex("savia", "700"),
   accent: rootsyColorHex("savia", "400"),
   promoGradientEnd: rootsyColorHex("savia", "teal"),
+  warning: "#D97706",
+  warningText: "#78350F",
+  warningSoft: "#FEF3C7",
+  danger: "#DC2626",
+  dangerDark: "#B91C1C",
 } as const

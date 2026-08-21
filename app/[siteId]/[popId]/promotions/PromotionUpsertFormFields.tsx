@@ -19,11 +19,11 @@ import {
   RootsFormTextField,
   RootsFormTextareaField,
   rootsFormColumnClass,
-  rootsFormEarthTextSecondaryClass,
+  rootsFormBrumaTextSecondaryClass,
   rootsFormFieldLabelClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
-import { rootsFormEarthDividerClass } from "@/components/rootsy-form/rootsFormEarthTokens"
+import { rootsFormBrumaDividerClass } from "@/components/rootsy-form/rootsFormBrumaTokens"
 import {
   PROMOTION_BENEFIT_TARGET_LABEL,
   PROMOTION_PRICING_MODE_LABEL,
@@ -35,7 +35,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { Dispatch, ReactNode, SetStateAction } from "react"
 
-const sectionDividerClass = cn("h-px w-full shrink-0", rootsFormEarthDividerClass)
+const sectionDividerClass = cn("h-px w-full shrink-0", rootsFormBrumaDividerClass)
 
 function FormSection({
   title,
@@ -54,7 +54,7 @@ function FormSection({
           <p
             className={cn(
               "mt-1 text-xs leading-relaxed",
-              rootsFormEarthTextSecondaryClass,
+              rootsFormBrumaTextSecondaryClass,
             )}
           >
             {description}
@@ -389,7 +389,7 @@ export function PromotionUpsertFormFields({
                       className={cn(
                         "h-10 rounded-lg border px-2 text-xs font-medium transition-colors",
                         checked
-                          ? "border-[color:var(--nature-canopy-400)]/45 bg-[color:var(--nature-canopy-100)] text-[color:var(--nature-canopy-800)]"
+                          ? "border-[color:var(--rootsy-savia-400)]/45 bg-[color:var(--rootsy-savia-100)] text-[color:var(--rootsy-savia-800)]"
                           : "border-border/70 bg-muted/20 text-muted-foreground hover:bg-muted/35",
                         disabled && "cursor-not-allowed opacity-50",
                       )}

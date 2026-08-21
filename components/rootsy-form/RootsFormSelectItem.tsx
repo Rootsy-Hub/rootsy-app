@@ -38,7 +38,7 @@ export function RootsFormSelectItem({
           "pointer-events-none absolute inset-y-0 right-3 flex w-4 items-center justify-center",
           isDark
             ? "text-[var(--rootsy-savia-400)]"
-            : "text-[#78716c]",
+            : "text-[color:var(--rootsy-bruma-500)]",
         )}
       >
         <SelectPrimitive.ItemIndicator>

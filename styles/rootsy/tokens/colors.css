@@ -112,4 +112,11 @@
   --rootsy-landing-neon-2: var(--rootsy-atmosphere-neon-2);
 
   --rootsy-white: #ffffff;
+
+  /* Funcionales UX — no son familia de marca ni clima */
+  --rootsy-warning: #d97706;
+  --rootsy-warning-text: #78350f;
+  --rootsy-warning-soft: #fef3c7;
+  --rootsy-danger: #dc2626;
+  --rootsy-danger-dark: #b91c1c;
 }

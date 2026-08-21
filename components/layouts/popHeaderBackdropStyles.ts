@@ -12,8 +12,8 @@ export const popHeaderGlassBorderClass =
   "border-[color-mix(in_srgb,#ffffff_4%,transparent)]"
 
 /** Texto meta legible sobre cristal POP. */
-export const popGlassFooterMutedTextClass = "text-[#a8a29e]"
-export const popGlassFooterDotClass = "text-[#57534e]"
+export const popGlassFooterMutedTextClass = "text-[color:var(--rootsy-bruma-400)]"
+export const popGlassFooterDotClass = "text-[color:var(--rootsy-bruma-600)]"
 
 /** @deprecated Usar bg-background/32 dentro de menuNatureShellClass */
 export const popHeaderBackgroundOverlayClass =
@@ -21,7 +21,7 @@ export const popHeaderBackgroundOverlayClass =
 
 /** @deprecated Usar menuVignetteClass */
 export const popWorkspaceVignetteClass =
-  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,#060908_50%,transparent)_100%)]"
+  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--rootsy-eter-950)_50%,transparent)_100%)]"
 
 /** @deprecated Usar menuHeaderChromeClass */
 export const popHeaderGlassClass = cn(

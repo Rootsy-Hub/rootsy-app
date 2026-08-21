@@ -17,7 +17,7 @@
   --muted-foreground: color-mix(in srgb, #ffffff 45%, transparent);
   --accent: color-mix(in srgb, var(--rootsy-sombra-600) 38%, transparent);
   --accent-foreground: #ffffff;
-  --destructive: #dc2626;
+  --destructive: var(--rootsy-danger);
   --destructive-foreground: #ffffff;
   --border: color-mix(in srgb, var(--rootsy-sombra-400) 38%, transparent);
   --input: color-mix(in srgb, var(--rootsy-sombra-400) 38%, transparent);

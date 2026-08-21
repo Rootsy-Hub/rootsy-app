@@ -1,57 +1,61 @@
 import { cn } from "@/lib/utils"
 
-/** Base pill Nature — cápsula compacta, tabular para números. */
+/** Base pill — cápsula compacta, tabular para números. */
 export const rootsNaturePillBaseClass =
   "inline-flex w-fit max-w-full items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold leading-none tabular-nums"
 
-/** Variantes soft — borde + fondo bruma (tablas, detalle, filtros). */
-export const rootsNaturePillCanopySoftClass = cn(
+/** Soft savia — estado positivo (activo, OK, autorizado). */
+export const rootsNaturePillSaviaSoftClass = cn(
   rootsNaturePillBaseClass,
-  "border border-[color:var(--nature-canopy-400)]/45 bg-[color:var(--nature-canopy-100)] text-[color:var(--nature-canopy-800)]",
+  "border border-[color:var(--rootsy-savia-400)]/45 bg-[color:var(--rootsy-savia-100)] text-[color:var(--rootsy-savia-800)]",
 )
 
-export const rootsNaturePillEarthSoftClass = cn(
+/** Soft bruma — metadato o tipo sin urgencia. */
+export const rootsNaturePillBrumaSoftClass = cn(
   rootsNaturePillBaseClass,
-  "border border-[color:var(--nature-earth-400)] bg-[color:var(--nature-earth-100)] text-[color:var(--nature-earth-800)]",
+  "border border-[color:var(--rootsy-bruma-300)] bg-[color:var(--rootsy-bruma-100)] text-[color:var(--rootsy-bruma-700)]",
 )
 
-export const rootsNaturePillEarthMutedSoftClass = cn(
+/** Soft bruma apagada — inactivo o secundario. */
+export const rootsNaturePillBrumaMutedSoftClass = cn(
   rootsNaturePillBaseClass,
-  "border border-[color:var(--nature-earth-400)] bg-[color:var(--nature-earth-100)] text-[color:var(--nature-earth-700)]",
+  "border border-[color:var(--rootsy-bruma-200)] bg-[color:var(--rootsy-bruma-50)] text-[color:var(--rootsy-bruma-500)]",
 )
 
-export const rootsNaturePillAutumnSoftClass = cn(
+/** Soft warning — pendiente o revisión. Ámbar funcional, no sol. */
+export const rootsNaturePillWarningSoftClass = cn(
   rootsNaturePillBaseClass,
-  "border border-[color:var(--nature-autumn-400)]/50 bg-[color:var(--nature-autumn-100)] text-[color:var(--nature-autumn-800)]",
+  "border border-[color:var(--rootsy-warning)]/40 bg-[color:var(--rootsy-warning-soft)] text-[color:var(--rootsy-warning-text)]",
 )
 
-export const rootsNaturePillEmberSoftClass = cn(
+/** Soft danger — vencido, rechazado, error. */
+export const rootsNaturePillDangerSoftClass = cn(
   rootsNaturePillBaseClass,
-  "border border-[color:var(--nature-ember-500)]/40 bg-[color:var(--nature-ember-600)]/10 text-[color:var(--nature-ember-700)]",
+  "border border-[color:var(--rootsy-danger)]/40 bg-[color-mix(in_srgb,var(--rootsy-danger)_10%,white)] text-[color:var(--rootsy-danger-dark)]",
 )
 
-/** Variante solid — énfasis alto (descuentos, métricas clave). */
-export const rootsNaturePillCanopySolidClass = cn(
+/** Solid savia — énfasis alto (descuentos, métricas clave). */
+export const rootsNaturePillSaviaSolidClass = cn(
   rootsNaturePillBaseClass,
-  "border border-[color:var(--nature-canopy-800)] bg-[color:var(--nature-canopy-700)] text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14)]",
+  "border border-[color:var(--rootsy-savia-800)] bg-[color:var(--rootsy-savia-700)] text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14)]",
 )
 
 export type RootsNaturePillVariant =
-  | "canopy"
-  | "earth"
-  | "earthMuted"
-  | "autumn"
-  | "ember"
-  | "canopySolid"
+  | "savia"
+  | "bruma"
+  | "brumaMuted"
+  | "warning"
+  | "danger"
+  | "saviaSolid"
 
 export const rootsNaturePillVariantClass: Record<
   RootsNaturePillVariant,
   string
 > = {
-  canopy: rootsNaturePillCanopySoftClass,
-  earth: rootsNaturePillEarthSoftClass,
-  earthMuted: rootsNaturePillEarthMutedSoftClass,
-  autumn: rootsNaturePillAutumnSoftClass,
-  ember: rootsNaturePillEmberSoftClass,
-  canopySolid: rootsNaturePillCanopySolidClass,
+  savia: rootsNaturePillSaviaSoftClass,
+  bruma: rootsNaturePillBrumaSoftClass,
+  brumaMuted: rootsNaturePillBrumaMutedSoftClass,
+  warning: rootsNaturePillWarningSoftClass,
+  danger: rootsNaturePillDangerSoftClass,
+  saviaSolid: rootsNaturePillSaviaSolidClass,
 }

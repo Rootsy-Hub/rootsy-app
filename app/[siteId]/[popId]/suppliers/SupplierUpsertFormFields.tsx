@@ -11,15 +11,15 @@ import {
   RootsFormTextField,
   RootsFormTextareaField,
   rootsFormColumnClass,
-  rootsFormEarthTextSecondaryClass,
+  rootsFormBrumaTextSecondaryClass,
   rootsFormFieldLabelClass,
 } from "@/components/rootsy-form"
-import { rootsFormEarthDividerClass } from "@/components/rootsy-form/rootsFormEarthTokens"
+import { rootsFormBrumaDividerClass } from "@/components/rootsy-form/rootsFormBrumaTokens"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Dispatch, ReactNode, SetStateAction } from "react"
 
-const sectionDividerClass = cn("h-px w-full shrink-0", rootsFormEarthDividerClass)
+const sectionDividerClass = cn("h-px w-full shrink-0", rootsFormBrumaDividerClass)
 
 function FormSection({
   title,
@@ -38,7 +38,7 @@ function FormSection({
           <p
             className={cn(
               "mt-1 text-xs leading-relaxed",
-              rootsFormEarthTextSecondaryClass,
+              rootsFormBrumaTextSecondaryClass,
             )}
           >
             {description}
@@ -67,7 +67,7 @@ function PadronFiscalHint({
   }
 
   return (
-    <p className={cn("text-xs leading-relaxed", rootsFormEarthTextSecondaryClass)}>
+    <p className={cn("text-xs leading-relaxed", rootsFormBrumaTextSecondaryClass)}>
       {lines.join(" · ")}
     </p>
   )

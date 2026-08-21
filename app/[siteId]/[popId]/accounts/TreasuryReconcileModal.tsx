@@ -36,7 +36,7 @@ import {
   RootsFormSelectField,
   RootsFormSelectItem,
   RootsFormTextareaField,
-  rootsFormEarthTextSecondaryClass,
+  rootsFormBrumaTextSecondaryClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
@@ -257,7 +257,7 @@ export function TreasuryReconcileModal({
             <p
               className={cn(
                 "text-[11px] font-semibold uppercase tracking-[0.12em]",
-                rootsFormEarthTextSecondaryClass,
+                rootsFormBrumaTextSecondaryClass,
               )}
             >
               {balanceLabel} al {formatTreasuryShortDate(eventDate)}
@@ -267,7 +267,7 @@ export function TreasuryReconcileModal({
             </p>
             {!balanceLoading &&
             Math.abs(balanceAsOf - globalPendingBalance) > 0.009 ? (
-              <p className={cn("mt-1 text-xs", rootsFormEarthTextSecondaryClass)}>
+              <p className={cn("mt-1 text-xs", rootsFormBrumaTextSecondaryClass)}>
                 Saldo actual: {fmt.format(globalPendingBalance)}
               </p>
             ) : null}
@@ -313,7 +313,7 @@ export function TreasuryReconcileModal({
           principalAmount > 0 ? (
             <div className="space-y-2 rounded-xl border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-3 py-2.5 text-sm">
               <div className="flex items-center justify-between gap-3">
-                <span className={cn("min-w-0 leading-snug", rootsFormEarthTextSecondaryClass)}>
+                <span className={cn("min-w-0 leading-snug", rootsFormBrumaTextSecondaryClass)}>
                   {isPos ? "Liquidación" : "Pago de consumos"}
                 </span>
                 <span className="shrink-0 font-numeric tabular-nums text-[var(--rootsy-bruma-900)]">
@@ -324,7 +324,7 @@ export function TreasuryReconcileModal({
               </div>
               {Number.isFinite(adjustmentAmount) && adjustmentAmount > 0 ? (
                 <div className="flex items-center justify-between gap-3">
-                  <span className={cn("min-w-0 leading-snug", rootsFormEarthTextSecondaryClass)}>
+                  <span className={cn("min-w-0 leading-snug", rootsFormBrumaTextSecondaryClass)}>
                     {isPos
                       ? TREASURY_RECONCILE_COMMISSIONS_LABEL
                       : TREASURY_CARD_OTHER_CHARGES_LABEL}

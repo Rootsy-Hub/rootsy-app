@@ -37,11 +37,11 @@ export const nightForestIconButtonStarSkinClass = rootsIconButtonNightChromeClas
 /** Focus en iconos nocturnos — halo lunar, no emerald duro. */
 export const nightForestIconButtonFocusRingClass =
   rootsIconButtonNightFocusRingClass
-export const nightForestBorderClass = "border-[#263530]/90"
-export const nightForestDividerClass = "bg-[#263530]/80"
-export const nightForestMutedTextClass = "text-[#78716c]"
+export const nightForestBorderClass = "border-[color:var(--rootsy-sombra-600)]/90"
+export const nightForestDividerClass = "bg-[color:var(--rootsy-sombra-600)]/80"
+export const nightForestMutedTextClass = "text-[color:var(--rootsy-bruma-500)]"
 export const nightForestFocusRingClass =
-  "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/25"
+  "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--rootsy-savia-400)]/25"
 
 /** Header oscuro operativo — bosque nocturno (`dark` y `night` son equivalentes). */
 export function isNightForestHeader(
@@ -96,7 +96,7 @@ function dataWorkspaceHeaderButtonOpenClass(
   }
   if (isNightForestHeader(headerVariant)) {
     return cn(
-      "data-[state=open]:border-[#33443d] data-[state=open]:bg-[#1c2824] data-[state=open]:text-[#e7e5e4]",
+      "data-[state=open]:border-[color:var(--rootsy-sombra-500)] data-[state=open]:bg-[color:var(--rootsy-sombra-700)] data-[state=open]:text-[color:var(--rootsy-bruma-200)]",
       "data-[state=open]:ring-0 data-[state=open]:outline-none",
       nightForestFocusRingClass,
     )
@@ -404,9 +404,9 @@ export function dataWorkspaceHeaderEdgeToggleClass(
   }
   if (isNightForestHeader(headerVariant)) {
     return cn(
-      "border-white/8 bg-[#141c19] text-[#78716c]",
+      "border-white/8 bg-[color:var(--rootsy-sombra-800)] text-[color:var(--rootsy-bruma-500)]",
       nightForestPanelHoverClass,
-      "hover:text-[#d6d3d1]",
+      "hover:text-[color:var(--rootsy-bruma-300)]",
     )
   }
   return "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"

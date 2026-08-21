@@ -172,11 +172,11 @@ export function ArticleTableRowPills({
         singleLine ? "flex-nowrap overflow-hidden" : "flex-wrap",
       )}
     >
-      <RootsNaturePill variant={row.isActive ? "canopy" : "earthMuted"}>
+      <RootsNaturePill variant={row.isActive ? "savia" : "brumaMuted"}>
         {row.isActive ? "Activo" : "Inactivo"}
       </RootsNaturePill>
       {isMerchandise ? (
-        <RootsNaturePill variant="earth">Mercadería vendible</RootsNaturePill>
+        <RootsNaturePill variant="bruma">Mercadería vendible</RootsNaturePill>
       ) : null}
       {hasDiscount && row.discountMode && row.discountValue != null ? (
         <ArticleCatalogDiscountBadge

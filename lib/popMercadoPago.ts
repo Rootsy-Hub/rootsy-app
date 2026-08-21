@@ -60,9 +60,9 @@ export function popMercadoPagoConnectionStatusLabel(
 export function popMercadoPagoConnectionPillVariant(
   status: PopMercadoPagoConnectionStatus,
 ): RootsNaturePillVariant {
-  if (status === "connected") return "canopy"
-  if (status === "expired") return "ember"
-  return "earthMuted"
+  if (status === "connected") return "savia"
+  if (status === "expired") return "danger"
+  return "brumaMuted"
 }
 
 export function resolvePopMercadoPagoConnectionStatus(

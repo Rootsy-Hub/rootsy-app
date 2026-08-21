@@ -6,9 +6,9 @@ import {
   type ArticleDiscountMode,
 } from "@/lib/articleDiscount"
 
-/** @deprecated Usar RootsNaturePill variant="canopySolid". */
+/** @deprecated Usar RootsNaturePill variant="saviaSolid". */
 export const articleCatalogDiscountPillClass =
-  "inline-flex w-fit max-w-full items-center rounded-full border border-[color:var(--nature-canopy-800)] bg-[color:var(--nature-canopy-700)] px-2.5 py-0.5 text-[11px] font-semibold leading-none tabular-nums text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14)]"
+  "inline-flex w-fit max-w-full items-center rounded-full border border-[color:var(--rootsy-savia-800)] bg-[color:var(--rootsy-savia-700)] px-2.5 py-0.5 text-[11px] font-semibold leading-none tabular-nums text-white shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14)]"
 
 export function ArticleCatalogDiscountBadge({
   mode,
@@ -23,7 +23,7 @@ export function ArticleCatalogDiscountBadge({
 }) {
   return (
     <RootsNaturePill
-      variant="canopySolid"
+      variant="saviaSolid"
       className={className}
       title={title}
     >

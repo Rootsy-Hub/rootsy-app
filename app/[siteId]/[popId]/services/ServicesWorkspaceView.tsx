@@ -769,7 +769,7 @@ export function ServicesWorkspaceView() {
                         {formatSaleComprobanteMoney(row.defaultPrice)}
                       </TableCell>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
-                        <RootsNaturePill variant="earth">
+                        <RootsNaturePill variant="bruma">
                           {row.billingPeriodDisplay}
                         </RootsNaturePill>
                       </TableCell>
@@ -783,7 +783,7 @@ export function ServicesWorkspaceView() {
                       </TableCell>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
                         <RootsNaturePill
-                          variant={row.isActive ? "canopy" : "earthMuted"}
+                          variant={row.isActive ? "savia" : "brumaMuted"}
                         >
                           {row.isActive ? "Activo" : "Inactivo"}
                         </RootsNaturePill>

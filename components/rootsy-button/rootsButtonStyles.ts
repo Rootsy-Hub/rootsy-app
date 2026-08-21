@@ -4,9 +4,9 @@ import {
   rootsIconButtonNightGhostClass,
 } from "@/components/rootsy-button/rootsIconButtonNightStyles"
 import {
-  rootsFormEarthHighlightHoverClass,
-  rootsFormEarthTextSecondaryClass,
-} from "@/components/rootsy-form/rootsFormEarthTokens"
+  rootsFormBrumaHighlightHoverClass,
+  rootsFormBrumaTextSecondaryClass,
+} from "@/components/rootsy-form/rootsFormBrumaTokens"
 import { cn } from "@/lib/utils"
 
 const rootsButtonFocusRingPrimary =
@@ -116,7 +116,7 @@ function rootsIconButtonSvgClass(size: RootsIconButtonSize) {
 
 const rootsIconButtonActionBaseClass = cn(
   "inline-flex shrink-0 items-center justify-center rounded-lg border-0 bg-transparent p-0 shadow-none transition-colors duration-150 outline-none focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-current",
-  rootsFormEarthTextSecondaryClass,
+  rootsFormBrumaTextSecondaryClass,
 )
 
 const rootsIconButtonActionIntentClass: Record<
@@ -124,10 +124,10 @@ const rootsIconButtonActionIntentClass: Record<
   string
 > = {
   neutral: cn(
-    rootsFormEarthHighlightHoverClass,
-    "hover:text-[#292524]",
-    "focus-visible:bg-[#f5f5f0] focus-visible:text-[#292524] focus-visible:ring-2 focus-visible:ring-[#d6d3d1]/50 focus-visible:ring-offset-0",
-    "active:bg-[#e7e5e4]/80 active:text-[#292524]",
+    rootsFormBrumaHighlightHoverClass,
+    "hover:text-[color:var(--rootsy-bruma-900)]",
+    "focus-visible:bg-[color:var(--rootsy-bruma-100)] focus-visible:text-[color:var(--rootsy-bruma-900)] focus-visible:ring-2 focus-visible:ring-[color:var(--rootsy-bruma-300)]/50 focus-visible:ring-offset-0",
+    "active:bg-[color:var(--rootsy-bruma-200)]/80 active:text-[color:var(--rootsy-bruma-900)]",
   ),
   edit: cn(
     "hover:bg-[var(--rootsy-savia-50)] hover:text-[var(--rootsy-savia-700)]",

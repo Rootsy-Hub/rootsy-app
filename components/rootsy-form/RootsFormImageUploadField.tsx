@@ -193,7 +193,7 @@ export function RootsFormImageUploadField({
             ) : null}
             {busy ? (
               <span className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
-                <Loader2 className="size-5 animate-spin text-[#57534e]" aria-hidden />
+                <Loader2 className="size-5 animate-spin text-[color:var(--rootsy-bruma-600)]" aria-hidden />
               </span>
             ) : null}
           </button>
@@ -247,7 +247,7 @@ export function RootsFormImageUploadField({
         >
           <span style={thumbStyle}>
             {busy ? (
-              <Loader2 className="size-5 animate-spin text-[#57534e]" aria-hidden />
+              <Loader2 className="size-5 animate-spin text-[color:var(--rootsy-bruma-600)]" aria-hidden />
             ) : DocumentIcon ? (
               <DocumentIcon className="size-5 text-[var(--rootsy-bruma-500)]" aria-hidden />
             ) : (

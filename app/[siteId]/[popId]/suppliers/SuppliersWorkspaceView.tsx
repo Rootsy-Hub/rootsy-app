@@ -919,7 +919,7 @@ export function SuppliersWorkspaceView() {
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
                         {r.ivaCondition ? (
                           <RootsNaturePill
-                            variant="earth"
+                            variant="bruma"
                             className="max-w-full"
                             title={
                               IVA_LABEL_BY_VALUE[r.ivaCondition] ??

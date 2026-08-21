@@ -15,7 +15,7 @@ type Props = {
 }
 
 export function RootsNaturePill({
-  variant = "earth",
+  variant = "bruma",
   children,
   className,
   title,

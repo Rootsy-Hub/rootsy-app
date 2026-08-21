@@ -638,9 +638,9 @@ export const darkTableFooterNavGroupClass = darkTableFooterNavSideClass
 export const darkTableFooterControlSurfaceClass = cn(
   nightForestBorderClass,
   nightForestPanelClass,
-  "text-[#78716c] transition-colors",
+  "text-[color:var(--rootsy-bruma-500)] transition-colors",
   nightForestPanelHoverClass,
-  "hover:text-[#d6d3d1]",
+  "hover:text-[color:var(--rootsy-bruma-300)]",
   nightForestFocusRingClass,
 )
 
