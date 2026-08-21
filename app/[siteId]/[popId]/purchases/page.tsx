@@ -825,8 +825,18 @@ function PurchasesPage() {
   const proveedorCatalogoBloqueado =
     proveedorSeleccionado != null && !proveedorSeleccionado.manual
 
+  useEffect(() => {
+    if (
+      payOnSupplierAccount &&
+      !partyCanOperateOnCurrentAccount(proveedorSeleccionado)
+    ) {
+      setPayOnSupplierAccount(false)
+    }
+  }, [payOnSupplierAccount, proveedorSeleccionado])
+
   const quitarProveedorCompra = useCallback(() => {
     setProveedorSeleccionado(null)
+    setPayOnSupplierAccount(false)
     setManualNombreProveedor("")
     setProveedorTaxId("")
     setCompraIvaCondition("")

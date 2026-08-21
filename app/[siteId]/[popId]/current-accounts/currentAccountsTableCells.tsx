@@ -7,7 +7,9 @@ import {
   currentAccountOpenAgingColumnClass,
   currentAccountTableAmountColumnClass,
   currentAccountTableCountColumnClass,
+  currentAccountTableLimitColumnClass,
   currentAccountTablePartyColumnClass,
+  currentAccountTableTermColumnClass,
 } from "@/app/[siteId]/[popId]/current-accounts/currentAccountsTableLayout"
 import { DataWorkspaceTableMoney } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
@@ -64,6 +66,56 @@ export function CurrentAccountPartyNameCell({ value }: { value: string }) {
       <p className={cn("truncate font-medium", workspaceTableNatureTextPrimaryClass)}>
         {value || "—"}
       </p>
+    </TableCell>
+  )
+}
+
+export function CurrentAccountLimitCell({
+  enrolled,
+  creditLimit,
+}: {
+  enrolled: boolean
+  creditLimit: number | null
+}) {
+  return (
+    <TableCell
+      className={cn(
+        workspaceTableLayoutBodyCellClass,
+        currentAccountTableLimitColumnClass,
+      )}
+    >
+      {!enrolled ? (
+        <span className={workspaceTableNatureTextSecondaryClass}>—</span>
+      ) : creditLimit == null ? (
+        <span className={workspaceTableNatureTextSecondaryClass}>Sin tope</span>
+      ) : (
+        <DataWorkspaceTableMoney>{formatMoney(creditLimit)}</DataWorkspaceTableMoney>
+      )}
+    </TableCell>
+  )
+}
+
+export function CurrentAccountTermDaysCell({
+  enrolled,
+  termDays,
+}: {
+  enrolled: boolean
+  termDays: number
+}) {
+  return (
+    <TableCell
+      className={cn(
+        workspaceTableLayoutBodyCellClass,
+        currentAccountTableTermColumnClass,
+      )}
+    >
+      {enrolled ? (
+        <span className={workspaceTableNatureTextSecondaryClass}>
+          {termDays} días
+        </span>
+      ) : (
+        <span className={workspaceTableNatureTextSecondaryClass}>—</span>
+      )}
     </TableCell>
   )
 }

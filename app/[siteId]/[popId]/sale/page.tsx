@@ -679,8 +679,18 @@ function SalePage() {
     ],
   )
 
+  useEffect(() => {
+    if (
+      payOnClientAccount &&
+      !partyCanOperateOnCurrentAccount(clienteSeleccionado)
+    ) {
+      setPayOnClientAccount(false)
+    }
+  }, [clienteSeleccionado, payOnClientAccount])
+
   const quitarClienteVenta = useCallback(() => {
     setClienteSeleccionado(null)
+    setPayOnClientAccount(false)
     setManualNombreCliente("")
     setFiscalDocVenta("")
     setVentaEmail("")

@@ -2,6 +2,7 @@
 
 import {
   CURRENT_ACCOUNT_TABLE_PAGE_SIZES,
+  CURRENT_ACCOUNT_TABLE_SORT_KEYS,
   DEFAULT_CURRENT_ACCOUNT_TABLE_PAGE_SIZE,
   type CurrentAccountTableSortKey,
 } from "@/app/[siteId]/[popId]/current-accounts/workspaceUrl"
@@ -23,6 +24,7 @@ import {
 } from "@/lib/currentAccountAccountingPosting"
 import {
   addCurrentAccountAgingAmount,
+  CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS,
   currentAccountAgingBucket,
   currentAccountDaysOverdue,
   currentAccountDocumentKindForDirection,
@@ -66,6 +68,9 @@ export type CurrentAccountPartyRow = {
   overdueAmount: number
   aging: CurrentAccountAgingTotals
   balance: number
+  unappliedCredit: number
+  creditLimit: number | null
+  termDays: number
 }
 
 export type CurrentAccountLedgerLine = {
@@ -462,40 +467,67 @@ function emptyPartyRow(
     overdueAmount: 0,
     aging: emptyCurrentAccountAgingTotals(),
     balance: 0,
+    unappliedCredit: 0,
+    creditLimit: null,
+    termDays: CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS,
   }
+}
+
+type EnrolledPartyRecord = {
+  id: string
+  name: string
+  creditLimit: number | null
+  termDays: number
 }
 
 async function loadEnrolledParties(
   supabase: Awaited<ReturnType<typeof createClient>>,
   popId: string,
   direction: CurrentAccountDirection,
-): Promise<{ id: string; name: string }[]> {
+): Promise<EnrolledPartyRecord[]> {
   const table = direction === "receivable" ? "clients" : "suppliers"
   const { data } = await supabase
     .from(table)
-    .select("id, name")
+    .select("id, name, current_account_credit_limit, current_account_term_days")
     .eq("pop_id", popId)
     .eq("current_account_enabled", true)
     .order("name", { ascending: true })
   return (data ?? []).map((row) => ({
     id: String(row.id),
     name: String(row.name ?? "").trim(),
+    creditLimit: normalizeCurrentAccountCreditLimit(
+      row.current_account_credit_limit,
+    ),
+    termDays: normalizeCurrentAccountTermDays(row.current_account_term_days),
   }))
+}
+
+function applyEnrollmentTerms(
+  party: CurrentAccountPartyRow,
+  enrolled: EnrolledPartyRecord,
+) {
+  party.enrolled = true
+  party.creditLimit = enrolled.creditLimit
+  party.termDays = enrolled.termDays
+  if (!party.partyName.trim() && enrolled.name) {
+    party.partyName = enrolled.name
+  }
 }
 
 function mergeEnrolledParties(
   parties: CurrentAccountPartyRow[],
-  enrolled: { id: string; name: string }[],
+  enrolled: EnrolledPartyRecord[],
 ): CurrentAccountPartyRow[] {
   const byId = new Map(parties.map((row) => [row.partyId, row]))
   for (const row of enrolled) {
     const current = byId.get(row.id)
     if (current) {
-      current.enrolled = true
-      if (!current.partyName.trim() && row.name) current.partyName = row.name
+      applyEnrollmentTerms(current, row)
       continue
     }
-    byId.set(row.id, emptyPartyRow(row.id, row.name || "—", true))
+    const next = emptyPartyRow(row.id, row.name || "—", true)
+    applyEnrollmentTerms(next, row)
+    byId.set(row.id, next)
   }
   return [...byId.values()]
 }
@@ -528,6 +560,7 @@ function groupParties(
   }
   for (const [partyId, credit] of unappliedByParty) {
     const current = byParty.get(partyId) ?? emptyPartyRow(partyId, "")
+    current.unappliedCredit = credit
     current.balance = roundMoney(current.balance - credit)
     byParty.set(partyId, current)
   }
@@ -560,6 +593,17 @@ async function fillMissingPartyNames(
   }
 }
 
+function creditLimitSortValue(row: CurrentAccountPartyRow): number {
+  if (!row.enrolled) return Number.NEGATIVE_INFINITY
+  if (row.creditLimit == null) return Number.POSITIVE_INFINITY
+  return row.creditLimit
+}
+
+function termDaysSortValue(row: CurrentAccountPartyRow): number {
+  if (!row.enrolled) return Number.NEGATIVE_INFINITY
+  return row.termDays
+}
+
 function sortParties(
   rows: CurrentAccountPartyRow[],
   sort: CurrentAccountTableSortKey | null,
@@ -570,6 +614,18 @@ function sortParties(
   return [...rows].sort((a, b) => {
     if (key === "party_name") {
       return a.partyName.localeCompare(b.partyName, "es") * dir
+    }
+    if (key === "credit_limit") {
+      const left = creditLimitSortValue(a)
+      const right = creditLimitSortValue(b)
+      if (left === right) return 0
+      return (left < right ? -1 : 1) * dir
+    }
+    if (key === "term_days") {
+      const left = termDaysSortValue(a)
+      const right = termDaysSortValue(b)
+      if (left === right) return 0
+      return (left < right ? -1 : 1) * dir
     }
     if (key === "open_count") return (a.openCount - b.openCount) * dir
     if (key === "overdue") return (a.overdueAmount - b.overdueAmount) * dir
@@ -677,10 +733,9 @@ export async function getPopCurrentAccountParties(
     parties = sortParties(
       parties,
       sort &&
-        (sort === "party_name" ||
-          sort === "open_count" ||
-          sort === "overdue" ||
-          sort === "balance")
+        CURRENT_ACCOUNT_TABLE_SORT_KEYS.includes(
+          sort as CurrentAccountTableSortKey,
+        )
         ? sort
         : "balance",
       sort ? ascending : false,

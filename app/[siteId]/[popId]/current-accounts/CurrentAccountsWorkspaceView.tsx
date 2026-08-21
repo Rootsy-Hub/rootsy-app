@@ -1,19 +1,37 @@
 "use client"
 
 import { CurrentAccountAgingToolbarFilter } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountAgingToolbarFilter"
+import { CurrentAccountApplyDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountApplyDialog"
 import { CurrentAccountDetailView } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountDetailView"
 import { CurrentAccountDirectionToolbarFilter } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountDirectionToolbarFilter"
 import { CurrentAccountEnrollDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountEnrollDialog"
+import { CurrentAccountSettleDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountSettleDialog"
+import { CurrentAccountTermsDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountTermsDialog"
+import {
+  getPopCurrentAccountLedger,
+  setPopCurrentAccountEnrollment,
+  type CurrentAccountOpenDocument,
+  type CurrentAccountPartyRow,
+} from "@/app/[siteId]/[popId]/current-accounts/actions"
 import {
   CurrentAccountCountCell,
+  CurrentAccountLimitCell,
   CurrentAccountMoneyCell,
   CurrentAccountOverdueCell,
   CurrentAccountPartyNameCell,
+  CurrentAccountTermDaysCell,
 } from "@/app/[siteId]/[popId]/current-accounts/currentAccountsTableCells"
+import {
+  CurrentAccountTableActionsCell,
+  CurrentAccountTableActionsHead,
+  type CurrentAccountRowActionKind,
+} from "@/app/[siteId]/[popId]/current-accounts/currentAccountsTableRowOptions"
 import {
   currentAccountTableAmountColumnClass,
   currentAccountTableCountColumnClass,
+  currentAccountTableLimitColumnClass,
   currentAccountTablePartyColumnClass,
+  currentAccountTableTermColumnClass,
 } from "@/app/[siteId]/[popId]/current-accounts/currentAccountsTableLayout"
 import {
   CURRENT_ACCOUNT_TABLE_PAGE_SIZES,
@@ -53,6 +71,7 @@ import {
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { currentAccountsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
@@ -65,11 +84,17 @@ import { TableBody } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePopCurrentAccountParties } from "@/hooks/usePopCurrentAccountParties"
 import {
+  CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS,
   currentAccountAgingFilterLabel,
   currentAccountDirectionLabel,
   type CurrentAccountDirection,
 } from "@/lib/currentAccounts"
-import { popCurrentAccountPartiesQueryRoot } from "@/lib/queryKeys"
+import {
+  popCurrentAccountLedgerQueryKey,
+  popCurrentAccountLedgerQueryRoot,
+  popCurrentAccountPartiesQueryRoot,
+} from "@/lib/queryKeys"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { useQueryClient } from "@tanstack/react-query"
@@ -108,6 +133,15 @@ export function CurrentAccountsWorkspaceView() {
   const [enrollOpen, setEnrollOpen] = useState(false)
   const [enrollDirection, setEnrollDirection] =
     useState<CurrentAccountDirection>("receivable")
+  const [rowAction, setRowAction] = useState<{
+    kind: CurrentAccountRowActionKind
+    party: CurrentAccountPartyRow
+    documents: CurrentAccountOpenDocument[]
+    unappliedCredit: number
+  } | null>(null)
+  const [rowActionBusyId, setRowActionBusyId] = useState<string | null>(null)
+  const [enrollmentBusy, setEnrollmentBusy] = useState(false)
+  const [rowActionError, setRowActionError] = useState<string | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const viewingParty = Boolean(ws.partyId)
@@ -176,7 +210,7 @@ export function CurrentAccountsWorkspaceView() {
         : partiesQuery.error
           ? String(partiesQuery.error)
           : null
-  const error = tableError
+  const error = rowActionError ?? tableError
 
   useEffect(() => {
     const res = partiesQuery.data
@@ -274,6 +308,75 @@ export function CurrentAccountsWorkspaceView() {
   const openEnroll = (direction: CurrentAccountDirection) => {
     setEnrollDirection(direction)
     setEnrollOpen(true)
+  }
+
+  const refreshParties = useCallback(async () => {
+    if (!popId) return
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: popCurrentAccountPartiesQueryRoot(popId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: popCurrentAccountLedgerQueryRoot(popId),
+      }),
+    ])
+  }, [popId, queryClient])
+
+  const closeRowAction = () => setRowAction(null)
+
+  const handleRowAction = async (
+    party: CurrentAccountPartyRow,
+    kind: CurrentAccountRowActionKind,
+  ) => {
+    setRowActionError(null)
+    if (kind === "terms" || kind === "enroll" || kind === "unenroll") {
+      setRowAction({
+        kind,
+        party,
+        documents: [],
+        unappliedCredit: party.unappliedCredit,
+      })
+      return
+    }
+
+    setRowActionBusyId(party.partyId)
+    try {
+      const ledger = await queryClient.fetchQuery({
+        queryKey: popCurrentAccountLedgerQueryKey(
+          popId,
+          ws.direction,
+          party.partyId,
+        ),
+        queryFn: () =>
+          getPopCurrentAccountLedger(popId, {
+            direction: ws.direction,
+            partyId: party.partyId,
+          }),
+        ...sessionListQueryOptions,
+      })
+      if (!ledger.success) {
+        setRowActionError(ledger.error)
+        return
+      }
+      setRowAction({
+        kind,
+        party: {
+          ...party,
+          unappliedCredit: ledger.unappliedCredit,
+          creditLimit: ledger.creditLimit,
+          termDays: ledger.termDays,
+          enrolled: ledger.enrolled,
+        },
+        documents: ledger.openDocuments,
+        unappliedCredit: ledger.unappliedCredit,
+      })
+    } catch (e: unknown) {
+      setRowActionError(
+        e instanceof Error ? e.message : "No se pudo abrir la acción.",
+      )
+    } finally {
+      setRowActionBusyId(null)
+    }
   }
 
   if (!popId || !siteId) {
@@ -450,6 +553,7 @@ export function CurrentAccountsWorkspaceView() {
             >
               <WorkspaceTableHeader>
                 <WorkspaceTableHeaderRow>
+                  <CurrentAccountTableActionsHead />
                   <WorkspaceTableSortHead
                     tone="nature"
                     label={
@@ -459,6 +563,27 @@ export function CurrentAccountsWorkspaceView() {
                     onSort={() => handleSortColumn("party_name")}
                     className={cn(
                       currentAccountTablePartyColumnClass,
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  />
+                  <WorkspaceTableSortHead
+                    tone="nature"
+                    align="right"
+                    label="Límite"
+                    direction={sortDirection("credit_limit")}
+                    onSort={() => handleSortColumn("credit_limit")}
+                    className={cn(
+                      currentAccountTableLimitColumnClass,
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  />
+                  <WorkspaceTableSortHead
+                    tone="nature"
+                    label="Plazo"
+                    direction={sortDirection("term_days")}
+                    onSort={() => handleSortColumn("term_days")}
+                    className={cn(
+                      currentAccountTableTermColumnClass,
                       workspaceTableLayoutHeaderHeadClass,
                     )}
                   />
@@ -522,7 +647,24 @@ export function CurrentAccountsWorkspaceView() {
                         }
                       }}
                     >
+                      <CurrentAccountTableActionsCell
+                        row={row}
+                        direction={ws.direction}
+                        canCreate={canCreate}
+                        busy={rowActionBusyId === row.partyId}
+                        onAction={(kind) => {
+                          void handleRowAction(row, kind)
+                        }}
+                      />
                       <CurrentAccountPartyNameCell value={row.partyName} />
+                      <CurrentAccountLimitCell
+                        enrolled={row.enrolled}
+                        creditLimit={row.creditLimit}
+                      />
+                      <CurrentAccountTermDaysCell
+                        enrolled={row.enrolled}
+                        termDays={row.termDays}
+                      />
                       <CurrentAccountCountCell value={row.openCount} />
                       <CurrentAccountOverdueCell
                         value={row.overdueAmount}
@@ -548,6 +690,88 @@ export function CurrentAccountsWorkspaceView() {
           queryKey: popCurrentAccountPartiesQueryRoot(popId),
         })
         openParty(partyId, enrollDirection)
+      }}
+    />
+    <CurrentAccountSettleDialog
+      open={rowAction?.kind === "settle"}
+      onOpenChange={(open) => {
+        if (!open) closeRowAction()
+      }}
+      popId={popId}
+      direction={ws.direction}
+      partyId={rowAction?.party.partyId ?? ""}
+      partyName={rowAction?.party.partyName ?? ""}
+      documents={rowAction?.documents ?? []}
+      onSettled={() => {
+        closeRowAction()
+        void refreshParties()
+      }}
+    />
+    <CurrentAccountApplyDialog
+      open={rowAction?.kind === "apply"}
+      onOpenChange={(open) => {
+        if (!open) closeRowAction()
+      }}
+      popId={popId}
+      direction={ws.direction}
+      partyId={rowAction?.party.partyId ?? ""}
+      partyName={rowAction?.party.partyName ?? ""}
+      unappliedCredit={rowAction?.unappliedCredit ?? 0}
+      documents={rowAction?.documents ?? []}
+      onApplied={() => {
+        closeRowAction()
+        void refreshParties()
+      }}
+    />
+    <CurrentAccountTermsDialog
+      open={rowAction?.kind === "terms" || rowAction?.kind === "enroll"}
+      onOpenChange={(open) => {
+        if (!open) closeRowAction()
+      }}
+      popId={popId}
+      direction={ws.direction}
+      partyId={rowAction?.party.partyId ?? ""}
+      partyName={rowAction?.party.partyName ?? ""}
+      creditLimit={rowAction?.party.creditLimit ?? null}
+      termDays={
+        rowAction?.party.termDays ?? CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS
+      }
+      onSaved={() => {
+        closeRowAction()
+        void refreshParties()
+      }}
+    />
+    <RootsConfirmDialog
+      open={rowAction?.kind === "unenroll"}
+      onOpenChange={(open) => {
+        if (!open) closeRowAction()
+      }}
+      title="Deshabilitar cuenta corriente"
+      description={
+        ws.direction === "payable"
+          ? "Ya no se podrá comprar a cuenta de este proveedor. El saldo y el extracto se mantienen."
+          : "Ya no se podrá vender a cuenta de este cliente. El saldo y el extracto se mantienen."
+      }
+      confirmLabel="Deshabilitar"
+      busy={enrollmentBusy}
+      onConfirm={() => {
+        if (!rowAction) return
+        void (async () => {
+          setEnrollmentBusy(true)
+          setRowActionError(null)
+          const result = await setPopCurrentAccountEnrollment(popId, {
+            direction: ws.direction,
+            partyId: rowAction.party.partyId,
+            enabled: false,
+          })
+          setEnrollmentBusy(false)
+          if (!result.success) {
+            setRowActionError(result.error)
+            return
+          }
+          closeRowAction()
+          await refreshParties()
+        })()
       }}
     />
     </>

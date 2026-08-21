@@ -218,6 +218,15 @@ export function useMesasSaleCheckout(
   const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] =
     useState<SaleCatalogPaymentOption | null>(null)
   const [payOnClientAccount, setPayOnClientAccount] = useState(false)
+
+  useEffect(() => {
+    if (
+      payOnClientAccount &&
+      !partyCanOperateOnCurrentAccount(clienteSeleccionado)
+    ) {
+      setPayOnClientAccount(false)
+    }
+  }, [clienteSeleccionado, payOnClientAccount])
   const [modoDescuento, setModoDescuento] = useState<"porcentaje" | "fijo">("porcentaje")
   const [valorDescuentoPorcentaje, setValorDescuentoPorcentaje] = useState(0)
   const [valorDescuentoFijo, setValorDescuentoFijo] = useState(0)
@@ -1889,6 +1898,7 @@ export function useMesasSaleCheckout(
       },
       quitarCliente: () => {
         setClienteSeleccionado(null)
+        setPayOnClientAccount(false)
         setManualNombreCliente("")
         setFiscalDocVenta("")
         setVentaEmail("")

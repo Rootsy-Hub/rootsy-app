@@ -62,7 +62,7 @@ export function mesaTableHighlightClass(options: {
     return mesaItemSelectionClass()
   }
   if (options.selected) {
-    return mesaItemSelectionClass({ active: true })
+    return "z-10 outline outline-4 outline-offset-0"
   }
   return ""
 }
@@ -81,18 +81,22 @@ export function mesaStatusClass(status: MesaTableStatus): string {
   const statusMap: Record<MesaTableStatus, string> = {
     free: cn(
       "border-[color-mix(in_srgb,var(--rootsy-savia-400)_70%,transparent)]",
+      "outline-[color-mix(in_srgb,var(--rootsy-savia-400)_70%,transparent)]",
       "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_48%,var(--rootsy-sombra-800))]",
     ),
     open: cn(
       "border-[color-mix(in_srgb,var(--destructive)_78%,transparent)]",
+      "outline-[color-mix(in_srgb,var(--destructive)_78%,transparent)]",
       "bg-[color-mix(in_srgb,var(--destructive)_46%,var(--rootsy-sombra-800))]",
     ),
     paying: cn(
       "border-[color-mix(in_srgb,#f59e0b_78%,transparent)]",
+      "outline-[color-mix(in_srgb,#f59e0b_78%,transparent)]",
       "bg-[color-mix(in_srgb,#d97706_46%,var(--rootsy-sombra-800))]",
     ),
     reserved: cn(
       "border-[color-mix(in_srgb,#7c3aed_74%,transparent)]",
+      "outline-[color-mix(in_srgb,#7c3aed_74%,transparent)]",
       "bg-[color-mix(in_srgb,#6d28d9_46%,var(--rootsy-sombra-800))]",
     ),
   }

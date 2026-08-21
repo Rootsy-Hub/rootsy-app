@@ -25,7 +25,6 @@ import {
   ChannelDataField,
   ChannelDataFields,
   ChannelDataHeader,
-  ChannelDataHint,
   ChannelDataOperarFooterBar,
   ChannelDataPanel,
   ChannelDataSection,
@@ -49,7 +48,7 @@ import { Button } from "@/components/ui/button"
 import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { Clock, Package, Pencil, UtensilsCrossed } from "lucide-react"
+import { Clock, Pencil, UtensilsCrossed } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 
@@ -273,10 +272,6 @@ export function MesaSessionPanel({
             {!canCloseSession && closeSessionBlockReason ? (
               <ChannelDataWarningBanner>{closeSessionBlockReason}</ChannelDataWarningBanner>
             ) : null}
-
-            <ChannelDataHint icon={Package}>
-              Usá la pestaña Pedido para cargar productos y cobrar.
-            </ChannelDataHint>
           </ChannelDataPanel>
 
           <ChannelDataOperarFooterBar

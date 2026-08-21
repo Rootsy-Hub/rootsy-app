@@ -379,9 +379,23 @@ const MODULE_SKELETON_CONFIG: Record<string, PopTableListSkeletonConfig> = {
     headers: [
       {
         type: "label",
+        label: "Acciones",
+        align: "center",
+        className: "w-14 pl-3 pr-1",
+        srOnly: true,
+      },
+      {
+        type: "label",
         label: "Cliente",
         className: "min-w-[12rem] px-3",
       },
+      {
+        type: "label",
+        label: "Límite",
+        align: "right",
+        className: "w-[8.5rem] px-3",
+      },
+      { type: "label", label: "Plazo", className: "w-[7.5rem] px-3" },
       { type: "label", label: "Abiertos", className: "w-28 px-3" },
       { type: "label", label: "Vencido", className: "w-32 px-3" },
       { type: "label", label: "Saldo", align: "right", className: "px-3" },
