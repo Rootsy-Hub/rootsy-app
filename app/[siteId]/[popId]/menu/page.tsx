@@ -161,6 +161,7 @@ function MenuPage() {
     profile,
     roleLabel,
     enabledModules,
+    dockItemIds,
   } = usePopMenuCache(popId)
 
   const filteredMenuSections = useMemo(
@@ -375,6 +376,7 @@ function MenuPage() {
     <MenuDockDndProvider
       popId={popId}
       enabledModules={enabledModules}
+      initialDockIds={dockItemIds}
     >
     <div
       className={cn(menuNatureShellClass, "menu-firmament-settle fixed inset-0 flex flex-col overflow-hidden bg-background")}

@@ -19,7 +19,6 @@ type Props = {
   imageUrl: string | null
   initials: string
   alive?: boolean
-  solo?: boolean
 }
 
 /** Planeta POP — luz propia que dialoga con el firmamento. */
@@ -29,7 +28,6 @@ export function HomePopPlanetTile({
   imageUrl,
   initials,
   alive = true,
-  solo = false,
 }: Props) {
   const lifeStyle = menuPlanetLifeStyle(`home-${sectionKey}-${name}`)
   const shellVariant = alive ? "default" : "placed"
@@ -43,7 +41,7 @@ export function HomePopPlanetTile({
         <div
           className={cn(
             "relative flex items-center justify-center overflow-hidden rounded-full",
-            solo ? "size-32 sm:size-36" : "size-28",
+            "size-32 sm:size-36",
             menuHoloIconShellForSection(sectionKey, shellVariant),
             alive && cn(menuHoloFloatLiftClass, menuHoloIconHoverForSection(sectionKey)),
           )}

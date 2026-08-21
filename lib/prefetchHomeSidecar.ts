@@ -4,7 +4,6 @@ import type { HomeSidecar } from "@/lib/loadHomeSidecar"
 import { loadHomeSidecar } from "@/lib/loadHomeSidecar"
 import {
   popAccessQueryKey,
-  userPopIdsQueryKey,
   userPopsAccessBatchQueryKey,
   userProfileQueryKey,
 } from "@/lib/queryKeys"
@@ -26,7 +25,6 @@ function seedHomeSidecarQueryClient(sidecar: HomeSidecar): QueryClient {
     userPopsAccessBatchQueryKey(sidecar.user.id),
     sidecar.batch,
   )
-  queryClient.setQueryData(userPopIdsQueryKey(sidecar.user.id), sidecar.batch.popIds)
   for (const popId of sidecar.batch.popIds) {
     const access = sidecar.batch.accessByPopId[popId]
     if (access) {

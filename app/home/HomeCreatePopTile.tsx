@@ -1,5 +1,6 @@
 "use client"
 
+import { HOME_COPY } from "@/app/home/homeCopy"
 import {
   menuHoloTileMotionClass,
   menuRealmLightMutedClass,
@@ -47,7 +48,7 @@ export function HomeCreatePopTile() {
           aria-hidden
         />
       </div>
-      <span className={homePopTileTitleClass}>Crear negocio</span>
+      <span className={homePopTileTitleClass}>{HOME_COPY.createPop}</span>
     </Link>
   )
 }

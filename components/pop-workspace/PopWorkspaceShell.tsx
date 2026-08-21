@@ -8,13 +8,18 @@ import {
 } from "@/context/PopOptimisticNavContext"
 import { PopWorkspaceProvider } from "@/context/PopWorkspaceContext"
 import { hasPopTableListSessionCache } from "@/lib/popTableListSessionCache"
-import { popModuleKeyFromPath, popPathFromHref } from "@/lib/popRoutes"
+import {
+  isPopMenuPathname,
+  popModuleKeyFromPath,
+  popPathFromHref,
+} from "@/lib/popRoutes"
 import { useQueryClient } from "@tanstack/react-query"
 import { useParams, usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 
 export function PopWorkspaceShell({ children }: { children: ReactNode }) {
   const params = useParams()
+  const pathname = usePathname()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
 
@@ -23,7 +28,11 @@ export function PopWorkspaceShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <PopWorkspaceProvider siteId={siteId} popId={popId} accessEnabled>
+    <PopWorkspaceProvider
+      siteId={siteId}
+      popId={popId}
+      accessEnabled={!isPopMenuPathname(pathname)}
+    >
       <PopOptimisticNavProvider>
         <PopOptimisticNavGate>{children}</PopOptimisticNavGate>
       </PopOptimisticNavProvider>

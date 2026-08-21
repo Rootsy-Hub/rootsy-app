@@ -1,24 +1,28 @@
 "use client"
 
 import Link from "next/link"
-import type { ReactNode } from "react"
+import { type ReactNode, useSyncExternalStore } from "react"
 import { Button } from "@/components/ui/button"
 import { HomeCreatePopTile, homePopTileTitleClass, homePopTileTitleMutedClass } from "@/app/home/HomeCreatePopTile"
+import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeLoadError } from "@/app/home/HomeLoadError"
+import { HomeGhostPlanet } from "@/app/home/HomePopPickerSkeleton"
 import { HomePopPlanetTile } from "@/app/home/HomePopPlanetTile"
 import type { HomePopListItem } from "@/app/home/homeUserDataTypes"
 import {
   menuHoloSectionForSkeletonIndex,
   menuHoloTileMotionClass,
-  menuHoloTileSkeletonIconForSection,
-  menuHoloTileSkeletonLabelClass,
   menuRealmChromeShellClass,
   menuRealmLightMutedClass,
 } from "@/lib/menu/menuHoloStyles"
 import { useHomePageData } from "@/hooks/useHomePageData"
 import { cn } from "@/lib/utils"
 
-const SKELETON_SLOTS = 4
+const subscribeNoop = () => () => {}
+
+function useIsHydrated() {
+  return useSyncExternalStore(subscribeNoop, () => true, () => false)
+}
 
 function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -39,44 +43,18 @@ function HomeConstellationStage({ children }: { children: ReactNode }) {
   )
 }
 
-export function HomePopPickerSkeleton() {
-  return (
-    <HomeConstellationStage>
-      <ul
-        className="mx-auto flex w-full max-w-3xl list-none flex-wrap justify-center gap-x-3 gap-y-6 sm:gap-x-4"
-        aria-busy="true"
-        aria-label="Cargando puntos de venta"
-      >
-        {Array.from({ length: SKELETON_SLOTS }, (_, index) => {
-          const sectionKey = menuHoloSectionForSkeletonIndex(index)
-          return (
-            <li key={index} className="basis-[9.1rem] sm:basis-[9.4rem]">
-              <div className="mx-auto flex w-full max-w-40 flex-col items-center">
-                <div
-                  aria-hidden
-                  className={cn(
-                    menuHoloTileSkeletonIconForSection(sectionKey),
-                    "size-28 rounded-full",
-                  )}
-                />
-                <span
-                  aria-hidden
-                  className={cn(menuHoloTileSkeletonLabelClass, "mt-3 w-24")}
-                />
-              </div>
-            </li>
-          )
-        })}
-      </ul>
-    </HomeConstellationStage>
-  )
-}
-
-export function HomePopPicker({ userId }: { userId: string }) {
+export function HomePopPicker({
+  userId,
+  fallback,
+}: {
+  userId: string
+  fallback: ReactNode
+}) {
+  const hydrated = useIsHydrated()
   const { pops, canCreatePop, createPopPending, isLoading, loadError, refetchAll } =
     useHomePageData(userId)
 
-  if (isLoading) return <HomePopPickerSkeleton />
+  if (!hydrated || isLoading) return fallback
   if (loadError) return <HomeLoadError onRetry={refetchAll} />
 
   return (
@@ -109,7 +87,11 @@ function HomePopPickerCards({
           isSoloPop ? "max-w-[13rem]" : "max-w-3xl",
         )}
       >
-        {showCreateTile ? (
+        {showCreateTile && createPopPending ? (
+          <li className="w-full max-w-[13rem]" aria-busy="true" aria-label="Cargando">
+            <HomeGhostPlanet solo />
+          </li>
+        ) : showCreateTile ? (
           <li className="w-full max-w-[13rem]">
             <HomeCreatePopTile />
           </li>
@@ -121,8 +103,7 @@ function HomePopPickerCards({
               )}
             >
               <p className={cn("text-base leading-relaxed", menuRealmLightMutedClass)}>
-                No tenés puntos de venta asociados con acceso activo. Si esperabas
-                ver uno, pedí que te inviten o que activen tu rol en el POP.
+                {HOME_COPY.emptyPops}
               </p>
             </li>
         ) : (
@@ -143,7 +124,6 @@ function HomePopPickerCards({
                   imageUrl={popLogoSrc}
                   initials={sigla}
                   alive={canEnter}
-                  solo={isSoloPop}
                 />
                 <span
                   className={cn(
@@ -187,7 +167,7 @@ function HomePopPickerCards({
                       variant="secondary"
                       className="mt-3 h-8 border-white/20 bg-white/10 text-xs text-white hover:bg-white/15"
                     >
-                      <Link href={subscribeHref}>Activar suscripción</Link>
+                      <Link href={subscribeHref}>{HOME_COPY.activateSubscription}</Link>
                     </Button>
                   ) : null}
                 </div>

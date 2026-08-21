@@ -14,16 +14,11 @@ import {
   MAX_MENU_DOCK_ITEMS,
   MIN_MENU_DOCK_ITEMS,
   persistMenuDockIds,
-  readCachedMenuDockIds,
   readInitialMenuDockIds,
   resolveMenuDockIds,
-  sanitizeMenuDockIds,
   writeCachedMenuDockIds,
 } from "@/lib/menuDockPreference"
-import {
-  getPopMenuDockPreference,
-  savePopMenuDockPreference,
-} from "@/app/[siteId]/[popId]/menu/menuDockActions"
+import { savePopMenuDockPreference } from "@/app/[siteId]/[popId]/menu/menuDockActions"
 import {
   menuHoloGlyphClass,
   menuHoloIconShellForSection,
@@ -377,12 +372,14 @@ export function DockIconVisual({
 type ProviderProps = {
   popId: string
   enabledModules: readonly PopAccessModule[]
+  initialDockIds?: readonly string[]
   children: ReactNode
 }
 
 export function MenuDockDndProvider({
   popId,
   enabledModules,
+  initialDockIds,
   children,
 }: ProviderProps) {
   const [editing, setEditing] = useState(false)
@@ -409,43 +406,18 @@ export function MenuDockDndProvider({
 
   useEffect(() => {
     if (enabledModules.length === 0) return
+    if (initialDockIds === undefined) return
 
-    let cancelled = false
-
-    async function loadDockPreference() {
-      try {
-        const fromDb = await getPopMenuDockPreference(popId)
-        if (cancelled) return
-
-        if (fromDb?.length) {
-          const resolved = resolveMenuDockIds(popId, enabledModules, fromDb)
-          setDockIds(resolved)
-          writeCachedMenuDockIds(popId, resolved)
-          return
-        }
-
-        const cached = readCachedMenuDockIds(popId)
-        if (cached?.length) {
-          const migrated = resolveMenuDockIds(popId, enabledModules, cached)
-          setDockIds(migrated)
-          void savePopMenuDockPreference(popId, migrated)
-          return
-        }
-
-        setDockIds(resolveMenuDockIds(popId, enabledModules))
-      } catch {
-        if (!cancelled) {
-          setDockIds(resolveMenuDockIds(popId, enabledModules))
-        }
-      }
+    const resolved = resolveMenuDockIds(
+      popId,
+      enabledModules,
+      initialDockIds.length > 0 ? initialDockIds : undefined,
+    )
+    setDockIds(resolved)
+    if (initialDockIds.length > 0) {
+      writeCachedMenuDockIds(popId, resolved)
     }
-
-    void loadDockPreference()
-
-    return () => {
-      cancelled = true
-    }
-  }, [popId, enabledModules])
+  }, [popId, enabledModules, initialDockIds])
 
   useEffect(() => {
     if (!editing) return

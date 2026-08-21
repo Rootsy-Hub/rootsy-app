@@ -3,10 +3,8 @@ export type UserProfileCache = {
   firstName: string
   lastName: string
   imageUrl: string | null
+  canCreatePop?: boolean
 }
-
-/** Cache `_user-pop-ids` — POPs accesibles (owner + miembro). */
-export type UserPopIdsCache = string[]
 
 export type PopAccessModulePermissions = {
   read: boolean
@@ -89,9 +87,14 @@ export type HomePopListItem = {
   siteId: string
   name: string
   imageUrl: string | null
+  backgroundImageUrl: string | null
+  streetAddress: string | null
   roleName: string
   isOwner: boolean
+  isActive: boolean
   canEnter: boolean
+  permissions: string[]
+  dockItemIds: string[]
   subscription: PopAccessSubscription
   enabledModules: PopAccessModule[]
   limits: PopAccessLimits

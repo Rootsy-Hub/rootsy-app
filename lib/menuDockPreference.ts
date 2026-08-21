@@ -127,7 +127,7 @@ export function writeCachedMenuDockIds(
 export function resolveMenuDockIds(
   popId: string,
   enabledModules: readonly PopAccessModule[],
-  saved?: readonly MenuDockItemId[] | null,
+  saved?: readonly string[] | null,
 ): MenuDockItemId[] {
   const candidate = sanitizeMenuDockIds(
     saved ?? readCachedMenuDockIds(popId) ?? DEFAULT_MENU_DOCK_IDS,

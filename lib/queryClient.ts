@@ -2,6 +2,7 @@ import { QueryClient } from "@tanstack/react-query"
 import {
   defaultQueryOptions,
   oneDayQueryOptions,
+  sessionListQueryOptions,
 } from "@/lib/queryStaleTimes"
 
 export function createQueryClient() {
@@ -18,9 +19,9 @@ export function createQueryClient() {
   })
 
   // Queries del home: sobreviven en memoria tras restore (sin observadores hasta auth + persistReady).
-  client.setQueryDefaults(["_user-profile"], oneDayQueryOptions)
-  client.setQueryDefaults(["_user-pop-ids"], oneDayQueryOptions)
+  client.setQueryDefaults(["_user-profile"], sessionListQueryOptions)
   client.setQueryDefaults(["_user-pops-access-batch"], oneDayQueryOptions)
+  client.setQueryDefaults(["_user-pops"], sessionListQueryOptions)
   client.setQueryDefaults(["_pop-access"], oneDayQueryOptions)
 
   return client

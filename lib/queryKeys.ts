@@ -75,12 +75,12 @@ export function userProfileQueryKey(userId: string) {
   return ["_user-profile", userId] as const
 }
 
-export function userPopIdsQueryKey(userId: string) {
-  return ["_user-pop-ids", userId] as const
-}
-
 export function userPopsAccessBatchQueryKey(userId: string) {
   return ["_user-pops-access-batch", userId] as const
+}
+
+export function userPopsQueryKey(userId: string) {
+  return ["_user-pops", userId] as const
 }
 
 export function popAccessQueryKey(popId: string) {
