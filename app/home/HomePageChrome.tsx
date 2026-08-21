@@ -4,15 +4,11 @@ import { Download } from "lucide-react"
 import {
   HomeWorkspaceBackdrop,
 } from "@/components/layouts/HomeWorkspaceBackdrop"
-import { PopGlassChrome } from "@/components/layouts/PopGlassChrome"
-import {
-  menuHeaderFlexRowClass,
-  menuHeaderHeightClass,
-} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
+import { menuHeaderFlexRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
-import "@/app/home/homeHarmony.css"
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeGreeting } from "@/app/home/HomeGreeting"
 import { HomeHeaderUserCluster } from "@/app/home/HomeHeaderUserCluster"
@@ -44,10 +40,7 @@ export function HomePageChrome({
     >
       <HomeWorkspaceBackdrop />
 
-      <PopGlassChrome
-        borderBottom
-        className={cn("relative z-20", menuHeaderHeightClass)}
-      >
+      <MenuHeaderEntity>
         <div className={menuHeaderFlexRowClass}>
           <Link
             href="/"
@@ -66,7 +59,7 @@ export function HomePageChrome({
 
           <HomeHeaderUserCluster userId={userId} />
         </div>
-      </PopGlassChrome>
+      </MenuHeaderEntity>
 
       <main className="relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto">
         <section className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col items-center justify-center px-5 py-6 sm:px-8 sm:py-8 lg:px-10">
@@ -75,7 +68,15 @@ export function HomePageChrome({
           <div className="mt-7 w-full sm:mt-8">{children}</div>
         </section>
 
-        <footer className="mt-auto flex w-full shrink-0 justify-center border-t border-white/[0.06] bg-black/10 px-4 py-4 backdrop-blur-sm sm:px-6 sm:py-5">
+        <footer
+          className={cn(
+            "relative mt-auto flex w-full shrink-0 justify-center px-4 py-4 sm:px-6 sm:py-5",
+            "border-t border-[color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent)]",
+            "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--rootsy-eter-900)_72%,transparent)_0%,color-mix(in_srgb,var(--rootsy-eter-950)_88%,transparent)_100%)]",
+            "backdrop-blur-[10px] backdrop-saturate-[1.01]",
+            "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent)]",
+          )}
+        >
           <div className="flex flex-nowrap items-center justify-center gap-3 px-1 sm:px-2">
             <p
               className={cn(
