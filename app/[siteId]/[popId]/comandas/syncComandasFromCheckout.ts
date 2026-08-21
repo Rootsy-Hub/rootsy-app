@@ -25,6 +25,21 @@ type DesiredLine = {
   comment: string
 }
 
+function recipeIdsFromCheckout(checkout: TableSessionCheckoutSnapshot): string[] {
+  const ids = new Set<string>()
+  for (const item of checkout.carrito) {
+    if (!item.kind || item.kind === "recipe") {
+      ids.add(item.productoId)
+      continue
+    }
+    if (item.kind !== "promotion") continue
+    for (const selection of item.promotionSelections ?? []) {
+      if (selection.kind === "recipe") ids.add(selection.refId)
+    }
+  }
+  return [...ids]
+}
+
 function desiredLinesFromCheckout(
   checkout: TableSessionCheckoutSnapshot,
   recipesById: Map<
@@ -34,19 +49,38 @@ function desiredLinesFromCheckout(
 ): DesiredLine[] {
   const out: DesiredLine[] = []
   for (const item of checkout.carrito) {
-    const kind = item.kind
-    if (kind && kind !== "recipe") continue
-    const recipe = recipesById.get(item.productoId)
-    if (!recipe) continue
-    const cartLineId = resolveCartLineId(item)
-    out.push({
-      cartLineId,
-      recipeId: item.productoId,
-      recipeName: recipe.name,
-      stationId: recipe.stationId,
-      quantity: Math.max(1, Math.round(item.cantidad)),
-      comment: checkout.itemComentarios?.[cartLineId]?.trim() ?? "",
-    })
+    const lineId = resolveCartLineId(item)
+    const comment = checkout.itemComentarios?.[lineId]?.trim() ?? ""
+    const quantity = Math.max(1, Math.round(item.cantidad))
+
+    if (!item.kind || item.kind === "recipe") {
+      const recipe = recipesById.get(item.productoId)
+      if (!recipe) continue
+      out.push({
+        cartLineId: lineId,
+        recipeId: item.productoId,
+        recipeName: recipe.name,
+        stationId: recipe.stationId,
+        quantity,
+        comment,
+      })
+      continue
+    }
+
+    if (item.kind !== "promotion") continue
+    for (const selection of item.promotionSelections ?? []) {
+      if (selection.kind !== "recipe") continue
+      const recipe = recipesById.get(selection.refId)
+      if (!recipe) continue
+      out.push({
+        cartLineId: `${lineId}:${selection.slotId}`,
+        recipeId: selection.refId,
+        recipeName: recipe.name,
+        stationId: recipe.stationId,
+        quantity: Math.max(1, quantity * Math.max(1, selection.slotQuantity)),
+        comment,
+      })
+    }
   }
   return out
 }
@@ -94,17 +128,10 @@ async function applyComandaSync(
     checkout: TableSessionCheckoutSnapshot
   },
 ): Promise<void> {
-  const recipeIds = [
-    ...new Set(
-      input.checkout.carrito
-        .filter((item) => !item.kind || item.kind === "recipe")
-        .map((item) => item.productoId),
-    ),
-  ]
   const recipesById = await loadRecipeStations(
     supabase,
     input.popId,
-    recipeIds,
+    recipeIdsFromCheckout(input.checkout),
   )
   const desired = desiredLinesFromCheckout(input.checkout, recipesById)
 
@@ -122,11 +149,10 @@ async function applyComandaSync(
 
   const existing = (existingRows ?? []) as ExistingComanda[]
   const existingByLine = new Map(existing.map((row) => [row.cart_line_id, row]))
-  const leftoverPending = existing.filter((row) => row.status === "pending")
-  const toUpdate = desired.filter((line) => {
-    const row = existingByLine.get(line.cartLineId)
-    return row != null && row.status !== "pending"
-  })
+  const desiredIds = new Set(desired.map((line) => line.cartLineId))
+  const leftoverPending = existing.filter(
+    (row) => row.status === "pending" && !desiredIds.has(row.cart_line_id),
+  )
 
   if (leftoverPending.length > 0) {
     const { error } = await supabase
@@ -142,9 +168,34 @@ async function applyComandaSync(
     }
   }
 
-  for (const line of toUpdate) {
+  const toInsert = desired.filter((line) => !existingByLine.has(line.cartLineId))
+  if (toInsert.length > 0) {
+    const { error } = await supabase.from("comandas").insert(
+      toInsert.map((line) => ({
+        pop_id: input.popId,
+        station_id: line.stationId,
+        status: "pending",
+        source_kind: input.sourceKind,
+        source_id: input.sourceId,
+        table_session_id: input.tableSessionId,
+        counter_order_id: input.counterOrderId,
+        cart_line_id: line.cartLineId,
+        recipe_id: line.recipeId,
+        recipe_name: line.recipeName,
+        quantity: line.quantity,
+        comment: line.comment,
+        origin_label: input.originLabel,
+        customer_name: input.customerName,
+      })),
+    )
+    if (error) {
+      console.error("comandas: no se pudieron crear tickets", error.message)
+    }
+  }
+
+  for (const line of desired) {
     const row = existingByLine.get(line.cartLineId)
-    if (!row) continue
+    if (!row || row.status !== "pending") continue
     const { error } = await supabase
       .from("comandas")
       .update({

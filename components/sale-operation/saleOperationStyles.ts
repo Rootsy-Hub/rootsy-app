@@ -113,6 +113,14 @@ export const saleOpTicketActionPayClass = cn(
   "active:!bg-[#B45309] active:!border-[#92400E]",
   "focus-visible:!shadow-[0_0_0_3px_color-mix(in_srgb,#F59E0B_38%,transparent)]",
 )
+
+/** Círculo operar Comandas — azul del estado “comandada”. */
+export const saleOpTicketActionComandasClass = cn(
+  "!bg-[#2563eb] !text-white !border-[#1d4ed8]",
+  "hover:!bg-[#3b82f6] hover:!border-[#2563eb]",
+  "active:!bg-[#1d4ed8] active:!border-[#1e3a8a]",
+  "focus-visible:!shadow-[0_0_0_3px_color-mix(in_srgb,#3b82f6_38%,transparent)]",
+)
 export const saleOpActionIconWrapDiscardClass =
   "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600"
 export const saleOpActionIconWrapConfirmClass =

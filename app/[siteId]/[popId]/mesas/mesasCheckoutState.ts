@@ -1,7 +1,9 @@
+import type { ComandaStatus } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import type { MenuCartItemKind, MenuCartItemSnapshot } from "@/lib/menuCart"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import type { SaleCatalogPaymentOption } from "@/app/[siteId]/[popId]/sale/actions"
 import { healLegacyLockedGeneralDiscount } from "@/lib/generalDiscountLock"
+import { parseComandaStatus } from "@/lib/comandaCartLine"
 
 export type MesasCartItem = {
   lineId?: string
@@ -11,6 +13,7 @@ export type MesasCartItem = {
   promotionSelections?: PromotionCartSelection[]
   snapshot?: MenuCartItemSnapshot
   paidLocked?: boolean
+  comandaStatus?: ComandaStatus
 }
 
 export type MesasClienteSeleccionado = {
@@ -128,6 +131,7 @@ function parseCartItem(v: unknown): MesasCartItem | null {
       ? v.lineId.trim()
       : undefined
   const snapshot = parseCartItemSnapshot(v.snapshot)
+  const comandaStatus = parseComandaStatus(v.comandaStatus)
   return {
     ...(lineId ? { lineId } : {}),
     productoId,
@@ -136,6 +140,7 @@ function parseCartItem(v: unknown): MesasCartItem | null {
     ...(promotionSelections ? { promotionSelections } : {}),
     ...(snapshot ? { snapshot } : {}),
     ...(v.paidLocked === true ? { paidLocked: true } : {}),
+    ...(comandaStatus ? { comandaStatus } : {}),
   }
 }
 

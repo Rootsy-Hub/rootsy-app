@@ -48,6 +48,7 @@ export type MenuCatalogRecipe = {
   categoryId: string
   categoryName: string
   imageUrl: string | null
+  stationId: string | null
 }
 
 export type MenuCatalogArticle = {
@@ -474,7 +475,7 @@ export async function getMenuCatalog(
         iva,
         image_url,
         category_id,
-        recipe_categories ( id, name )
+        recipe_categories ( id, name, station_id )
       `,
             )
             .eq("pop_id", popId)
@@ -538,23 +539,7 @@ export async function getMenuCatalog(
         const categoryId = String(row.category_id ?? "")
         return categoryId !== "" && visibleRecipeCategoryIds.has(categoryId)
       })
-      .map((row) => {
-        const cat = row.recipe_categories as { name?: string } | null
-        const rawImg = row.image_url
-        return {
-          id: String(row.id),
-          name: String(row.name ?? ""),
-          description: String(row.description ?? ""),
-          salePrice: Number(row.sale_price ?? 0) || 0,
-          iva: Number(row.iva ?? 0) || 0,
-          categoryId: String(row.category_id ?? ""),
-          categoryName: cat?.name ? String(cat.name) : "—",
-          imageUrl:
-            typeof rawImg === "string" && rawImg.trim() !== ""
-              ? rawImg.trim()
-              : null,
-        }
-      })
+      .map((row) => mapMenuRecipeRow(row as Record<string, unknown>))
 
     const productCategories: SaleCatalogCategory[] = (productCatRows ?? []).map(
       (c) => ({
@@ -649,16 +634,23 @@ const MENU_RECIPE_SELECT = `
   iva,
   image_url,
   category_id,
-  recipe_categories ( id, name )
+  recipe_categories ( id, name, station_id )
 ` as const
 
 function mapMenuRecipeRow(
   row: Record<string, unknown>,
   listPriceOverride?: number,
 ): MenuCatalogRecipe {
-  const cat = row.recipe_categories as { name?: string } | null
+  const cat = row.recipe_categories as {
+    name?: string
+    station_id?: string | null
+  } | null
   const rawImg = row.image_url
   const principal = Number(row.sale_price ?? 0) || 0
+  const stationId =
+    typeof cat?.station_id === "string" && cat.station_id.trim()
+      ? cat.station_id.trim()
+      : null
   return {
     id: String(row.id),
     name: String(row.name ?? ""),
@@ -672,6 +664,7 @@ function mapMenuRecipeRow(
     categoryName: cat?.name ? String(cat.name) : "—",
     imageUrl:
       typeof rawImg === "string" && rawImg.trim() !== "" ? rawImg.trim() : null,
+    stationId,
   }
 }
 

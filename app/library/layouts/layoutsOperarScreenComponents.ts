@@ -81,7 +81,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Ticket",
     component: "SaleOperationActionsBar",
-    token: "RootsIconButton · círculo full · Descartar · Cobrar",
+    token: "RootsIconButton · círculo full · Descartar · Comandas · Cobrar",
     source: "SaleOperationTicketOrderPanel",
   },
   {

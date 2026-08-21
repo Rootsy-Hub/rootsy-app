@@ -1,4 +1,7 @@
+import "@/app/library/color/rootsyNaturePalette.css"
 import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
+import { comandaStatusWorld } from "@/app/[siteId]/[popId]/comandas/comandaStatusWorlds"
+import type { ComandaStatus } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { layoutsOperarSummarySectionTitleClass } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   dataWorkspaceBlocksSkeletonBreathTone,
@@ -23,8 +26,9 @@ export const comandasBrisaBoardShellClass =
 
 /** Headers a todo el ancho — misma altura que toolbar operar. */
 export const comandasBrisaHeaderRowClass = cn(
-  "grid shrink-0 grid-cols-4",
-  "h-16 border-b border-[var(--rootsy-bruma-200)]",
+  "rootsy-nature-palette grid shrink-0 grid-cols-4",
+  "h-16 overflow-hidden",
+  "divide-x divide-[color-mix(in_srgb,var(--rootsy-white)_42%,transparent)]",
 )
 
 export const comandasBrisaBodyRowClass = cn(
@@ -32,20 +36,37 @@ export const comandasBrisaBodyRowClass = cn(
   "divide-x divide-[var(--rootsy-bruma-200)]",
 )
 
-export const comandasBrisaColumnHeaderClass =
-  "flex min-w-0 items-center gap-2 px-4"
+export function comandasBrisaColumnHeaderClass(status: ComandaStatus): string {
+  const world = comandaStatusWorld(status)
+  return cn(
+    "relative isolate flex min-w-0 items-center gap-2 overflow-hidden px-4",
+    "before:pointer-events-none before:absolute before:inset-0 before:content-['']",
+    world.headerClass,
+  )
+}
 
-export const comandasBrisaColumnTitleClass = layoutsOperarSummarySectionTitleClass
+export function comandasBrisaColumnTitleClass(status: ComandaStatus): string {
+  return cn(
+    layoutsOperarSummarySectionTitleClass,
+    "relative z-1",
+    comandaStatusWorld(status).titleClass,
+  )
+}
 
-export const comandasBrisaColumnIconClass =
-  "size-3.5 shrink-0 text-[var(--rootsy-savia-600)]"
+export function comandasBrisaColumnIconClass(status: ComandaStatus): string {
+  return cn(
+    "relative z-1 size-3.5 shrink-0",
+    comandaStatusWorld(status).iconClass,
+  )
+}
 
-export const comandasBrisaCountPillClass = cn(
-  "inline-flex size-5 shrink-0 items-center justify-center rounded-full",
-  "border border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))]",
-  "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)]",
-  "font-canopy text-[10px] font-semibold tabular-nums text-[var(--rootsy-savia-800)]",
-)
+export function comandasBrisaCountPillClass(status: ComandaStatus): string {
+  return cn(
+    "relative z-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full border",
+    "font-canopy text-[10px] font-semibold tabular-nums",
+    comandaStatusWorld(status).pillClass,
+  )
+}
 
 export const comandasBrisaCountPillWideClass = "size-6 text-[9px]"
 

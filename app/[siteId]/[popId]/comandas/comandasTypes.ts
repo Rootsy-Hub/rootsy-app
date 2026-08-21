@@ -27,6 +27,45 @@ export type ComandaTicket = {
   preparingAt: string | null
   readyAt: string | null
   deliveredAt: string | null
+  sendId: string | null
+  sendComment: string
+}
+
+export type PendingComandaItem = {
+  id: string
+  cartLineId: string
+  recipeName: string
+  quantity: number
+  comment: string
+  stationId: string
+  stationName: string
+}
+
+export type ComandaSendPeel = {
+  fromCartLineId: string
+  sentCartLineId: string
+  sentQuantity: number
+  remainderQuantity: number
+}
+
+export type ComandaBoardCard = {
+  id: string
+  primaryItemId: string
+  sendId: string | null
+  status: ComandaStatus
+  stationId: string
+  sourceKind: ComandaSourceKind
+  originLabel: string
+  customerName: string
+  sendComment: string
+  createdAt: string
+  statusChangedAt: string
+  items: Array<{
+    id: string
+    recipeName: string
+    quantity: number
+    comment: string
+  }>
 }
 
 export type ComandaStation = {
@@ -38,7 +77,7 @@ export type ComandaStation = {
 
 export const COMANDA_STATUS_LABELS: Record<ComandaStatus, string> = {
   pending: "Sin comandar",
-  sent: "Comandado",
+  sent: "Comanda",
   preparing: "Preparando",
   ready: "Listo",
   delivered: "Entregado",

@@ -14,6 +14,8 @@ export type MenuCatalogProduct = SaleCatalogProduct & {
   /** Clave de filtro sidebar: `recipes:{id}`, `products:{id}` o `promotions:all` */
   categoriaFiltro: string
   promotionMeta?: MenuCatalogPromotion
+  /** Receta con estación de comanda. Sin esto no se comanda. */
+  stationId?: string | null
 }
 
 export function catalogProductPlaceholderImage(id: string): string {
@@ -40,6 +42,7 @@ export function menuRecipeToProduct(recipe: MenuCatalogRecipe): MenuCatalogProdu
     section: "recipes",
     categoriaFiltro: `recipes:${recipe.categoryId}`,
     iva: recipe.iva,
+    stationId: recipe.stationId?.trim() || null,
   }
 }
 

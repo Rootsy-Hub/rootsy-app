@@ -16,10 +16,11 @@ import {
   saleOpActionIconWrapDiscardClass,
   saleOpActionPayClass,
   saleOpActionsBarShellClass,
+  saleOpTicketActionComandasClass,
   saleOpTicketActionPayClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
-import { Banknote, CircleDollarSign, HandCoins, Loader2, X } from "lucide-react"
+import { Banknote, ChefHat, CircleDollarSign, HandCoins, Loader2, X } from "lucide-react"
 
 const ticketActionDiscardStyle = {
   borderRadius: layoutsOperarTicketActionCircleRadius,
@@ -43,6 +44,8 @@ export type SaleOperationActionsBarProps = {
   confirmTone?: "charge" | "pay"
   onDiscard: () => void
   onConfirm: () => void
+  onComandas?: () => void
+  comandasDisabled?: boolean
   flush?: boolean
   /** Ticket operar — umbral circular Descartar · Cobrar / Pagar. */
   variant?: "default" | "operar"
@@ -65,6 +68,8 @@ export function SaleOperationActionsBar({
   confirmTone = "charge",
   onDiscard,
   onConfirm,
+  onComandas,
+  comandasDisabled = false,
   flush = false,
   variant = "default",
   contextLabel,
@@ -80,7 +85,7 @@ export function SaleOperationActionsBar({
       <div className="flex h-full w-full items-center justify-center gap-[var(--rootsy-space-300)]">
         {contextLabel ? (
           <p
-            className="flex min-w-[2.5rem] max-w-[9rem] flex-col items-center justify-center leading-none text-[var(--rootsy-bruma-800)]"
+            className="flex min-w-[2.5rem] max-w-[7.5rem] flex-col items-center justify-center leading-none text-[var(--rootsy-bruma-800)]"
             aria-label={`${contextLabel.caption} ${contextLabel.value}`}
           >
             <span className="font-canopy text-xs font-bold">
@@ -112,6 +117,25 @@ export function SaleOperationActionsBar({
             aria-hidden
           />
         </RootsIconButton>
+        {contextLabel ? (
+          <RootsIconButton
+            label="Comandas"
+            theme="pos"
+            emphasis="primary"
+            size="large"
+            sizeChildren={false}
+            disabled={comandasDisabled}
+            onClick={() => onComandas?.()}
+            className={saleOpTicketActionComandasClass}
+            style={ticketActionDiscardStyle}
+          >
+            <ChefHat
+              size={layoutsOperarTicketActionDiscardIconPx}
+              strokeWidth={2}
+              aria-hidden
+            />
+          </RootsIconButton>
+        ) : null}
         <RootsIconButton
           label={confirmLoading ? "Procesando" : resolvedConfirmLabel}
           theme="pos"

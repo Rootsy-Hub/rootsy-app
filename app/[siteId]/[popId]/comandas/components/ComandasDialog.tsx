@@ -76,7 +76,7 @@ function ComandasDialogBody({
       <div className="flex items-start justify-between gap-4 pr-12">
         <RootsDialogHeader
           title="Comandas"
-            description="Elegí la estación y mové las comandas entre comandado, preparando, listo y entregado."
+            description="Elegí la estación y mové las comandas entre comanda, preparando, listo y entregado."
           className="min-w-0 flex-1"
         />
         <div className="shrink-0 pt-5">

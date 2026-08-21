@@ -1,3 +1,4 @@
+import type { ComandaStatus } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 
 export type MenuCartItemKind = "article" | "recipe" | "promotion"
@@ -23,6 +24,8 @@ export type MenuCartItem = {
   snapshot?: MenuCartItemSnapshot
   /** Línea ya cobrada en un pago parcial; no se edita ni mergea con nuevos ítems. */
   paidLocked?: boolean
+  /** Receta (o promo con receta) comandable. pending = sin comandar. */
+  comandaStatus?: ComandaStatus
 }
 
 export function resolveCartLineId(item: MenuCartItem): string {

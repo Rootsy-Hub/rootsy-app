@@ -216,6 +216,7 @@ function buildQuoteDisplayRowsFromCheckoutSnapshot(
         kind,
         promotionSelections: item.promotionSelections,
         paidLocked: item.paidLocked,
+        comandaStatus: item.comandaStatus,
       },
     ]
   })
@@ -248,6 +249,7 @@ function buildQuoteDisplayRowsFromCheckoutSnapshot(
           producto,
           promotionSelections: item.promotionSelections,
           paidLocked: item.paidLocked,
+          comandaStatus: item.comandaStatus,
         }
       }),
     ),

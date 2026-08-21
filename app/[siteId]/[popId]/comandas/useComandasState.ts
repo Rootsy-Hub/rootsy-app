@@ -224,8 +224,19 @@ export function useComandasState(popId: string, siteId: string) {
               : previous.deliveredAt,
         }
         inFlightMovesRef.current.set(ticketId, optimistic)
+        const sendId = previous.sendId
         return prev.map((ticket) =>
-          ticket.id === ticketId ? optimistic : ticket,
+          ticket.id === ticketId || (sendId != null && ticket.sendId === sendId)
+            ? {
+                ...ticket,
+                status,
+                statusChangedAt: now,
+                sentAt: optimistic.sentAt,
+                preparingAt: optimistic.preparingAt,
+                readyAt: optimistic.readyAt,
+                deliveredAt: optimistic.deliveredAt,
+              }
+            : ticket,
         )
       })
       return { previous, skipped }
@@ -246,8 +257,15 @@ export function useComandasState(popId: string, siteId: string) {
       const res = await moveComandaStatus(popId, siteId, ticketId, status)
       if (!res.success) {
         inFlightMovesRef.current.delete(ticketId)
+        const sendId = previous.sendId
         setTickets((prev) =>
-          prev.map((ticket) => (ticket.id === ticketId ? previous : ticket)),
+          prev.map((ticket) =>
+            ticket.id === ticketId || (sendId != null && ticket.sendId === sendId)
+              ? previous.id === ticket.id
+                ? previous
+                : { ...ticket, status: previous.status, statusChangedAt: previous.statusChangedAt }
+              : ticket,
+          ),
         )
         setError(res.error)
         return false

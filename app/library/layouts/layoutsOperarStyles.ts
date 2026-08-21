@@ -669,7 +669,7 @@ export const layoutsOperarSummaryActionsRowClass = cn(
   "[height:var(--layouts-operar-ticket-actions-h)]",
 )
 
-/** 1.2.3 — umbral circular Descartar + Cobrar (ticket operar). */
+/** 1.2.3 — umbral circular Descartar · Pedido/Mesa · Comandas · Cobrar. */
 export const layoutsOperarTicketCircleActionsRowClass = cn(
   "row-start-2 flex shrink-0 items-center justify-center",
   "gap-[var(--rootsy-space-300)]",

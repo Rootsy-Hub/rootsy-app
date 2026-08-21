@@ -1,5 +1,11 @@
 "use client"
 
+import {
+  getPendingComandasForSource,
+  sendComandaBatch,
+} from "@/app/[siteId]/[popId]/comandas/actions"
+import { applyComandaSendToCart } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { saveCounterOrderCheckout, closeCounterOrderCheckout } from "@/app/[siteId]/[popId]/mostrador/actions"
 import {
   emptyTableSessionCheckout,
@@ -50,6 +56,11 @@ import {
   countAppliedPromotions,
   groupMostradorCartDisplayRows,
 } from "@/lib/mostradorCartDisplay"
+import {
+  ensureCartLineComandaStatuses,
+  isComandaLocked,
+  promotionSelectionsAreCommandable,
+} from "@/lib/comandaCartLine"
 import {
   applyTicketLineEdit,
   addProductToTicketCart,
@@ -246,6 +257,13 @@ export function useMostradorSaleCheckout(
   const [descuentoModalAbierto, setDescuentoModalAbierto] = useState(false)
   const [descartarConfirmOpen, setDescartarConfirmOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [comandasOpen, setComandasOpen] = useState(false)
+  const [pendingComandaItems, setPendingComandaItems] = useState<
+    PendingComandaItem[]
+  >([])
+  const [comandasLoading, setComandasLoading] = useState(false)
+  const [comandasSubmitting, setComandasSubmitting] = useState(false)
+  const [comandasError, setComandasError] = useState<string | null>(null)
   const [partialPayment, setPartialPayment] = useState(false)
   const [partialSelection, setPartialSelection] = useState<PartialPaymentSelection>({})
   const [closeOnComplete, setCloseOnComplete] = useState(true)
@@ -594,6 +612,7 @@ export function useMostradorSaleCheckout(
       })
       return changed ? next : prev
     })
+    setCarrito((prev) => ensureCartLineComandaStatuses(prev, productosByKey))
   }, [productosByKey])
 
   const overrideSnapshot = useMemo(
@@ -755,6 +774,69 @@ export function useMostradorSaleCheckout(
       !isPaid &&
       !hasAnyPartialPayment({ paidPartialUnits, totalPagadoAcumulado }),
     [hayItemsEnPedido, isPaid, paidPartialUnits, totalPagadoAcumulado],
+  )
+
+  const hayPendingComandas = useMemo(
+    () => carrito.some((item) => item.comandaStatus === "pending"),
+    [carrito],
+  )
+
+  const abrirComandas = useCallback(async () => {
+    if (!popId || !counterOrderId) return
+    setComandasError(null)
+    setPendingComandaItems([])
+    setComandasOpen(true)
+    setComandasLoading(true)
+    await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
+    const res = await getPendingComandasForSource(
+      popId,
+      siteId,
+      "counter",
+      counterOrderId,
+    )
+    setComandasLoading(false)
+    if (!res.success) {
+      setComandasError(res.error)
+      setPendingComandaItems([])
+      return
+    }
+    setPendingComandaItems(res.items)
+  }, [counterOrderId, flushCheckoutPersist, popId, siteId])
+
+  const enviarComandas = useCallback(
+    async (input: {
+      quantities: Record<string, number>
+      stationComments: Record<string, string>
+    }) => {
+      if (!popId || !counterOrderId) return
+      setComandasSubmitting(true)
+      setComandasError(null)
+      await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
+      const res = await sendComandaBatch(popId, siteId, {
+        sourceKind: "counter",
+        sourceId: counterOrderId,
+        quantities: input.quantities,
+        stationComments: input.stationComments,
+      })
+      setComandasSubmitting(false)
+      if (!res.success) {
+        setComandasError(res.error)
+        return
+      }
+      for (const peel of res.peels) {
+        copyTicketLineOverrides(peel.fromCartLineId, peel.sentCartLineId, {
+          setItemDescuentoModo,
+          setItemDescuentoDraft,
+          setItemDescuentoSuprimido,
+          setItemComentarios,
+        })
+      }
+      setCarrito((prev) =>
+        applyComandaSendToCart(prev, res.sentCartLineIds, res.peels),
+      )
+      setComandasOpen(false)
+    },
+    [counterOrderId, flushCheckoutPersist, popId, siteId],
   )
 
   const descuentoGeneralEditBlocked = useMemo(
@@ -1038,6 +1120,10 @@ export function useMostradorSaleCheckout(
           selections,
           paidPartialUnits: checkoutStateRef.current.paidPartialUnits ?? {},
           snapshot: snapshotFromCatalogProduct(product),
+          commandable: promotionSelectionsAreCommandable(
+            selections,
+            productosByKey,
+          ),
         })
         affectedLineId = result.affectedLineId
         for (const copy of result.overrideCopies) {
@@ -1144,6 +1230,7 @@ export function useMostradorSaleCheckout(
         if (
           !target ||
           target.paidLocked ||
+          isComandaLocked(target.comandaStatus) ||
           cartLineHasPaidUnits(lineId, target, paidPartialUnits)
         ) {
           return prev
@@ -1173,6 +1260,7 @@ export function useMostradorSaleCheckout(
         const target = prev.find((i) => resolveCartLineId(i) === lineId)
         if (
           target?.paidLocked ||
+          isComandaLocked(target?.comandaStatus) ||
           (target &&
             cartLineHasPaidUnits(lineId, target, paidPartialUnits))
         ) {
@@ -1748,6 +1836,10 @@ export function useMostradorSaleCheckout(
         setImprimirComprobante(hasConfiguredSaleComprobante(comprobante))
         setConfirmOpen(true)
       },
+      onComandas: () => {
+        void abrirComandas()
+      },
+      comandasDisabled: !hayPendingComandas,
     },
     modals: {
       popId: popId ?? "",
@@ -1773,6 +1865,20 @@ export function useMostradorSaleCheckout(
       setDescartarConfirmOpen,
       confirmOpen,
       setConfirmOpen,
+      comandasOpen,
+      setComandasOpen: (open: boolean) => {
+        setComandasOpen(open)
+        if (!open) {
+          setPendingComandaItems([])
+          setComandasError(null)
+          setComandasLoading(false)
+        }
+      },
+      pendingComandaItems,
+      comandasLoading,
+      comandasSubmitting,
+      comandasError,
+      enviarComandas,
       manualNombreCliente,
       setManualNombreCliente,
       fiscalDocVenta,

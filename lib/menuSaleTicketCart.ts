@@ -42,6 +42,7 @@ import {
   type MenuCartItemKind,
 } from "@/lib/menuCart"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
+import { initialComandaStatus, isComandaLocked } from "@/lib/comandaCartLine"
 import {
   cartLineHasPaidUnits,
   materializePaidCartLines,
@@ -171,7 +172,7 @@ export function applyTicketLineEdit(input: {
   const sourceLine = input.carrito.find(
     (item) => resolveCartLineId(item) === input.edit.cartLineId,
   )
-  if (sourceLine?.paidLocked) {
+  if (sourceLine?.paidLocked || isComandaLocked(sourceLine?.comandaStatus)) {
     return
   }
 
@@ -351,6 +352,7 @@ export function addProductToTicketCart(input: {
     const mergeTargetId = resolveCartLineId(mergeTarget)
     const canMerge =
       !mergeTarget.paidLocked &&
+      !isComandaLocked(mergeTarget.comandaStatus) &&
       !cartLineHasPaidUnits(mergeTargetId, mergeTarget, paidPartialUnits)
     if (canMerge) {
       const merged = input.carrito.map((i) =>
@@ -368,6 +370,8 @@ export function addProductToTicketCart(input: {
   if (product?.kind === "article") {
     seedCartLineDefaultDiscount(product, lineId, input.overrideActions)
   }
+  const commandable =
+    kind === "recipe" && Boolean(product?.stationId?.trim())
   return {
     ...materializeTicketCartAfterMutation(
       [
@@ -379,6 +383,9 @@ export function addProductToTicketCart(input: {
           kind,
           ...(product
             ? { snapshot: snapshotFromCatalogProduct(product) }
+            : {}),
+          ...(initialComandaStatus(commandable)
+            ? { comandaStatus: initialComandaStatus(commandable) }
             : {}),
         },
       ],
@@ -394,10 +401,11 @@ export function addPromotionToTicketCart(input: {
   selections: PromotionCartSelection[]
   paidPartialUnits?: Record<string, number>
   snapshot?: MenuCartItem["snapshot"]
+  commandable?: boolean
 }): TicketCartMutationResult {
   const paidPartialUnits = input.paidPartialUnits ?? {}
   const existe = input.carrito.find((i) => {
-    if (i.paidLocked) return false
+    if (i.paidLocked || isComandaLocked(i.comandaStatus)) return false
     if (cartLineHasPaidUnits(resolveCartLineId(i), i, paidPartialUnits)) {
       return false
     }
@@ -427,6 +435,9 @@ export function addPromotionToTicketCart(input: {
           kind: "promotion" as const,
           promotionSelections: input.selections,
           ...(input.snapshot ? { snapshot: input.snapshot } : {}),
+          ...(initialComandaStatus(input.commandable === true)
+            ? { comandaStatus: initialComandaStatus(true) }
+            : {}),
         },
       ],
       paidPartialUnits,

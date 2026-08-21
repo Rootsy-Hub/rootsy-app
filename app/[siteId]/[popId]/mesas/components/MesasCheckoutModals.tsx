@@ -7,6 +7,7 @@ import { SaleComprobantePickerDialog } from "@/components/checkout/SaleComproban
 import type { SaleComprobantePreviewInput } from "@/components/checkout/SaleComprobanteTicketPreview"
 import { SaleFinalizeDialog } from "@/components/checkout/SaleFinalizeDialog"
 import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
+import { ComandaSendDialog } from "@/components/sale-operation/ComandaSendDialog"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog/RootsConfirmDialog"
 import { partyCanOperateOnCurrentAccount } from "@/lib/currentAccounts"
 import { getSaleComprobanteDisplayLabel, hasConfiguredSaleComprobante } from "@/lib/saleComprobantePicker"
@@ -174,6 +175,17 @@ export function MesasCheckoutModals({
             ? "No podés modificar el descuento general porque ya hay cobros parciales registrados."
             : undefined
         }
+      />
+
+      <ComandaSendDialog
+        open={m.comandasOpen}
+        onOpenChange={m.setComandasOpen}
+        contextLabel={contextLabel}
+        items={m.pendingComandaItems}
+        loading={m.comandasLoading}
+        submitting={m.comandasSubmitting}
+        submitError={m.comandasError}
+        onConfirm={m.enviarComandas}
       />
 
       <RootsConfirmDialog

@@ -1,6 +1,10 @@
 "use client"
 
-import { canDragComanda, canMoveComandaTo } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import {
+  canDragComanda,
+  canMoveComandaTo,
+  groupComandasForBoard,
+} from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import {
   comandasBrisaBoardShellClass,
   comandasBrisaBodyRowClass,
@@ -30,6 +34,7 @@ import {
 import {
   COMANDA_BOARD_COLUMNS,
   COMANDA_STATUS_LABELS,
+  type ComandaBoardCard,
   type ComandaStatus,
   type ComandaTicket,
 } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
@@ -56,11 +61,12 @@ import {
   ChefHat,
   ClipboardList,
   CookingPot,
-  UtensilsCrossed,
 } from "lucide-react"
 
+type BoardColumnId = Exclude<ComandaStatus, "pending">
+
 const BOARD_COLUMNS: {
-  id: ComandaStatus
+  id: BoardColumnId
   label: string
   icon: typeof ChefHat
 }[] = [
@@ -71,7 +77,7 @@ const BOARD_COLUMNS: {
 ]
 
 const EMPTY_COPY: Record<(typeof BOARD_COLUMNS)[number]["id"], string> = {
-  sent: "Nada comandado",
+  sent: "Nada en comanda",
   preparing: "Nada en preparación",
   ready: "Nada listo",
   delivered: "Nada entregado",
@@ -88,8 +94,8 @@ type Props = {
   ) => Promise<boolean> | boolean
 }
 
-function ticketAgo(ticket: ComandaTicket): string {
-  return formatDistanceToNow(new Date(ticket.statusChangedAt || ticket.createdAt), {
+function ticketAgo(card: Pick<ComandaBoardCard, "statusChangedAt" | "createdAt">): string {
+  return formatDistanceToNow(new Date(card.statusChangedAt || card.createdAt), {
     addSuffix: true,
     locale: es,
   })
@@ -106,16 +112,16 @@ function ColumnHeader({
 
   return (
     <div
-      className={comandasBrisaColumnHeaderClass}
+      className={comandasBrisaColumnHeaderClass(column.id)}
       aria-label={`${column.label}. ${countLabel}`}
     >
-      <column.icon className={comandasBrisaColumnIconClass} aria-hidden />
-      <h2 className={cn("min-w-0 flex-1 truncate", comandasBrisaColumnTitleClass)}>
+      <column.icon className={comandasBrisaColumnIconClass(column.id)} aria-hidden />
+      <h2 className={cn("min-w-0 flex-1 truncate", comandasBrisaColumnTitleClass(column.id))}>
         {column.label}
       </h2>
       <span
         className={cn(
-          comandasBrisaCountPillClass,
+          comandasBrisaCountPillClass(column.id),
           String(count).length > 1 && comandasBrisaCountPillWideClass,
         )}
         aria-label={countLabel}
@@ -126,40 +132,51 @@ function ColumnHeader({
   )
 }
 
-function TicketCardContent({ ticket }: { ticket: ComandaTicket }) {
-  const qtyLabel = ticket.quantity > 1 ? `${ticket.quantity}× ` : ""
-
+function TicketCardContent({ card }: { card: ComandaBoardCard }) {
   return (
     <>
       <div className={comandasBrisaTicketHeaderClass}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className={cn(comandasBrisaTicketEyebrowClass, "truncate")}>
-              {ticket.sourceKind === "table" ? "Mesa" : "Mostrador"}
+              {card.sourceKind === "table" ? "Mesa" : "Mostrador"}
             </p>
             <p className={cn("mt-0.5 truncate", comandasBrisaTicketTitleClass)}>
-              {qtyLabel}
-              {ticket.recipeName}
+              {card.originLabel}
             </p>
           </div>
           <span className={cn(comandasBrisaTicketBadgeClass, "shrink-0")}>
-            {ticketAgo(ticket)}
+            {ticketAgo(card)}
           </span>
         </div>
       </div>
       <div className={comandasBrisaTicketBodyClass}>
-        <p className={cn("flex items-center gap-1.5", comandasBrisaTicketMetaClass)}>
-          <UtensilsCrossed className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate">{ticket.originLabel}</span>
-        </p>
-        {ticket.customerName ? (
+        <ul className="space-y-1.5">
+          {card.items.map((item) => {
+            const qtyLabel = item.quantity > 1 ? `${item.quantity}× ` : ""
+            return (
+              <li key={item.id}>
+                <p className={cn("truncate", comandasBrisaTicketMetaClass)}>
+                  {qtyLabel}
+                  {item.recipeName}
+                </p>
+                {item.comment ? (
+                  <p className={cn("mt-0.5 line-clamp-2", comandasBrisaTicketDetailClass)}>
+                    {item.comment}
+                  </p>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
+        {card.customerName ? (
           <p className={cn("mt-2", comandasBrisaTicketDetailClass)}>
-            {ticket.customerName}
+            {card.customerName}
           </p>
         ) : null}
-        {ticket.comment ? (
+        {card.sendComment ? (
           <p className={cn("mt-1 line-clamp-3", comandasBrisaTicketDetailClass)}>
-            {ticket.comment}
+            {card.sendComment}
           </p>
         ) : null}
       </div>
@@ -168,17 +185,17 @@ function TicketCardContent({ ticket }: { ticket: ComandaTicket }) {
 }
 
 function KanbanTicketCard({
-  ticket,
+  card,
   canUpdate,
 }: {
-  ticket: ComandaTicket
+  card: ComandaBoardCard
   canUpdate: boolean
 }) {
-  const draggable = canUpdate && canDragComanda(ticket.status)
+  const draggable = canUpdate && canDragComanda(card.status)
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
-      id: ticket.id,
-      data: { ticket },
+      id: card.id,
+      data: { card },
       disabled: !draggable,
     })
 
@@ -201,7 +218,7 @@ function KanbanTicketCard({
           !draggable && comandasBrisaTicketCardIdleClass,
         )}
       >
-        <TicketCardContent ticket={ticket} />
+        <TicketCardContent card={card} />
       </article>
     </li>
   )
@@ -214,9 +231,9 @@ function KanbanColumnBody({
   draggingTicket,
 }: {
   column: (typeof BOARD_COLUMNS)[number]
-  tickets: ComandaTicket[]
+  tickets: ComandaBoardCard[]
   canUpdate: boolean
-  draggingTicket: ComandaTicket | null
+  draggingTicket: ComandaBoardCard | null
 }) {
   const dropDisabled =
     draggingTicket != null &&
@@ -248,10 +265,10 @@ function KanbanColumnBody({
         />
       ) : (
         <ul className={comandasBrisaTicketListClass}>
-          {tickets.map((ticket) => (
+          {tickets.map((card) => (
             <KanbanTicketCard
-              key={ticket.id}
-              ticket={ticket}
+              key={card.id}
+              card={card}
               canUpdate={canUpdate}
             />
           ))}
@@ -266,9 +283,9 @@ function ComandasBoardSkeleton() {
     <div className={comandasBrisaBoardShellClass} aria-hidden>
       <div className={comandasBrisaHeaderRowClass}>
         {BOARD_COLUMNS.map((column) => (
-          <div key={column.id} className={comandasBrisaColumnHeaderClass}>
-            <span className={cn(comandasBrisaSkeletonBarClass, "h-3 w-24")} />
-            <span className={cn(comandasBrisaSkeletonBoxClass, "ml-auto size-5 rounded-full")} />
+          <div key={column.id} className={comandasBrisaColumnHeaderClass(column.id)}>
+            <span className={cn(comandasBrisaSkeletonBarClass, "relative z-1 h-3 w-24")} />
+            <span className={cn(comandasBrisaSkeletonBoxClass, "relative z-1 ml-auto size-5 rounded-full")} />
           </div>
         ))}
       </div>
@@ -297,23 +314,25 @@ export function ComandasBoard({
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   )
 
+  const cards = useMemo(() => groupComandasForBoard(tickets), [tickets])
+
   const ticketsByColumn = useMemo(() => {
-    const grouped: Record<(typeof BOARD_COLUMNS)[number]["id"], ComandaTicket[]> = {
+    const grouped: Record<BoardColumnId, ComandaBoardCard[]> = {
       sent: [],
       preparing: [],
       ready: [],
       delivered: [],
     }
-    for (const ticket of tickets) {
-      if (ticket.status === "pending") continue
-      grouped[ticket.status].push(ticket)
+    for (const card of cards) {
+      if (card.status === "pending") continue
+      grouped[card.status].push(card)
     }
     return grouped
-  }, [tickets])
+  }, [cards])
 
   const draggingTicket = useMemo(
-    () => tickets.find((ticket) => ticket.id === draggingTicketId) ?? null,
-    [tickets, draggingTicketId],
+    () => cards.find((card) => card.id === draggingTicketId) ?? null,
+    [cards, draggingTicketId],
   )
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -324,16 +343,16 @@ export function ComandasBoard({
     setDraggingTicketId(null)
     const { active, over } = event
     if (!over) return
-    const ticket = tickets.find((row) => row.id === String(active.id))
-    if (!ticket || !canDragComanda(ticket.status)) return
+    const card = cards.find((row) => row.id === String(active.id))
+    if (!card || !canDragComanda(card.status)) return
 
     const overId = String(over.id)
     const targetColumn = COMANDA_BOARD_COLUMNS.includes(overId as ComandaStatus)
       ? (overId as ComandaStatus)
-      : tickets.find((row) => row.id === overId)?.status
+      : cards.find((row) => row.id === overId)?.status
 
-    if (!targetColumn || !canMoveComandaTo(ticket.status, targetColumn)) return
-    void onMoveTicket(ticket.id, targetColumn)
+    if (!targetColumn || !canMoveComandaTo(card.status, targetColumn)) return
+    void onMoveTicket(card.primaryItemId, targetColumn)
   }
 
   return (
@@ -380,7 +399,7 @@ export function ComandasBoard({
       <DragOverlay dropAnimation={null}>
         {draggingTicket ? (
           <div className={comandasBrisaTicketOverlayClass}>
-            <TicketCardContent ticket={draggingTicket} />
+            <TicketCardContent card={draggingTicket} />
           </div>
         ) : null}
       </DragOverlay>

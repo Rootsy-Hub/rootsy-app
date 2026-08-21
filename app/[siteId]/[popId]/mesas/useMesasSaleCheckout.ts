@@ -1,5 +1,11 @@
 "use client"
 
+import {
+  getPendingComandasForSource,
+  sendComandaBatch,
+} from "@/app/[siteId]/[popId]/comandas/actions"
+import { applyComandaSendToCart } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { saveTableSessionCheckout, closeTableSessionCheckout } from "@/app/[siteId]/[popId]/mesas/actions"
 import {
   emptyTableSessionCheckout,
@@ -76,6 +82,11 @@ import {
   snapshotFromCatalogProduct,
   type MenuCatalogProduct,
 } from "@/lib/menuCatalogProduct"
+import {
+  ensureCartLineComandaStatuses,
+  isComandaLocked,
+  promotionSelectionsAreCommandable,
+} from "@/lib/comandaCartLine"
 import {
   cartItemsMatch,
   normalizeCartItemKind,
@@ -243,6 +254,13 @@ export function useMesasSaleCheckout(
   const [descuentoModalAbierto, setDescuentoModalAbierto] = useState(false)
   const [descartarConfirmOpen, setDescartarConfirmOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [comandasOpen, setComandasOpen] = useState(false)
+  const [pendingComandaItems, setPendingComandaItems] = useState<
+    PendingComandaItem[]
+  >([])
+  const [comandasLoading, setComandasLoading] = useState(false)
+  const [comandasSubmitting, setComandasSubmitting] = useState(false)
+  const [comandasError, setComandasError] = useState<string | null>(null)
   const [partialPayment, setPartialPayment] = useState(false)
   const [partialSelection, setPartialSelection] = useState<PartialPaymentSelection>({})
   const [closeOnComplete, setCloseOnComplete] = useState(true)
@@ -589,6 +607,7 @@ export function useMesasSaleCheckout(
       })
       return changed ? next : prev
     })
+    setCarrito((prev) => ensureCartLineComandaStatuses(prev, productosByKey))
   }, [productosByKey])
 
   const overrideSnapshot = useMemo(
@@ -749,6 +768,69 @@ export function useMesasSaleCheckout(
       hayItemsEnPedido &&
       !hasAnyPartialPayment({ paidPartialUnits, totalPagadoAcumulado }),
     [hayItemsEnPedido, paidPartialUnits, totalPagadoAcumulado],
+  )
+
+  const hayPendingComandas = useMemo(
+    () => carrito.some((item) => item.comandaStatus === "pending"),
+    [carrito],
+  )
+
+  const abrirComandas = useCallback(async () => {
+    if (!popId || !tableSessionId) return
+    setComandasError(null)
+    setPendingComandaItems([])
+    setComandasOpen(true)
+    setComandasLoading(true)
+    await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
+    const res = await getPendingComandasForSource(
+      popId,
+      siteId,
+      "table",
+      tableSessionId,
+    )
+    setComandasLoading(false)
+    if (!res.success) {
+      setComandasError(res.error)
+      setPendingComandaItems([])
+      return
+    }
+    setPendingComandaItems(res.items)
+  }, [flushCheckoutPersist, popId, siteId, tableSessionId])
+
+  const enviarComandas = useCallback(
+    async (input: {
+      quantities: Record<string, number>
+      stationComments: Record<string, string>
+    }) => {
+      if (!popId || !tableSessionId) return
+      setComandasSubmitting(true)
+      setComandasError(null)
+      await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
+      const res = await sendComandaBatch(popId, siteId, {
+        sourceKind: "table",
+        sourceId: tableSessionId,
+        quantities: input.quantities,
+        stationComments: input.stationComments,
+      })
+      setComandasSubmitting(false)
+      if (!res.success) {
+        setComandasError(res.error)
+        return
+      }
+      for (const peel of res.peels) {
+        copyTicketLineOverrides(peel.fromCartLineId, peel.sentCartLineId, {
+          setItemDescuentoModo,
+          setItemDescuentoDraft,
+          setItemDescuentoSuprimido,
+          setItemComentarios,
+        })
+      }
+      setCarrito((prev) =>
+        applyComandaSendToCart(prev, res.sentCartLineIds, res.peels),
+      )
+      setComandasOpen(false)
+    },
+    [flushCheckoutPersist, popId, siteId, tableSessionId],
   )
 
   const checkoutFullyPaid = useMemo(
@@ -1048,6 +1130,10 @@ export function useMesasSaleCheckout(
           selections,
           paidPartialUnits: checkoutStateRef.current.paidPartialUnits ?? {},
           snapshot: snapshotFromCatalogProduct(product),
+          commandable: promotionSelectionsAreCommandable(
+            selections,
+            productosByKey,
+          ),
         })
         affectedLineId = result.affectedLineId
         for (const copy of result.overrideCopies) {
@@ -1154,6 +1240,7 @@ export function useMesasSaleCheckout(
         if (
           !target ||
           target.paidLocked ||
+          isComandaLocked(target.comandaStatus) ||
           cartLineHasPaidUnits(lineId, target, paidPartialUnits)
         ) {
           return prev
@@ -1183,6 +1270,7 @@ export function useMesasSaleCheckout(
         const target = prev.find((i) => resolveCartLineId(i) === lineId)
         if (
           target?.paidLocked ||
+          isComandaLocked(target?.comandaStatus) ||
           (target &&
             cartLineHasPaidUnits(lineId, target, paidPartialUnits))
         ) {
@@ -1773,6 +1861,10 @@ export function useMesasSaleCheckout(
         setImprimirComprobante(hasConfiguredSaleComprobante(comprobante))
         setConfirmOpen(true)
       },
+      onComandas: () => {
+        void abrirComandas()
+      },
+      comandasDisabled: !hayPendingComandas,
     },
     modals: {
       popId: popId ?? "",
@@ -1798,6 +1890,20 @@ export function useMesasSaleCheckout(
       setDescartarConfirmOpen,
       confirmOpen,
       setConfirmOpen,
+      comandasOpen,
+      setComandasOpen: (open: boolean) => {
+        setComandasOpen(open)
+        if (!open) {
+          setPendingComandaItems([])
+          setComandasError(null)
+          setComandasLoading(false)
+        }
+      },
+      pendingComandaItems,
+      comandasLoading,
+      comandasSubmitting,
+      comandasError,
+      enviarComandas,
       manualNombreCliente,
       setManualNombreCliente,
       fiscalDocVenta,
