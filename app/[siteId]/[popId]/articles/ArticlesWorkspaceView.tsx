@@ -8,17 +8,13 @@ import { ArticleDeleteDialog } from "@/app/[siteId]/[popId]/articles/ArticleDele
 import { ArticleCategoriesDialog } from "@/app/[siteId]/[popId]/articles/ArticleCategoriesDialog"
 import { ArticleCategoryDeleteDialog } from "@/app/[siteId]/[popId]/articles/ArticleCategoryDeleteDialog"
 import { ArticlePriceListsDialog } from "@/app/[siteId]/[popId]/articles/ArticlePriceListsDialog"
-import {
-  getItemPriceListAmounts,
-  getPopPriceLists,
-} from "@/app/[siteId]/[popId]/articles/priceListActions"
+import { getPopPriceLists } from "@/app/[siteId]/[popId]/articles/priceListActions"
 import { ArticleItemKindToolbarFilter, articleItemKindFilterToQuery, resolveArticleItemKindFilterId } from "@/app/[siteId]/[popId]/articles/ArticleItemKindToolbarFilter"
 import {
   createPopArticle,
   createPopCategory,
   deletePopArticle,
   deletePopCategory,
-  getPopArticleCategories,
   getPopCategoryArticleCount,
   getPopArticleSupplierOptions,
   syncPopCategorySaleLayout,
@@ -28,7 +24,6 @@ import {
   type CategoryLayoutUpdate,
   type ArticleTableRow,
 } from "@/app/[siteId]/[popId]/articles/actions"
-import { getPopArticleCosts } from "@/app/[siteId]/[popId]/articles/articleCostsActions"
 import {
   articleCostLinesFromRows,
   articleCostLinesToInput,
@@ -117,9 +112,15 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { usePopArticleCategories } from "@/hooks/usePopArticleCategories"
 import { usePopArticlesTable } from "@/hooks/usePopArticlesTable"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
-import { popArticlesQueryRoot } from "@/lib/queryKeys"
+import {
+  popArticleCategoriesQueryKey,
+  popArticleQueryKey,
+  popArticlesQueryRoot,
+} from "@/lib/queryKeys"
+import { fetchPopArticle } from "@/lib/rootsyApi/articlesClient"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   DEFAULT_ARTICLE_IVA_ALICUOTA_ID,
@@ -203,6 +204,41 @@ function defaultCreateFormState(): ArticleFormState {
     ...defaultArticleCatalogExtraFormState(),
     listPrices: {},
   }
+}
+
+function formStateFromArticleRow(
+  row: ArticleTableRow,
+  siteId: string,
+): ArticleFormState {
+  return {
+    name: row.name,
+    description: row.description,
+    imageUrl: row.imageUrl ?? "",
+    sku: row.sku ?? "",
+    barcode: row.barcode ?? "",
+    salePrice: formatMoneyInputForField(row.salePrice),
+    iva: resolveArticleIvaSelectValue(siteId, row.iva),
+    categoryId: row.categoryId,
+    isActive: row.isActive,
+    allowNegativeStock: row.allowNegativeStock,
+    itemKind: row.itemKind,
+    ...unitOfMeasureToFormState(row.unitOfMeasure),
+    defaultWastePct:
+      row.defaultWastePct != null ? String(row.defaultWastePct) : "",
+    minStockLevel: row.minStockLevel != null ? String(row.minStockLevel) : "",
+    ...catalogFieldsFromRow(row),
+    listPrices: Object.fromEntries(
+      (row.listPrices ?? []).map(({ listId, amount }) => [
+        listId,
+        formatMoneyInputForField(amount),
+      ]),
+    ),
+  }
+}
+
+function costLinesFromArticleRow(row: ArticleTableRow): ArticleCostFormLine[] {
+  const loaded = articleCostLinesFromRows(row.costs ?? [], row.unitOfMeasure)
+  return loaded.length > 0 ? loaded : [createEmptyArticleCostLine()]
 }
 
 function catalogFieldsFromRow(row: ArticleTableRow): ArticleCatalogExtraFormState {
@@ -308,15 +344,8 @@ export function ArticlesWorkspaceView() {
   const [draftFilters, setDraftFilters] = useState<ArticlesModalFilters>(
     defaultArticlesModalFilters,
   )
-  const [filterCategoryList, setFilterCategoryList] = useState<
-    ArticleCategoryOption[]
-  >([])
-
   const [editRow, setEditRow] = useState<ArticleTableRow | null>(null)
-  const [editCategories, setEditCategories] = useState<ArticleCategoryOption[]>(
-    [],
-  )
-  const [editLoading, setEditLoading] = useState(false)
+  const [editRefreshing, setEditRefreshing] = useState(false)
   const [editSaving, setEditSaving] = useState(false)
   const [editForm, setEditForm] = useState<ArticleFormState>(() => ({
     name: "",
@@ -343,10 +372,6 @@ export function ArticlesWorkspaceView() {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
 
-  const [createCategories, setCreateCategories] = useState<
-    ArticleCategoryOption[]
-  >([])
-  const [createCatLoading, setCreateCatLoading] = useState(false)
   const [createSaving, setCreateSaving] = useState(false)
   const [createBanner, setCreateBanner] = useState<string | null>(null)
   const [createForm, setCreateForm] = useState<ArticleFormState>(defaultCreateFormState)
@@ -358,10 +383,6 @@ export function ArticlesWorkspaceView() {
   const [priceLists, setPriceLists] = useState<SalePriceList[]>([])
   const [priceListsOpen, setPriceListsOpen] = useState(false)
   const [categoriesOpen, setCategoriesOpen] = useState(false)
-  const [categoriesRows, setCategoriesRows] = useState<ArticleCategoryOption[]>(
-    [],
-  )
-  const [categoriesLoading, setCategoriesLoading] = useState(false)
   const [categoriesBanner, setCategoriesBanner] = useState<string | null>(null)
   const [newCategoryName, setNewCategoryName] = useState("")
   const [newCategorySaving, setNewCategorySaving] = useState(false)
@@ -381,6 +402,7 @@ export function ArticlesWorkspaceView() {
     null,
   )
   const [createOpen, setCreateOpen] = useState(false)
+  const editRequestIdRef = useRef(0)
   const [imagePreview, setImagePreview] = useState<{
     url: string
     title: string
@@ -424,6 +446,8 @@ export function ArticlesWorkspaceView() {
   const articlesTableQuery = usePopArticlesTable(popId, articlesListParams, {
     enabled: Boolean(popId && siteId),
   })
+  const categoriesQuery = usePopArticleCategories(popId)
+  const categoryOptions = categoriesQuery.data ?? []
 
   const articles = articlesTableQuery.data?.articles ?? []
   const totalCount = articlesTableQuery.data?.totalCount ?? 0
@@ -459,8 +483,9 @@ export function ArticlesWorkspaceView() {
   useEffect(() => {
     const res = articlesTableQuery.data
     if (!res || res.success || !res.redirect) return
+    const redirect = res.redirect
     const timeout = window.setTimeout(() => {
-      routerRef.current.push(res.redirect)
+      routerRef.current.push(redirect)
     }, 1200)
     return () => window.clearTimeout(timeout)
   }, [articlesTableQuery.data])
@@ -506,22 +531,12 @@ export function ArticlesWorkspaceView() {
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  useEffect(() => {
-    if (!popId || !siteId) return
-    let cancelled = false
-    ;(async () => {
-      const res = await getPopArticleCategories(popId)
-      if (cancelled) return
-      if (res.success) {
-        setFilterCategoryList(res.categories)
-      } else {
-        setFilterCategoryList([])
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [popId, siteId])
+  const refreshArticleCategories = useCallback(async () => {
+    if (!popId) return
+    await queryClient.invalidateQueries({
+      queryKey: popArticleCategoriesQueryKey(popId),
+    })
+  }, [popId, queryClient])
 
   const refreshPriceLists = useCallback(async () => {
     if (!popId) return
@@ -576,113 +591,46 @@ export function ArticlesWorkspaceView() {
     }
   }, [popId, createOpen, editRow])
 
-  useEffect(() => {
-    if (!createOpen || !popId) return
-    let cancelled = false
-    ;(async () => {
-      setCreateCatLoading(true)
-      const catRes = await getPopArticleCategories(popId)
-      if (cancelled) return
-      setCreateCatLoading(false)
-      if (catRes.success) {
-        setCreateCategories(catRes.categories)
-      } else {
-        setCreateBanner(catRes.error)
-        setCreateCategories([])
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [createOpen, popId])
-
-  const openEdit = async (row: ArticleTableRow) => {
+  const openEdit = (row: ArticleTableRow) => {
     if (!popId || !siteId) return
+    const requestId = ++editRequestIdRef.current
     setEditBanner(null)
     setEditRow(row)
-    setEditForm({
-      name: row.name,
-      description: row.description,
-      imageUrl: row.imageUrl ?? "",
-      sku: row.sku ?? "",
-      barcode: row.barcode ?? "",
-      salePrice: formatMoneyInputForField(row.salePrice),
-      iva: resolveArticleIvaSelectValue(siteId, row.iva),
-      categoryId: row.categoryId,
-      isActive: row.isActive,
-      allowNegativeStock: row.allowNegativeStock,
-      itemKind: row.itemKind,
-      ...unitOfMeasureToFormState(row.unitOfMeasure),
-      defaultWastePct:
-        row.defaultWastePct != null ? String(row.defaultWastePct) : "",
-      minStockLevel:
-        row.minStockLevel != null ? String(row.minStockLevel) : "",
-      ...catalogFieldsFromRow(row),
-      listPrices: {},
-    })
-    setEditLoading(true)
-    const [catRes, costsRes, listAmountsRes] = await Promise.all([
-      getPopArticleCategories(popId),
-      getPopArticleCosts(popId, row.id),
-      getItemPriceListAmounts(popId, "article", row.id),
-    ])
-    setEditLoading(false)
-    if (catRes.success) {
-      setEditCategories(catRes.categories)
-    } else {
-      setEditBanner(catRes.error)
-      setEditCategories([])
-    }
-    if (costsRes.success) {
-      const loaded = articleCostLinesFromRows(
-        costsRes.costs,
-        row.unitOfMeasure,
-      )
-      setEditCostLines(
-        loaded.length > 0 ? loaded : [createEmptyArticleCostLine()],
-      )
-    } else {
-      setEditBanner((prev) => prev ?? costsRes.error)
-      setEditCostLines([createEmptyArticleCostLine()])
-    }
-    if (listAmountsRes.success) {
-      setEditForm((f) => ({
-        ...f,
-        listPrices: Object.fromEntries(
-          Object.entries(listAmountsRes.amounts).map(([id, amount]) => [
-            id,
-            formatMoneyInputForField(amount),
-          ]),
-        ),
-      }))
-    }
+    setEditForm(formStateFromArticleRow(row, siteId))
+    setEditCostLines(costLinesFromArticleRow(row))
+    setEditRefreshing(true)
+    void queryClient
+      .fetchQuery({
+        queryKey: popArticleQueryKey(popId, row.id),
+        queryFn: () => fetchPopArticle(popId, row.id),
+        staleTime: 0,
+      })
+      .then((fresh) => {
+        if (editRequestIdRef.current !== requestId) return
+        setEditRow(fresh)
+        setEditForm(formStateFromArticleRow(fresh, siteId))
+        setEditCostLines(costLinesFromArticleRow(fresh))
+      })
+      .catch((error: unknown) => {
+        if (editRequestIdRef.current !== requestId) return
+        setEditBanner(
+          error instanceof Error
+            ? error.message
+            : "No se pudo actualizar el artículo",
+        )
+      })
+      .finally(() => {
+        if (editRequestIdRef.current === requestId) setEditRefreshing(false)
+      })
   }
 
   const closeEdit = () => {
+    editRequestIdRef.current += 1
     setEditRow(null)
     setEditBanner(null)
+    setEditRefreshing(false)
     setEditCostLines([])
   }
-
-  const loadModalCategories = useCallback(
-    async (opts?: { silent?: boolean }) => {
-      if (!popId || !siteId) return
-      const silent = opts?.silent === true
-      if (!silent) setCategoriesLoading(true)
-      const res = await getPopArticleCategories(popId)
-      if (!silent) setCategoriesLoading(false)
-      if (res.success) {
-        setCategoriesRows(res.categories)
-        if (!silent) setCategoriesBanner(null)
-      } else if (!silent) {
-        setCategoriesBanner(res.error)
-        setCategoriesRows([])
-      } else {
-        setCategoriesBanner(res.error)
-      }
-    },
-    [popId, siteId],
-  )
 
   const openCreate = useCallback(() => {
     if (!canCreate) return
@@ -768,12 +716,8 @@ export function ArticlesWorkspaceView() {
         return
       }
       setNewCategoryName("")
-      await loadModalCategories({ silent: true })
+      await refreshArticleCategories()
       setCategoriesBoardKey((k) => k + 1)
-      const fresh = await getPopArticleCategories(popId)
-      if (fresh.success) {
-        setFilterCategoryList(fresh.categories)
-      }
       invalidatePopOperateCatalogs(queryClient, popId)
     } finally {
       setNewCategorySaving(false)
@@ -806,42 +750,35 @@ export function ArticlesWorkspaceView() {
       return
     }
     cancelEditCategory()
-    await loadModalCategories({ silent: true })
-    const fresh = await getPopArticleCategories(popId)
-    if (fresh.success) {
-      setFilterCategoryList(fresh.categories)
-    }
+    await refreshArticleCategories()
     invalidatePopOperateCatalogs(queryClient, popId)
   }
 
   const saveCategoryLayout = async (updates: CategoryLayoutUpdate[]) => {
     if (!popId || !siteId || updates.length === 0) return
-    setCategoriesRows((prev) =>
-      prev.map((c) => {
-        const patch = updates.find((u) => u.id === c.id)
-        return patch
-          ? {
-              ...c,
-              sortOrder: patch.sortOrder,
-              showInSale: patch.showInSale,
-            }
-          : c
-      }),
+    queryClient.setQueryData(
+      popArticleCategoriesQueryKey(popId),
+      (prev: ArticleCategoryOption[] | undefined) =>
+        prev?.map((c) => {
+          const patch = updates.find((u) => u.id === c.id)
+          return patch
+            ? {
+                ...c,
+                sortOrder: patch.sortOrder,
+                showInSale: patch.showInSale,
+              }
+            : c
+        }),
     )
     setCategoriesBanner(null)
     const res = await syncPopCategorySaleLayout(popId, updates)
     if (!res.success) {
       setCategoriesBanner(res.error)
-      await loadModalCategories({ silent: true })
+      await refreshArticleCategories()
       setCategoriesBoardKey((k) => k + 1)
       return
     }
     invalidatePopOperateCatalogs(queryClient, popId)
-    void getPopArticleCategories(popId).then((fresh) => {
-      if (fresh.success) {
-        setFilterCategoryList(fresh.categories)
-      }
-    })
   }
 
   const removeCategory = (id: string, label: string) => {
@@ -880,11 +817,7 @@ export function ArticlesWorkspaceView() {
     }
     closeDeleteCategory()
     setCategoriesBanner(null)
-    await loadModalCategories({ silent: true })
-    const fresh = await getPopArticleCategories(popId)
-    if (fresh.success) {
-      setFilterCategoryList(fresh.categories)
-    }
+    await refreshArticleCategories()
     invalidatePopOperateCatalogs(queryClient, popId)
   }
 
@@ -1025,8 +958,8 @@ export function ArticlesWorkspaceView() {
   const categoryLabelForChip = useMemo(() => {
     const id = workspaceParsed.categoryId.trim()
     if (!id) return ""
-    return filterCategoryList.find((c) => c.id === id)?.name ?? ""
-  }, [filterCategoryList, workspaceParsed.categoryId])
+    return categoryOptions.find((c) => c.id === id)?.name ?? ""
+  }, [categoryOptions, workspaceParsed.categoryId])
 
   const modalFiltersActiveCount = useMemo(() => {
     const filters = articlesModalFiltersFromWorkspace(workspaceParsed)
@@ -1137,9 +1070,7 @@ export function ArticlesWorkspaceView() {
               headerVariant={dataWorkspaceTableListHeaderVariant}
               onClick={() => {
                 setCategoriesOpen(true)
-                void loadModalCategories({
-                  silent: categoriesRows.length > 0,
-                })
+                void refreshArticleCategories()
               }}
             >
               <FolderTree className="size-5" aria-hidden />
@@ -1694,7 +1625,7 @@ export function ArticlesWorkspaceView() {
         onOpenChange={(open) => !open && closeEdit()}
         mode="edit"
         title="Editar artículo"
-        loading={editLoading}
+        refreshing={editRefreshing}
         saving={editSaving}
         banner={editBanner}
         onBannerChange={setEditBanner}
@@ -1706,7 +1637,7 @@ export function ArticlesWorkspaceView() {
         form={editForm}
         onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))}
         onItemKindChange={handleEditItemKindChange}
-        categories={editCategories}
+        categories={categoryOptions}
         priceLists={priceLists}
         supplierOptions={supplierOptions}
         costLines={editCostLines}
@@ -1734,7 +1665,7 @@ export function ArticlesWorkspaceView() {
         onOpenChange={(open) => !open && closeCreate()}
         mode="create"
         title="Nuevo artículo"
-        loading={createCatLoading}
+        loading={categoriesQuery.isPending && !categoriesQuery.data}
         saving={createSaving}
         banner={createBanner}
         onBannerChange={setCreateBanner}
@@ -1746,7 +1677,7 @@ export function ArticlesWorkspaceView() {
         form={createForm}
         onChange={(patch) => setCreateForm((f) => ({ ...f, ...patch }))}
         onItemKindChange={handleCreateItemKindChange}
-        categories={createCategories}
+        categories={categoryOptions}
         priceLists={priceLists}
         supplierOptions={supplierOptions}
         costLines={createCostLines}
@@ -1780,8 +1711,8 @@ export function ArticlesWorkspaceView() {
         canCreate={canCreate}
         canUpdate={canUpdate}
         canDelete={canDelete}
-        loading={categoriesLoading}
-        categories={categoriesRows}
+        loading={categoriesQuery.isPending && !categoriesQuery.data}
+        categories={categoryOptions}
         boardKey={categoriesBoardKey}
         newCategoryName={newCategoryName}
         newCategorySaving={newCategorySaving}

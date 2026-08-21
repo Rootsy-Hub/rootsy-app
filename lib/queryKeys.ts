@@ -179,6 +179,14 @@ export function popArticlesQueryRoot(popId: string) {
   return ["pop-articles", popId] as const
 }
 
+export function popArticleQueryKey(popId: string, articleId: string) {
+  return ["pop-article", popId, articleId] as const
+}
+
+export function popArticleCategoriesQueryKey(popId: string) {
+  return ["pop-article-categories", popId] as const
+}
+
 export type PopOperationsQueryParams = {
   view: string
   dateFrom: string | null

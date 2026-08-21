@@ -1,6 +1,6 @@
 import "server-only"
 
-import { getPopArticlesTable } from "@/app/[siteId]/[popId]/articles/actions"
+import { fetchPopArticlesTableServer } from "@/lib/rootsyApi/articlesServer"
 import { articlesModalFiltersFromWorkspace } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
 import type { ArticlesWorkspaceUrlState } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
 import { getPopChecksTable } from "@/app/[siteId]/[popId]/checks/actions"
@@ -89,7 +89,7 @@ export async function prefetchPopArticlesTable(
   }
   return prefetchPopListQuery({
     queryKey: popArticlesQueryKey(popId, params),
-    queryFn: () => getPopArticlesTable(popId, params),
+    queryFn: () => fetchPopArticlesTableServer(popId, params),
   })
 }
 

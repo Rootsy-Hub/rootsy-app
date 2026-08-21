@@ -29,7 +29,7 @@ import {
   normalizeStoredUnitOfMeasure,
 } from "@/lib/articleItemKind"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
-import type { ArticleCostLineInput } from "@/lib/articleCosts"
+import type { ArticleCostLineInput, ArticleCostRow } from "@/lib/articleCosts"
 import { primarySaleUnitCostFromCosts } from "@/lib/articleCosts"
 import { activeCostCountByArticleIds } from "@/lib/articleCostQueries"
 import {
@@ -70,6 +70,8 @@ export type ArticleTableRow = {
   allowNegativeStock: boolean
   stockOnHand: number
   activeCostCount: number
+  costs: ArticleCostRow[]
+  listPrices: { listId: string; amount: number }[]
 }
 
 export type ArticleSupplierOption = {
@@ -234,6 +236,8 @@ function articleRowFromDb(row: Record<string, unknown>): ArticleTableRow {
     allowNegativeStock: Boolean(row.allow_negative_stock),
     stockOnHand: 0,
     activeCostCount: 0,
+    costs: [],
+    listPrices: [],
   }
 }
 

@@ -1,5 +1,6 @@
 import "server-only"
 
+import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 
 const SECRET_HEADER = "x-rootsy-api-secret"
@@ -59,4 +60,20 @@ export async function rootsyApiFetch<T>(
     throw new RootsyApiError(msg, res.status, body)
   }
   return body as T
+}
+
+export function rootsyApiErrorResponse(error: unknown) {
+  if (error instanceof RootsyApiError) {
+    if (error.body && typeof error.body === "object") {
+      return NextResponse.json(error.body, { status: error.status })
+    }
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: error.status },
+    )
+  }
+  return NextResponse.json(
+    { success: false, error: "Error interno" },
+    { status: 500 },
+  )
 }

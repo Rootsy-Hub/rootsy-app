@@ -57,6 +57,7 @@ type Props = FormFieldsProps & {
   title: string
   loading?: boolean
   loadingMessage?: string
+  refreshing?: boolean
   saving?: boolean
   banner?: string | null
   onBannerChange?: (message: string | null) => void
@@ -90,6 +91,7 @@ export function ArticleUpsertDialog({
   title,
   loading = false,
   loadingMessage = "Cargando categorías…",
+  refreshing = false,
   saving = false,
   banner,
   onBannerChange,
@@ -177,6 +179,14 @@ export function ArticleUpsertDialog({
           title={title}
           description={`Paso ${step}/${LAST_STEP} · ${stepMeta.label}`}
         />
+        {refreshing ? (
+          <div
+            className="h-0.5 w-full overflow-hidden bg-[color:var(--rootsy-bruma-200)]"
+            aria-hidden
+          >
+            <div className="h-full w-1/3 animate-pulse bg-[color:var(--rootsy-savia-500)]/50" />
+          </div>
+        ) : null}
         {loading ? (
           <RootsDialogBody>
             <RootsDialogLoadingState message={loadingMessage} />
