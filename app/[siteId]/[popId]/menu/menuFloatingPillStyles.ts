@@ -6,8 +6,8 @@ export const menuHeaderChromeClass = cn("menu-pop-chrome", menuRealmChromeShellC
 
 export const menuHeaderBorderClass = "border-[rgba(228,242,248,0.14)]"
 
-/** Altura fija compartida — header home y menú POP (80px). */
-export const menuHeaderHeightClass = "h-20 shrink-0"
+/** Altura del header de menú — 64px mobile · 80px desktop. */
+export const menuHeaderHeightClass = "h-16 shrink-0 md:h-20"
 
 /** Header de módulo — más bajo que home: deja aire para listados y losetas (68px). */
 export const menuModuleHeaderHeightClass = "h-17 shrink-0"

@@ -44,7 +44,10 @@ export function MenuHeaderEntity({
   return (
     <Tag className={cn(menuHeaderEntityClass, className)}>
       <div
-        className={isFooter ? menuFooterEntityBodyClass : menuHeaderEntityBodyClass}
+        className={cn(
+          isFooter ? menuFooterEntityBodyClass : menuHeaderEntityBodyClass,
+          !isFooter && !isDialog && "pt-[env(safe-area-inset-top)]",
+        )}
       >
         <div aria-hidden className="menu-header-entity-core" />
         <div aria-hidden className="menu-header-entity-sky" />

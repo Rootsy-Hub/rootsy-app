@@ -1,4 +1,7 @@
-import { menuRealmTitleClass } from "@/lib/menu/menuHoloStyles"
+import {
+  eterHeaderHairlineClass,
+  eterHeaderTitleClass,
+} from "@/lib/eter/eterChrome"
 import { buildPopLogoFallbackUrl } from "@/lib/popIdentityDisplay"
 import { cn } from "@/lib/utils"
 
@@ -28,8 +31,8 @@ export function PopIdentityHeaderCompact({
     <div className={cn("flex min-w-0 items-center gap-2.5", className)}>
       <div
         className={cn(
-          "size-8 shrink-0 overflow-hidden rounded-lg ring-1",
-          isDark ? "ring-[rgba(228,242,248,0.16)]" : "ring-border",
+          "size-8 shrink-0 overflow-hidden rounded-lg",
+          isDark ? eterHeaderHairlineClass : "ring-1 ring-border",
         )}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -39,7 +42,7 @@ export function PopIdentityHeaderCompact({
         className={cn(
           "truncate text-sm font-semibold",
           isDark
-            ? menuRealmTitleClass
+            ? eterHeaderTitleClass
             : "text-[var(--rootsy-bruma-900)]/90",
         )}
       >

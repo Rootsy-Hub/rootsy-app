@@ -19,6 +19,11 @@ import {
   menuHoloTileMotionClass,
   menuPlanetLifeStyle,
 } from "@/lib/menu/menuHoloStyles"
+import {
+  menuPlanetIconGlyphClass,
+  menuPlanetIconShellClass,
+  menuPlanetTileClass,
+} from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
 import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
@@ -74,7 +79,7 @@ export function MenuGridItemButton({
 
   const Icon = item.icon
   const tileClassName = cn(
-    "group flex h-[7.125rem] w-24 flex-col items-center gap-2.5",
+    menuPlanetTileClass,
     !editing && menuHoloTileMotionClass,
   )
 
@@ -86,7 +91,7 @@ export function MenuGridItemButton({
       >
         <div
           className={cn(
-            "flex size-[72px] items-center justify-center rounded-[20px]",
+            menuPlanetIconShellClass,
             menuHoloIconShellForSection(sectionKey, shellVariant),
             !isDragGhost &&
               menuHoloRealmWorldRimClass(sectionKey, showDockPlacedStyle),
@@ -98,7 +103,7 @@ export function MenuGridItemButton({
           {!isDragGhost ? (
             <MenuIconChrome sectionKey={sectionKey} alive={isAlive} />
           ) : null}
-          <Icon className={cn("size-8", menuHoloGlyphClass)} />
+          <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
         </div>
       </div>
 

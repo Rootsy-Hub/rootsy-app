@@ -1,4 +1,9 @@
 import { menuGhostBarClass, menuGhostTileClass } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
+import {
+  menuPlanetGridClass,
+  menuPlanetIconShellClass,
+  menuPlanetTileClass,
+} from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
 import { cn } from "@/lib/utils"
 
 const DORMANT_TILE_COUNT = 12
@@ -7,9 +12,9 @@ function MenuGridItemGhost() {
   return (
     <div
       aria-hidden
-      className="flex h-[7.125rem] w-24 flex-col items-center gap-2.5 justify-self-center"
+      className={cn(menuPlanetTileClass, "justify-self-center")}
     >
-      <div className={cn("size-[72px] rounded-[20px]", menuGhostTileClass)} />
+      <div className={cn(menuPlanetIconShellClass, menuGhostTileClass)} />
       <span className={cn(menuGhostBarClass, "h-3 w-[3.25rem]")} />
     </div>
   )
@@ -17,8 +22,8 @@ function MenuGridItemGhost() {
 
 export function MenuDormantGrid() {
   return (
-    <div className="w-full px-8" aria-hidden>
-      <div className="mx-auto grid min-h-[280px] max-w-4xl grid-cols-6 gap-x-0 gap-y-8 px-6 pb-6 pt-2">
+    <div className="w-full px-4 md:px-8" aria-hidden>
+      <div className={menuPlanetGridClass}>
         {Array.from({ length: DORMANT_TILE_COUNT }, (_, index) => (
           <MenuGridItemGhost key={index} />
         ))}

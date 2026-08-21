@@ -1,11 +1,10 @@
 "use client"
 
-import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
-import { RootsIconButton } from "@/components/rootsy-button"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { MenuDock } from "@/app/[siteId]/[popId]/menu/MenuDock"
 import { MenuDockDndProvider, useMenuDockEdit } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import { MenuGridItemButton } from "@/app/[siteId]/[popId]/menu/MenuGridItemButton"
+import { MenuPageHeader } from "@/app/[siteId]/[popId]/menu/MenuPageHeader"
 import {
   MenuSectionNavigator,
   type MenuSectionNavItem,
@@ -27,22 +26,9 @@ import {
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import {
-  menuHeaderRowClass,
-} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
-import {
-  menuRealmDividerClass,
-  menuRealmLightMutedClass,
-  menuRealmTitleClass,
-} from "@/lib/menu/menuHoloStyles"
-import {
-  menuSearchClearButtonClass,
-  menuSearchFieldActiveClass,
-  menuSearchFieldIconClass,
-  menuSearchFieldIdleClass,
-  menuSearchInputClass,
-  menuSearchShellClass,
-  menuSearchShortcutClass,
-} from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
+  menuPlanetGridClass,
+  menuPlanetSlideClass,
+} from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import {
@@ -72,13 +58,6 @@ import {
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import useEmblaCarousel from "embla-carousel-react"
-import {
-  Search,
-  HelpCircle,
-  Bell,
-  X,
-  Home,
-} from "lucide-react"
 
 type MenuSectionDef = {
   title: string
@@ -96,11 +75,20 @@ function detectSearchShortcutLabel(): string {
 function closeSearch(
   setShowSearch: (value: boolean) => void,
   setSearchQuery: (value: string) => void,
-  inputRef?: RefObject<HTMLInputElement | null>,
+  ...inputRefs: RefObject<HTMLInputElement | null>[]
 ) {
   setShowSearch(false)
   setSearchQuery("")
-  inputRef?.current?.blur()
+  inputRefs.forEach((inputRef) => inputRef.current?.blur())
+}
+
+function focusVisibleSearchInput(
+  ...inputRefs: RefObject<HTMLInputElement | null>[]
+) {
+  const visible = inputRefs
+    .map((inputRef) => inputRef.current)
+    .find((input) => input && input.offsetParent !== null)
+  visible?.focus()
 }
 
 function routeForMenuLink(
@@ -136,7 +124,8 @@ function MenuPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [showSearch, setShowSearch] = useState(false)
   const [searchShortcutLabel, setSearchShortcutLabel] = useState("Ctrl+K")
-  const searchInputRef = useRef<HTMLInputElement>(null)
+  const mobileSearchRef = useRef<HTMLInputElement>(null)
+  const desktopSearchRef = useRef<HTMLInputElement>(null)
   const searchQueryRef = useRef(searchQuery)
   searchQueryRef.current = searchQuery
   const [time, setTime] = useState<Date | null>(null)
@@ -263,7 +252,12 @@ function MenuPage() {
       }
 
       window.setTimeout(() => {
-        if (document.activeElement === searchInputRef.current) return
+        if (
+          document.activeElement === mobileSearchRef.current ||
+          document.activeElement === desktopSearchRef.current
+        ) {
+          return
+        }
         if (!searchQueryRef.current.trim()) {
           setShowSearch(false)
         }
@@ -274,7 +268,10 @@ function MenuPage() {
 
   const openSearch = useCallback(() => {
     setShowSearch(true)
-    window.setTimeout(() => searchInputRef.current?.focus(), 0)
+    window.setTimeout(
+      () => focusVisibleSearchInput(mobileSearchRef, desktopSearchRef),
+      0,
+    )
   }, [])
 
   useEffect(() => {
@@ -282,12 +279,15 @@ function MenuPage() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault()
         setShowSearch(true)
-        window.setTimeout(() => searchInputRef.current?.focus(), 0)
+        window.setTimeout(
+          () => focusVisibleSearchInput(mobileSearchRef, desktopSearchRef),
+          0,
+        )
         return
       }
 
       if (event.key === "Escape" && showSearch) {
-        closeSearch(setShowSearch, setSearchQuery, searchInputRef)
+        closeSearch(setShowSearch, setSearchQuery, mobileSearchRef, desktopSearchRef)
       }
     }
 
@@ -387,7 +387,10 @@ function MenuPage() {
       initialDockIds={dockItemIds}
     >
     <div
-      className={cn(menuNatureShellClass, "menu-firmament-settle fixed inset-0 flex flex-col overflow-hidden bg-background")}
+      className={cn(
+        menuNatureShellClass,
+        "menu-firmament-settle fixed inset-0 flex h-dvh max-h-dvh flex-col overflow-hidden bg-background",
+      )}
       aria-busy={contentPending}
     >
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -465,151 +468,47 @@ function MenuPage() {
         {contentPending ? (
           <MenuDormantHeader />
         ) : (
-          <div className={menuHeaderRowClass}>
-          <div className="flex min-w-0 items-center gap-6">
-            <RootsIconButton
-              href="/home"
-              tone="ghost"
-              surface="dark"
-              size="large"
-              label="Ir al inicio"
-            >
-              <Home aria-hidden />
-            </RootsIconButton>
-
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="size-12 shrink-0 overflow-hidden rounded-lg ring-1 ring-[rgba(228,242,248,0.18)]">
-                <img
-                  src={headerPopLogoSrc}
-                  alt=""
-                  className="size-full object-cover"
-                />
-              </div>
-              <div className="min-w-0">
-                <p className={cn("truncate text-sm font-semibold", menuRealmTitleClass)}>
-                  {headerPopName}
-                </p>
-                <p className={cn("truncate text-xs font-normal", menuRealmLightMutedClass)}>
-                  {headerPopAddress}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full justify-self-center">
-            <div
-              className={cn(
-                menuSearchShellClass,
-                !showSearch && "cursor-text",
-              )}
-              onClick={(event) => {
-                if (showSearch) return
-                if (event.target instanceof HTMLInputElement) return
-                openSearch()
-              }}
-            >
-              <Search
-                className={cn(
-                  "pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2",
-                  menuSearchFieldIconClass,
-                )}
-                aria-hidden
-              />
-              <input
-                ref={searchInputRef}
-                type="search"
-                placeholder="Buscar..."
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                onFocus={() => setShowSearch(true)}
-                onBlur={handleSearchBlur}
-                aria-label="Buscar en el menú"
-                aria-expanded={showSearch}
-                className={cn(
-                  menuSearchInputClass,
-                  showSearch
-                    ? menuSearchFieldActiveClass
-                    : menuSearchFieldIdleClass,
-                )}
-              />
-              {showSearch ? (
-                <button
-                  type="button"
-                  data-menu-search-close
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    closeSearch(setShowSearch, setSearchQuery, searchInputRef)
-                  }}
-                  className={cn(
-                    "absolute right-2 top-1/2 -translate-y-1/2",
-                    menuSearchClearButtonClass,
-                  )}
-                  aria-label="Cerrar búsqueda"
-                >
-                  <X className="size-4" aria-hidden />
-                </button>
-              ) : (
-                <kbd
-                  className={cn(
-                    "pointer-events-none absolute right-4 top-1/2 -translate-y-1/2",
-                    menuSearchShortcutClass,
-                  )}
-                >
-                  {searchShortcutLabel}
-                </kbd>
-              )}
-            </div>
-          </div>
-
-          <div className="flex min-w-0 items-center justify-end gap-6">
-            <div className="flex items-center gap-1">
-              <RootsIconButton
-                tone="ghost"
-                surface="dark"
-                size="default"
-                label="Notificaciones"
-              >
-                <Bell aria-hidden />
-              </RootsIconButton>
-            </div>
-
-            <div className={cn("h-6 w-px", menuRealmDividerClass)} />
-
-            <div className="flex shrink-0 flex-col items-end">
-              <span className={cn("text-lg tabular-nums", menuRealmTitleClass)}>
-                {isMounted && time
-                  ? formatLocaleTime(time)
-                  : "--:--"}
-              </span>
-              <span className={cn("text-xs uppercase tracking-wide", menuRealmLightMutedClass)}>
-                {isMounted && time
-                  ? time.toLocaleDateString("es-AR", {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "short",
-                    })
-                  : "---"}
-              </span>
-            </div>
-
-            <div className={cn("h-6 w-px", menuRealmDividerClass)} />
-
-            <DataWorkspaceHeaderUserMenu
-              userName={headerUserName}
-              userAvatarSrc={headerUserAvatarSrc}
-              isOnline={isOnline}
-              headerVariant="dark"
-              roleLabel={headerUserRoleLabel}
-              hasResolvedRole={Boolean(headerUserRoleLabel)}
-            />
-          </div>
-        </div>
+          <MenuPageHeader
+            popLogoSrc={headerPopLogoSrc}
+            popName={headerPopName}
+            popAddress={headerPopAddress}
+            userName={headerUserName}
+            userAvatarSrc={headerUserAvatarSrc}
+            userRoleLabel={headerUserRoleLabel}
+            isOnline={isOnline}
+            clockLabel={isMounted && time ? formatLocaleTime(time) : "--:--"}
+            dateLabel={
+              isMounted && time
+                ? time.toLocaleDateString("es-AR", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                  })
+                : "---"
+            }
+            showSearch={showSearch}
+            searchQuery={searchQuery}
+            searchShortcutLabel={searchShortcutLabel}
+            mobileSearchRef={mobileSearchRef}
+            desktopSearchRef={desktopSearchRef}
+            onSearchChange={setSearchQuery}
+            onSearchFocus={() => setShowSearch(true)}
+            onSearchBlur={handleSearchBlur}
+            onOpenSearch={openSearch}
+            onCloseSearch={() =>
+              closeSearch(
+                setShowSearch,
+                setSearchQuery,
+                mobileSearchRef,
+                desktopSearchRef,
+              )
+            }
+          />
         )}
       </MenuHeaderEntity>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-14 sm:gap-16">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-start gap-6 py-4 pb-28 sm:gap-10 md:justify-center md:gap-14 md:py-0 md:pb-8">
           {menuReady ? (
             <MenuSectionNavigator
               className="menu-content-emerge"
@@ -629,8 +528,8 @@ function MenuPage() {
                   const items = getFilteredItems(sectionKey)
 
                   return (
-                    <div key={sectionKey} className="flex-[0_0_100%] min-w-0 px-8">
-                      <div className="grid grid-cols-6 gap-x-0 gap-y-8 max-w-4xl mx-auto min-h-[280px] px-6 pb-6 pt-2 select-none">
+                    <div key={sectionKey} className={menuPlanetSlideClass}>
+                      <div className={menuPlanetGridClass}>
                         {items.map((item) => {
                           const target = routeForMenuLink(siteId, popId, item.link)
                           const styleSectionKey =
@@ -693,16 +592,6 @@ function MenuPage() {
         className={menuReady ? "menu-content-emerge" : undefined}
       />
 
-      <RootsIconButton
-        type="button"
-        tone="ghost"
-        surface="dark"
-        size="large"
-        label="Ayuda"
-        className="absolute bottom-4 right-4 z-30 rounded-full"
-      >
-        <HelpCircle aria-hidden />
-      </RootsIconButton>
     </div>
     </MenuDockDndProvider>
   )

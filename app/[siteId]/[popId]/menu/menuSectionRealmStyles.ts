@@ -19,13 +19,13 @@ export const menuSectionRealmSurfaceClass = cn(
 
 /** Rail de mundos — cristal tenue, tipografía precisa. */
 export const menuSectionRealmRailClass = cn(
-  "inline-flex items-stretch overflow-hidden",
+  "inline-flex w-full max-w-md items-stretch overflow-hidden sm:w-auto sm:max-w-none",
   menuSectionRealmRadiusClass,
   menuSectionRealmSurfaceClass,
 )
 
 export const menuSectionRealmTabClass = cn(
-  "relative min-w-[5.5rem] px-4 py-2 text-center sm:min-w-[6.25rem] sm:px-5",
+  "relative min-w-0 flex-1 px-3 py-2 text-center sm:min-w-[5.5rem] sm:flex-none sm:px-4 md:min-w-[6.25rem] md:px-5",
   "text-[11px] font-medium uppercase tracking-[0.1em] antialiased",
   "transition-[color,background-color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)]",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,255,255,0.18)] focus-visible:ring-offset-0",

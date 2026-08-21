@@ -4,6 +4,7 @@ import {
   isDarkChromeHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { EterIconButton } from "@/components/eter/EterIconButton"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 
@@ -22,13 +23,11 @@ export function DataWorkspaceHeaderIconButton({
   primary = false,
   ...rest
 }: DataWorkspaceHeaderIconButtonProps) {
-  /** Universo noche: placa visible siempre — outlined / primaria savia. Ghost queda para chrome (volver, fullscreen). */
   if (isDarkChromeHeader(headerVariant)) {
     return (
-      <RootsIconButton
+      <EterIconButton
         label={label}
-        theme="pos"
-        emphasis={primary ? "primary" : "outlined"}
+        intent={primary ? "primary" : "subtle"}
         size="default"
         {...rest}
       />

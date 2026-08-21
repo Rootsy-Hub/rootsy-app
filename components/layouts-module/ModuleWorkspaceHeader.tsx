@@ -7,12 +7,12 @@ import {
   dataWorkspaceHeaderToolbarClass,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { EterIconButton } from "@/components/eter/EterIconButton"
 import { PopIdentityHeaderCompact } from "@/components/pop-identity/PopIdentityHeaderCompact"
-import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import {
-  menuRealmDividerClass,
-  menuRealmTitleClass,
-} from "@/lib/menu/menuHoloStyles"
+  eterHeaderDividerClass,
+  eterHeaderTitleClass,
+} from "@/lib/eter/eterChrome"
 import { cn } from "@/lib/utils"
 import {
   ArrowLeft,
@@ -47,11 +47,6 @@ export type ModuleWorkspaceHeaderProps = {
   canCollapseSidebar?: boolean
   sidebarOpen?: boolean
   onToggleSidebar?: () => void
-}
-
-const universeChrome = {
-  tone: "ghost" as const,
-  surface: "dark" as const,
 }
 
 export function ModuleWorkspaceHeader({
@@ -93,25 +88,18 @@ export function ModuleWorkspaceHeader({
             {showBack || showFullscreenButton || showSidebarToggle ? (
               <div className="flex items-center gap-0.5">
                 {showBack ? (
-                  <RootsIconButton
-                    {...universeChrome}
+                  <EterIconButton
                     size="default"
                     href={backHref}
                     label="Volver al menú"
                   >
                     <ArrowLeft aria-hidden />
-                  </RootsIconButton>
+                  </EterIconButton>
                 ) : null}
                 {showFullscreenButton ? (
-                  <RootsIconButton
-                    {...universeChrome}
+                  <EterIconButton
                     size="default"
                     label={
-                      isFullscreen
-                        ? "Salir de pantalla completa"
-                        : "Pantalla completa"
-                    }
-                    title={
                       isFullscreen
                         ? "Salir de pantalla completa"
                         : "Pantalla completa"
@@ -123,17 +111,13 @@ export function ModuleWorkspaceHeader({
                     ) : (
                       <Maximize2 aria-hidden />
                     )}
-                  </RootsIconButton>
+                  </EterIconButton>
                 ) : null}
                 {showSidebarToggle ? (
-                  <RootsIconButton
-                    {...universeChrome}
+                  <EterIconButton
                     size="default"
+                    intent={sidebarOpen ? "subtle" : "danger"}
                     onClick={onToggleSidebar}
-                    className={cn(
-                      !sidebarOpen &&
-                        "!border-red-500/45 !bg-red-500/15 !text-red-300 hover:!border-red-400/55 hover:!bg-red-500/25 hover:!text-red-200",
-                    )}
                     aria-expanded={sidebarOpen}
                     aria-controls="data-workspace-sidebar"
                     label={
@@ -141,16 +125,13 @@ export function ModuleWorkspaceHeader({
                         ? "Ocultar panel de navegación"
                         : "Mostrar panel de navegación"
                     }
-                    title={
-                      sidebarOpen ? "Ocultar panel ([)" : "Mostrar panel ([)"
-                    }
                   >
                     {sidebarOpen ? (
                       <PanelLeftClose aria-hidden />
                     ) : (
                       <PanelLeftOpen aria-hidden />
                     )}
-                  </RootsIconButton>
+                  </EterIconButton>
                 ) : null}
               </div>
             ) : null}
@@ -170,7 +151,7 @@ export function ModuleWorkspaceHeader({
               <h1
                 className={cn(
                   "truncate text-xl tracking-tight",
-                  menuRealmTitleClass,
+                  eterHeaderTitleClass,
                 )}
               >
                 {resolvedTitle}
@@ -187,7 +168,7 @@ export function ModuleWorkspaceHeader({
               </div>
             ) : null}
             {showActions && userName ? (
-              <div className={cn("h-6 w-px", menuRealmDividerClass)} aria-hidden />
+              <div className={cn("h-6 w-px", eterHeaderDividerClass)} aria-hidden />
             ) : null}
             {userName ? (
               <DataWorkspaceHeaderUserMenu

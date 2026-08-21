@@ -10,6 +10,11 @@ import {
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import type { RootsIconButtonSize } from "@/components/rootsy-button/rootsButtonStyles"
+import {
+  eterHeaderBodyClass,
+  eterHeaderFocusRingClass,
+  eterHeaderMutedClass,
+} from "@/lib/eter/eterChrome"
 import { initialsFromPopName } from "@/lib/popIdentityDisplay"
 import {
   RootsDropdownContent,
@@ -34,6 +39,8 @@ export type DataWorkspaceHeaderUserMenuProps = {
   size?: RootsIconButtonSize
   roleLabel?: string
   hasResolvedRole?: boolean
+  /** Si es false, solo el avatar — útil en headers compactos. */
+  showIdentity?: boolean
 }
 
 const userAvatarFallbackClass =
@@ -46,6 +53,7 @@ export function DataWorkspaceHeaderUserMenu({
   headerVariant = "default",
   size = "default",
   roleLabel,
+  showIdentity = true,
 }: DataWorkspaceHeaderUserMenuProps) {
   const isTinted = isDataWorkspaceTintedHeader(headerVariant)
   const theme = isDarkChromeHeader(headerVariant) ? "dark" : "light"
@@ -84,20 +92,27 @@ export function DataWorkspaceHeaderUserMenu({
           className={cn(
             "group flex min-w-0 items-center gap-3 text-left",
             "outline-none",
-            "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]/40",
+            "focus-visible:rounded-lg",
+            eterHeaderFocusRingClass,
           )}
         >
-          <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
-            <span className="truncate text-sm font-normal text-white">
+          <div
+            className={cn(
+              "min-w-0 flex-col items-end text-right leading-tight",
+              showIdentity ? "hidden sm:flex" : "hidden",
+            )}
+          >
+            <span className={cn("truncate text-sm", eterHeaderBodyClass)}>
               {userName}
             </span>
             {resolvedRoleLabel ? (
               <span
                 className={cn(
-                  "truncate text-xs font-normal text-[var(--rootsy-bruma-400)]",
+                  "truncate text-xs font-normal",
+                  eterHeaderMutedClass,
                   "transition-colors duration-[50ms]",
-                  "group-hover:text-[var(--rootsy-bruma-300)]",
-                  "group-data-[state=open]:text-[var(--rootsy-bruma-300)]",
+                  "group-hover:text-[color-mix(in_srgb,var(--rootsy-eter-100)_78%,transparent)]",
+                  "group-data-[state=open]:text-[color-mix(in_srgb,var(--rootsy-eter-100)_78%,transparent)]",
                 )}
               >
                 {resolvedRoleLabel}
@@ -130,8 +145,8 @@ export function DataWorkspaceHeaderUserMenu({
                 "pointer-events-none absolute inset-0 rounded-full",
                 "ring-1 ring-transparent",
                 "transition-[box-shadow] duration-[50ms]",
-                "group-hover:ring-[color-mix(in_srgb,#ffffff_18%,transparent)]",
-                "group-data-[state=open]:ring-[color-mix(in_srgb,#ffffff_18%,transparent)]",
+                "group-hover:ring-[color-mix(in_srgb,var(--rootsy-eter-100)_18%,transparent)]",
+                "group-data-[state=open]:ring-[color-mix(in_srgb,var(--rootsy-eter-100)_18%,transparent)]",
               )}
             />
             <span
@@ -139,7 +154,7 @@ export function DataWorkspaceHeaderUserMenu({
               aria-label={isOnline ? "En línea" : "Sin conexión"}
               title={isOnline ? "En línea" : "Sin conexión"}
               className={cn(
-                "pointer-events-none absolute right-0 bottom-0 size-2 rounded-full ring-1 ring-[var(--rootsy-sombra-900)]",
+                "pointer-events-none absolute right-0 bottom-0 size-2 rounded-full ring-1 ring-[var(--rootsy-eter-950)]",
                 isOnline
                   ? "bg-[var(--rootsy-savia-500)]"
                   : "bg-[var(--rootsy-danger)]",

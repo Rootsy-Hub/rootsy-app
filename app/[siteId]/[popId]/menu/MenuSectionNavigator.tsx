@@ -38,7 +38,7 @@ export function MenuSectionNavigator({
   return (
     <div
       className={cn(
-        "mx-auto flex w-full max-w-4xl shrink-0 justify-center px-6 pb-1 pt-0",
+        "mx-auto flex w-full max-w-4xl shrink-0 justify-center px-4 pb-1 pt-0 sm:px-6",
         className,
       )}
     >

@@ -11,7 +11,7 @@ const GHOST_TABS = 3
 /** Selector de mundos en fantasma — mismas cajas, sin nombres. */
 export function MenuDormantNavigator() {
   return (
-    <div className="mx-auto flex w-full max-w-4xl shrink-0 justify-center px-6 pb-1 pt-0">
+    <div className="mx-auto flex w-full max-w-4xl shrink-0 justify-center px-4 pb-1 pt-0 sm:px-6">
       <div className={menuSectionRealmRailClass} aria-hidden>
         {Array.from({ length: GHOST_TABS }, (_, index) => (
           <div key={index} className="flex items-stretch">
