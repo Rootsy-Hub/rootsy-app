@@ -4,7 +4,7 @@ import {
   getAccountingLedgerForAccount,
   type AccountNature,
   type LedgerMovementRow,
-} from "@/app/[siteId]/[popId]/accounting/actions"
+} from "@/app/[siteId]/[popId]/reports/accountingActions"
 import { useTreasuryInfiniteScroll } from "@/app/[siteId]/[popId]/accounts/treasuryInfiniteScroll"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"

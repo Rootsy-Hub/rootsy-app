@@ -215,12 +215,11 @@ function buildPlatformFullBusinessTypeModules(): RootsBusinessTypeModulesConfig 
           (key) => ROOTS_PUBLIC_BUSINESS_TYPE_MODULES[key].specific.administrar,
         ),
       ),
-      configurar: dedupeModulesByKey([
-        ...ROOTS_BUSINESS_TYPE_ORDER.flatMap(
+      configurar: dedupeModulesByKey(
+        ROOTS_BUSINESS_TYPE_ORDER.flatMap(
           (key) => ROOTS_PUBLIC_BUSINESS_TYPE_MODULES[key].specific.configurar,
         ),
-        { key: "accounting", label: "Contabilidad" },
-      ]),
+      ),
     },
     extras: dedupeModulesByKey(
       ROOTS_BUSINESS_TYPE_ORDER.flatMap(

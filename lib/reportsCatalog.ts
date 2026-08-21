@@ -39,7 +39,7 @@ export type ReportCatalogItem = {
   icon: LucideIcon
   /** Ruta relativa al POP (sin leading slash). */
   path: string
-  /** Query extra (p. ej. foco en contabilidad u operaciones). */
+  /** Query extra (p. ej. reporte inline u operaciones). */
   query?: Record<string, string>
   /** Solo visible en el hub; el reporte aún no está disponible. Quitar al implementar. */
   planned?: boolean
@@ -86,8 +86,8 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         title: "Posición IVA",
         description: "Saldo de IVA débito y crédito del período.",
         icon: Receipt,
-        path: "accounting",
-        query: { focus: "vat" },
+        path: "reports",
+        query: { report: "vat-position" },
       },
       {
         id: "invoices",
@@ -116,32 +116,32 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         title: "Estado de resultados",
         description: "Ingresos, costos, gastos y resultado del período.",
         icon: TrendingUp,
-        path: "accounting",
-        query: { focus: "income_statement" },
+        path: "reports",
+        query: { report: "income-statement" },
       },
       {
         id: "balance-sheet",
         title: "Balance general",
         description: "Activos, pasivos y patrimonio neto.",
         icon: Scale,
-        path: "accounting",
-        query: { focus: "balance_sheet" },
+        path: "reports",
+        query: { report: "balance-sheet" },
       },
       {
         id: "cash-flow",
         title: "Flujo de caja",
         description: "Movimiento de efectivo y cuentas equivalentes.",
         icon: Waves,
-        path: "accounting",
-        query: { focus: "cash_flow" },
+        path: "reports",
+        query: { report: "cash-flow" },
       },
       {
         id: "summaries",
         title: "Resúmenes por rubro",
         description: "Totales agrupados por tipo de cuenta.",
         icon: PieChart,
-        path: "accounting",
-        query: { focus: "summaries" },
+        path: "reports",
+        query: { report: "summaries" },
       },
     ],
   },
@@ -155,24 +155,24 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         title: "Sumas y saldos",
         description: "Debe, haber y saldo por cuenta contable.",
         icon: Calculator,
-        path: "accounting",
-        query: { focus: "trial_balance" },
+        path: "reports",
+        query: { report: "trial-balance" },
       },
       {
         id: "journal",
         title: "Libro diario",
         description: "Asientos cronológicos con origen de cada movimiento.",
         icon: ScrollText,
-        path: "accounting",
-        query: { focus: "journal" },
+        path: "reports",
+        query: { report: "journal" },
       },
       {
         id: "ledger",
         title: "Mayor general",
         description: "Movimientos detallados de una cuenta.",
         icon: BookOpen,
-        path: "accounting",
-        query: { focus: "ledger" },
+        path: "reports",
+        query: { report: "ledger" },
       },
       {
         id: "cash-registers",

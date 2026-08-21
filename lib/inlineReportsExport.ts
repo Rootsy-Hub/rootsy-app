@@ -9,7 +9,7 @@ import type {
   LedgerMovementRow,
   TrialBalanceRow,
   VatPositionRow,
-} from "@/app/[siteId]/[popId]/accounting/actions"
+} from "@/app/[siteId]/[popId]/reports/accountingActions"
 import type { TreasuryPeriodReportRow } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
 import type { BalanceSheetDisplayRow } from "@/lib/balanceSheetReportHierarchy"
 import type { IncomeStatementDisplayRow } from "@/lib/incomeStatementReportHierarchy"

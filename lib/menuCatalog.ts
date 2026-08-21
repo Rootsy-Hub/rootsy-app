@@ -53,7 +53,6 @@ export type MenuItemLink =
   | "clients"
   | "accounts"
   | "printers"
-  | "accounting"
   | "cash-registers"
   | "inventory"
   | "recipes"
@@ -143,7 +142,6 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
     items: [
       { name: "Cuentas", icon: Landmark, link: "accounts" },
       { name: "Recursos Humanos", icon: UserCog, link: "hr" },
-      { name: "Contabilidad", icon: Landmark, link: "accounting" },
       { name: "Cajas", icon: Calculator, link: "cash-registers" },
       { name: "Impresoras", icon: Printer, link: "printers" },
       { name: "Alertas", icon: Bell, link: "section", moduleKey: "alerts" },

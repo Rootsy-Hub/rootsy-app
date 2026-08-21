@@ -1,4 +1,4 @@
-import type { IncomeStatementLine } from "@/app/[siteId]/[popId]/accounting/actions"
+import type { IncomeStatementLine } from "@/app/[siteId]/[popId]/reports/accountingActions"
 
 export type IncomeStatementSectionKey = "ingresos" | "costos" | "gastos"
 

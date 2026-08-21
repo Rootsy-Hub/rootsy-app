@@ -1,7 +1,7 @@
 import {
   getAccountingJournalEntries,
   type JournalEntrySummaryRow,
-} from "@/app/[siteId]/[popId]/accounting/actions"
+} from "@/app/[siteId]/[popId]/reports/accountingActions"
 
 const JOURNAL_EXPORT_PAGE_SIZE = 200
 

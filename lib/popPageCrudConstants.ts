@@ -6,15 +6,6 @@ export type PopPageDefinition = {
 }
 
 export const POP_PAGES = {
-  accounting: {
-    path: "accounting",
-    permissions: {
-      read: "accounting:read",
-      create: "accounting:create",
-      update: "accounting:update",
-      delete: "accounting:delete",
-    },
-  },
   articles: {
     path: "articles",
     permissions: {

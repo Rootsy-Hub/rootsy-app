@@ -28,7 +28,6 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   invoices: "invoices",
   accounts: "accounts",
   "cash-registers": "cash_registers",
-  accounting: "accounting",
   hr: "hr",
   printers: "printers",
   settings: "settings",
@@ -84,7 +83,6 @@ const MENU_MODULE_KEY_ORDER: Record<MenuModuleSection, readonly string[]> = {
   configurar: [
     "accounts",
     "hr",
-    "accounting",
     "cash_registers",
     "printers",
     "alerts",
@@ -165,6 +163,7 @@ export function buildMenuSectionsFromEnabledModules(
   for (const mod of enabledModules) {
     if (!mod.permissions?.read) continue
     if (mod.key === "summary") continue
+    if (mod.key === "accounting") continue
     if (mod.key === "active_services") continue
 
     const section = resolveMenuModuleSection(mod)

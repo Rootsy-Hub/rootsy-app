@@ -36,7 +36,7 @@ export const STATISTICS_SECTIONS: StatisticsSectionDef[] = [
     id: "profitability",
     label: "Rentabilidad",
     description: "Margen, costos, gastos y resultado del período",
-    iconModuleKey: "accounting",
+    iconModuleKey: "reports",
   },
   {
     id: "products",

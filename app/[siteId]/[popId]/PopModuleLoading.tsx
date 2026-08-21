@@ -36,7 +36,6 @@ const MODULE_TITLES: Record<string, string> = {
   hr: "RRHH",
   printers: "Impresoras",
   settings: "Ajustes",
-  accounting: "Contabilidad",
   reports: "Reportes",
   statistics: "Estadísticas",
   sale: "Vender",
