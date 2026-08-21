@@ -67,7 +67,7 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { Badge } from "@/components/ui/badge"
+import { RootsNaturePill } from "@/components/rootsy-pill"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   TableBody,
@@ -918,9 +918,9 @@ export function SuppliersWorkspaceView() {
                       </TableCell>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
                         {r.ivaCondition ? (
-                          <Badge
-                            variant="secondary"
-                            className="max-w-full truncate font-normal"
+                          <RootsNaturePill
+                            variant="earth"
+                            className="max-w-full"
                             title={
                               IVA_LABEL_BY_VALUE[r.ivaCondition] ??
                               r.ivaCondition
@@ -929,7 +929,7 @@ export function SuppliersWorkspaceView() {
                             <span className="truncate">
                               {IVA_LABEL_BY_VALUE[r.ivaCondition] ?? "—"}
                             </span>
-                          </Badge>
+                          </RootsNaturePill>
                         ) : (
                           <span className={workspaceTableNatureTextSecondaryClass}>
                             —

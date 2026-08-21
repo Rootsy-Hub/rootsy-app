@@ -4,7 +4,10 @@ import {
   getPendingComandasForSource,
   sendComandaBatch,
 } from "@/app/[siteId]/[popId]/comandas/actions"
-import { applyComandaSendToCart } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import {
+  applyComandaSendToCart,
+  healCartLinesAlreadySent,
+} from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { saveTableSessionCheckout, closeTableSessionCheckout } from "@/app/[siteId]/[popId]/mesas/actions"
 import {
@@ -805,7 +808,14 @@ export function useMesasSaleCheckout(
         ),
       })),
     )
-  }, [flushCheckoutPersist, popId, siteId, tableSessionId])
+    setCarrito((prev) =>
+      healCartLinesAlreadySent(
+        prev,
+        res.items.map((item) => item.cartLineId),
+        productosByKey,
+      ),
+    )
+  }, [flushCheckoutPersist, popId, productosByKey, siteId, tableSessionId])
 
   const enviarComandas = useCallback(
     async (input: {
@@ -836,11 +846,16 @@ export function useMesasSaleCheckout(
         })
       }
       setCarrito((prev) =>
-        applyComandaSendToCart(prev, res.sentCartLineIds, res.peels),
+        applyComandaSendToCart(
+          prev,
+          res.sentCartLineIds,
+          res.peels,
+          productosByKey,
+        ),
       )
       setComandasOpen(false)
     },
-    [flushCheckoutPersist, popId, siteId, tableSessionId],
+    [flushCheckoutPersist, popId, productosByKey, siteId, tableSessionId],
   )
 
   const checkoutFullyPaid = useMemo(

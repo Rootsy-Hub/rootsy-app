@@ -4,6 +4,7 @@ import type {
   ComandaStatus,
   ComandaTicket,
 } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
+import { commandableCartLineKeys } from "@/lib/comandaCartLine"
 
 export function formatTableOriginLabel(labels: string[]): string {
   const clean = labels.map((label) => label.trim()).filter(Boolean)
@@ -113,20 +114,23 @@ export function groupComandasForBoard(
   })
 }
 
-export function markCartLinesSent<T extends { lineId?: string; productoId: string; kind?: string; promotionSelections?: Array<{ slotId: string }>; comandaStatus?: ComandaStatus }>(
+export function markCartLinesSent<
+  T extends {
+    lineId?: string
+    productoId: string
+    kind?: string
+    promotionSelections?: Array<{ slotId: string; kind: string; refId: string }>
+    comandaStatus?: ComandaStatus
+  },
+>(
   carrito: T[],
   sentCartLineIds: string[],
+  productosByKey?: Map<string, { stationId?: string | null }>,
 ): T[] {
   const sent = new Set(sentCartLineIds)
   if (sent.size === 0) return carrito
   return carrito.map((item) => {
-    const lineId = item.lineId?.trim() || item.productoId
-    const keys =
-      item.kind === "promotion"
-        ? (item.promotionSelections ?? []).map(
-            (selection) => `${lineId}:${selection.slotId}`,
-          )
-        : [lineId]
+    const keys = commandableCartLineKeys(item, productosByKey)
     if (keys.length === 0) return item
     if (!keys.every((key) => sent.has(key))) return item
     return { ...item, comandaStatus: "sent" as const }
@@ -139,13 +143,14 @@ export function applyComandaSendToCart<
     productoId: string
     cantidad: number
     kind?: string
-    promotionSelections?: Array<{ slotId: string }>
+    promotionSelections?: Array<{ slotId: string; kind: string; refId: string }>
     comandaStatus?: ComandaStatus
   },
 >(
   carrito: T[],
   sentCartLineIds: string[],
   peels: ComandaSendPeel[],
+  productosByKey?: Map<string, { stationId?: string | null }>,
 ): T[] {
   let next = carrito
   for (const peel of peels) {
@@ -173,5 +178,29 @@ export function applyComandaSendToCart<
     })
     next = copy
   }
-  return markCartLinesSent(next, sentCartLineIds)
+  return markCartLinesSent(next, sentCartLineIds, productosByKey)
+}
+
+/** Líneas pending sin ticket pendiente: ya se comandaron (p. ej. promo con artículos). */
+export function healCartLinesAlreadySent<
+  T extends {
+    lineId?: string
+    productoId: string
+    kind?: string
+    promotionSelections?: Array<{ slotId: string; kind: string; refId: string }>
+    comandaStatus?: ComandaStatus
+  },
+>(
+  carrito: T[],
+  pendingCartLineIds: string[],
+  productosByKey?: Map<string, { stationId?: string | null }>,
+): T[] {
+  const pending = new Set(pendingCartLineIds)
+  return carrito.map((item) => {
+    if (item.comandaStatus !== "pending") return item
+    const keys = commandableCartLineKeys(item, productosByKey)
+    if (keys.length === 0) return item
+    if (keys.some((key) => pending.has(key))) return item
+    return { ...item, comandaStatus: "sent" as const }
+  })
 }

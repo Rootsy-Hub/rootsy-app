@@ -19,12 +19,12 @@ type Props = {
   children: ReactNode
   /** home = 80px · module = 68px · dialog = alto por contenido. */
   size?: "home" | "module" | "dialog"
-  /** header = cielo · footer = tierra húmeda. */
+  /** header = éter · footer = suelo. */
   as?: "header" | "footer"
   className?: string
 }
 
-/** Cielo arriba, tierra abajo — el umbral del mundo Rootsy. */
+/** Éter arriba, suelo abajo — el umbral del mundo Rootsy. */
 export function MenuHeaderEntity({
   children,
   size = "home",

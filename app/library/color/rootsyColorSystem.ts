@@ -4,7 +4,14 @@
  * Contextos de pantalla: POS, workspace, marketing (hero), librería.
  */
 
-import { ROOTSY_COLOR_SEMANTIC, rootsyColorHex } from "@/lib/design-system"
+import {
+  ROOTSY_CIELO,
+  ROOTSY_COLOR_SEMANTIC,
+  ROOTSY_ETER,
+  ROOTSY_SOL,
+  ROOTSY_SUELO,
+  rootsyColorHex,
+} from "@/lib/design-system"
 
 const hx = rootsyColorHex
 const W = ROOTSY_COLOR_SEMANTIC.white
@@ -551,6 +558,43 @@ export const ROOTSY_COMPLEMENTARY_PAIRINGS: ComplementaryPairing[] = [
     accent: { label: "Rojo", hex: FUNCTIONAL.danger },
     harmony: "split",
     usage: "Pills y banners — no reutilizar en decoración.",
+  },
+  {
+    id: "clima-cielo-savia",
+    title: "Cielo + Savia",
+    description: "Bosque y cielo abierto — savia acciona, cielo informa sin caer en teal.",
+    primary: { label: "Savia 600", hex: hx("savia", "600") },
+    secondary: { label: "Cielo 500", hex: ROOTSY_CIELO["500"] },
+    harmony: "complementary",
+    usage: "Comandas lista vs enviada. Teal se queda en marketing.",
+  },
+  {
+    id: "clima-sol-sombra",
+    title: "Sol + Sombra",
+    description: "Sol a través del dosel — calor vivo, no ámbar de aviso.",
+    primary: { label: "Sombra 700", hex: hx("sombra", "700") },
+    secondary: { label: "Sol 500", hex: ROOTSY_SOL["500"] },
+    harmony: "complementary",
+    usage: "Preparando, calor de cocina. Warning ámbar se queda para alerta UX.",
+  },
+  {
+    id: "clima-comandas",
+    title: "Cielo + Sol + Savia",
+    description: "Mundos de comanda — enviada, preparando, lista.",
+    primary: { label: "Cielo 500", hex: ROOTSY_CIELO["500"] },
+    secondary: { label: "Sol 500", hex: ROOTSY_SOL["500"] },
+    accent: { label: "Savia 500", hex: hx("savia", "500") },
+    harmony: "split",
+    usage: "Headers de mundo en Comandas.",
+  },
+  {
+    id: "clima-eter-suelo",
+    title: "Éter + Suelo",
+    description: "Umbral del módulo — espacio arriba, tierra mojada abajo.",
+    primary: { label: "Éter 900", hex: ROOTSY_ETER["900"] },
+    secondary: { label: "Suelo 900", hex: ROOTSY_SUELO["900"] },
+    harmony: "complementary",
+    usage: "MenuHeaderEntity header / footer. Listados y menú.",
   },
 ]
 

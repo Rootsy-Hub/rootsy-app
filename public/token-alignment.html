@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Alineación UI — tokens y componentes Rootsy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --sombra-950: #050807; --sombra-900: #080c0b; --sombra-800: #0e1311;
+      --sombra-700: #151c19; --sombra-600: #1b2420; --sombra-500: #222b27;
+      --sombra-400: #5a6b63; --sombra-300: #8fa396;
+      --bruma-50: #f4f6f9; --bruma-100: #eef1f5; --bruma-200: #dfe4ea;
+      --bruma-300: #cbd5e1; --bruma-400: #94a3b8; --bruma-500: #64748b;
+      --bruma-600: #475569; --bruma-700: #334155; --bruma-900: #121417;
+      --savia-900: #064e3b; --savia-800: #065f46; --savia-700: #047857;
+      --savia-600: #059669; --savia-500: #10b981; --savia-400: #34d399;
+      --savia-300: #6ee7b7; --savia-200: #a7f3d0; --savia-100: #d1fae5; --savia-50: #ecfdf5;
+      --savia-teal: #14b8a6; --white: #fff;
+      --canopy-800: #0f5739; --canopy-700: #16704a; --canopy-600: #1e8f5a;
+      --canopy-400: #3fc87e; --canopy-100: #ddf5e8;
+      --earth-900: #292524; --earth-800: #44403c; --earth-700: #57534e;
+      --earth-600: #78716c; --earth-500: #a8a29e; --earth-400: #d6d3d1;
+      --earth-200: #e7e5e4; --earth-100: #f5f5f0; --earth-50: #fafaf7;
+      --suelo-950: #0a0c08; --suelo-900: #151810; --suelo-800: #24291e;
+      --suelo-700: #353b2c; --suelo-600: #464d3a; --suelo-400: #8f9782;
+      --suelo-300: #b6bda8; --suelo-50: #f1f2eb;
+      --sky-700: #0369a1; --sky-500: #0ea5e9; --sky-200: #bae6fd; --sky-100: #e0f2fe;
+      --autumn-800: #92400e; --autumn-600: #d97706; --autumn-200: #fde68a; --autumn-100: #fef3c7;
+      --cielo-800: #0a4574; --cielo-700: #0b5a98; --cielo-600: #0c72c2;
+      --cielo-500: #1286e8; --cielo-400: #45a6f2; --cielo-200: #a8d6fa;
+      --cielo-100: #d4ecfc; --cielo-50: #eaf6fe;
+      --sol-800: #7a4e08; --sol-700: #9c640a; --sol-600: #c98c0d;
+      --sol-500: #e8b10f; --sol-400: #f3c62e; --sol-200: #f8e17a;
+      --sol-100: #fbf3c6; --sol-50: #fdf8e8;
+      --warn: #d97706; --warn-text: #78350f; --danger: #dc2626; --info-text: #0f766e;
+      --oklch-bg: oklch(0.98 0.005 110);
+      --oklch-fg: oklch(0.25 0.03 150);
+      --oklch-card: oklch(0.995 0.002 110);
+      --oklch-muted: oklch(0.50 0.03 150);
+      --oklch-primary: oklch(0.55 0.14 155);
+      --oklch-border: oklch(0.88 0.025 130);
+      --oklch-accent: oklch(0.75 0.12 75);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Nunito Sans", sans-serif;
+      background: var(--sombra-950);
+      color: var(--bruma-100);
+      line-height: 1.45;
+    }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    .page { max-width: 1180px; margin: 0 auto; padding: 40px 24px 100px; }
+
+    .hero { margin-bottom: 36px; padding-bottom: 28px; border-bottom: 1px solid color-mix(in srgb, var(--sombra-400) 32%, transparent); }
+    .eyebrow { color: var(--savia-400); font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+    h1 { margin: 8px 0 12px; font-size: 30px; font-weight: 800; letter-spacing: -0.03em; color: #fff; }
+    .lede { max-width: 68ch; margin: 0; color: var(--sombra-300); font-size: 15px; }
+
+    .toc { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; margin-top: 24px; }
+    .toc a {
+      display: block; padding: 12px 14px; border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--sombra-400) 28%, transparent);
+      background: var(--sombra-900); color: inherit; text-decoration: none;
+    }
+    .toc a:hover { border-color: var(--savia-600); }
+    .toc strong { display: block; font-size: 13px; color: #fff; }
+    .toc span { display: block; margin-top: 4px; font-size: 12px; color: var(--sombra-300); }
+
+    .part { margin: 64px 0 0; }
+    .part > h2 { margin: 0 0 8px; font-size: 13px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--savia-400); }
+    .part > p { margin: 0 0 28px; color: var(--sombra-300); font-size: 14px; max-width: 72ch; }
+
+    .slice { margin: 0 0 40px; }
+    .slice h3 { margin: 0 0 6px; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .file { font-size: 12px; color: var(--sombra-300); margin: 0 0 14px; }
+    .file b { color: var(--bruma-200); font-weight: 600; }
+
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+    .go { background: color-mix(in srgb, var(--savia-500) 22%, transparent); color: var(--savia-300); }
+    .care { background: color-mix(in srgb, #f59e0b 18%, transparent); color: #fcd34d; }
+    .stop { background: color-mix(in srgb, #ef4444 18%, transparent); color: #fca5a5; }
+    .keep { background: color-mix(in srgb, #38bdf8 18%, transparent); color: #7dd3fc; }
+    .newtok { background: color-mix(in srgb, #a78bfa 20%, transparent); color: #c4b5fd; }
+
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 860px) { .pair { grid-template-columns: 1fr; } }
+    .col { border-radius: 16px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--sombra-400) 30%, transparent); background: var(--sombra-900); }
+    .col-head { display: flex; justify-content: space-between; gap: 10px; padding: 9px 14px; background: var(--sombra-800); font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+    .col-head em { font-style: normal; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--sombra-300); }
+    .stage { padding: 16px; }
+    .note { margin: 10px 0 0; font-size: 12px; color: var(--sombra-300); }
+
+    /* —— App chrome —— */
+    .module {
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+      color: var(--bruma-900);
+      box-shadow: 0 18px 40px -24px rgb(5 8 7 / 0.45);
+    }
+    .module-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      background: linear-gradient(180deg, var(--sombra-950), var(--sombra-800));
+      color: #fff; font-size: 13px; font-weight: 700;
+    }
+    .module-bar small { font-weight: 600; color: var(--sombra-300); }
+
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table th {
+      text-align: left; padding: 8px 12px;
+      background: var(--bruma-100); color: var(--bruma-600);
+      font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      border-bottom: 1px solid var(--bruma-200);
+    }
+    .table td { padding: 10px 12px; border-bottom: 1px solid var(--bruma-100); vertical-align: middle; }
+    .table tr:last-child td { border-bottom: 0; }
+    .cell-name { font-weight: 700; }
+    .cell-money { font-variant-numeric: tabular-nums; text-align: right; }
+
+    .pills { display: flex; flex-wrap: wrap; gap: 4px; }
+    .pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; border: 1px solid; line-height: 1; }
+    .pill-canopy { border-color: color-mix(in srgb, var(--canopy-400) 45%, transparent); background: var(--canopy-100); color: var(--canopy-800); }
+    .pill-canopy-solid { border-color: var(--canopy-800); background: var(--canopy-700); color: #fff; }
+    .pill-earth { border-color: var(--earth-400); background: var(--earth-100); color: var(--earth-800); }
+    .pill-earth-muted { border-color: var(--earth-400); background: var(--earth-100); color: var(--earth-700); }
+    .pill-savia { border-color: color-mix(in srgb, var(--savia-400) 45%, transparent); background: var(--savia-100); color: var(--savia-800); }
+    .pill-savia-solid { border-color: var(--savia-800); background: var(--savia-700); color: #fff; }
+    .pill-bruma { border-color: var(--bruma-300); background: var(--bruma-100); color: var(--bruma-700); }
+
+    .badge-shadcn {
+      display: inline-flex; align-items: center; border-radius: 8px;
+      padding: 2px 8px; font-size: 12px; font-weight: 400; border: 1px solid transparent;
+    }
+    .badge-secondary { background: oklch(0.94 0.02 110); color: oklch(0.30 0.05 150); }
+    .badge-default { background: var(--oklch-primary); color: #fff; }
+    .badge-outline { border-color: var(--oklch-border); color: var(--oklch-fg); background: #fff; }
+    .badge-savia-soft { background: var(--savia-100); color: var(--savia-800); border-color: color-mix(in srgb, var(--savia-400) 35%, transparent); }
+    .badge-bruma-soft { background: var(--bruma-100); color: var(--bruma-700); border-color: var(--bruma-300); }
+
+    /* Factura */
+    .form-card { background: var(--earth-50); color: var(--earth-900); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+    .form-card.new { background: var(--bruma-50); color: var(--bruma-900); }
+    .notice { border-radius: 10px; border: 1px solid; padding: 10px 12px; font-size: 13px; }
+    .notice strong { display: block; margin-bottom: 2px; }
+    .notice small { display: block; margin-top: 2px; font-size: 12px; opacity: 0.9; }
+    .notice-amber { border-color: color-mix(in srgb, #f59e0b 35%, transparent); background: #fffbeb; color: #451a03; }
+    .notice-earth { border-color: var(--earth-400); background: var(--earth-100); color: var(--earth-800); }
+    .notice-warn { border-color: color-mix(in srgb, var(--warn) 28%, var(--bruma-200)); background: color-mix(in srgb, var(--warn) 10%, #fff); color: var(--warn-text); }
+    .notice-muted { border-color: var(--bruma-300); background: var(--bruma-100); color: var(--bruma-700); }
+    .banner-roots {
+      display: flex; gap: 10px; align-items: flex-start;
+      border-radius: 12px; border: 1px solid; padding: 10px 12px; font-size: 13px;
+    }
+    .banner-roots .dot { width: 8px; height: 8px; border-radius: 99px; margin-top: 5px; flex: 0 0 auto; }
+    .file-row {
+      display: flex; align-items: center; gap: 10px;
+      border: 1px solid; border-radius: 10px; padding: 8px 10px; background: #fff; font-size: 13px;
+    }
+    .file-row .x { width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; cursor: default; }
+
+    .week { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .week button { height: 36px; border-radius: 8px; border: 1px solid; font: inherit; font-size: 11px; font-weight: 700; }
+    .w-on-old { border-color: color-mix(in srgb, var(--canopy-400) 45%, transparent); background: var(--canopy-100); color: var(--canopy-800); }
+    .w-off-old { border-color: #ddd; background: #f4f4f0; color: var(--earth-600); }
+    .w-on-new { border-color: color-mix(in srgb, var(--savia-400) 45%, transparent); background: var(--savia-100); color: var(--savia-800); }
+    .w-off-new { border-color: var(--bruma-200); background: var(--bruma-50); color: var(--bruma-500); }
+
+    /* Comandas */
+    .board { display: grid; grid-template-columns: repeat(4, 1fr); border-radius: 12px; overflow: hidden; }
+    .colh { height: 56px; display: flex; align-items: center; gap: 6px; padding: 0 10px; font-size: 12px; font-weight: 800; position: relative; }
+    .colh::before { content: ""; position: absolute; inset: 0; pointer-events: none; }
+    .cnt { position: relative; display: inline-flex; width: 18px; height: 18px; align-items: center; justify-content: center; border-radius: 99px; border: 1px solid; font-size: 10px; }
+    .sky { background: var(--sky-100); color: var(--sky-700); }
+    .sky::before { background: radial-gradient(ellipse 80% 90% at 16% -12%, var(--sky-200) 0%, transparent 70%); }
+    .aut { background: var(--autumn-100); color: var(--autumn-800); }
+    .aut::before { background: radial-gradient(ellipse 80% 90% at 16% -12%, var(--autumn-200) 0%, transparent 70%); }
+    .sv { background: var(--savia-50); color: var(--savia-800); }
+    .sv::before { background: radial-gradient(ellipse 80% 90% at 16% -12%, var(--savia-100) 0%, transparent 70%); }
+    .info { background: color-mix(in srgb, var(--savia-teal) 12%, #fff); color: var(--info-text); }
+    .warnh { background: color-mix(in srgb, var(--warn) 12%, #fff); color: var(--warn-text); }
+    .cielo { background: var(--cielo-100); color: var(--cielo-800); }
+    .cielo::before { background: radial-gradient(ellipse 80% 90% at 16% -12%, var(--cielo-200) 0%, transparent 70%); }
+    .sol { background: var(--sol-100); color: var(--sol-800); }
+    .sol::before { background: radial-gradient(ellipse 80% 90% at 16% -12%, var(--sol-200) 0%, transparent 70%); }
+
+    /* Menú */
+    .menu-dark { background: #070a09; border-radius: 12px; padding: 16px; }
+    .icons { display: flex; gap: 14px; }
+    .itile { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.16); font-size: 11px; font-weight: 800; }
+    .op-old { background: linear-gradient(to bottom right, var(--canopy-400), var(--canopy-600)); }
+    .op-new { background: linear-gradient(to bottom right, var(--savia-400), var(--savia-600)); }
+    .adm { background: linear-gradient(to bottom right, #22d3ee, #0e7490); }
+    .cfg { background: linear-gradient(to bottom right, #a78bfa, #6d28d9); }
+    .cap { margin: 6px 0 0; font-size: 10px; color: #8fa396; text-align: center; }
+    .floor { height: 72px; border-radius: 10px; margin-top: 14px; position: relative; }
+    .floor-old {
+      background: linear-gradient(180deg, color-mix(in srgb, var(--earth-900) 52%, var(--sombra-900)) 0%, color-mix(in srgb, var(--earth-900) 22%, var(--sombra-950)) 55%, #050807 100%);
+      border-top: 1px solid color-mix(in srgb, var(--earth-800) 28%, transparent);
+    }
+    .floor-keep {
+      background: linear-gradient(180deg, color-mix(in srgb, var(--earth-900) 52%, var(--sombra-900)) 0%, color-mix(in srgb, var(--earth-900) 22%, var(--sombra-950)) 55%, #050807 100%);
+      border-top: 1px solid color-mix(in srgb, var(--earth-800) 28%, transparent);
+    }
+    .floor span { position: absolute; left: 12px; bottom: 10px; font-size: 11px; font-weight: 700; color: rgb(255 255 255 / 0.72); }
+
+    /* Modales */
+    .dlg-scrim { background: rgb(5 8 7 / 0.18); border-radius: 14px; padding: 18px; }
+    .dlg-old {
+      background: var(--oklch-card); color: var(--oklch-fg);
+      border: 1px solid var(--oklch-border); border-radius: 12px; padding: 20px;
+      box-shadow: 0 22px 50px -20px rgb(0 0 0 / 0.25);
+    }
+    .dlg-old h4 { margin: 0 0 8px; font-size: 16px; }
+    .dlg-old p { margin: 0 0 14px; font-size: 13px; color: var(--oklch-muted); }
+    .dlg-old .err { border-radius: 8px; border: 1px solid rgb(220 38 38 / 0.25); background: rgb(220 38 38 / 0.05); color: #dc2626; padding: 8px 10px; font-size: 13px; margin-bottom: 10px; }
+    .btns { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn { appearance: none; border: 0; border-radius: 8px; height: 36px; padding: 0 14px; font: inherit; font-size: 13px; font-weight: 600; cursor: default; }
+    .btn-outline { border: 1px solid var(--oklch-border); background: #fff; color: var(--oklch-fg); }
+    .btn-dest { background: #dc2626; color: #fff; }
+    .btn-primary-oklch { background: var(--oklch-primary); color: #fff; }
+
+    .dlg-new {
+      background: #fff; color: var(--bruma-900); border: 0; border-radius: 16px;
+      box-shadow: 0 22px 70px -18px rgb(5 8 7 / 0.28); overflow: hidden;
+    }
+    .dlg-new .hd { padding: 16px 16px 8px; }
+    .dlg-new h4 { margin: 0; font-size: 16px; font-weight: 700; }
+    .dlg-new .bd { padding: 0 16px 12px; font-size: 13px; color: var(--bruma-500); }
+    .dlg-new .ft { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; background: var(--bruma-50); }
+    .btn-subtle { background: transparent; color: var(--bruma-700); height: 40px; border-radius: 8px; }
+    .btn-danger { background: #dc2626; color: #fff; height: 40px; border-radius: 8px; font-weight: 700; }
+    .btn-savia { background: var(--savia-600); color: #fff; height: 40px; border-radius: 8px; font-weight: 700; box-shadow: 0 1px 2px rgb(5 8 7 / 0.08); }
+
+    .shadcn-field { display: grid; gap: 4px; }
+    .shadcn-field label { font-size: 13px; font-weight: 600; }
+    .shadcn-field input {
+      height: 36px; border-radius: 8px; border: 1px solid var(--oklch-border);
+      padding: 0 10px; font: inherit; background: #fff; color: var(--oklch-fg);
+    }
+    .roots-field { display: grid; gap: 6px; }
+    .roots-field label { font-size: 12px; font-weight: 700; color: var(--bruma-600); }
+    .roots-field input {
+      height: 40px; border-radius: 8px; border: 1px solid #dfe4ea;
+      padding: 0 12px; font: inherit; background: #fff; color: #121417;
+    }
+
+    .token-chip { display: inline-block; margin-top: 6px; font-size: 11px; color: var(--sombra-300); }
+
+    .triple { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    @media (max-width: 1080px) { .triple { grid-template-columns: 1fr; } }
+
+    .floor-band {
+      position: relative;
+      overflow: hidden;
+      border-radius: 0 0 12px 12px;
+    }
+    .floor-earth {
+      background: linear-gradient(180deg,
+        color-mix(in srgb, #292524 52%, #080c0b) 0%,
+        color-mix(in srgb, #292524 22%, #050807) 55%,
+        color-mix(in srgb, #061009 38%, #050807) 100%);
+      border-top: 1px solid color-mix(in srgb, #44403c 28%, transparent);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, #57534e 14%, transparent),
+        inset 0 18px 36px color-mix(in srgb, #022c22 22%, transparent);
+    }
+    .floor-sombra {
+      background: linear-gradient(180deg, #050807 0%, #080c0b 55%, #0e1311 100%);
+      border-top: 1px solid color-mix(in srgb, #2a3530 50%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #5a6b63 12%, transparent);
+    }
+    .floor-suelo {
+      background: linear-gradient(180deg,
+        color-mix(in srgb, var(--suelo-900) 56%, var(--sombra-900)) 0%,
+        color-mix(in srgb, var(--suelo-900) 28%, var(--sombra-950)) 52%,
+        color-mix(in srgb, var(--savia-900) 22%, var(--sombra-950)) 100%);
+      border-top: 1px solid color-mix(in srgb, var(--suelo-700) 32%, transparent);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--suelo-400) 14%, transparent),
+        inset 0 18px 36px color-mix(in srgb, #022c22 26%, transparent);
+    }
+    .tbl-preview { border-radius: 12px; overflow: hidden; background: #fff; }
+    .tbl-preview .thead {
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      padding: 8px 14px; background: #eef1f5; color: #475569;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .tbl-preview .trow {
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      padding: 10px 14px; font-size: 13px; color: #121417; border-top: 1px solid #eef1f5;
+    }
+    .tbl-foot {
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      align-items: center; gap: 12px; padding: 12px 16px; min-height: 64px;
+    }
+    .tbl-foot .muted { font-size: 13px; }
+    .tbl-foot .strong { font-weight: 700; }
+    .tbl-foot .nav { display: flex; gap: 6px; align-items: center; }
+    .tbl-foot .ib {
+      width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center;
+      border: 1px solid transparent; font-size: 14px;
+    }
+    .foot-earth .muted { color: color-mix(in srgb, #f5f5f0 78%, #d6d3d1); }
+    .foot-earth .strong { color: #fafaf7; }
+    .foot-earth .ib { color: color-mix(in srgb, #fff 72%, #8fa396); }
+    .foot-sombra .muted { color: #8fa396; }
+    .foot-sombra .strong { color: #f4f8f6; }
+    .foot-sombra .ib { color: color-mix(in srgb, #fff 70%, #8fa396); }
+    .foot-suelo .muted { color: color-mix(in srgb, var(--suelo-50) 72%, var(--suelo-400)); }
+    .foot-suelo .strong { color: var(--suelo-50); }
+    .foot-suelo .ib { color: color-mix(in srgb, var(--suelo-50) 78%, var(--suelo-300)); }
+
+    .tbx { padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-height: 108px; }
+    @media (min-width: 520px) { .tbx { grid-template-columns: repeat(4, 1fr); } }
+    .slot {
+      display: flex; align-items: center; gap: 10px;
+      border: 0; border-radius: 12px; padding: 8px 10px; min-height: 72px;
+      text-align: left; font: inherit; cursor: default;
+      transform: translateY(-1px);
+    }
+    .slot-ic {
+      width: 40px; height: 40px; border-radius: 8px;
+      display: grid; place-items: center; font-size: 11px; font-weight: 800; flex: 0 0 auto;
+    }
+    .slot-lab { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .slot-val { display: block; font-size: 13px; font-weight: 700; }
+    .slot-earth {
+      background: linear-gradient(180deg, color-mix(in srgb, #57534e 46%, #080c0b) 0%, color-mix(in srgb, #44403c 34%, #050807) 100%);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, #d6d3d1 16%, transparent),
+        0 2px 0 color-mix(in srgb, #292524 55%, #050807),
+        0 7px 16px color-mix(in srgb, #050807 48%, transparent);
+    }
+    .slot-earth .slot-ic { background: color-mix(in srgb, #292524 58%, #050807); color: color-mix(in srgb, #d6d3d1 72%, transparent); }
+    .slot-earth .slot-lab { color: color-mix(in srgb, #d6d3d1 48%, transparent); }
+    .slot-earth .slot-val { color: color-mix(in srgb, #d6d3d1 62%, transparent); }
+    .slot-sprout {
+      background: linear-gradient(168deg, color-mix(in srgb, #10b981 58%, #44403c) 0%, color-mix(in srgb, #059669 50%, #080c0b) 52%, color-mix(in srgb, #065f46 40%, #292524) 100%);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, #6ee7b7 14%, transparent),
+        0 2px 0 color-mix(in srgb, #065f46 42%, #050807),
+        0 8px 18px color-mix(in srgb, #050807 40%, transparent);
+    }
+    .slot-sprout .slot-ic {
+      background: linear-gradient(168deg, #34d399 0%, #10b981 48%, #047857 100%);
+      color: #ecfdf5;
+    }
+    .slot-sprout .slot-lab { color: color-mix(in srgb, #a7f3d0 86%, #ecfdf5); }
+    .slot-sprout .slot-val { color: color-mix(in srgb, #ecfdf5 92%, #d1fae5); }
+    .slot-sombra {
+      background: linear-gradient(180deg, #1b2420 0%, #080c0b 100%);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent), 0 4px 12px rgb(5 8 7 / 0.4);
+    }
+    .slot-sombra .slot-ic { background: #151c19; color: #8fa396; }
+    .slot-sombra .slot-lab { color: #5a6b63; }
+    .slot-sombra .slot-val { color: #8fa396; }
+    .slot-sombra-on {
+      background: linear-gradient(168deg, color-mix(in srgb, #10b981 50%, #151c19) 0%, #047857 100%);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, #6ee7b7 16%, transparent);
+    }
+    .slot-sombra-on .slot-ic { background: #059669; color: #ecfdf5; }
+    .slot-sombra-on .slot-lab { color: #a7f3d0; }
+    .slot-sombra-on .slot-val { color: #ecfdf5; }
+    .slot-suelo {
+      background: linear-gradient(180deg,
+        color-mix(in srgb, var(--suelo-700) 52%, var(--sombra-900)) 0%,
+        color-mix(in srgb, var(--suelo-800) 40%, var(--sombra-950)) 100%);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--suelo-400) 18%, transparent),
+        0 2px 0 color-mix(in srgb, var(--suelo-900) 62%, var(--sombra-950)),
+        0 7px 16px color-mix(in srgb, var(--sombra-950) 48%, transparent);
+    }
+    .slot-suelo .slot-ic { background: color-mix(in srgb, var(--suelo-900) 62%, var(--sombra-950)); color: color-mix(in srgb, var(--suelo-400) 78%, transparent); }
+    .slot-suelo .slot-lab { color: color-mix(in srgb, var(--suelo-400) 52%, transparent); }
+    .slot-suelo .slot-val { color: color-mix(in srgb, var(--suelo-300) 68%, transparent); }
+    .slot-sprout-suelo {
+      background: linear-gradient(168deg,
+        color-mix(in srgb, var(--savia-500) 58%, var(--suelo-800)) 0%,
+        color-mix(in srgb, var(--savia-600) 50%, var(--sombra-900)) 52%,
+        color-mix(in srgb, var(--savia-800) 40%, var(--suelo-900)) 100%);
+      box-shadow:
+        inset 0 1px 0 color-mix(in srgb, var(--savia-300) 16%, transparent),
+        0 2px 0 color-mix(in srgb, var(--savia-800) 42%, var(--sombra-950)),
+        0 8px 18px color-mix(in srgb, var(--sombra-950) 40%, transparent);
+    }
+    .slot-sprout-suelo .slot-ic {
+      background: linear-gradient(168deg, var(--savia-400) 0%, var(--savia-500) 48%, var(--savia-700) 100%);
+      color: var(--savia-50);
+    }
+    .slot-sprout-suelo .slot-lab { color: color-mix(in srgb, var(--savia-200) 86%, var(--savia-50)); }
+    .slot-sprout-suelo .slot-val { color: color-mix(in srgb, var(--savia-50) 92%, var(--savia-100)); }
+    .ramp-row { display: flex; gap: 4px; margin-top: 10px; }
+    .ramp-row i {
+      flex: 1; height: 32px; border-radius: 6px;
+      display: grid; place-items: end start;
+      padding: 3px 5px;
+      font-size: 8px; font-weight: 800; font-style: normal; letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.72);
+    }
+
+    .rec { margin-top: 14px; padding: 14px 16px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--savia-500) 28%, transparent); background: color-mix(in srgb, var(--savia-900) 35%, var(--sombra-900)); }
+    .rec strong { color: var(--savia-300); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <p class="eyebrow">Preview · no cambia el producto</p>
+      <h1>UI de producto: tokens y componentes</h1>
+      <p class="lede">
+        Izquierda: cómo está hoy. Derecha: cómo quedaría con la paleta sombra / bruma / savia
+        y con los componentes de <span class="mono">/library</span>
+        (RootsDialog, RootsForm, RootsBanner, RootsNaturePill, RootsButton).
+        Si el mapeo no existe, lo marco como token nuevo a generar.
+      </p>
+      <nav class="toc">
+        <a href="#articulos"><strong>Artículos · pills</strong><span>canopy / earth → savia / bruma</span></a>
+        <a href="#servicios"><strong>Servicios · Badge shadcn</strong><span>Componente viejo + primary oklch</span></a>
+        <a href="#facturas"><strong>Emitir factura</strong><span>Aviso ad hoc · earth vs banner</span></a>
+        <a href="#promos"><strong>Promos · días</strong><span>Botones canopy vs savia</span></a>
+        <a href="#comandas"><strong>Comandas</strong><span>Cielo + sol — climas nuevos</span></a>
+        <a href="#inventario"><strong>Inventario · borrar</strong><span>Dialog shadcn vs RootsConfirm</span></a>
+        <a href="#tesoreria"><strong>Tesorería · form</strong><span>Input/Label/Button vs RootsForm</span></a>
+        <a href="#menu"><strong>Menú POP</strong><span>Operar sí · piso se queda</span></a>
+        <a href="#suelo"><strong>Suelo · footer + toolbox</strong><span>Tierra mojada adaptada a la paleta</span></a>
+        <a href="#hecho"><strong>Hecho en producto</strong><span>Componentes migrados hoy</span></a>
+      </nav>
+    </header>
+
+    <div class="part">
+      <h2>Parte 1 · Tokens en UI real</h2>
+      <p>Mismas piezas del producto. El cambio es de color (y a veces de componente, si el actual no es de la librería).</p>
+
+      <section class="slice" id="articulos">
+        <div class="meta">
+          <h3>Artículos — estado y descuento</h3>
+          <span class="badge go">token existe</span>
+        </div>
+        <p class="file"><b>Hoy</b> <span class="mono">articlesTableCells.tsx</span> · <span class="mono">RootsNaturePill canopy / earth</span> · <span class="mono">ArticleCatalogDiscountBadge</span></p>
+        <div class="pair">
+          <article class="col">
+            <div class="col-head">Hoy <em>--nature-canopy · --nature-earth</em></div>
+            <div class="stage">
+              <div class="module">
+                <div class="module-bar">Artículos <small>tabla workspace</small></div>
+                <table class="table">
+                  <thead><tr><th>Artículo</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td class="cell-name">Espresso doble</td>
+                      <td>
+                        <div class="pills">
+                          <span class="pill pill-canopy">Activo</span>
+                          <span class="pill pill-earth">Mercadería vendible</span>
+                          <span class="pill pill-canopy-solid">−15%</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="cell-name">Medialuna</td>
+                      <td><span class="pill pill-earth-muted">Inactivo</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="token-chip">También recetas, promos, cheques, Cuentas Corrientes, Mercado Pago.</p>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Propuesto <em>savia-100/700 · bruma-100/700</em></div>
+            <div class="stage">
+              <div class="module">
+                <div class="module-bar">Artículos <small>mismo RootsNaturePill</small></div>
+                <table class="table">
+                  <thead><tr><th>Artículo</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td class="cell-name">Espresso doble</td>
+                      <td>
+                        <div class="pills">
+                          <span class="pill pill-savia">Activo</span>
+                          <span class="pill pill-bruma">Mercadería vendible</span>
+                          <span class="pill pill-savia-solid">−15%</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="cell-name">Medialuna</td>
+                      <td><span class="pill pill-bruma">Inactivo</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="token-chip">No hace falta token nuevo. El componente ya es de librería; solo cambian las variantes canopy/earth.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="slice" id="servicios">
+        <div class="meta">
+          <h3>Servicios — Badge de shadcn</h3>
+          <span class="badge care">componente viejo</span>
+          <span class="badge go">token existe</span>
+        </div>
+        <p class="file"><b>Hoy</b> <span class="mono">ServicesWorkspaceView.tsx</span> usa <span class="mono">Badge</span> de <span class="mono">components/ui/badge</span> (primary oklch / secondary crema). Librería: <span class="mono">RootsNaturePill</span>.</p>
+        <div class="pair">
+          <article class="col">
+            <div class="col-head">Hoy <em>Badge default / secondary / outline</em></div>
+            <div class="stage">
+              <div class="module">
+                <div class="module-bar">Servicios <small>periodo · activo</small></div>
+                <table class="table">
+                  <thead><tr><th>Servicio</th><th>Periodo</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td class="cell-name">Membresía mensual</td>
+                      <td><span class="badge-shadcn badge-secondary">Mensual</span></td>
+                      <td><span class="badge-shadcn badge-default">Activo</span></td>
+                    </tr>
+                    <tr>
+                      <td class="cell-name">Clase suelta</td>
+                      <td><span class="badge-shadcn badge-secondary">Único</span></td>
+                      <td><span class="badge-shadcn badge-outline">Inactivo</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Propuesto <em>RootsNaturePill savia / bruma</em></div>
+            <div class="stage">
+              <div class="module">
+                <div class="module-bar">Servicios <small>igual que artículos</small></div>
+                <table class="table">
+                  <thead><tr><th>Servicio</th><th>Periodo</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td class="cell-name">Membresía mensual</td>
+                      <td><span class="pill pill-bruma">Mensual</span></td>
+                      <td><span class="pill pill-savia">Activo</span></td>
+                    </tr>
+                    <tr>
+                      <td class="cell-name">Clase suelta</td>
+                      <td><span class="pill pill-bruma">Único</span></td>
+                      <td><span class="pill pill-bruma">Inactivo</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="token-chip">Proveedores también usa Badge shadcn. Mismo reemplazo.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="slice" id="facturas">
+        <div class="meta">
+          <h3>Emitir factura — avisos y archivo</h3>
+          <span class="badge care">componente ad hoc</span>
+          <span class="badge go">warning ya existe</span>
+        </div>
+        <p class="file"><b>Hoy</b> <span class="mono">InvoiceComposeFormFields.tsx</span> · <span class="mono">StatusNotice</span> local (amber Tailwind + earth) · íconos <span class="mono">--nature-earth-*</span>. Librería: <span class="mono">RootsBanner</span> + <span class="mono">RootsForm</span>.</p>
+        <div class="pair">
+          <article class="col">
+            <div class="col-head">Hoy <em>amber-50 · earth-100 · earth-600</em></div>
+            <div class="stage">
+              <div class="form-card">
+                <div class="notice notice-amber">
+                  <strong>No hay sesión de caja abierta</strong>
+                  <small>Abrí una sesión en Cajas para este punto de venta.</small>
+                </div>
+                <div class="notice notice-earth">
+                  <strong>Sin permiso</strong>
+                  <small>No tenés permiso para emitir facturas en este punto de venta.</small>
+                </div>
+                <div class="file-row" style="border-color:#e7e5e4;color:#292524">
+                  <span style="color:#78716c">▣</span>
+                  <span style="flex:1">homologacion.crt</span>
+                  <button class="x" type="button" style="color:#57534e">✕</button>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Propuesto <em>--color-status-warning · bruma · RootsBanner</em></div>
+            <div class="stage">
+              <div class="form-card new">
+                <div class="banner-roots notice-warn">
+                  <span class="dot" style="background:var(--warn)"></span>
+                  <div>
+                    <strong>No hay sesión de caja abierta</strong>
+                    <small>Abrí una sesión en Cajas para este punto de venta.</small>
+                  </div>
+                </div>
+                <div class="banner-roots notice-muted">
+                  <span class="dot" style="background:var(--bruma-400)"></span>
+                  <div>
+                    <strong>Sin permiso</strong>
+                    <small>No tenés permiso para emitir facturas en este punto de venta.</small>
+                  </div>
+                </div>
+                <div class="file-row" style="border-color:#dfe4ea;color:#121417">
+                  <span style="color:#64748b">▣</span>
+                  <span style="flex:1">homologacion.crt</span>
+                  <button class="x" type="button" style="color:#475569">✕</button>
+                </div>
+              </div>
+              <p class="token-chip">Aviso: #D97706 / #78350F ya están en la paleta funcional. Neutro: bruma, no hay que inventar tierra.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="slice" id="promos">
+        <div class="meta">
+          <h3>Promos — días de la semana</h3>
+          <span class="badge go">token existe</span>
+        </div>
+        <p class="file"><b>Hoy</b> <span class="mono">PromotionUpsertFormFields.tsx</span> · botones nativos con canopy. El form ya es RootsForm; el chip checked no.</p>
+        <div class="pair">
+          <article class="col">
+            <div class="col-head">Hoy <em>--nature-canopy-400/100/800</em></div>
+            <div class="stage">
+              <div class="form-card">
+                <div style="font-size:12px;font-weight:700;color:#78716c;margin-bottom:8px">Días de la semana</div>
+                <div class="week">
+                  <button class="w-on-old" type="button">Lun</button>
+                  <button class="w-on-old" type="button">Mar</button>
+                  <button class="w-off-old" type="button">Mié</button>
+                  <button class="w-off-old" type="button">Jue</button>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Propuesto <em>savia-400/100/800</em></div>
+            <div class="stage">
+              <div class="form-card new">
+                <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">Días de la semana</div>
+                <div class="week">
+                  <button class="w-on-new" type="button">Lun</button>
+                  <button class="w-on-new" type="button">Mar</button>
+                  <button class="w-off-new" type="button">Mié</button>
+                  <button class="w-off-new" type="button">Jue</button>
+                </div>
+              </div>
+              <p class="token-chip">Misma pieza, otro verde. No hace falta componente nuevo si el patrón de “chip pressed” no está en la librería.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="slice" id="comandas">
+        <div class="meta">
+          <h3>Comandas — headers de mundo</h3>
+          <span class="badge keep">clima</span>
+          <span class="badge go">cielo + sol</span>
+        </div>
+        <p class="file"><b>Hoy</b> <span class="mono">comandaStatusWorlds.ts</span>. Lista/entregada ya son savia. Enviada = sky Tailwind. Preparando = autumn (casi warning). La tercera columna adapta esos climas a <span class="mono">--rootsy-cielo-*</span> y <span class="mono">--rootsy-sol-*</span>.</p>
+        <div class="triple">
+          <article class="col">
+            <div class="col-head">Hoy <em>sky · autumn · savia</em></div>
+            <div class="stage">
+              <div class="board">
+                <div class="colh sky"><span>Enviada</span><span class="cnt" style="border-color:#bae6fd;background:#e0f2fe">3</span></div>
+                <div class="colh aut"><span>Preparando</span><span class="cnt" style="border-color:#fde68a;background:#fef3c7">2</span></div>
+                <div class="colh sv"><span>Lista</span><span class="cnt" style="border-color:#d1fae5;background:#ecfdf5">1</span></div>
+                <div class="colh sv"><span>Entregada</span><span class="cnt" style="border-color:#a7f3d0;background:#d1fae5">4</span></div>
+              </div>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Si se fuerza paleta <em>info teal · warning</em></div>
+            <div class="stage">
+              <div class="board">
+                <div class="colh info"><span>Enviada</span><span class="cnt" style="border-color:#99f6e4;background:#ccfbf1">3</span></div>
+                <div class="colh warnh"><span>Preparando</span><span class="cnt" style="border-color:#fde68a;background:#fffbeb">2</span></div>
+                <div class="colh sv"><span>Lista</span><span class="cnt" style="border-color:#d1fae5;background:#ecfdf5">1</span></div>
+                <div class="colh sv"><span>Entregada</span><span class="cnt" style="border-color:#a7f3d0;background:#d1fae5">4</span></div>
+              </div>
+              <p class="token-chip">Enviada en teal deja de ser cielo. Preparando se mezcla con aviso UX.</p>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Lo que yo haría <em>cielo vivo + sol</em></div>
+            <div class="stage">
+              <div class="board">
+                <div class="colh cielo"><span>Enviada</span><span class="cnt" style="border-color:#a8d6fa;background:#eaf6fe">3</span></div>
+                <div class="colh sol"><span>Preparando</span><span class="cnt" style="border-color:#f8e17a;background:#fdf8e8">2</span></div>
+                <div class="colh sv"><span>Lista</span><span class="cnt" style="border-color:#d1fae5;background:#ecfdf5">1</span></div>
+                <div class="colh sv"><span>Entregada</span><span class="cnt" style="border-color:#a7f3d0;background:#d1fae5">4</span></div>
+              </div>
+              <div class="ramp-row" aria-label="Rampas cielo y sol">
+                <i style="background:#0a4574">c800</i>
+                <i style="background:#1286e8">c500</i>
+                <i style="background:#45a6f2">c400</i>
+                <i style="background:#d4ecfc;color:#0a4574">c100</i>
+                <i style="background:#7a4e08">s800</i>
+                <i style="background:#e8b10f;color:#7a4e08">s500</i>
+                <i style="background:#f3c62e;color:#7a4e08">s400</i>
+                <i style="background:#fbf3c6;color:#7a4e08">s100</i>
+              </div>
+              <p class="token-chip">Cerúleo de siesta + sol a través del dosel. Savia no se toca. Warning ámbar se queda para alerta.</p>
+            </div>
+          </article>
+        </div>
+        <div class="rec">
+          <strong>Recomendación.</strong>
+          No reciclar sky Tailwind ni forzar teal/warning.
+          Sumar <span class="mono">--rootsy-cielo-*</span>
+          (<span class="mono">500 #1286E8</span>) y
+          <span class="mono">--rootsy-sol-*</span>
+          (<span class="mono">500 #E8B10F</span>)
+          como climas complementarios — ya están en paleta y en
+          <span class="mono">/library</span> → Complementarios.
+          Info teal y warning ámbar no se pisan: son semántica UX, no mundos.
+        </div>
+      </section>
+    </div>
+
+    <div class="part">
+      <h2>Parte 2 · Componentes que no son de la librería</h2>
+      <p>
+        Acá el problema no es solo el color: el bloque está armado con primitivos shadcn
+        (<span class="mono">Dialog</span>, <span class="mono">Button</span>, <span class="mono">Input</span>, <span class="mono">Badge</span>, <span class="mono">Label</span>)
+        o con HTML suelto, en vez de RootsDialog / RootsForm / RootsBanner / RootsButton.
+      </p>
+
+      <section class="slice" id="inventario">
+        <div class="meta">
+          <h3>Inventario — ¿Eliminar movimiento?</h3>
+          <span class="badge stop">Dialog + Button shadcn</span>
+        </div>
+        <p class="file"><b>Hoy</b> <span class="mono">InventoryDeleteMovementDialog.tsx</span> · <span class="mono">data-rootsy-light-shell</span> (tema oklch) · <span class="mono">Button outline / destructive</span>. Referencia buena: <span class="mono">PrinterUpsertDialog</span> / <span class="mono">RootsConfirmDialog</span>.</p>
+        <div class="pair">
+          <article class="col">
+            <div class="col-head">Hoy <em>ui/dialog · ui/button · oklch</em></div>
+            <div class="stage">
+              <div class="dlg-scrim">
+                <div class="dlg-old">
+                  <h4>¿Eliminar movimiento?</h4>
+                  <div class="err">No se pudo borrar. Reintentá.</div>
+                  <p>Se borra del libro y el saldo se recalcula. Usalo solo para correcciones.</p>
+                  <div class="btns">
+                    <button class="btn btn-outline" type="button">Cancelar</button>
+                    <button class="btn btn-dest" type="button">Eliminar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Librería <em>RootsConfirmDialog · RootsDanger / Subtle</em></div>
+            <div class="stage">
+              <div class="dlg-scrim">
+                <div class="dlg-new">
+                  <div class="hd"><h4>¿Eliminar movimiento?</h4></div>
+                  <div class="bd">Se borra del libro y el saldo se recalcula. Usalo solo para correcciones.</div>
+                  <div class="ft">
+                    <button class="btn btn-subtle" type="button">Cancelar</button>
+                    <button class="btn btn-danger" type="button">Eliminar</button>
+                  </div>
+                </div>
+              </div>
+              <p class="token-chip">Mismo patrón en preview de artículo, varios filters dialog, PaymentMethodDialog, tesorería.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="slice" id="tesoreria">
+        <div class="meta">
+          <h3>Tesorería — form shadcn vs RootsForm</h3>
+          <span class="badge stop">Input · Label · Button</span>
+        </div>
+        <p class="file"><b>Hoy</b> <span class="mono">TreasuryReconcileModal.tsx</span> / <span class="mono">TreasuryAccountDetailView.tsx</span> · <span class="mono">Field</span>, <span class="mono">Input</span>, <span class="mono">Label</span>, <span class="mono">Button</span>. Impresoras ya usa RootsForm + RootsDialog.</p>
+        <div class="pair">
+          <article class="col">
+            <div class="col-head">Hoy <em>primitivos ui/* · primary oklch</em></div>
+            <div class="stage">
+              <div class="dlg-scrim">
+                <div class="dlg-old">
+                  <h4>Conciliar movimiento</h4>
+                  <div class="shadcn-field" style="margin-bottom:12px">
+                    <label>Referencia</label>
+                    <input value="Transferencia Galicia" readonly />
+                  </div>
+                  <div class="btns">
+                    <button class="btn btn-outline" type="button">Cancelar</button>
+                    <button class="btn btn-primary-oklch" type="button">Guardar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Librería <em>RootsFormTextField · RootsPrimaryButton</em></div>
+            <div class="stage">
+              <div class="dlg-scrim">
+                <div class="dlg-new">
+                  <div class="hd"><h4>Conciliar movimiento</h4></div>
+                  <div class="bd">
+                    <div class="roots-field">
+                      <label>Referencia</label>
+                      <input value="Transferencia Galicia" readonly />
+                    </div>
+                  </div>
+                  <div class="ft">
+                    <button class="btn btn-subtle" type="button">Cancelar</button>
+                    <button class="btn btn-savia" type="button">Guardar</button>
+                  </div>
+                </div>
+              </div>
+              <p class="token-chip">El primary deja de ser forest oklch y pasa a savia-600 — el botón de librería ya lo trae.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="slice" id="menu">
+        <div class="meta">
+          <h3>Menú POP — icono Operar vs piso</h3>
+          <span class="badge care">por capa</span>
+        </div>
+        <p class="file"><b>Hoy</b> <span class="mono">menuNatureStyles.ts</span> · <span class="mono">menuHeaderEntityStyles.ts</span>. Administrar/Configurar (mar, dusk) no tienen familia en la paleta nueva y no hace falta.</p>
+        <div class="pair">
+          <article class="col">
+            <div class="col-head">Hoy</div>
+            <div class="stage">
+              <div class="menu-dark">
+                <div class="icons">
+                  <div><div class="itile op-old">OP</div><p class="cap">canopy</p></div>
+                  <div><div class="itile adm">AD</div><p class="cap">mar · se queda</p></div>
+                  <div><div class="itile cfg">CF</div><p class="cap">dusk · se queda</p></div>
+                </div>
+                <div class="floor floor-old"><span>Piso tierra húmeda</span></div>
+              </div>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Propuesto <em>solo Operar → savia</em></div>
+            <div class="stage">
+              <div class="menu-dark">
+                <div class="icons">
+                  <div><div class="itile op-new">OP</div><p class="cap">savia-400→600</p></div>
+                  <div><div class="itile adm">AD</div><p class="cap">igual</p></div>
+                  <div><div class="itile cfg">CF</div><p class="cap">igual</p></div>
+                </div>
+                <div class="floor floor-keep"><span>Piso sin tocar</span></div>
+              </div>
+              <p class="token-chip">No generar “earth” ni “night” en la paleta nueva. El piso ya mezcla earth con sombra; rediseñarlo es otro ticket.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <div class="part" id="suelo">
+      <h2>Suelo compartido · footer de tablas + toolbox de operar</h2>
+      <p>
+        No es un leftover de formularios: es el mismo chrome
+        <span class="mono">ROOTSY_LAYOUTS_EARTH_FLOOR</span>
+        — “tierra empapada”. Lo usan el pie de listados densos
+        (Clientes, Artículos, …) y la banda toolbox de Vender / Mesas / Mostrador / Comprar.
+        Hoy el barro es stone Tailwind (#292524). Sombra sola es bosque frío.
+        La tercera columna adapta el concepto a una rampa nueva
+        <span class="mono">--rootsy-suelo-*</span> — humus oliva que dialoga con sombra y savia.
+      </p>
+
+      <section class="slice">
+        <div class="meta">
+          <h3>Footer del layout de tablas</h3>
+          <span class="badge keep">clima de piso</span>
+        </div>
+        <p class="file"><b>Hoy</b> <span class="mono">rootsyLayoutsEarthFloor.ts</span> + textos <span class="mono">layoutsTablesFooterCountTextClass</span> (earth-50/100/400). Superficie vía <span class="mono">MenuHeaderEntity as=footer</span>.</p>
+        <div class="triple">
+          <article class="col">
+            <div class="col-head">Hoy <em>earth-900 bajo sombra + savia-990</em></div>
+            <div class="stage" style="padding:12px">
+              <div class="tbl-preview">
+                <div class="thead"><span>Cliente</span><span>Saldo</span><span>Estado</span></div>
+                <div class="trow"><span>Bar La Perla</span><span>$ 42.300</span><span>Al día</span></div>
+                <div class="trow"><span>Almacén Sur</span><span>$ 8.110</span><span>Al día</span></div>
+                <div class="tbl-foot floor-band floor-earth foot-earth">
+                  <span class="muted">1–20 de <span class="strong">184</span></span>
+                  <span class="nav"><span class="ib">‹</span><span class="strong">2</span><span class="ib">›</span></span>
+                  <span class="muted" style="text-align:right">20 / pág</span>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Si se fuerza paleta <em>solo sombra</em></div>
+            <div class="stage" style="padding:12px">
+              <div class="tbl-preview">
+                <div class="thead"><span>Cliente</span><span>Saldo</span><span>Estado</span></div>
+                <div class="trow"><span>Bar La Perla</span><span>$ 42.300</span><span>Al día</span></div>
+                <div class="trow"><span>Almacén Sur</span><span>$ 8.110</span><span>Al día</span></div>
+                <div class="tbl-foot floor-band floor-sombra foot-sombra">
+                  <span class="muted">1–20 de <span class="strong">184</span></span>
+                  <span class="nav"><span class="ib">‹</span><span class="strong">2</span><span class="ib">›</span></span>
+                  <span class="muted" style="text-align:right">20 / pág</span>
+                </div>
+              </div>
+              <p class="token-chip">Se pierde el barro. Queda chrome de header (universo), no suelo.</p>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Lo que yo haría <em>--rootsy-suelo-* oliva</em></div>
+            <div class="stage" style="padding:12px">
+              <div class="tbl-preview">
+                <div class="thead"><span>Cliente</span><span>Saldo</span><span>Estado</span></div>
+                <div class="trow"><span>Bar La Perla</span><span>$ 42.300</span><span>Al día</span></div>
+                <div class="trow"><span>Almacén Sur</span><span>$ 8.110</span><span>Al día</span></div>
+                <div class="tbl-foot floor-band floor-suelo foot-suelo">
+                  <span class="muted">1–20 de <span class="strong">184</span></span>
+                  <span class="nav"><span class="ib">‹</span><span class="strong">2</span><span class="ib">›</span></span>
+                  <span class="muted" style="text-align:right">20 / pág</span>
+                </div>
+              </div>
+              <p class="token-chip">Mismo gesto de piso, otro pigmento: humus oliva + humedad savia. No es el taupe de hoy ni el carbón de sombra.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="slice">
+        <div class="meta">
+          <h3>Toolbox de operar</h3>
+          <span class="badge keep">misma banda</span>
+        </div>
+        <p class="file"><b>Hoy</b> <span class="mono">layoutsOperarToolboxBarClass</span> = mismo floor · slots <span class="mono">layouts-operar-earth-slot</span> (piedra idle / savia brote). Vender, Mesas, Mostrador, Comprar.</p>
+        <div class="triple">
+          <article class="col">
+            <div class="col-head">Hoy <em>piedras sobre el barro</em></div>
+            <div class="stage" style="padding:12px;background:#0e1311">
+              <div class="floor-band floor-earth tbx">
+                <div class="slot slot-sprout">
+                  <span class="slot-ic">CL</span>
+                  <span><span class="slot-lab">Cliente</span><span class="slot-val">La Perla</span></span>
+                </div>
+                <div class="slot slot-earth">
+                  <span class="slot-ic">CO</span>
+                  <span><span class="slot-lab">Comprobante</span><span class="slot-val">Elegir</span></span>
+                </div>
+                <div class="slot slot-earth">
+                  <span class="slot-ic">PA</span>
+                  <span><span class="slot-lab">Pago</span><span class="slot-val">Elegir</span></span>
+                </div>
+                <div class="slot slot-earth">
+                  <span class="slot-ic">DE</span>
+                  <span><span class="slot-lab">Descuento</span><span class="slot-val">—</span></span>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Si se fuerza paleta <em>cubiertas sombra</em></div>
+            <div class="stage" style="padding:12px;background:#0e1311">
+              <div class="floor-band floor-sombra tbx">
+                <div class="slot slot-sombra-on">
+                  <span class="slot-ic">CL</span>
+                  <span><span class="slot-lab">Cliente</span><span class="slot-val">La Perla</span></span>
+                </div>
+                <div class="slot slot-sombra">
+                  <span class="slot-ic">CO</span>
+                  <span><span class="slot-lab">Comprobante</span><span class="slot-val">Elegir</span></span>
+                </div>
+                <div class="slot slot-sombra">
+                  <span class="slot-ic">PA</span>
+                  <span><span class="slot-lab">Pago</span><span class="slot-val">Elegir</span></span>
+                </div>
+                <div class="slot slot-sombra">
+                  <span class="slot-ic">DE</span>
+                  <span><span class="slot-lab">Descuento</span><span class="slot-val">—</span></span>
+                </div>
+              </div>
+              <p class="token-chip">Es la propuesta B de la librería (cubiertas sombra). Válida, pero otro producto visual.</p>
+            </div>
+          </article>
+          <article class="col">
+            <div class="col-head">Lo que yo haría <em>suelo oliva + savia brote</em></div>
+            <div class="stage" style="padding:12px;background:#0e1311">
+              <div class="floor-band floor-suelo tbx">
+                <div class="slot slot-sprout-suelo">
+                  <span class="slot-ic">CL</span>
+                  <span><span class="slot-lab">Cliente</span><span class="slot-val">La Perla</span></span>
+                </div>
+                <div class="slot slot-suelo">
+                  <span class="slot-ic">CO</span>
+                  <span><span class="slot-lab">Comprobante</span><span class="slot-val">Elegir</span></span>
+                </div>
+                <div class="slot slot-suelo">
+                  <span class="slot-ic">PA</span>
+                  <span><span class="slot-lab">Pago</span><span class="slot-val">Elegir</span></span>
+                </div>
+                <div class="slot slot-suelo">
+                  <span class="slot-ic">DE</span>
+                  <span><span class="slot-lab">Descuento</span><span class="slot-val">—</span></span>
+                </div>
+              </div>
+              <div class="ramp-row" aria-label="Rampa suelo">
+                <i style="background:#0a0c08">950</i>
+                <i style="background:#151810">900</i>
+                <i style="background:#24291e">800</i>
+                <i style="background:#353b2c">700</i>
+                <i style="background:#464d3a">600</i>
+                <i style="background:#8f9782;color:#151810">400</i>
+                <i style="background:#b6bda8;color:#151810">300</i>
+                <i style="background:#f1f2eb;color:#151810">50</i>
+              </div>
+              <p class="token-chip">Piedras de corteza mojada, no taupe ni pizarra. El brote savia nace del humus, no del stone.</p>
+            </div>
+          </article>
+        </div>
+
+        <div class="rec">
+          <strong>Recomendación.</strong>
+          No aliasar earth → sombra (el reemplazo que se sintió mal) ni reciclar el stone Tailwind.
+          Sumar <span class="mono">--rootsy-suelo-*</span> a la paleta nueva como chrome de piso:
+          <span class="mono">950 #0A0C08</span>,
+          <span class="mono">900 #151810</span>,
+          <span class="mono">800 #24291E</span>,
+          <span class="mono">700 #353B2C</span>,
+          <span class="mono">400 #8F9782</span>,
+          <span class="mono">50 #F1F2EB</span>.
+          Oliva húmeda que se sienta con sombra y deja brotar savia.
+          No es una cuarta familia de marca: solo footer y toolbox. Forms y pills siguen en bruma.
+        </div>
+      </section>
+    </div>
+
+    <div class="part">
+      <h2>Mapa rápido · ¿token nuevo?</h2>
+      <p>Qué hay hoy, qué hay en la paleta nueva, y si hay que inventar algo.</p>
+      <div class="module" style="overflow:auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Uso en producto</th>
+              <th>Token hoy</th>
+              <th>En paleta nueva</th>
+              <th>¿Generar?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Activo, descuento, primary, Operar</td>
+              <td class="mono">canopy / forest oklch</td>
+              <td>savia-600 / 100 / 400</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>Neutro de form, pill muted, aviso “sin permiso”</td>
+              <td class="mono">earth-*</td>
+              <td>bruma-50…700</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <td>Preparando · aviso factura · stock</td>
+              <td class="mono">autumn / amber-50</td>
+              <td>warning #D97706 · clima sol #E8B10F</td>
+              <td><b>Sol</b> para mundos · warning se queda</td>
+            </tr>
+            <tr>
+              <td>Enviada (comandas)</td>
+              <td class="mono">--nature-sky</td>
+              <td>cielo-500 #1286E8 (no teal)</td>
+              <td><b>Sí</b> — --rootsy-cielo-* (ya en paleta)</td>
+            </tr>
+            <tr>
+              <td>Administrar / Configurar</td>
+              <td class="mono">sea / dusk</td>
+              <td>no hay</td>
+              <td>No — clima del menú</td>
+            </tr>
+            <tr>
+              <td>Footer tablas + toolbox operar (suelo)</td>
+              <td class="mono">earth-900/800/700 + savia</td>
+              <td>sombra pierde el barro; earth choca con la paleta</td>
+              <td><b>Sí</b> — --rootsy-suelo-* oliva (ya en paleta)</td>
+            </tr>
+            <tr>
+              <td>Piso del menú, night shell</td>
+              <td class="mono">earth-900 / night-950</td>
+              <td>mismo suelo · night ≈ sombra</td>
+              <td>No — no aliasar</td>
+            </tr>
+            <tr>
+              <td>Error / eliminar</td>
+              <td class="mono">destructive oklch / ember</td>
+              <td>--color-status-danger #DC2626</td>
+              <td>No</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="part" id="hecho">
+      <h2>Hecho en producto · 21 ago</h2>
+      <p>
+        Primera tanda: componentes que no eran de la librería. Tokens canopy/earth
+        del suelo, pills de artículos y tema <span class="mono">.rootsy-app-light</span> no se tocaron.
+      </p>
+      <div class="module" style="overflow:auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Pantalla</th>
+              <th>Antes</th>
+              <th>Ahora</th>
+              <th>Archivo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Inventario · borrar movimiento</td>
+              <td>Dialog + Button shadcn · tema oklch</td>
+              <td>RootsConfirmDialog (danger)</td>
+              <td class="mono">InventoryDeleteMovementDialog.tsx</td>
+            </tr>
+            <tr>
+              <td>Servicios · periodo y estado</td>
+              <td>Badge shadcn (primary oklch)</td>
+              <td>RootsNaturePill earth / canopy</td>
+              <td class="mono">ServicesWorkspaceView.tsx</td>
+            </tr>
+            <tr>
+              <td>Proveedores · condición IVA</td>
+              <td>Badge shadcn secondary</td>
+              <td>RootsNaturePill earth</td>
+              <td class="mono">SuppliersWorkspaceView.tsx</td>
+            </tr>
+            <tr>
+              <td>Emitir factura · avisos</td>
+              <td>StatusNotice ad hoc (amber / earth)</td>
+              <td>RootsBanner warning / neutral</td>
+              <td class="mono">InvoiceComposeFormFields.tsx</td>
+            </tr>
+            <tr>
+              <td>Artículos · preview de imagen</td>
+              <td>DialogContent + data-rootsy-light-shell</td>
+              <td>RootsDialogContent + Header + Body</td>
+              <td class="mono">ArticleImagePreviewDialog.tsx</td>
+            </tr>
+            <tr>
+              <td>Tesorería · liquidar POS / pagar tarjeta</td>
+              <td>Dialog + Field + Input + Button zinc</td>
+              <td>RootsDialog + RootsForm (fecha, dinero, select, notas) + footer librería</td>
+              <td class="mono">TreasuryReconcileModal.tsx</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note" style="margin-top:16px">
+        Pendiente (no es esta tanda): pills canopy→savia, days de promo,
+        theme <span class="mono">.rootsy-app-light</span>, y el resto de Dialog shadcn
+        (filtros, PaymentMethod, tesorería detalle).
+        Suelo, cielo, sol y éter ya están en producto y en <span class="mono">/library</span> → Color → Mundos.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

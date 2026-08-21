@@ -5,6 +5,7 @@ export const COLOR_NEW_LIBRARY_SUBITEMS = [
   { id: "colors-new-semantic", label: "Semántica" },
   { id: "colors-new-themes", label: "Temas" },
   { id: "colors-new-pairings", label: "Complementarios" },
+  { id: "colors-new-mundos", label: "Mundos" },
   { id: "colors-new-contrast", label: "Contraste" },
   { id: "colors-new-accents", label: "Énfasis" },
   { id: "colors-new-palettes", label: "Paletas" },
@@ -52,7 +53,7 @@ export const COLOR_NEW_PAGE_META: Record<string, ColorNewPageMeta> = {
     id: "colors-new",
     title: "Color",
     description:
-      "Tres familias de marca — sombra, bruma y savia — más atmósfera para efectos de marketing.",
+      "Tres familias de marca — sombra, bruma y savia — más climas de mundo (suelo, cielo, sol, éter).",
   },
   "colors-new-semantic": {
     id: "colors-new-semantic",
@@ -68,7 +69,14 @@ export const COLOR_NEW_PAGE_META: Record<string, ColorNewPageMeta> = {
   "colors-new-pairings": {
     id: "colors-new-pairings",
     title: "Complementarios",
-    description: "Armonías de producto — sombra+savia, split POS, bruma+workspace, CTA promo.",
+    description:
+      "Armonías de producto — sombra+savia, split POS, climas cielo/sol/éter, CTA promo.",
+  },
+  "colors-new-mundos": {
+    id: "colors-new-mundos",
+    title: "Mundos",
+    description:
+      "Sombra, bruma, savia, suelo, cielo, sol y éter — dónde vive cada uno y qué no es.",
   },
   "colors-new-contrast": {
     id: "colors-new-contrast",
@@ -83,7 +91,7 @@ export const COLOR_NEW_PAGE_META: Record<string, ColorNewPageMeta> = {
   "colors-new-palettes": {
     id: "colors-new-palettes",
     title: "Paletas",
-    description: "Las tres rampas oficiales — sombra, bruma y savia.",
+    description: "Las tres rampas oficiales — sombra, bruma y savia — más suelo, cielo, sol y éter.",
   },
   "colors-new-data-viz": {
     id: "colors-new-data-viz",
@@ -140,6 +148,7 @@ export function getColorNewPageMeta(sectionId: string): ColorNewPageMeta | undef
 export const COLOR_NEW_RELATED_LINKS = [
   { sectionId: "colors-new-semantic", label: "Semántica", hint: "Tokens oficiales." },
   { sectionId: "colors-new-themes", label: "Temas", hint: "POS · workspace · marketing." },
+  { sectionId: "colors-new-mundos", label: "Mundos", hint: "Suelo · cielo · sol · éter." },
   { sectionId: "colors-new-palettes", label: "Paletas", hint: "Tres familias." },
   { sectionId: "colors-new-atmosphere", label: "Atmósfera", hint: "Hero marketing." },
   { sectionId: "colors-new-sombra", label: "Sombra", hint: "Bajo el dosel." },

@@ -1,13 +1,11 @@
 "use client"
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { cn } from "@/lib/utils"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { Dialog } from "@/components/ui/dialog"
 
 type Props = {
   open: boolean
@@ -15,11 +13,6 @@ type Props = {
   imageUrl: string | null
   title?: string
 }
-
-const dialogSurface = cn(
-  "rootsy-app-light gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 text-foreground shadow-2xl ring-1 ring-black/[0.04] sm:max-w-lg",
-  "max-h-[min(90vh,720px)] flex flex-col overflow-hidden",
-)
 
 export function ArticleImagePreviewDialog({
   open,
@@ -31,29 +24,23 @@ export function ArticleImagePreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        data-rootsy-light-shell="true"
-        showCloseButton
-        className={dialogSurface}
-      >
-        <DialogHeader className="shrink-0 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left">
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            {title}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Vista ampliada de la imagen del artículo
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-muted/10 p-6">
+      <RootsDialogContent>
+        <RootsDialogHeader
+          open={open}
+          title={title}
+          description="Vista ampliada de la imagen del artículo"
+          descriptionHidden
+        />
+        <RootsDialogBody className="flex items-center justify-center">
           {src ? (
             <img
               src={src}
               alt=""
-              className="max-h-[min(60vh,520px)] w-auto max-w-full rounded-xl border border-border/60 bg-white object-contain shadow-sm"
+              className="max-h-[min(60vh,520px)] w-auto max-w-full rounded-xl border border-[var(--rootsy-bruma-200)] bg-white object-contain"
             />
           ) : null}
-        </div>
-      </DialogContent>
+        </RootsDialogBody>
+      </RootsDialogContent>
     </Dialog>
   )
 }

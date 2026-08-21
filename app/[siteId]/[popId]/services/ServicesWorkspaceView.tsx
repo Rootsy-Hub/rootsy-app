@@ -77,7 +77,7 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { Badge } from "@/components/ui/badge"
+import { RootsNaturePill } from "@/components/rootsy-pill"
 import { TableBody, TableCell } from "@/components/ui/table"
 import { usePopServicesTable } from "@/hooks/usePopServicesTable"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -769,9 +769,9 @@ export function ServicesWorkspaceView() {
                         {formatSaleComprobanteMoney(row.defaultPrice)}
                       </TableCell>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
-                        <Badge variant="secondary" className="font-normal">
+                        <RootsNaturePill variant="earth">
                           {row.billingPeriodDisplay}
-                        </Badge>
+                        </RootsNaturePill>
                       </TableCell>
                       <TableCell
                         className={cn(
@@ -782,12 +782,11 @@ export function ServicesWorkspaceView() {
                         {row.detailCount}
                       </TableCell>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
-                        <Badge
-                          variant={row.isActive ? "default" : "outline"}
-                          className="font-normal"
+                        <RootsNaturePill
+                          variant={row.isActive ? "canopy" : "earthMuted"}
                         >
                           {row.isActive ? "Activo" : "Inactivo"}
-                        </Badge>
+                        </RootsNaturePill>
                       </TableCell>
                       {canUpdate || canDelete ? (
                         <TableCell className={workspaceTableLayoutActionsBodyCellClass}>

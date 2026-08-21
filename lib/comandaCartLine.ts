@@ -77,6 +77,32 @@ export function promotionSelectionsAreCommandable(
   })
 }
 
+export function commandableCartLineKeys(
+  item: {
+    lineId?: string
+    productoId: string
+    kind?: string
+    promotionSelections?: Array<{
+      slotId: string
+      kind: string
+      refId: string
+    }>
+  },
+  productosByKey?: Map<string, { stationId?: string | null }>,
+): string[] {
+  const lineId = item.lineId?.trim() || item.productoId
+  if (item.kind !== "promotion") return [lineId]
+  return (item.promotionSelections ?? [])
+    .filter((selection) => {
+      if (selection.kind !== "recipe") return false
+      if (!productosByKey) return true
+      return Boolean(
+        productosByKey.get(`recipe:${selection.refId}`)?.stationId?.trim(),
+      )
+    })
+    .map((selection) => `${lineId}:${selection.slotId}`)
+}
+
 export function ensureCartLineComandaStatuses<T extends MenuCartItem>(
   carrito: T[],
   productosByKey: Map<string, { stationId?: string | null }>,

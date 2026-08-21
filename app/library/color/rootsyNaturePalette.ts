@@ -3,7 +3,7 @@
  * Tres familias: sombra · bruma · savia. Atmósfera = composición de marketing.
  */
 
-import { rootsyColorHex } from "@/lib/design-system"
+import { ROOTSY_CIELO, ROOTSY_ETER, ROOTSY_SOL, ROOTSY_SUELO, rootsyColorHex } from "@/lib/design-system"
 
 const hx = rootsyColorHex
 
@@ -163,6 +163,92 @@ export const ATMOSPHERE_SPEC: NatureFamily = {
 /** @deprecated Usar ATMOSPHERE_SPEC — landing no es familia de marca. */
 export const LANDING_FAMILY = ATMOSPHERE_SPEC
 
+/**
+ * Tierra mojada — chrome de piso, no familia de marca.
+ * Humus oliva que dialoga con sombra y savia. Footer de tablas + toolbox de operar.
+ */
+export const SUELO_FAMILY: NatureFamily = {
+  id: "suelo",
+  title: "Suelo · tierra mojada",
+  subtitle: "Chrome de piso",
+  description:
+    "Humus oliva bajo el dosel — no el stone Tailwind ni sombra sola. El piso después de la lluvia: barro verde-oscuro, corteza húmeda y un velo de savia. Solo footer de listados y toolbox de Operar.",
+  steps: [
+    { id: "u950", label: "950", hex: ROOTSY_SUELO["950"], usage: "Umbral más hondo — mix con sombra-950." },
+    { id: "u900", label: "900", hex: ROOTSY_SUELO["900"], usage: "★ Banda de piso — tierra empapada." },
+    { id: "u800", label: "800", hex: ROOTSY_SUELO["800"], usage: "★ Piedra idle — corteza mojada." },
+    { id: "u700", label: "700", hex: ROOTSY_SUELO["700"], usage: "Cara de la piedra — relieve." },
+    { id: "u600", label: "600", hex: ROOTSY_SUELO["600"], usage: "Hover de slot idle." },
+    { id: "u400", label: "400", hex: ROOTSY_SUELO["400"], usage: "★ Label y highlight de liquen." },
+    { id: "u300", label: "300", hex: ROOTSY_SUELO["300"], usage: "Texto muted sobre el piso." },
+    { id: "u50", label: "50", hex: ROOTSY_SUELO["50"], usage: "Conteo / números del footer." },
+  ],
+}
+
+/**
+ * Cielo — clima complementario, no familia de marca.
+ * Azul cerúleo vivo: informa y abre aire sin caer en sky Tailwind ni en teal de marketing.
+ */
+export const CIELO_FAMILY: NatureFamily = {
+  id: "cielo",
+  title: "Cielo · azul de naturaleza",
+  subtitle: "Clima complementario",
+  description:
+    "Cerúleo de siesta — más vivo que el sky genérico, más azul que el teal de savia. Headers de mundo (enviada), amplitud e info de clima. No es --color-status-info.",
+  steps: [
+    { id: "k800", label: "800", hex: ROOTSY_CIELO["800"], usage: "★ Texto sobre cielo 50/100." },
+    { id: "k700", label: "700", hex: ROOTSY_CIELO["700"], usage: "Hover / pressed de mundo." },
+    { id: "k600", label: "600", hex: ROOTSY_CIELO["600"], usage: "Acento medio." },
+    { id: "k500", label: "500", hex: ROOTSY_CIELO["500"], usage: "★ Azul vivo — par complementario." },
+    { id: "k400", label: "400", hex: ROOTSY_CIELO["400"], usage: "Glow e íconos." },
+    { id: "k200", label: "200", hex: ROOTSY_CIELO["200"], usage: "Veladura del header." },
+    { id: "k100", label: "100", hex: ROOTSY_CIELO["100"], usage: "★ Superficie de mundo enviada." },
+    { id: "k50", label: "50", hex: ROOTSY_CIELO["50"], usage: "Lavado más claro." },
+  ],
+}
+
+/**
+ * Sol — clima complementario, no familia de marca.
+ * Amarillo sol: calor de cocina / preparando. El ámbar #D97706 se queda para aviso UX.
+ */
+export const SOL_FAMILY: NatureFamily = {
+  id: "sol",
+  title: "Sol · amarillo vivo",
+  subtitle: "Clima complementario",
+  description:
+    "Sol a través del dosel — amarillo oro, no otoño naranja ni warning. Calor de “preparando” y mundos cálidos. El ámbar funcional no se toca.",
+  steps: [
+    { id: "o800", label: "800", hex: ROOTSY_SOL["800"], usage: "★ Texto sobre sol 50/100." },
+    { id: "o700", label: "700", hex: ROOTSY_SOL["700"], usage: "Hover de mundo." },
+    { id: "o600", label: "600", hex: ROOTSY_SOL["600"], usage: "Acento medio." },
+    { id: "o500", label: "500", hex: ROOTSY_SOL["500"], usage: "★ Sol — par complementario." },
+    { id: "o400", label: "400", hex: ROOTSY_SOL["400"], usage: "Glow e íconos." },
+    { id: "o200", label: "200", hex: ROOTSY_SOL["200"], usage: "Veladura del header." },
+    { id: "o100", label: "100", hex: ROOTSY_SOL["100"], usage: "★ Superficie de mundo preparando." },
+    { id: "o50", label: "50", hex: ROOTSY_SOL["50"], usage: "Lavado más claro." },
+  ],
+}
+
+/**
+ * Éter — chrome del header, no familia de marca.
+ * El espacio fuera del planeta: noche profunda, estrellas, horizonte de luz fría.
+ */
+export const ETER_FAMILY: NatureFamily = {
+  id: "eter",
+  title: "Éter · espacio fuera del planeta",
+  subtitle: "Chrome de header",
+  description:
+    "Noche sideral — no es sombra (bosque bajo el dosel) ni cielo (día de comanda). El header reutilizable: estrellas, horizonte y puente al planeta.",
+  steps: [
+    { id: "t950", label: "950", hex: ROOTSY_ETER["950"], usage: "★ Vacío más hondo — cierre del gradiente." },
+    { id: "t900", label: "900", hex: ROOTSY_ETER["900"], usage: "★ Centro de la banda." },
+    { id: "t800", label: "800", hex: ROOTSY_ETER["800"], usage: "★ Boca del header." },
+    { id: "t700", label: "700", hex: ROOTSY_ETER["700"], usage: "Vacío un poco más abierto." },
+    { id: "t200", label: "200", hex: ROOTSY_ETER["200"], usage: "Resplandor medio del horizonte." },
+    { id: "t100", label: "100", hex: ROOTSY_ETER["100"], usage: "★ Luz fría — línea de horizonte y borde." },
+  ],
+}
+
 /** Paletas del grupo Color (nuevo) — tres familias de marca. */
 export const COLOR_NEW_FAMILIES: NatureFamily[] = [
   SOMBRA_FAMILY,
@@ -201,6 +287,30 @@ export const COLOR_NEW_GRADIENTS: NatureGradient[] = [
     from: hx("sombra", "950"),
     via: hx("sombra", "600"),
     to: hx("bruma", "100"),
+  },
+  {
+    id: "suelo-mojado",
+    title: "Tierra mojada",
+    description: "Humus oliva bajo el dosel — humedad savia en el umbral. Chrome de footer y toolbox.",
+    from: ROOTSY_SUELO["900"],
+    via: ROOTSY_SUELO["800"],
+    to: hx("savia", "990"),
+  },
+  {
+    id: "clima-comandas",
+    title: "Mundos de comanda",
+    description: "Cielo vivo a sol a savia — enviada, preparando, lista.",
+    from: ROOTSY_CIELO["500"],
+    via: ROOTSY_SOL["500"],
+    to: hx("savia", "500"),
+  },
+  {
+    id: "eter-header",
+    title: "Éter del header",
+    description: "Espacio fuera del planeta — éter 800 a 950. Estrellas y horizonte de luz fría.",
+    from: ROOTSY_ETER["800"],
+    via: ROOTSY_ETER["900"],
+    to: ROOTSY_ETER["950"],
   },
 ]
 

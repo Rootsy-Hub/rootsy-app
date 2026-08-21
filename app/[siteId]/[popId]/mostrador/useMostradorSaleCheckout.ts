@@ -4,7 +4,10 @@ import {
   getPendingComandasForSource,
   sendComandaBatch,
 } from "@/app/[siteId]/[popId]/comandas/actions"
-import { applyComandaSendToCart } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import {
+  applyComandaSendToCart,
+  healCartLinesAlreadySent,
+} from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { saveCounterOrderCheckout, closeCounterOrderCheckout } from "@/app/[siteId]/[popId]/mostrador/actions"
 import {
@@ -811,7 +814,14 @@ export function useMostradorSaleCheckout(
         ),
       })),
     )
-  }, [counterOrderId, flushCheckoutPersist, popId, siteId])
+    setCarrito((prev) =>
+      healCartLinesAlreadySent(
+        prev,
+        res.items.map((item) => item.cartLineId),
+        productosByKey,
+      ),
+    )
+  }, [counterOrderId, flushCheckoutPersist, popId, productosByKey, siteId])
 
   const enviarComandas = useCallback(
     async (input: {
@@ -842,11 +852,16 @@ export function useMostradorSaleCheckout(
         })
       }
       setCarrito((prev) =>
-        applyComandaSendToCart(prev, res.sentCartLineIds, res.peels),
+        applyComandaSendToCart(
+          prev,
+          res.sentCartLineIds,
+          res.peels,
+          productosByKey,
+        ),
       )
       setComandasOpen(false)
     },
-    [counterOrderId, flushCheckoutPersist, popId, siteId],
+    [counterOrderId, flushCheckoutPersist, popId, productosByKey, siteId],
   )
 
   const descuentoGeneralEditBlocked = useMemo(

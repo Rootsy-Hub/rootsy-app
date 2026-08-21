@@ -3,6 +3,9 @@
  * Espejo de styles/rootsy/tokens/colors.css
  *
  * Tres familias de marca: sombra · bruma · savia
+ * Suelo = chrome de piso (footer + toolbox). No es una cuarta familia de marca.
+ * Cielo / sol = climas complementarios (comandas, mundos). No son marca.
+ * Éter = chrome del header (espacio fuera del planeta). No es cielo de día.
  * Atmósfera = efectos decorativos de marketing (no familia aplicable a UI).
  */
 
@@ -52,6 +55,66 @@ export const ROOTSY_COLOR_RAMPS = {
     /** Extensión promocional — gradiente CTA hero (savia → teal). */
     teal: "#14B8A6",
   },
+} as const
+
+/**
+ * Tierra mojada — humus oliva bajo el dosel.
+ * No es el stone Tailwind (#292524) ni sombra sola: dialoga con sombra (bosque)
+ * y savia (humedad). Solo footer de tablas y toolbox de operar.
+ */
+export const ROOTSY_SUELO = {
+  "950": "#0A0C08",
+  "900": "#151810",
+  "800": "#24291E",
+  "700": "#353B2C",
+  "600": "#464D3A",
+  "400": "#8F9782",
+  "300": "#B6BDA8",
+  "50": "#F1F2EB",
+} as const
+
+/**
+ * Cielo — azul de naturaleza vivo (cerúleo de siesta, no Tailwind sky ni teal).
+ * Dialoga con savia sin competir: más azul, más croma. Headers “enviada”, info de mundo.
+ */
+export const ROOTSY_CIELO = {
+  "800": "#0A4574",
+  "700": "#0B5A98",
+  "600": "#0C72C2",
+  "500": "#1286E8",
+  "400": "#45A6F2",
+  "200": "#A8D6FA",
+  "100": "#D4ECFC",
+  "50": "#EAF6FE",
+} as const
+
+/**
+ * Sol — amarillo sol a través del dosel.
+ * No es el ámbar de aviso (#D97706) ni otoño Tailwind. Calor vivo para “preparando”.
+ */
+export const ROOTSY_SOL = {
+  "800": "#7A4E08",
+  "700": "#9C640A",
+  "600": "#C98C0D",
+  "500": "#E8B10F",
+  "400": "#F3C62E",
+  "200": "#F8E17A",
+  "100": "#FBF3C6",
+  "50": "#FDF8E8",
+} as const
+
+/**
+ * Éter — espacio fuera del planeta.
+ * Noche profunda, estrellas y horizonte de luz fría. Header reutilizable.
+ * No es sombra (bosque) ni cielo (día).
+ */
+export const ROOTSY_ETER = {
+  "950": "#010306",
+  "900": "#02060A",
+  "800": "#040A0E",
+  "700": "#0B1824",
+  "200": "#C8DCE8",
+  "100": "#E4F2F8",
 } as const
 
 /** Auroras y glow — solo blur/atmosphere en marketing. Nunca texto, borde ni botón sólido. */

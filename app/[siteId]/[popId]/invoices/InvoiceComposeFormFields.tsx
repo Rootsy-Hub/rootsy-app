@@ -2,6 +2,7 @@
 
 import type { getInvoiceFormContext } from "@/app/[siteId]/[popId]/invoices/actions"
 import type { InvoiceComposeFormState } from "@/app/[siteId]/[popId]/invoices/invoiceComposeFormState"
+import { RootsBanner } from "@/components/rootsy-banner"
 import {
   RootsFormField,
   RootsFormMoneyField,
@@ -47,20 +48,12 @@ function StatusNotice({
   tone?: "amber" | "muted"
 }) {
   return (
-    <div
-      role="status"
-      className={cn(
-        "rounded-lg border px-3 py-2.5 text-sm",
-        tone === "amber"
-          ? "border-amber-500/35 bg-amber-50/90 text-amber-950"
-          : "border-[color:var(--nature-earth-400)] bg-[color:var(--nature-earth-100)] text-[color:var(--nature-earth-800)]",
-      )}
-    >
-      <p className="font-medium">{title}</p>
-      <div className={cn("mt-1 text-xs leading-relaxed opacity-90")}>
-        {children}
-      </div>
-    </div>
+    <RootsBanner
+      intent={tone === "amber" ? "warning" : "neutral"}
+      density="compact"
+      title={title}
+      message={children}
+    />
   )
 }
 
