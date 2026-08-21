@@ -4,6 +4,7 @@ import {
   formatTableOriginLabel,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
+import { resolveCheckoutLineComment } from "@/lib/comandaCartLine"
 import { resolveCartLineId } from "@/lib/menuCart"
 import { createClient } from "@/utils/supabase/server"
 
@@ -50,7 +51,7 @@ function desiredLinesFromCheckout(
   const out: DesiredLine[] = []
   for (const item of checkout.carrito) {
     const lineId = resolveCartLineId(item)
-    const comment = checkout.itemComentarios?.[lineId]?.trim() ?? ""
+    const comment = resolveCheckoutLineComment(lineId, checkout.itemComentarios)
     const quantity = Math.max(1, Math.round(item.cantidad))
 
     if (!item.kind || item.kind === "recipe") {

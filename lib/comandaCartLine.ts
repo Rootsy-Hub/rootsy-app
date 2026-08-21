@@ -6,6 +6,41 @@ import {
 } from "@/lib/menuCart"
 import { cn } from "@/lib/utils"
 
+/** Comentario de línea: el ticket guarda `row:${lineId}:regular` además de `lineId`. */
+export function resolveCheckoutLineComment(
+  lineId: string,
+  comments: Record<string, string> | null | undefined,
+): string {
+  if (!comments) return ""
+  const direct = comments[lineId]?.trim()
+  if (direct) return direct
+  const regular = comments[`row:${lineId}:regular`]?.trim()
+  if (regular) return regular
+  const promo = comments[`row:${lineId}:promo`]?.trim()
+  if (promo) return promo
+  for (const [key, value] of Object.entries(comments)) {
+    const trimmed = value?.trim() ?? ""
+    if (!trimmed) continue
+    if (key.startsWith(`row:${lineId}:`)) return trimmed
+    if (key.startsWith("row:") && key.endsWith(`:${lineId}`)) return trimmed
+  }
+  return ""
+}
+
+export function pendingComandaComment(
+  cartLineId: string,
+  storedComment: string,
+  comments: Record<string, string> | null | undefined,
+): string {
+  const stored = storedComment.trim()
+  if (stored) return stored
+  const fromLine = resolveCheckoutLineComment(cartLineId, comments)
+  if (fromLine) return fromLine
+  const colon = cartLineId.lastIndexOf(":")
+  if (colon <= 0) return ""
+  return resolveCheckoutLineComment(cartLineId.slice(0, colon), comments)
+}
+
 export function parseComandaStatus(value: unknown): ComandaStatus | undefined {
   if (
     value === "pending" ||

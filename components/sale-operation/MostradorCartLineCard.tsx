@@ -20,7 +20,7 @@ import {
   CheckoutSectionPanel,
   type CheckoutDiscountMode,
 } from "@/components/checkout/CheckoutFormFields"
-import { RootsFormSegmentField } from "@/components/rootsy-form"
+import { RootsFormSegmentField, RootsFormTextareaField } from "@/components/rootsy-form"
 import { CartLineSubtitleRow } from "@/components/sale-operation/CartLineSubtitleRow"
 import {
   CartLineQuantityLabel,
@@ -40,9 +40,7 @@ import {
   RootsDialogContent,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Dialog } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
 import {
   mostradorCartRowCommentKey,
   pricingForMostradorRow,
@@ -650,19 +648,15 @@ export function MostradorCartLineCard({
                   Este ítem no admite comentario.
                 </p>
               ) : (
-                <FieldGroup className="gap-4">
-                  <Field>
-                    <FieldLabel htmlFor={commentFieldId}>Comentario</FieldLabel>
-                    <Textarea
-                      id={commentFieldId}
-                      value={commentDraft}
-                      onChange={(e) => setCommentDraft(e.target.value)}
-                      placeholder="Ej: sin cebolla, bien cocido..."
-                      rows={3}
-                      className="min-h-22 resize-none rounded-xl"
-                    />
-                  </Field>
-                </FieldGroup>
+                <RootsFormTextareaField
+                  id={commentFieldId}
+                  label="Comentario"
+                  value={commentDraft}
+                  onChange={(e) => setCommentDraft(e.target.value)}
+                  placeholder="Ej: sin cebolla, bien cocido..."
+                  rows={3}
+                  textareaClassName="resize-none"
+                />
               )}
             </CheckoutSectionPanel>
 

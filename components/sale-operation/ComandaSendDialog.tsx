@@ -24,7 +24,8 @@ import {
 } from "@/components/rootsy-dialog"
 import { RootsFormControlTextarea } from "@/components/rootsy-form/RootsFormControlTextarea"
 import { Dialog } from "@/components/ui/dialog"
-import { Minus, Plus } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { MessageSquare, Minus, Plus } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 type Props = {
@@ -128,9 +129,7 @@ export function ComandaSendDialog({
           const qty = selectedQty(selection, item)
           const selected = qty > 0
           const showQuantityStepper = item.quantity > 1
-          const itemTitle = item.comment.trim()
-            ? `${item.recipeName} · ${item.comment.trim()}`
-            : item.recipeName
+          const comment = item.comment.trim()
           return (
             <li
               key={item.cartLineId}
@@ -145,19 +144,37 @@ export function ComandaSendDialog({
                   toggleItem(item, !selected)
                 }
               }}
-              className={saleFinalizeDialogPartialRowClass}
+              className={cn(saleFinalizeDialogPartialRowClass, "items-start")}
             >
               <span
-                className={saleFinalizeDialogPartialCheckClass(selected)}
+                className={cn(saleFinalizeDialogPartialCheckClass(selected), "mt-0.5")}
                 aria-hidden
               >
                 ✓
               </span>
-              <span
-                className={saleFinalizeDialogPartialNameClass(selected)}
-                title={itemTitle}
-              >
-                {itemTitle}
+              <span className="min-w-0 flex-1">
+                <span
+                  className={cn(saleFinalizeDialogPartialNameClass(selected), "block")}
+                  title={item.recipeName}
+                >
+                  {item.recipeName}
+                </span>
+                {comment ? (
+                  <span
+                    className={cn(
+                      "mt-0.5 block text-[11px] font-medium leading-snug",
+                      selected
+                        ? "text-[var(--rootsy-bruma-700)]"
+                        : "text-[var(--rootsy-bruma-500)]",
+                    )}
+                  >
+                    <MessageSquare
+                      className="mr-1 inline size-3 -translate-y-px text-[var(--rootsy-bruma-600)]"
+                      aria-hidden
+                    />
+                    {comment}
+                  </span>
+                ) : null}
               </span>
               {showQuantityStepper ? (
                 <div

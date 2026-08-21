@@ -10,6 +10,10 @@ import {
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import { dataWorkspaceHeaderEdgeToggleClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
+import {
+  ModuleWorkspaceBackdropFallback,
+  moduleWorkspaceFallbackSurfaceClass,
+} from "@/components/layouts-module/ModuleWorkspaceBackdropFallback"
 import { layoutsModuleContentShellClass } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX } from "@/app/library/layouts/layoutsOperarStyles"
@@ -224,7 +228,7 @@ export function DataWorkspaceLayout({
               "relative min-h-screen overflow-hidden",
               useHomeBackdrop
                 ? homeWorkspaceSurfaceClass
-                : "rootsy-app-light bg-background",
+                : moduleWorkspaceFallbackSurfaceClass,
             ),
       )}
     >
@@ -233,13 +237,7 @@ export function DataWorkspaceLayout({
       ) : useHomeBackdrop ? (
         <HomeWorkspaceBackdrop />
       ) : (
-        <div
-          className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
-          aria-hidden
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(oklch(0.92_0.02_130/0.35)_1px,transparent_1px),linear-gradient(90deg,oklch(0.92_0.02_130/0.35)_1px,transparent_1px)] bg-size-[48px_48px] opacity-40" />
-        </div>
+        <ModuleWorkspaceBackdropFallback className="motion-reduce:opacity-50" />
       )}
 
       <div

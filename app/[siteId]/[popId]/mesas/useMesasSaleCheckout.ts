@@ -85,6 +85,7 @@ import {
 import {
   ensureCartLineComandaStatuses,
   isComandaLocked,
+  pendingComandaComment,
   promotionSelectionsAreCommandable,
 } from "@/lib/comandaCartLine"
 import {
@@ -794,7 +795,16 @@ export function useMesasSaleCheckout(
       setPendingComandaItems([])
       return
     }
-    setPendingComandaItems(res.items)
+    setPendingComandaItems(
+      res.items.map((item) => ({
+        ...item,
+        comment: pendingComandaComment(
+          item.cartLineId,
+          item.comment,
+          checkoutStateRef.current.itemComentarios,
+        ),
+      })),
+    )
   }, [flushCheckoutPersist, popId, siteId, tableSessionId])
 
   const enviarComandas = useCallback(
