@@ -1,22 +1,28 @@
-const SKELETON_SLOTS = 4
+import {
+  HOME_POP_AVATAR_SIZE_CLASS,
+  HOME_POP_TILE_BASIS_CLASS,
+  HOME_POP_TILE_MAX_CLASS,
+} from "@/app/home/homePopTileLayout"
+import { cn } from "@/lib/utils"
 
-/** Mismo diámetro que el planeta real (`HomePopPlanetTile` solo / crear negocio). */
-const GHOST_PLANET_SIZE = "size-32 sm:size-36"
+const SKELETON_SLOTS = 4
 
 export function HomeGhostPlanet({ solo = false }: { solo?: boolean }) {
   return (
-    <div className="mx-auto flex w-full max-w-40 flex-col items-center">
+    <div className={cn("mx-auto flex w-full flex-col items-center", HOME_POP_TILE_MAX_CLASS)}>
       <div
         aria-hidden
-        className={`${GHOST_PLANET_SIZE} animate-pulse rounded-full bg-white/12`}
+        className={cn(
+          HOME_POP_AVATAR_SIZE_CLASS,
+          "animate-pulse rounded-full bg-white/12 ring-2 ring-white/14",
+        )}
       />
       <span
         aria-hidden
-        className={
-          solo
-            ? "mt-4 h-6 w-28 animate-pulse rounded-md bg-white/12 sm:h-7 sm:w-32"
-            : "mt-4 h-6 w-24 animate-pulse rounded-md bg-white/12 sm:h-7 sm:w-28"
-        }
+        className={cn(
+          "mt-4 h-[0.92rem] animate-pulse rounded-md bg-white/12",
+          solo ? "w-24" : "w-20",
+        )}
       />
     </div>
   )
@@ -31,7 +37,7 @@ export function HomePopPickerSkeleton() {
         aria-label="Cargando puntos de venta"
       >
         {Array.from({ length: SKELETON_SLOTS }, (_, index) => (
-          <li key={index} className="basis-[9.1rem] sm:basis-[9.4rem]">
+          <li key={index} className={HOME_POP_TILE_BASIS_CLASS}>
             <HomeGhostPlanet />
           </li>
         ))}

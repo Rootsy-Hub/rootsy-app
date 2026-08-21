@@ -3,15 +3,14 @@
 import Link from "next/link"
 import { type ReactNode, useSyncExternalStore } from "react"
 import { Button } from "@/components/ui/button"
-import { HomeCreatePopTile, homePopTileTitleClass, homePopTileTitleMutedClass } from "@/app/home/HomeCreatePopTile"
+import { HomeCreatePopTile } from "@/app/home/HomeCreatePopTile"
+import { HOME_POP_TILE_BASIS_CLASS } from "@/app/home/homePopTileLayout"
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeLoadError } from "@/app/home/HomeLoadError"
 import { HomeGhostPlanet } from "@/app/home/HomePopPickerSkeleton"
 import { HomePopPlanetTile } from "@/app/home/HomePopPlanetTile"
 import type { HomePopListItem } from "@/app/home/homeUserDataTypes"
 import {
-  menuHoloSectionForSkeletonIndex,
-  menuHoloTileMotionClass,
   menuRealmChromeShellClass,
   menuRealmLightMutedClass,
 } from "@/lib/menu/menuHoloStyles"
@@ -107,8 +106,7 @@ function HomePopPickerCards({
               </p>
             </li>
         ) : (
-          pops.map((pop, index) => {
-            const sectionKey = menuHoloSectionForSkeletonIndex(index)
+          pops.map((pop) => {
             const sigla = initialsFromName(pop.name)
             const sub = pop.subscription
             const popLogoSrc = pop.imageUrl?.trim() || null
@@ -117,40 +115,27 @@ function HomePopPickerCards({
             const subscribeHref = `/${pop.siteId}/${pop.id}/subscribe`
 
             const cardInner = (
-              <>
-                <HomePopPlanetTile
-                  sectionKey={sectionKey}
-                  name={pop.name}
-                  imageUrl={popLogoSrc}
-                  initials={sigla}
-                  alive={canEnter}
-                />
-                <span
-                  className={cn(
-                    "line-clamp-2",
-                    canEnter ? homePopTileTitleClass : homePopTileTitleMutedClass,
-                  )}
-                >
-                  {pop.name}
-                </span>
-              </>
+              <HomePopPlanetTile
+                name={pop.name}
+                imageUrl={popLogoSrc}
+                initials={sigla}
+                address={pop.streetAddress?.trim() || null}
+                active={canEnter}
+              />
             )
 
             return (
               <li
                 key={pop.id}
                 className={cn(
-                  isSoloPop ? "w-full" : "basis-[9.1rem] sm:basis-[9.4rem]",
+                  isSoloPop ? "w-full" : HOME_POP_TILE_BASIS_CLASS,
                 )}
               >
                 <div className="mx-auto flex w-full max-w-40 flex-col items-center">
                   {canEnter ? (
                     <Link
                       href={menuHref}
-                      className={cn(
-                        "group flex w-full flex-col items-center focus-visible:outline-none",
-                        menuHoloTileMotionClass,
-                      )}
+                      className="group flex w-full flex-col items-center focus-visible:outline-none"
                     >
                       {cardInner}
                     </Link>

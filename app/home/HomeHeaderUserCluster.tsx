@@ -2,8 +2,7 @@
 
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeUserPhotoDialog } from "@/app/home/HomeUserPhotoDialog"
-import { HomeSubtleButton } from "@/app/home/HomeSubtleButton"
-import { RootsIconButton } from "@/components/rootsy-button"
+import { HomeLogoutButton, HomeSubtleButton } from "@/app/home/HomeSubtleButton"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useHomePageData } from "@/hooks/useHomePageData"
 import { menuRealmLightStaticClass } from "@/lib/menu/menuHoloStyles"
@@ -101,16 +100,9 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
         initials={initials}
       />
 
-      <RootsIconButton
-        type="button"
-        label={HOME_COPY.logOut}
-        theme="workspace"
-        rowIntent="destructive"
-        size="default"
-        onClick={() => void handleLogOut()}
-      >
+      <HomeLogoutButton label={HOME_COPY.logOut} onClick={() => void handleLogOut()}>
         <LogOut />
-      </RootsIconButton>
+      </HomeLogoutButton>
     </div>
   )
 }
