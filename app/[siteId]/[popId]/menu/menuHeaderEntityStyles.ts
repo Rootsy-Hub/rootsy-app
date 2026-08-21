@@ -25,6 +25,10 @@ export const menuHeaderEntityBodyClass = cn(
   "border-b border-[color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent)]",
 )
 
+/** Home — misma entidad, sin losa ni costura. */
+export const menuHeaderEntityFloatBodyClass =
+  "menu-header-entity-body relative w-full overflow-hidden bg-transparent"
+
 /** Tierra mojada — humus oliva, humedad de savia. */
 export const menuFooterEntityBodyClass = cn(
   "menu-header-entity-body menu-header-entity-body--floor relative w-full overflow-hidden",

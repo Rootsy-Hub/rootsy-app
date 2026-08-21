@@ -40,7 +40,7 @@ export function HomePageChrome({
     >
       <HomeWorkspaceBackdrop />
 
-      <MenuHeaderEntity>
+      <MenuHeaderEntity float>
         <div className={menuHeaderFlexRowClass}>
           <Link
             href="/"
@@ -68,15 +68,7 @@ export function HomePageChrome({
           <div className="mt-7 w-full sm:mt-8">{children}</div>
         </section>
 
-        <footer
-          className={cn(
-            "relative mt-auto flex w-full shrink-0 justify-center px-4 py-4 sm:px-6 sm:py-5",
-            "border-t border-[color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent)]",
-            "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--rootsy-eter-900)_72%,transparent)_0%,color-mix(in_srgb,var(--rootsy-eter-950)_88%,transparent)_100%)]",
-            "backdrop-blur-[10px] backdrop-saturate-[1.01]",
-            "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent)]",
-          )}
-        >
+        <footer className="relative mt-auto flex w-full shrink-0 justify-center px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex flex-nowrap items-center justify-center gap-3 px-1 sm:px-2">
             <p
               className={cn(

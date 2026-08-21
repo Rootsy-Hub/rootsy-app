@@ -128,18 +128,6 @@
   animation-duration: 7.6s;
 }
 
-.home-eter-horizon {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--rootsy-eter-100) 18%, transparent) 24%,
-    color-mix(in srgb, var(--rootsy-eter-100) 36%, transparent) 50%,
-    color-mix(in srgb, var(--rootsy-eter-100) 18%, transparent) 76%,
-    transparent 100%
-  );
-  animation: home-eter-horizon-breathe 14s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-}
-
 @keyframes home-eter-star-pulse {
   0%,
   100% {
@@ -155,19 +143,8 @@
   }
 }
 
-@keyframes home-eter-horizon-breathe {
-  0%,
-  100% {
-    opacity: 0.42;
-  }
-  50% {
-    opacity: 0.62;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .home-eter-star,
-  .home-eter-horizon {
+  .home-eter-star {
     animation: none !important;
   }
 }
