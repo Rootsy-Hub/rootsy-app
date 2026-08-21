@@ -3,6 +3,10 @@ import type {
   MesaReservation,
   MesaReservationStatus,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import {
+  DEFAULT_OPERATIONAL_DAY_CLOSE_TIME,
+  operationalDayKey,
+} from "@/lib/popOperationalDay"
 
 export const DEFAULT_MESAS_RESERVATION_FLOOR_BUFFER_MINUTES = 45
 export const DEFAULT_MESAS_RESERVATION_GRACE_MINUTES = 20
@@ -22,8 +26,6 @@ export const ACTIVE_FLOOR_RESERVATION_STATUSES = new Set<MesaReservationStatus>(
 export const AGENDA_RESERVATION_STATUSES = new Set<MesaReservationStatus>([
   "pending",
   "confirmed",
-  "seated",
-  "no_show",
 ])
 
 export function readMesasReservationSettings(
@@ -92,7 +94,7 @@ function formatFloorWindowInstant(instant: Date, referenceDay: Date): string {
 export function describeReservationFloorWindow(
   arrivalAt: string,
   settings: MesasReservationSettings,
-  options?: { hasAssignedTable?: boolean },
+  options?: { hasAssignedTable?: boolean; tableCount?: number },
 ): { start: Date; end: Date; summary: string } {
   const { start, end, arrival } = reservationFloorWindow(arrivalAt, settings)
   const from = formatFloorWindowInstant(start, arrival)
@@ -104,7 +106,7 @@ export function describeReservationFloorWindow(
     start,
     end,
     summary: hasAssignedTable
-      ? `En el plano, la mesa se verá reservada de ${from} a ${to} (${timing}).`
+      ? `En el plano, ${options?.tableCount && options.tableCount > 1 ? "las mesas se verán reservadas" : "la mesa se verá reservada"} de ${from} a ${to} (${timing}).`
       : `Sin mesa asignada: no se pinta en el plano. Ventana operativa de ${from} a ${to} (${timing}).`,
   }
 }
@@ -121,12 +123,26 @@ export function mesasReservationSettingsFromDraft(input: {
   })
 }
 
+export function reservationTableIds(
+  reservation: Pick<MesaReservation, "tableId" | "tableIds">,
+): string[] {
+  if (reservation.tableIds?.length) return reservation.tableIds
+  return reservation.tableId ? [reservation.tableId] : []
+}
+
+export function reservationIncludesTable(
+  reservation: Pick<MesaReservation, "tableId" | "tableIds">,
+  tableId: string,
+): boolean {
+  return reservationTableIds(reservation).includes(tableId)
+}
+
 export function reservationShowsOnFloor(
-  reservation: Pick<MesaReservation, "arrivalAt" | "status" | "tableId">,
+  reservation: Pick<MesaReservation, "arrivalAt" | "status" | "tableId" | "tableIds">,
   settings: MesasReservationSettings,
   now = new Date(),
 ): boolean {
-  if (!reservation.tableId) return false
+  if (reservationTableIds(reservation).length === 0) return false
   if (!ACTIVE_FLOOR_RESERVATION_STATUSES.has(reservation.status)) {
     return false
   }
@@ -144,8 +160,7 @@ export function pickFloorReservation(
   const candidates = reservations
     .filter(
       (r) =>
-        r.tableId != null &&
-        r.tableId === tableId &&
+        reservationIncludesTable(r, tableId) &&
         reservationShowsOnFloor(r, settings, now),
     )
     .sort(
@@ -158,16 +173,62 @@ export function pickFloorReservation(
 export function reservationsForAgendaDay(
   reservations: MesaReservation[],
   day = new Date(),
+  options?: {
+    timeZone?: string
+    operationalDayCloseTime?: string
+  },
 ): MesaReservation[] {
+  const timeZone = options?.timeZone?.trim() ?? ""
+  const closeTime =
+    options?.operationalDayCloseTime ?? DEFAULT_OPERATIONAL_DAY_CLOSE_TIME
+  const todayKey = timeZone
+    ? operationalDayKey(day.toISOString(), timeZone, closeTime)
+    : ""
+
   return reservations
-    .filter(
-      (r) =>
-        AGENDA_RESERVATION_STATUSES.has(r.status) &&
-        isSameCalendarDay(new Date(r.arrivalAt), day),
-    )
+    .filter((r) => {
+      if (!AGENDA_RESERVATION_STATUSES.has(r.status)) return false
+      if (todayKey) {
+        return (
+          operationalDayKey(r.arrivalAt, timeZone, closeTime) === todayKey
+        )
+      }
+      return isSameCalendarDay(new Date(r.arrivalAt), day)
+    })
     .sort(
       (a, b) =>
         new Date(a.arrivalAt).getTime() - new Date(b.arrivalAt).getTime(),
+    )
+}
+
+function reservationArrivalDay(iso: string): string {
+  const d = new Date(iso)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
+/** Historial: todas las reservas del período, filtradas por cliente. */
+export function reservationsForHistory(input: {
+  reservations: MesaReservation[]
+  from: string | null
+  to: string | null
+  clientQuery: string
+}): MesaReservation[] {
+  const query = input.clientQuery.trim().toLowerCase()
+
+  return input.reservations
+    .filter((reservation) => {
+      const day = reservationArrivalDay(reservation.arrivalAt)
+      if (input.from && day < input.from) return false
+      if (input.to && day > input.to) return false
+      if (!query) return true
+      return reservation.clientName.toLowerCase().includes(query)
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.arrivalAt).getTime() - new Date(a.arrivalAt).getTime(),
     )
 }
 
@@ -184,8 +245,7 @@ export function upcomingReservationWarning(
   const todayActive = reservations
     .filter(
       (r) =>
-        r.tableId != null &&
-        r.tableId === tableId &&
+        reservationIncludesTable(r, tableId) &&
         ACTIVE_FLOOR_RESERVATION_STATUSES.has(r.status) &&
         isSameCalendarDay(new Date(r.arrivalAt), now),
     )
@@ -213,6 +273,29 @@ export function upcomingReservationWarning(
   return null
 }
 
+export function reservationWindowHasEnded(
+  arrivalAt: string,
+  settings: MesasReservationSettings,
+  now = new Date(),
+): boolean {
+  return now.getTime() > reservationFloorWindow(arrivalAt, settings).end.getTime()
+}
+
+/** Confirmada/pendiente cuya ventana ya pasó, sin sentar ni cancelar. */
+export function resolveReservationStatus(
+  reservation: Pick<MesaReservation, "arrivalAt" | "status">,
+  settings: MesasReservationSettings,
+  now = new Date(),
+): MesaReservationStatus {
+  if (
+    ACTIVE_FLOOR_RESERVATION_STATUSES.has(reservation.status) &&
+    reservationWindowHasEnded(reservation.arrivalAt, settings, now)
+  ) {
+    return "expired"
+  }
+  return reservation.status
+}
+
 export function mesaReservationStatusLabel(status: MesaReservationStatus): string {
   switch (status) {
     case "pending":
@@ -222,9 +305,11 @@ export function mesaReservationStatusLabel(status: MesaReservationStatus): strin
     case "seated":
       return "Sentada"
     case "completed":
-      return "Completada"
+      return "Terminada"
+    case "expired":
+      return "Vencida"
     case "no_show":
-      return "No-show"
+      return "No vino"
     case "cancelled":
       return "Cancelada"
   }
@@ -232,11 +317,15 @@ export function mesaReservationStatusLabel(status: MesaReservationStatus): strin
 
 /** Valores iniciales para abrir mesa desde una reserva activa en el plano. */
 export function mesaOpenInitialFromReservation(
-  reservation: Pick<MesaReservation, "guestCount" | "note">,
+  reservation: Pick<MesaReservation, "guestCount" | "note" | "tableId" | "tableIds">,
   tableId: string,
 ): Partial<MesaOpenSessionInput> {
+  const reservedIds = reservationTableIds(reservation)
+  const tableIds = reservedIds.includes(tableId)
+    ? [tableId, ...reservedIds.filter((id) => id !== tableId)]
+    : [tableId, ...reservedIds]
   return {
-    tableIds: [tableId],
+    tableIds,
     guestCount: reservation.guestCount,
     note: reservation.note,
   }

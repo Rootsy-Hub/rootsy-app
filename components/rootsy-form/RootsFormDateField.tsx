@@ -45,6 +45,8 @@ type Props = {
   popoverClassName?: string
   /** `compact` → "11 ago 2026" para espacios angostos. */
   displayFormat?: "long" | "compact"
+  /** ISO `yyyy-MM-dd`. Deshabilita días anteriores en el calendario. */
+  minDate?: string
 } & RootsFormFieldAssistProps
 
 export function RootsFormDateField({
@@ -65,6 +67,7 @@ export function RootsFormDateField({
   triggerClassName,
   popoverClassName,
   displayFormat = "long",
+  minDate,
 }: Props) {
   const autoId = useId()
   const fieldId = id ?? autoId
@@ -78,6 +81,12 @@ export function RootsFormDateField({
   })
   const [open, setOpen] = useState(false)
   const selected = useMemo(() => parseRootsFormIsoDate(value), [value])
+  const minDay = useMemo(() => {
+    if (!minDate || !/^\d{4}-\d{2}-\d{2}$/.test(minDate)) return undefined
+    const [year, month, day] = minDate.split("-").map(Number)
+    const local = new Date(year, month - 1, day)
+    return Number.isNaN(local.getTime()) ? undefined : local
+  }, [minDate])
   const displayValue = selected
     ? displayFormat === "compact"
       ? formatRootsFormDisplayDateCompact(selected)
@@ -155,10 +164,13 @@ export function RootsFormDateField({
             selected={selected}
             onSelect={(date) => {
               if (!date) return
+              if (minDay && date < minDay) return
               onChange(toISODateLocal(date))
               setOpen(false)
             }}
             defaultMonth={selected}
+            startMonth={minDay}
+            disabled={minDay ? { before: minDay } : undefined}
             className={rootsFormDateCalendarShellClass}
             classNames={rootsFormDateCalendarClassNames}
             formatters={{

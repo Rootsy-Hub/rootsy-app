@@ -46,6 +46,13 @@ export type SaleOperationActionsBarProps = {
   flush?: boolean
   /** Ticket operar — umbral circular Descartar · Cobrar / Pagar. */
   variant?: "default" | "operar"
+  /** Mesa o pedido — caption arriba, número abajo, alineado con los círculos. */
+  contextLabel?: {
+    caption: string
+    value: string
+    /** Pedido de mostrador: el código puede ser largo. */
+    valueSize?: "prominent" | "compact"
+  }
   className?: string
 }
 
@@ -60,6 +67,7 @@ export function SaleOperationActionsBar({
   onConfirm,
   flush = false,
   variant = "default",
+  contextLabel,
   className,
 }: SaleOperationActionsBarProps) {
   const confirmInactive = confirmDisabled || confirmLoading
@@ -69,7 +77,25 @@ export function SaleOperationActionsBar({
 
   if (variant === "operar") {
     return (
-      <>
+      <div className="flex h-full w-full items-center justify-center gap-[var(--rootsy-space-300)]">
+        {contextLabel ? (
+          <p
+            className="flex min-w-[2.5rem] max-w-[9rem] flex-col items-center justify-center leading-none text-[var(--rootsy-bruma-800)]"
+            aria-label={`${contextLabel.caption} ${contextLabel.value}`}
+          >
+            <span className="font-canopy text-xs font-bold">
+              {contextLabel.caption}
+            </span>
+            <span
+              className={cn(
+                "-mt-0.5 truncate font-ledger font-bold tabular-nums tracking-tight",
+                contextLabel.valueSize === "compact" ? "text-sm" : "text-2xl",
+              )}
+            >
+              {contextLabel.value}
+            </span>
+          </p>
+        ) : null}
         <RootsIconButton
           label="Descartar"
           theme="workspace"
@@ -101,7 +127,7 @@ export function SaleOperationActionsBar({
         >
           <ConfirmIcon size={layoutsOperarTicketActionConfirmIconPx} aria-hidden />
         </RootsIconButton>
-      </>
+      </div>
     )
   }
 

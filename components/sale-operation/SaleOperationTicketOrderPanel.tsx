@@ -46,7 +46,11 @@ type Props = {
   actions: ActionsProps
   totalBar: TotalProps
   listTitle?: string
-  listSubtitle?: string
+  contextLabel?: {
+    caption: string
+    value: string
+    valueSize?: "prominent" | "compact"
+  }
   emptyTitle?: string
   flush?: boolean
   loading?: boolean
@@ -90,7 +94,7 @@ export function SaleOperationTicketOrderPanel({
   actions,
   totalBar,
   listTitle = "Pedido",
-  listSubtitle,
+  contextLabel,
   emptyTitle = "Pedido vacío",
   loading = false,
   cartScrollHighlight,
@@ -120,11 +124,6 @@ export function SaleOperationTicketOrderPanel({
         <div className={layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL)}>
           <div className="min-w-0">
             <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
-            {listSubtitle ? (
-              <p className="mt-0.5 truncate text-xs font-medium text-[var(--layouts-operar-light-cart-line-meta)]">
-                {listSubtitle}
-              </p>
-            ) : null}
           </div>
         </div>
 
@@ -190,7 +189,11 @@ export function SaleOperationTicketOrderPanel({
 
       {!loading && hasTicketItems ? (
         <div className={layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL)}>
-          <SaleOperationActionsBar {...actions} variant="operar" />
+          <SaleOperationActionsBar
+            {...actions}
+            variant="operar"
+            contextLabel={contextLabel}
+          />
         </div>
       ) : null}
     </>

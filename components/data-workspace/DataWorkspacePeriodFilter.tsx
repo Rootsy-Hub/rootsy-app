@@ -24,6 +24,7 @@ import {
   DATA_WORKSPACE_DATE_QUICK_PRESETS,
   dataWorkspaceDateFilterSummary,
   type DataWorkspaceDatePreset,
+  type DataWorkspaceDateQuickPreset,
 } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
@@ -49,6 +50,7 @@ export function DataWorkspacePeriodFilter({
   triggerId: triggerIdProp,
   showActiveState = true,
   variant = "panel",
+  presets = DATA_WORKSPACE_DATE_QUICK_PRESETS,
   className,
 }: {
   preset: DataWorkspaceDatePreset
@@ -62,6 +64,7 @@ export function DataWorkspacePeriodFilter({
   showActiveState?: boolean
   /** `compact` toolbar inline; `layout` barra flush h-23 con RootsForm. */
   variant?: "panel" | "compact" | "layout"
+  presets?: DataWorkspaceDateQuickPreset[]
   className?: string
 }) {
   const autoLabelId = useId()
@@ -207,7 +210,7 @@ export function DataWorkspacePeriodFilter({
             )}
             contentClassName={periodSelectContentClass}
           >
-            {DATA_WORKSPACE_DATE_QUICK_PRESETS.map((item) => (
+            {presets.map((item) => (
               <RootsFormSelectItem
                 key={item.id}
                 value={item.id}

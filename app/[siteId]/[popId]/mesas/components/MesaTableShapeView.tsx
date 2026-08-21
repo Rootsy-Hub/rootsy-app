@@ -48,7 +48,7 @@ export function MesaTableShapeView({
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center justify-center",
+        "relative flex flex-col items-center justify-center overflow-visible",
         mesaStatusClass(status),
         mesaTableHighlightClass({ selected, layoutSelected }),
         isRound ? "rounded-full" : "rounded-xl",

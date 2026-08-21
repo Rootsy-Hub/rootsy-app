@@ -5,6 +5,7 @@ import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataW
 import { RootsBanner } from "@/components/rootsy-banner"
 import { getBannerIconStyle } from "@/components/rootsy-banner/rootsBannerSpecRuntime"
 import {
+  RootsDangerButton,
   RootsDangerSubtleButton,
   RootsPrimaryButton,
   RootsSubtleButton,
@@ -37,7 +38,7 @@ export type ChannelOperarFooterAction = {
   loadingLabel?: string
   title?: string
   type?: "button" | "submit"
-  variant: "primary" | "discard" | "secondary"
+  variant: "primary" | "discard" | "destructive" | "secondary"
 }
 
 function ChannelOperarFooterButton({
@@ -58,6 +59,9 @@ function ChannelOperarFooterButton({
 
   if (action.variant === "primary") {
     return <RootsPrimaryButton {...buttonProps}>{action.label}</RootsPrimaryButton>
+  }
+  if (action.variant === "destructive") {
+    return <RootsDangerButton {...buttonProps}>{action.label}</RootsDangerButton>
   }
   if (action.variant === "discard") {
     return (
@@ -86,12 +90,12 @@ export function ChannelDataOperarFooterBar({
     <div className={cn(channelOperarFooterShellClass, className)}>
       <div
         className={cn(
-          "flex w-full flex-wrap items-center gap-[var(--rootsy-space-150)]",
+          "flex w-full flex-nowrap items-center gap-[var(--rootsy-space-150)]",
           rest.length > 0 ? "justify-between" : "justify-end",
         )}
       >
         {rest.length > 0 ? (
-          <div className="flex min-w-0 flex-wrap items-center gap-[var(--rootsy-space-150)]">
+          <div className="flex min-w-0 flex-nowrap items-center gap-[var(--rootsy-space-150)]">
             {rest.map((action) => (
               <ChannelOperarFooterButton
                 key={`${action.variant}-${action.label}`}
@@ -211,15 +215,18 @@ export function ChannelDataWarningBanner({ children }: { children: ReactNode }) 
 export function ChannelDataHint({
   icon: Icon,
   children,
+  className,
 }: {
   icon?: LucideIcon
   children: ReactNode
+  className?: string
 }) {
   return (
     <RootsBanner
       intent="neutral"
       layout="message"
       density="compact"
+      className={className}
       icon={
         Icon ? (
           <Icon
@@ -310,10 +317,12 @@ export function ChannelDataSecondaryAction({
 
 export function ChannelDataFormActionsBar({
   onCancel,
+  cancelLabel = "Cancelar",
   cancelDisabled,
   primary,
 }: {
   onCancel?: () => void
+  cancelLabel?: string
   cancelDisabled?: boolean
   primary: {
     label: string
@@ -331,7 +340,7 @@ export function ChannelDataFormActionsBar({
           ? [
               {
                 variant: "secondary" as const,
-                label: "Cancelar",
+                label: cancelLabel,
                 disabled: cancelDisabled,
                 onClick: onCancel,
               },

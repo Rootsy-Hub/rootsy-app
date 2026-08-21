@@ -12,7 +12,6 @@ import {
   type PersistedClient,
 } from "@tanstack/query-persist-client-core"
 import { hydrate, QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import {
   createContext,
   useContext,
@@ -95,9 +94,6 @@ export function QueryProvider({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <PersistReadyContext.Provider value={persistReady}>
         {children}
-        {process.env.NODE_ENV === "development" ? (
-          <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
-        ) : null}
       </PersistReadyContext.Provider>
     </QueryClientProvider>
   )

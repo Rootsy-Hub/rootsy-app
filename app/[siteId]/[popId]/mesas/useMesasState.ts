@@ -23,10 +23,13 @@ import {
   pickFloorReservation,
   readMesasReservationSettings,
   reservationsForAgendaDay,
+  resolveReservationStatus,
   upcomingReservationWarning,
   type MesaReservationWarning,
   type MesasReservationSettings,
 } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
+import { DEFAULT_OPERATIONAL_DAY_CLOSE_TIME } from "@/lib/popOperationalDay"
+import { timezoneForSiteId } from "@/lib/popTimezone"
 import type {
   MesaFloorDecor,
   MesaOpenSessionInput,
@@ -120,6 +123,7 @@ function mapReservationRow(row: MesaReservationRow): MesaReservation {
   return {
     id: row.id,
     tableId: row.tableId,
+    tableIds: row.tableIds,
     clientId: row.clientId,
     clientName: row.clientName,
     guestCount: row.guestCount,
@@ -183,6 +187,7 @@ function toSessionInput(input: MesaOpenSessionInput) {
     waiterId: input.waiterId,
     guestCount: input.guestCount,
     note: input.note,
+    reservationId: input.reservationId,
   }
 }
 
@@ -212,6 +217,9 @@ export function useMesasState(popId: string, siteId: string) {
     useState<MesasReservationSettings>(() =>
       readMesasReservationSettings(null),
     )
+  const [operationalDayCloseTime, setOperationalDayCloseTime] = useState(
+    DEFAULT_OPERATIONAL_DAY_CLOSE_TIME,
+  )
 
   useEffect(() => {
     const id = window.setInterval(() => setFloorNow(new Date()), 60_000)
@@ -226,21 +234,38 @@ export function useMesasState(popId: string, siteId: string) {
     knownSessionIdsRef.current = new Set(sessions.map((session) => session.id))
   }, [sessions])
 
+  const visibleReservations = useMemo(
+    () =>
+      reservations.map((reservation) => ({
+        ...reservation,
+        status: resolveReservationStatus(
+          reservation,
+          reservationSettings,
+          floorNow,
+        ),
+      })),
+    [reservations, reservationSettings, floorNow],
+  )
+
   const tables = useMemo(
     () =>
       applyTableOccupancy(
         layoutTables,
         sessions,
-        reservations,
+        visibleReservations,
         reservationSettings,
         floorNow,
       ),
-    [layoutTables, sessions, reservations, reservationSettings, floorNow],
+    [layoutTables, sessions, visibleReservations, reservationSettings, floorNow],
   )
 
   const todayAgenda = useMemo(
-    () => reservationsForAgendaDay(reservations, floorNow),
-    [reservations, floorNow],
+    () =>
+      reservationsForAgendaDay(visibleReservations, floorNow, {
+        timeZone: timezoneForSiteId(siteId),
+        operationalDayCloseTime,
+      }),
+    [visibleReservations, floorNow, siteId, operationalDayCloseTime],
   )
 
   const removeSession = useCallback((sessionId: string) => {
@@ -328,6 +353,7 @@ export function useMesasState(popId: string, siteId: string) {
 
     setSessionError(null)
     setReservationSettings(res.settings)
+    setOperationalDayCloseTime(res.operationalDayCloseTime)
   }, [popId, siteId])
 
   const reloadOccupancy = useCallback(async () => {
@@ -530,8 +556,8 @@ export function useMesasState(popId: string, siteId: string) {
 
   const selectedReservation = useMemo(() => {
     if (!selectedTable?.reservationId) return null
-    return reservations.find((r) => r.id === selectedTable.reservationId) ?? null
-  }, [selectedTable, reservations])
+    return visibleReservations.find((r) => r.id === selectedTable.reservationId) ?? null
+  }, [selectedTable, visibleReservations])
 
   const selectedTableReservationWarning = useMemo((): MesaReservationWarning | null => {
     if (!selectedTableId) return null
@@ -554,11 +580,14 @@ export function useMesasState(popId: string, siteId: string) {
 
   const selectedTableIds = useMemo(() => {
     if (!selectedTableId) return new Set<string>()
-    if (!selectedSession || selectedSession.tableIds.length <= 1) {
-      return new Set([selectedTableId])
+    if (selectedSession && selectedSession.tableIds.length > 1) {
+      return new Set(selectedSession.tableIds)
     }
-    return new Set(selectedSession.tableIds)
-  }, [selectedTableId, selectedSession])
+    if (selectedReservation && selectedReservation.tableIds.length > 1) {
+      return new Set(selectedReservation.tableIds)
+    }
+    return new Set([selectedTableId])
+  }, [selectedTableId, selectedSession, selectedReservation])
 
   useEffect(() => {
     if (!layoutEditMode) setLayoutSelection(null)
@@ -667,15 +696,17 @@ export function useMesasState(popId: string, siteId: string) {
       }
 
       upsertSession(res.session)
-      setReservations((prev) =>
-        prev.map((r) =>
-          r.tableId != null &&
-          input.tableIds.includes(r.tableId) &&
-          (r.status === "pending" || r.status === "confirmed")
-            ? { ...r, status: "seated" as const }
-            : r,
-        ),
-      )
+      if (input.reservationId) {
+        const seatedId = input.reservationId
+        setReservations((prev) =>
+          prev.map((r) =>
+            r.id === seatedId &&
+            (r.status === "pending" || r.status === "confirmed")
+              ? { ...r, status: "seated" as const }
+              : r,
+          ),
+        )
+      }
       setSelectedTableId(input.tableIds[0] ?? null)
       return true
     },
@@ -716,9 +747,10 @@ export function useMesasState(popId: string, siteId: string) {
       }
 
       removeSession(sessionId)
+      await reloadReservations()
       return true
     },
-    [popId, siteId, removeSession],
+    [popId, siteId, removeSession, reloadReservations],
   )
 
   const setSessionFloorStatus = useCallback(
@@ -839,15 +871,18 @@ export function useMesasState(popId: string, siteId: string) {
       const tableIds =
         input.tableIds.length > 0
           ? input.tableIds
-          : reservation.tableId
-            ? [reservation.tableId]
-            : []
+          : reservation.tableIds.length > 0
+            ? reservation.tableIds
+            : reservation.tableId
+              ? [reservation.tableId]
+              : []
       if (tableIds.length === 0) return false
 
-      if (!reservation.tableId) {
+      if (reservation.tableIds.length === 0 && !reservation.tableId) {
         const assigned = await saveReservation({
           reservationId: reservation.id,
           tableId: tableIds[0],
+          tableIds,
           clientId: reservation.clientId,
           clientName: reservation.clientName,
           guestCount: input.guestCount ?? reservation.guestCount ?? null,
@@ -861,6 +896,7 @@ export function useMesasState(popId: string, siteId: string) {
         ...input,
         tableIds,
         guestCount: input.guestCount ?? reservation.guestCount ?? null,
+        reservationId: reservation.id,
       })
       return ok
     },
@@ -871,7 +907,7 @@ export function useMesasState(popId: string, siteId: string) {
     salons,
     tables,
     sessions,
-    reservations,
+    reservations: visibleReservations,
     decors,
     activeSalonId,
     setActiveSalonId,

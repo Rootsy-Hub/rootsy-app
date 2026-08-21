@@ -7,19 +7,9 @@ import { SaleComprobantePickerDialog } from "@/components/checkout/SaleComproban
 import type { SaleComprobantePreviewInput } from "@/components/checkout/SaleComprobanteTicketPreview"
 import { SaleFinalizeDialog } from "@/components/checkout/SaleFinalizeDialog"
 import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { RootsConfirmDialog } from "@/components/rootsy-dialog/RootsConfirmDialog"
 import { partyCanOperateOnCurrentAccount } from "@/lib/currentAccounts"
 import { getSaleComprobanteDisplayLabel, hasConfiguredSaleComprobante } from "@/lib/saleComprobantePicker"
-import { saleOpAlertDialogContent } from "@/components/sale-operation/saleOperationStyles"
 import { useMemo } from "react"
 
 type Props = {
@@ -186,25 +176,15 @@ export function MesasCheckoutModals({
         }
       />
 
-      <AlertDialog open={m.descartarConfirmOpen} onOpenChange={m.setDescartarConfirmOpen}>
-        <AlertDialogContent className={saleOpAlertDialogContent}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Descartar el pedido?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se quitarán los productos y la configuración de cliente, comprobante y pago.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={m.descartarPedido}
-              className="bg-rose-600 hover:bg-rose-500"
-            >
-              Descartar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <RootsConfirmDialog
+        open={m.descartarConfirmOpen}
+        onOpenChange={m.setDescartarConfirmOpen}
+        title="¿Descartar el pedido?"
+        description="Se quitarán los productos y la configuración de cliente, comprobante y pago."
+        confirmLabel="Descartar"
+        destructive
+        onConfirm={m.descartarPedido}
+      />
 
       <SaleFinalizeDialog
         open={m.confirmOpen}

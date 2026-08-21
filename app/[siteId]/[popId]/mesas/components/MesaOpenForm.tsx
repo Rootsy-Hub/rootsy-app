@@ -30,6 +30,8 @@ type Props = {
   submitLabel?: string
   onSubmit: (input: MesaOpenSessionInput) => void | Promise<void>
   onCancel?: () => void
+  cancelLabel?: string
+  cancelDisabled?: boolean
 }
 
 export function MesaOpenForm({
@@ -40,6 +42,8 @@ export function MesaOpenForm({
   submitLabel = "Abrir mesa",
   onSubmit,
   onCancel,
+  cancelLabel,
+  cancelDisabled,
 }: Props) {
   const [waiterId, setWaiterId] = useState(initial?.waiterId ?? "")
   const [guestCountRaw, setGuestCountRaw] = useState(
@@ -176,6 +180,8 @@ export function MesaOpenForm({
 
       <ChannelDataFormActionsBar
         onCancel={onCancel}
+        cancelLabel={cancelLabel}
+        cancelDisabled={cancelDisabled || submitting}
         primary={{
           type: "submit",
           label:

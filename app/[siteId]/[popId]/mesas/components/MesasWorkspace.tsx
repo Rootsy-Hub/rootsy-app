@@ -71,10 +71,12 @@ export function MesasWorkspace({
   onRegisterLayoutData,
 }: Props) {
   const { bootstrap } = usePopWorkspace()
-  const canReadClients = useMemo(
-    () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canRead,
+  const clientsAccess = useMemo(
+    () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []),
     [bootstrap?.permissionKeys],
   )
+  const canReadClients = clientsAccess.canRead
+  const canCreateClient = clientsAccess.canCreate
 
   const {
     salons,
@@ -91,6 +93,7 @@ export function MesasWorkspace({
     selectedTableReservationWarning,
     reservationSettings,
     saveReservationSettings,
+    reservations,
     todayAgenda,
     salonTables,
     salonDecors,
@@ -111,6 +114,7 @@ export function MesasWorkspace({
     openSession,
     updateSession,
     reloadSessions,
+    reloadReservations,
     setSessionFloorStatus,
     saveReservation,
     removeReservation,
@@ -140,8 +144,8 @@ export function MesasWorkspace({
   )
 
   const handleSessionClose = useCallback(async () => {
-    await reloadSessions()
-  }, [reloadSessions])
+    await Promise.all([reloadSessions(), reloadReservations()])
+  }, [reloadSessions, reloadReservations])
 
   const handleCartLineAdded = useCallback(
     (lineId: string) => {
@@ -239,14 +243,30 @@ export function MesasWorkspace({
   const mergeCandidates = useMemo(() => {
     if (!selectedTable) return []
     const free = freeTablesInSalon(selectedTable.salonId, [selectedTable.id])
-    if (!selectedSession) return free
-    const sessionOthers = tables.filter(
-      (t) =>
-        selectedSession.tableIds.includes(t.id) && t.id !== selectedTable.id,
-    )
+    const reservedOthers =
+      selectedReservation && selectedTable.status === "reserved"
+        ? tables.filter(
+            (t) =>
+              selectedReservation.tableIds.includes(t.id) &&
+              t.id !== selectedTable.id,
+          )
+        : []
+    if (!selectedSession && reservedOthers.length === 0) return free
+    const sessionOthers = selectedSession
+      ? tables.filter(
+          (t) =>
+            selectedSession.tableIds.includes(t.id) && t.id !== selectedTable.id,
+        )
+      : reservedOthers
     const seen = new Set(sessionOthers.map((t) => t.id))
     return [...sessionOthers, ...free.filter((t) => !seen.has(t.id))]
-  }, [selectedTable, selectedSession, tables, freeTablesInSalon])
+  }, [
+    selectedTable,
+    selectedSession,
+    selectedReservation,
+    tables,
+    freeTablesInSalon,
+  ])
 
   const mesaLabel = sessionTitle(
     selectedTable?.label ?? null,
@@ -254,8 +274,9 @@ export function MesasWorkspace({
   )
 
   const handleSelectAgendaReservation = useCallback((reservation: MesaReservation) => {
-    if (reservation.tableId) {
-      selectTable(reservation.tableId)
+    const tableId = reservation.tableIds[0] ?? reservation.tableId
+    if (tableId) {
+      selectTable(tableId)
     }
   }, [selectTable])
 
@@ -438,15 +459,18 @@ export function MesasWorkspace({
                   closeSessionMode={checkout.cerrarMesaMode}
                   closeSessionLoading={checkout.submitting}
                   clientLabel={checkout.sessionClientLabel}
+                  onCancelReservation={removeReservation}
                 />
               </div>
             ) : rightView === "agenda" ? (
               <div className={layoutsOperarSummaryPanelTabBodyClass}>
                 <MesaAgendaPanel
                   agenda={todayAgenda}
+                  reservations={reservations}
                   tables={tables}
                   popId={popId}
                   canReadClients={canReadClients}
+                  canCreateClient={canCreateClient}
                   reservationSettings={reservationSettings}
                   onSaveReservationSettings={saveReservationSettings}
                   waiters={waiters}

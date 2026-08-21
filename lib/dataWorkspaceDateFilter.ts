@@ -11,6 +11,7 @@ import type { DateRange } from "react-day-picker"
 
 export type DataWorkspaceDatePreset =
   | "all"
+  | "today"
   | "this_week"
   | "this_month"
   | "last_month"
@@ -18,15 +19,23 @@ export type DataWorkspaceDatePreset =
   | "last_30"
   | "custom"
 
-export const DATA_WORKSPACE_DATE_QUICK_PRESETS: {
+export type DataWorkspaceDateQuickPreset = {
   id: Exclude<DataWorkspaceDatePreset, "all" | "custom">
   label: string
-}[] = [
+}
+
+export const DATA_WORKSPACE_DATE_QUICK_PRESETS: DataWorkspaceDateQuickPreset[] = [
   { id: "this_week", label: "Esta semana" },
   { id: "this_month", label: "Este mes" },
   { id: "last_month", label: "Mes anterior" },
   { id: "last_7", label: "Últimos 7 días" },
   { id: "last_30", label: "Últimos 30 días" },
+]
+
+export const RESERVATION_HISTORY_DATE_PRESETS: DataWorkspaceDateQuickPreset[] = [
+  { id: "today", label: "Hoy" },
+  { id: "this_week", label: "Esta semana" },
+  { id: "this_month", label: "Este mes" },
 ]
 
 export function isCompleteDateRange(
@@ -50,6 +59,10 @@ export function computeDataWorkspaceDateBounds(
   switch (preset) {
     case "all":
       return { from: null, to: null }
+    case "today": {
+      const day = toISODateLocal(today)
+      return { from: day, to: day }
+    }
     case "this_week": {
       const from = startOfWeek(today, { weekStartsOn: 1 })
       const to = endOfWeek(today, { weekStartsOn: 1 })
@@ -118,6 +131,7 @@ export function dataWorkspaceDateFilterSummary(
   bounds: { from: string | null; to: string | null },
 ): string {
   if (preset === "all") return "Todas las fechas"
+  if (preset === "today") return "Hoy"
   if (preset === "this_week") return "Esta semana"
   if (preset === "this_month") return "Este mes"
   if (preset === "last_month") return "Mes anterior"
@@ -133,6 +147,7 @@ export function dataWorkspacePresetLabel(
   preset: DataWorkspaceDatePreset,
 ): string {
   if (preset === "all") return "Todas las fechas"
+  if (preset === "today") return "Hoy"
   if (preset === "custom") return "Rango personalizado"
   const match = DATA_WORKSPACE_DATE_QUICK_PRESETS.find((item) => item.id === preset)
   return match?.label ?? "Período"

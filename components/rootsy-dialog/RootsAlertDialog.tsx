@@ -110,6 +110,7 @@ type FooterProps = {
   onConfirm?: () => void
   destructive?: boolean
   confirmDisabled?: boolean
+  cancelDisabled?: boolean
   /** dialog.footer.single — solo la acción primaria a la derecha. */
   hideCancel?: boolean
   className?: string
@@ -122,6 +123,7 @@ export function RootsAlertDialogFooter({
   onConfirm,
   destructive = false,
   confirmDisabled,
+  cancelDisabled,
   hideCancel = false,
   className,
 }: FooterProps) {
@@ -136,7 +138,11 @@ export function RootsAlertDialogFooter({
       )}
     >
       {hideCancel ? null : (
-        <RootsSubtleButton type="button" onClick={onCancel}>
+        <RootsSubtleButton
+          type="button"
+          disabled={cancelDisabled}
+          onClick={onCancel}
+        >
           {cancelLabel}
         </RootsSubtleButton>
       )}

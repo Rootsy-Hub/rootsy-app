@@ -138,6 +138,7 @@ export const MOCK_MESA_RESERVATIONS: MesaReservation[] = [
   {
     id: "res-1",
     tableId: "a7",
+    tableIds: ["a7"],
     clientId: null,
     clientName: "Familia Acosta",
     guestCount: 4,

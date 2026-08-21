@@ -21,6 +21,13 @@
   animation: mesa-floor-edit-ring 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
+.mesa-table-select-ring {
+  outline: 2px solid var(--mesa-select, var(--rootsy-savia-400));
+  outline-offset: 0;
+  box-shadow: 0 0 0 5px
+    color-mix(in srgb, var(--mesa-select, var(--rootsy-savia-400)) 32%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mesa-floor-edit-ring {
     animation: none;

@@ -84,7 +84,11 @@ export function MostradorOrderPanel({
         totalPagado: totalPagadoAcumulado,
       }}
       listTitle="Pedido"
-      listSubtitle={orderLabel ? `Pedido ${orderLabel}` : undefined}
+      contextLabel={
+        orderLabel
+          ? { caption: "Pedido", value: orderLabel, valueSize: "compact" }
+          : undefined
+      }
       cartScrollHighlight={cartScrollHighlight}
     />
   )
