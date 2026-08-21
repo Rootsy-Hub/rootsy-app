@@ -344,7 +344,7 @@ export function MenuDock({ siteId, popId }: Props) {
   )
 
   return (
-    <div className="flex w-full max-w-full justify-center overflow-x-auto overscroll-x-contain">
+    <div className="flex w-full max-w-full justify-center overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div
         className={cn(
           "flex items-end overflow-visible",

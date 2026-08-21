@@ -508,7 +508,7 @@ function MenuPage() {
       </MenuHeaderEntity>
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-start gap-6 py-4 pb-28 sm:gap-10 md:justify-center md:gap-14 md:py-0 md:pb-8">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-start gap-5 px-0 py-3 pb-[calc(7.25rem+env(safe-area-inset-bottom))] sm:gap-8 md:justify-center md:gap-14 md:py-0 md:pb-8">
           {menuReady ? (
             <MenuSectionNavigator
               className="menu-content-emerge"
@@ -529,6 +529,13 @@ function MenuPage() {
 
                   return (
                     <div key={sectionKey} className={menuPlanetSlideClass}>
+                      {items.length === 0 ? (
+                        <p className="px-4 py-10 text-center text-sm text-white/45">
+                          {searchQuery.trim()
+                            ? "No encuentro nada con esa búsqueda."
+                            : "Esta sección está vacía."}
+                        </p>
+                      ) : (
                       <div className={menuPlanetGridClass}>
                         {items.map((item) => {
                           const target = routeForMenuLink(siteId, popId, item.link)
@@ -556,6 +563,7 @@ function MenuPage() {
                           )
                         })}
                       </div>
+                      )}
                     </div>
                   )
                 })}

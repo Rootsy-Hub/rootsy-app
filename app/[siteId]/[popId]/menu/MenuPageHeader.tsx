@@ -67,7 +67,7 @@ export function MenuPageHeader({
 }: MenuPageHeaderProps) {
   return (
     <>
-      <div className="flex h-full min-w-0 items-center gap-2 px-3 md:hidden">
+      <div className="flex h-full min-w-0 items-center gap-1.5 px-2 md:hidden">
         {showSearch ? (
           <MenuSearchField
             inputRef={mobileSearchRef}
@@ -186,7 +186,7 @@ function MenuPopIdentity({
   compact?: boolean
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-2.5 md:gap-3">
+    <div className={cn("flex min-w-0 items-center gap-2.5 md:gap-3", compact && "flex-1")}>
       <div
         className={cn(
           "shrink-0 overflow-hidden rounded-lg",
@@ -279,6 +279,8 @@ function MenuSearchField({
       <input
         ref={inputRef}
         type="search"
+        inputMode="search"
+        enterKeyHint="search"
         placeholder="Buscar..."
         value={query}
         onChange={(event) => onChange(event.target.value)}

@@ -37,7 +37,7 @@ export const menuSearchShortcutClass = cn(
 )
 
 export const menuSearchClearButtonClass = cn(
-  "flex size-7 items-center justify-center rounded-full transition-colors",
+  "flex size-9 items-center justify-center rounded-full transition-colors md:size-7",
   eterHeaderMutedClass,
   "hover:text-white/88",
 )

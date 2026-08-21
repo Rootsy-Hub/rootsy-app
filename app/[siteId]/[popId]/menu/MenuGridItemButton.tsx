@@ -23,6 +23,7 @@ import {
   menuPlanetIconGlyphClass,
   menuPlanetIconShellClass,
   menuPlanetTileClass,
+  menuPlanetTileLabelClass,
 } from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
@@ -110,6 +111,7 @@ export function MenuGridItemButton({
       <span
         className={cn(
           "flex h-8 w-full items-center justify-center text-center line-clamp-2",
+          menuPlanetTileLabelClass,
           showDockPlacedStyle || isDragGhost
             ? menuHoloLabelDockPlacedClass
             : menuHoloLabelClass,

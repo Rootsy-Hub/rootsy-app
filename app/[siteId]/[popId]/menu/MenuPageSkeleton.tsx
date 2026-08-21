@@ -31,8 +31,8 @@ export function MenuPageSkeleton() {
         <MenuDormantHeader />
       </MenuHeaderEntity>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-14 sm:gap-16">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-start gap-5 py-3 pb-[calc(7.25rem+env(safe-area-inset-bottom))] sm:gap-8 md:justify-center md:gap-14 md:py-0 md:pb-8">
           <MenuDormantNavigator />
           <div className="w-full">
             <MenuDormantGrid />

@@ -53,7 +53,10 @@ export function MenuSectionNavigator({
           const isLast = index === sections.length - 1
 
           return (
-            <div key={section.key} className="flex items-stretch">
+            <div
+              key={section.key}
+              className="flex min-w-0 flex-1 items-stretch sm:flex-none"
+            >
               <button
                 type="button"
                 role="tab"
@@ -73,7 +76,7 @@ export function MenuSectionNavigator({
                       : menuSectionRealmTabIdleClass,
                 )}
               >
-                {section.title}
+                <span className="block truncate">{section.title}</span>
                 {selected ? (
                   <span
                     aria-hidden
