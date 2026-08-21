@@ -1,6 +1,7 @@
 "use client"
 
 import { HOME_COPY } from "@/app/home/homeCopy"
+import { HomeUserPhotoDialog } from "@/app/home/HomeUserPhotoDialog"
 import { RootsIconButton, RootsSubtleButton } from "@/components/rootsy-button"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useHomePageData } from "@/hooks/useHomePageData"
@@ -22,6 +23,7 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
   const router = useRouter()
   const { profile, profileFullName, profilePending } = useHomePageData(userId ?? "")
   const [isOnline, setIsOnline] = useState(true)
+  const [photoOpen, setPhotoOpen] = useState(false)
 
   const imageUrl = profile?.imageUrl?.trim() || null
   const initials = profileFullName.trim().slice(0, 2).toUpperCase() || "·"
@@ -60,7 +62,15 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
             aria-hidden
           />
         ) : (
-          <span className={cn(ISOLOGO_TILE_CLASS, "bg-white/10")}>
+          <button
+            type="button"
+            className={cn(
+              ISOLOGO_TILE_CLASS,
+              "cursor-pointer bg-white/10 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
+            )}
+            aria-label={HOME_COPY.photoModalTitle}
+            onClick={() => setPhotoOpen(true)}
+          >
             {imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={imageUrl} alt="" className="size-full object-cover" />
@@ -74,7 +84,7 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
                 {initials}
               </span>
             )}
-          </span>
+          </button>
         )}
         <span
           role="status"
@@ -86,6 +96,14 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
           )}
         />
       </span>
+
+      <HomeUserPhotoDialog
+        open={photoOpen}
+        onOpenChange={setPhotoOpen}
+        name={profileFullName.trim()}
+        imageUrl={imageUrl}
+        initials={initials}
+      />
 
       <RootsIconButton
         type="button"

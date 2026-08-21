@@ -16,10 +16,8 @@ import "@/app/home/homeHarmony.css"
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeGreeting } from "@/app/home/HomeGreeting"
 import { HomeHeaderUserCluster } from "@/app/home/HomeHeaderUserCluster"
-import {
-  menuRealmLightMutedClass,
-  menuRealmLightStaticClass,
-} from "@/lib/menu/menuHoloStyles"
+import { RootsSubtleButton } from "@/components/rootsy-button"
+import { menuRealmLightMutedClass } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -52,8 +50,8 @@ export function HomePageChrome({
       >
         <div className={menuHeaderFlexRowClass}>
           <Link
-            href="/home"
-            aria-label="Rootsy — inicio"
+            href="/"
+            aria-label="Rootsy — landing"
             className="inline-flex shrink-0 items-center rounded-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,255,255,0.22)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           >
             <Image
@@ -87,17 +85,10 @@ export function HomePageChrome({
             >
               {HOME_COPY.footerLead}
             </p>
-            <button
-              type="button"
-              className={cn(
-                "inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-sm transition-colors",
-                menuRealmLightStaticClass,
-                "hover:text-white",
-              )}
-            >
+            <RootsSubtleButton type="button" size="compact" theme="pos" withIcon>
               <Download className="size-4" aria-hidden />
               {HOME_COPY.download}
-            </button>
+            </RootsSubtleButton>
           </div>
         </footer>
       </main>
