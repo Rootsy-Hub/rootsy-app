@@ -243,115 +243,33 @@ export const BUTTONS_UI_POS_TEXT_APPEARANCES = [
   "link",
 ] as const satisfies readonly ButtonsUiAppearanceId[]
 
-function getButtonsUiPosDefaultSurface(
-  state: ButtonsUiInteractionState,
-): HardcodedButtonSurface {
-  const base: HardcodedButtonSurface = {
-    backgroundColor: elevationSurfaceDark("elevation.surface"),
-    color: pos.textSecondary,
-    border: `1px solid ${pos.border}`,
-    boxShadow: `inset 0 1px 0 color-mix(in srgb, ${TEXT_ON_DARK} 8%, transparent)`,
-    fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
-  }
-
-  switch (state) {
-    case "default":
-      return base
-    case "hover":
-      return {
-        ...base,
-        backgroundColor: elevationSurfaceDark("elevation.surface.raised"),
-        color: TEXT_ON_DARK,
-        border: `1px solid color-mix(in srgb, ${TEXT_ON_DARK} 12%, ${pos.border} 88%)`,
-      }
-    case "active":
-      return {
-        ...base,
-        backgroundColor: elevationSurfaceDark("elevation.surface.sunken"),
-        color: WHITE,
-        border: `1px solid ${pos.border}`,
-      }
-    case "focus":
-      return { ...base, boxShadow: mergeShadow(base.boxShadow, FOCUS_RING_DARK) }
-    case "disabled":
-      return { ...base, opacity: 0.5 }
-    case "loading":
-      return { ...base, loadingLabel: "Creando…", opacity: 0.92 }
-  }
-}
-
-function getButtonsUiPosSubtleSurface(
-  state: ButtonsUiInteractionState,
-): HardcodedButtonSurface {
-  const base: HardcodedButtonSurface = {
-    backgroundColor: "transparent",
-    color: pos.textSecondary,
-    border: "1px solid transparent",
-    fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
-  }
-
-  switch (state) {
-    case "default":
-      return base
-    case "hover":
-      return {
-        ...base,
-        backgroundColor: `color-mix(in srgb, ${elevationSurfaceDark("elevation.surface.sunken")} 48%, transparent)`,
-        color: TEXT_ON_DARK,
-      }
-    case "active":
-      return {
-        ...base,
-        backgroundColor: `color-mix(in srgb, ${pos.shell} 65%, transparent)`,
-        color: WHITE,
-      }
-    case "focus":
-      return { ...base, boxShadow: FOCUS_RING_DARK }
-    case "disabled":
-      return { ...base, opacity: 0.5 }
-    case "loading":
-      return { ...base, loadingLabel: "Cancelando…", opacity: 0.92 }
-  }
-}
-
-function getButtonsUiPosLinkSurface(
-  state: ButtonsUiInteractionState,
-): HardcodedButtonSurface {
-  const base: HardcodedButtonSurface = {
-    backgroundColor: "transparent",
-    color: pos.accent,
-    border: "1px solid transparent",
-    fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
-    textDecoration: "underline",
-  }
-
-  switch (state) {
-    case "default":
-      return base
-    case "hover":
-      return { ...base, color: hx("savia", "300") }
-    case "active":
-      return { ...base, color: hx("savia", "500") }
-    case "focus":
-      return { ...base, boxShadow: FOCUS_RING_DARK }
-    case "disabled":
-      return { ...base, opacity: 0.5 }
-    case "loading":
-      return { ...base, loadingLabel: "Cargando…", opacity: 0.92 }
-  }
-}
-
-function getButtonsUiPosAppearanceSurface(
+/** Mismos appearances que light · tokens POS (sombra + savia en enlace). */
+function getButtonsUiPosTextBase(
   appearance: (typeof BUTTONS_UI_POS_TEXT_APPEARANCES)[number],
-  state: ButtonsUiInteractionState,
 ): HardcodedButtonSurface {
   switch (appearance) {
     case "default":
-      return getButtonsUiPosDefaultSurface(state)
+      return {
+        backgroundColor: pos.surface,
+        color: TEXT_ON_DARK,
+        border: `1px solid ${pos.border}`,
+        fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
+      }
     case "subtle":
-      return getButtonsUiPosSubtleSurface(state)
+      return {
+        backgroundColor: "transparent",
+        color: pos.textSecondary,
+        border: "1px solid transparent",
+        fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+      }
     case "link":
-      return getButtonsUiPosLinkSurface(state)
+      return {
+        backgroundColor: "transparent",
+        color: pos.accent,
+        border: "1px solid transparent",
+        fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+        textDecoration: "underline",
+      }
   }
 }
 
@@ -360,17 +278,12 @@ export function getButtonsUiAppearanceSurface(
   state: ButtonsUiInteractionState = "default",
   theme: IconButtonThemeId = "workspace",
 ): HardcodedButtonSurface {
-  if (
+  const posText =
     theme === "pos" &&
     (BUTTONS_UI_POS_TEXT_APPEARANCES as readonly string[]).includes(appearance)
-  ) {
-    return getButtonsUiPosAppearanceSurface(
-      appearance as (typeof BUTTONS_UI_POS_TEXT_APPEARANCES)[number],
-      state,
-    )
-  }
-
-  const base = getButtonsUiDefaultSurface(appearance)
+  const base = posText
+    ? getButtonsUiPosTextBase(appearance as (typeof BUTTONS_UI_POS_TEXT_APPEARANCES)[number])
+    : getButtonsUiDefaultSurface(appearance)
 
   switch (state) {
     case "default":
@@ -381,7 +294,12 @@ export function getButtonsUiAppearanceSurface(
           return { ...base, backgroundColor: colorTokenHex("primary", "Hover") }
         case "default":
         case "subtle":
-          return { ...base, backgroundColor: colorTokenHex("default", "Hover") }
+          return {
+            ...base,
+            backgroundColor: posText
+              ? elevationSurfaceDark("elevation.surface.raised")
+              : colorTokenHex("default", "Hover"),
+          }
         case "danger":
           return { ...base, backgroundColor: colorTokenHex("danger", "Hover") }
         case "danger-subtle":
@@ -393,7 +311,7 @@ export function getButtonsUiAppearanceSurface(
         case "link":
           return {
             ...base,
-            color: colorTokenHex("link", "Hover"),
+            color: posText ? hx("savia", "300") : colorTokenHex("link", "Hover"),
             textDecoration: "underline",
           }
       }
@@ -405,8 +323,10 @@ export function getButtonsUiAppearanceSurface(
         case "subtle":
           return {
             ...base,
-            backgroundColor: hx("bruma", "100"),
-            border: `1px solid ${colorTokenHex("default", "Borde")}`,
+            backgroundColor: posText
+              ? elevationSurfaceDark("elevation.surface.sunken")
+              : hx("bruma", "100"),
+            border: `1px solid ${posText ? pos.border : colorTokenHex("default", "Borde")}`,
           }
         case "danger":
           return { ...base, backgroundColor: colorTokenHex("danger", "Active") }
@@ -419,7 +339,7 @@ export function getButtonsUiAppearanceSurface(
         case "link":
           return {
             ...base,
-            color: colorTokenHex("link", "Active"),
+            color: posText ? hx("savia", "500") : colorTokenHex("link", "Active"),
             textDecoration: "underline",
           }
       }
@@ -429,13 +349,13 @@ export function getButtonsUiAppearanceSurface(
           return { ...base, boxShadow: mergeShadow(base.boxShadow, FOCUS_RING_SAVIA) }
         case "default":
         case "subtle":
-          return { ...base, boxShadow: FOCUS_RING_NEUTRAL }
+          return { ...base, boxShadow: posText ? FOCUS_RING_DARK : FOCUS_RING_NEUTRAL }
         case "danger":
           return { ...base, boxShadow: mergeShadow(base.boxShadow, FOCUS_RING_DANGER) }
         case "danger-subtle":
           return { ...base, boxShadow: FOCUS_RING_DANGER }
         case "link":
-          return { ...base, boxShadow: FOCUS_RING_NEUTRAL }
+          return { ...base, boxShadow: posText ? FOCUS_RING_DARK : FOCUS_RING_NEUTRAL }
       }
     case "disabled":
       return { ...base, opacity: 0.5 }

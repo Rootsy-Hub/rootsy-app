@@ -192,7 +192,7 @@ export function ButtonsLiveGallery() {
         <div className="space-y-8 p-5 sm:p-6">
           <SectionHeading
             title="Botones de texto · tema POS"
-            description="Default · Borde · Sutil · Enlace — chrome nocturno, mismos tamaños."
+            description="Default · Borde · Sutil · Enlace — mismos estados, paleta sombra."
             darkPanel
           />
 

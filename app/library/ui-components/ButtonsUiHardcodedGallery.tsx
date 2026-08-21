@@ -523,7 +523,7 @@ export function ButtonsUiHardcodedGallery() {
         <div className="space-y-8 p-5 sm:p-6">
           <SectionHeading
             title="Botones de texto · tema POS"
-            description="Default · Borde · Sutil · Enlace — chrome nocturno."
+            description="Default · Borde · Sutil · Enlace — mismos estados, paleta sombra."
             darkPanel
           />
 

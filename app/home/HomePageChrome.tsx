@@ -16,7 +16,7 @@ import "@/app/home/homeHarmony.css"
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeGreeting } from "@/app/home/HomeGreeting"
 import { HomeHeaderUserCluster } from "@/app/home/HomeHeaderUserCluster"
-import { RootsSubtleButton } from "@/components/rootsy-button"
+import { HomeSubtleButton } from "@/app/home/HomeSubtleButton"
 import { menuRealmLightMutedClass } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
@@ -85,10 +85,10 @@ export function HomePageChrome({
             >
               {HOME_COPY.footerLead}
             </p>
-            <RootsSubtleButton type="button" size="compact" theme="pos" withIcon>
+            <HomeSubtleButton withIcon>
               <Download className="size-4" aria-hidden />
               {HOME_COPY.download}
-            </RootsSubtleButton>
+            </HomeSubtleButton>
           </div>
         </footer>
       </main>

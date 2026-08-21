@@ -2,7 +2,8 @@
 
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeUserPhotoDialog } from "@/app/home/HomeUserPhotoDialog"
-import { RootsIconButton, RootsSubtleButton } from "@/components/rootsy-button"
+import { HomeSubtleButton } from "@/app/home/HomeSubtleButton"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useHomePageData } from "@/hooks/useHomePageData"
 import { menuRealmLightStaticClass } from "@/lib/menu/menuHoloStyles"
@@ -46,14 +47,9 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
 
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <RootsSubtleButton
-        type="button"
-        size="compact"
-        theme="pos"
-        onClick={() => router.push("/home")}
-      >
+      <HomeSubtleButton onClick={() => router.push("/home")}>
         {HOME_COPY.editProfile}
-      </RootsSubtleButton>
+      </HomeSubtleButton>
 
       <span className="relative inline-flex size-10 shrink-0">
         {profilePending || !userId ? (
