@@ -49,6 +49,7 @@ export type MemberRow = {
 export type PendingInviteRow = {
   id: string
   email: string
+  employeeId: string | null
   roleId: string
   roleDisplayName: string
   message: string | null
@@ -276,6 +277,7 @@ export async function getPopHrDashboard(popId: string): Promise<
           `
           id,
           email,
+          employee_id,
           role_id,
           message,
           created_at,
@@ -295,6 +297,7 @@ export async function getPopHrDashboard(popId: string): Promise<
           return {
             id: i.id,
             email: i.email,
+            employeeId: i.employee_id ? String(i.employee_id) : null,
             roleId: i.role_id,
             roleDisplayName: rr?.display_name ?? "—",
             message: i.message ?? null,
@@ -337,6 +340,7 @@ export async function inviteUserToPop(
   emailRaw: string,
   roleId: string,
   message?: string | null,
+  employeeId?: string | null,
 ): Promise<
   | {
       success: true
@@ -367,9 +371,38 @@ export async function inviteUserToPop(
     }
   }
 
-  const email = emailRaw.trim().toLowerCase()
+  const linkedEmployeeId = employeeId?.trim() || ""
+  if (!linkedEmployeeId) {
+    return {
+      success: false,
+      error: "El acceso se da desde la ficha de la persona.",
+    }
+  }
+
+  const { data: employee, error: employeeErr } = await supabase
+    .from("pop_employees")
+    .select("id, email, user_id, left_at, first_name, last_name")
+    .eq("pop_id", popId)
+    .eq("id", linkedEmployeeId)
+    .maybeSingle()
+
+  if (employeeErr) return { success: false, error: employeeErr.message }
+  if (!employee) {
+    return { success: false, error: "No encontramos a esa persona." }
+  }
+  if (employee.left_at) {
+    return { success: false, error: "Esa persona ya no trabaja en este local." }
+  }
+  if (employee.user_id) {
+    return { success: false, error: "Esa persona ya entra a Rootsy." }
+  }
+
+  const email = (employee.email || emailRaw).trim().toLowerCase()
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { success: false, error: "Correo electrónico no válido." }
+    return {
+      success: false,
+      error: "Cargá el correo en la ficha antes de dar acceso.",
+    }
   }
 
   if (user.email && user.email.trim().toLowerCase() === email) {
@@ -426,6 +459,7 @@ export async function inviteUserToPop(
     .insert({
       pop_id: popId,
       email,
+      employee_id: linkedEmployeeId,
       role_id: roleId,
       invited_by: user.uid,
       message: message?.trim() || null,
@@ -437,7 +471,7 @@ export async function inviteUserToPop(
     if (insErr.code === "23505") {
       return {
         success: false,
-        error: "Ya existe una invitación pendiente para ese correo.",
+        error: "Ya hay una invitación pendiente para esa persona.",
       }
     }
     return { success: false, error: insErr.message }

@@ -1,5 +1,6 @@
 "use client"
 
+import type { PendingInviteRow } from "@/app/[siteId]/[popId]/hr/actions"
 import type { EmployeeRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import {
   dataWorkspaceLightDropdownContentClass,
@@ -38,13 +39,17 @@ import {
   DoorClosed,
   DoorOpen,
   KeyRound,
+  Link2,
+  Mail,
   MoreVertical,
   NotebookPen,
+  RotateCw,
   Shield,
   Store,
   Undo2,
   UserRound,
   UserX,
+  X,
 } from "lucide-react"
 
 const salaryFmt = new Intl.NumberFormat("es-AR", {
@@ -126,9 +131,11 @@ function StatusIcon({
 function PersonStatus({
   person,
   isOwner,
+  pendingInvite,
 }: {
   person: EmployeeRow
   isOwner: boolean
+  pendingInvite: boolean
 }) {
   if (person.leftAt) {
     return (
@@ -138,9 +145,10 @@ function PersonStatus({
 
   const showClockedIn = person.isClockedIn
   const showUsesRootsy = Boolean(person.userId)
-  const showOwnerPill = isOwner && !showClockedIn && !showUsesRootsy
+  const showPending = pendingInvite && !showUsesRootsy
+  const showOwnerPill = isOwner && !showClockedIn && !showUsesRootsy && !showPending
 
-  if (!showClockedIn && !showUsesRootsy && !showOwnerPill) return null
+  if (!showClockedIn && !showUsesRootsy && !showOwnerPill && !showPending) return null
 
   return (
     <div className="flex items-center justify-end gap-0.5">
@@ -152,6 +160,11 @@ function PersonStatus({
       {showUsesRootsy ? (
         <StatusIcon label="Usa Rootsy">
           <RootsyIsologoIcon className="size-3.5 text-[var(--rootsy-bruma-900)]" />
+        </StatusIcon>
+      ) : null}
+      {showPending ? (
+        <StatusIcon label="Invitación pendiente">
+          <Mail className="size-3.5 text-[var(--rootsy-bruma-900)]" strokeWidth={1.85} />
         </StatusIcon>
       ) : null}
       {showOwnerPill ? (
@@ -182,12 +195,17 @@ type Props = {
   imageUrl?: string | null
   isOwner: boolean
   rootsyRole?: string | null
+  pendingInvite?: PendingInviteRow | null
   canManagePeople: boolean
   canManageInvites: boolean
   clockBusy: boolean
+  inviteBusy?: boolean
   onOpen: () => void
   onClock: () => void
   onInvite: () => void
+  onCopyInvite?: () => void
+  onRenewInvite?: () => void
+  onRevokeInvite?: () => void
   onChangeRole?: () => void
   onRevokeAccess?: () => void
   onLeave: () => void
@@ -199,12 +217,17 @@ export function HrPersonCard({
   imageUrl,
   isOwner,
   rootsyRole,
+  pendingInvite = null,
   canManagePeople,
   canManageInvites,
   clockBusy,
+  inviteBusy = false,
   onOpen,
   onClock,
   onInvite,
+  onCopyInvite,
+  onRenewInvite,
+  onRevokeInvite,
   onChangeRole,
   onRevokeAccess,
   onLeave,
@@ -214,20 +237,38 @@ export function HrPersonCard({
   const salary =
     person.monthlySalary == null ? "—" : salaryFmt.format(person.monthlySalary)
   const showClock = canManagePeople && !person.leftAt
-  const showInvite = canManageInvites && !person.userId && !person.leftAt
+  const hasEmail = Boolean(person.email?.trim())
+  const showInvite =
+    canManageInvites && !person.userId && !person.leftAt && !pendingInvite && hasEmail
+  const showInviteNeedsEmail =
+    canManageInvites && !person.userId && !person.leftAt && !pendingInvite && !hasEmail
+  const showPendingInvite = Boolean(pendingInvite) && canManageInvites && !person.userId
+  const inviteExpired = pendingInvite
+    ? new Date(pendingInvite.expiresAt).getTime() < Date.now()
+    : false
   const showChangeRole = Boolean(onChangeRole) && canManageInvites && !isOwner
   const showRevokeAccess = Boolean(onRevokeAccess) && canManageInvites && !isOwner
   const showLeave = canManagePeople && !person.leftAt && !isOwner
   const showReturn = canManagePeople && Boolean(person.leftAt)
   const showMenu =
-    canManagePeople || showInvite || showChangeRole || showRevokeAccess || showReturn
+    canManagePeople ||
+    showInvite ||
+    showInviteNeedsEmail ||
+    showPendingInvite ||
+    showChangeRole ||
+    showRevokeAccess ||
+    showReturn
   const metaLine = person.leftAt
     ? "Quedó en el historial"
-    : rootsyRole
-      ? `Rootsy · ${rootsyRole}`
-      : person.hiredAt
-        ? `Desde ${formatHired(person.hiredAt)}`
-        : person.documentNumber || "Falta CUIL"
+    : pendingInvite
+      ? inviteExpired
+        ? "Invitación vencida"
+        : `Invitación pendiente · ${pendingInvite.roleDisplayName}`
+      : rootsyRole
+        ? `Rootsy · ${rootsyRole}`
+        : person.hiredAt
+          ? `Desde ${formatHired(person.hiredAt)}`
+          : person.documentNumber || "Falta CUIL"
 
   return (
     <article className={dataWorkspaceEntityCardLosetaClass}>
@@ -253,7 +294,11 @@ export function HrPersonCard({
             )}
             <div className="relative min-w-0 flex-1">
               <div className="absolute right-0 top-0">
-                <PersonStatus person={person} isOwner={isOwner} />
+                <PersonStatus
+                  person={person}
+                  isOwner={isOwner}
+                  pendingInvite={Boolean(pendingInvite)}
+                />
               </div>
               <p
                 className={cn(
@@ -303,6 +348,39 @@ export function HrPersonCard({
                       <RootsDropdownItem theme="light" onSelect={onInvite}>
                         <KeyRound className="size-4 shrink-0 opacity-70" aria-hidden />
                         <span>Dar acceso a Rootsy</span>
+                      </RootsDropdownItem>
+                    ) : null}
+                    {showInviteNeedsEmail ? (
+                      <RootsDropdownItem theme="light" onSelect={onOpen}>
+                        <KeyRound className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span>Cargá el correo para dar acceso</span>
+                      </RootsDropdownItem>
+                    ) : null}
+                    {showPendingInvite && pendingInvite?.inviteUrl && onCopyInvite ? (
+                      <RootsDropdownItem theme="light" onSelect={onCopyInvite}>
+                        <Link2 className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span>Copiar enlace</span>
+                      </RootsDropdownItem>
+                    ) : null}
+                    {showPendingInvite && inviteExpired && onRenewInvite ? (
+                      <RootsDropdownItem
+                        theme="light"
+                        disabled={inviteBusy}
+                        onSelect={onRenewInvite}
+                      >
+                        <RotateCw className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span>Renovar invitación</span>
+                      </RootsDropdownItem>
+                    ) : null}
+                    {showPendingInvite && onRevokeInvite ? (
+                      <RootsDropdownItem
+                        theme="light"
+                        variant="destructive"
+                        disabled={inviteBusy}
+                        onSelect={onRevokeInvite}
+                      >
+                        <X className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span>Cancelar invitación</span>
                       </RootsDropdownItem>
                     ) : null}
                     {showChangeRole ? (

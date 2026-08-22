@@ -29,7 +29,6 @@ import type {
   UpsertEmployeeInput,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import { HrChangeRoleDialog } from "@/app/[siteId]/[popId]/hr/HrChangeRoleDialog"
-import { HrInviteCard } from "@/app/[siteId]/[popId]/hr/HrInviteCard"
 import { HrInviteDialog, type HrInviteResult } from "@/app/[siteId]/[popId]/hr/HrInviteDialog"
 import { HrPageSkeleton } from "@/app/[siteId]/[popId]/hr/HrPageSkeleton"
 import { HrPersonCard } from "@/app/[siteId]/[popId]/hr/HrPersonCard"
@@ -61,7 +60,7 @@ import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
-import { Plus, UserPlus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -72,7 +71,20 @@ import {
   type ReactNode,
 } from "react"
 
-type PeopleFilter = "negocio" | "local" | "acceso" | "baja" | "espera"
+type PeopleFilter = "negocio" | "local" | "acceso" | "baja"
+
+function pendingInviteForPerson(
+  person: EmployeeRow,
+  invites: PendingInviteRow[],
+): PendingInviteRow | null {
+  const byEmployee = invites.find((invite) => invite.employeeId === person.id)
+  if (byEmployee) return byEmployee
+  const email = person.email?.trim().toLowerCase()
+  if (!email) return null
+  return (
+    invites.find((invite) => invite.email.trim().toLowerCase() === email) ?? null
+  )
+}
 
 type ConfirmAction =
   | { kind: "delete-role"; role: PopRoleRow }
@@ -180,7 +192,12 @@ function HrPage() {
   const [personSaving, setPersonSaving] = useState(false)
   const [personError, setPersonError] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState("")
+  const [invitePerson, setInvitePerson] = useState<{
+    id: string
+    name: string
+    email: string
+  } | null>(null)
+  const inviteEmail = invitePerson?.email ?? ""
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviteResult, setInviteResult] = useState<HrInviteResult | null>(null)
@@ -462,26 +479,32 @@ function HrPage() {
     await Promise.all([loadDashboard(), refresh()])
   }
 
-  const openInvite = (email?: string) => {
-    setInviteEmail(email?.trim() ?? "")
+  const openInvite = (person: {
+    id: string
+    firstName: string
+    lastName: string
+    email?: string | null
+  }) => {
+    setInvitePerson({
+      id: person.id,
+      name: `${person.firstName} ${person.lastName}`.trim() || "Sin nombre",
+      email: person.email?.trim() ?? "",
+    })
     setInviteError(null)
     setInviteResult(null)
     setInviteOpen(true)
   }
 
-  const handleInvite = async (input: {
-    email: string
-    roleId: string
-    message: string
-  }) => {
-    if (!popId || !siteId || !canManageInvites) return
+  const handleInvite = async (input: { roleId: string; message: string }) => {
+    if (!popId || !siteId || !canManageInvites || !invitePerson) return
     setInviting(true)
     setInviteError(null)
     const res = await inviteUserToPop(
       popId,
-      input.email,
+      invitePerson.email,
       input.roleId,
       input.message || null,
+      invitePerson.id,
     )
     setInviting(false)
     if (!res.success) {
@@ -494,7 +517,6 @@ function HrPage() {
       emailError: res.emailError,
       resendConfigured: res.resendConfigured,
     })
-    setPeopleFilter("espera")
     await loadDashboard()
   }
 
@@ -541,6 +563,15 @@ function HrPage() {
       text: input.id ? "Persona actualizada." : "Persona cargada en el negocio.",
     })
     await loadDashboard()
+    const createdEmail = input.email.trim()
+    if (!input.id && createdEmail && canManageInvites) {
+      openInvite({
+        id: res.id,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        email: createdEmail,
+      })
+    }
   }
 
   const handleClock = async (person: EmployeeRow) => {
@@ -695,7 +726,6 @@ function HrPage() {
     { value: "local", label: "En el local" },
     { value: "acceso", label: "Con Rootsy" },
     { value: "baja", label: "Ya no" },
-    ...(canManageInvites ? [{ value: "espera", label: "Invitadas" }] : []),
   ]
 
   return (
@@ -721,15 +751,6 @@ function HrPage() {
                 onClick={openNewPerson}
               >
                 <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderTooltipIconButton>
-            ) : null}
-            {canManageInvites ? (
-              <DataWorkspaceHeaderTooltipIconButton
-                label="Dar acceso a Rootsy"
-                headerVariant={dataWorkspaceModuleHeaderVariant}
-                onClick={() => openInvite()}
-              >
-                <UserPlus className="size-5" aria-hidden />
               </DataWorkspaceHeaderTooltipIconButton>
             ) : null}
           </>
@@ -779,29 +800,7 @@ function HrPage() {
                   options={peopleFilterOptions}
                 />
 
-                {peopleFilter === "espera" ? (
-                  pending.length === 0 ? (
-                    <p className={dataWorkspaceBlocksEmptyStateClass}>
-                      Nadie está esperando entrar a Rootsy.
-                    </p>
-                  ) : (
-                    <div className={dataWorkspaceEntityCardsGridClass}>
-                      {pending.map((invite) => (
-                        <HrInviteCard
-                          key={invite.id}
-                          invite={invite}
-                          revokeBusy={actionKey === `revoke-${invite.id}`}
-                          onCopy={() => void copyInviteUrl(invite.inviteUrl)}
-                          onRevoke={() =>
-                            setConfirmAction({ kind: "revoke", invite })
-                          }
-                          renewBusy={actionKey === `renew-${invite.id}`}
-                          onRenew={() => void handleRenewInvite(invite)}
-                        />
-                      ))}
-                    </div>
-                  )
-                ) : visiblePeople.length === 0 ? (
+                {visiblePeople.length === 0 ? (
                   <p className={dataWorkspaceBlocksEmptyStateClass}>
                     {peopleFilter === "local"
                       ? "Nadie está en el local ahora."
@@ -817,6 +816,7 @@ function HrPage() {
                       const member = members.find(
                         (item) => item.userId === person.userId,
                       )
+                      const invite = pendingInviteForPerson(person, pending)
                       return (
                         <HrPersonCard
                           key={person.id}
@@ -826,16 +826,39 @@ function HrPage() {
                           rootsyRole={
                             member?.isActive ? member.roleDisplayName : null
                           }
+                          pendingInvite={invite}
                           canManagePeople={canManagePeople}
                           canManageInvites={canManageInvites}
                           clockBusy={actionKey === `clock-${person.id}`}
+                          inviteBusy={
+                            invite
+                              ? actionKey === `revoke-${invite.id}` ||
+                                actionKey === `renew-${invite.id}`
+                              : false
+                          }
                           onOpen={() => {
                             setPersonEditing(person)
                             setPersonError(null)
                             setPersonOpen(true)
                           }}
                           onClock={() => void handleClock(person)}
-                          onInvite={() => openInvite(person.email ?? undefined)}
+                          onInvite={() => openInvite(person)}
+                          onCopyInvite={
+                            invite
+                              ? () => void copyInviteUrl(invite.inviteUrl)
+                              : undefined
+                          }
+                          onRenewInvite={
+                            invite
+                              ? () => void handleRenewInvite(invite)
+                              : undefined
+                          }
+                          onRevokeInvite={
+                            invite
+                              ? () =>
+                                  setConfirmAction({ kind: "revoke", invite })
+                              : undefined
+                          }
                           onChangeRole={
                             member &&
                             member.isActive &&
@@ -976,26 +999,23 @@ function HrPage() {
       <HrInviteDialog
         open={inviteOpen}
         roles={assignableRoles}
-        initialEmail={inviteEmail}
+        personName={invitePerson?.name ?? ""}
+        email={inviteEmail}
         saving={inviting}
         error={inviteError}
         result={inviteResult}
         onOpenChange={(open) => {
           if (!open && !inviting) {
             setInviteOpen(false)
-            setInviteEmail("")
+            setInvitePerson(null)
             setInviteError(null)
             setInviteResult(null)
           }
         }}
         onSubmit={handleInvite}
-        onInviteAnother={() => {
-          setInviteEmail("")
-          setInviteResult(null)
-          setInviteError(null)
-        }}
         onCreateRole={() => {
           setInviteOpen(false)
+          setInvitePerson(null)
           setInviteError(null)
           setInviteResult(null)
           handleOpenCreateRole()

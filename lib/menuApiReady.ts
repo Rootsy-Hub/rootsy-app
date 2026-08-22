@@ -20,6 +20,7 @@ export const MENU_API_READY_IDS = [
   "reports",
   "accounts",
   "cash-registers",
+  "statistics",
 ] as const satisfies readonly MenuDockItemId[]
 
 const READY = new Set<string>(MENU_API_READY_IDS)

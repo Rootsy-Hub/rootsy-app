@@ -7,6 +7,7 @@ import { validatePopAccess } from "@/lib/popHelpers"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import type { EmployeeRow, UpsertEmployeeInput } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import { createClient } from "@/utils/supabase/server"
+import { createServiceRoleClient } from "@/utils/supabase/service-role"
 
 async function requireHrWrite(popId: string, action: "create" | "update" | "delete") {
   const access = await validatePopAccess(popId)
@@ -120,21 +121,54 @@ export async function ensureEmployeesFromMembers(
   const supabase = await createClient()
   const { data: existing } = await supabase
     .from("pop_employees")
-    .select("user_id")
+    .select("id, user_id, email")
     .eq("pop_id", popId)
-    .not("user_id", "is", null)
 
   const known = new Set(
     (existing || []).map((row) => row.user_id).filter(Boolean) as string[],
   )
+  const unlinkedByEmail = new Map<string, string>()
+  for (const row of existing || []) {
+    if (row.user_id || !row.email) continue
+    unlinkedByEmail.set(String(row.email).trim().toLowerCase(), row.id)
+  }
 
   const missing = members.filter(
     (member) => member.isActive && member.userId && !known.has(member.userId),
   )
   if (missing.length === 0) return
 
+  let admin: ReturnType<typeof createServiceRoleClient> | null = null
+  try {
+    admin = createServiceRoleClient()
+  } catch {
+    admin = null
+  }
+
+  const stillMissing: MemberSeed[] = []
+  for (const member of missing) {
+    let email = ""
+    if (admin) {
+      const { data } = await admin.auth.admin.getUserById(member.userId)
+      email = data.user?.email?.trim().toLowerCase() ?? ""
+    }
+    const employeeId = email ? unlinkedByEmail.get(email) : undefined
+    if (employeeId) {
+      await supabase
+        .from("pop_employees")
+        .update({ user_id: member.userId })
+        .eq("pop_id", popId)
+        .eq("id", employeeId)
+        .is("user_id", null)
+      continue
+    }
+    stillMissing.push(member)
+  }
+
+  if (stillMissing.length === 0) return
+
   await supabase.from("pop_employees").insert(
-    missing.map((member) => ({
+    stillMissing.map((member) => ({
       pop_id: popId,
       user_id: member.userId,
       first_name: member.firstName.trim() || "Sin",
@@ -186,7 +220,12 @@ export async function upsertPopEmployee(
       .update(payload)
       .eq("pop_id", popId)
       .eq("id", input.id)
-    if (error) return { success: false, error: error.message }
+    if (error) {
+      if (error.code === "23505") {
+        return { success: false, error: "Ya hay alguien activo con ese correo." }
+      }
+      return { success: false, error: error.message }
+    }
     return { success: true, id: input.id }
   }
 
@@ -196,6 +235,9 @@ export async function upsertPopEmployee(
     .select("id")
     .single()
   if (error || !data) {
+    if (error?.code === "23505") {
+      return { success: false, error: "Ya hay alguien activo con ese correo." }
+    }
     return { success: false, error: error?.message || "No se pudo guardar." }
   }
   return { success: true, id: data.id }
