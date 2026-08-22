@@ -103,6 +103,20 @@ export const POP_PERMS = {
   CURRENT_ACCOUNT_CREATE: { resource: "current_accounts", action: "create" },
   CURRENT_ACCOUNT_UPDATE: { resource: "current_accounts", action: "update" },
   CURRENT_ACCOUNT_DELETE: { resource: "current_accounts", action: "delete" },
+
+  REPORTS_READ: { resource: "reports", action: "read" },
+  STATISTICS_READ: { resource: "statistics", action: "read" },
+  ALERTS_READ: { resource: "alerts", action: "read" },
+  CHAT_READ: { resource: "chat", action: "read" },
+  MANUFACTURING_READ: { resource: "manufacturing", action: "read" },
+  QUOTES_READ: { resource: "quotes", action: "read" },
+  QUOTES_CREATE: { resource: "quotes", action: "create" },
+  QUOTES_DELETE: { resource: "quotes", action: "delete" },
+  PURCHASES_READ: { resource: "purchases", action: "read" },
+  PURCHASES_CREATE: { resource: "purchases", action: "create" },
+  PURCHASE_ORDERS_READ: { resource: "purchase_orders", action: "read" },
+  PURCHASE_ORDERS_CREATE: { resource: "purchase_orders", action: "create" },
+  PURCHASE_ORDERS_DELETE: { resource: "purchase_orders", action: "delete" },
 } as const
 
 export function permissionKeysInclude(

@@ -1,11 +1,13 @@
 import type {
   AttendancePunchRow,
+  EmployeePaymentRow,
   EmployeeRow,
   FrancoRow,
   HrDashboardData,
   PermissionCatalogRow,
   UpsertEmployeeInput,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { buildHrPermissionCatalogRows } from "@/lib/hrPermissionCatalog"
 
 type ApiOk<T> = { success: true; data: T }
@@ -62,6 +64,7 @@ export async function fetchHrEmployeeDetail(
       employee: EmployeeRow
       punches: AttendancePunchRow[]
       francos: FrancoRow[]
+      payments: EmployeePaymentRow[]
       imageUrl: string | null
       canManagePeople: boolean
     }
@@ -74,6 +77,7 @@ export async function fetchHrEmployeeDetail(
     employee: EmployeeRow
     punches: AttendancePunchRow[]
     francos: FrancoRow[]
+    payments: EmployeePaymentRow[]
     imageUrl: string | null
     canManagePeople: boolean
   }>(res)
@@ -154,6 +158,42 @@ export async function removeEmployeeFranco(
   const res = await fetch(
     `/api/pops/${popId}/hr/employees/${employeeId}/francos/${francoId}`,
     { method: "DELETE", headers: { accept: "application/json" } },
+  )
+  return parseMutate(res)
+}
+
+export async function fetchHrPaymentContext(
+  popId: string,
+): Promise<
+  | { success: true; context: TreasuryPaymentContext }
+  | { success: false; error: string }
+> {
+  const res = await fetch(`/api/pops/${popId}/hr/payment-context`, {
+    headers: { accept: "application/json" },
+  })
+  const parsed = await parseJson<TreasuryPaymentContext>(res)
+  if (!parsed.success) return parsed
+  return { success: true, context: parsed.data }
+}
+
+export async function recordEmployeePayment(
+  popId: string,
+  employeeId: string,
+  input: {
+    amount: number
+    paidAt: string
+    paymentKind: string
+    treasuryAccountId: string
+    notes?: string | null
+  },
+) {
+  const res = await fetch(
+    `/api/pops/${popId}/hr/employees/${employeeId}/payments`,
+    {
+      method: "POST",
+      headers: { accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
   )
   return parseMutate(res)
 }

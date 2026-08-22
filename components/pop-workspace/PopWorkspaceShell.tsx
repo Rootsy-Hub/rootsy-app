@@ -1,6 +1,7 @@
 "use client"
 
 import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
+import { PopModuleAccessGate } from "@/components/pop-workspace/PopModuleAccessGate"
 import {
   PopOptimisticNavProvider,
   navigationArrived,
@@ -36,7 +37,9 @@ export function PopWorkspaceShell({ children }: { children: ReactNode }) {
     >
       <PopRealtimeProvider>
         <PopOptimisticNavProvider>
-          <PopOptimisticNavGate>{children}</PopOptimisticNavGate>
+          <PopModuleAccessGate>
+            <PopOptimisticNavGate>{children}</PopOptimisticNavGate>
+          </PopModuleAccessGate>
         </PopOptimisticNavProvider>
       </PopRealtimeProvider>
     </PopWorkspaceProvider>

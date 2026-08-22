@@ -63,6 +63,9 @@ export type MenuItemLink =
   | "statistics"
   | "checks"
   | "current-accounts"
+  | "alerts"
+  | "chat"
+  | "manufacturing"
   | "section"
 
 /** Identificador de un acceso directo del dock (solo rutas navegables). */
@@ -115,7 +118,7 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Comprar", icon: ShoppingBag, link: "purchases" },
       { name: "Gastos", icon: Receipt, link: "expenses" },
       { name: "Inventario", icon: ClipboardList, link: "inventory" },
-      { name: "Fabricar", icon: Factory, link: "section", moduleKey: "manufacturing" },
+      { name: "Fabricar", icon: Factory, link: "manufacturing", moduleKey: "manufacturing" },
       { name: "Cuentas corrientes", icon: CreditCard, link: "current-accounts" },
     ],
   },
@@ -144,8 +147,8 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Recursos Humanos", icon: UserCog, link: "hr" },
       { name: "Cajas", icon: Calculator, link: "cash-registers" },
       { name: "Impresoras", icon: Printer, link: "printers" },
-      { name: "Alertas", icon: Bell, link: "section", moduleKey: "alerts" },
-      { name: "Chat", icon: MessageSquare, link: "section", moduleKey: "chat" },
+      { name: "Alertas", icon: Bell, link: "alerts", moduleKey: "alerts" },
+      { name: "Chat", icon: MessageSquare, link: "chat", moduleKey: "chat" },
       { name: "Ajustes", icon: Cog, link: "settings" },
     ],
   },

@@ -49,14 +49,26 @@ function resolveModulePermissions(
   grants: readonly string[],
   isOwner: boolean,
 ): PopAccessModulePermissions | null {
-  const pageKey = POP_ACCESS_MODULE_TO_PAGE_KEY[moduleKey]
-  if (!pageKey || !(pageKey in POP_PAGES)) {
-    return { read: true, create: false, update: false, delete: false }
-  }
-  const perms = POP_PAGES[pageKey].permissions
   if (isOwner) {
     return { read: true, create: true, update: true, delete: true }
   }
+  if (moduleKey === "comandas") {
+    const read =
+      grants.includes("comandas:read") ||
+      grants.includes("mesas:read") ||
+      grants.includes("mostrador:read")
+    return {
+      read,
+      create: grants.includes("comandas:create"),
+      update: grants.includes("comandas:update"),
+      delete: grants.includes("comandas:delete"),
+    }
+  }
+  const pageKey = POP_ACCESS_MODULE_TO_PAGE_KEY[moduleKey]
+  if (!pageKey || !(pageKey in POP_PAGES)) {
+    return { read: false, create: false, update: false, delete: false }
+  }
+  const perms = POP_PAGES[pageKey].permissions
   return {
     read: grants.includes(perms.read),
     create: grants.includes(perms.create),

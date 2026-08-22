@@ -28,6 +28,16 @@ export type FrancoRow = {
   day: string
 }
 
+export type EmployeePaymentRow = {
+  id: string
+  amount: number
+  paidAt: string
+  paymentKind: string
+  treasuryAccountId: string
+  treasuryAccountName: string | null
+  notes: string | null
+}
+
 export type PopRoleRow = {
   id: string
   name: string

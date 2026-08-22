@@ -45,6 +45,9 @@ const MODULE_TITLES: Record<string, string> = {
   comandas: "Comandas",
   mostrador: "Mostrador",
   "cobrar-servicios": "Cobrar servicios",
+  alerts: "Alertas",
+  chat: "Chat",
+  manufacturing: "Fabricar",
 }
 
 function moduleKeyFromPathname(pathname: string): string {

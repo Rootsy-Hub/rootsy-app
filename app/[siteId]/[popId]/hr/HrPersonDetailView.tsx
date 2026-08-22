@@ -4,10 +4,14 @@ import {
   clockEmployeeIn,
   clockEmployeeOut,
   fetchHrEmployeeDetail,
+  fetchHrPaymentContext,
   markEmployeeFranco,
+  recordEmployeePayment,
   removeEmployeeFranco,
 } from "@/lib/rootsyApi/hrClient"
 import { HrFrancoDialog } from "@/app/[siteId]/[popId]/hr/HrFrancoDialog"
+import { HrPayDialog } from "@/app/[siteId]/[popId]/hr/HrPayDialog"
+import { HrPersonPaymentsPanel } from "@/app/[siteId]/[popId]/hr/HrPersonPaymentsPanel"
 import {
   formatAttendanceDuration,
   HrPersonAttendancePanel,
@@ -15,6 +19,7 @@ import {
 } from "@/app/[siteId]/[popId]/hr/HrPersonAttendancePanel"
 import type {
   AttendancePunchRow,
+  EmployeePaymentRow,
   EmployeeRow,
   FrancoRow,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
@@ -39,7 +44,12 @@ import {
   computeDataWorkspaceDateBounds,
   type DataWorkspaceDatePreset,
 } from "@/lib/dataWorkspaceDateFilter"
+import { formatMoneyInputForField } from "@/lib/moneyInput"
 import { isoTimestampInDateBounds, todayPopCalendarDate } from "@/lib/popTimezone"
+import {
+  buildPayPaymentOptions,
+  type TreasuryPaymentOption,
+} from "@/lib/treasuryPaymentOptions"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, DoorClosed, DoorOpen, UserRound } from "lucide-react"
@@ -86,6 +96,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
   const [employee, setEmployee] = useState<EmployeeRow | null>(null)
   const [punches, setPunches] = useState<AttendancePunchRow[]>([])
   const [francos, setFrancos] = useState<FrancoRow[]>([])
+  const [payments, setPayments] = useState<EmployeePaymentRow[]>([])
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [canManagePeople, setCanManagePeople] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -95,6 +106,11 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
   const [francoSaving, setFrancoSaving] = useState(false)
   const [francoError, setFrancoError] = useState<string | null>(null)
   const [francoBusyId, setFrancoBusyId] = useState<string | null>(null)
+  const [payOpen, setPayOpen] = useState(false)
+  const [paySaving, setPaySaving] = useState(false)
+  const [payError, setPayError] = useState<string | null>(null)
+  const [payOptions, setPayOptions] = useState<TreasuryPaymentOption[]>([])
+  const [payOptionsLoading, setPayOptionsLoading] = useState(false)
   const [datePreset, setDatePreset] =
     useState<DataWorkspaceDatePreset>("this_month")
   const [customDateRange, setCustomDateRange] = useState<
@@ -118,6 +134,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
         setEmployee(null)
         setPunches([])
         setFrancos([])
+        setPayments([])
       }
       setError(res.error)
       return
@@ -125,6 +142,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
     setEmployee(res.employee)
     setPunches(res.punches)
     setFrancos(res.francos)
+    setPayments(res.payments ?? [])
     setImageUrl(res.imageUrl)
     setCanManagePeople(res.canManagePeople)
     setError(null)
@@ -155,19 +173,24 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
     return periodPunches.length === 0 ? "—" : formatAttendanceDuration(totalMs)
   }, [periodPunches])
 
-  const periodFrancos = useMemo(
-    () =>
-      francos.filter((franco) => {
-        const day = franco.day
-        if (dateBounds.from && day < dateBounds.from) return false
-        if (dateBounds.to && day > dateBounds.to) return false
-        return true
-      }),
-    [francos, dateBounds.from, dateBounds.to],
-  )
-
   const today = todayPopCalendarDate(timeZone)
   const todayIsFranco = francos.some((franco) => franco.day === today)
+
+  const periodPayments = useMemo(
+    () =>
+      payments.filter((payment) => {
+        if (dateBounds.from && payment.paidAt < dateBounds.from) return false
+        if (dateBounds.to && payment.paidAt > dateBounds.to) return false
+        return true
+      }),
+    [payments, dateBounds.from, dateBounds.to],
+  )
+
+  const periodPaidLabel = useMemo(() => {
+    if (periodPayments.length === 0) return "—"
+    const total = periodPayments.reduce((sum, payment) => sum + payment.amount, 0)
+    return salaryFmt.format(total)
+  }, [periodPayments])
 
   async function handleClock() {
     if (!employee || clockBusy) return
@@ -206,6 +229,41 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
       setError(res.error || "No se pudo sacar el franco.")
       return
     }
+    await loadDetail({ silent: true })
+  }
+
+  async function openPayDialog() {
+    setPayError(null)
+    setPayOpen(true)
+    setPayOptionsLoading(true)
+    const res = await fetchHrPaymentContext(popId)
+    setPayOptionsLoading(false)
+    if (!res.success) {
+      setPayOptions([])
+      setPayError(res.error)
+      return
+    }
+    setPayOptions(
+      buildPayPaymentOptions(res.context).filter((option) => option.kind !== "check"),
+    )
+  }
+
+  async function handlePay(input: {
+    amount: number
+    paidAt: string
+    paymentKind: string
+    treasuryAccountId: string
+  }) {
+    if (paySaving) return
+    setPaySaving(true)
+    setPayError(null)
+    const res = await recordEmployeePayment(popId, employeeId, input)
+    setPaySaving(false)
+    if (!res.success) {
+      setPayError(res.error || "No se pudo registrar el pago.")
+      return
+    }
+    setPayOpen(false)
     await loadDetail({ silent: true })
   }
 
@@ -316,6 +374,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
             </div>
             <div className={cn(dataWorkspaceDetailCardStatsClass, "sm:grid-cols-2 lg:grid-cols-4")}>
               <HeaderKpi label="Sueldo" value={salary} />
+              <HeaderKpi label="Pagado en el período" value={periodPaidLabel} />
               <HeaderKpi label="Horas del período" value={periodHoursLabel} />
               <HeaderKpi
                 label="Jornadas"
@@ -323,12 +382,6 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
                   loading && !employee
                     ? "—"
                     : String(periodPunches.length)
-                }
-              />
-              <HeaderKpi
-                label="Francos"
-                value={
-                  loading && !employee ? "—" : String(periodFrancos.length)
                 }
               />
             </div>
@@ -339,6 +392,15 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
           <div className="rounded-[1.375rem] border border-[color-mix(in_srgb,var(--color-status-danger)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--color-status-danger)_6%,white)] px-4 py-3 font-canopy text-sm text-[var(--color-status-danger)]">
             {error}
           </div>
+        ) : null}
+
+        {employee ? (
+          <HrPersonPaymentsPanel
+            payments={payments}
+            dateBounds={dateBounds}
+            canManagePeople={canManagePeople}
+            onPay={() => void openPayDialog()}
+          />
         ) : null}
 
         {employee ? (
@@ -371,6 +433,26 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
             if (!open) setFrancoError(null)
           }}
           onSubmit={(day) => void handleMarkFranco(day)}
+        />
+
+        <HrPayDialog
+          open={payOpen}
+          defaultDay={today}
+          defaultAmount={
+            employee?.monthlySalary == null
+              ? ""
+              : formatMoneyInputForField(employee.monthlySalary)
+          }
+          options={payOptions}
+          loadingOptions={payOptionsLoading}
+          saving={paySaving}
+          error={payError}
+          onOpenChange={(open) => {
+            if (!open && paySaving) return
+            setPayOpen(open)
+            if (!open) setPayError(null)
+          }}
+          onSubmit={(input) => void handlePay(input)}
         />
       </div>
     </div>

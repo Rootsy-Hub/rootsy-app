@@ -218,6 +218,8 @@ export function PurchaseOrdersWorkspaceView() {
     [afterHydration, hasPermission, menuCache.popAccess],
   )
   const canDelete =
+    orderPerm(POP_PERMS.PURCHASE_ORDERS_DELETE) ||
+    orderPerm(POP_PERMS.PURCHASE_ORDERS_CREATE) ||
     orderPerm(POP_PERMS.OPERATIONS_DELETE) ||
     orderPerm(POP_PERMS.OPERATIONS_CREATE)
 

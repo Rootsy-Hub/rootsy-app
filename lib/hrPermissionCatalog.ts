@@ -22,8 +22,13 @@ const SECTION_LABELS: Record<PopPageKey, string> = {
   sale: "Vender (POS)",
   mesas: "Mesas",
   mostrador: "Mostrador",
+  comandas: "Comandas",
   operations: "Operaciones",
+  reports: "Reportes",
+  statistics: "Estadísticas",
   purchases: "Compras",
+  purchase_orders: "Órdenes de compra",
+  quotes: "Presupuestos",
   expenses: "Gastos",
   articles: "Artículos",
   recipes: "Recetas",
@@ -31,17 +36,18 @@ const SECTION_LABELS: Record<PopPageKey, string> = {
   "cobrar-servicios": "Vender servicio",
   promotions: "Promociones",
   inventory: "Inventario",
+  manufacturing: "Fabricación",
   clients: "Clientes",
   suppliers: "Proveedores",
   invoices: "Facturas",
   accounts: "Cuentas / tesorería",
   "cash-registers": "Cajas",
   printers: "Impresoras",
+  alerts: "Alertas",
+  chat: "Chat",
   settings: "Ajustes",
   hr: "Recursos humanos",
   menu: "Menú",
-  quotes: "Presupuestos",
-  purchase_orders: "Órdenes de compra",
   checks: "Cheques",
   "current-accounts": "Cuentas corrientes",
 }
@@ -50,25 +56,34 @@ const SECTION_LABELS: Record<PopPageKey, string> = {
 const SECTION_ORDER: PopPageKey[] = [
   "sale",
   "mesas",
-  "operations",
+  "mostrador",
+  "comandas",
   "purchases",
   "expenses",
-  "articles",
-  "recipes",
-  "services",
-  "cobrar-servicios",
-  "promotions",
   "inventory",
+  "manufacturing",
+  "current-accounts",
   "clients",
   "suppliers",
-  "checks",
-  "current-accounts",
   "invoices",
+  "articles",
+  "recipes",
+  "promotions",
+  "services",
+  "checks",
+  "operations",
+  "statistics",
+  "reports",
+  "quotes",
+  "purchase_orders",
   "accounts",
+  "hr",
   "cash-registers",
   "printers",
+  "alerts",
+  "chat",
   "settings",
-  "hr",
+  "cobrar-servicios",
 ]
 
 const ACTION_LABELS: Record<string, string> = {
@@ -107,61 +122,34 @@ export function buildHrPermissionCatalogRows(): HrPermissionCatalogRow[] {
   return buildHrPermissionSections().flatMap((s) => s.permissions)
 }
 
-/** Agrupa permisos por pantalla del POP para el editor de roles. */
+/** Una sección por módulo, con sus keys propias (sin fusionar pantallas). */
 export function buildHrPermissionSections(): HrPermissionSection[] {
-  const keyToPage = new Map<string, PopPageKey>()
-
-  for (const pageKey of SECTION_ORDER) {
-    for (const permKey of permissionKeysForPage(pageKey)) {
-      if (!keyToPage.has(permKey)) {
-        keyToPage.set(permKey, pageKey)
-      }
-    }
-  }
-
-  for (const pageKey of Object.keys(POP_PAGES) as PopPageKey[]) {
-    if (SECTION_ORDER.includes(pageKey)) continue
-    for (const permKey of permissionKeysForPage(pageKey)) {
-      if (!keyToPage.has(permKey)) {
-        keyToPage.set(permKey, pageKey)
-      }
-    }
-  }
-
-  const byPage = new Map<PopPageKey, HrPermissionCatalogRow[]>()
-
-  for (const [permKey, pageKey] of keyToPage.entries()) {
-    const list = byPage.get(pageKey) ?? []
-    list.push(rowFromKey(permKey))
-    byPage.set(pageKey, list)
-  }
-
   const actionOrder = ["read", "create", "update", "delete"]
-
+  const seen = new Set<PopPageKey>()
   const sections: HrPermissionSection[] = []
-  for (const pageKey of SECTION_ORDER) {
-    const perms = byPage.get(pageKey)
-    if (!perms?.length) continue
-    perms.sort(
-      (a, b) =>
-        actionOrder.indexOf(a.action) - actionOrder.indexOf(b.action) ||
-        a.key.localeCompare(b.key, "es"),
-    )
+
+  const push = (pageKey: PopPageKey) => {
+    if (seen.has(pageKey)) return
+    seen.add(pageKey)
+    const permissions = permissionKeysForPage(pageKey)
+      .map(rowFromKey)
+      .sort(
+        (a, b) =>
+          actionOrder.indexOf(a.action) - actionOrder.indexOf(b.action) ||
+          a.key.localeCompare(b.key, "es"),
+      )
+    if (!permissions.length) return
     sections.push({
       pageKey,
       label: SECTION_LABELS[pageKey] ?? pageKey,
-      permissions: perms,
+      permissions,
     })
-    byPage.delete(pageKey)
   }
 
-  for (const [pageKey, perms] of byPage.entries()) {
-    perms.sort((a, b) => a.key.localeCompare(b.key, "es"))
-    sections.push({
-      pageKey,
-      label: SECTION_LABELS[pageKey] ?? pageKey,
-      permissions: perms,
-    })
+  for (const pageKey of SECTION_ORDER) push(pageKey)
+  for (const pageKey of Object.keys(POP_PAGES) as PopPageKey[]) {
+    if (pageKey === "menu") continue
+    push(pageKey)
   }
 
   return sections

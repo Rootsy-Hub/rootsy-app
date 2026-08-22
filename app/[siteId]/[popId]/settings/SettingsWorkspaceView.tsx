@@ -108,7 +108,6 @@ export function SettingsWorkspaceView() {
   const queryClient = useQueryClient()
   const {
     bootstrap,
-    popAccess,
     loading: bootstrapLoading,
     error: bootstrapError,
     refresh: refreshBootstrap,
@@ -202,35 +201,9 @@ export function SettingsWorkspaceView() {
           ? String(settingsQuery.error)
           : null
 
-  const isOwner =
-    popAccess?.isOwner === true ||
-    (settingsQuery.data?.success === true && settingsQuery.data.isOwner)
-  const resolvedIsOwner = isOwner || popAccess?.isOwner === true
-  const showOwnerSectionsInNav =
-    resolvedIsOwner || (pageLoading && popAccess?.isOwner !== false)
-
   const requestedSectionId = workspaceParams.get(POP_SETTINGS_SECTION_QUERY_PARAM)
 
-  const pendingNavSectionIds = useMemo(() => {
-    if (!pageLoading) return [] as PopSettingsSectionId[]
-
-    const ids = new Set<PopSettingsSectionId>()
-    if (isPopSettingsSectionId(requestedSectionId)) {
-      ids.add(requestedSectionId)
-    }
-    if (optimisticSectionId) {
-      ids.add(optimisticSectionId)
-    }
-    return [...ids]
-  }, [optimisticSectionId, pageLoading, requestedSectionId])
-
-  const visibleSections = useMemo(
-    () =>
-      visiblePopSettingsSections(showOwnerSectionsInNav, {
-        includeSectionIds: pendingNavSectionIds,
-      }),
-    [showOwnerSectionsInNav, pendingNavSectionIds],
-  )
+  const visibleSections = useMemo(() => visiblePopSettingsSections(), [])
 
   const visibleSectionIds = useMemo(
     () => visibleSections.map((section) => section.id),
@@ -295,7 +268,7 @@ export function SettingsWorkspaceView() {
   )
 
   const padron = usePadronAutofillRazonSocial(popId, form.fiscalCuit ?? "", {
-    enabled: Boolean(popId) && isOwner && canUpdate && !pageLoading,
+    enabled: Boolean(popId) && canUpdate && !pageLoading,
     suppressClear: pageLoading,
     manual: true,
   })
@@ -321,7 +294,7 @@ export function SettingsWorkspaceView() {
   )
 
   useEffect(() => {
-    if (!isOwner || loading) return
+    if (!canUpdate || loading) return
     if (padron.busy) return
     const hasCuit = Boolean((form.fiscalCuit ?? "").trim())
     if (!hasCuit) {
@@ -353,7 +326,7 @@ export function SettingsWorkspaceView() {
     padron.razonSocial,
     padron.fiscalActividadesPadron,
     padron.busy,
-    isOwner,
+    canUpdate,
     loading,
     form.fiscalCuit,
   ])

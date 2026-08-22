@@ -87,22 +87,76 @@ export const POP_PAGES = {
       delete: "operations:delete",
     },
   },
+  reports: {
+    path: "reports",
+    permissions: {
+      read: "reports:read",
+      create: "reports:create",
+      update: "reports:update",
+      delete: "reports:delete",
+    },
+  },
+  statistics: {
+    path: "statistics",
+    permissions: {
+      read: "statistics:read",
+      create: "statistics:create",
+      update: "statistics:update",
+      delete: "statistics:delete",
+    },
+  },
+  alerts: {
+    path: "alerts",
+    permissions: {
+      read: "alerts:read",
+      create: "alerts:create",
+      update: "alerts:update",
+      delete: "alerts:delete",
+    },
+  },
+  manufacturing: {
+    path: "manufacturing",
+    permissions: {
+      read: "manufacturing:read",
+      create: "manufacturing:create",
+      update: "manufacturing:update",
+      delete: "manufacturing:delete",
+    },
+  },
+  chat: {
+    path: "chat",
+    permissions: {
+      read: "chat:read",
+      create: "chat:create",
+      update: "chat:update",
+      delete: "chat:delete",
+    },
+  },
+  comandas: {
+    path: "comandas",
+    permissions: {
+      read: "comandas:read",
+      create: "comandas:create",
+      update: "comandas:update",
+      delete: "comandas:delete",
+    },
+  },
   purchases: {
     path: "purchases",
     permissions: {
-      read: "operations:read",
-      create: "operations:create",
-      update: "operations:update",
-      delete: "operations:delete",
+      read: "purchases:read",
+      create: "purchases:create",
+      update: "purchases:update",
+      delete: "purchases:delete",
     },
   },
   purchase_orders: {
     path: "purchase-orders",
     permissions: {
-      read: "operations:read",
-      create: "operations:create",
-      update: "operations:update",
-      delete: "operations:delete",
+      read: "purchase_orders:read",
+      create: "purchase_orders:create",
+      update: "purchase_orders:update",
+      delete: "purchase_orders:delete",
     },
   },
   accounts: {
@@ -135,10 +189,10 @@ export const POP_PAGES = {
   quotes: {
     path: "quotes",
     permissions: {
-      read: "sale:read",
-      create: "sale:create",
-      update: "sale:update",
-      delete: "sale:delete",
+      read: "quotes:read",
+      create: "quotes:create",
+      update: "quotes:update",
+      delete: "quotes:delete",
     },
   },
   mesas: {

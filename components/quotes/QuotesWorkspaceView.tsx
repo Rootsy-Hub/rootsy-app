@@ -197,6 +197,8 @@ export function QuotesWorkspaceView() {
     [afterHydration, hasPermission, menuCache.popAccess],
   )
   const canDelete =
+    quotePerm(POP_PERMS.QUOTES_DELETE) ||
+    quotePerm(POP_PERMS.QUOTES_CREATE) ||
     quotePerm({ resource: "sale", action: "delete" }) ||
     quotePerm(POP_PERMS.SALE_CREATE)
 
