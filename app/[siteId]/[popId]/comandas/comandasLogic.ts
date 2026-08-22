@@ -3,6 +3,7 @@ import type {
   ComandaSendPeel,
   ComandaStatus,
   ComandaTicket,
+  ComandaVoidPeel,
 } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { commandableCartLineKeys } from "@/lib/comandaCartLine"
 
@@ -15,6 +16,22 @@ export function formatTableOriginLabel(labels: string[]): string {
 
 export function formatCounterOriginLabel(orderNumber: number): string {
   return `Pedido #${orderNumber}`
+}
+
+/** Pill de tablero: solo la magnitud, sin “hace…”. */
+export function formatComandaElapsed(
+  iso: string,
+  now = Date.now(),
+): string {
+  const then = new Date(iso).getTime()
+  if (!Number.isFinite(then)) return "—"
+  const seconds = Math.max(0, Math.round((now - then) / 1000))
+  if (seconds < 60) return "<1m"
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h`
+  return `${Math.floor(hours / 24)}d`
 }
 
 export function checkoutCustomerName(input: {
@@ -83,7 +100,7 @@ export function groupComandasForBoard(
 ): ComandaBoardCard[] {
   const groups = new Map<string, ComandaTicket[]>()
   for (const ticket of tickets) {
-    if (ticket.status === "pending") continue
+    if (ticket.status === "pending" || ticket.status === "voided") continue
     const key = ticket.sendId ?? ticket.id
     const list = groups.get(key) ?? []
     list.push(ticket)
@@ -96,6 +113,7 @@ export function groupComandasForBoard(
       id: key,
       primaryItemId: first.id,
       sendId: first.sendId,
+      sendKind: first.sendKind,
       status: first.status,
       stationId: first.stationId,
       sourceKind: first.sourceKind,
@@ -203,4 +221,75 @@ export function healCartLinesAlreadySent<
     if (keys.some((key) => pending.has(key))) return item
     return { ...item, comandaStatus: "sent" as const }
   })
+}
+
+export function markCartLinesVoided<
+  T extends {
+    lineId?: string
+    productoId: string
+    kind?: string
+    promotionSelections?: Array<{ slotId: string; kind: string; refId: string }>
+    comandaStatus?: ComandaStatus
+  },
+>(
+  carrito: T[],
+  voidedCartLineIds: string[],
+  productosByKey?: Map<string, { stationId?: string | null }>,
+): T[] {
+  const voided = new Set(voidedCartLineIds)
+  if (voided.size === 0) return carrito
+  return carrito.map((item) => {
+    const keys = commandableCartLineKeys(item, productosByKey)
+    const lineId = item.lineId?.trim() || item.productoId
+    if (voided.has(lineId)) {
+      return { ...item, comandaStatus: "voided" as const }
+    }
+    if (keys.length === 0) return item
+    if (!keys.every((key) => voided.has(key))) return item
+    return { ...item, comandaStatus: "voided" as const }
+  })
+}
+
+export function applyComandaVoidToCart<
+  T extends {
+    lineId?: string
+    productoId: string
+    cantidad: number
+    kind?: string
+    promotionSelections?: Array<{ slotId: string; kind: string; refId: string }>
+    comandaStatus?: ComandaStatus
+  },
+>(
+  carrito: T[],
+  voidedCartLineIds: string[],
+  peels: ComandaVoidPeel[],
+  productosByKey?: Map<string, { stationId?: string | null }>,
+): T[] {
+  let next = carrito
+  for (const peel of peels) {
+    const idx = next.findIndex((item) => {
+      const lineId = item.lineId?.trim() || item.productoId
+      return lineId === peel.fromCartLineId
+    })
+    if (idx < 0) continue
+    const item = next[idx]!
+    if (peel.voidedQuantity >= item.cantidad) {
+      next = next.map((row, rowIdx) =>
+        rowIdx === idx ? { ...row, comandaStatus: "voided" as const } : row,
+      )
+      continue
+    }
+    const remainderQty = Math.max(1, peel.remainderQuantity)
+    const voidedQty = Math.max(1, peel.voidedQuantity)
+    const copy = next.slice()
+    copy[idx] = { ...item, cantidad: remainderQty }
+    copy.push({
+      ...item,
+      lineId: peel.voidedCartLineId,
+      cantidad: voidedQty,
+      comandaStatus: "voided" as const,
+    })
+    next = copy
+  }
+  return markCartLinesVoided(next, voidedCartLineIds, productosByKey)
 }

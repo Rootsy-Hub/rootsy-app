@@ -3,9 +3,11 @@
 import {
   getPendingComandasForSource,
   sendComandaBatch,
+  voidComandaBatch,
 } from "@/app/[siteId]/[popId]/comandas/actions"
 import {
   applyComandaSendToCart,
+  applyComandaVoidToCart,
   healCartLinesAlreadySent,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
@@ -62,8 +64,10 @@ import {
 import {
   ensureCartLineComandaStatuses,
   isComandaLocked,
+  isComandaVoidable,
   pendingComandaComment,
   promotionSelectionsAreCommandable,
+  resolveVoidComandaRequest,
 } from "@/lib/comandaCartLine"
 import {
   applyTicketLineEdit,
@@ -862,6 +866,62 @@ export function useMostradorSaleCheckout(
       setComandasOpen(false)
     },
     [counterOrderId, flushCheckoutPersist, popId, productosByKey, siteId],
+  )
+
+  const anularLineaComanda = useCallback(
+    async (input: { lineId: string; quantity: number; comment: string }) => {
+      if (!popId || !counterOrderId) return
+      const item = carrito.find((row) => resolveCartLineId(row) === input.lineId)
+      if (
+        !item ||
+        item.paidLocked ||
+        !isComandaVoidable(item.comandaStatus) ||
+        cartLineHasPaidUnits(input.lineId, item, paidPartialUnits)
+      ) {
+        throw new Error("Esa línea no se puede anular.")
+      }
+      await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
+      const payload = resolveVoidComandaRequest(
+        item,
+        input.quantity,
+        input.comment,
+      )
+      const res = await voidComandaBatch(popId, siteId, {
+        sourceKind: "counter",
+        sourceId: counterOrderId,
+        ...payload,
+      })
+      if (!res.success) throw new Error(res.error)
+      for (const peel of res.peels) {
+        copyTicketLineOverrides(peel.fromCartLineId, peel.voidedCartLineId, {
+          setItemDescuentoModo,
+          setItemDescuentoDraft,
+          setItemDescuentoSuprimido,
+          setItemComentarios,
+        })
+      }
+      const nextCart = applyComandaVoidToCart(
+        carrito,
+        res.voidedCartLineIds,
+        res.peels,
+        productosByKey,
+      )
+      setCarrito(nextCart)
+      checkoutStateRef.current = {
+        ...checkoutStateRef.current,
+        carrito: nextCart,
+      }
+      await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
+    },
+    [
+      carrito,
+      counterOrderId,
+      flushCheckoutPersist,
+      paidPartialUnits,
+      popId,
+      productosByKey,
+      siteId,
+    ],
   )
 
   const descuentoGeneralEditBlocked = useMemo(
@@ -1767,6 +1827,7 @@ export function useMostradorSaleCheckout(
     agregarAlCarrito,
     agregarPromoAlCarrito,
     aplicarEdicionLineaTicket,
+    anularLineaComanda,
     cambiarCantidadPorLinea,
     quitarLineaPorId,
     quitarQuantityDealApplication,

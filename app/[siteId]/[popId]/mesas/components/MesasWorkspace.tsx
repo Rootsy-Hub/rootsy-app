@@ -516,6 +516,7 @@ export function MesasWorkspace({
                 setRightView(view)
               }}
               pedidoDisabled={!selectedSession}
+              tableLabel={mesaLabel}
             />
 
             {rightView === "session" ? (

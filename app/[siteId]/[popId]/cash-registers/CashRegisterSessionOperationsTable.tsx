@@ -17,7 +17,7 @@ import {
   formatCashRegisterMoney,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
 import { OperationSaleDetailDialog } from "@/app/[siteId]/[popId]/operations/OperationSaleDetailDialog"
-import { getOperationSaleById } from "@/app/[siteId]/[popId]/operations/actions"
+import { fetchOperationSaleById } from "@/lib/rootsyApi/operationsClient"
 import type {
   OperationSaleDetailContext,
   OperationSaleRow,
@@ -110,7 +110,7 @@ export function CashRegisterSessionOperationsTable({
       setDetailError(null)
       setDetailLoading(true)
 
-      const res = await getOperationSaleById(popId, saleId)
+      const res = await fetchOperationSaleById(popId, saleId)
       setDetailLoading(false)
       if (!res.success) {
         setDetailError(res.error)

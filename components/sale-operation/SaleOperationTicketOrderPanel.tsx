@@ -6,7 +6,6 @@ import type { OperationCartLineOverrideState } from "@/components/sale-operation
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
 import {
-  layoutsOperarSummaryCartHeadingClass,
   layoutsOperarSummaryCartListSurfaceClass,
   layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
@@ -45,6 +44,11 @@ type Props = {
   aplicarEdicionLineaTicket: (input: MostradorCartLineEditInput) => void
   cambiarCantidadPorLinea: (lineId: string, delta: number) => void
   quitarQuantityDealApplication: (applicationId: string) => void
+  anularLineaComanda?: (input: {
+    lineId: string
+    quantity: number
+    comment: string
+  }) => void | Promise<void>
   actions: ActionsProps
   totalBar: TotalProps
   listTitle?: string
@@ -93,6 +97,7 @@ export function SaleOperationTicketOrderPanel({
   aplicarEdicionLineaTicket,
   cambiarCantidadPorLinea,
   quitarQuantityDealApplication,
+  anularLineaComanda,
   actions,
   totalBar,
   listTitle = "Pedido",
@@ -116,28 +121,6 @@ export function SaleOperationTicketOrderPanel({
 
   const panel = (
     <div className="flex h-full min-h-0 flex-1 flex-col md:contents">
-      {contextLabel ? (
-        <div
-          className={cn(
-            "md:hidden shrink-0 px-3 py-2.5",
-            "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_90%,transparent)]",
-            "bg-[var(--rootsy-bruma-50)]",
-          )}
-          aria-label={`${contextLabel.caption} ${contextLabel.value}`}
-        >
-          <p className={layoutsOperarSummaryCartHeadingClass}>
-            {contextLabel.caption}
-          </p>
-          <p
-            className={cn(
-              "font-ledger font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]",
-              contextLabel.valueSize === "compact" ? "text-xl" : "text-2xl",
-            )}
-          >
-            {contextLabel.value}
-          </p>
-        </div>
-      ) : null}
       <div
         ref={cartScrollContainerRef}
         className={cn(
@@ -181,6 +164,16 @@ export function SaleOperationTicketOrderPanel({
                     overrides={cartLineOverrides}
                     paidPartialUnits={paidPartialUnits}
                     onApplyEdits={aplicarEdicionLineaTicket}
+                    onVoidLine={
+                      anularLineaComanda
+                        ? ({ quantity, comment }) =>
+                            anularLineaComanda({
+                              lineId: row.cartLineId,
+                              quantity,
+                              comment,
+                            })
+                        : undefined
+                    }
                     onRemove={() => {
                       const paymentStatus = getRowPaymentStatus(row, paidPartialUnits)
                       if (

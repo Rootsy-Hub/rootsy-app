@@ -5,10 +5,12 @@ import {
   timestampsForStatusChange,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type {
+  ComandaSendKind,
   ComandaSendPeel,
   ComandaStation,
   ComandaStatus,
   ComandaTicket,
+  ComandaVoidPeel,
   PendingComandaItem,
 } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
@@ -45,7 +47,7 @@ const COMANDA_SELECT = `
   ready_at,
   delivered_at,
   send_id,
-  comanda_sends ( comment )
+  comanda_sends ( comment, kind )
 `
 
 const DELIVERED_RETENTION_HOURS = 12
@@ -60,8 +62,13 @@ function isComandaStatus(value: string): value is ComandaStatus {
     value === "sent" ||
     value === "preparing" ||
     value === "ready" ||
-    value === "delivered"
+    value === "delivered" ||
+    value === "voided"
   )
+}
+
+function parseSendKind(value: unknown): ComandaSendKind {
+  return value === "void" ? "void" : "order"
 }
 
 function mapComandaRow(row: {
@@ -85,7 +92,10 @@ function mapComandaRow(row: {
   ready_at: string | null
   delivered_at: string | null
   send_id?: string | null
-  comanda_sends?: { comment?: string | null } | { comment?: string | null }[] | null
+  comanda_sends?:
+    | { comment?: string | null; kind?: string | null }
+    | { comment?: string | null; kind?: string | null }[]
+    | null
 }): ComandaTicket {
   const sendRel = row.comanda_sends
   const send = Array.isArray(sendRel) ? sendRel[0] : sendRel
@@ -110,6 +120,7 @@ function mapComandaRow(row: {
     readyAt: row.ready_at ? String(row.ready_at) : null,
     deliveredAt: row.delivered_at ? String(row.delivered_at) : null,
     sendId: row.send_id ? String(row.send_id) : null,
+    sendKind: parseSendKind(send?.kind),
     sendComment: send?.comment ? String(send.comment) : "",
   }
 }
@@ -679,4 +690,197 @@ export async function sendComandaBatch(
   }
 
   return { success: true, sentCartLineIds, peels }
+}
+
+const VOIDABLE_STATUSES = ["sent", "preparing", "ready", "delivered"] as const
+
+export async function voidComandaBatch(
+  popId: string,
+  routeSiteId: string,
+  input: {
+    sourceKind: "table" | "counter"
+    sourceId: string
+    parentCartLineId: string
+    parentVoidQuantity: number
+    parentRemainderQuantity: number
+    quantities: Record<string, number>
+    comment: string
+  },
+): Promise<
+  | { success: true; voidedCartLineIds: string[]; peels: ComandaVoidPeel[] }
+  | { success: false; error: string; redirect?: string }
+> {
+  const gate = await requireComandasAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+  if (!isUuid(input.sourceId)) {
+    return { success: false, error: "Pedido inválido." }
+  }
+
+  const parentCartLineId = input.parentCartLineId.trim()
+  if (!parentCartLineId) {
+    return { success: false, error: "Línea inválida." }
+  }
+
+  const cartLineIds = [
+    ...new Set(
+      Object.entries(input.quantities)
+        .filter(([, qty]) => resolveSendQuantity(qty, Number.MAX_SAFE_INTEGER) > 0)
+        .map(([id]) => id.trim())
+        .filter(Boolean),
+    ),
+  ]
+  if (cartLineIds.length === 0) {
+    return { success: false, error: "Elegí al menos un ítem para anular." }
+  }
+
+  const { data: rows, error: loadErr } = await gate.supabase
+    .from("comandas")
+    .select(
+      `
+      id,
+      cart_line_id,
+      station_id,
+      quantity,
+      recipe_id,
+      recipe_name,
+      comment,
+      origin_label,
+      customer_name,
+      table_session_id,
+      counter_order_id,
+      source_kind,
+      source_id,
+      status
+    `,
+    )
+    .eq("pop_id", popId)
+    .eq("source_kind", input.sourceKind)
+    .eq("source_id", input.sourceId)
+    .in("status", [...VOIDABLE_STATUSES])
+    .in("cart_line_id", cartLineIds)
+
+  if (loadErr) return { success: false, error: loadErr.message }
+
+  const selected = (rows ?? []).filter((row) => {
+    const currentQty = Math.max(1, Number(row.quantity) || 1)
+    return resolveSendQuantity(input.quantities[String(row.cart_line_id)], currentQty) > 0
+  })
+  if (selected.length === 0) {
+    return { success: false, error: "No hay ítems comandados para anular." }
+  }
+
+  const byStation = new Map<string, typeof selected>()
+  for (const row of selected) {
+    const stationId = String(row.station_id)
+    const list = byStation.get(stationId) ?? []
+    list.push(row)
+    byStation.set(stationId, list)
+  }
+
+  const now = new Date().toISOString()
+  const comment = input.comment.trim()
+
+  for (const [stationId, items] of byStation) {
+    const { data: send, error: sendErr } = await gate.supabase
+      .from("comanda_sends")
+      .insert({
+        pop_id: popId,
+        station_id: stationId,
+        kind: "void",
+        status: "sent",
+        source_kind: input.sourceKind,
+        source_id: input.sourceId,
+        table_session_id:
+          input.sourceKind === "table" ? input.sourceId : null,
+        counter_order_id:
+          input.sourceKind === "counter" ? input.sourceId : null,
+        comment,
+        sent_at: now,
+        status_changed_at: now,
+      })
+      .select("id")
+      .single()
+
+    if (sendErr || !send) {
+      return {
+        success: false,
+        error: sendErr?.message || "No se pudo avisar la anulación a cocina.",
+      }
+    }
+
+    for (const item of items) {
+      const fromCartLineId = String(item.cart_line_id)
+      const currentQty = Math.max(1, Number(item.quantity) || 1)
+      const voidQty = resolveSendQuantity(input.quantities[fromCartLineId], currentQty)
+      if (voidQty <= 0) continue
+
+      const { error: insertErr } = await gate.supabase.from("comandas").insert({
+        pop_id: popId,
+        station_id: item.station_id,
+        status: "sent",
+        send_id: send.id,
+        source_kind: item.source_kind,
+        source_id: item.source_id,
+        table_session_id: item.table_session_id,
+        counter_order_id: item.counter_order_id,
+        cart_line_id: crypto.randomUUID(),
+        recipe_id: item.recipe_id,
+        recipe_name: item.recipe_name,
+        quantity: voidQty,
+        comment: item.comment,
+        origin_label: item.origin_label,
+        customer_name: item.customer_name,
+        sent_at: now,
+        status_changed_at: now,
+      })
+      if (insertErr) return { success: false, error: insertErr.message }
+
+      if (voidQty < currentQty) {
+        const { error: remainErr } = await gate.supabase
+          .from("comandas")
+          .update({ quantity: currentQty - voidQty })
+          .eq("pop_id", popId)
+          .eq("id", item.id)
+        if (remainErr) return { success: false, error: remainErr.message }
+        continue
+      }
+
+      const { error: voidErr } = await gate.supabase
+        .from("comandas")
+        .update({
+          status: "voided",
+          voided_at: now,
+          status_changed_at: now,
+        })
+        .eq("pop_id", popId)
+        .eq("id", item.id)
+      if (voidErr) return { success: false, error: voidErr.message }
+    }
+  }
+
+  const parentVoidQty = Math.max(1, Math.round(input.parentVoidQuantity) || 1)
+  const parentRemainder = Math.max(0, Math.round(input.parentRemainderQuantity) || 0)
+
+  if (parentRemainder <= 0) {
+    return {
+      success: true,
+      voidedCartLineIds: [parentCartLineId],
+      peels: [],
+    }
+  }
+
+  return {
+    success: true,
+    voidedCartLineIds: [],
+    peels: [
+      {
+        fromCartLineId: parentCartLineId,
+        voidedCartLineId: crypto.randomUUID(),
+        voidedQuantity: parentVoidQty,
+        remainderQuantity: parentRemainder,
+      },
+    ],
+  }
 }

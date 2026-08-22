@@ -8,12 +8,14 @@ type Props = {
   value: MostradorRightPanelView
   onChange: (view: MostradorRightPanelView) => void
   cartDisabled?: boolean
+  orderLabel?: string | null
 }
 
 export function MostradorRightPanelTabs({
   value,
   onChange,
   cartDisabled,
+  orderLabel,
 }: Props) {
   return (
     <SaleOperationPanelTabs
@@ -22,7 +24,12 @@ export function MostradorRightPanelTabs({
       ariaLabel="Datos y pedido"
       variant="operar"
       tabs={[
-        { id: "detail", label: "Datos", icon: ClipboardList },
+        {
+          id: "detail",
+          label: "Datos",
+          icon: ClipboardList,
+          suffix: orderLabel ?? undefined,
+        },
         {
           id: "cart",
           label: "Pedido",

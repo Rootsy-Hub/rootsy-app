@@ -194,6 +194,7 @@ export function MostradorWorkspace({
               value={rightView}
               onChange={setRightView}
               cartDisabled={!selectedOrder}
+              orderLabel={orderLabel}
             />
 
             {rightView === "detail" ? (

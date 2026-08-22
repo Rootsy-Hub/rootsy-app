@@ -9,8 +9,10 @@ import {
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
 import {
+  saleOpActionComandasFillClass,
   saleOpActionConfirmClass,
   saleOpActionDiscardClass,
+  saleOpActionDiscardFillClass,
   saleOpActionIconWrapConfirmClass,
   saleOpActionIconWrapConfirmDisabledClass,
   saleOpActionIconWrapDiscardClass,
@@ -87,6 +89,8 @@ export function SaleOperationActionsBar({
         : "Cobrar"
 
   if (variant === "mobile") {
+    const showComandas = typeof onComandas === "function"
+
     return (
       <div
         className={cn(
@@ -95,23 +99,46 @@ export function SaleOperationActionsBar({
           className,
         )}
       >
-        <button
-          type="button"
-          disabled={discardDisabled}
-          onClick={onDiscard}
-          className={saleOpActionDiscardClass}
-        >
-          <span
-            className={cn(
-              saleOpActionIconWrapDiscardClass,
-              discardDisabled && "bg-slate-200/60 text-slate-500",
-            )}
-            aria-hidden
+        {showComandas ? (
+          <div className="grid min-w-0 grid-cols-2">
+            <button
+              type="button"
+              disabled={discardDisabled}
+              aria-label="Descartar"
+              onClick={onDiscard}
+              className={saleOpActionDiscardFillClass}
+            >
+              <X className="size-5 stroke-[2.5]" aria-hidden />
+            </button>
+            <button
+              type="button"
+              disabled={comandasDisabled}
+              aria-label="Comandas"
+              onClick={() => onComandas?.()}
+              className={saleOpActionComandasFillClass}
+            >
+              <ChefHat className="size-5" aria-hidden />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={discardDisabled}
+            onClick={onDiscard}
+            className={saleOpActionDiscardClass}
           >
-            <X className="size-4 stroke-[2.5]" />
-          </span>
-          Descartar
-        </button>
+            <span
+              className={cn(
+                saleOpActionIconWrapDiscardClass,
+                discardDisabled && "bg-slate-200/60 text-slate-500",
+              )}
+              aria-hidden
+            >
+              <X className="size-4 stroke-[2.5]" />
+            </span>
+            Descartar
+          </button>
+        )}
         <button
           type="button"
           disabled={confirmInactive}

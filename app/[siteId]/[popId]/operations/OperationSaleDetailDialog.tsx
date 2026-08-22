@@ -6,9 +6,10 @@ import type {
   OperationSaleRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
 import {
-  getOperationSaleDetailCharges,
-  getOperationSaleDetailContext,
-} from "@/app/[siteId]/[popId]/operations/actions"
+  fetchOperationSaleById,
+  fetchOperationSaleDetailCharges,
+  fetchOperationSaleDetailContext,
+} from "@/lib/rootsyApi/operationsClient"
 import { ChannelOperationCheckoutTicket } from "@/app/[siteId]/[popId]/operations/ChannelOperationCheckoutTicket"
 import { OperationSaleDetailCharges } from "@/app/[siteId]/[popId]/operations/OperationSaleDetailCharges"
 import { OperationSaleDetailMeta } from "@/app/[siteId]/[popId]/operations/OperationSaleDetailMeta"
@@ -92,6 +93,7 @@ export function OperationSaleDetailDialog({
   const [chargesLoading, setChargesLoading] = useState(false)
   const [chargesError, setChargesError] = useState<string | null>(null)
   const [invoiceSale, setInvoiceSale] = useState<OperationSaleRow | null>(null)
+  const [detailSale, setDetailSale] = useState<OperationSaleRow | null>(null)
 
   useEffect(() => {
     setContext(contextProp)
@@ -106,30 +108,50 @@ export function OperationSaleDetailDialog({
       setChargesError(null)
       setChargesLoading(false)
       setInvoiceSale(null)
+      setDetailSale(null)
       return
     }
     if (!sale?.id) return
 
     let cancelled = false
+    const hasLines = (sale.lineItems?.length ?? 0) > 0
 
-    if (!contextProp) {
+    if (!hasLines) {
       setContextLoading(true)
       setContextError(null)
-      void getOperationSaleDetailContext(popId, sale.id).then((res) => {
+      void fetchOperationSaleById(popId, sale.id).then((res) => {
         if (cancelled) return
         setContextLoading(false)
         if (!res.success) {
           setContextError(res.error)
           setContext(null)
+          setDetailSale(null)
           return
         }
+        setDetailSale(res.sale)
         setContext(res.context)
       })
+    } else {
+      setDetailSale(sale)
+      if (!contextProp) {
+        setContextLoading(true)
+        setContextError(null)
+        void fetchOperationSaleDetailContext(popId, sale.id).then((res) => {
+          if (cancelled) return
+          setContextLoading(false)
+          if (!res.success) {
+            setContextError(res.error)
+            setContext(null)
+            return
+          }
+          setContext(res.context)
+        })
+      }
     }
 
     setChargesLoading(true)
     setChargesError(null)
-    void getOperationSaleDetailCharges(popId, {
+    void fetchOperationSaleDetailCharges(popId, {
       saleId: sale.id,
       groupedSaleIds: sale.groupedSaleIds,
       tableSessionId: sale.tableSessionId,
@@ -154,8 +176,10 @@ export function OperationSaleDetailDialog({
     sale?.groupedSaleIds,
     sale?.tableSessionId,
     sale?.counterOrderId,
+    sale?.lineItems?.length,
     popId,
     contextProp,
+    sale,
   ])
 
   const channel = sale
@@ -294,7 +318,7 @@ export function OperationSaleDetailDialog({
                     />
                   ) : (
                     <SaleDetailTicketView
-                      sale={sale}
+                      sale={detailSale ?? sale}
                       showPaymentDetails={false}
                       showHeading={false}
                       ticketTone="operar"

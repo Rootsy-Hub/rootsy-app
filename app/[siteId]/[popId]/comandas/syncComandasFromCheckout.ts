@@ -50,6 +50,7 @@ function desiredLinesFromCheckout(
 ): DesiredLine[] {
   const out: DesiredLine[] = []
   for (const item of checkout.carrito) {
+    if (item.comandaStatus === "voided") continue
     const lineId = resolveCartLineId(item)
     const comment = resolveCheckoutLineComment(lineId, checkout.itemComentarios)
     const quantity = Math.max(1, Math.round(item.cantidad))

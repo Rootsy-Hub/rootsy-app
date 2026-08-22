@@ -1,10 +1,10 @@
 "use client"
 
 import {
-  getOperationAccountingEntries,
   type OperationAccountingEntryDetail,
   type OperationsListView,
 } from "@/app/[siteId]/[popId]/operations/actions"
+import { fetchOperationAccountingEntries } from "@/lib/rootsyApi/operationsClient"
 import {
   tdMoneyClass,
   tdMoneyMutedClass,
@@ -249,7 +249,7 @@ export function OperationAccountingModal({
     setLoading(true)
     setError(null)
     setEntries([])
-    const res = await getOperationAccountingEntries(popId, {
+    const res = await fetchOperationAccountingEntries(popId, {
       view,
       operationId,
       groupedSaleIds,

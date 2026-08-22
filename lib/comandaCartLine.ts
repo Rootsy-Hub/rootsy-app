@@ -47,7 +47,8 @@ export function parseComandaStatus(value: unknown): ComandaStatus | undefined {
     value === "sent" ||
     value === "preparing" ||
     value === "ready" ||
-    value === "delivered"
+    value === "delivered" ||
+    value === "voided"
   ) {
     return value
   }
@@ -59,6 +60,87 @@ export function isComandaLocked(
   status: ComandaStatus | undefined,
 ): boolean {
   return status != null && status !== "pending"
+}
+
+export function isComandaVoided(
+  status: ComandaStatus | undefined,
+): boolean {
+  return status === "voided"
+}
+
+export function isComandaVoidable(
+  status: ComandaStatus | undefined,
+): boolean {
+  return (
+    status === "sent" ||
+    status === "preparing" ||
+    status === "ready" ||
+    status === "delivered"
+  )
+}
+
+export function voidQuantitiesForCartItem(
+  item: {
+    lineId?: string
+    productoId: string
+    kind?: string
+    promotionSelections?: Array<{
+      slotId: string
+      kind: string
+      refId: string
+      slotQuantity?: number
+    }>
+  },
+  voidCartQty: number,
+): Record<string, number> {
+  const qty = Math.max(1, Math.round(voidCartQty))
+  const lineId = item.lineId?.trim() || item.productoId
+  if (item.kind !== "promotion") {
+    return { [lineId]: qty }
+  }
+  const out: Record<string, number> = {}
+  for (const selection of item.promotionSelections ?? []) {
+    if (selection.kind !== "recipe") continue
+    out[`${lineId}:${selection.slotId}`] =
+      qty * Math.max(1, Math.round(selection.slotQuantity ?? 1))
+  }
+  return out
+}
+
+export function resolveVoidComandaRequest(
+  item: {
+    lineId?: string
+    productoId: string
+    cantidad: number
+    kind?: string
+    promotionSelections?: Array<{
+      slotId: string
+      kind: string
+      refId: string
+      slotQuantity?: number
+    }>
+  },
+  quantity: number,
+  comment: string,
+): {
+  parentCartLineId: string
+  parentVoidQuantity: number
+  parentRemainderQuantity: number
+  quantities: Record<string, number>
+  comment: string
+} {
+  const parentCartLineId = item.lineId?.trim() || item.productoId
+  const parentVoidQuantity = Math.min(
+    Math.max(1, Math.round(item.cantidad)),
+    Math.max(1, Math.round(quantity)),
+  )
+  return {
+    parentCartLineId,
+    parentVoidQuantity,
+    parentRemainderQuantity: Math.max(0, item.cantidad - parentVoidQuantity),
+    quantities: voidQuantitiesForCartItem(item, parentVoidQuantity),
+    comment,
+  }
 }
 
 export function initialComandaStatus(commandable: boolean): ComandaStatus | undefined {
@@ -149,5 +231,7 @@ export function comandaLineStatusBarClass(status: ComandaStatus): string {
       return "bg-[var(--rootsy-savia-100)] text-[var(--rootsy-savia-800)]"
     case "delivered":
       return "bg-[var(--rootsy-savia-600)] text-white"
+    case "voided":
+      return "bg-[color-mix(in_srgb,var(--rootsy-danger)_18%,white)] text-[var(--rootsy-danger-dark)]"
   }
 }

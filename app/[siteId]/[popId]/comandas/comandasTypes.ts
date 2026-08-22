@@ -4,6 +4,9 @@ export type ComandaStatus =
   | "preparing"
   | "ready"
   | "delivered"
+  | "voided"
+
+export type ComandaSendKind = "order" | "void"
 
 export type ComandaSourceKind = "table" | "counter"
 
@@ -28,6 +31,7 @@ export type ComandaTicket = {
   readyAt: string | null
   deliveredAt: string | null
   sendId: string | null
+  sendKind: ComandaSendKind
   sendComment: string
 }
 
@@ -48,10 +52,18 @@ export type ComandaSendPeel = {
   remainderQuantity: number
 }
 
+export type ComandaVoidPeel = {
+  fromCartLineId: string
+  voidedCartLineId: string
+  voidedQuantity: number
+  remainderQuantity: number
+}
+
 export type ComandaBoardCard = {
   id: string
   primaryItemId: string
   sendId: string | null
+  sendKind: ComandaSendKind
   status: ComandaStatus
   stationId: string
   sourceKind: ComandaSourceKind
@@ -81,6 +93,7 @@ export const COMANDA_STATUS_LABELS: Record<ComandaStatus, string> = {
   preparing: "Preparando",
   ready: "Listo",
   delivered: "Entregado",
+  voided: "Anulado",
 }
 
 export const COMANDA_BOARD_COLUMNS: ComandaStatus[] = [

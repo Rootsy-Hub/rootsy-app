@@ -37,7 +37,8 @@ export function evaluateChannelCloseEligibility(input: {
     }
   }
 
-  const hasItems = carrito.length > 0
+  const billableCarrito = carrito.filter((item) => item.comandaStatus !== "voided")
+  const hasItems = billableCarrito.length > 0
   const hasPartialPayment = hasAnyPartialPayment({
     paidPartialUnits,
     totalPagadoAcumulado,
@@ -45,7 +46,7 @@ export function evaluateChannelCloseEligibility(input: {
   const checkoutFullyPaid =
     hasItems &&
     isCheckoutFullyPaid({
-      carrito,
+      carrito: billableCarrito,
       paidPartialUnits,
       quantityDealApplications,
     })
