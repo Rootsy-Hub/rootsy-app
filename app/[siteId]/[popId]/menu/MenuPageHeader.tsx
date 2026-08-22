@@ -20,7 +20,8 @@ import {
   eterHeaderTitleClass,
 } from "@/lib/eter/eterChrome"
 import { cn } from "@/lib/utils"
-import { Bell, Home, Search, X } from "lucide-react"
+import { MenuNotificationsButton } from "@/app/[siteId]/[popId]/menu/MenuNotificationsButton"
+import { Home, Search, X } from "lucide-react"
 import type { RefObject } from "react"
 
 type MenuPageHeaderProps = {
@@ -98,6 +99,7 @@ export function MenuPageHeader({
             />
 
             <div className="ml-auto flex shrink-0 items-center gap-1">
+              <MenuNotificationsButton />
               <EterIconButton
                 size="default"
                 label="Buscar en el menú"
@@ -146,9 +148,7 @@ export function MenuPageHeader({
 
         <div className="flex min-w-0 items-center justify-end gap-6">
           <div className="flex items-center gap-1">
-            <EterIconButton size="default" label="Notificaciones">
-              <Bell aria-hidden />
-            </EterIconButton>
+            <MenuNotificationsButton />
           </div>
 
           <div className={cn("h-6 w-px", eterHeaderDividerClass)} />
