@@ -26,13 +26,15 @@ import {
   menuPlanetTileLabelClass,
 } from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
 import { MenuApiReadyBadge } from "@/app/[siteId]/[popId]/menu/MenuApiReadyBadge"
+import { MenuNotificationBadge } from "@/app/[siteId]/[popId]/menu/MenuNotificationBadge"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import {
   isOptimisticNavTarget,
   usePopOptimisticNav,
 } from "@/context/PopOptimisticNavContext"
 import { RootsSpinner } from "@/components/rootsy-spinner"
-import { isMenuApiReady } from "@/lib/menuApiReady"
+import { shouldShowMenuApiReadyBadge } from "@/lib/menuApiReady"
+import { getMenuNotificationDemoCount } from "@/lib/menuNotificationDemo"
 import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
@@ -178,8 +180,11 @@ export function MenuGridItemButton({
             <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
           )}
         </div>
-        {!isDragGhost && !isLeaving && isMenuApiReady(item.link) ? (
+        {!isDragGhost && !isLeaving && shouldShowMenuApiReadyBadge(item.link) ? (
           <MenuApiReadyBadge />
+        ) : null}
+        {!isDragGhost && !isLeaving ? (
+          <MenuNotificationBadge count={getMenuNotificationDemoCount(item.link)} />
         ) : null}
       </div>
 

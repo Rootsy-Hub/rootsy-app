@@ -30,3 +30,12 @@ const READY = new Set<string>(MENU_API_READY_IDS)
 export function isMenuApiReady(id: string | null | undefined): boolean {
   return Boolean(id && READY.has(id))
 }
+
+/** Poner en `true` para volver a mostrar el check verde de API lista. */
+export const SHOW_MENU_API_READY_BADGE = false
+
+export function shouldShowMenuApiReadyBadge(
+  id: string | null | undefined,
+): boolean {
+  return SHOW_MENU_API_READY_BADGE && isMenuApiReady(id)
+}

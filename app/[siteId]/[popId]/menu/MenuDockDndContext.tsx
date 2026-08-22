@@ -32,9 +32,11 @@ import {
   menuNatureShellClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { MenuApiReadyBadge } from "@/app/[siteId]/[popId]/menu/MenuApiReadyBadge"
+import { MenuNotificationBadge } from "@/app/[siteId]/[popId]/menu/MenuNotificationBadge"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import { RootsSpinner } from "@/components/rootsy-spinner"
-import { isMenuApiReady } from "@/lib/menuApiReady"
+import { shouldShowMenuApiReadyBadge } from "@/lib/menuApiReady"
+import { getMenuNotificationDemoCount } from "@/lib/menuNotificationDemo"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
@@ -332,7 +334,8 @@ function MenuDockDragPreview({
         sectionKey={sectionKey}
         variant="overlay"
         size={fromMenu ? "md" : "lg"}
-        apiReady={isMenuApiReady(getDragItemId(item))}
+        apiReady={shouldShowMenuApiReadyBadge(getDragItemId(item))}
+        notificationCount={getMenuNotificationDemoCount(getDragItemId(item))}
       />
     </div>
   )
@@ -345,6 +348,7 @@ export function DockIconVisual({
   className,
   size = "md",
   apiReady = false,
+  notificationCount = 0,
   busy = false,
   busyLabel,
 }: {
@@ -354,6 +358,7 @@ export function DockIconVisual({
   className?: string
   size?: "md" | "sm" | "lg"
   apiReady?: boolean
+  notificationCount?: number
   busy?: boolean
   busyLabel?: string
 }) {
@@ -390,6 +395,7 @@ export function DockIconVisual({
         )}
       </div>
       {apiReady && !busy ? <MenuApiReadyBadge size="sm" /> : null}
+      {!busy ? <MenuNotificationBadge count={notificationCount} size="sm" /> : null}
     </div>
   )
 }
