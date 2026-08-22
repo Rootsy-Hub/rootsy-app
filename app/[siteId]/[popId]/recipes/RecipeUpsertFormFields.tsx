@@ -55,7 +55,9 @@ type Props = {
   form: RecipeFormState
   setForm: Dispatch<SetStateAction<RecipeFormState>>
   categories: RecipeCategoryOption[]
+  categoriesLoading?: boolean
   priceLists?: SalePriceList[]
+  priceListsLoading?: boolean
   disabled?: boolean
 }
 
@@ -66,7 +68,9 @@ export function RecipeUpsertFormFields({
   form,
   setForm,
   categories,
+  categoriesLoading = false,
   priceLists = [],
+  priceListsLoading = false,
   disabled = false,
 }: Props) {
   const activeCategories = categories.filter((c) => c.isActive)
@@ -105,8 +109,10 @@ export function RecipeUpsertFormFields({
               onValueChange={(value) =>
                 setForm((f) => ({ ...f, categoryId: value }))
               }
-              disabled={disabled}
-              placeholder="Elegir categoría"
+              disabled={disabled || categoriesLoading}
+              placeholder={
+                categoriesLoading ? "Cargando categorías…" : "Elegir categoría"
+              }
             >
               {activeCategories.map((category) => (
                 <RootsFormSelectItem key={category.id} value={category.id}>
@@ -148,7 +154,7 @@ export function RecipeUpsertFormFields({
             </div>
             <SalePriceListExtraFields
               idPrefix={idPrefix}
-              lists={priceLists}
+              lists={priceListsLoading ? [] : priceLists}
               values={form.listPrices ?? {}}
               onChange={(listId, value) =>
                 setForm((f) => ({

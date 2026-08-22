@@ -9,6 +9,7 @@ type Props = {
   popId: string
   checkout: MostradorSaleCheckout
   catalogSidebarOpen: boolean
+  onCatalogSidebarOpenChange?: (open: boolean) => void
 }
 
 export function MostradorCatalogPanel({
@@ -16,6 +17,7 @@ export function MostradorCatalogPanel({
   popId,
   checkout,
   catalogSidebarOpen,
+  onCatalogSidebarOpenChange,
 }: Props) {
   const {
     catalogLoading,
@@ -43,6 +45,7 @@ export function MostradorCatalogPanel({
         error={catalogError}
         onAddProduct={agregarAlCarrito}
         catalogSidebarOpen={catalogSidebarOpen}
+        onCatalogSidebarOpenChange={onCatalogSidebarOpenChange}
         catalogScope="menu"
         itemsSource="menu"
         mergeCatalogArticles={mergeCatalogArticles}

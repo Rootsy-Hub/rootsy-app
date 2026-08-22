@@ -327,6 +327,18 @@ export function popRecipesQueryRoot(popId: string) {
   return ["pop-recipes", popId] as const
 }
 
+export function popRecipeQueryKey(popId: string, recipeId: string) {
+  return ["pop-recipe", popId, recipeId] as const
+}
+
+export function popRecipeCategoriesQueryKey(popId: string) {
+  return ["pop-recipe-categories", popId] as const
+}
+
+export function popComandaStationsQueryKey(popId: string) {
+  return ["pop-comanda-stations", popId] as const
+}
+
 export type PopPromotionsQueryParams = {
   q: string
   page: number

@@ -1,6 +1,6 @@
 "use client"
 
-import { uploadRecipeImage } from "@/app/[siteId]/[popId]/recipes/actions"
+import { uploadRecipeImage } from "@/lib/rootsyApi/recipesClient"
 import { RootsFormImageUploadField } from "@/components/rootsy-form/RootsFormImageUploadField"
 import {
   compressImageFileToWebp,

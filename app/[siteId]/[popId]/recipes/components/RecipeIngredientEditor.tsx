@@ -1,10 +1,10 @@
 "use client"
 
-import {
-  getRecipeIngredientOptionsByIds,
-  type RecipeIngredientInput,
-  type RecipeIngredientOption,
+import type {
+  RecipeIngredientInput,
+  RecipeIngredientOption,
 } from "@/app/[siteId]/[popId]/recipes/actions"
+import { getRecipeIngredientOptionsByIds } from "@/lib/rootsyApi/recipesClient"
 import { RecipeIngredientSearchField } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientSearchField"
 import { RootsIconButton, RootsSubtleButton } from "@/components/rootsy-button"
 import {

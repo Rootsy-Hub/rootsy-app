@@ -16,6 +16,7 @@ import {
   RootsDialogContent,
   RootsDialogErrorBanner,
   RootsDialogHeader,
+  RootsDialogLoadingState,
 } from "@/components/rootsy-dialog"
 import {
   RootsFormSelectField,
@@ -30,6 +31,7 @@ type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   banner: string | null
+  loading?: boolean
   categories: RecipeCategoryOption[]
   boardKey: number
   canCreate: boolean
@@ -59,6 +61,7 @@ export function RecipeCategoriesDialog({
   open,
   onOpenChange,
   banner,
+  loading = false,
   categories,
   boardKey,
   canCreate,
@@ -146,6 +149,9 @@ export function RecipeCategoriesDialog({
               </RootsProgressButton>
             </div>
           ) : null}
+          {loading && categories.length === 0 ? (
+            <RootsDialogLoadingState message="Cargando categorías" />
+          ) : (
           <RecipeCategoriesMenuBoard
             key={boardKey}
             categories={categories}
@@ -164,6 +170,7 @@ export function RecipeCategoriesDialog({
             editingStationId={editingStationId}
             onEditingStationChange={onEditingStationChange}
           />
+          )}
         </RootsDialogBody>
       </RootsDialogContent>
     </Dialog>

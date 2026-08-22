@@ -309,31 +309,46 @@ export function MostradorBoard({
           <MostradorBoardSkeleton />
         ) : (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <OperarCanvasToolbarColumnHeaderRow>
-              {BOARD_COLUMNS.map((column) => (
-                <OperarCanvasToolbarColumnHeader
-                  key={column.id}
-                  icon={column.icon}
-                  label={column.label}
-                  count={ordersByColumn[column.id].length}
-                />
-              ))}
-            </OperarCanvasToolbarColumnHeaderRow>
+            <div className="hidden md:block">
+              <OperarCanvasToolbarColumnHeaderRow>
+                {BOARD_COLUMNS.map((column) => (
+                  <OperarCanvasToolbarColumnHeader
+                    key={column.id}
+                    icon={column.icon}
+                    label={column.label}
+                    count={ordersByColumn[column.id].length}
+                  />
+                ))}
+              </OperarCanvasToolbarColumnHeaderRow>
+            </div>
             <div
               className={cn(
-                "grid min-h-0 flex-1 grid-cols-3 overflow-hidden",
-                "divide-x divide-[var(--layouts-operar-border-dark-hairline)]",
+                "grid min-h-0 flex-1 overflow-auto md:overflow-hidden",
+                "grid-cols-1 md:grid-cols-3",
+                "divide-y divide-[var(--layouts-operar-border-dark-hairline)]",
+                "md:divide-x md:divide-y-0",
               )}
             >
               {BOARD_COLUMNS.map((column) => (
-                <KanbanColumnBody
+                <div
                   key={column.id}
-                  column={column}
-                  orders={ordersByColumn[column.id]}
-                  selectedOrderId={selectedOrderId}
-                  draggingOrder={draggingOrder}
-                  onSelectOrder={onSelectOrder}
-                />
+                  className="flex min-h-0 min-w-0 flex-col max-md:min-h-72"
+                >
+                  <div className="md:hidden">
+                    <OperarCanvasToolbarColumnHeader
+                      icon={column.icon}
+                      label={column.label}
+                      count={ordersByColumn[column.id].length}
+                    />
+                  </div>
+                  <KanbanColumnBody
+                    column={column}
+                    orders={ordersByColumn[column.id]}
+                    selectedOrderId={selectedOrderId}
+                    draggingOrder={draggingOrder}
+                    onSelectOrder={onSelectOrder}
+                  />
+                </div>
               ))}
             </div>
           </div>

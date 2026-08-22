@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  searchRecipeIngredientOptions,
-  type RecipeIngredientOption,
-} from "@/app/[siteId]/[popId]/recipes/actions"
+import type { RecipeIngredientOption } from "@/app/[siteId]/[popId]/recipes/actions"
+import { searchRecipeIngredientOptions } from "@/lib/rootsyApi/recipesClient"
 import {
   RootsFormSearchField,
   rootsFormSelectContentClass,
@@ -218,7 +216,7 @@ export function RecipeIngredientSearchField({
     <ul
       className={cn(rootsFormDropdownListClass, "w-full")}
       role="listbox"
-      aria-label="Materias primas"
+      aria-label="Ingredientes"
       aria-busy={isSearching}
     >
       {isSearching ? (
@@ -228,7 +226,7 @@ export function RecipeIngredientSearchField({
         </li>
       ) : results.length === 0 ? (
         <li className="px-3 py-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
-          Sin materia prima para esa búsqueda
+          Sin ingredientes para esa búsqueda
         </li>
       ) : (
         results.map((option) => {
@@ -278,13 +276,13 @@ export function RecipeIngredientSearchField({
           if (selectedIdRef.current) onClear()
         }}
         onClear={handleClear}
-        placeholder="Buscar materia prima…"
+        placeholder="Buscar ingrediente…"
         resultsSummary={
           showDropdown
             ? isSearching
-              ? "Buscando materia prima…"
+              ? "Buscando ingredientes…"
               : results.length === 0
-                ? "Sin materia prima para esa búsqueda"
+                ? "Sin ingredientes para esa búsqueda"
                 : `${results.length} resultado${results.length === 1 ? "" : "s"}`
             : undefined
         }

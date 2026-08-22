@@ -21,8 +21,6 @@ import { getPurchaseOrdersTable } from "@/app/[siteId]/[popId]/purchase-orders/a
 import { DEFAULT_PURCHASE_ORDER_TABLE_PAGE_SIZE } from "@/app/[siteId]/[popId]/purchase-orders/orderConstants"
 import { DEFAULT_QUOTE_TABLE_PAGE_SIZE } from "@/app/[siteId]/[popId]/quotes/quoteConstants"
 import { getSaleQuotesTable } from "@/app/[siteId]/[popId]/quotes/actions"
-import { getPopRecipesTable } from "@/app/[siteId]/[popId]/recipes/actions"
-import type { RecipesWorkspaceUrlState } from "@/app/[siteId]/[popId]/recipes/workspaceUrl"
 import { getPopServicesTable } from "@/app/[siteId]/[popId]/services/actions"
 import type { ServicesWorkspaceUrlState } from "@/app/[siteId]/[popId]/services/workspaceUrl"
 import { getPopSuppliersTable } from "@/app/[siteId]/[popId]/suppliers/actions"
@@ -39,7 +37,6 @@ import {
   popPromotionsQueryKey,
   popPurchaseOrdersQueryKey,
   popQuotesQueryKey,
-  popRecipesQueryKey,
   popServicesQueryKey,
   popSuppliersQueryKey,
   type PopClientsQueryParams,
@@ -128,25 +125,6 @@ export async function prefetchPopChecksTable(
   return prefetchPopListQuery({
     queryKey: popChecksQueryKey(popId, params),
     queryFn: () => getPopChecksTable(popId, params),
-  })
-}
-
-export async function prefetchPopRecipesTable(
-  popId: string,
-  url: RecipesWorkspaceUrlState,
-): Promise<DehydratedState | null> {
-  const params = {
-    q: url.q,
-    page: url.page,
-    pageSize: url.pageSize,
-    soloActivos: url.soloActivos,
-    categoryId: url.categoryId,
-    sort: url.sort,
-    ord: url.ord,
-  }
-  return prefetchPopListQuery({
-    queryKey: popRecipesQueryKey(popId, params),
-    queryFn: () => getPopRecipesTable(popId, params),
   })
 }
 

@@ -65,16 +65,17 @@ export const layoutsOperarBodyShellClass = cn(
   "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--rootsy-sombra-950)]",
 )
 
-/** Grid principal 1 · 2 columnas: operación (1.1) | ticket (1.2). */
+/** Grid principal 1 · mobile: canvas + dock. Desktop: operación | ticket. */
 export const layoutsOperarBodyMainGridClass = cn(
-  "grid min-h-0 flex-1",
-  "[grid-template-columns:var(--layouts-operar-grid-cols)]",
-  "[grid-template-rows:minmax(0,1fr)]",
+  "flex min-h-0 flex-1 flex-col",
+  "md:grid md:[grid-template-columns:var(--layouts-operar-grid-cols)]",
+  "md:[grid-template-rows:minmax(0,1fr)]",
 )
 
 /** 1.1 Columna izquierda — catálogo (1.1.1) + toolbox (1.1.2). */
 export const layoutsOperarOperationColumnClass = cn(
-  "col-start-1 row-start-1 grid min-h-0 min-w-0 overflow-hidden",
+  "grid min-h-0 min-w-0 flex-1 overflow-hidden",
+  "md:col-start-1 md:row-start-1",
   "[grid-template-rows:var(--layouts-operar-operation-rows)]",
 )
 
@@ -90,17 +91,25 @@ export const layoutsOperarCatalogColumnInMainGridClass = cn(
   "border-b border-[var(--layouts-operar-border-dark-default)]",
 )
 
-/** Rail catálogo — mismo sidebar oscuro que Library / Estadísticas / Ajustes. */
+/** Rail catálogo — inline en desktop; overlay a la izquierda en mobile. */
 export const layoutsOperarCatalogSidebarClass = cn(
   "relative shrink-0 overflow-hidden",
   "border-r border-[var(--layouts-operar-border-dark-hairline)]",
-  "transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
+  "transition-[width,border-color,transform] duration-300 ease-in-out motion-reduce:transition-none",
+  "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:h-full max-md:shadow-xl",
   librarySidebarClass,
 )
 
 export const layoutsOperarCatalogSidebarOpenClass =
   "w-[var(--layouts-operar-catalog-sidebar-w)] min-w-[var(--layouts-operar-catalog-sidebar-w)]"
-export const layoutsOperarCatalogSidebarClosedClass = "w-0 border-r-0"
+export const layoutsOperarCatalogSidebarClosedClass = cn(
+  "w-0 border-r-0",
+  "max-md:w-[var(--layouts-operar-catalog-sidebar-w)] max-md:-translate-x-full max-md:pointer-events-none",
+)
+
+export const layoutsOperarCatalogRailBackdropClass = cn(
+  "fixed inset-0 z-30 bg-black/50 md:hidden",
+)
 
 /** Estructura catálogo wireframe — color vía getLayoutsOperarWireframeZoneStyle. */
 export const layoutsOperarWireframeCatalogSidebarClass = cn(
@@ -625,12 +634,13 @@ export const layoutsOperarSummaryPanelTabBodyClass = cn(
   "rootsy-app-light layouts-operar-ticket-shell h-full min-h-0 w-full",
 )
 
-/** Panel ticket 1.2 — col derecha del grid principal. */
+/** Panel ticket 1.2 — col derecha en desktop; full en el sheet mobile. */
 export const layoutsOperarSummaryPanelClass = cn(
   layoutsOperarSummaryPanelSurfaceClass,
-  "col-start-2 row-start-1 min-h-0",
-  "border-l border-[var(--layouts-operar-border-split)]",
-  "w-[var(--layouts-operar-ticket-w)] max-w-[var(--layouts-operar-ticket-w)]",
+  "min-h-0 h-full w-full",
+  "md:col-start-2 md:row-start-1",
+  "md:border-l md:border-[var(--layouts-operar-border-split)]",
+  "md:w-[var(--layouts-operar-ticket-w)] md:max-w-[var(--layouts-operar-ticket-w)]",
 )
 
 /** Vender servicio — panel derecho con fila de totales operar. */

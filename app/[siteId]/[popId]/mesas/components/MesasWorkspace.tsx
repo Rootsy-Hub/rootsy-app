@@ -49,6 +49,7 @@ type Props = {
   siteId: string
   popId: string
   catalogSidebarOpen: boolean
+  onCatalogSidebarOpenChange?: (open: boolean) => void
   canUpdateLayout: boolean
   onRegisterReload?: (reload: () => Promise<void>) => void
   onRegisterLayoutData?: (getter: () => MesasLayoutData | null) => void
@@ -66,6 +67,7 @@ export function MesasWorkspace({
   siteId,
   popId,
   catalogSidebarOpen,
+  onCatalogSidebarOpenChange,
   canUpdateLayout,
   onRegisterReload,
   onRegisterLayoutData,
@@ -384,6 +386,7 @@ export function MesasWorkspace({
       ) : null}
 
       <LayoutsOperarMainGrid
+        ticketDockLabel="Mesa"
         catalog={
           !showCatalog ? (
             <section className={cn(layoutsOperarCatalogColumnClass, "flex-col")}>
@@ -439,6 +442,7 @@ export function MesasWorkspace({
               popId={popId}
               checkout={checkout}
               catalogSidebarOpen={catalogSidebarOpen}
+              onCatalogSidebarOpenChange={onCatalogSidebarOpenChange}
             />
           )
         }

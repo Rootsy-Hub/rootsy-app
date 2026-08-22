@@ -37,6 +37,7 @@ export function defaultRecipeFormState(): RecipeFormState {
 export function recipeFormFromDetail(
   row: RecipeTableRow,
   ingredients: RecipeIngredientFormLine[],
+  listPrices: Record<string, string> = {},
 ): RecipeFormState {
   return {
     name: row.name,
@@ -49,7 +50,7 @@ export function recipeFormFromDetail(
     allowNegativeStock: row.allowNegativeStock,
     ingredients:
       ingredients.length > 0 ? ingredients : [createEmptyIngredientLine()],
-    listPrices: {},
+    listPrices,
   }
 }
 

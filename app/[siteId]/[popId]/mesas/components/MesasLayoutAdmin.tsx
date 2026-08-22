@@ -5,30 +5,9 @@ import { MesasSalonsDialog } from "@/app/[siteId]/[popId]/mesas/components/Mesas
 import { MesasTablesDialog } from "@/app/[siteId]/[popId]/mesas/components/MesasTablesDialog"
 import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
 import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
-import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { LayoutGrid, MapPin, Shapes, type LucideIcon } from "lucide-react"
-import { useState } from "react"
-
-function MesasHeaderTooltipButton({
-  label,
-  icon: Icon,
-  onClick,
-}: {
-  label: string
-  icon: LucideIcon
-  onClick: () => void
-}) {
-  return (
-    <DataWorkspaceHeaderTooltipIconButton
-      label={label}
-      headerVariant={dataWorkspaceModuleHeaderVariant}
-      onClick={onClick}
-    >
-      <Icon className="size-5" aria-hidden />
-    </DataWorkspaceHeaderTooltipIconButton>
-  )
-}
+import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
+import { LayoutGrid, MapPin, Shapes } from "lucide-react"
+import { useMemo, useState, type ReactNode } from "react"
 
 type Props = {
   popId: string
@@ -37,42 +16,51 @@ type Props = {
   canUpdate: boolean
   onLayoutChanged: () => Promise<void>
   getLayoutData?: () => MesasLayoutData | null
+  children: (parts: {
+    moreActions: DataWorkspaceHeaderMoreAction[]
+  }) => ReactNode
 }
 
-export function MesasLayoutAdminButtons({
+export function MesasLayoutAdmin({
   popId,
   siteId,
   salons,
   canUpdate,
   onLayoutChanged,
   getLayoutData,
+  children,
 }: Props) {
   const [salonsOpen, setSalonsOpen] = useState(false)
   const [tablesOpen, setTablesOpen] = useState(false)
   const [decorsOpen, setDecorsOpen] = useState(false)
 
+  const moreActions = useMemo<DataWorkspaceHeaderMoreAction[]>(
+    () =>
+      canUpdate
+        ? [
+            {
+              label: "Salones",
+              icon: MapPin,
+              onClick: () => setSalonsOpen(true),
+            },
+            {
+              label: "Mesas",
+              icon: LayoutGrid,
+              onClick: () => setTablesOpen(true),
+            },
+            {
+              label: "Elementos del plano",
+              icon: Shapes,
+              onClick: () => setDecorsOpen(true),
+            },
+          ]
+        : [],
+    [canUpdate],
+  )
+
   return (
     <>
-      {canUpdate ? (
-        <>
-          <MesasHeaderTooltipButton
-            label="Salones"
-            icon={MapPin}
-            onClick={() => setSalonsOpen(true)}
-          />
-          <MesasHeaderTooltipButton
-            label="Mesas"
-            icon={LayoutGrid}
-            onClick={() => setTablesOpen(true)}
-          />
-          <MesasHeaderTooltipButton
-            label="Elementos del plano"
-            icon={Shapes}
-            onClick={() => setDecorsOpen(true)}
-          />
-        </>
-      ) : null}
-
+      {children({ moreActions })}
       {canUpdate ? (
         <>
           <MesasSalonsDialog

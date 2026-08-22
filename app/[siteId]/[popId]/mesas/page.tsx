@@ -1,6 +1,6 @@
 "use client"
 
-import { MesasLayoutAdminButtons } from "@/app/[siteId]/[popId]/mesas/components/MesasLayoutAdmin"
+import { MesasLayoutAdmin } from "@/app/[siteId]/[popId]/mesas/components/MesasLayoutAdmin"
 import { MesasWorkspace } from "@/app/[siteId]/[popId]/mesas/components/MesasWorkspace"
 import {
   getMesasLayout,
@@ -103,42 +103,45 @@ function MesasPage() {
   }
 
   return (
-    <DataWorkspaceOperationsLayout
-      siteId={siteId}
+    <MesasLayoutAdmin
       popId={popId}
-      popName={popName}
-      title="Mesas"
-      loading={loading}
-      userName={bootstrap?.userFullName || user?.email || ""}
-      userAvatarSrc={bootstrap?.userImageUrl}
-      headerActions={
-        <MesasLayoutAdminButtons
-          popId={popId}
-          siteId={siteId}
-          salons={salons}
-          canUpdate={access.canUpdate}
-          getLayoutData={() => layoutDataRef.current()}
-          onLayoutChanged={handleLayoutChanged}
-        />
-      }
-      sidebarCollapsible
-      sidebarEdgeToggle={false}
-      sidebarOpen={catalogSidebarOpen}
-      onSidebarOpenChange={setCatalogSidebarOpen}
+      siteId={siteId}
+      salons={salons}
+      canUpdate={access.canUpdate}
+      getLayoutData={() => layoutDataRef.current()}
+      onLayoutChanged={handleLayoutChanged}
     >
-      <MesasWorkspace
-        siteId={siteId}
-        popId={popId}
-        catalogSidebarOpen={catalogSidebarOpen}
-        canUpdateLayout={access.canUpdate}
-        onRegisterReload={(reload) => {
-          reloadLayoutRef.current = reload
-        }}
-        onRegisterLayoutData={(getter) => {
-          layoutDataRef.current = getter
-        }}
-      />
-    </DataWorkspaceOperationsLayout>
+      {({ moreActions }) => (
+        <DataWorkspaceOperationsLayout
+          siteId={siteId}
+          popId={popId}
+          popName={popName}
+          title="Mesas"
+          loading={loading}
+          userName={bootstrap?.userFullName || user?.email || ""}
+          userAvatarSrc={bootstrap?.userImageUrl}
+          headerMoreActions={moreActions}
+          sidebarCollapsible
+          sidebarEdgeToggle={false}
+          sidebarOpen={catalogSidebarOpen}
+          onSidebarOpenChange={setCatalogSidebarOpen}
+        >
+          <MesasWorkspace
+            siteId={siteId}
+            popId={popId}
+            catalogSidebarOpen={catalogSidebarOpen}
+            onCatalogSidebarOpenChange={setCatalogSidebarOpen}
+            canUpdateLayout={access.canUpdate}
+            onRegisterReload={(reload) => {
+              reloadLayoutRef.current = reload
+            }}
+            onRegisterLayoutData={(getter) => {
+              layoutDataRef.current = getter
+            }}
+          />
+        </DataWorkspaceOperationsLayout>
+      )}
+    </MesasLayoutAdmin>
   )
 }
 

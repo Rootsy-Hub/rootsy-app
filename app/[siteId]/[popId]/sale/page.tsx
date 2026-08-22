@@ -70,8 +70,6 @@ import {
   DataWorkspaceOperationsLayout,
   OperationsModuleBackdrop,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
-import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -1146,19 +1144,17 @@ function SalePage() {
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
-        headerActions={
-          <DataWorkspaceHeaderTooltipIconButton
-            label="Crear presupuesto"
-            headerVariant={dataWorkspaceModuleHeaderVariant}
-            disabled={!hayItemsEnPedido || presupuestoSubmitting}
-            onClick={() => {
+        headerMoreActions={[
+          {
+            label: "Crear presupuesto",
+            icon: FileText,
+            onClick: () => {
+              if (!hayItemsEnPedido || presupuestoSubmitting) return
               setPresupuestoError(null)
               setPresupuestoConfirmOpen(true)
-            }}
-          >
-            <FileText className="size-5" aria-hidden />
-          </DataWorkspaceHeaderTooltipIconButton>
-        }
+            },
+          },
+        ]}
       >
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <OperationsModuleBackdrop />
@@ -1196,6 +1192,7 @@ function SalePage() {
                 error={catalogError}
                 onAddProduct={handleAddProduct}
                 catalogSidebarOpen={catalogSidebarOpen}
+                onCatalogSidebarOpenChange={setCatalogSidebarOpen}
                 catalogScope="sale"
                 itemsSource="sale"
                 mergeCatalogArticles={mergeCatalogArticles}

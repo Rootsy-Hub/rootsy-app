@@ -1241,6 +1241,7 @@ function PurchasesPage() {
                 error={catalogError}
                 onAddProduct={agregarAlCarrito}
                 catalogSidebarOpen={catalogSidebarOpen}
+                onCatalogSidebarOpenChange={setCatalogSidebarOpen}
               />
             }
             toolbox={

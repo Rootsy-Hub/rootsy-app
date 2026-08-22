@@ -810,6 +810,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                   selectedService={selectedService}
                   popId={popId}
                   catalogSidebarOpen={catalogSidebarOpen}
+                  onCatalogSidebarOpenChange={setCatalogSidebarOpen}
                   disabled={saving}
                   onSelectService={selectService}
                   onClearSelectedService={clearSelectedService}

@@ -1,25 +1,6 @@
 "use client"
 
-import {
-  createComandaStation,
-  createPopRecipe,
-  createRecipeCategory,
-  deleteComandaStation,
-  deletePopRecipe,
-  deleteRecipeCategory,
-  getPopComandaStationCategoryCount,
-  getPopComandaStations,
-  getPopRecipeCategories,
-  getPopRecipeCategoryRecipeCount,
-  getPopRecipeDetail,
-  syncRecipeCategoryMenuLayout,
-  updateComandaStation,
-  updatePopRecipe,
-  updateRecipeCategory,
-  type ComandaStationOption,
-  type RecipeCategoryOption,
-  type RecipeTableRow,
-} from "@/app/[siteId]/[popId]/recipes/actions"
+import type { RecipeTableRow } from "@/app/[siteId]/[popId]/recipes/actions"
 import { ingredientLinesFromDetail } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientEditor"
 import { RecipeCategoryDeleteDialog } from "@/app/[siteId]/[popId]/recipes/RecipeCategoryDeleteDialog"
 import { RecipeCategoriesDialog } from "@/app/[siteId]/[popId]/recipes/RecipeCategoriesDialog"
@@ -105,20 +86,46 @@ import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTab
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { recipesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { TableBody, TableCell, TableRow } from "@/components/ui/table"
+import { TableBody, TableCell } from "@/components/ui/table"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
+import { usePopComandaStations } from "@/hooks/usePopComandaStations"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import { usePopPriceLists } from "@/hooks/usePopPriceLists"
+import { usePopRecipeCategories } from "@/hooks/usePopRecipeCategories"
 import { usePopRecipesTable } from "@/hooks/usePopRecipesTable"
-import {
-  getItemPriceListAmounts,
-  getPopPriceLists,
-} from "@/app/[siteId]/[popId]/articles/priceListActions"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
 import { formatMoneyInputForField } from "@/lib/moneyInput"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
 import {
   extraPriceLists,
   parseListPriceFormValues,
-  type SalePriceList,
 } from "@/lib/salePriceLists"
-import { popRecipesQueryRoot } from "@/lib/queryKeys"
+import {
+  popComandaStationsQueryKey,
+  popRecipeCategoriesQueryKey,
+  popRecipeQueryKey,
+  popRecipesQueryRoot,
+} from "@/lib/queryKeys"
+import {
+  createPopComandaStation,
+  deletePopComandaStation,
+  fetchPopComandaStationCategoryCount,
+  updatePopComandaStation,
+} from "@/lib/rootsyApi/comandaStationsClient"
+import {
+  createPopRecipeCategory,
+  deletePopRecipeCategory,
+  fetchPopRecipeCategoryCount,
+  syncPopRecipeCategoryLayout,
+  updatePopRecipeCategory,
+} from "@/lib/rootsyApi/recipeCategoriesClient"
+import {
+  createPopRecipe,
+  deletePopRecipe,
+  fetchPopRecipe,
+  updatePopRecipe,
+} from "@/lib/rootsyApi/recipesClient"
 import { useQueryClient } from "@tanstack/react-query"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
@@ -153,22 +160,34 @@ export function RecipesWorkspaceView() {
   const searchParams = useSearchParams()
   const routerRef = useRef(router)
   routerRef.current = router
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
   const ws = useMemo(
-    () => parseRecipesWorkspaceUrl(searchParams),
-    [searchParams],
+    () => parseRecipesWorkspaceUrl(workspaceParams),
+    [workspaceParams],
   )
 
   const searchInputId = useId()
   const filtersButtonId = useId()
   const pageSizeLabelId = useId()
 
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [actionError, setError] = useState<string | null>(null)
-
-  const [categories, setCategories] = useState<RecipeCategoryOption[]>([])
-  const [stations, setStations] = useState<ComandaStationOption[]>([])
   const [searchInput, setSearchInput] = useState(ws.q)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
@@ -177,12 +196,12 @@ export function RecipesWorkspaceView() {
   )
 
   const [formOpen, setFormOpen] = useState(false)
-  const [formDetailLoading, setFormDetailLoading] = useState(false)
+  const [formRefreshing, setFormRefreshing] = useState(false)
   const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<RecipeFormState>(defaultRecipeFormState())
-  const [priceLists, setPriceLists] = useState<SalePriceList[]>([])
+  const editRequestIdRef = useRef(0)
 
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<RecipeTableRow | null>(null)
@@ -215,7 +234,6 @@ export function RecipesWorkspaceView() {
   )
 
   const [stationsOpen, setStationsOpen] = useState(false)
-  const [stationsLoading, setStationsLoading] = useState(false)
   const [stationsBanner, setStationsBanner] = useState<string | null>(null)
   const [newStationName, setNewStationName] = useState("")
   const [newStationSaving, setNewStationSaving] = useState(false)
@@ -234,10 +252,19 @@ export function RecipesWorkspaceView() {
 
   const pushWs = useCallback(
     (patch: Parameters<typeof mergeRecipesWorkspaceUrl>[1]) => {
-      const next = mergeRecipesWorkspaceUrl(searchParams, patch)
-      router.replace(`${pathname}?${next.toString()}`)
+      const qs = mergeRecipesWorkspaceUrl(workspaceParams, patch)
+      const next = qs.toString()
+        ? `${pathname}?${qs.toString()}`
+        : pathname
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== next) {
+          window.history.replaceState(window.history.state, "", next)
+        }
+      }
+      setWorkspaceSearch(qs.toString())
     },
-    [pathname, router, searchParams],
+    [pathname, workspaceParams],
   )
 
   const handleSortColumn = useCallback(
@@ -274,17 +301,48 @@ export function RecipesWorkspaceView() {
       sort: ws.sort,
       ord: ws.ord,
     },
-    { enabled: Boolean(popId) },
+    { enabled: Boolean(popId && siteId) },
   )
+  const categoriesNeeded =
+    formOpen || categoriesOpen || filtersModalOpen
+  const categoriesQuery = usePopRecipeCategories(popId, {
+    enabled: categoriesNeeded,
+  })
+  const categories = categoriesQuery.data ?? []
+  const stationsNeeded = categoriesOpen || stationsOpen
+  const stationsQuery = usePopComandaStations(popId, {
+    enabled: stationsNeeded,
+  })
+  const stations = stationsQuery.data ?? []
+  const priceListsNeeded = formOpen
+  const priceListsQuery = usePopPriceLists(popId, {
+    enabled: priceListsNeeded,
+  })
+  const priceLists = priceListsQuery.data ?? []
 
   const recipes = recipesQuery.data?.recipes ?? []
   const totalCount = recipesQuery.data?.totalCount ?? 0
-  const canCreate = recipesQuery.data?.canCreate ?? false
-  const canUpdate = recipesQuery.data?.canUpdate ?? false
-  const canDelete = recipesQuery.data?.canDelete ?? false
+  const recipePerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = recipePerm(POP_PERMS.RECIPE_CREATE)
+  const canUpdate = recipePerm(POP_PERMS.RECIPE_UPDATE)
+  const canDelete = recipePerm(POP_PERMS.RECIPE_DELETE)
   const loading =
-    recipesQuery.isPending ||
-    (recipesQuery.isFetching && !recipesQuery.isFetched)
+    !popId || !siteId
+      ? false
+      : recipesQuery.isPending ||
+        (recipesQuery.isFetching && !recipesQuery.isFetched)
   const tableError =
     recipesQuery.data?.success === false
       ? recipesQuery.data.error
@@ -297,57 +355,39 @@ export function RecipesWorkspaceView() {
 
   const refreshRecipesList = useCallback(async () => {
     if (!popId) return
+    invalidatePopOperateCatalogs(queryClient, popId)
     await queryClient.invalidateQueries({
       queryKey: popRecipesQueryRoot(popId),
     })
   }, [popId, queryClient])
 
-  const loadCategories = useCallback(async () => {
+  const refreshCategories = useCallback(async () => {
     if (!popId) return
-    const res = await getPopRecipeCategories(popId)
-    if (res.success) setCategories(res.categories)
-  }, [popId])
+    await queryClient.invalidateQueries({
+      queryKey: popRecipeCategoriesQueryKey(popId),
+    })
+  }, [popId, queryClient])
 
-  const loadStations = useCallback(
-    async (opts?: { spinner?: boolean }) => {
-      if (!popId) return
-      if (opts?.spinner) setStationsLoading(true)
-      try {
-        const res = await getPopComandaStations(popId)
-        if (res.success) {
-          setStations(res.stations)
-          if (opts?.spinner) setStationsBanner(null)
-        } else if (opts?.spinner) {
-          setStationsBanner(res.error)
-        }
-      } finally {
-        if (opts?.spinner) setStationsLoading(false)
-      }
-    },
-    [popId],
-  )
-
-  const loadPriceLists = useCallback(async () => {
+  const refreshStations = useCallback(async () => {
     if (!popId) return
-    const res = await getPopPriceLists(popId)
-    if (res.success) setPriceLists(res.lists)
-  }, [popId])
+    await queryClient.invalidateQueries({
+      queryKey: popComandaStationsQueryKey(popId),
+    })
+  }, [popId, queryClient])
 
   useEffect(() => {
     const res = recipesQuery.data
     if (!res || res.success || !("redirect" in res) || !res.redirect) return
-    routerRef.current.replace(res.redirect)
+    const redirect = res.redirect
+    const timeout = window.setTimeout(() => {
+      routerRef.current.push(redirect)
+    }, 1200)
+    return () => window.clearTimeout(timeout)
   }, [recipesQuery.data])
 
   useEffect(() => {
     setSelected(new Set())
   }, [ws.q, ws.page, ws.pageSize, ws.soloActivos, ws.categoryId, ws.sort, ws.ord])
-
-  useEffect(() => {
-    void loadCategories()
-    void loadStations()
-    void loadPriceLists()
-  }, [loadCategories, loadStations, loadPriceLists])
 
   useEffect(() => {
     setSearchInput(ws.q)
@@ -440,54 +480,70 @@ export function RecipesWorkspaceView() {
   }, [pushWs])
 
   const openCreate = () => {
+    if (!canCreate) return
     setEditingId(null)
     setForm(defaultRecipeFormState())
     setFormError(null)
+    setFormRefreshing(false)
     setFormOpen(true)
   }
 
-  const openEdit = async (row: RecipeTableRow) => {
+  const openEdit = (row: RecipeTableRow) => {
+    if (!popId) return
+    const requestId = ++editRequestIdRef.current
     setFormError(null)
-    setFormDetailLoading(true)
-    setFormOpen(true)
     setEditingId(row.id)
-    const res = await getPopRecipeDetail(popId, row.id)
-    setFormDetailLoading(false)
-    if (!res.success) {
-      setFormError(res.error)
-      return
-    }
-    const amountsRes = await getItemPriceListAmounts(popId, "recipe", row.id)
-    const next = recipeFormFromDetail(
-      res.recipe,
-      ingredientLinesFromDetail(res.recipe.ingredients),
-    )
-    if (amountsRes.success) {
-      next.listPrices = Object.fromEntries(
-        Object.entries(amountsRes.amounts).map(([id, amount]) => [
-          id,
-          formatMoneyInputForField(amount),
-        ]),
-      )
-    }
-    setForm(next)
+    setForm(recipeFormFromDetail(row, []))
+    setFormRefreshing(true)
+    setFormOpen(true)
+    void queryClient
+      .fetchQuery({
+        queryKey: popRecipeQueryKey(popId, row.id),
+        queryFn: () => fetchPopRecipe(popId, row.id),
+        staleTime: 0,
+      })
+      .then((detail) => {
+        if (editRequestIdRef.current !== requestId) return
+        setForm(
+          recipeFormFromDetail(
+            detail,
+            ingredientLinesFromDetail(detail.ingredients),
+            Object.fromEntries(
+              (detail.listPrices ?? []).map((item) => [
+                item.listId,
+                formatMoneyInputForField(item.amount),
+              ]),
+            ),
+          ),
+        )
+      })
+      .catch((err: unknown) => {
+        if (editRequestIdRef.current !== requestId) return
+        setFormError(
+          err instanceof Error ? err.message : "No se pudo cargar la receta",
+        )
+      })
+      .finally(() => {
+        if (editRequestIdRef.current === requestId) setFormRefreshing(false)
+      })
   }
 
   const closeForm = () => {
+    editRequestIdRef.current += 1
     setFormOpen(false)
   }
 
   const finalizeFormClose = () => {
     setEditingId(null)
     setFormError(null)
-    setFormDetailLoading(false)
+    setFormRefreshing(false)
     setFormSaving(false)
     setForm(defaultRecipeFormState())
   }
 
   const submitForm = async (e: FormEvent) => {
     e.preventDefault()
-    if (formSaving || formDetailLoading) return
+    if (formSaving || formRefreshing) return
     setFormSaving(true)
     setFormError(null)
     const payload = {
@@ -545,7 +601,7 @@ export function RecipesWorkspaceView() {
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim() || newCategorySaving) return
     setNewCategorySaving(true)
-    const res = await createRecipeCategory(
+    const res = await createPopRecipeCategory(
       popId,
       newCategoryName,
       newCategoryStationId,
@@ -559,7 +615,7 @@ export function RecipesWorkspaceView() {
     setNewCategoryName("")
     setNewCategoryStationId(null)
     setCategoriesBoardKey((k) => k + 1)
-    await loadCategories()
+    await refreshCategories()
   }
 
   const handleSaveCategoryEdit = async () => {
@@ -573,7 +629,7 @@ export function RecipesWorkspaceView() {
       return
     }
     setCategoryBusy(true)
-    const res = await updateRecipeCategory(
+    const res = await updatePopRecipeCategory(
       popId,
       editingCategoryId,
       editingCategoryName,
@@ -588,14 +644,14 @@ export function RecipesWorkspaceView() {
     setEditingCategoryId(null)
     setEditingCategoryName("")
     setEditingCategoryStationId(null)
-    await loadCategories()
+    await refreshCategories()
   }
 
   const requestDeleteCategory = (id: string, name: string) => {
     if (!popId) return
     setDeleteCategoryBanner(null)
     setDeleteCategoryTarget({ id, name, recipeCount: null })
-    void getPopRecipeCategoryRecipeCount(popId, id).then((res) => {
+    void fetchPopRecipeCategoryCount(popId, id).then((res) => {
       if (!res.success) {
         setDeleteCategoryTarget(null)
         setCategoriesBanner(res.error)
@@ -617,7 +673,7 @@ export function RecipesWorkspaceView() {
     if (deleteCategoryTarget.recipeCount !== 0) return
     setDeleteCategoryBusy(true)
     setDeleteCategoryBanner(null)
-    const res = await deleteRecipeCategory(popId, deleteCategoryTarget.id)
+    const res = await deletePopRecipeCategory(popId, deleteCategoryTarget.id)
     setDeleteCategoryBusy(false)
     if (!res.success) {
       setDeleteCategoryBanner(res.error)
@@ -626,13 +682,13 @@ export function RecipesWorkspaceView() {
     closeDeleteCategory()
     setCategoriesBanner(null)
     setCategoriesBoardKey((k) => k + 1)
-    await loadCategories()
+    await refreshCategories()
   }
 
   const handleCreateStation = async () => {
     if (!newStationName.trim() || newStationSaving) return
     setNewStationSaving(true)
-    const res = await createComandaStation(popId, newStationName)
+    const res = await createPopComandaStation(popId, newStationName)
     setNewStationSaving(false)
     if (!res.success) {
       setStationsBanner(res.error)
@@ -640,7 +696,7 @@ export function RecipesWorkspaceView() {
     }
     setStationsBanner(null)
     setNewStationName("")
-    await loadStations()
+    await refreshStations()
   }
 
   const handleSaveStationEdit = async () => {
@@ -648,7 +704,7 @@ export function RecipesWorkspaceView() {
     const current = stations.find((station) => station.id === editingStationId)
     if (current && editingStationName.trim() === current.name.trim()) return
     setStationBusy(true)
-    const res = await updateComandaStation(
+    const res = await updatePopComandaStation(
       popId,
       editingStationId,
       editingStationName,
@@ -661,14 +717,14 @@ export function RecipesWorkspaceView() {
     setStationsBanner(null)
     setEditingStationId(null)
     setEditingStationName("")
-    await Promise.all([loadStations(), loadCategories()])
+    await Promise.all([refreshStations(), refreshCategories()])
   }
 
   const requestDeleteStation = (id: string, name: string) => {
     if (!popId) return
     setDeleteStationBanner(null)
     setDeleteStationTarget({ id, name, categoryCount: null })
-    void getPopComandaStationCategoryCount(popId, id).then((res) => {
+    void fetchPopComandaStationCategoryCount(popId, id).then((res) => {
       if (!res.success) {
         setDeleteStationTarget(null)
         setStationsBanner(res.error)
@@ -690,7 +746,7 @@ export function RecipesWorkspaceView() {
     if (deleteStationTarget.categoryCount !== 0) return
     setDeleteStationBusy(true)
     setDeleteStationBanner(null)
-    const res = await deleteComandaStation(popId, deleteStationTarget.id)
+    const res = await deletePopComandaStation(popId, deleteStationTarget.id)
     setDeleteStationBusy(false)
     if (!res.success) {
       setDeleteStationBanner(res.error)
@@ -698,7 +754,7 @@ export function RecipesWorkspaceView() {
     }
     closeDeleteStation()
     setStationsBanner(null)
-    await Promise.all([loadStations(), loadCategories()])
+    await Promise.all([refreshStations(), refreshCategories()])
   }
 
   if (!popId || !siteId) {
@@ -744,8 +800,6 @@ export function RecipesWorkspaceView() {
                   icon: ChefHat,
                   onClick: () => {
                     setStationsOpen(true)
-                    setStationsLoading(true)
-                    void loadStations({ spinner: true })
                   },
                 },
               ]
@@ -1056,7 +1110,7 @@ export function RecipesWorkspaceView() {
         idPrefix={editingId ? "recipe-edit" : "recipe-create"}
         title={editingId ? "Editar receta" : "Nueva receta"}
         description="Platos o tragos vendibles por unidad. El costo se calcula desde los ingredientes."
-        loading={formDetailLoading}
+        refreshing={formRefreshing}
         saving={formSaving}
         banner={formError}
         onSubmit={(e) => void submitForm(e)}
@@ -1067,8 +1121,10 @@ export function RecipesWorkspaceView() {
         siteId={siteId}
         popId={popId}
         categories={categories}
+        categoriesLoading={categoriesQuery.isPending && !categoriesQuery.data}
         priceLists={priceLists}
-        disabled={formDetailLoading || formSaving}
+        priceListsLoading={priceListsQuery.isPending && !priceListsQuery.data}
+        disabled={formSaving}
       />
 
       {deleteTarget ? (
@@ -1103,6 +1159,7 @@ export function RecipesWorkspaceView() {
           }
         }}
         banner={categoriesBanner}
+        loading={categoriesQuery.isPending && !categoriesQuery.data}
         categories={categories}
         boardKey={categoriesBoardKey}
         canCreate={canCreate}
@@ -1132,12 +1189,12 @@ export function RecipesWorkspaceView() {
         onDeleteCategory={requestDeleteCategory}
         onLayoutChange={async (updates) => {
           setCategoryBusy(true)
-          const res = await syncRecipeCategoryMenuLayout(popId, updates)
+          const res = await syncPopRecipeCategoryLayout(popId, updates)
           setCategoryBusy(false)
           if (!res.success) setCategoriesBanner(res.error)
           else {
             setCategoriesBanner(null)
-            await loadCategories()
+            await refreshCategories()
           }
         }}
         stations={stations}
@@ -1170,7 +1227,7 @@ export function RecipesWorkspaceView() {
           }
         }}
         banner={stationsBanner}
-        loading={stationsLoading}
+        loading={stationsQuery.isPending && !stationsQuery.data}
         stations={stations}
         canCreate={canCreate}
         canUpdate={canUpdate}

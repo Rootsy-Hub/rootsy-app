@@ -1,7 +1,7 @@
 "use client"
 
 import { MostradorWorkspace } from "@/app/[siteId]/[popId]/mostrador/components/MostradorWorkspace"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
+import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   DataWorkspaceOperationsLayout,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
@@ -82,14 +82,14 @@ function MostradorPage() {
       onSidebarOpenChange={setCatalogSidebarOpen}
       headerActions={
         access.canCreate ? (
-          <DataWorkspaceHeaderTooltipIconButton
+          <DataWorkspaceHeaderIconButton
             label="Nuevo pedido"
             headerVariant={dataWorkspaceModuleHeaderVariant}
             primary
             onClick={() => startCreateOrderRef.current?.()}
           >
             <Plus className="size-5" aria-hidden />
-          </DataWorkspaceHeaderTooltipIconButton>
+          </DataWorkspaceHeaderIconButton>
         ) : null
       }
     >
@@ -97,6 +97,7 @@ function MostradorPage() {
         siteId={siteId}
         popId={popId}
         catalogSidebarOpen={catalogSidebarOpen}
+        onCatalogSidebarOpenChange={setCatalogSidebarOpen}
         onRegisterStartCreateOrder={registerStartCreateOrder}
       />
     </DataWorkspaceOperationsLayout>

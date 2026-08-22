@@ -6,6 +6,7 @@ import {
   layoutsOperarOperationColumnClass,
   layoutsOperarToolboxRowClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import { OperarTicketMobileLayer } from "@/components/layouts-module/OperarTicketMobileLayer"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -18,20 +19,23 @@ type Props = {
   ticket: ReactNode
   /** Ubicación de la banda toolbox dentro de la columna operación. */
   toolboxPosition?: "top" | "bottom"
+  /** Label de la barra mobile que abre el ticket. */
+  ticketDockLabel?: string
   className?: string
 }
 
 /**
  * Grid operar nivel 1 — producción (Vender · Mostrador · Mesas · Compras).
  *
- * 1.1 col izquierda: catálogo + toolbox
- * 1.2 col derecha: ticket
+ * Desktop: 1.1 col izquierda (catálogo + toolbox) · 1.2 ticket
+ * Mobile: canvas a full · ticket en dock + sheet
  */
 export function LayoutsOperarMainGrid({
   catalog,
   toolbox,
   ticket,
   toolboxPosition = "bottom",
+  ticketDockLabel,
   className,
 }: Props) {
   const showToolbox = toolbox != null
@@ -60,13 +64,22 @@ export function LayoutsOperarMainGrid({
         </div>
         {showToolbox ? (
           <div
-            className={cn(layoutsOperarToolboxRowClass, toolboxOnTop && "row-start-1")}
+            className={cn(
+              layoutsOperarToolboxRowClass,
+              toolboxOnTop && "row-start-1",
+              "max-md:hidden",
+            )}
           >
             {toolbox}
           </div>
         ) : null}
       </div>
-      {ticket}
+      <div className="hidden min-h-0 md:contents">{ticket}</div>
+      <OperarTicketMobileLayer
+        ticket={ticket}
+        toolbox={showToolbox ? toolbox : null}
+        dockLabel={ticketDockLabel}
+      />
     </main>
   )
 }

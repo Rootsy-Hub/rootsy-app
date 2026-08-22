@@ -29,6 +29,7 @@ import {
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
+  layoutsOperarCatalogRailBackdropClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
@@ -46,6 +47,7 @@ type Props = {
   error: string | null
   onAddProduct: (productId: string, quantity?: number) => void
   catalogSidebarOpen?: boolean
+  onCatalogSidebarOpenChange?: (open: boolean) => void
   className?: string
 }
 
@@ -94,6 +96,7 @@ export function PurchaseCatalogBrowser({
   error,
   onAddProduct,
   catalogSidebarOpen = true,
+  onCatalogSidebarOpenChange,
   className,
 }: Props) {
   const [vistaCatalogo, setVistaCatalogo] = useState<PurchaseCatalogView>(() =>
@@ -180,6 +183,14 @@ export function PurchaseCatalogBrowser({
 
   return (
     <div className={cn(layoutsOperarCatalogColumnClass, className)}>
+      {catalogSidebarOpen && onCatalogSidebarOpenChange ? (
+        <button
+          type="button"
+          className={layoutsOperarCatalogRailBackdropClass}
+          aria-label="Cerrar categorías"
+          onClick={() => onCatalogSidebarOpenChange(false)}
+        />
+      ) : null}
       <aside
         id="data-workspace-sidebar"
         className={cn(

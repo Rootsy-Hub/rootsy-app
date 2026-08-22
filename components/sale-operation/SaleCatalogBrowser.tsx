@@ -47,6 +47,7 @@ import {
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
+  layoutsOperarCatalogRailBackdropClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
@@ -77,6 +78,7 @@ type Props = {
   addDisabled?: boolean
   /** Control externo del panel de categorías (p. ej. botón del header). */
   catalogSidebarOpen?: boolean
+  onCatalogSidebarOpenChange?: (open: boolean) => void
   /** Filtros del rail: venta directa vs catálogo menú (mesas/mostrador). */
   catalogScope?: CatalogScope
   itemsSource?: CatalogScope
@@ -102,6 +104,7 @@ export function SaleCatalogBrowser({
   onAddProduct,
   addDisabled = false,
   catalogSidebarOpen: catalogSidebarOpenProp,
+  onCatalogSidebarOpenChange,
   catalogScope = "menu",
   itemsSource,
   mergeCatalogArticles,
@@ -117,6 +120,10 @@ export function SaleCatalogBrowser({
     catalogSidebarOpenProp === undefined,
   )
   const sidebarOpen = catalogSidebarOpenProp ?? internalSidebar.open
+  const closeCatalogRail = useCallback(() => {
+    if (onCatalogSidebarOpenChange) onCatalogSidebarOpenChange(false)
+    else internalSidebar.setOpen(false)
+  }, [internalSidebar, onCatalogSidebarOpenChange])
 
   const [vistaCatalogo, setVistaCatalogo] = useState<SaleCatalogViewPersisted>(() =>
     resolveSaleCatalogView(
@@ -388,6 +395,14 @@ export function SaleCatalogBrowser({
 
   return (
     <div className={cn(layoutsOperarCatalogColumnClass, className)}>
+      {sidebarOpen ? (
+        <button
+          type="button"
+          className={layoutsOperarCatalogRailBackdropClass}
+          aria-label="Cerrar categorías"
+          onClick={closeCatalogRail}
+        />
+      ) : null}
       <aside
         id="data-workspace-sidebar"
         className={cn(

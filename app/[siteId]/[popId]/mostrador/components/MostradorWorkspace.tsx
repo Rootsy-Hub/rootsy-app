@@ -29,6 +29,7 @@ type Props = {
   siteId: string
   popId: string
   catalogSidebarOpen: boolean
+  onCatalogSidebarOpenChange?: (open: boolean) => void
   onRegisterStartCreateOrder?: (handler: (() => void) | null) => void
 }
 
@@ -36,6 +37,7 @@ export function MostradorWorkspace({
   siteId,
   popId,
   catalogSidebarOpen,
+  onCatalogSidebarOpenChange,
   onRegisterStartCreateOrder,
 }: Props) {
   const {
@@ -157,6 +159,7 @@ export function MostradorWorkspace({
               popId={popId}
               checkout={checkout}
               catalogSidebarOpen={catalogSidebarOpen}
+              onCatalogSidebarOpenChange={onCatalogSidebarOpenChange}
             />
           )
         }

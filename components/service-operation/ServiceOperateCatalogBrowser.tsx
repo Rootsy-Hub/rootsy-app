@@ -9,6 +9,7 @@ import {
   layoutsOperarCatalogColumnClass,
   layoutsOperarCatalogGridClass,
   layoutsOperarCatalogGridStyle,
+  layoutsOperarCatalogRailBackdropClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
@@ -48,6 +49,7 @@ type Props = {
   selectedService?: ServiceTypeChargeOption | null
   popId?: string
   catalogSidebarOpen?: boolean
+  onCatalogSidebarOpenChange?: (open: boolean) => void
   disabled?: boolean
   onSelectService: (serviceId: string) => void
   onClearSelectedService?: () => void
@@ -69,6 +71,7 @@ export function ServiceOperateCatalogBrowser({
   selectedService = null,
   popId,
   catalogSidebarOpen = true,
+  onCatalogSidebarOpenChange,
   disabled = false,
   onSelectService,
   onClearSelectedService,
@@ -124,6 +127,15 @@ export function ServiceOperateCatalogBrowser({
     <>
       <div className={layoutsOperarCatalogColumnClass}>
         {showSelectedDetail ? null : (
+          <>
+          {catalogSidebarOpen && onCatalogSidebarOpenChange ? (
+            <button
+              type="button"
+              className={layoutsOperarCatalogRailBackdropClass}
+              aria-label="Cerrar categorías"
+              onClick={() => onCatalogSidebarOpenChange(false)}
+            />
+          ) : null}
           <aside
             id="data-workspace-sidebar"
             className={cn(
@@ -148,6 +160,7 @@ export function ServiceOperateCatalogBrowser({
               )}
             </div>
           </aside>
+          </>
         )}
 
         <section
