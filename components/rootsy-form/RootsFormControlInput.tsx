@@ -28,6 +28,7 @@ export const RootsFormControlInput = forwardRef<HTMLInputElement, Props>(
       <input
         ref={ref}
         data-slot="roots-form-control-input"
+        suppressHydrationWarning
         disabled={disabled}
         aria-invalid={invalid || undefined}
         className={cn(

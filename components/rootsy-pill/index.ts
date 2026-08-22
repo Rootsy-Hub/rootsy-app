@@ -1,12 +1,12 @@
 export { RootsNaturePill } from "@/components/rootsy-pill/RootsNaturePill"
 export {
-  rootsNaturePillAutumnSoftClass,
   rootsNaturePillBaseClass,
-  rootsNaturePillCanopySoftClass,
-  rootsNaturePillCanopySolidClass,
-  rootsNaturePillEarthMutedSoftClass,
-  rootsNaturePillEarthSoftClass,
-  rootsNaturePillEmberSoftClass,
+  rootsNaturePillBrumaMutedSoftClass,
+  rootsNaturePillBrumaSoftClass,
+  rootsNaturePillDangerSoftClass,
+  rootsNaturePillSaviaSoftClass,
+  rootsNaturePillSaviaSolidClass,
   rootsNaturePillVariantClass,
+  rootsNaturePillWarningSoftClass,
   type RootsNaturePillVariant,
 } from "@/components/rootsy-pill/rootsyNaturePillStyles"

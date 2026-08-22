@@ -23,9 +23,14 @@ export const SALE_CATALOG_ARTICLE_SELECT = `
 
 export function mapSaleCatalogArticleRow(
   row: Record<string, unknown>,
+  listPriceOverride?: number,
 ): SaleCatalogArticle {
   const cat = row.categories as unknown as { name?: string } | null
-  const listPrice = Number(row.sale_price ?? 0) || 0
+  const principal = Number(row.sale_price ?? 0) || 0
+  const listPrice =
+    listPriceOverride != null && Number.isFinite(listPriceOverride)
+      ? listPriceOverride
+      : principal
   const rawDiscountMode = row.discount_mode
   const discountMode: ArticleDiscountMode | null =
     typeof rawDiscountMode === "string" && isArticleDiscountMode(rawDiscountMode)

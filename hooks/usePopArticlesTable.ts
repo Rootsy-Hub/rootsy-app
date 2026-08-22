@@ -1,14 +1,12 @@
 "use client"
 
-import {
-  getPopArticlesTable,
-  type GetPopArticlesTableInput,
-} from "@/app/[siteId]/[popId]/articles/actions"
+import type { GetPopArticlesTableInput } from "@/app/[siteId]/[popId]/articles/actions"
 import {
   popArticlesQueryKey,
   type PopArticlesQueryParams,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { fetchPopArticlesTable } from "@/lib/rootsyApi/articlesClient"
 import { useQuery } from "@tanstack/react-query"
 
 type UsePopArticlesTableOptions = {
@@ -41,7 +39,7 @@ export function usePopArticlesTable(
 
   return useQuery({
     queryKey: popArticlesQueryKey(popId ?? "", params),
-    queryFn: () => getPopArticlesTable(popId!, queryParams),
+    queryFn: () => fetchPopArticlesTable(popId!, queryParams),
     enabled,
     ...sessionListQueryOptions,
   })

@@ -1,8 +1,19 @@
-import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
+import type {
+  HomePopListItem,
+  PopAccessCache,
+  PopAccessModule,
+  PopAccessModulePermissions,
+} from "@/app/home/homeUserDataTypes"
+import { POP_ACCESS_MODULE_TO_PAGE_KEY } from "@/lib/popAccessModuleMap"
+import { POP_PAGES, type PopPageKey } from "@/lib/popPageCrudConstants"
 import type { MenuItemDef, MenuItemLink, MenuSectionKey } from "@/lib/menuCatalog"
 import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
-import { ROOTS_MODULE_SECTION_LABELS } from "@/lib/rootsySubscriptionCatalog"
-import { Banknote } from "lucide-react"
+import {
+  ROOTS_BUSINESS_TYPE_MODULES,
+  ROOTS_MODULE_SECTION_LABELS,
+  ROOTS_SHARED_MODULES,
+} from "@/lib/rootsySubscriptionCatalog"
+import { Banknote, ChefHat } from "lucide-react"
 
 /** Link del menú → key de módulo en `_pop-access` / catálogo de suscripción. */
 export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
@@ -11,6 +22,7 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   "purchase-orders": "purchase_orders",
   mostrador: "mostrador",
   mesas: "mesas",
+  comandas: "comandas",
   purchases: "purchases",
   expenses: "expenses",
   articles: "stock",
@@ -27,7 +39,6 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   invoices: "invoices",
   accounts: "accounts",
   "cash-registers": "cash_registers",
-  accounting: "accounting",
   hr: "hr",
   printers: "printers",
   settings: "settings",
@@ -57,6 +68,7 @@ const MENU_MODULE_KEY_ORDER: Record<MenuModuleSection, readonly string[]> = {
     "sale",
     "mostrador",
     "mesas",
+    "comandas",
     "active_services",
     "purchases",
     "expenses",
@@ -82,7 +94,6 @@ const MENU_MODULE_KEY_ORDER: Record<MenuModuleSection, readonly string[]> = {
   configurar: [
     "accounts",
     "hr",
-    "accounting",
     "cash_registers",
     "printers",
     "alerts",
@@ -163,6 +174,7 @@ export function buildMenuSectionsFromEnabledModules(
   for (const mod of enabledModules) {
     if (!mod.permissions?.read) continue
     if (mod.key === "summary") continue
+    if (mod.key === "accounting") continue
     if (mod.key === "active_services") continue
 
     const section = resolveMenuModuleSection(mod)
@@ -179,6 +191,24 @@ export function buildMenuSectionsFromEnabledModules(
       link,
     })
     grouped.set(section, items)
+  }
+
+  const hasKitchenOps = enabledModules.some(
+    (mod) =>
+      (mod.key === "mesas" || mod.key === "mostrador") &&
+      mod.permissions?.read,
+  )
+  if (hasKitchenOps) {
+    const operarItems = grouped.get("operar") ?? []
+    if (!operarItems.some((item) => item.link === "comandas")) {
+      operarItems.push({
+        moduleKey: "comandas",
+        name: "Comandas",
+        icon: ChefHat,
+        link: "comandas",
+      })
+      grouped.set("operar", operarItems)
+    }
   }
 
   const hasActiveServices = enabledModules.some(
@@ -209,11 +239,156 @@ export function buildMenuSectionsFromEnabledModules(
   return out
 }
 
+function moduleReadKey(moduleKey: string): string | null {
+  const pageKey = POP_ACCESS_MODULE_TO_PAGE_KEY[moduleKey]
+  if (!pageKey) return null
+  return POP_PAGES[pageKey as PopPageKey]?.permissions.read ?? null
+}
+
+export function hasModuleReadPermission(
+  permissions: readonly string[],
+  isOwner: boolean,
+  moduleKey: string,
+): boolean {
+  if (isOwner) return true
+  if (moduleKey === "comandas") {
+    return (
+      permissions.includes("mesas:read") ||
+      permissions.includes("mostrador:read")
+    )
+  }
+  const read = moduleReadKey(moduleKey)
+  return read ? permissions.includes(read) : false
+}
+
+function moduleCrud(
+  permissions: readonly string[],
+  isOwner: boolean,
+  moduleKey: string,
+): PopAccessModulePermissions {
+  if (isOwner) {
+    return { read: true, create: true, update: true, delete: true }
+  }
+  const pageKey = POP_ACCESS_MODULE_TO_PAGE_KEY[moduleKey]
+  if (!pageKey || !(pageKey in POP_PAGES)) {
+    return {
+      read: hasModuleReadPermission(permissions, false, moduleKey),
+      create: false,
+      update: false,
+      delete: false,
+    }
+  }
+  const perms = POP_PAGES[pageKey].permissions
+  return {
+    read: permissions.includes(perms.read),
+    create: permissions.includes(perms.create),
+    update: permissions.includes(perms.update),
+    delete: permissions.includes(perms.delete),
+  }
+}
+
+function catalogModulesForMenu(): Array<{
+  key: string
+  label: string
+  section: MenuModuleSection
+  isExtra: boolean
+}> {
+  const catalog = ROOTS_BUSINESS_TYPE_MODULES.platform_full
+  const extraKeys = new Set(catalog.extras.map((mod) => mod.key))
+  const byKey = new Map<
+    string,
+    { key: string; label: string; section: MenuModuleSection; isExtra: boolean }
+  >()
+
+  for (const section of MENU_MODULE_SECTION_ORDER) {
+    for (const mod of [
+      ...ROOTS_SHARED_MODULES[section],
+      ...catalog.specific[section],
+    ]) {
+      if (!byKey.has(mod.key)) {
+        byKey.set(mod.key, {
+          key: mod.key,
+          label: mod.label,
+          section,
+          isExtra: extraKeys.has(mod.key),
+        })
+      }
+    }
+  }
+  for (const mod of catalog.extras) {
+    if (byKey.has(mod.key)) continue
+    byKey.set(mod.key, {
+      key: mod.key,
+      label: mod.label,
+      section: LEGACY_EXTRA_MODULE_SECTION[mod.key] ?? "configurar",
+      isExtra: true,
+    })
+  }
+  return [...byKey.values()]
+}
+
+export function enabledModulesFromPermissionKeys(
+  permissions: readonly string[],
+  isOwner: boolean,
+): PopAccessModule[] {
+  const out: PopAccessModule[] = []
+  for (const mod of catalogModulesForMenu()) {
+    const crud = moduleCrud(permissions, isOwner, mod.key)
+    if (!crud.read) continue
+    out.push({
+      key: mod.key,
+      label: mod.label,
+      section: mod.section,
+      isExtra: mod.isExtra,
+      permissions: crud,
+    })
+  }
+  return out
+}
+
+export function homePopToMenuAccess(
+  pop: HomePopListItem,
+  enabledModules: PopAccessModule[],
+): PopAccessCache {
+  return {
+    pop: {
+      id: pop.id,
+      name: pop.name,
+      imageUrl: pop.imageUrl,
+      backgroundImageUrl: pop.backgroundImageUrl,
+      siteId: pop.siteId,
+      streetAddress: pop.streetAddress,
+      isActive: pop.isActive,
+    },
+    subscription: pop.subscription,
+    enabledModules,
+    limits: pop.limits,
+    fiscal: {
+      hasValidCuit: false,
+      emisorIvaCondition: "responsable_inscripto",
+    },
+    isOwner: pop.isOwner,
+    role: {
+      name: pop.roleName,
+      displayName: pop.roleName,
+      permissionGrants: pop.permissions,
+    },
+    canEnter: pop.canEnter,
+  }
+}
+
 export function canAccessMenuItemFromPopAccess(
   enabledModules: readonly PopAccessModule[],
   menuLink?: MenuItemLink,
 ): boolean {
   if (!menuLink || menuLink === "section") return false
+  if (menuLink === "comandas") {
+    return enabledModules.some(
+      (mod) =>
+        (mod.key === "mesas" || mod.key === "mostrador") &&
+        Boolean(mod.permissions?.read),
+    )
+  }
   const moduleKey = MENU_LINK_TO_MODULE_KEY[menuLink]
   if (!moduleKey) return false
   const mod = enabledModules.find((entry) => entry.key === moduleKey)

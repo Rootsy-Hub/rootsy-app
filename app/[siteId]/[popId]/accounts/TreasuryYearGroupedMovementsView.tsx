@@ -21,6 +21,7 @@ type Props<T> = {
   renderRow: (item: T) => {
     description: ReactNode
     subtitle?: ReactNode
+    detail?: ReactNode
     amount: string
     suppressTopBorder?: boolean
     trailing?: ReactNode
@@ -124,6 +125,7 @@ export function TreasuryYearGroupedMovementsView<T>({
                             {row.subtitle}
                           </p>
                         ) : null}
+                        {row.detail}
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <span className={cn(tokens.amount, row.amountClassName)}>

@@ -1,9 +1,7 @@
 import {
   DEFAULT_INVOICE_TABLE_PAGE_SIZE,
   INVOICE_TABLE_PAGE_SIZES,
-  type InvoiceRegimenValue,
   type InvoiceStatusValue,
-  isInvoiceRegimenValue,
   isInvoiceStatusValue,
 } from "@/app/[siteId]/[popId]/invoices/invoiceConstants"
 import {
@@ -23,14 +21,18 @@ export const INVOICE_TABLE_SORT_KEYS = [
 
 export type InvoiceTableSortKey = (typeof INVOICE_TABLE_SORT_KEYS)[number]
 
+export const INVOICE_RECIBO_X_FILTER = "recibo_x" as const
+
+export type InvoiceCbteTipoFilter = number | typeof INVOICE_RECIBO_X_FILTER | ""
+
 export type InvoicesWorkspaceUrlState = {
   q: string
   page: number
   pageSize: InvoiceTablePageSize
   /** Vacío = todos los estados. */
   status: InvoiceStatusValue | ""
-  /** Vacío = todos los regímenes. */
-  regimen: InvoiceRegimenValue | ""
+  /** Vacío = todos los tipos. Código ARCA `CbteTipo`, o Recibo X. */
+  cbteTipo: InvoiceCbteTipoFilter
   sort: InvoiceTableSortKey | null
   ord: WorkspaceTableSortDirection
 }
@@ -48,9 +50,14 @@ function parseStatus(raw: string | null): InvoiceStatusValue | "" {
   return isInvoiceStatusValue(value) ? value : ""
 }
 
-function parseRegimen(raw: string | null): InvoiceRegimenValue | "" {
+function parseCbteTipo(raw: string | null): InvoiceCbteTipoFilter {
   const value = raw?.trim() ?? ""
-  return isInvoiceRegimenValue(value) ? value : ""
+  if (value === INVOICE_RECIBO_X_FILTER || value === "x") {
+    return INVOICE_RECIBO_X_FILTER
+  }
+  const n = Number(value)
+  if (Number.isInteger(n) && n >= 1) return n
+  return ""
 }
 
 export function parseInvoicesWorkspaceUrl(
@@ -66,7 +73,7 @@ export function parseInvoicesWorkspaceUrl(
     page: Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1,
     pageSize: parsePageSize(params.get("ps")),
     status: parseStatus(params.get("status")),
-    regimen: parseRegimen(params.get("regimen")),
+    cbteTipo: parseCbteTipo(params.get("tipo")),
     sort: sort as InvoiceTableSortKey | null,
     ord,
   }
@@ -94,8 +101,10 @@ export function mergeInvoicesWorkspaceUrl(
   if (merged.status) next.set("status", merged.status)
   else next.delete("status")
 
-  if (merged.regimen) next.set("regimen", merged.regimen)
-  else next.delete("regimen")
+  if (merged.cbteTipo) next.set("tipo", String(merged.cbteTipo))
+  else next.delete("tipo")
+
+  next.delete("regimen")
 
   appendWorkspaceTableSortParams(next, {
     sort: merged.sort,
@@ -106,7 +115,7 @@ export function mergeInvoicesWorkspaceUrl(
     patch.page === undefined &&
     (patch.q !== undefined ||
       patch.status !== undefined ||
-      patch.regimen !== undefined ||
+      patch.cbteTipo !== undefined ||
       patch.sort !== undefined ||
       patch.ord !== undefined)
   ) {

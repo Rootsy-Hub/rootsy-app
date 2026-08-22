@@ -6,6 +6,7 @@ import {
   Briefcase,
   BookOpen,
   Calculator,
+  ChefHat,
   ClipboardList,
   Cog,
   CreditCard,
@@ -52,6 +53,7 @@ const ROOTS_MODULE_ICON_MAP: Record<string, LucideIcon> = {
   inventory: ClipboardList,
   cash_registers: Calculator,
   mesas: UtensilsCrossed,
+  comandas: ChefHat,
   mostrador: Monitor,
   recipes: BookOpen,
   services: Briefcase,
@@ -61,7 +63,6 @@ const ROOTS_MODULE_ICON_MAP: Record<string, LucideIcon> = {
   invoices: FileBarChart,
   printers: Printer,
   chat: MessageSquare,
-  accounting: Landmark,
 }
 
 export function getRootsModuleIcon(key: string): LucideIcon {

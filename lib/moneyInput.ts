@@ -95,6 +95,18 @@ export function parseMoneyInput(raw: string, fallback = 0): number {
   return n
 }
 
+/** Si el monto supera el tope, devuelve el tope formateado. */
+export function clampMoneyInputToMax(
+  raw: string,
+  max: number,
+  formatValue: (amount: number) => string = formatMoneyInputForField,
+): string {
+  if (!raw.trim() || !Number.isFinite(max) || max < 0) return raw
+  const parsed = parseMoneyInput(raw, Number.NaN)
+  if (!Number.isFinite(parsed) || parsed <= max + 0.009) return raw
+  return formatValue(max)
+}
+
 /** Formato final de presentación: miles + 2 decimales (`1.250,00`). */
 export function formatMoneyInputForField(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return ""

@@ -7,18 +7,10 @@ import { SaleComprobantePickerDialog } from "@/components/checkout/SaleComproban
 import type { SaleComprobantePreviewInput } from "@/components/checkout/SaleComprobanteTicketPreview"
 import { SaleFinalizeDialog } from "@/components/checkout/SaleFinalizeDialog"
 import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ComandaSendDialog } from "@/components/sale-operation/ComandaSendDialog"
+import { RootsConfirmDialog } from "@/components/rootsy-dialog/RootsConfirmDialog"
+import { partyCanOperateOnCurrentAccount } from "@/lib/currentAccounts"
 import { getSaleComprobanteDisplayLabel, hasConfiguredSaleComprobante } from "@/lib/saleComprobantePicker"
-import { saleOpAlertDialogContent } from "@/components/sale-operation/saleOperationStyles"
 import { useMemo } from "react"
 
 type Props = {
@@ -120,6 +112,7 @@ export function MesasCheckoutModals({
             taxId: party.taxId ?? null,
             ivaCondition: party.ivaCondition ?? null,
             defaultInvoiceTypeLabel: party.defaultInvoiceTypeLabel ?? null,
+            currentAccountEnabled: party.currentAccountEnabled === true,
           })
         }
         onConfirmManual={m.confirmarClienteManual}
@@ -162,6 +155,7 @@ export function MesasCheckoutModals({
           m.setMetodoPagoSeleccionado(null)
         }}
         clientAccountDescription="Registrá la deuda en Cuentas por cobrar para esta operación."
+        hideAccountOption={!partyCanOperateOnCurrentAccount(m.clienteSeleccionado)}
       />
 
       <GeneralDiscountDialog
@@ -183,25 +177,26 @@ export function MesasCheckoutModals({
         }
       />
 
-      <AlertDialog open={m.descartarConfirmOpen} onOpenChange={m.setDescartarConfirmOpen}>
-        <AlertDialogContent className={saleOpAlertDialogContent}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Descartar el pedido?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se quitarán los productos y la configuración de cliente, comprobante y pago.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={m.descartarPedido}
-              className="bg-rose-600 hover:bg-rose-500"
-            >
-              Descartar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ComandaSendDialog
+        open={m.comandasOpen}
+        onOpenChange={m.setComandasOpen}
+        contextLabel={contextLabel}
+        items={m.pendingComandaItems}
+        loading={m.comandasLoading}
+        submitting={m.comandasSubmitting}
+        submitError={m.comandasError}
+        onConfirm={m.enviarComandas}
+      />
+
+      <RootsConfirmDialog
+        open={m.descartarConfirmOpen}
+        onOpenChange={m.setDescartarConfirmOpen}
+        title="¿Descartar el pedido?"
+        description="Se quitarán los productos y la configuración de cliente, comprobante y pago."
+        confirmLabel="Descartar"
+        destructive
+        onConfirm={m.descartarPedido}
+      />
 
       <SaleFinalizeDialog
         open={m.confirmOpen}

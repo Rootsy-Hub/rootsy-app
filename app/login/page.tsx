@@ -20,7 +20,9 @@ import { RootsFormToneProvider } from "@/components/rootsy-form"
 import { formatEmailInput, validateEmailField } from "@/lib/authValidation"
 import { withGuestAuth } from "@/hoc/withGuestAuth"
 import {
-  getAuthCallbackUrl,
+  authPathWithNext,
+  getAuthCallbackUrlWithNext,
+  resolveAuthNextFromSearch,
   setAuthNextPath,
 } from "@/lib/authCallbackRedirect"
 import { checkSignupEmailStatus } from "@/app/auth/actions"
@@ -40,7 +42,7 @@ function LoginPage() {
   const searchParams = useSearchParams()
   const supabase = useMemo(() => createClient(), [])
 
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState(() => searchParams.get("email")?.trim() ?? "")
   const [password, setPassword] = useState("")
   const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" })
   const [error, setError] = useState("")
@@ -53,8 +55,15 @@ function LoginPage() {
     () => resolveSignupIntent(searchParams),
     [searchParams],
   )
-  const registerHref = signupIntentHref(REGISTER_PATH, signupIntent)
-  const afterAuthHref = signupContinueHref(searchParams)
+  const afterAuthHref = resolveAuthNextFromSearch(
+    searchParams,
+    signupContinueHref(searchParams),
+  )
+  const registerHref = authPathWithNext(
+    signupIntentHref(REGISTER_PATH, signupIntent),
+    afterAuthHref,
+    searchParams.get("email") ?? email,
+  )
 
   const callbackError = searchParams.get("error")
   const bannerMessage =
@@ -70,8 +79,7 @@ function LoginPage() {
     return !errors.email && !errors.password
   }, [email, password])
 
-  const handleSubmit = async (ev: React.FormEvent) => {
-    ev.preventDefault()
+  const submitAccount = async () => {
     setError("")
     setNeedsConfirmation(false)
     setOfferRecovery(false)
@@ -132,7 +140,7 @@ function LoginPage() {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: getAuthCallbackUrl(origin),
+          redirectTo: getAuthCallbackUrlWithNext(origin, afterAuthHref),
         },
       })
       if (oauthError) throw oauthError
@@ -159,6 +167,7 @@ function LoginPage() {
             <AuthResendConfirmation
               email={formatEmailInput(email)}
               message={bannerMessage}
+              next={afterAuthHref}
               intent="warning"
             />
           ) : (
@@ -175,7 +184,15 @@ function LoginPage() {
       ) : null}
 
       <RootsFormToneProvider tone="dark">
-        <form className="mt-7 space-y-5" noValidate onSubmit={handleSubmit}>
+        <form
+          className="mt-7 space-y-5"
+          noValidate
+          suppressHydrationWarning
+          onSubmit={(event) => {
+            event.preventDefault()
+            void submitAccount()
+          }}
+        >
           <AuthEmailField
             value={email}
             onChange={(next) => {
@@ -205,12 +222,15 @@ function LoginPage() {
           />
 
           <RootsPrimaryButton
-            type="submit"
+            type="button"
             size="large"
             loading={isLoading}
             loadingLabel={LOGIN_COPY.submitLoading}
             disabled={googleLoading}
             className="w-full"
+            onClick={() => {
+              void submitAccount()
+            }}
           >
             {LOGIN_COPY.submit}
           </RootsPrimaryButton>

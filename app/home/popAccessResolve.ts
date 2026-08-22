@@ -169,6 +169,22 @@ export function buildPopAccessEnabledModules(input: {
     })
   }
 
+  const showAllModules =
+    input.allModules || businessTypeKey === "platform_full"
+  if (showAllModules && !out.some((entry) => entry.key === "comandas")) {
+    out.push({
+      key: "comandas",
+      label: "Comandas",
+      section: "operar",
+      isExtra: false,
+      permissions: resolveModulePermissions(
+        "comandas",
+        input.permissionGrants,
+        input.isOwner,
+      ),
+    })
+  }
+
   return out
 }
 

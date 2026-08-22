@@ -1,6 +1,9 @@
 "use client"
 
-import { SaleFinalizeDialog } from "@/components/checkout/SaleFinalizeDialog"
+import {
+  SaleFinalizeDialog,
+  type SaleFinalizeTone,
+} from "@/components/checkout/SaleFinalizeDialog"
 import type { LucideIcon } from "lucide-react"
 
 type Props = {
@@ -19,6 +22,8 @@ type Props = {
   partyIcon?: LucideIcon
   comprobanteLabel: string
   paymentLabel: string
+  tone?: SaleFinalizeTone
+  amountLabel?: string
   onConfirm: () => void | Promise<void>
 }
 

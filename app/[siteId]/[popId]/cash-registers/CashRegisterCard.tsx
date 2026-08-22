@@ -28,7 +28,7 @@ import {
   dataWorkspaceEntityCardStatusOpenClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { RootsDefaultButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
+import { RootsDefaultButton } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
 import {
   Calculator,
@@ -40,6 +40,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react"
+import { formatArcaPtoVta } from "@/lib/arcaPtoVta"
 import { formatLocaleDateTime } from "@/lib/popTimezone"
 import Link from "next/link"
 import { cashRegisterEntityEyebrowLabel } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
@@ -235,15 +236,20 @@ export function CashRegisterCard({
               <h3 className={cn("mt-0.5 truncate pr-24", dataWorkspaceEntityCardTitleClass)}>
                 {row.name}
               </h3>
+              {row.arcaPtoVta != null ? (
+                <p className="mt-0.5 truncate font-canopy text-xs tabular-nums text-[var(--rootsy-bruma-500)]">
+                  Punto de venta {formatArcaPtoVta(row.arcaPtoVta)}
+                </p>
+              ) : null}
               {isOpen && openedLabel ? (
                 <p className="mt-0.5 truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
                   Desde {openedLabel}
                 </p>
-              ) : (
+              ) : row.arcaPtoVta == null ? (
                 <p className="mt-0.5 text-xs text-transparent" aria-hidden>
                   &nbsp;
                 </p>
-              )}
+              ) : null}
             </div>
             {menuSections.length > 0 ? (
               <div
@@ -331,8 +337,7 @@ export function CashRegisterCard({
               {showCloseAction ? (
                 <RootsDefaultButton
                   type="button"
-                  size="sm"
-                  className={cn(rootsButtonCompactSizeClass, "shrink-0 px-3 text-xs")}
+                  className="shrink-0"
                   onClick={onClose}
                 >
                   Cerrar
@@ -350,11 +355,11 @@ export function CashRegisterCard({
               {canCreate ? (
                 <RootsDefaultButton
                   type="button"
-                  size="sm"
-                  className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
+                  withIcon
+                  className="shrink-0"
                   onClick={onOpen}
                 >
-                  <DoorOpen className="size-3.5" aria-hidden />
+                  <DoorOpen className="size-4" aria-hidden />
                   Abrir turno
                 </RootsDefaultButton>
               ) : null}

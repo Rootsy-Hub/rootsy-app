@@ -1,18 +1,8 @@
 "use client"
 
-import {
-  createPopService,
-  createServiceCategory,
-  deletePopService,
-  deleteServiceCategory,
-  getPopServiceCategories,
-  getPopServiceDetail,
-  updatePopService,
-  updateServiceCategory,
-  type ServiceCategoryOption,
-  type ServiceTableRow,
-} from "@/app/[siteId]/[popId]/services/actions"
+import type { ServiceTableRow } from "@/app/[siteId]/[popId]/services/actions"
 import { ServiceCategoriesDialog } from "@/app/[siteId]/[popId]/services/ServiceCategoriesDialog"
+import { ServiceCategoryDeleteDialog } from "@/app/[siteId]/[popId]/services/ServiceCategoryDeleteDialog"
 import { ServiceDeleteDialog } from "@/app/[siteId]/[popId]/services/ServiceDeleteDialog"
 import {
   defaultServiceFormState,
@@ -77,11 +67,32 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { Badge } from "@/components/ui/badge"
+import { RootsNaturePill } from "@/components/rootsy-pill"
 import { TableBody, TableCell } from "@/components/ui/table"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import { usePopServiceCategories } from "@/hooks/usePopServiceCategories"
 import { usePopServicesTable } from "@/hooks/usePopServicesTable"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import { popServicesQueryRoot } from "@/lib/queryKeys"
+import { emptyServiceDetailsGrid } from "@/lib/serviceCatalogTypes"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
+import {
+  popServiceCategoriesQueryKey,
+  popServiceQueryKey,
+  popServicesQueryRoot,
+} from "@/lib/queryKeys"
+import {
+  createPopServiceCategory,
+  deletePopServiceCategory,
+  updatePopServiceCategory,
+} from "@/lib/rootsyApi/serviceCategoriesClient"
+import {
+  createPopService,
+  deletePopService,
+  fetchPopService,
+  updatePopService,
+} from "@/lib/rootsyApi/servicesClient"
 import { useQueryClient } from "@tanstack/react-query"
 import { formatSaleComprobanteMoney } from "@/lib/saleComprobantePreview"
 import { cn } from "@/lib/utils"
@@ -107,21 +118,35 @@ export function ServicesWorkspaceView() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
-  const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const popId = typeof params?.popId === "string" ? params.popId : ""
   const queryClient = useQueryClient()
   const routerRef = useRef(router)
   routerRef.current = router
 
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
   const ws = useMemo(
-    () => parseServicesWorkspaceUrl(searchParams),
-    [searchParams],
+    () => parseServicesWorkspaceUrl(workspaceParams),
+    [workspaceParams],
   )
 
   const [actionError, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
 
-  const [categories, setCategories] = useState<ServiceCategoryOption[]>([])
   const [searchInput, setSearchInput] = useState(ws.q)
   const searchInputId = useId()
   const filtersButtonId = useId()
@@ -133,11 +158,12 @@ export function ServicesWorkspaceView() {
   )
 
   const [formOpen, setFormOpen] = useState(false)
-  const [formDetailLoading, setFormDetailLoading] = useState(false)
+  const [formRefreshing, setFormRefreshing] = useState(false)
   const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(defaultServiceFormState())
+  const editRequestIdRef = useRef(0)
 
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<ServiceTableRow | null>(null)
@@ -148,15 +174,36 @@ export function ServicesWorkspaceView() {
   const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
   const [categoryBusy, setCategoryBusy] = useState(false)
+  const [pendingCategoryCreate, setPendingCategoryCreate] = useState<{
+    name: string
+  } | null>(null)
+  const [pendingCategoryDeleteId, setPendingCategoryDeleteId] = useState<
+    string | null
+  >(null)
+  const [deleteCategoryTarget, setDeleteCategoryTarget] = useState<{
+    id: string
+    name: string
+  } | null>(null)
+  const [deleteCategoryBusy, setDeleteCategoryBusy] = useState(false)
+  const [deleteCategoryBanner, setDeleteCategoryBanner] = useState<string | null>(
+    null,
+  )
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
   const [editingCategoryName, setEditingCategoryName] = useState("")
 
   const pushWs = useCallback(
     (patch: Parameters<typeof mergeServicesWorkspaceUrl>[1]) => {
-      const next = mergeServicesWorkspaceUrl(searchParams, patch)
-      router.replace(`${pathname}?${next.toString()}`)
+      const qs = mergeServicesWorkspaceUrl(workspaceParams, patch)
+      const next = qs.toString() ? `${pathname}?${qs.toString()}` : pathname
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== next) {
+          window.history.replaceState(window.history.state, "", next)
+        }
+      }
+      setWorkspaceSearch(qs.toString())
     },
-    [pathname, router, searchParams],
+    [pathname, workspaceParams],
   )
 
   const handleSortColumn = useCallback(
@@ -183,7 +230,7 @@ export function ServicesWorkspaceView() {
   )
 
   const servicesQuery = usePopServicesTable(
-    popId,
+    popId || undefined,
     {
       q: ws.q,
       page: ws.page,
@@ -193,17 +240,37 @@ export function ServicesWorkspaceView() {
       sort: ws.sort,
       ord: ws.ord,
     },
-    { enabled: Boolean(popId) },
+    { enabled: Boolean(popId && siteId) },
   )
+  const categoriesNeeded = formOpen || categoriesOpen || filtersModalOpen
+  const categoriesQuery = usePopServiceCategories(popId || undefined, {
+    enabled: categoriesNeeded,
+  })
+  const categories = categoriesQuery.data ?? []
 
   const services = servicesQuery.data?.services ?? []
   const totalCount = servicesQuery.data?.totalCount ?? 0
-  const canCreate = servicesQuery.data?.canCreate ?? false
-  const canUpdate = servicesQuery.data?.canUpdate ?? false
-  const canDelete = servicesQuery.data?.canDelete ?? false
+  const servicePerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = servicePerm(POP_PERMS.SERVICE_CREATE)
+  const canUpdate = servicePerm(POP_PERMS.SERVICE_UPDATE)
+  const canDelete = servicePerm(POP_PERMS.SERVICE_DELETE)
   const loading =
-    servicesQuery.isPending ||
-    (servicesQuery.isFetching && !servicesQuery.isFetched)
+    !popId || !siteId
+      ? false
+      : servicesQuery.isPending ||
+        (servicesQuery.isFetching && !servicesQuery.isFetched)
   const tableError =
     servicesQuery.data?.success === false
       ? servicesQuery.data.error
@@ -221,25 +288,26 @@ export function ServicesWorkspaceView() {
     })
   }, [popId, queryClient])
 
-  const loadCategories = useCallback(async () => {
+  const refreshCategories = useCallback(async () => {
     if (!popId) return
-    const res = await getPopServiceCategories(popId)
-    if (res.success) setCategories(res.categories)
-  }, [popId])
+    await queryClient.invalidateQueries({
+      queryKey: popServiceCategoriesQueryKey(popId),
+    })
+  }, [popId, queryClient])
 
   useEffect(() => {
     const res = servicesQuery.data
     if (!res || res.success || !("redirect" in res) || !res.redirect) return
-    routerRef.current.replace(res.redirect)
+    const redirect = res.redirect
+    const timeout = window.setTimeout(() => {
+      routerRef.current.push(redirect)
+    }, 1200)
+    return () => window.clearTimeout(timeout)
   }, [servicesQuery.data])
 
   useEffect(() => {
     setSelected(new Set())
   }, [ws.q, ws.page, ws.pageSize, ws.soloActivos, ws.categoryId, ws.sort, ws.ord])
-
-  useEffect(() => {
-    void loadCategories()
-  }, [loadCategories])
 
   useEffect(() => {
     setSearchInput(ws.q)
@@ -331,75 +399,115 @@ export function ServicesWorkspaceView() {
   }, [pushWs])
 
   const openCreate = () => {
+    if (!canCreate) return
     setEditingId(null)
     setForm(defaultServiceFormState())
     setFormError(null)
+    setFormRefreshing(false)
     setFormOpen(true)
   }
 
-  const openEdit = async (row: ServiceTableRow) => {
+  const openEdit = (row: ServiceTableRow) => {
     if (!popId) return
+    const requestId = ++editRequestIdRef.current
     setFormError(null)
-    setFormDetailLoading(true)
-    setFormOpen(true)
     setEditingId(row.id)
-    const res = await getPopServiceDetail(popId, row.id)
-    setFormDetailLoading(false)
-    if (!res.success) {
-      setFormError(res.error)
-      return
-    }
     setForm(
       serviceFormFromDetail({
-        categoryId: res.service.categoryId,
-        name: res.service.name,
-        description: res.service.description,
-        imageUrl: res.service.imageUrl,
-        defaultPrice: res.service.defaultPrice,
-        billingPeriod: res.service.billingPeriod,
-        billingPeriodLabel: res.service.billingPeriodLabel,
-        detailsGrid: res.service.detailsGrid,
-        contractText: res.service.contractText,
-        paymentTiming: res.service.paymentTiming,
-        dueDaysAfter: res.service.dueDaysAfter,
-        lateInterestType: res.service.lateInterestType,
-        lateInterestValue: res.service.lateInterestValue,
-        discountMode: res.service.discountMode,
-        discountValue: res.service.discountValue,
-        isActive: res.service.isActive,
-        articles: res.service.articles.map((line) => ({
-          articleId: line.articleId,
-          quantity: line.quantity,
-          articleName: line.articleName,
-          unitOfMeasure: line.unitOfMeasure,
-        })),
-        addons: res.service.addons.map((addon) => ({
-          name: addon.name,
-          price: addon.price,
-          articles: addon.articles.map((line) => ({
-            articleId: line.articleId,
-            quantity: line.quantity,
-            articleName: line.articleName,
-            unitOfMeasure: line.unitOfMeasure,
-          })),
-        })),
+        categoryId: row.categoryId,
+        name: row.name,
+        description: row.description,
+        imageUrl: row.imageUrl,
+        defaultPrice: row.defaultPrice,
+        billingPeriod: row.billingPeriod,
+        billingPeriodLabel: row.billingPeriodLabel,
+        detailsGrid: emptyServiceDetailsGrid(),
+        contractText: "",
+        paymentTiming: "end_of_period",
+        dueDaysAfter: 0,
+        lateInterestType: "none",
+        lateInterestValue: null,
+        discountMode: "none",
+        discountValue: null,
+        isActive: row.isActive,
+        articles: [],
+        addons: [],
       }),
     )
+    setFormRefreshing(true)
+    setFormOpen(true)
+    void queryClient
+      .fetchQuery({
+        queryKey: popServiceQueryKey(popId, row.id),
+        queryFn: () => fetchPopService(popId, row.id),
+        staleTime: 0,
+      })
+      .then((detail) => {
+        if (editRequestIdRef.current !== requestId) return
+        setForm(
+          serviceFormFromDetail({
+            categoryId: detail.categoryId,
+            name: detail.name,
+            description: detail.description,
+            imageUrl: detail.imageUrl,
+            defaultPrice: detail.defaultPrice,
+            billingPeriod: detail.billingPeriod,
+            billingPeriodLabel: detail.billingPeriodLabel,
+            detailsGrid: detail.detailsGrid,
+            contractText: detail.contractText,
+            paymentTiming: detail.paymentTiming,
+            dueDaysAfter: detail.dueDaysAfter,
+            lateInterestType: detail.lateInterestType,
+            lateInterestValue: detail.lateInterestValue,
+            discountMode: detail.discountMode,
+            discountValue: detail.discountValue,
+            isActive: detail.isActive,
+            articles: detail.articles.map((line) => ({
+              articleId: line.articleId,
+              quantity: line.quantity,
+              articleName: line.articleName,
+              unitOfMeasure: line.unitOfMeasure,
+            })),
+            addons: detail.addons.map((addon) => ({
+              name: addon.name,
+              price: addon.price,
+              articles: addon.articles.map((line) => ({
+                articleId: line.articleId,
+                quantity: line.quantity,
+                articleName: line.articleName,
+                unitOfMeasure: line.unitOfMeasure,
+              })),
+            })),
+          }),
+        )
+      })
+      .catch((err: unknown) => {
+        if (editRequestIdRef.current !== requestId) return
+        setFormError(
+          err instanceof Error ? err.message : "No se pudo cargar el servicio",
+        )
+      })
+      .finally(() => {
+        if (editRequestIdRef.current === requestId) setFormRefreshing(false)
+      })
   }
 
-  const closeForm = () => setFormOpen(false)
+  const closeForm = () => {
+    editRequestIdRef.current += 1
+    setFormOpen(false)
+  }
 
   const finalizeFormClose = () => {
     setEditingId(null)
     setFormError(null)
-    setFormDetailLoading(false)
+    setFormRefreshing(false)
     setFormSaving(false)
     setForm(defaultServiceFormState())
   }
 
   const submitForm = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId || formSaving || formDetailLoading) return
+    if (!popId || formSaving || formRefreshing) return
     setFormSaving(true)
     setFormError(null)
     const payload = serviceFormToPayload(form)
@@ -445,22 +553,28 @@ export function ServicesWorkspaceView() {
   }
 
   const handleCreateCategory = async () => {
-    if (!popId || !newCategoryName.trim() || categoryBusy) return
+    const name = newCategoryName.trim()
+    if (!popId || !name || categoryBusy) return
     setCategoryBusy(true)
-    const res = await createServiceCategory(popId, newCategoryName)
-    setCategoryBusy(false)
+    setPendingCategoryCreate({ name })
+    setNewCategoryName("")
+    const res = await createPopServiceCategory(popId, name)
     if (!res.success) {
+      setPendingCategoryCreate(null)
+      setCategoryBusy(false)
+      setNewCategoryName(name)
       setError(res.error)
       return
     }
-    setNewCategoryName("")
-    await loadCategories()
+    await refreshCategories()
+    setCategoryBusy(false)
+    setPendingCategoryCreate(null)
   }
 
   const handleSaveCategoryEdit = async () => {
     if (!popId || !editingCategoryId || categoryBusy) return
     setCategoryBusy(true)
-    const res = await updateServiceCategory(
+    const res = await updatePopServiceCategory(
       popId,
       editingCategoryId,
       editingCategoryName,
@@ -472,17 +586,39 @@ export function ServicesWorkspaceView() {
     }
     setEditingCategoryId(null)
     setEditingCategoryName("")
-    await loadCategories()
+    await refreshCategories()
   }
 
-  const handleDeleteCategory = async (id: string, name: string) => {
-    if (!popId) return
-    if (!window.confirm(`¿Eliminar la categoría «${name}»?`)) return
-    setCategoryBusy(true)
-    const res = await deleteServiceCategory(popId, id)
-    setCategoryBusy(false)
-    if (!res.success) setError(res.error)
-    else await loadCategories()
+  const closeDeleteCategory = () => {
+    setDeleteCategoryTarget(null)
+    setDeleteCategoryBanner(null)
+  }
+
+  const requestDeleteCategory = (id: string, name: string) => {
+    setDeleteCategoryBanner(null)
+    setDeleteCategoryTarget({ id, name })
+  }
+
+  const handleDeleteCategory = async () => {
+    if (!popId || !deleteCategoryTarget) return
+    const target = deleteCategoryTarget
+    setDeleteCategoryBusy(true)
+    setDeleteCategoryBanner(null)
+    setPendingCategoryDeleteId(target.id)
+    if (editingCategoryId === target.id) {
+      setEditingCategoryId(null)
+      setEditingCategoryName("")
+    }
+    setDeleteCategoryTarget(null)
+    setDeleteCategoryBusy(false)
+    const res = await deletePopServiceCategory(popId, target.id)
+    if (!res.success) {
+      setPendingCategoryDeleteId(null)
+      setError(res.error)
+      return
+    }
+    await refreshCategories()
+    setPendingCategoryDeleteId(null)
   }
 
   if (!popId || !siteId) {
@@ -505,29 +641,26 @@ export function ServicesWorkspaceView() {
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "Catálogo",
-        headerActions: (
-          <>
-            {canCreate ? (
-              <DataWorkspaceHeaderIconButton
-                label="Nuevo servicio"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                primary
-                onClick={openCreate}
-              >
-                <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            ) : null}
-            {(canUpdate || canCreate) && (
-              <DataWorkspaceHeaderIconButton
-                label="Gestionar categorías"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                onClick={() => setCategoriesOpen(true)}
-              >
-                <FolderTree className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            )}
-          </>
-        ),
+        headerActions: canCreate ? (
+          <DataWorkspaceHeaderIconButton
+            label="Nuevo servicio"
+            headerVariant={dataWorkspaceTableListHeaderVariant}
+            primary
+            onClick={openCreate}
+          >
+            <Plus className="size-5" aria-hidden />
+          </DataWorkspaceHeaderIconButton>
+        ) : null,
+        headerMoreActions:
+          canUpdate || canCreate
+            ? [
+                {
+                  label: "Gestionar categorías",
+                  icon: FolderTree,
+                  onClick: () => setCategoriesOpen(true),
+                },
+              ]
+            : undefined,
       }}
       error={error}
     >
@@ -769,9 +902,9 @@ export function ServicesWorkspaceView() {
                         {formatSaleComprobanteMoney(row.defaultPrice)}
                       </TableCell>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
-                        <Badge variant="secondary" className="font-normal">
+                        <RootsNaturePill variant="bruma">
                           {row.billingPeriodDisplay}
-                        </Badge>
+                        </RootsNaturePill>
                       </TableCell>
                       <TableCell
                         className={cn(
@@ -782,12 +915,11 @@ export function ServicesWorkspaceView() {
                         {row.detailCount}
                       </TableCell>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
-                        <Badge
-                          variant={row.isActive ? "default" : "outline"}
-                          className="font-normal"
+                        <RootsNaturePill
+                          variant={row.isActive ? "savia" : "brumaMuted"}
                         >
                           {row.isActive ? "Activo" : "Inactivo"}
-                        </Badge>
+                        </RootsNaturePill>
                       </TableCell>
                       {canUpdate || canDelete ? (
                         <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
@@ -827,7 +959,7 @@ export function ServicesWorkspaceView() {
         }}
         mode={editingId ? "edit" : "create"}
         title={editingId ? "Editar servicio" : "Nuevo servicio"}
-        loading={formDetailLoading}
+        refreshing={formRefreshing}
         saving={formSaving}
         banner={formError}
         onBannerChange={setFormError}
@@ -858,7 +990,16 @@ export function ServicesWorkspaceView() {
 
       <ServiceCategoriesDialog
         open={categoriesOpen}
-        onOpenChange={setCategoriesOpen}
+        onOpenChange={(open) => {
+          setCategoriesOpen(open)
+          if (!open) {
+            setNewCategoryName("")
+            setPendingCategoryCreate(null)
+            setPendingCategoryDeleteId(null)
+            setCategoryBusy(false)
+            closeDeleteCategory()
+          }
+        }}
         categories={categories}
         canCreate={canCreate}
         canUpdate={canUpdate}
@@ -867,6 +1008,15 @@ export function ServicesWorkspaceView() {
         onNewCategoryNameChange={setNewCategoryName}
         onCreateCategory={() => void handleCreateCategory()}
         categoryBusy={categoryBusy}
+        pendingCreateName={
+          pendingCategoryCreate &&
+          !categories.some(
+            (category) => category.name === pendingCategoryCreate.name,
+          )
+            ? pendingCategoryCreate.name
+            : null
+        }
+        pendingDeleteId={pendingCategoryDeleteId}
         editingCategoryId={editingCategoryId}
         editingCategoryName={editingCategoryName}
         onEditingCategoryNameChange={setEditingCategoryName}
@@ -879,7 +1029,19 @@ export function ServicesWorkspaceView() {
           setEditingCategoryName("")
         }}
         onSaveEdit={() => void handleSaveCategoryEdit()}
-        onDeleteCategory={(id, name) => void handleDeleteCategory(id, name)}
+        onDeleteCategory={requestDeleteCategory}
+      />
+
+      <ServiceCategoryDeleteDialog
+        open={deleteCategoryTarget !== null}
+        target={deleteCategoryTarget}
+        banner={deleteCategoryBanner}
+        busy={deleteCategoryBusy}
+        onOpenChange={(open) => {
+          if (!open && !deleteCategoryBusy) closeDeleteCategory()
+        }}
+        onClose={closeDeleteCategory}
+        onConfirmDelete={() => void handleDeleteCategory()}
       />
 
       <ServicesFiltersDialog

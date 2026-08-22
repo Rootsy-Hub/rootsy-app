@@ -19,7 +19,11 @@ import {
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
-import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
+import { isMenuApiReady } from "@/lib/menuApiReady"
+import {
+  isOptimisticNavTarget,
+  usePopOptimisticNav,
+} from "@/context/PopOptimisticNavContext"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { menuDockEditBadgeClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
@@ -28,6 +32,7 @@ import { RootsIconButton } from "@/components/rootsy-button"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
 import { Check, Minus, Pencil } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useRef } from "react"
 
 type Props = {
   siteId: string
@@ -84,6 +89,7 @@ function DockSlotItem({
   item,
   index,
   editing,
+  rearranging,
   shiftX,
   dragAnimating,
   canRemove,
@@ -93,13 +99,15 @@ function DockSlotItem({
   item: MenuCatalogItem
   index: number
   editing: boolean
+  rearranging: boolean
   shiftX: number
   dragAnimating: boolean
   canRemove: boolean
   href: string | null
   onRemove: () => void
 }) {
-  const { start: startOptimisticNav } = usePopOptimisticNav()
+  const { pending, start: startOptimisticNav } = usePopOptimisticNav()
+  const isLeaving = isOptimisticNavTarget(href, pending)
   const {
     attributes,
     listeners,
@@ -108,18 +116,24 @@ function DockSlotItem({
   } = useDraggable({
     id: dockDragId(item.id),
     data: { kind: "dock" as const, itemId: item.id },
-    disabled: !editing,
+    disabled: !rearranging,
   })
 
   const { setNodeRef: setDropRef } = useDroppable({
     id: dockDragId(item.id),
     data: { kind: "dock-drop" as const, itemId: item.id },
-    disabled: !editing,
+    disabled: !rearranging,
   })
+
+  const skipClickAfterDrag = useRef(false)
+
+  useEffect(() => {
+    if (isDragging) skipClickAfterDrag.current = true
+  }, [isDragging])
 
   const setRefs = (node: HTMLDivElement | null) => {
     setDragRef(node)
-    if (editing) setDropRef(node)
+    if (rearranging) setDropRef(node)
   }
 
   return (
@@ -131,17 +145,17 @@ function DockSlotItem({
         left: index * DOCK_SLOT_SHIFT_PX,
         width: DOCK_SLOT_SHIFT_PX,
         transform:
-          editing && !isDragging ? `translateX(${shiftX}px)` : undefined,
-        transition: editing && dragAnimating ? DOCK_LAYOUT_TRANSITION : undefined,
+          rearranging && !isDragging ? `translateX(${shiftX}px)` : undefined,
+        transition: rearranging && dragAnimating ? DOCK_LAYOUT_TRANSITION : undefined,
       }}
     >
       <div
         style={{ animationDelay: `${(index % 5) * 45}ms` }}
         className={cn(
           "relative",
-          editing && "touch-none",
+          rearranging && "touch-none",
           editing && !isDragging && !dragAnimating && "animate-dock-wiggle",
-          editing && isDragging && "opacity-0",
+          rearranging && isDragging && "opacity-0",
         )}
       >
         {editing ? (
@@ -152,14 +166,27 @@ function DockSlotItem({
             className="relative cursor-grab active:cursor-grabbing"
             aria-label={item.name}
           >
-            <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
+            <DockIconVisual
+              icon={item.icon}
+              sectionKey={item.sectionKey}
+              apiReady={isMenuApiReady(item.id)}
+            />
           </button>
         ) : (
-          <div className="group/dock-tip relative">
+          <div
+            className="group/dock-tip relative"
+            {...(rearranging ? listeners : {})}
+            {...(rearranging ? attributes : {})}
+          >
             {href ? (
               <Link
                 href={href}
                 onClick={(event) => {
+                  if (skipClickAfterDrag.current) {
+                    event.preventDefault()
+                    skipClickAfterDrag.current = false
+                    return
+                  }
                   if (
                     href === "/home" ||
                     event.metaKey ||
@@ -169,12 +196,23 @@ function DockSlotItem({
                   ) {
                     return
                   }
+                  if (pending && !isLeaving) {
+                    event.preventDefault()
+                    return
+                  }
                   startOptimisticNav({ href, title: item.name })
                 }}
                 className="relative block transition-transform duration-200 hover:scale-110 active:scale-95"
                 aria-label={item.name}
+                aria-busy={isLeaving || undefined}
               >
-                <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
+                <DockIconVisual
+                  icon={item.icon}
+                  sectionKey={item.sectionKey}
+                  apiReady={isMenuApiReady(item.id)}
+                  busy={isLeaving}
+                  busyLabel={`Abriendo ${item.name}`}
+                />
               </Link>
             ) : (
               <button
@@ -183,7 +221,11 @@ function DockSlotItem({
                 className="relative cursor-default opacity-70"
                 aria-label={item.name}
               >
-                <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
+                <DockIconVisual
+                  icon={item.icon}
+                  sectionKey={item.sectionKey}
+                  apiReady={isMenuApiReady(item.id)}
+                />
               </button>
             )}
             <span
@@ -230,6 +272,7 @@ function DockIconsTrack({
   siteId,
   popId,
   editing,
+  rearranging,
   slotCount,
   dockItems,
   dockIds,
@@ -244,6 +287,7 @@ function DockIconsTrack({
   siteId: string
   popId: string
   editing: boolean
+  rearranging: boolean
   slotCount: number
   dockItems: MenuCatalogItem[]
   dockIds: readonly MenuDockItemId[]
@@ -276,7 +320,7 @@ function DockIconsTrack({
         transition: dragAnimating ? DOCK_WIDTH_TRANSITION : undefined,
       }}
     >
-      {editing
+      {rearranging
         ? Array.from({ length: insertZoneCount }, (_, index) => (
             <DockInsertZone
               key={`insert-${index}`}
@@ -289,7 +333,7 @@ function DockIconsTrack({
 
       {dockItems.map((item, index) => {
         const target = routeForDockItem(siteId, popId, item)
-        const shiftX = editing
+        const shiftX = rearranging
           ? getDockItemShiftX(
               item.id,
               index,
@@ -307,6 +351,7 @@ function DockIconsTrack({
             item={item}
             index={index}
             editing={editing}
+            rearranging={rearranging}
             shiftX={shiftX}
             dragAnimating={dragAnimating}
             canRemove={canRemove}
@@ -333,29 +378,34 @@ export function MenuDock({ siteId, popId }: Props) {
     canAddMore,
     canRemove,
     removeFromDock,
+    isCompactDock,
   } = useMenuDockEdit()
 
+  const rearranging = editing || isCompactDock
+  const dragLive = rearranging && dragging
   const slotCount = getDockEditSlotCount(
     dockItems.length,
     canAddMore,
-    editing ? dragging : false,
-    editing ? activeDragKind : null,
-    editing ? dropPreviewIndex : null,
+    dragLive,
+    dragLive ? activeDragKind : null,
+    dragLive ? dropPreviewIndex : null,
   )
 
   return (
-    <div className="flex w-full justify-center">
+    <div className="flex w-full max-w-full justify-center overflow-x-auto overflow-y-visible overscroll-x-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div
         className={cn(
           "flex items-end overflow-visible",
-          editing && dragging &&
+          dragLive &&
             "transition-[width,padding,gap] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         )}
         style={{
           paddingTop: DOCK_SHELL_PADDING_Y_PX,
           paddingBottom: DOCK_SHELL_PADDING_Y_PX,
           paddingLeft: DOCK_SHELL_PADDING_X_PX,
-          paddingRight: DOCK_CHROME_INSET_PX,
+          paddingRight: isCompactDock
+            ? DOCK_SHELL_PADDING_X_PX
+            : DOCK_CHROME_INSET_PX,
           gap: DOCK_SHELL_PADDING_X_PX,
         }}
       >
@@ -364,6 +414,7 @@ export function MenuDock({ siteId, popId }: Props) {
             siteId={siteId}
             popId={popId}
             editing={editing}
+            rearranging={rearranging}
             slotCount={slotCount}
             dockItems={dockItems}
             dockIds={dockIds}
@@ -371,14 +422,14 @@ export function MenuDock({ siteId, popId }: Props) {
             draggingItemId={draggingItemId}
             activeDragKind={activeDragKind}
             dropPreviewIndex={dropPreviewIndex}
-            dragAnimating={editing && dragging}
+            dragAnimating={dragLive}
             canRemove={canRemove}
             onRemove={removeFromDock}
           />
         ) : null}
 
         <div
-          className="flex shrink-0 items-center self-end"
+          className="hidden shrink-0 items-center self-end md:flex"
           style={{
             height: DOCK_ICON_SIZE_PX,
             marginBottom: DOCK_TRACK_INSET_Y_PX,

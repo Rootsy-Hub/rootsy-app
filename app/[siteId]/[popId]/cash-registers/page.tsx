@@ -6,7 +6,9 @@ import {
   createCashRegister,
   deleteCashRegister,
   getCashRegistersPageData,
+  updateCashRegister,
   openCashSession,
+  type ArcaSalePointOption,
   type CashRegisterRow,
   type CashTreasuryAccountOption,
   type ClosingSnapshot,
@@ -27,10 +29,6 @@ import { CashRegisterDeleteDialog } from "@/app/[siteId]/[popId]/cash-registers/
 import { CashRegisterMoveDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterMoveDialog"
 import { CashRegisterOpenDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterOpenDialog"
 import { CashRegistersGridSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegistersGridSkeleton"
-import {
-  hasCashRegisterArcaInput,
-  saveCashRegisterArcaConfig,
-} from "@/app/[siteId]/[popId]/cash-registers/cashRegisterArcaClient"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
   DataWorkspaceModuleLayout,
@@ -38,7 +36,6 @@ import {
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { RootsBanner } from "@/components/rootsy-banner"
-import { RootsFormSegmentField } from "@/components/rootsy-form"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
@@ -49,48 +46,16 @@ import {
   formatMoneyInputForField,
   parseMoneyInput,
 } from "@/lib/moneyInput"
-import { formatLocaleDateTime } from "@/lib/popTimezone"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type FormEvent,
 } from "react"
-
-type RegisterFilter = "todas" | "abiertas" | "cerradas" | "inactivas"
-
-const REGISTER_FILTER_OPTIONS = [
-  { value: "todas", label: "Todas" },
-  { value: "abiertas", label: "Abiertas" },
-  { value: "cerradas", label: "Cerradas" },
-  { value: "inactivas", label: "Inactivas" },
-] as const
-
-function registerMatchesFilter(row: CashRegisterRow, filter: RegisterFilter) {
-  const isOpen = Boolean(row.openSessionId)
-  if (filter === "abiertas") return row.isActive && isOpen
-  if (filter === "cerradas") return row.isActive && !isOpen
-  if (filter === "inactivas") return !row.isActive
-  return true
-}
-
-function registerFilterEmptyCopy(filter: RegisterFilter, canCreate: boolean) {
-  if (filter === "abiertas") return "Ninguna caja está abierta ahora."
-  if (filter === "cerradas") return "No hay cajas cerradas."
-  if (filter === "inactivas") return "Ninguna caja está desactivada."
-  return canCreate
-    ? "Todavía no hay cajas. Creá la primera."
-    : "Todavía no hay cajas configuradas."
-}
-
-function formatDateTime(iso: string) {
-  return formatLocaleDateTime(iso)
-}
 
 function CashRegistersPage() {
   const router = useRouter()
@@ -107,6 +72,7 @@ function CashRegistersPage() {
   const [cashTreasuryAccounts, setCashTreasuryAccounts] = useState<
     CashTreasuryAccountOption[]
   >([])
+  const [salePoints, setSalePoints] = useState<ArcaSalePointOption[]>([])
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>(
     [],
   )
@@ -115,14 +81,6 @@ function CashRegistersPage() {
   const [canDelete, setCanDelete] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [registerFilter, setRegisterFilter] = useState<RegisterFilter>("todas")
-  const [popFiscalCuit, setPopFiscalCuit] = useState<string | null>(null)
-  const [popFiscalRazonSocial, setPopFiscalRazonSocial] = useState<string | null>(
-    null,
-  )
-
-  const popSettingsHref =
-    siteId && popId ? `/${siteId}/${popId}/settings` : undefined
   const cashRegistersBasePath = `/${siteId}/${popId}/cash-registers`
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -170,12 +128,11 @@ function CashRegistersPage() {
       setError(res.error || "Error")
       setRegisters([])
       setCashTreasuryAccounts([])
+      setSalePoints([])
       setPaymentMethods([])
       setCanCreate(false)
       setCanUpdate(false)
       setCanDelete(false)
-      setPopFiscalCuit(null)
-      setPopFiscalRazonSocial(null)
       if (res.redirect) {
         setTimeout(() => routerRef.current.push(res.redirect!), 1200)
       }
@@ -183,12 +140,11 @@ function CashRegistersPage() {
     }
     setRegisters(res.registers)
     setCashTreasuryAccounts(res.cashTreasuryAccounts)
+    setSalePoints(res.salePoints)
     setPaymentMethods(res.paymentMethods)
     setCanCreate(res.canCreate)
     setCanUpdate(res.canUpdate)
     setCanDelete(res.canDelete)
-    setPopFiscalCuit(res.popFiscalCuit)
-    setPopFiscalRazonSocial(res.popFiscalRazonSocial)
     setError(null)
   }, [popId, siteId])
 
@@ -218,10 +174,6 @@ function CashRegistersPage() {
   const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
   const headerError = bootstrapError
-  const visibleRegisters = useMemo(
-    () => registers.filter((row) => registerMatchesFilter(row, registerFilter)),
-    [registerFilter, registers],
-  )
 
   const openCreate = () => {
     setCreateBanner(null)
@@ -236,35 +188,12 @@ function CashRegistersPage() {
       name: input.name,
       sortOrder: 0,
       cashTreasuryAccountId: input.cashTreasuryAccountId,
+      arcaSalePointId: input.arcaSalePointId,
     })
     if (!res.success) {
       setCreateSaving(false)
       setCreateBanner(res.error)
       return
-    }
-
-    if (hasCashRegisterArcaInput(input)) {
-      const arcaRes = await saveCashRegisterArcaConfig(
-        popId,
-        res.registerId,
-        {
-          name: input.name,
-          sortOrder: 0,
-          isActive: true,
-          cashTreasuryAccountId: input.cashTreasuryAccountId,
-          arcaCertificateSecretName: null,
-          arcaCertificateLastFour: null,
-        },
-        input,
-      )
-      if (!arcaRes.success) {
-        setCreateSaving(false)
-        setCreateBanner(
-          `La caja se creó, pero no se pudo guardar la configuración ARCA: ${arcaRes.error}`,
-        )
-        await load()
-        return
-      }
     }
 
     setCreateSaving(false)
@@ -281,19 +210,13 @@ function CashRegistersPage() {
     if (!popId || !siteId || !editRow) return
     setEditSaving(true)
     setEditBanner(null)
-    const res = await saveCashRegisterArcaConfig(
-      popId,
-      editRow.id,
-      {
-        name: payload.name,
-        sortOrder: editRow.sortOrder,
-        isActive: payload.isActive,
-        cashTreasuryAccountId: payload.cashTreasuryAccountId,
-        arcaCertificateSecretName: editRow.arcaCertificateSecretName ?? null,
-        arcaCertificateLastFour: editRow.arcaCertificateLastFour ?? null,
-      },
-      payload,
-    )
+    const res = await updateCashRegister(popId, editRow.id, {
+      name: payload.name,
+      sortOrder: editRow.sortOrder,
+      isActive: payload.isActive,
+      cashTreasuryAccountId: payload.cashTreasuryAccountId,
+      arcaSalePointId: payload.arcaSalePointId,
+    })
     setEditSaving(false)
     if (!res.success) {
       setEditBanner(res.error)
@@ -489,26 +412,15 @@ function CashRegistersPage() {
               <RootsBanner intent="danger" layout="message" message={error} />
             ) : (
               <DataWorkspaceBlocksSection>
-                <RootsFormSegmentField
-                  label="Ver cajas"
-                  aria-label="Filtrar cajas"
-                  layout="inline"
-                  className="[&>span:first-child]:sr-only"
-                  groupClassName="border-0"
-                  value={registerFilter}
-                  onValueChange={(value) =>
-                    setRegisterFilter(value as RegisterFilter)
-                  }
-                  options={REGISTER_FILTER_OPTIONS}
-                />
-
-                {visibleRegisters.length === 0 ? (
+                {registers.length === 0 ? (
                   <p className={dataWorkspaceBlocksEmptyStateClass}>
-                    {registerFilterEmptyCopy(registerFilter, canCreate)}
+                    {canCreate
+                      ? "Todavía no hay cajas. Creá la primera."
+                      : "Todavía no hay cajas configuradas."}
                   </p>
                 ) : (
                   <div className={dataWorkspaceEntityCardsGridClass}>
-                    {visibleRegisters.map((r) => (
+                    {registers.map((r) => (
                       <CashRegisterCard
                         key={r.id}
                         row={r}
@@ -537,9 +449,7 @@ function CashRegistersPage() {
         saving={createSaving}
         banner={createBanner}
         cashTreasuryAccounts={cashTreasuryAccounts}
-        popFiscalCuit={popFiscalCuit}
-        popFiscalRazonSocial={popFiscalRazonSocial}
-        settingsHref={popSettingsHref}
+        salePoints={salePoints}
         onSubmit={submitCreate}
       />
 
@@ -552,10 +462,7 @@ function CashRegistersPage() {
         saving={editSaving}
         banner={editBanner}
         cashTreasuryAccounts={cashTreasuryAccounts}
-        popFiscalCuit={popFiscalCuit}
-        popFiscalRazonSocial={popFiscalRazonSocial}
-        settingsHref={popSettingsHref}
-        formatDateTime={formatDateTime}
+        salePoints={salePoints}
         onSubmit={submitEdit}
       />
 

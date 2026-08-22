@@ -1,5 +1,10 @@
-import type { OperationSaleChannel } from "@/app/[siteId]/[popId]/operations/actions"
+import type {
+  OperationSaleChannel,
+  OperationSaleChargeRow,
+  OperationSaleRow,
+} from "@/app/[siteId]/[popId]/operations/actions"
 import { popDateTimeIntlOptions } from "@/lib/popTimezone"
+import { roundSaleMoney } from "@/lib/saleLineDiscount"
 export function operationSaleDetailTitle(channel: OperationSaleChannel): string {
   switch (channel) {
     case "table":
@@ -95,4 +100,24 @@ export function formatChannelPlaceLine(input: {
   const waiter = input.waiterName?.trim()
   if (waiter && place !== "—") return `${place} · ${waiter}`
   return place
+}
+
+/** Saldo de una operación de mesa/mostrador cuando hubo cobros parciales. */
+export function resolveOperationSaleOutstanding(
+  sale: OperationSaleRow,
+  charges: OperationSaleChargeRow[] = [],
+): number {
+  const orderTotal = sale.channelOrderTotal
+  if (orderTotal == null || !Number.isFinite(orderTotal)) return 0
+  const paidFromCharges = charges.reduce((sum, charge) => sum + charge.amount, 0)
+  const paidFromPayments = sale.payments.reduce(
+    (sum, payment) => sum + payment.amount,
+    0,
+  )
+  const paid = Math.max(
+    paidFromCharges,
+    sale.channelPaidTotal ?? 0,
+    paidFromPayments,
+  )
+  return Math.max(0, roundSaleMoney(orderTotal - paid))
 }

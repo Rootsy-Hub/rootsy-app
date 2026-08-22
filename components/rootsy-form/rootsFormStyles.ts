@@ -37,29 +37,7 @@ import {
   rootsFormUiTextFieldClass,
   rootsFormUiTextareaFieldClass,
 } from "@/components/rootsy-form/rootsFormUiStyles"
-import {
-  rootsFormEarthActiveBgClass,
-  rootsFormEarthBgSubtleClass,
-  rootsFormEarthBorderClass,
-  rootsFormEarthBorderHoverClass,
-  rootsFormEarthDisabledClass,
-  rootsFormEarthDividerClass,
-  rootsFormEarthHighlightHoverClass,
-  rootsFormEarthLabelMutedClass,
-  rootsFormEarthPlaceholderClass,
-  rootsFormEarthPrefixBgClass,
-  rootsFormEarthPrefixBgMutedClass,
-  rootsFormEarthPrefixBorderClass,
-  rootsFormEarthPrefixBorderHoverClass,
-  rootsFormEarthPrefixIconSvgClass,
-  rootsFormEarthPrefixTextClass,
-  rootsFormEarthPrefixTextMutedClass,
-  rootsFormEarthSelectionClass,
-  rootsFormEarthTextClass,
-  rootsFormEarthTextSecondaryClass,
-  rootsFormEarthTextTertiaryClass,
-  rootsFormTextInputSurfaceClass,
-} from "@/components/rootsy-form/rootsFormEarthTokens"
+import { rootsFormBrumaDividerClass } from "@/components/rootsy-form/rootsFormBrumaTokens"
 import { cn } from "@/lib/utils"
 
 export const rootsFormControlSelectionClass = rootsFormUiSelectionClass
@@ -93,7 +71,7 @@ export const rootsFormGridClass =
 /** Línea vertical entre columnas (solo visible en layout de dos columnas). */
 export const rootsFormGridDividerClass = cn(
   "hidden min-h-full w-px shrink-0 lg:block",
-  rootsFormEarthDividerClass,
+  rootsFormBrumaDividerClass,
 )
 
 /** Fila de dos campos dentro de una columna (p. ej. SKU + código de barras). */

@@ -654,6 +654,8 @@ export function OperationsSalesTable({
         onOpenChange={(open) => {
           if (!open) setInvoiceSale(null)
         }}
+        siteId={siteId}
+        popId={popId}
       />
     </>
   )

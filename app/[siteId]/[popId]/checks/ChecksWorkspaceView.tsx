@@ -1,13 +1,6 @@
 "use client"
 
-import {
-  clearPopCheck,
-  createPopCheck,
-  depositPopCheck,
-  rejectPopCheck,
-  voidPopCheck,
-  type CheckTableRow,
-} from "@/app/[siteId]/[popId]/checks/actions"
+import type { CheckTableRow } from "@/app/[siteId]/[popId]/checks/actions"
 import { CheckLifecycleDialog } from "@/app/[siteId]/[popId]/checks/CheckLifecycleDialog"
 import {
   CheckDirectionToolbarFilter,
@@ -81,28 +74,34 @@ import { checksSkeletonColumns } from "@/components/data-workspace/workspaceTabl
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { TableBody } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopChecksTable } from "@/hooks/usePopChecksTable"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
 import { popChecksQueryRoot } from "@/lib/queryKeys"
-import { useQueryClient } from "@tanstack/react-query"
+import {
+  clearPopCheck,
+  createPopCheck,
+  depositPopCheck,
+  fetchCheckDepositAccounts,
+  rejectPopCheck,
+  voidPopCheck,
+} from "@/lib/rootsyApi/checksClient"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   checkDirectionLabel,
   checkStatusLabel,
   type CheckDirection,
   type CheckLifecycleAction,
 } from "@/lib/checkDocuments"
-import { getTreasuryPaymentContext } from "@/lib/treasuryPaymentContext"
 import { cn } from "@/lib/utils"
 import {
   nextWorkspaceTableSortState,
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react"
-import {
-  useParams,
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -115,27 +114,37 @@ import {
 
 export function ChecksWorkspaceView() {
   const params = useParams()
-  const router = useRouter()
-  const routerRef = useRef(router)
-  routerRef.current = router
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const siteId = String(params.siteId ?? "")
   const popId = String(params.popId ?? "")
   const queryClient = useQueryClient()
+  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
+
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
   const ws = useMemo(
-    () => parseChecksWorkspaceUrl(searchParams),
-    [searchParams],
+    () => parseChecksWorkspaceUrl(workspaceParams),
+    [workspaceParams],
   )
   const searchInputId = useId()
   const pageSizeLabelId = useId()
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
 
   const [searchInput, setSearchInput] = useState(ws.q)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const [bankOptions, setBankOptions] = useState<{ id: string; name: string }[]>(
-    [],
-  )
   const [lifecycleOpen, setLifecycleOpen] = useState(false)
   const [lifecycleAction, setLifecycleAction] =
     useState<CheckLifecycleAction | null>(null)
@@ -154,13 +163,18 @@ export function ChecksWorkspaceView() {
 
   const pushWs = useCallback(
     (patch: Parameters<typeof mergeChecksWorkspaceUrl>[1]) => {
-      const next = mergeChecksWorkspaceUrl(searchParams, patch)
+      const next = mergeChecksWorkspaceUrl(workspaceParams, patch)
       const qs = next.toString()
-      if (qs === searchParams.toString()) return
       const href = qs ? `${pathname}?${qs}` : pathname
-      routerRef.current.replace(href, { scroll: false })
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== href) {
+          window.history.replaceState(window.history.state, "", href)
+        }
+      }
+      setWorkspaceSearch(qs)
     },
-    [pathname, searchParams],
+    [pathname, workspaceParams],
   )
 
   const handleSortColumn = useCallback(
@@ -197,13 +211,26 @@ export function ChecksWorkspaceView() {
       sort: ws.sort,
       ord: ws.ord,
     },
-    { enabled: Boolean(popId) },
+    { enabled: Boolean(popId && siteId) },
   )
 
   const checks = checksQuery.data?.checks ?? []
   const totalCount = checksQuery.data?.totalCount ?? 0
-  const canCreate = checksQuery.data?.canCreate ?? false
-  const canUpdate = checksQuery.data?.canUpdate ?? false
+  const checkPerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = checkPerm(POP_PERMS.CHECK_CREATE)
+  const canUpdate = checkPerm(POP_PERMS.CHECK_UPDATE)
   const loading =
     checksQuery.isPending ||
     (checksQuery.isFetching && !checksQuery.isFetched)
@@ -223,23 +250,15 @@ export function ChecksWorkspaceView() {
     })
   }, [popId, queryClient])
 
-  useEffect(() => {
-    const res = checksQuery.data
-    if (!res || res.success || !res.redirect) return
-    routerRef.current.replace(res.redirect)
-  }, [checksQuery.data])
-
-  useEffect(() => {
-    if (!popId) return
-    let cancelled = false
-    void getTreasuryPaymentContext(popId).then((res) => {
-      if (cancelled || !res.success) return
-      setBankOptions(res.context.bankTreasuryAccounts)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [popId])
+  const depositAccountsQuery = useQuery({
+    queryKey: ["pop-check-deposit-accounts", popId],
+    queryFn: () => fetchCheckDepositAccounts(popId),
+    enabled: Boolean(popId) && lifecycleOpen && lifecycleAction === "deposit",
+  })
+  const bankOptions =
+    depositAccountsQuery.data?.success === true
+      ? depositAccountsQuery.data.accounts
+      : []
 
   useEffect(() => {
     setSearchInput(ws.q)

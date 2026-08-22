@@ -65,16 +65,17 @@ export const layoutsOperarBodyShellClass = cn(
   "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--rootsy-sombra-950)]",
 )
 
-/** Grid principal 1 · 2 columnas: operación (1.1) | ticket (1.2). */
+/** Grid principal 1 · mobile: escena única. Desktop: operación | ticket. */
 export const layoutsOperarBodyMainGridClass = cn(
-  "grid min-h-0 flex-1",
-  "[grid-template-columns:var(--layouts-operar-grid-cols)]",
-  "[grid-template-rows:minmax(0,1fr)]",
+  "flex min-h-0 flex-1 flex-col",
+  "md:grid md:[grid-template-columns:var(--layouts-operar-grid-cols)]",
+  "md:[grid-template-rows:minmax(0,1fr)]",
 )
 
 /** 1.1 Columna izquierda — catálogo (1.1.1) + toolbox (1.1.2). */
 export const layoutsOperarOperationColumnClass = cn(
-  "col-start-1 row-start-1 grid min-h-0 min-w-0 overflow-hidden",
+  "grid min-h-0 min-w-0 flex-1 overflow-hidden",
+  "md:col-start-1 md:row-start-1",
   "[grid-template-rows:var(--layouts-operar-operation-rows)]",
 )
 
@@ -90,17 +91,25 @@ export const layoutsOperarCatalogColumnInMainGridClass = cn(
   "border-b border-[var(--layouts-operar-border-dark-default)]",
 )
 
-/** Rail catálogo — mismo sidebar oscuro que Library / Estadísticas / Ajustes. */
+/** Rail catálogo — inline en desktop; overlay a la izquierda en mobile. */
 export const layoutsOperarCatalogSidebarClass = cn(
   "relative shrink-0 overflow-hidden",
   "border-r border-[var(--layouts-operar-border-dark-hairline)]",
-  "transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
+  "transition-[width,border-color,transform] duration-300 ease-in-out motion-reduce:transition-none",
+  "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:h-full max-md:shadow-xl",
   librarySidebarClass,
 )
 
 export const layoutsOperarCatalogSidebarOpenClass =
   "w-[var(--layouts-operar-catalog-sidebar-w)] min-w-[var(--layouts-operar-catalog-sidebar-w)]"
-export const layoutsOperarCatalogSidebarClosedClass = "w-0 border-r-0"
+export const layoutsOperarCatalogSidebarClosedClass = cn(
+  "w-0 border-r-0",
+  "max-md:w-[var(--layouts-operar-catalog-sidebar-w)] max-md:-translate-x-full max-md:pointer-events-none",
+)
+
+export const layoutsOperarCatalogRailBackdropClass = cn(
+  "fixed inset-0 z-30 bg-black/50 md:hidden",
+)
 
 /** Estructura catálogo wireframe — color vía getLayoutsOperarWireframeZoneStyle. */
 export const layoutsOperarWireframeCatalogSidebarClass = cn(
@@ -329,8 +338,43 @@ export const layoutsOperarFormCanvasScrollClass = cn(
 export const layoutsOperarFormCanvasScrollEndClass =
   "pb-10 sm:pb-12 lg:pb-14"
 
-/** Grilla demo — sale usa grid-cols-3 en desktop. */
-export const layoutsOperarCatalogGridClass = "grid grid-cols-2 gap-4 xl:grid-cols-3"
+/**
+ * Card de catálogo operar — ancho anclado al ritmo space.500.
+ * 5×40 = 200 (piso) · 6×40 = 240 (techo). La grilla suma columnas (1…n)
+ * en vez de estirar o comprimir la card.
+ */
+export const LAYOUTS_OPERAR_CATALOG_CARD_MIN_WIDTH_PX = rootsySpacePx("500") * 5
+export const LAYOUTS_OPERAR_CATALOG_CARD_MAX_WIDTH_PX = rootsySpacePx("500") * 6
+/** gap-4 · space.200 */
+export const LAYOUTS_OPERAR_CATALOG_GRID_GAP_PX = rootsySpacePx("200")
+export const LAYOUTS_OPERAR_CATALOG_GRID_COLS_MIN = 1
+
+/** Columnas según el ancho real del canvas, no del viewport. */
+export function layoutsOperarCatalogColumnCount(containerWidthPx: number): number {
+  const min = LAYOUTS_OPERAR_CATALOG_CARD_MIN_WIDTH_PX
+  const max = LAYOUTS_OPERAR_CATALOG_CARD_MAX_WIDTH_PX
+  const gap = LAYOUTS_OPERAR_CATALOG_GRID_GAP_PX
+  const colsMin = LAYOUTS_OPERAR_CATALOG_GRID_COLS_MIN
+
+  if (!Number.isFinite(containerWidthPx) || containerWidthPx <= 0) {
+    return 2
+  }
+
+  const maxFit = Math.max(colsMin, Math.floor((containerWidthPx + gap) / (min + gap)))
+  const minNeeded = Math.max(colsMin, Math.ceil((containerWidthPx + gap) / (max + gap)))
+
+  return Math.min(maxFit, minNeeded)
+}
+
+/** Grilla fluida — piso 200px, las columnas se reparte el resto (1fr). */
+export const layoutsOperarCatalogGridClass = "grid w-full min-w-0 gap-4"
+export const layoutsOperarCatalogGridStyle = {
+  gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${LAYOUTS_OPERAR_CATALOG_CARD_MIN_WIDTH_PX}px), 1fr))`,
+} as const
+
+export function layoutsOperarCatalogGridTemplate(columns: number): string {
+  return `repeat(${columns}, minmax(0, 1fr))`
+}
 
 /** Empty catálogo — mascota + burbuja de diálogo (bruma sobre dosel). */
 export const layoutsOperarCatalogEmptyMascotShellClass =
@@ -590,18 +634,34 @@ export const layoutsOperarSummaryPanelTabBodyClass = cn(
   "rootsy-app-light layouts-operar-ticket-shell h-full min-h-0 w-full",
 )
 
-/** Panel ticket 1.2 — col derecha del grid principal. */
+/** Panel ticket 1.2 — col derecha en desktop; escena mobile a full. */
 export const layoutsOperarSummaryPanelClass = cn(
   layoutsOperarSummaryPanelSurfaceClass,
-  "col-start-2 row-start-1 min-h-0",
-  "border-l border-[var(--layouts-operar-border-split)]",
-  "w-[var(--layouts-operar-ticket-w)] max-w-[var(--layouts-operar-ticket-w)]",
+  "min-h-0 h-full w-full",
+  "md:col-start-2 md:row-start-1",
+  "md:border-l md:border-[var(--layouts-operar-border-split)]",
+  "md:w-[var(--layouts-operar-ticket-w)] md:max-w-[var(--layouts-operar-ticket-w)]",
 )
+
+/** Ticket con tabs (Mesas · Mostrador) — sin mezclar grid-template-rows en `cn`. */
+export const layoutsOperarSummaryPanelTabsClass = cn(
+  "layouts-operar-ticket-shell rootsy-app-light grid min-h-0 h-full w-full overflow-hidden",
+  "grid-rows-[auto_minmax(0,1fr)]",
+  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
+  "md:col-start-2 md:row-start-1",
+  "md:border-l md:border-[var(--layouts-operar-border-split)]",
+  "md:w-[var(--layouts-operar-ticket-w)] md:max-w-[var(--layouts-operar-ticket-w)]",
+)
+
+/** Ticket simple (Vender · Compras) — una escena en mobile. */
+export const layoutsOperarSummaryPanelMobileStackClass =
+  "max-md:[grid-template-rows:minmax(0,1fr)]"
 
 /** Vender servicio — panel derecho con fila de totales operar. */
 export const serviceOperateSnapshotPanelClass = cn(
   layoutsOperarSummaryPanelClass,
   "service-operate-snapshot-panel",
+  "max-md:[grid-template-rows:auto_minmax(0,1fr)_auto_auto]",
 )
 
 /** Panel ticket aislado — sección 4 · demo sin grid padre. */
@@ -634,7 +694,7 @@ export const layoutsOperarSummaryActionsRowClass = cn(
   "[height:var(--layouts-operar-ticket-actions-h)]",
 )
 
-/** 1.2.3 — umbral circular Descartar + Cobrar (ticket operar). */
+/** 1.2.3 — umbral circular Descartar · Pedido/Mesa · Comandas · Cobrar. */
 export const layoutsOperarTicketCircleActionsRowClass = cn(
   "row-start-2 flex shrink-0 items-center justify-center",
   "gap-[var(--rootsy-space-300)]",

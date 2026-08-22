@@ -5,6 +5,9 @@
  */
 
 import {
+  LAYOUTS_OPERAR_CATALOG_CARD_MAX_WIDTH_PX,
+  LAYOUTS_OPERAR_CATALOG_CARD_MIN_WIDTH_PX,
+  LAYOUTS_OPERAR_CATALOG_GRID_GAP_PX,
   LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
   LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_TOKEN,
   LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX,
@@ -91,7 +94,11 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
   ticketTotalMinHeightSmPx: OPERAR_FOOTER_BAND_MIN_SM_PX,
   productCardHeightPx: 256,
   productCardMediaHeightPx: 80,
-  catalogGridColsDesktop: 3,
+  /** 5× space.500 — piso para que la card no se aplaste. */
+  catalogCardMinWidthPx: LAYOUTS_OPERAR_CATALOG_CARD_MIN_WIDTH_PX,
+  /** 6× space.500 — techo para que la card no se estire. */
+  catalogCardMaxWidthPx: LAYOUTS_OPERAR_CATALOG_CARD_MAX_WIDTH_PX,
+  catalogGridGapPx: LAYOUTS_OPERAR_CATALOG_GRID_GAP_PX,
   toolboxSlots: ["Cliente", "Comprobante", "Pago", "Descuento"] as const,
 } as const
 

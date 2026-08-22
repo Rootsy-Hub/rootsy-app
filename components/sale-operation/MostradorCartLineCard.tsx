@@ -20,7 +20,7 @@ import {
   CheckoutSectionPanel,
   type CheckoutDiscountMode,
 } from "@/components/checkout/CheckoutFormFields"
-import { RootsFormSegmentField } from "@/components/rootsy-form"
+import { RootsFormSegmentField, RootsFormTextareaField } from "@/components/rootsy-form"
 import { CartLineSubtitleRow } from "@/components/sale-operation/CartLineSubtitleRow"
 import {
   CartLineQuantityLabel,
@@ -40,9 +40,7 @@ import {
   RootsDialogContent,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Dialog } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
 import {
   mostradorCartRowCommentKey,
   pricingForMostradorRow,
@@ -55,6 +53,8 @@ import {
   normalizeCartLineDiscountDraftForApply,
   type MostradorCartLineEditInput,
 } from "@/lib/menuCartLineMerge"
+import { CartLineComandaStatusBar } from "@/components/sale-operation/CartLineComandaStatusBar"
+import { isComandaLocked } from "@/lib/comandaCartLine"
 import { getRowPaymentStatus } from "@/lib/partialCheckoutSelection"
 import {
   labelUnitOfMeasure,
@@ -216,6 +216,7 @@ export function MostradorCartLineCard({
 
   const isCartLineLocked =
     row.paidLocked === true ||
+    isComandaLocked(row.comandaStatus) ||
     paymentStatus.isFullyPaid ||
     paymentStatus.isPartiallyPaid
 
@@ -534,13 +535,22 @@ export function MostradorCartLineCard({
             "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_6%,var(--rootsy-bruma-100))]",
         )}
       >
+        {row.comandaStatus ? (
+          <CartLineComandaStatusBar status={row.comandaStatus} />
+        ) : null}
         {isCartLineLocked ? (
           <div
             className={cn(
               rowGridLayoutClass,
               paymentStatus.isFullyPaid && "opacity-70",
             )}
-            aria-label={`${row.nombre} (pagado)`}
+            aria-label={
+              paymentStatus.isFullyPaid || row.paidLocked
+                ? `${row.nombre} (pagado)`
+                : isComandaLocked(row.comandaStatus)
+                  ? `${row.nombre} (comandada)`
+                  : row.nombre
+            }
           >
             {rowContent}
           </div>
@@ -638,19 +648,15 @@ export function MostradorCartLineCard({
                   Este ítem no admite comentario.
                 </p>
               ) : (
-                <FieldGroup className="gap-4">
-                  <Field>
-                    <FieldLabel htmlFor={commentFieldId}>Comentario</FieldLabel>
-                    <Textarea
-                      id={commentFieldId}
-                      value={commentDraft}
-                      onChange={(e) => setCommentDraft(e.target.value)}
-                      placeholder="Ej: sin cebolla, bien cocido..."
-                      rows={3}
-                      className="min-h-22 resize-none rounded-xl"
-                    />
-                  </Field>
-                </FieldGroup>
+                <RootsFormTextareaField
+                  id={commentFieldId}
+                  label="Comentario"
+                  value={commentDraft}
+                  onChange={(e) => setCommentDraft(e.target.value)}
+                  placeholder="Ej: sin cebolla, bien cocido..."
+                  rows={3}
+                  textareaClassName="resize-none"
+                />
               )}
             </CheckoutSectionPanel>
 

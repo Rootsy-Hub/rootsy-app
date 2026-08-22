@@ -1,31 +1,17 @@
 "use client"
 
-import type { CashTreasuryAccountOption } from "@/app/[siteId]/[popId]/cash-registers/actions"
+import type {
+  ArcaSalePointOption,
+  CashTreasuryAccountOption,
+} from "@/app/[siteId]/[popId]/cash-registers/actions"
 import {
   RootsFormSelectField,
   RootsFormSelectItem,
 } from "@/components/rootsy-form"
+import { formatArcaPtoVta } from "@/lib/arcaPtoVta"
 import { Banknote, Hash } from "lucide-react"
-import { useMemo } from "react"
 
-export const ARCA_PTO_VTA_UNSET = "__unset__"
-
-export function formatArcaPtoVtaLabel(value: number): string {
-  return String(value).padStart(5, "0")
-}
-
-export function buildArcaPtoVtaOptions(currentRaw: string): number[] {
-  const options = new Set<number>()
-  for (let i = 1; i <= 99; i++) options.add(i)
-  const current = currentRaw.trim()
-  if (current !== "") {
-    const parsed = Number(current)
-    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 99999) {
-      options.add(Math.trunc(parsed))
-    }
-  }
-  return [...options].sort((a, b) => a - b)
-}
+export const CASH_REGISTER_SALE_POINT_NONE = "none"
 
 type TreasurySelectProps = {
   id: string
@@ -68,42 +54,46 @@ export function CashRegisterTreasuryAccountSelect({
   )
 }
 
-type PtoVtaSelectProps = {
+type SalePointSelectProps = {
   id: string
-  label?: string
   value: string
   onValueChange: (value: string) => void
+  salePoints: ArcaSalePointOption[]
   disabled?: boolean
 }
 
-export function CashRegisterArcaPtoVtaSelect({
+export function CashRegisterSalePointSelect({
   id,
-  label = "Punto de venta",
   value,
   onValueChange,
+  salePoints,
   disabled = false,
-}: PtoVtaSelectProps) {
-  const options = useMemo(() => buildArcaPtoVtaOptions(value), [value])
-  const selectValue = value.trim() === "" ? ARCA_PTO_VTA_UNSET : value
+}: SalePointSelectProps) {
+  const hasPoints = salePoints.length > 0
+  const selectValue = value || CASH_REGISTER_SALE_POINT_NONE
 
   return (
     <RootsFormSelectField
-      label={label}
+      label="Punto de venta AFIP"
       id={id}
-      value={selectValue}
-      onValueChange={(next) => {
-        onValueChange(next === ARCA_PTO_VTA_UNSET ? "" : next)
-      }}
-      disabled={disabled}
-      placeholder="Elegí el punto de venta"
+      value={hasPoints ? selectValue : CASH_REGISTER_SALE_POINT_NONE}
+      onValueChange={onValueChange}
+      disabled={disabled || !hasPoints}
+      placeholder={
+        hasPoints
+          ? "Elegí un punto de venta"
+          : "Creá un punto de venta en Facturas"
+      }
+      hint="Se usa al emitir facturas con esta caja."
       prefix={<Hash className="size-4 shrink-0" aria-hidden />}
     >
-      <RootsFormSelectItem value={ARCA_PTO_VTA_UNSET}>
-        Sin configurar
+      <RootsFormSelectItem value={CASH_REGISTER_SALE_POINT_NONE}>
+        Sin punto de venta
       </RootsFormSelectItem>
-      {options.map((pto) => (
-        <RootsFormSelectItem key={pto} value={String(pto)}>
-          {formatArcaPtoVtaLabel(pto)}
+      {salePoints.map((point) => (
+        <RootsFormSelectItem key={point.id} value={point.id}>
+          {formatArcaPtoVta(point.ptoVta)}
+          {point.configured ? "" : " · Pendiente"}
         </RootsFormSelectItem>
       ))}
     </RootsFormSelectField>

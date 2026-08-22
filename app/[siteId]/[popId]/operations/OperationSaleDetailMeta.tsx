@@ -16,10 +16,8 @@ type Props = {
 
 function SaleDetailIdField({ saleId }: { saleId: string }) {
   return (
-    <OperationSaleDetailField label="ID">
-      <span className="break-all text-[11px] leading-snug text-muted-foreground">
-        {saleId}
-      </span>
+    <OperationSaleDetailField label="ID" muted>
+      {saleId}
     </OperationSaleDetailField>
   )
 }
@@ -27,7 +25,7 @@ function SaleDetailIdField({ saleId }: { saleId: string }) {
 export function OperationSaleDetailMeta({ saleId, context, timeZone }: Props) {
   if (context.channel === "table") {
     return (
-      <div className="divide-y divide-border/45">
+      <div className="flex flex-col gap-4">
         <SaleDetailIdField saleId={saleId} />
         {context.tableLabel ? (
           <OperationSaleDetailField label="Mesa">
@@ -76,7 +74,7 @@ export function OperationSaleDetailMeta({ saleId, context, timeZone }: Props) {
 
   if (context.channel === "counter") {
     return (
-      <div className="divide-y divide-border/45">
+      <div className="flex flex-col gap-4">
         <SaleDetailIdField saleId={saleId} />
         {context.counterOrderLabel ? (
           <OperationSaleDetailField label="Pedido">
@@ -143,7 +141,7 @@ export function OperationSaleDetailMeta({ saleId, context, timeZone }: Props) {
   }
 
   return (
-    <div className="divide-y divide-border/45">
+    <div className="flex flex-col gap-4">
       <SaleDetailIdField saleId={saleId} />
       <OperationSaleDetailField label="Hora de la venta">
         {formatOperationDetailTimestamp(context.soldAt, timeZone)}

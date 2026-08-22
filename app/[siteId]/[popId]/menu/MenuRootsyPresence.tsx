@@ -2,6 +2,12 @@
 
 import { fetchMenuRootsyAdvice } from "@/app/[siteId]/[popId]/menu/menuRootsyActions"
 import { MenuRootsySuggestionSheet } from "@/app/[siteId]/[popId]/menu/MenuRootsySuggestionSheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import "@/app/[siteId]/[popId]/menu/menuRootsyPresence.css"
 import {
   menuRootsyPresenceGroundClass,
@@ -21,6 +27,9 @@ import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
+import "@/app/home/homeEter.css"
+import rootsySaludoInicial from "../../../../public/logos/rootsy/rootsy-saludo-inicial.png"
+import rootsySaludo from "../../../../public/logos/rootsy/rootsy-saludo.png"
 
 type Props = {
   sectionKey: MenuSectionKey
@@ -50,6 +59,7 @@ export function MenuRootsyPresence({
   className,
 }: Props) {
   const [open, setOpen] = useState(false)
+  const [mobileAdviceOpen, setMobileAdviceOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [advice, setAdvice] = useState<MenuRootsyAdvice | null>(null)
   const [dataPending, setDataPending] = useState(false)
@@ -77,7 +87,8 @@ export function MenuRootsyPresence({
   }, [rootsyContext, popAccess, rotationToken])
 
   const displayAdvice = advice ?? instantAdvice
-  const loadingAdvice = open && dataPending && !advice
+  const listening = open || mobileAdviceOpen
+  const loadingAdvice = listening && dataPending && !advice
   const catalogSuggestionId = displayAdvice?.catalogSuggestionId ?? null
 
   useEffect(() => {
@@ -103,6 +114,7 @@ export function MenuRootsyPresence({
 
   useEffect(() => {
     setOpen(false)
+    setMobileAdviceOpen(false)
   }, [sectionKey])
 
   useEffect(() => {
@@ -183,24 +195,98 @@ export function MenuRootsyPresence({
           <button
             type="button"
             disabled={disabled}
-            aria-expanded={open}
+            aria-expanded={listening}
             aria-controls={open ? panelId : undefined}
-            aria-label={open ? "Cerrar Rootsy" : "Escuchar a Rootsy"}
-            onClick={() => setOpen((value) => !value)}
+            aria-label={listening ? "Cerrar Rootsy" : "Escuchar a Rootsy"}
+            onClick={() => {
+              if (window.matchMedia("(max-width: 767px)").matches) {
+                setOpen(false)
+                setMobileAdviceOpen(true)
+                return
+              }
+              setOpen((value) => !value)
+            }}
             onMouseDown={(event) => event.preventDefault()}
             className={menuRootsyPresenceTriggerClass}
           >
+            <span className="md:hidden" aria-hidden>
+              <span
+                className={cn(
+                  "home-rootsy-saludo !h-[4.25rem] !w-[4.25rem]",
+                  listening && "is-hello",
+                )}
+              >
+                <img
+                  src={rootsySaludoInicial.src}
+                  alt=""
+                  className="home-rootsy-saludo__idle"
+                />
+                <img
+                  src={rootsySaludo.src}
+                  alt=""
+                  className="home-rootsy-saludo__hello"
+                />
+              </span>
+            </span>
             <Image
-              src={open ? "/images/atento.png" : "/images/contento.png"}
+              src={listening ? "/images/atento.png" : "/images/contento.png"}
               alt=""
               width={176}
               height={176}
-              className={menuRootsyPresenceImageClass}
+              className={cn(menuRootsyPresenceImageClass, "hidden md:block")}
               priority
             />
           </button>
         </div>
       </div>
+
+      <Sheet open={mobileAdviceOpen} onOpenChange={setMobileAdviceOpen}>
+        <SheetContent
+          side="bottom"
+          className={cn(
+            "gap-0 border-t px-4 pt-3 text-white",
+            "rounded-t-[22px] sm:max-w-none",
+            "bg-[linear-gradient(168deg,rgba(4,10,14,0.98)_0%,rgba(2,6,10,0.99)_100%)]",
+            "border-[rgba(228,242,248,0.14)]",
+            "pb-[max(1.25rem,env(safe-area-inset-bottom))]",
+            "[&>button]:hidden",
+          )}
+        >
+          <div
+            aria-hidden
+            className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/22"
+          />
+          <SheetTitle className="sr-only">Rootsy</SheetTitle>
+          <SheetDescription className="sr-only">
+            Sugerencia de Rootsy para este menú
+          </SheetDescription>
+          <div className="px-1 pb-1">
+            {loadingAdvice ? (
+              <p className={menuRootsyPresencePanelVoiceClass}>
+                Preparando una idea para vos…
+              </p>
+            ) : displayAdvice ? (
+              <>
+                <p className={menuRootsyPresencePanelVoiceClass}>
+                  {displayAdvice.lead}
+                </p>
+                {catalogSuggestionId ? (
+                  <button
+                    type="button"
+                    className={menuRootsyPresenceVerMasClass}
+                    onClick={() => {
+                      setMobileAdviceOpen(false)
+                      setSheetOpen(true)
+                    }}
+                  >
+                    Ver más
+                  </button>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <MenuRootsySuggestionSheet
         open={sheetOpen}

@@ -98,10 +98,15 @@ export function SaleOperationPanelTabs<T extends string>({
             role="tab"
             aria-selected={active}
             disabled={disabled}
+            onMouseDown={(event) => {
+              event.preventDefault()
+            }}
             onClick={() => !disabled && onChange(id)}
             className={cn(
               "relative z-10 flex h-full min-w-0 flex-1 items-center justify-center gap-1.5 px-4 text-sm font-semibold leading-none",
               "transition-colors duration-200",
+              "outline-none ring-0",
+              "focus:outline-none focus:ring-0 focus:shadow-none",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset",
               disabled && "cursor-not-allowed opacity-40",
               isOperar

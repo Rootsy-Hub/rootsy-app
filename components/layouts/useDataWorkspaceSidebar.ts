@@ -37,6 +37,17 @@ export function useDataWorkspaceSidebar(
     }
   }, [enabled, open, storageKey])
 
+  useEffect(() => {
+    if (!enabled) return
+    const mq = window.matchMedia("(max-width: 767px)")
+    const closeIfMobile = () => {
+      if (mq.matches) setOpen(false)
+    }
+    closeIfMobile()
+    mq.addEventListener("change", closeIfMobile)
+    return () => mq.removeEventListener("change", closeIfMobile)
+  }, [enabled])
+
   const toggle = useCallback(() => {
     setOpen((prev) => !prev)
   }, [])

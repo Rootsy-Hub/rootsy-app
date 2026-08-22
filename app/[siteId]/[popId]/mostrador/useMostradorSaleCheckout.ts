@@ -1,5 +1,14 @@
 "use client"
 
+import {
+  getPendingComandasForSource,
+  sendComandaBatch,
+} from "@/app/[siteId]/[popId]/comandas/actions"
+import {
+  applyComandaSendToCart,
+  healCartLinesAlreadySent,
+} from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { saveCounterOrderCheckout, closeCounterOrderCheckout } from "@/app/[siteId]/[popId]/mostrador/actions"
 import {
   emptyTableSessionCheckout,
@@ -18,6 +27,7 @@ import {
   type OperationPartyManualConfirmOptions,
   type OperationPartyManualConfirmPayload,
 } from "@/lib/operationPartyPicker"
+import { partyCanOperateOnCurrentAccount } from "@/lib/currentAccounts"
 import {
   generalDiscountToolbarLabel,
   healLegacyLockedGeneralDiscount,
@@ -29,6 +39,7 @@ import {
 } from "@/lib/saleCheckoutPayment"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
+import { getSalePriceListSession } from "@/lib/salePriceListSession"
 import {
   buildMenuProductMap,
   computeMenuQuantityDealApplications,
@@ -49,11 +60,18 @@ import {
   groupMostradorCartDisplayRows,
 } from "@/lib/mostradorCartDisplay"
 import {
+  ensureCartLineComandaStatuses,
+  isComandaLocked,
+  pendingComandaComment,
+  promotionSelectionsAreCommandable,
+} from "@/lib/comandaCartLine"
+import {
   applyTicketLineEdit,
   addProductToTicketCart,
   addPromotionToTicketCart,
   applyPartialPaymentCartMaterialization,
   copyTicketLineOverrides,
+  mapMenuCartToDetallados,
 } from "@/lib/menuSaleTicketCart"
 import {
   ensureCartLineIds,
@@ -65,8 +83,11 @@ import {
   type OperationCartLineOverrideState,
 } from "@/components/sale-operation/OperationCartLineRow"
 import {
+  collectCartCatalogEnsureIds,
   menuArticleToProduct,
   menuRecipeToProduct,
+  resolveMenuCartCatalogProduct,
+  snapshotFromCatalogProduct,
   type MenuCatalogProduct,
 } from "@/lib/menuCatalogProduct"
 import {
@@ -189,6 +210,7 @@ export function useMostradorSaleCheckout(
     openCashSession,
     invoiceTypeSiteId,
     catalogLoading,
+    catalogItemsEnsuring,
     catalogError,
     catalogLoadAttempted,
     mergeCatalogArticles,
@@ -219,6 +241,15 @@ export function useMostradorSaleCheckout(
   const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] =
     useState<SaleCatalogPaymentOption | null>(null)
   const [payOnClientAccount, setPayOnClientAccount] = useState(false)
+
+  useEffect(() => {
+    if (
+      payOnClientAccount &&
+      !partyCanOperateOnCurrentAccount(clienteSeleccionado)
+    ) {
+      setPayOnClientAccount(false)
+    }
+  }, [clienteSeleccionado, payOnClientAccount])
   const [modoDescuento, setModoDescuento] = useState<"porcentaje" | "fijo">("porcentaje")
   const [valorDescuentoPorcentaje, setValorDescuentoPorcentaje] = useState(0)
   const [valorDescuentoFijo, setValorDescuentoFijo] = useState(0)
@@ -230,6 +261,13 @@ export function useMostradorSaleCheckout(
   const [descuentoModalAbierto, setDescuentoModalAbierto] = useState(false)
   const [descartarConfirmOpen, setDescartarConfirmOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [comandasOpen, setComandasOpen] = useState(false)
+  const [pendingComandaItems, setPendingComandaItems] = useState<
+    PendingComandaItem[]
+  >([])
+  const [comandasLoading, setComandasLoading] = useState(false)
+  const [comandasSubmitting, setComandasSubmitting] = useState(false)
+  const [comandasError, setComandasError] = useState<string | null>(null)
   const [partialPayment, setPartialPayment] = useState(false)
   const [partialSelection, setPartialSelection] = useState<PartialPaymentSelection>({})
   const [closeOnComplete, setCloseOnComplete] = useState(true)
@@ -557,15 +595,29 @@ export function useMostradorSaleCheckout(
   )
 
   useEffect(() => {
-    const articleIds: string[] = []
-    const recipeIds: string[] = []
-    for (const item of carrito) {
-      const kind = normalizeCartItemKind(item.kind)
-      if (kind === "recipe") recipeIds.push(item.productoId)
-      else if (kind === "article") articleIds.push(item.productoId)
-    }
+    const { articleIds, recipeIds } = collectCartCatalogEnsureIds(carrito)
     void ensureCatalogItems(articleIds, recipeIds)
   }, [carrito, ensureCatalogItems])
+
+  useEffect(() => {
+    setCarrito((prev) => {
+      let changed = false
+      const next = prev.map((item) => {
+        if (item.snapshot?.nombre.trim()) return item
+        const kind = normalizeCartItemKind(item.kind)
+        const producto = resolveMenuCartCatalogProduct(
+          productosByKey,
+          item.productoId,
+          kind,
+        )
+        if (!producto) return item
+        changed = true
+        return { ...item, snapshot: snapshotFromCatalogProduct(producto) }
+      })
+      return changed ? next : prev
+    })
+    setCarrito((prev) => ensureCartLineComandaStatuses(prev, productosByKey))
+  }, [productosByKey])
 
   const overrideSnapshot = useMemo(
     () => ({
@@ -618,24 +670,7 @@ export function useMostradorSaleCheckout(
 
   const mapCarritoToDetallados = useCallback(
     (source: MesasCartItem[]) =>
-      source
-        .map((i) => {
-          const kind = normalizeCartItemKind(i.kind)
-          const producto =
-            productosByKey.get(`${kind}:${i.productoId}`) ?? null
-          if (kind === "promotion" && !i.promotionSelections?.length) {
-            return null
-          }
-          if (kind !== "promotion" && !producto) return null
-          return {
-            ...i,
-            kind,
-            lineId: resolveCartLineId({ ...i, kind }),
-            cartLineKey: resolveCartLineId({ ...i, kind }),
-            producto,
-          }
-        })
-        .filter((i): i is NonNullable<typeof i> => i != null),
+      mapMenuCartToDetallados(source, productosByKey),
     [productosByKey],
   )
 
@@ -648,6 +683,9 @@ export function useMostradorSaleCheckout(
     () => mapCarritoToDetallados(unpaidCarrito),
     [unpaidCarrito, mapCarritoToDetallados],
   )
+
+  const orderPanelLoading =
+    carrito.length > 0 && (catalogLoading || catalogItemsEnsuring)
 
   const cartDisplayRows = useMemo(
     () =>
@@ -740,6 +778,90 @@ export function useMostradorSaleCheckout(
       !isPaid &&
       !hasAnyPartialPayment({ paidPartialUnits, totalPagadoAcumulado }),
     [hayItemsEnPedido, isPaid, paidPartialUnits, totalPagadoAcumulado],
+  )
+
+  const hayPendingComandas = useMemo(
+    () => carrito.some((item) => item.comandaStatus === "pending"),
+    [carrito],
+  )
+
+  const abrirComandas = useCallback(async () => {
+    if (!popId || !counterOrderId) return
+    setComandasError(null)
+    setPendingComandaItems([])
+    setComandasOpen(true)
+    setComandasLoading(true)
+    await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
+    const res = await getPendingComandasForSource(
+      popId,
+      siteId,
+      "counter",
+      counterOrderId,
+    )
+    setComandasLoading(false)
+    if (!res.success) {
+      setComandasError(res.error)
+      setPendingComandaItems([])
+      return
+    }
+    setPendingComandaItems(
+      res.items.map((item) => ({
+        ...item,
+        comment: pendingComandaComment(
+          item.cartLineId,
+          item.comment,
+          checkoutStateRef.current.itemComentarios,
+        ),
+      })),
+    )
+    setCarrito((prev) =>
+      healCartLinesAlreadySent(
+        prev,
+        res.items.map((item) => item.cartLineId),
+        productosByKey,
+      ),
+    )
+  }, [counterOrderId, flushCheckoutPersist, popId, productosByKey, siteId])
+
+  const enviarComandas = useCallback(
+    async (input: {
+      quantities: Record<string, number>
+      stationComments: Record<string, string>
+    }) => {
+      if (!popId || !counterOrderId) return
+      setComandasSubmitting(true)
+      setComandasError(null)
+      await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
+      const res = await sendComandaBatch(popId, siteId, {
+        sourceKind: "counter",
+        sourceId: counterOrderId,
+        quantities: input.quantities,
+        stationComments: input.stationComments,
+      })
+      setComandasSubmitting(false)
+      if (!res.success) {
+        setComandasError(res.error)
+        return
+      }
+      for (const peel of res.peels) {
+        copyTicketLineOverrides(peel.fromCartLineId, peel.sentCartLineId, {
+          setItemDescuentoModo,
+          setItemDescuentoDraft,
+          setItemDescuentoSuprimido,
+          setItemComentarios,
+        })
+      }
+      setCarrito((prev) =>
+        applyComandaSendToCart(
+          prev,
+          res.sentCartLineIds,
+          res.peels,
+          productosByKey,
+        ),
+      )
+      setComandasOpen(false)
+    },
+    [counterOrderId, flushCheckoutPersist, popId, productosByKey, siteId],
   )
 
   const descuentoGeneralEditBlocked = useMemo(
@@ -864,7 +986,7 @@ export function useMostradorSaleCheckout(
       hayItemsEnPedido &&
       pagoConfigurado &&
       (payOnClientAccount
-        ? Boolean(clienteSeleccionado?.id)
+        ? partyCanOperateOnCurrentAccount(clienteSeleccionado)
         : metodoPagoSeleccionado != null) &&
       canCreateSale &&
       canReadCashRegisters &&
@@ -875,7 +997,7 @@ export function useMostradorSaleCheckout(
       hayItemsEnPedido,
       pagoConfigurado,
       payOnClientAccount,
-      clienteSeleccionado?.id,
+      clienteSeleccionado,
       metodoPagoSeleccionado,
       canCreateSale,
       canReadCashRegisters,
@@ -936,6 +1058,7 @@ export function useMostradorSaleCheckout(
       setVentaEmail(payload.email)
       setVentaIvaCondition(payload.ivaCondition)
       setClienteSeleccionado(buildOperationPartyManualSelection(payload))
+      setPayOnClientAccount(false)
       if (payload.ivaCondition && hasValidPopFiscalCuit) {
         const suggested = suggestSaleComprobanteForClientIva(
           payload.ivaCondition as ClientIvaConditionValue,
@@ -1021,6 +1144,11 @@ export function useMostradorSaleCheckout(
           promotionId,
           selections,
           paidPartialUnits: checkoutStateRef.current.paidPartialUnits ?? {},
+          snapshot: snapshotFromCatalogProduct(product),
+          commandable: promotionSelectionsAreCommandable(
+            selections,
+            productosByKey,
+          ),
         })
         affectedLineId = result.affectedLineId
         for (const copy of result.overrideCopies) {
@@ -1127,6 +1255,7 @@ export function useMostradorSaleCheckout(
         if (
           !target ||
           target.paidLocked ||
+          isComandaLocked(target.comandaStatus) ||
           cartLineHasPaidUnits(lineId, target, paidPartialUnits)
         ) {
           return prev
@@ -1156,6 +1285,7 @@ export function useMostradorSaleCheckout(
         const target = prev.find((i) => resolveCartLineId(i) === lineId)
         if (
           target?.paidLocked ||
+          isComandaLocked(target?.comandaStatus) ||
           (target &&
             cartLineHasPaidUnits(lineId, target, paidPartialUnits))
         ) {
@@ -1340,6 +1470,7 @@ export function useMostradorSaleCheckout(
 
         const res = await completeSale(popId, {
           siteId,
+          priceListId: getSalePriceListSession(popId),
           lines: buildCompleteSaleLinesFromCart({
             carrito: carritoToSell,
             quantityDealApplications:
@@ -1620,8 +1751,10 @@ export function useMostradorSaleCheckout(
 
   return {
     catalogLoading,
+    catalogItemsEnsuring,
     catalogError,
     catalogLoadAttempted,
+    orderPanelLoading,
     mergeCatalogArticles,
     mergeCatalogRecipes,
     openCashSession,
@@ -1728,6 +1861,10 @@ export function useMostradorSaleCheckout(
         setImprimirComprobante(hasConfiguredSaleComprobante(comprobante))
         setConfirmOpen(true)
       },
+      onComandas: () => {
+        void abrirComandas()
+      },
+      comandasDisabled: !hayPendingComandas,
     },
     modals: {
       popId: popId ?? "",
@@ -1753,6 +1890,20 @@ export function useMostradorSaleCheckout(
       setDescartarConfirmOpen,
       confirmOpen,
       setConfirmOpen,
+      comandasOpen,
+      setComandasOpen: (open: boolean) => {
+        setComandasOpen(open)
+        if (!open) {
+          setPendingComandaItems([])
+          setComandasError(null)
+          setComandasLoading(false)
+        }
+      },
+      pendingComandaItems,
+      comandasLoading,
+      comandasSubmitting,
+      comandasError,
+      enviarComandas,
       manualNombreCliente,
       setManualNombreCliente,
       fiscalDocVenta,
@@ -1822,7 +1973,9 @@ export function useMostradorSaleCheckout(
           taxId: c.taxId,
           ivaCondition: c.ivaCondition,
           defaultInvoiceTypeLabel: c.defaultInvoiceTypeLabel,
+          currentAccountEnabled: c.currentAccountEnabled === true,
         })
+        if (!c.currentAccountEnabled) setPayOnClientAccount(false)
         setManualNombreCliente(c.name)
         setFiscalDocVenta(c.taxId ?? "")
         setVentaIvaCondition(c.ivaCondition ?? "")
@@ -1864,6 +2017,7 @@ export function useMostradorSaleCheckout(
       },
       quitarCliente: () => {
         setClienteSeleccionado(null)
+        setPayOnClientAccount(false)
         setManualNombreCliente("")
         setFiscalDocVenta("")
         setVentaEmail("")

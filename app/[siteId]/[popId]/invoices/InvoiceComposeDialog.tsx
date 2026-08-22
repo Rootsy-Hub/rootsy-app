@@ -1,7 +1,7 @@
 "use client"
 
 import { InvoiceComposeFormFields } from "@/app/[siteId]/[popId]/invoices/InvoiceComposeFormFields"
-import type { getInvoiceFormContext } from "@/app/[siteId]/[popId]/invoices/actions"
+import type { InvoiceFormContextResult } from "@/app/[siteId]/[popId]/invoices/actions"
 import type { InvoiceComposeFormState } from "@/app/[siteId]/[popId]/invoices/invoiceComposeFormState"
 import {
   RootsDialogBody,
@@ -11,7 +11,7 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
-import { rootsFormEarthTextSecondaryClass } from "@/components/rootsy-form"
+import { rootsFormBrumaTextSecondaryClass } from "@/components/rootsy-form"
 import { cn } from "@/lib/utils"
 import { Dialog } from "@/components/ui/dialog"
 import {
@@ -24,7 +24,7 @@ import {
   type SetStateAction,
 } from "react"
 
-type FormCtx = Awaited<ReturnType<typeof getInvoiceFormContext>>
+type FormCtx = InvoiceFormContextResult
 
 type FormFieldsProps = {
   idPrefix: string
@@ -50,6 +50,7 @@ type Props = FormFieldsProps & {
   banner?: string | null
   debugFecae?: string | null
   confirmDisabled?: boolean
+  refreshing?: boolean
   onSubmit: FormEventHandler<HTMLFormElement>
   onCancel: () => void
   onAfterClose?: () => void
@@ -62,6 +63,7 @@ export function InvoiceComposeDialog({
   banner,
   debugFecae,
   confirmDisabled = false,
+  refreshing = false,
   onSubmit,
   onCancel,
   onAfterClose,
@@ -98,6 +100,14 @@ export function InvoiceComposeDialog({
           title="Nueva factura ARCA"
           description="Factura B consumidor final. Elegí si emitís con la caja abierta o una prueba en homologación sin guardar."
         />
+        {refreshing ? (
+          <div
+            className="h-0.5 w-full overflow-hidden bg-[color:var(--rootsy-bruma-200)]"
+            aria-hidden
+          >
+            <div className="h-full w-1/3 animate-pulse bg-[color:var(--rootsy-savia-500)]/50" />
+          </div>
+        ) : null}
         <RootsDialogForm onSubmit={onSubmit}>
           <RootsDialogBody>
             {banner ? (
@@ -111,7 +121,7 @@ export function InvoiceComposeDialog({
                 <pre
                   className={cn(
                     "mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-all text-[11px] leading-snug",
-                    rootsFormEarthTextSecondaryClass,
+                    rootsFormBrumaTextSecondaryClass,
                   )}
                 >
                   {debugFecae}

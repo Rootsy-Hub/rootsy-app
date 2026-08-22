@@ -17,4 +17,19 @@ export const menuDormantFirmamentLayerClass = cn(
   "pointer-events-none absolute inset-0 overflow-hidden",
 )
 
+/** Fantasma home — pulso blanco sobre éter, sin contenido inventado. */
+export const menuGhostPulseClass = "animate-pulse bg-white/12"
+
+export const menuGhostBarClass = cn(
+  "block animate-pulse rounded-md bg-white/12",
+)
+
+export const menuGhostCircleClass = cn(
+  "animate-pulse rounded-full bg-white/12 ring-2 ring-white/14",
+)
+
+export const menuGhostTileClass = cn(
+  "animate-pulse bg-white/12 ring-2 ring-white/14",
+)
+
 export { menuAmbientTopGlowClass, menuVignetteClass }

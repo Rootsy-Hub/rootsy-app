@@ -37,6 +37,7 @@ export function MostradorOrderPanel({
     cerrarPedido,
     cerrarPedidoMode,
     puedeRegistrar,
+    orderPanelLoading,
   } = checkout
 
   const confirmLabel =
@@ -56,6 +57,7 @@ export function MostradorOrderPanel({
 
   return (
     <SaleOperationTicketOrderPanel
+      loading={orderPanelLoading}
       cartDisplayRows={cartDisplayRows}
       cartLineOverrides={cartLineOverrides}
       paidPartialUnits={paidPartialUnits}
@@ -84,7 +86,11 @@ export function MostradorOrderPanel({
         totalPagado: totalPagadoAcumulado,
       }}
       listTitle="Pedido"
-      listSubtitle={orderLabel ? `Pedido ${orderLabel}` : undefined}
+      contextLabel={
+        orderLabel
+          ? { caption: "Pedido", value: orderLabel, valueSize: "compact" }
+          : undefined
+      }
       cartScrollHighlight={cartScrollHighlight}
     />
   )

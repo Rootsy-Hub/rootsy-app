@@ -9,6 +9,29 @@ export const ROOTS_SORTABLE_ROW_GAP_PX = 6
 export const ROOTS_SORTABLE_SLOT_SHIFT_PX =
   ROOTS_SORTABLE_ROW_HEIGHT_PX + ROOTS_SORTABLE_ROW_GAP_PX
 
+export const ROOTS_SORTABLE_COMFORTABLE_ROW_HEIGHT_PX = 56
+export const ROOTS_SORTABLE_COMFORTABLE_ROW_GAP_PX = 8
+export const ROOTS_SORTABLE_COMFORTABLE_SLOT_SHIFT_PX =
+  ROOTS_SORTABLE_COMFORTABLE_ROW_HEIGHT_PX +
+  ROOTS_SORTABLE_COMFORTABLE_ROW_GAP_PX
+
+export type RootsSortableRowSize = "default" | "comfortable"
+
+export function rootsSortableRowMetrics(size: RootsSortableRowSize = "default") {
+  if (size === "comfortable") {
+    return {
+      rowHeightPx: ROOTS_SORTABLE_COMFORTABLE_ROW_HEIGHT_PX,
+      rowGapPx: ROOTS_SORTABLE_COMFORTABLE_ROW_GAP_PX,
+      slotShiftPx: ROOTS_SORTABLE_COMFORTABLE_SLOT_SHIFT_PX,
+    }
+  }
+  return {
+    rowHeightPx: ROOTS_SORTABLE_ROW_HEIGHT_PX,
+    rowGapPx: ROOTS_SORTABLE_ROW_GAP_PX,
+    slotShiftPx: ROOTS_SORTABLE_SLOT_SHIFT_PX,
+  }
+}
+
 export const ROOTS_SORTABLE_LAYOUT_TRANSITION =
   "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)"
 
@@ -46,6 +69,8 @@ export const rootsSortableListDragHandleClass = cn(
   "hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
   "active:cursor-grabbing",
   "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+  "disabled:cursor-not-allowed disabled:opacity-40",
+  "disabled:hover:bg-transparent disabled:hover:text-[var(--rootsy-bruma-500)]",
 )
 
 export const rootsSortableListDragHandleIconClass = "text-[var(--rootsy-bruma-500)]"

@@ -15,6 +15,7 @@ import {
   layoutsOperarCatalogRowClass,
   layoutsOperarOperationColumnClass,
   layoutsOperarCatalogGridClass,
+  layoutsOperarCatalogGridStyle,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarOpenClass,
   layoutsOperarCatalogSectionShellClass,
@@ -308,7 +309,7 @@ function LayoutsOperarCatalogArticleCanvas({ children }: { children: React.React
 function LayoutsOperarProductCatalog() {
   return (
     <div className={layoutsOperarCatalogCanvasScrollClass}>
-      <div className={layoutsOperarCatalogGridClass}>
+      <div className={layoutsOperarCatalogGridClass} style={layoutsOperarCatalogGridStyle}>
         {DEMO_PRODUCTS.map((product) => (
           <LayoutsOperarProductCardProposalGrid key={product.id} product={product} />
         ))}

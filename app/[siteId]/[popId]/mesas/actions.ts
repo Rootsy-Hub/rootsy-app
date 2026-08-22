@@ -7,6 +7,7 @@ import {
   type MesaReservationStatus,
   type MesaTableShape,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import { syncComandasFromTableCheckout } from "@/app/[siteId]/[popId]/comandas/syncComandasFromCheckout"
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { readCheckoutFromSessionMetadata, readFloorStatusFromSessionMetadata, floorStatusToSessionMetadataValue, type MesaSessionFloorStatus } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { buildUnpaidCarrito } from "@/lib/partialCheckoutSelection"
@@ -21,7 +22,13 @@ import {
 } from "@/lib/popHelpers"
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
-import { readMesasReservationSettings, type MesasReservationSettings } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
+import {
+  findReservationTableConflict,
+  readMesasReservationSettings,
+  type MesasReservationSettings,
+} from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
+import type { MesaReservation } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import { operationalDayCloseTimeFromSettings } from "@/lib/popOperationalDay"
 import { createClient } from "@/utils/supabase/server"
 
 export type MesasSalonRow = {
@@ -1090,6 +1097,7 @@ export type TableSessionMutationInput = {
   waiterId?: string
   guestCount?: number | null
   note?: string
+  reservationId?: string | null
 }
 
 const TABLE_SESSION_SELECT = `
@@ -1179,6 +1187,79 @@ export async function getOpenTableSessionById(
   }
 }
 
+function friendlyTableSessionError(message: string): string {
+  if (/ya tiene una sesión abierta/i.test(message)) {
+    return "Una de las mesas ya está abierta con otra cuenta. Liberála o sentá sin juntarla."
+  }
+  if (/inválida o inactiva/i.test(message)) {
+    return "Una de las mesas no está disponible."
+  }
+  return message
+}
+
+async function occupiedTablesOpenError(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  tableIds: string[],
+): Promise<string | null> {
+  const { data: sessions, error } = await supabase
+    .from("table_sessions")
+    .select("dining_table_id, table_session_tables ( dining_table_id )")
+    .eq("pop_id", popId)
+    .eq("status", "open")
+
+  if (error) return null
+
+  const occupied = new Set<string>()
+  for (const session of sessions ?? []) {
+    if (typeof session.dining_table_id === "string") {
+      occupied.add(session.dining_table_id)
+    }
+    for (const extra of session.table_session_tables ?? []) {
+      if (typeof extra.dining_table_id === "string") {
+        occupied.add(extra.dining_table_id)
+      }
+    }
+  }
+
+  const hit = tableIds.filter((id) => occupied.has(id))
+  if (hit.length === 0) return null
+
+  const { data: rows } = await supabase
+    .from("dining_tables")
+    .select("id, label")
+    .in("id", hit)
+
+  const labels = (rows ?? [])
+    .map((row) => row.label)
+    .filter(
+      (label): label is string =>
+        typeof label === "string" && label.trim().length > 0,
+    )
+
+  if (labels.length === 1) {
+    return `La mesa ${labels[0]} ya está abierta. Liberála o sentá sin juntarla.`
+  }
+  if (labels.length > 1) {
+    return `Las mesas ${labels.join(", ")} ya están abiertas. Liberálas o sentá sin juntarlas.`
+  }
+  return "Una de las mesas ya está abierta. Liberála o sentá sin juntarla."
+}
+
+async function markReservationSeatedAfterOpen(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  reservationId: string,
+) {
+  if (!reservationId) return
+  await supabase
+    .from("table_reservations")
+    .update({ status: "seated" })
+    .eq("id", reservationId)
+    .eq("pop_id", popId)
+    .in("status", ["pending", "confirmed"])
+}
+
 export async function openTableSession(
   popId: string,
   routeSiteId: string,
@@ -1216,16 +1297,19 @@ export async function openTableSession(
   const { supabase, userId } = gate
   const primaryTableId = tableIds[0]
   const mergedTableIds = tableIds.slice(1)
+  const reservationId = input.reservationId?.trim() ?? ""
 
-  const { error: reservationSeatErr } = await supabase
-    .from("table_reservations")
-    .update({ status: "seated" })
-    .eq("pop_id", popId)
-    .in("dining_table_id", tableIds)
-    .in("status", ["pending", "confirmed"])
+  if (reservationId && !isUuid(reservationId)) {
+    return { success: false, error: "Reserva inválida." }
+  }
 
-  if (reservationSeatErr) {
-    return { success: false, error: reservationSeatErr.message }
+  const occupiedError = await occupiedTablesOpenError(
+    supabase,
+    popId,
+    tableIds,
+  )
+  if (occupiedError) {
+    return { success: false, error: occupiedError }
   }
 
   const { data: inserted, error: insertErr } = await supabase
@@ -1238,6 +1322,7 @@ export async function openTableSession(
       notes: input.note?.trim() ?? "",
       waiter_user_id: waiterId || null,
       opened_by: userId,
+      ...(reservationId ? { metadata: { reservation_id: reservationId } } : {}),
     })
     .select(TABLE_SESSION_SELECT)
     .single()
@@ -1245,7 +1330,9 @@ export async function openTableSession(
   if (insertErr || !inserted) {
     return {
       success: false,
-      error: insertErr?.message || "No se pudo abrir la mesa.",
+      error: friendlyTableSessionError(
+        insertErr?.message || "No se pudo abrir la mesa.",
+      ),
     }
   }
 
@@ -1261,7 +1348,10 @@ export async function openTableSession(
 
     if (mergeErr) {
       await supabase.from("table_sessions").delete().eq("id", sessionId)
-      return { success: false, error: mergeErr.message }
+      return {
+        success: false,
+        error: friendlyTableSessionError(mergeErr.message),
+      }
     }
 
     const { data: refreshed, error: refreshErr } = await supabase
@@ -1271,11 +1361,14 @@ export async function openTableSession(
       .single()
 
     if (refreshErr || !refreshed) {
+      await supabase.from("table_sessions").delete().eq("id", sessionId)
       return {
         success: false,
         error: refreshErr?.message || "No se pudo leer la sesión creada.",
       }
     }
+
+    await markReservationSeatedAfterOpen(supabase, popId, reservationId)
 
     return {
       success: true,
@@ -1284,6 +1377,8 @@ export async function openTableSession(
       ),
     }
   }
+
+  await markReservationSeatedAfterOpen(supabase, popId, reservationId)
 
   return {
     success: true,
@@ -1408,6 +1503,52 @@ export async function updateTableSession(
   }
 }
 
+async function completeReservationsAfterSessionClose(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  session: {
+    dining_table_id?: string | null
+    metadata?: unknown
+    table_session_tables?: { dining_table_id: string }[] | null
+  },
+) {
+  const metadata =
+    session.metadata &&
+    typeof session.metadata === "object" &&
+    !Array.isArray(session.metadata)
+      ? (session.metadata as Record<string, unknown>)
+      : null
+  const linkedId =
+    typeof metadata?.reservation_id === "string" &&
+    isUuid(metadata.reservation_id)
+      ? metadata.reservation_id
+      : null
+
+  if (linkedId) {
+    await supabase
+      .from("table_reservations")
+      .update({ status: "completed" })
+      .eq("id", linkedId)
+      .eq("pop_id", popId)
+      .eq("status", "seated")
+    return
+  }
+
+  const tableIds = [
+    session.dining_table_id,
+    ...(session.table_session_tables ?? []).map((row) => row.dining_table_id),
+  ].filter((id): id is string => Boolean(id) && isUuid(id))
+
+  if (tableIds.length === 0) return
+
+  await supabase
+    .from("table_reservations")
+    .update({ status: "completed" })
+    .eq("pop_id", popId)
+    .in("dining_table_id", tableIds)
+    .eq("status", "seated")
+}
+
 export async function closeTableSession(
   popId: string,
   routeSiteId: string,
@@ -1426,6 +1567,18 @@ export async function closeTableSession(
   }
 
   const { supabase, userId } = gate
+  const { data: openSession, error: openSessionErr } = await supabase
+    .from("table_sessions")
+    .select("id, dining_table_id, metadata, table_session_tables ( dining_table_id )")
+    .eq("id", sessionId)
+    .eq("pop_id", popId)
+    .eq("status", "open")
+    .maybeSingle()
+
+  if (openSessionErr) {
+    return { success: false, error: openSessionErr.message }
+  }
+
   const { data, error } = await supabase
     .from("table_sessions")
     .update({
@@ -1444,6 +1597,14 @@ export async function closeTableSession(
   }
   if (!data) {
     return { success: false, error: "La sesión no está abierta o no existe." }
+  }
+
+  if (openSession) {
+    try {
+      await completeReservationsAfterSessionClose(supabase, popId, openSession)
+    } catch {
+      // La mesa ya se liberó; no frenar el cierre por la reserva.
+    }
   }
 
   return { success: true }
@@ -1485,101 +1646,21 @@ export async function closeTableSessionCheckout(
 
   const checkout = readCheckoutFromSessionMetadata(session.metadata)
   const carrito = checkout?.carrito ?? []
-  const totalPagadoAcumulado = checkout?.totalPagadoAcumulado ?? 0
   const paidPartialUnits = checkout?.paidPartialUnits ?? {}
-  const hasPayment =
-    totalPagadoAcumulado > 0 ||
-    Object.values(paidPartialUnits).some((value) => Number(value) > 0)
   const unpaidCarrito = buildUnpaidCarrito({
     carrito,
     paidPartialUnits,
     quantityDealApplications: [],
   })
-  const hasUnpaidItems = unpaidCarrito.length > 0
 
-  const { count: salesCount, error: salesCountErr } = await supabase
-    .from("sales")
-    .select("id", { count: "exact", head: true })
-    .eq("pop_id", popId)
-    .eq("table_session_id", sessionId)
-    .eq("status", "completed")
-
-  if (salesCountErr) {
-    return { success: false, error: salesCountErr.message }
-  }
-
-  const hasSales = (salesCount ?? 0) > 0
-
-  if (hasUnpaidItems) {
+  if (unpaidCarrito.length > 0) {
     return {
       success: false,
       error: "Hay ítems sin cobrar. Cobrá el pedido antes de liberar la mesa.",
     }
   }
 
-  // Mesa vacía: sin ventas ni cobros registrados en el checkout.
-  if (!hasSales && !hasPayment) {
-    return closeTableSession(popId, routeSiteId, sessionId, "closed")
-  }
-
-  // Hay ventas o cobros: verificar que no quede saldo pendiente.
-  if (hasSales) {
-    const { data: salesRows, error: salesErr } = await supabase
-      .from("sales")
-      .select("metadata")
-      .eq("pop_id", popId)
-      .eq("table_session_id", sessionId)
-      .eq("status", "completed")
-      .order("sold_at", { ascending: false })
-
-    if (salesErr) {
-      return { success: false, error: salesErr.message }
-    }
-
-    let maxOrderTotal = 0
-    let maxPaidAccumulated = 0
-    for (const row of salesRows ?? []) {
-      const metadata =
-        row.metadata &&
-        typeof row.metadata === "object" &&
-        !Array.isArray(row.metadata)
-          ? (row.metadata as Record<string, unknown>)
-          : {}
-      const orderTotal = Number(metadata.channel_order_total)
-      const paidAccumulated = Number(metadata.channel_paid_accumulated)
-      if (Number.isFinite(orderTotal)) {
-        maxOrderTotal = Math.max(maxOrderTotal, orderTotal)
-      }
-      if (Number.isFinite(paidAccumulated)) {
-        maxPaidAccumulated = Math.max(maxPaidAccumulated, paidAccumulated)
-      }
-    }
-
-    const paidFromSalesMetadata =
-      maxOrderTotal <= 0 ||
-      maxPaidAccumulated + 0.009 >= maxOrderTotal
-    const paidFromCheckout =
-      maxOrderTotal > 0 && totalPagadoAcumulado + 0.009 >= maxOrderTotal
-
-    if (maxOrderTotal > 0 && !paidFromSalesMetadata && !paidFromCheckout) {
-      return {
-        success: false,
-        error: "La mesa aún tiene saldo pendiente de cobro.",
-      }
-    }
-
-    return closeTableSession(popId, routeSiteId, sessionId, "closed")
-  }
-
-  // Cobros en checkout sin ventas vinculadas (estado inconsistente): permitir si no hay ítems pendientes.
-  if (hasPayment) {
-    return closeTableSession(popId, routeSiteId, sessionId, "closed")
-  }
-
-  return {
-    success: false,
-    error: "No hay cobros registrados para liberar esta mesa.",
-  }
+  return closeTableSession(popId, routeSiteId, sessionId, "closed")
 }
 
 export async function saveTableSessionCheckout(
@@ -1638,6 +1719,8 @@ export async function saveTableSessionCheckout(
       error: error?.message || "No se pudo guardar el pedido de la mesa.",
     }
   }
+
+  await syncComandasFromTableCheckout(supabase, popId, sessionId, checkout)
 
   return { success: true, updatedAt: data.updated_at as string }
 }
@@ -1714,6 +1797,7 @@ export async function setTableSessionFloorStatus(
 export type MesaReservationRow = {
   id: string
   tableId: string | null
+  tableIds: string[]
   clientId: string | null
   clientName: string
   guestCount: number | null
@@ -1732,7 +1816,8 @@ const TABLE_RESERVATION_SELECT = `
   arrival_at,
   status,
   notes,
-  updated_at
+  updated_at,
+  table_reservation_tables ( dining_table_id )
 `
 
 function parseReservationStatus(raw: unknown): MesaReservationStatus {
@@ -1742,6 +1827,7 @@ function parseReservationStatus(raw: unknown): MesaReservationStatus {
     value === "confirmed" ||
     value === "seated" ||
     value === "completed" ||
+    value === "expired" ||
     value === "no_show" ||
     value === "cancelled"
   ) {
@@ -1760,15 +1846,23 @@ function mapTableReservationRow(row: {
   status: string | null
   notes: string | null
   updated_at: string
+  table_reservation_tables?: { dining_table_id: string }[] | null
 }): MesaReservationRow {
   const guestCount =
     row.guest_count != null && Number.isFinite(row.guest_count)
       ? Math.max(1, Math.min(50, Math.round(row.guest_count)))
       : null
+  const extraIds = (row.table_reservation_tables ?? []).map(
+    (item) => item.dining_table_id,
+  )
+  const tableIds = row.dining_table_id
+    ? normalizeTableSessionTableIds(row.dining_table_id, extraIds)
+    : []
 
   return {
     id: row.id,
     tableId: row.dining_table_id,
+    tableIds,
     clientId: row.client_id,
     clientName: row.client_name?.trim() ?? "",
     guestCount,
@@ -1777,6 +1871,38 @@ function mapTableReservationRow(row: {
     note: row.notes?.trim() ?? "",
     updatedAt: row.updated_at,
   }
+}
+
+async function syncReservationExtraTables(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  reservationId: string,
+  extraTableIds: string[],
+): Promise<string | null> {
+  const { error: deleteErr } = await supabase
+    .from("table_reservation_tables")
+    .delete()
+    .eq("table_reservation_id", reservationId)
+  if (deleteErr) return deleteErr.message
+
+  if (extraTableIds.length === 0) return null
+
+  const { error: insertErr } = await supabase.from("table_reservation_tables").insert(
+    extraTableIds.map((diningTableId) => ({
+      table_reservation_id: reservationId,
+      dining_table_id: diningTableId,
+    })),
+  )
+  return insertErr?.message ?? null
+}
+
+function reservationWriteErrorMessage(
+  message: string | undefined,
+  fallback: string,
+): string {
+  if (message?.includes("table_reservations_table_arrival_idx")) {
+    return "Esa mesa ya tiene una reserva en el mismo horario."
+  }
+  return message || fallback
 }
 
 export async function getTableReservations(
@@ -1825,10 +1951,40 @@ export async function upsertTableReservation(
     return { success: false, error: gate.error, redirect: gate.redirect }
   }
 
-  const tableIdRaw = input.tableId?.trim() ?? ""
+  const requestedTableIds = (input.tableIds ?? []).map((id) => id.trim()).filter(Boolean)
+  const tableIdRaw = requestedTableIds[0] || input.tableId?.trim() || ""
   const tableId = tableIdRaw && isUuid(tableIdRaw) ? tableIdRaw : null
   if (tableIdRaw && !tableId) {
     return { success: false, error: "Mesa inválida." }
+  }
+  const extraTableIds = normalizeTableSessionTableIds(
+    tableId ?? "",
+    requestedTableIds.slice(1),
+  ).filter((id) => id !== tableId)
+  if (extraTableIds.some((id) => !isUuid(id))) {
+    return { success: false, error: "Mesa inválida." }
+  }
+  if (extraTableIds.length > 0 && !tableId) {
+    return { success: false, error: "Elegí una mesa principal para unir las demás." }
+  }
+
+  if (tableId && extraTableIds.length > 0) {
+    const { data: tableRows, error: tableRowsErr } = await gate.supabase
+      .from("dining_tables")
+      .select("id, salon_id")
+      .eq("pop_id", popId)
+      .in("id", [tableId, ...extraTableIds])
+
+    if (tableRowsErr) {
+      return { success: false, error: tableRowsErr.message }
+    }
+    if ((tableRows ?? []).length !== extraTableIds.length + 1) {
+      return { success: false, error: "Alguna mesa no pertenece a este local." }
+    }
+    const salonIds = new Set((tableRows ?? []).map((row) => row.salon_id as string))
+    if (salonIds.size > 1) {
+      return { success: false, error: "Las mesas unidas tienen que ser del mismo salón." }
+    }
   }
 
   const clientId = input.clientId?.trim() ?? ""
@@ -1859,6 +2015,48 @@ export async function upsertTableReservation(
   const status = input.status ? parseReservationStatus(input.status) : "confirmed"
 
   const { supabase } = gate
+
+  const assignedTableIds = tableId ? [tableId, ...extraTableIds] : []
+  if (assignedTableIds.length > 0) {
+    const [{ data: popRow }, { data: existingRows, error: existingRowsErr }] =
+      await Promise.all([
+        supabase.from("pops").select("settings").eq("id", popId).maybeSingle(),
+        supabase
+          .from("table_reservations")
+          .select(TABLE_RESERVATION_SELECT)
+          .eq("pop_id", popId)
+          .in("status", ["pending", "confirmed"]),
+      ])
+
+    if (existingRowsErr) {
+      return { success: false, error: existingRowsErr.message }
+    }
+
+    const popSettings =
+      popRow?.settings && typeof popRow.settings === "object"
+        ? (popRow.settings as Record<string, unknown>)
+        : null
+    const conflict = findReservationTableConflict({
+      tableIds: assignedTableIds,
+      arrivalAt,
+      settings: readMesasReservationSettings(popSettings),
+      reservations: (existingRows ?? []).map((row) =>
+        mapTableReservationRow(
+          row as unknown as Parameters<typeof mapTableReservationRow>[0],
+        ),
+      ) as MesaReservation[],
+      excludeReservationId: reservationId || null,
+    })
+
+    if (conflict) {
+      const name = conflict.reservation.clientName.trim() || "otro cliente"
+      return {
+        success: false,
+        error: `Esa mesa ya está reservada para ${name} en un horario que se pisa.`,
+      }
+    }
+  }
+
   const payload = {
     pop_id: popId,
     dining_table_id: tableId,
@@ -1887,6 +2085,7 @@ export async function upsertTableReservation(
     if (
       existing.status === "seated" ||
       existing.status === "completed" ||
+      existing.status === "expired" ||
       existing.status === "cancelled"
     ) {
       return {
@@ -1906,14 +2105,39 @@ export async function upsertTableReservation(
     if (error || !data) {
       return {
         success: false,
-        error: error?.message || "No se pudo actualizar la reserva.",
+        error: reservationWriteErrorMessage(
+          error?.message,
+          "No se pudo actualizar la reserva.",
+        ),
+      }
+    }
+
+    const extrasErr = await syncReservationExtraTables(
+      supabase,
+      reservationId,
+      extraTableIds,
+    )
+    if (extrasErr) {
+      return { success: false, error: extrasErr }
+    }
+
+    const { data: refreshed, error: refreshErr } = await supabase
+      .from("table_reservations")
+      .select(TABLE_RESERVATION_SELECT)
+      .eq("id", reservationId)
+      .single()
+
+    if (refreshErr || !refreshed) {
+      return {
+        success: false,
+        error: refreshErr?.message || "No se pudo leer la reserva actualizada.",
       }
     }
 
     return {
       success: true,
       reservation: mapTableReservationRow(
-        data as unknown as Parameters<typeof mapTableReservationRow>[0],
+        refreshed as unknown as Parameters<typeof mapTableReservationRow>[0],
       ),
     }
   }
@@ -1927,14 +2151,41 @@ export async function upsertTableReservation(
   if (error || !data) {
     return {
       success: false,
-      error: error?.message || "No se pudo guardar la reserva.",
+      error: reservationWriteErrorMessage(
+        error?.message,
+        "No se pudo guardar la reserva.",
+      ),
+    }
+  }
+
+  const createdId = data.id as string
+  const extrasErr = await syncReservationExtraTables(
+    supabase,
+    createdId,
+    extraTableIds,
+  )
+  if (extrasErr) {
+    await supabase.from("table_reservations").delete().eq("id", createdId)
+    return { success: false, error: extrasErr }
+  }
+
+  const { data: refreshed, error: refreshErr } = await supabase
+    .from("table_reservations")
+    .select(TABLE_RESERVATION_SELECT)
+    .eq("id", createdId)
+    .single()
+
+  if (refreshErr || !refreshed) {
+    return {
+      success: false,
+      error: refreshErr?.message || "No se pudo leer la reserva creada.",
     }
   }
 
   return {
     success: true,
     reservation: mapTableReservationRow(
-      data as unknown as Parameters<typeof mapTableReservationRow>[0],
+      refreshed as unknown as Parameters<typeof mapTableReservationRow>[0],
     ),
   }
 }
@@ -1997,6 +2248,7 @@ export async function updateTableReservationStatus(
     "confirmed",
     "seated",
     "completed",
+    "expired",
     "no_show",
     "cancelled",
   ]
@@ -2032,7 +2284,11 @@ export async function getMesasReservationSettings(
   popId: string,
   routeSiteId: string,
 ): Promise<
-  | { success: true; settings: MesasReservationSettings }
+  | {
+      success: true
+      settings: MesasReservationSettings
+      operationalDayCloseTime: string
+    }
   | { success: false; error: string; redirect?: string }
 > {
   const gate = await requireMesasAccess(popId, routeSiteId, "read")
@@ -2059,6 +2315,7 @@ export async function getMesasReservationSettings(
   return {
     success: true,
     settings: readMesasReservationSettings(popSettings),
+    operationalDayCloseTime: operationalDayCloseTimeFromSettings(popSettings),
   }
 }
 

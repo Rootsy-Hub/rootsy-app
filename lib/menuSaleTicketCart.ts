@@ -11,7 +11,11 @@ import {
   cartDetailItemsFromCarrito,
   countAppliedPromotions,
 } from "@/lib/mostradorCartDisplay"
-import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
+import {
+  resolveMenuCartCatalogProduct,
+  snapshotFromCatalogProduct,
+  type MenuCatalogProduct,
+} from "@/lib/menuCatalogProduct"
 import {
   computeMenuQuantityDealApplications,
   computeMenuQuantityDealDiscounts,
@@ -38,12 +42,34 @@ import {
   type MenuCartItemKind,
 } from "@/lib/menuCart"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
+import { initialComandaStatus, isComandaLocked } from "@/lib/comandaCartLine"
 import {
   cartLineHasPaidUnits,
   materializePaidCartLines,
   type PartialPaymentSelection,
 } from "@/lib/partialCheckoutSelection"
 import type { Dispatch, SetStateAction } from "react"
+
+export function mapMenuCartToDetallados<T extends MenuCartItem>(
+  source: T[],
+  productosByKey: Map<string, MenuCatalogProduct>,
+) {
+  return source.map((item) => {
+    const kind = normalizeCartItemKind(item.kind)
+    return {
+      ...item,
+      kind,
+      lineId: resolveCartLineId({ ...item, kind }),
+      cartLineKey: resolveCartLineId({ ...item, kind }),
+      producto: resolveMenuCartCatalogProduct(
+        productosByKey,
+        item.productoId,
+        kind,
+        item.snapshot,
+      ),
+    }
+  })
+}
 
 export function saleProductToMenuCatalogProduct(
   product: SaleCatalogProduct,
@@ -69,21 +95,10 @@ export function buildTicketCartDisplayRows(input: {
     overrides: input.overrides,
   })
 
-  const itemsDetallados = input.carrito
-    .map((i) => {
-      const kind = normalizeCartItemKind(i.kind)
-      const producto = input.productosByKey.get(`${kind}:${i.productoId}`) ?? null
-      if (kind === "promotion" && !i.promotionSelections?.length) return null
-      if (kind !== "promotion" && !producto) return null
-      return {
-        ...i,
-        kind,
-        lineId: resolveCartLineId({ ...i, kind }),
-        cartLineKey: resolveCartLineId({ ...i, kind }),
-        producto,
-      }
-    })
-    .filter((i): i is NonNullable<typeof i> => i != null)
+  const itemsDetallados = mapMenuCartToDetallados(
+    input.carrito,
+    input.productosByKey,
+  )
 
   const cartDisplayRows = buildMostradorCartDisplayRows({
     items: cartDetailItemsFromCarrito(itemsDetallados),
@@ -157,7 +172,7 @@ export function applyTicketLineEdit(input: {
   const sourceLine = input.carrito.find(
     (item) => resolveCartLineId(item) === input.edit.cartLineId,
   )
-  if (sourceLine?.paidLocked) {
+  if (sourceLine?.paidLocked || isComandaLocked(sourceLine?.comandaStatus)) {
     return
   }
 
@@ -337,6 +352,7 @@ export function addProductToTicketCart(input: {
     const mergeTargetId = resolveCartLineId(mergeTarget)
     const canMerge =
       !mergeTarget.paidLocked &&
+      !isComandaLocked(mergeTarget.comandaStatus) &&
       !cartLineHasPaidUnits(mergeTargetId, mergeTarget, paidPartialUnits)
     if (canMerge) {
       const merged = input.carrito.map((i) =>
@@ -354,11 +370,24 @@ export function addProductToTicketCart(input: {
   if (product?.kind === "article") {
     seedCartLineDefaultDiscount(product, lineId, input.overrideActions)
   }
+  const commandable =
+    kind === "recipe" && Boolean(product?.stationId?.trim())
   return {
     ...materializeTicketCartAfterMutation(
       [
         ...input.carrito,
-        { lineId, productoId: input.productoId, cantidad: quantity, kind },
+        {
+          lineId,
+          productoId: input.productoId,
+          cantidad: quantity,
+          kind,
+          ...(product
+            ? { snapshot: snapshotFromCatalogProduct(product) }
+            : {}),
+          ...(initialComandaStatus(commandable)
+            ? { comandaStatus: initialComandaStatus(commandable) }
+            : {}),
+        },
       ],
       paidPartialUnits,
     ),
@@ -371,10 +400,12 @@ export function addPromotionToTicketCart(input: {
   promotionId: string
   selections: PromotionCartSelection[]
   paidPartialUnits?: Record<string, number>
+  snapshot?: MenuCartItem["snapshot"]
+  commandable?: boolean
 }): TicketCartMutationResult {
   const paidPartialUnits = input.paidPartialUnits ?? {}
   const existe = input.carrito.find((i) => {
-    if (i.paidLocked) return false
+    if (i.paidLocked || isComandaLocked(i.comandaStatus)) return false
     if (cartLineHasPaidUnits(resolveCartLineId(i), i, paidPartialUnits)) {
       return false
     }
@@ -403,6 +434,10 @@ export function addPromotionToTicketCart(input: {
           cantidad: 1,
           kind: "promotion" as const,
           promotionSelections: input.selections,
+          ...(input.snapshot ? { snapshot: input.snapshot } : {}),
+          ...(initialComandaStatus(input.commandable === true)
+            ? { comandaStatus: initialComandaStatus(true) }
+            : {}),
         },
       ],
       paidPartialUnits,

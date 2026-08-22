@@ -3,6 +3,7 @@
 import { useEffect, type ComponentType } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { resolveAuthNextFromSearch } from "@/lib/authCallbackRedirect"
 import { signupContinueHref } from "@/lib/signupIntent"
 import { Spinner } from "@/components/ui/spinner"
 
@@ -14,7 +15,9 @@ export function withGuestAuth<P extends object>(Component: ComponentType<P>) {
 
     useEffect(() => {
       if (loading || !user) return
-      router.replace(signupContinueHref(searchParams))
+      router.replace(
+        resolveAuthNextFromSearch(searchParams, signupContinueHref(searchParams)),
+      )
     }, [user, loading, router, searchParams])
 
     if (loading) {

@@ -9,6 +9,7 @@ import { validatePopAccess } from "@/lib/popHelpers"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
+import { loadPriceListOverrideMap } from "@/app/[siteId]/[popId]/articles/priceListActions"
 import {
   mapSaleCatalogArticleRow,
   SALE_CATALOG_ARTICLE_SELECT,
@@ -66,6 +67,7 @@ export type SaleCatalogClient = {
   taxId: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
+  currentAccountEnabled?: boolean
 }
 
 export type SaleCatalogPaymentMethod = SaleCatalogPaymentOption
@@ -328,9 +330,17 @@ export async function getSaleCatalogItemsPage(
 
     const rows = (data ?? []) as Record<string, unknown>[]
     const hasMore = rows.length > OPERATE_CATALOG_PAGE_SIZE
-    const items = rows
-      .slice(0, OPERATE_CATALOG_PAGE_SIZE)
-      .map(mapSaleCatalogArticleRow)
+    const pageRows = rows.slice(0, OPERATE_CATALOG_PAGE_SIZE)
+    const overrides = await loadPriceListOverrideMap(
+      supabase,
+      popId,
+      filter.priceListId,
+      "article",
+      pageRows.map((row) => String(row.id)),
+    )
+    const items = pageRows.map((row) =>
+      mapSaleCatalogArticleRow(row, overrides.get(String(row.id))),
+    )
     return {
       success: true,
       page: {
@@ -344,9 +354,28 @@ export async function getSaleCatalogItemsPage(
   }
 }
 
+async function mapSaleArticlesWithPriceList(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  priceListId: string | undefined,
+  rows: Record<string, unknown>[],
+) {
+  const overrides = await loadPriceListOverrideMap(
+    supabase,
+    popId,
+    priceListId,
+    "article",
+    rows.map((row) => String(row.id)),
+  )
+  return rows.map((row) =>
+    mapSaleCatalogArticleRow(row, overrides.get(String(row.id))),
+  )
+}
+
 export async function getSaleCatalogArticlesByIds(
   popId: string,
   ids: string[],
+  priceListId?: string,
 ): Promise<
   | { success: true; articles: SaleCatalogArticle[] }
   | { success: false; error: string }
@@ -364,10 +393,14 @@ export async function getSaleCatalogArticlesByIds(
       .eq("is_active", true)
       .in("id", unique)
     if (error) return { success: false, error: error.message }
+    const rows = (data ?? []) as Record<string, unknown>[]
     return {
       success: true,
-      articles: ((data ?? []) as Record<string, unknown>[]).map(
-        mapSaleCatalogArticleRow,
+      articles: await mapSaleArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        rows,
       ),
     }
   } catch (e: unknown) {
@@ -379,6 +412,7 @@ export async function getSaleCatalogArticlesByIds(
 export async function findSaleCatalogArticleByScan(
   popId: string,
   rawQuery: string,
+  priceListId?: string,
 ): Promise<
   | { success: true; article: SaleCatalogArticle | null }
   | { success: false; error: string }
@@ -412,11 +446,15 @@ export async function findSaleCatalogArticleByScan(
       return { success: false, error: barcodeError.message }
     }
     if ((barcodeRows ?? []).length === 1) {
+      const [article] = await mapSaleArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        [barcodeRows![0] as Record<string, unknown>],
+      )
       return {
         success: true,
-        article: mapSaleCatalogArticleRow(
-          barcodeRows![0] as Record<string, unknown>,
-        ),
+        article: article ?? null,
       }
     }
     if ((barcodeRows ?? []).length > 1) {
@@ -434,11 +472,15 @@ export async function findSaleCatalogArticleByScan(
       return { success: false, error: nameError.message }
     }
     if ((nameRows ?? []).length === 1) {
+      const [article] = await mapSaleArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        [nameRows![0] as Record<string, unknown>],
+      )
       return {
         success: true,
-        article: mapSaleCatalogArticleRow(
-          nameRows![0] as Record<string, unknown>,
-        ),
+        article: article ?? null,
       }
     }
     return { success: true, article: null }

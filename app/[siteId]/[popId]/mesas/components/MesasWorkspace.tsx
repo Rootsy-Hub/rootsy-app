@@ -5,6 +5,7 @@ import { MesasCatalogPanel } from "@/app/[siteId]/[popId]/mesas/components/Mesas
 import { MesasCheckoutModals } from "@/app/[siteId]/[popId]/mesas/components/MesasCheckoutModals"
 import { MesaSessionPanel } from "@/app/[siteId]/[popId]/mesas/components/MesaSessionPanel"
 import { MesasFloorPlan } from "@/app/[siteId]/[popId]/mesas/components/MesasFloorPlan"
+import { MesasTablePickerList } from "@/app/[siteId]/[popId]/mesas/components/MesasTablePickerList"
 import { MesasOrderPanel } from "@/app/[siteId]/[popId]/mesas/components/MesasOrderPanel"
 import { MesasRightPanelTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasRightPanelTabs"
 import { MesasSalonTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasSalonTabs"
@@ -22,10 +23,11 @@ import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleC
 import { useMesasState } from "@/app/[siteId]/[popId]/mesas/useMesasState"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import { useOperarMobileStage } from "@/components/layouts-module/OperarMobileStage"
 import {
   layoutsOperarCatalogColumnClass,
   layoutsOperarCatalogCanvasClass,
-  layoutsOperarSummaryPanelClass,
+  layoutsOperarSummaryPanelTabsClass,
   layoutsOperarSummaryPanelInnerGridClass,
   layoutsOperarSummaryPanelTabBodyClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
@@ -37,7 +39,10 @@ import {
   mesasRealtimeBannerClass,
 } from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
-import { MesasFloorPlanSkeleton } from "@/components/sale-operation/OperarChannelCanvasSkeletons"
+import {
+  MesasFloorPlanSkeleton,
+  MesasTablePickerListSkeleton,
+} from "@/components/sale-operation/OperarChannelCanvasSkeletons"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
@@ -49,6 +54,7 @@ type Props = {
   siteId: string
   popId: string
   catalogSidebarOpen: boolean
+  onCatalogSidebarOpenChange?: (open: boolean) => void
   canUpdateLayout: boolean
   onRegisterReload?: (reload: () => Promise<void>) => void
   onRegisterLayoutData?: (getter: () => MesasLayoutData | null) => void
@@ -66,15 +72,18 @@ export function MesasWorkspace({
   siteId,
   popId,
   catalogSidebarOpen,
+  onCatalogSidebarOpenChange,
   canUpdateLayout,
   onRegisterReload,
   onRegisterLayoutData,
 }: Props) {
   const { bootstrap } = usePopWorkspace()
-  const canReadClients = useMemo(
-    () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canRead,
+  const clientsAccess = useMemo(
+    () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []),
     [bootstrap?.permissionKeys],
   )
+  const canReadClients = clientsAccess.canRead
+  const canCreateClient = clientsAccess.canCreate
 
   const {
     salons,
@@ -91,6 +100,7 @@ export function MesasWorkspace({
     selectedTableReservationWarning,
     reservationSettings,
     saveReservationSettings,
+    reservations,
     todayAgenda,
     salonTables,
     salonDecors,
@@ -111,15 +121,21 @@ export function MesasWorkspace({
     openSession,
     updateSession,
     reloadSessions,
+    reloadReservations,
     setSessionFloorStatus,
     saveReservation,
     removeReservation,
     markReservationNoShow,
     checkInReservation,
     freeTablesInSalon,
+    removeSession,
   } = useMesasState(popId, siteId)
 
+  const mobileStage = useOperarMobileStage()
   const [rightView, setRightView] = useState<MesasRightPanelView>("session")
+  const [agendaReservationId, setAgendaReservationId] = useState<string | null>(
+    null,
+  )
   const [waiters, setWaiters] = useState<MesaWaiter[]>([])
   const showCatalog = rightView === "cart"
   const cartScrollHighlight = useCartListScrollHighlight()
@@ -140,8 +156,9 @@ export function MesasWorkspace({
   )
 
   const handleSessionClose = useCallback(async () => {
-    await reloadSessions()
-  }, [reloadSessions])
+    if (selectedSession?.id) removeSession(selectedSession.id)
+    void Promise.all([reloadSessions(), reloadReservations()])
+  }, [reloadSessions, reloadReservations, removeSession, selectedSession?.id])
 
   const handleCartLineAdded = useCallback(
     (lineId: string) => {
@@ -231,6 +248,23 @@ export function MesasWorkspace({
     return out
   }, [tables, sessions])
 
+  const tableReservationArrivalAt = useMemo(() => {
+    const arrivalByReservation = Object.fromEntries(
+      reservations.map((reservation) => [reservation.id, reservation.arrivalAt]),
+    )
+    const out: Record<string, string> = {}
+    for (const table of tables) {
+      if (
+        table.status === "reserved" &&
+        table.reservationId &&
+        arrivalByReservation[table.reservationId]
+      ) {
+        out[table.id] = arrivalByReservation[table.reservationId]
+      }
+    }
+    return out
+  }, [tables, reservations])
+
   const sessionTables = useMemo(() => {
     if (!selectedSession) return selectedTable ? [selectedTable] : []
     return tables.filter((t) => selectedSession.tableIds.includes(t.id))
@@ -239,14 +273,32 @@ export function MesasWorkspace({
   const mergeCandidates = useMemo(() => {
     if (!selectedTable) return []
     const free = freeTablesInSalon(selectedTable.salonId, [selectedTable.id])
-    if (!selectedSession) return free
-    const sessionOthers = tables.filter(
-      (t) =>
-        selectedSession.tableIds.includes(t.id) && t.id !== selectedTable.id,
-    )
+    const reservedOthers =
+      selectedReservation && selectedTable.status === "reserved"
+        ? tables.filter(
+            (t) =>
+              selectedReservation.tableIds.includes(t.id) &&
+              t.id !== selectedTable.id &&
+              t.status !== "open" &&
+              t.status !== "paying",
+          )
+        : []
+    if (!selectedSession && reservedOthers.length === 0) return free
+    const sessionOthers = selectedSession
+      ? tables.filter(
+          (t) =>
+            selectedSession.tableIds.includes(t.id) && t.id !== selectedTable.id,
+        )
+      : reservedOthers
     const seen = new Set(sessionOthers.map((t) => t.id))
     return [...sessionOthers, ...free.filter((t) => !seen.has(t.id))]
-  }, [selectedTable, selectedSession, tables, freeTablesInSalon])
+  }, [
+    selectedTable,
+    selectedSession,
+    selectedReservation,
+    tables,
+    freeTablesInSalon,
+  ])
 
   const mesaLabel = sessionTitle(
     selectedTable?.label ?? null,
@@ -254,8 +306,9 @@ export function MesasWorkspace({
   )
 
   const handleSelectAgendaReservation = useCallback((reservation: MesaReservation) => {
-    if (reservation.tableId) {
-      selectTable(reservation.tableId)
+    const tableId = reservation.tableIds[0] ?? reservation.tableId
+    if (tableId) {
+      selectTable(tableId)
     }
   }, [selectTable])
 
@@ -285,7 +338,14 @@ export function MesasWorkspace({
       table.sessionId != null &&
       (table.status === "open" || table.status === "paying")
     setRightView(isOpen ? "cart" : "session")
+    mobileStage?.setStage("ticket")
   }
+
+  useEffect(() => {
+    if (mobileStage?.stage === "catalog") {
+      setRightView("cart")
+    }
+  }, [mobileStage?.stage])
 
   const handleMoveTable = useCallback(
     (tableId: string, dx: number, dy: number) => {
@@ -321,6 +381,104 @@ export function MesasWorkspace({
     ],
   )
 
+  const floorCanvas = (
+    <section className={cn(layoutsOperarCatalogColumnClass, "flex-col")}>
+      <div className={layoutsOperarCatalogCanvasClass}>
+        <MesasSalonTabs
+          salons={salons}
+          activeSalonId={activeSalonId}
+          onChange={setActiveSalonId}
+          tableCounts={tableCounts}
+          loading={floorLoading}
+        />
+        <div className="row-start-2 flex h-full min-h-0 flex-col overflow-hidden">
+          {layoutError ? (
+            <div className={mesasLayoutErrorBannerClass}>{layoutError}</div>
+          ) : null}
+          {floorLoading ? (
+            <MesasFloorPlanSkeleton />
+          ) : salons.length === 0 ? (
+            <div className={cn("flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center text-sm", mesasFloorEmptyTextClass)}>
+              <p>Todavía no hay salones configurados.</p>
+              {canUpdateLayout ? (
+                <p className={mesasFloorEmptyHintClass}>
+                  Usá el botón <strong className={mesasFloorEmptyStrongClass}>Salones</strong>{" "}
+                  arriba a la derecha para empezar.
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <MesasFloorPlan
+              tables={salonTables}
+              decors={salonDecors}
+              selectedTableIds={selectedTableIds}
+              layoutEditMode={layoutEditMode}
+              layoutSelection={layoutSelection}
+              canEditLayout={canUpdateLayout}
+              onToggleLayoutEdit={() => setLayoutEditMode((v) => !v)}
+              onSelectTable={handleSelectTable}
+              onSelectLayoutItem={selectLayoutItem}
+              onRotateLayoutItem={rotateLayoutItem}
+              onMoveTable={handleMoveTable}
+              onMoveDecor={handleMoveDecor}
+              tableOpenedAt={tableOpenedAt}
+              tableReservationArrivalAt={tableReservationArrivalAt}
+              reservationSettings={reservationSettings}
+            />
+          )}
+        </div>
+      </div>
+    </section>
+  )
+
+  const mobileFloorCanvas = (
+    <section className={cn(layoutsOperarCatalogColumnClass, "flex-col")}>
+      <div
+        className={cn(
+          layoutsOperarCatalogCanvasClass,
+          "[grid-template-rows:minmax(0,1fr)]",
+        )}
+      >
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
+          {layoutError ? (
+            <div className={mesasLayoutErrorBannerClass}>{layoutError}</div>
+          ) : null}
+          {floorLoading ? (
+            <MesasTablePickerListSkeleton />
+          ) : salons.length === 0 ? (
+            <div className={cn("flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center text-sm", mesasFloorEmptyTextClass)}>
+              <p>Todavía no hay salones configurados.</p>
+              {canUpdateLayout ? (
+                <p className={mesasFloorEmptyHintClass}>
+                  Usá el botón <strong className={mesasFloorEmptyStrongClass}>Salones</strong>{" "}
+                  arriba a la derecha para empezar.
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <MesasTablePickerList
+              heading="Mesas"
+              tables={tables}
+              salons={salons}
+              selectedTableId={selectedTableId}
+              onSelect={handleSelectTable}
+            />
+          )}
+        </div>
+      </div>
+    </section>
+  )
+
+  const catalogPanel = (
+    <MesasCatalogPanel
+      siteId={siteId}
+      popId={popId}
+      checkout={checkout}
+      catalogSidebarOpen={catalogSidebarOpen}
+      onCatalogSidebarOpenChange={onCatalogSidebarOpenChange}
+    />
+  )
+
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
       <OperationsModuleBackdrop />
@@ -339,76 +497,24 @@ export function MesasWorkspace({
       ) : null}
 
       <LayoutsOperarMainGrid
-        catalog={
-          !showCatalog ? (
-            <section className={cn(layoutsOperarCatalogColumnClass, "flex-col")}>
-              <div className={layoutsOperarCatalogCanvasClass}>
-                <MesasSalonTabs
-                  salons={salons}
-                  activeSalonId={activeSalonId}
-                  onChange={setActiveSalonId}
-                  tableCounts={tableCounts}
-                  loading={floorLoading}
-                />
-                <div className="row-start-2 flex h-full min-h-0 flex-col overflow-hidden">
-                  {layoutError ? (
-                    <div className={mesasLayoutErrorBannerClass}>{layoutError}</div>
-                  ) : null}
-                  {floorLoading ? (
-                    <MesasFloorPlanSkeleton />
-                  ) : salons.length === 0 ? (
-                    <div className={cn("flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center text-sm", mesasFloorEmptyTextClass)}>
-                      <p>Todavía no hay salones configurados.</p>
-                      {canUpdateLayout ? (
-                        <p className={mesasFloorEmptyHintClass}>
-                          Usá el botón <strong className={mesasFloorEmptyStrongClass}>Salones</strong>{" "}
-                          arriba a la derecha para empezar.
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <MesasFloorPlan
-                      tables={salonTables}
-                      decors={salonDecors}
-                      selectedTableIds={selectedTableIds}
-                      layoutEditMode={layoutEditMode}
-                      layoutSelection={layoutSelection}
-                      canEditLayout={canUpdateLayout}
-                      onToggleLayoutEdit={() => setLayoutEditMode((v) => !v)}
-                      onSelectTable={handleSelectTable}
-                      onSelectLayoutItem={selectLayoutItem}
-                      onRotateLayoutItem={rotateLayoutItem}
-                      onMoveTable={handleMoveTable}
-                      onMoveDecor={handleMoveDecor}
-                      tableOpenedAt={tableOpenedAt}
-                    />
-                  )}
-                </div>
-              </div>
-            </section>
-          ) : (
-            <MesasCatalogPanel
-              siteId={siteId}
-              popId={popId}
-              checkout={checkout}
-              catalogSidebarOpen={catalogSidebarOpen}
-            />
-          )
-        }
-        toolbox={
-          showCatalog ? <SaleOperationToolbox {...checkout.toolbox} /> : null
-        }
+        mobileHomeLabel="Mesas"
+        mobileHome={mobileFloorCanvas}
+        mobileCatalog={catalogPanel}
+        mobileCatalogDisabled={!selectedSession}
+        catalog={!showCatalog ? floorCanvas : catalogPanel}
+        toolbox={<SaleOperationToolbox {...checkout.toolbox} />}
+        desktopToolbox={showCatalog}
         ticket={
           <aside
-            className={cn(
-              layoutsOperarSummaryPanelClass,
-              "[grid-template-rows:auto_minmax(0,1fr)]",
-            )}
+            className={layoutsOperarSummaryPanelTabsClass}
             aria-label="Panel de mesa y pedido"
           >
             <MesasRightPanelTabs
               value={rightView}
-              onChange={setRightView}
+              onChange={(view) => {
+                if (view !== "agenda") setAgendaReservationId(null)
+                setRightView(view)
+              }}
               pedidoDisabled={!selectedSession}
             />
 
@@ -422,9 +528,10 @@ export function MesasWorkspace({
                   }
                   reservationWarning={selectedTableReservationWarning}
                   sessionTables={sessionTables}
+                  tables={tables}
                   waiters={waiters}
                   mergeCandidates={mergeCandidates}
-                  sessionError={sessionError ?? checkout.submitError}
+                  sessionError={sessionError}
                   onOpenSession={handleOpenSession}
                   onUpdateSession={updateSession}
                   onCloseSession={() => checkout.cerrarMesa()}
@@ -437,16 +544,23 @@ export function MesasWorkspace({
                   closeSessionBlockReason={checkout.cerrarMesaBlockReason}
                   closeSessionMode={checkout.cerrarMesaMode}
                   closeSessionLoading={checkout.submitting}
+                  closeSessionError={checkout.submitError}
                   clientLabel={checkout.sessionClientLabel}
+                  onOpenReservationDetail={(reservation) => {
+                    setAgendaReservationId(reservation.id)
+                    setRightView("agenda")
+                  }}
                 />
               </div>
             ) : rightView === "agenda" ? (
               <div className={layoutsOperarSummaryPanelTabBodyClass}>
                 <MesaAgendaPanel
                   agenda={todayAgenda}
+                  reservations={reservations}
                   tables={tables}
                   popId={popId}
                   canReadClients={canReadClients}
+                  canCreateClient={canCreateClient}
                   reservationSettings={reservationSettings}
                   onSaveReservationSettings={saveReservationSettings}
                   waiters={waiters}
@@ -459,24 +573,22 @@ export function MesasWorkspace({
                     return checkInReservation(reservation, input)
                   }}
                   onSelectReservation={handleSelectAgendaReservation}
+                  openReservationId={agendaReservationId}
                 />
               </div>
             ) : (
-              <div className={layoutsOperarSummaryPanelTabBodyClass}>
-                {checkout.submitError ? (
-                  <div className="shrink-0 px-3 pt-3 sm:px-3.5">
-                    <p className="rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
-                      {checkout.submitError}
-                    </p>
-                  </div>
-                ) : null}
-                <div className={cn(layoutsOperarSummaryPanelInnerGridClass, "min-h-0 flex-1")}>
-                  <MesasOrderPanel
-                    checkout={checkout}
-                    tableLabel={mesaLabel}
-                    cartScrollHighlight={cartScrollHighlight}
-                  />
-                </div>
+              <div
+                className={cn(
+                  layoutsOperarSummaryPanelTabBodyClass,
+                  layoutsOperarSummaryPanelInnerGridClass,
+                  "max-md:[grid-template-rows:minmax(0,1fr)]",
+                )}
+              >
+                <MesasOrderPanel
+                  checkout={checkout}
+                  tableLabel={mesaLabel}
+                  cartScrollHighlight={cartScrollHighlight}
+                />
               </div>
             )}
           </aside>

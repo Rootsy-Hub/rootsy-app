@@ -1,6 +1,6 @@
 "use server"
 
-import { getAccountingIncomeStatement } from "@/app/[siteId]/[popId]/accounting/actions"
+import { getAccountingIncomeStatement } from "@/app/[siteId]/[popId]/reports/accountingActions"
 import {
   getOperationsList,
   type OperationExpenseLedgerRow,

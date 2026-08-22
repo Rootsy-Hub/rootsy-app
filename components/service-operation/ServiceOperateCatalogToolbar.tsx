@@ -29,7 +29,7 @@ export function ServiceOperateCatalogToolbar({
 }: Props) {
   return (
     <div className={cn(layoutsOperarCatalogToolbarClass, className)}>
-      <div className={layoutsOperarCatalogToolbarViewToggleShellClass}>
+      <div className={cn(layoutsOperarCatalogToolbarViewToggleShellClass, "max-md:hidden")}>
         <button
           type="button"
           onClick={() => onModoVistaChange("grid")}

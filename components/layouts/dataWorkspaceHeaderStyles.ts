@@ -37,11 +37,11 @@ export const nightForestIconButtonStarSkinClass = rootsIconButtonNightChromeClas
 /** Focus en iconos nocturnos — halo lunar, no emerald duro. */
 export const nightForestIconButtonFocusRingClass =
   rootsIconButtonNightFocusRingClass
-export const nightForestBorderClass = "border-[#263530]/90"
-export const nightForestDividerClass = "bg-[#263530]/80"
-export const nightForestMutedTextClass = "text-[#78716c]"
+export const nightForestBorderClass = "border-[color:var(--rootsy-sombra-600)]/90"
+export const nightForestDividerClass = "bg-[color:var(--rootsy-sombra-600)]/80"
+export const nightForestMutedTextClass = "text-[color:var(--rootsy-bruma-500)]"
 export const nightForestFocusRingClass =
-  "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/25"
+  "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--rootsy-savia-400)]/25"
 
 /** Header oscuro operativo — bosque nocturno (`dark` y `night` son equivalentes). */
 export function isNightForestHeader(
@@ -96,7 +96,7 @@ function dataWorkspaceHeaderButtonOpenClass(
   }
   if (isNightForestHeader(headerVariant)) {
     return cn(
-      "data-[state=open]:border-[#33443d] data-[state=open]:bg-[#1c2824] data-[state=open]:text-[#e7e5e4]",
+      "data-[state=open]:border-[color:var(--rootsy-sombra-500)] data-[state=open]:bg-[color:var(--rootsy-sombra-700)] data-[state=open]:text-[color:var(--rootsy-bruma-200)]",
       "data-[state=open]:ring-0 data-[state=open]:outline-none",
       nightForestFocusRingClass,
     )
@@ -175,12 +175,19 @@ export function dataWorkspaceHeaderIconButtonClass(
   )
 }
 
+const dataWorkspaceSectionMenuTriggerLayoutClass = cn(
+  "group inline-flex h-10 w-10 shrink-0 items-center justify-center gap-0 rounded-xl border px-0 text-sm font-semibold transition-all",
+  "md:h-10 md:w-auto md:max-w-[min(100%,13rem)] md:justify-start md:gap-2 md:px-2.5",
+  "[&>span]:sr-only md:[&>span]:not-sr-only md:[&>span]:min-w-0 md:[&>span]:truncate",
+  "[&>svg:last-child]:hidden md:[&>svg:last-child]:block",
+)
+
 export function dataWorkspaceSectionMenuTriggerClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
   if (isLayoutsTablesHeader(headerVariant)) {
     return cn(
-      "group inline-flex h-10 w-auto max-w-[min(100%,13rem)] shrink-0 items-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition-all",
+      dataWorkspaceSectionMenuTriggerLayoutClass,
       dataWorkspaceHeaderButtonFocusClass,
       "border-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-savia-600))]",
       "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,transparent)] text-[var(--rootsy-savia-300)]",
@@ -195,19 +202,23 @@ export function dataWorkspaceSectionMenuTriggerClass(
   }
   if (isNightForestHeader(headerVariant)) {
     return cn(
-      "group inline-flex h-10 w-auto max-w-[min(100%,13rem)] shrink-0 items-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition-all",
+      dataWorkspaceSectionMenuTriggerLayoutClass,
       dataWorkspaceHeaderButtonFocusClass,
-      "border-emerald-500/35 bg-emerald-500/10 text-emerald-100",
-      "shadow-[inset_0_1px_0_rgba(168,235,196,0.08)]",
-      "hover:border-emerald-400/50 hover:bg-emerald-500/16 hover:text-white",
-      "data-[state=open]:border-emerald-400/55 data-[state=open]:bg-emerald-500/18 data-[state=open]:text-white",
+      "border-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-savia-600))]",
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,transparent)] text-[var(--rootsy-savia-300)]",
+      "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-300)_10%,transparent)]",
+      "hover:border-[color-mix(in_srgb,var(--rootsy-white)_16%,var(--rootsy-savia-500))]",
+      "hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,transparent)] hover:text-white",
+      "data-[state=open]:border-[color-mix(in_srgb,var(--rootsy-white)_18%,var(--rootsy-savia-500))]",
+      "data-[state=open]:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_22%,transparent)] data-[state=open]:text-white",
       "data-[state=open]:ring-0 data-[state=open]:outline-none",
-      "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/30",
-      "[&_svg]:text-emerald-300/95",
+      "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-savia-400)_8%)]",
+      "[&_svg]:text-[var(--rootsy-savia-400)]",
     )
   }
   return cn(
-    "group inline-flex h-10 w-auto max-w-[min(100%,11rem)] shrink-0 items-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition-all",
+    dataWorkspaceSectionMenuTriggerLayoutClass,
+    "md:max-w-[min(100%,11rem)]",
     dataWorkspaceHeaderButtonFocusClass,
     "border-primary/30 bg-primary/10 text-foreground",
     "hover:border-primary/40 hover:bg-primary/14",
@@ -401,9 +412,9 @@ export function dataWorkspaceHeaderEdgeToggleClass(
   }
   if (isNightForestHeader(headerVariant)) {
     return cn(
-      "border-white/8 bg-[#141c19] text-[#78716c]",
+      "border-white/8 bg-[color:var(--rootsy-sombra-800)] text-[color:var(--rootsy-bruma-500)]",
       nightForestPanelHoverClass,
-      "hover:text-[#d6d3d1]",
+      "hover:text-[color:var(--rootsy-bruma-300)]",
     )
   }
   return "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"

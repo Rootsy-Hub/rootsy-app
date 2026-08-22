@@ -2,6 +2,9 @@
  * Primitivos de color Rootsy — :root global.
  * Fuente CSS espejo de lib/design-system/tokens/colors.ts
  * Tres familias: sombra · bruma · savia
+ * Suelo = chrome de piso (no familia de marca)
+ * Cielo / sol = climas complementarios (no familia de marca)
+ * Éter = chrome del header (espacio fuera del planeta)
  */
 
 :root {
@@ -44,6 +47,44 @@
   --rootsy-savia-50: #ecfdf5;
   --rootsy-savia-teal: #14b8a6;
 
+  /* Suelo — tierra mojada (footer + toolbox). Oliva húmeda, no stone Tailwind. */
+  --rootsy-suelo-950: #0a0c08;
+  --rootsy-suelo-900: #151810;
+  --rootsy-suelo-800: #24291e;
+  --rootsy-suelo-700: #353b2c;
+  --rootsy-suelo-600: #464d3a;
+  --rootsy-suelo-400: #8f9782;
+  --rootsy-suelo-300: #b6bda8;
+  --rootsy-suelo-50: #f1f2eb;
+
+  /* Cielo — azul de naturaleza vivo (comandas enviada). No Tailwind sky, no teal. */
+  --rootsy-cielo-800: #0a4574;
+  --rootsy-cielo-700: #0b5a98;
+  --rootsy-cielo-600: #0c72c2;
+  --rootsy-cielo-500: #1286e8;
+  --rootsy-cielo-400: #45a6f2;
+  --rootsy-cielo-200: #a8d6fa;
+  --rootsy-cielo-100: #d4ecfc;
+  --rootsy-cielo-50: #eaf6fe;
+
+  /* Sol — amarillo sol (comandas preparando). No es warning ámbar. */
+  --rootsy-sol-800: #7a4e08;
+  --rootsy-sol-700: #9c640a;
+  --rootsy-sol-600: #c98c0d;
+  --rootsy-sol-500: #e8b10f;
+  --rootsy-sol-400: #f3c62e;
+  --rootsy-sol-200: #f8e17a;
+  --rootsy-sol-100: #fbf3c6;
+  --rootsy-sol-50: #fdf8e8;
+
+  /* Éter — espacio fuera del planeta (header). No es cielo de día ni sombra. */
+  --rootsy-eter-950: #010306;
+  --rootsy-eter-900: #02060a;
+  --rootsy-eter-800: #040a0e;
+  --rootsy-eter-700: #0b1824;
+  --rootsy-eter-200: #c8dce8;
+  --rootsy-eter-100: #e4f2f8;
+
   /* Atmósfera — auroras de marketing (blur only) */
   --rootsy-atmosphere-neon: #25fe02;
   --rootsy-atmosphere-neon-2: #02fe85;
@@ -71,4 +112,11 @@
   --rootsy-landing-neon-2: var(--rootsy-atmosphere-neon-2);
 
   --rootsy-white: #ffffff;
+
+  /* Funcionales UX — no son familia de marca ni clima */
+  --rootsy-warning: #d97706;
+  --rootsy-warning-text: #78350f;
+  --rootsy-warning-soft: #fef3c7;
+  --rootsy-danger: #dc2626;
+  --rootsy-danger-dark: #b91c1c;
 }

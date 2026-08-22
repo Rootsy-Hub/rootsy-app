@@ -1,24 +1,26 @@
 "use client"
 
-import type { getInvoiceFormContext } from "@/app/[siteId]/[popId]/invoices/actions"
+import type { InvoiceFormContextResult } from "@/app/[siteId]/[popId]/invoices/actions"
 import type { InvoiceComposeFormState } from "@/app/[siteId]/[popId]/invoices/invoiceComposeFormState"
+import { RootsBanner } from "@/components/rootsy-banner"
 import {
   RootsFormField,
   RootsFormMoneyField,
   RootsFormSegmentField,
   RootsFormTextField,
   RootsFormTextareaField,
-  rootsFormEarthTextSecondaryClass,
+  rootsFormBrumaTextSecondaryClass,
   rootsFormImageUploadShellClass,
   rootsFormTextFieldClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
+import { formatArcaPtoVta } from "@/lib/arcaPtoVta"
 import { rootsFormImageUploadShellEmptyClass } from "@/components/rootsy-form/rootsFormStyles"
 import { cn } from "@/lib/utils"
 import { FileKey, FileText, Upload, X } from "lucide-react"
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from "react"
 
-type FormCtx = Awaited<ReturnType<typeof getInvoiceFormContext>>
+type FormCtx = InvoiceFormContextResult
 
 type Props = {
   idPrefix: string
@@ -47,20 +49,12 @@ function StatusNotice({
   tone?: "amber" | "muted"
 }) {
   return (
-    <div
-      role="status"
-      className={cn(
-        "rounded-lg border px-3 py-2.5 text-sm",
-        tone === "amber"
-          ? "border-amber-500/35 bg-amber-50/90 text-amber-950"
-          : "border-[color:var(--nature-earth-400)] bg-[color:var(--nature-earth-100)] text-[color:var(--nature-earth-800)]",
-      )}
-    >
-      <p className="font-medium">{title}</p>
-      <div className={cn("mt-1 text-xs leading-relaxed opacity-90")}>
-        {children}
-      </div>
-    </div>
+    <RootsBanner
+      intent={tone === "amber" ? "warning" : "neutral"}
+      density="compact"
+      title={title}
+      message={children}
+    />
   )
 }
 
@@ -109,12 +103,12 @@ function PemFileField({
             disabled && "opacity-60",
           )}
         >
-          <Icon className="size-4 shrink-0 text-[color:var(--nature-earth-600)]" aria-hidden />
+          <Icon className="size-4 shrink-0 text-[color:var(--rootsy-bruma-500)]" aria-hidden />
           <span className="min-w-0 flex-1 truncate text-sm">{file.name}</span>
           <button
             type="button"
             disabled={disabled}
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--nature-earth-700)] transition-colors hover:bg-[color:var(--nature-earth-100)]"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--rootsy-bruma-600)] transition-colors hover:bg-[color:var(--rootsy-bruma-100)]"
             aria-label={`Quitar ${label.toLowerCase()}`}
             onClick={clear}
           >
@@ -131,11 +125,11 @@ function PemFileField({
             "flex w-full flex-col items-center gap-1.5 px-4 py-5 text-sm",
           )}
         >
-          <Upload className="size-5 text-[color:var(--nature-earth-500)]" aria-hidden />
-          <span className="font-medium text-[color:var(--nature-earth-900)]">
+          <Upload className="size-5 text-[color:var(--rootsy-bruma-400)]" aria-hidden />
+          <span className="font-medium text-[color:var(--rootsy-bruma-900)]">
             Elegir archivo
           </span>
-          <span className={rootsFormEarthTextSecondaryClass}>{extensionsHint}</span>
+          <span className={rootsFormBrumaTextSecondaryClass}>{extensionsHint}</span>
         </button>
       )}
     </RootsFormField>
@@ -180,15 +174,17 @@ export function InvoiceComposeFormFields({
         <>
           {formCtx?.success && formCtx.cashSession ? (
             <div className={cn(rootsFormImageUploadShellClass, "px-3 py-2.5 text-sm")}>
-              <p className="font-medium text-[color:var(--nature-earth-900)]">
+              <p className="font-medium text-[color:var(--rootsy-bruma-900)]">
                 {formCtx.cashSession.cashRegisterName || "Caja"}
               </p>
-              <p className={cn("mt-1 text-xs", rootsFormEarthTextSecondaryClass)}>
-                Punto de venta AFIP:{" "}
-                <span className="tabular-nums text-[color:var(--nature-earth-900)]">
-                  {formCtx.cashSession.ptoVta ?? "—"}
-                </span>
-              </p>
+              {formCtx.cashSession.salePoint ? (
+                <p className={cn("mt-1 text-xs", rootsFormBrumaTextSecondaryClass)}>
+                  Punto de venta AFIP:{" "}
+                  <span className="tabular-nums text-[color:var(--rootsy-bruma-900)]">
+                    {formatArcaPtoVta(formCtx.cashSession.salePoint.ptoVta)}
+                  </span>
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -199,15 +195,21 @@ export function InvoiceComposeFormFields({
             </StatusNotice>
           ) : null}
 
-          {hasOpenCashSession && !cashEmitReady ? (
-            <StatusNotice title="Falta configuración ARCA en la caja">
-              {formCtx?.success &&
-              !formCtx.cashSession?.hasCertificates
-                ? "Cargá certificado y clave ARCA en el almacenamiento seguro (editar caja). "
-                : null}
-              {formCtx?.success && formCtx.cashSession?.ptoVta == null
-                ? "Definí el punto de venta AFIP en la configuración de la caja."
-                : null}
+          {hasOpenCashSession &&
+          formCtx?.success === true &&
+          !formCtx.cashSession?.salePoint ? (
+            <StatusNotice title="Falta punto de venta">
+              Asigná un punto de venta AFIP a esta caja en Cajas.
+            </StatusNotice>
+          ) : null}
+
+          {hasOpenCashSession &&
+          formCtx?.success === true &&
+          formCtx.cashSession?.salePoint &&
+          !cashEmitReady ? (
+            <StatusNotice title="Falta configuración fiscal">
+              Ese punto de venta no tiene certificado. Cargalo en Configuración
+              fiscal.
             </StatusNotice>
           ) : null}
 
@@ -218,10 +220,10 @@ export function InvoiceComposeFormFields({
           ) : null}
         </>
       ) : (
-        <p className={cn("text-xs leading-relaxed", rootsFormEarthTextSecondaryClass)}>
+        <p className={cn("text-xs leading-relaxed", rootsFormBrumaTextSecondaryClass)}>
           Es un ambiente distinto al de producción: el WSAA solo acepta el
           certificado digital que generaste para{" "}
-          <strong className="font-medium text-[color:var(--nature-earth-900)]">
+          <strong className="font-medium text-[color:var(--rootsy-bruma-900)]">
             homologación
           </strong>{" "}
           (no el .crt de producción). No se guarda ningún registro en Rootsy.

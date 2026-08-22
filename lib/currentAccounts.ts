@@ -135,6 +135,8 @@ export function currentAccountAgingFilterLabel(
 
 export const CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS = 30
 
+export const CURRENT_ACCOUNT_TERM_DAY_OPTIONS = [15, 30, 60] as const
+
 /** Suma días a una fecha ISO `YYYY-MM-DD` sin corrimiento por huso. */
 export function addIsoCalendarDays(isoDate: string, days: number): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return isoDate
@@ -200,4 +202,20 @@ export function currentAccountOpenDocumentAgingLabel(
   if (daysOverdue <= 0) return "al día"
   if (daysOverdue === 1) return "1 día vencida"
   return `${daysOverdue} días vencida`
+}
+
+export function partyCanOperateOnCurrentAccount(party: {
+  id?: string | null
+  manual?: boolean
+  currentAccountEnabled?: boolean | null
+} | null | undefined): boolean {
+  return Boolean(party?.id && !party.manual && party.currentAccountEnabled)
+}
+
+export function currentAccountNotEnrolledMessage(
+  direction: CurrentAccountDirection,
+): string {
+  return direction === "payable"
+    ? "Este proveedor no está dado de alta en Cuentas corrientes. Dalo de alta para comprar a cuenta."
+    : "Este cliente no está dado de alta en Cuentas corrientes. Dalo de alta para vender a cuenta."
 }

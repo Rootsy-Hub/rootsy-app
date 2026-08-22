@@ -182,17 +182,6 @@ export function SaleComprobantePickerDialog({
           />
         </RootsDialogBody>
 
-        <div className="border-t border-[var(--rootsy-bruma-200)] px-[var(--rootsy-space-400)] pb-[var(--rootsy-space-200)] pt-[var(--rootsy-space-200)] lg:hidden">
-          <SaleComprobanteTicketPreview
-            previewInput={previewInput}
-            emitter={emitter}
-            previewComprobanteLabel={draft}
-            loading={loading}
-            error={error}
-            className="max-h-[280px]"
-          />
-        </div>
-
         <RootsDialogDualActionFooter
           onCancel={() => onOpenChange(false)}
           cancelLabel="Cancelar"

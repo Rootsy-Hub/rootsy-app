@@ -17,10 +17,10 @@ export function createQueryClient() {
     },
   })
 
-  // Queries del home: sobreviven en memoria tras restore (sin observadores hasta auth + persistReady).
+  // Home + sidecar: 1 día en persist (localStorage). Reload no refetch.
   client.setQueryDefaults(["_user-profile"], oneDayQueryOptions)
-  client.setQueryDefaults(["_user-pop-ids"], oneDayQueryOptions)
   client.setQueryDefaults(["_user-pops-access-batch"], oneDayQueryOptions)
+  client.setQueryDefaults(["_user-pops"], oneDayQueryOptions)
   client.setQueryDefaults(["_pop-access"], oneDayQueryOptions)
 
   return client

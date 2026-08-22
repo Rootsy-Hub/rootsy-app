@@ -1,11 +1,12 @@
 "use client"
 
-import { getPurchaseOrdersTable } from "@/app/[siteId]/[popId]/purchase-orders/actions"
+import type { GetPurchaseOrdersTableInput } from "@/app/[siteId]/[popId]/purchase-orders/actions"
 import {
   popPurchaseOrdersQueryKey,
   type PopPurchaseOrdersQueryParams,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { fetchPopPurchaseOrdersTable } from "@/lib/rootsyApi/purchaseOrdersClient"
 import { useQuery } from "@tanstack/react-query"
 
 type UsePopPurchaseOrdersTableOptions = {
@@ -18,17 +19,17 @@ export function usePopPurchaseOrdersTable(
   options?: UsePopPurchaseOrdersTableOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
+  const queryParams: GetPurchaseOrdersTableInput = {
+    page: params.page,
+    pageSize: params.pageSize,
+    q: params.q,
+    dateFrom: params.dateFrom,
+    dateTo: params.dateTo,
+  }
 
   return useQuery({
     queryKey: popPurchaseOrdersQueryKey(popId ?? "", params),
-    queryFn: () =>
-      getPurchaseOrdersTable(popId!, {
-        page: params.page,
-        pageSize: params.pageSize,
-        q: params.q,
-        dateFrom: params.dateFrom,
-        dateTo: params.dateTo,
-      }),
+    queryFn: () => fetchPopPurchaseOrdersTable(popId!, queryParams),
     enabled,
     ...sessionListQueryOptions,
   })

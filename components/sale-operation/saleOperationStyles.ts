@@ -96,6 +96,31 @@ export const saleOpActionConfirmClass = cn(
   "disabled:bg-emerald-600/28 disabled:text-white/65 disabled:shadow-none disabled:hover:bg-emerald-600/28 disabled:active:bg-emerald-600/28",
   "focus-visible:ring-emerald-400/45",
 )
+
+/** Pagar — otoño 600/500/700 (cosecha, dinero que sale). No es danger. */
+export const saleOpActionPayClass = cn(
+  saleOpActionBtnBaseClass,
+  "bg-[#D97706] text-white hover:bg-[#F59E0B] active:bg-[#B45309]",
+  "shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]",
+  "disabled:bg-[#D97706]/28 disabled:text-white/65 disabled:shadow-none disabled:hover:bg-[#D97706]/28 disabled:active:bg-[#D97706]/28",
+  "focus-visible:ring-[#F59E0B]/45",
+)
+
+/** Círculo operar Pagar — pisa savia del icon-button primary. */
+export const saleOpTicketActionPayClass = cn(
+  "!bg-[#D97706] !text-white !border-[#B45309]",
+  "hover:!bg-[#F59E0B] hover:!border-[#D97706]",
+  "active:!bg-[#B45309] active:!border-[#92400E]",
+  "focus-visible:!shadow-[0_0_0_3px_color-mix(in_srgb,#F59E0B_38%,transparent)]",
+)
+
+/** Círculo operar Comandas — azul del estado “comandada”. */
+export const saleOpTicketActionComandasClass = cn(
+  "!bg-[#2563eb] !text-white !border-[#1d4ed8]",
+  "hover:!bg-[#3b82f6] hover:!border-[#2563eb]",
+  "active:!bg-[#1d4ed8] active:!border-[#1e3a8a]",
+  "focus-visible:!shadow-[0_0_0_3px_color-mix(in_srgb,#3b82f6_38%,transparent)]",
+)
 export const saleOpActionIconWrapDiscardClass =
   "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600"
 export const saleOpActionIconWrapConfirmClass =

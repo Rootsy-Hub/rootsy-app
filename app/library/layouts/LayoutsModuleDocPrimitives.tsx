@@ -273,7 +273,7 @@ function ModuleHeaderWireframe({
       ) : null}
       {annotate === "full" ? (
         <WireframeBadge
-          label="universo · horizonte · puente al planeta"
+          label="éter · horizonte · puente al planeta"
           className="bottom-1.5 left-2"
           dark
         />

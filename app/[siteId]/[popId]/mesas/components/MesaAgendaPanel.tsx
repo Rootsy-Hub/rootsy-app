@@ -1,6 +1,7 @@
 "use client"
 
 import { MesaOpenForm } from "@/app/[siteId]/[popId]/mesas/components/MesaOpenForm"
+import { MesaReservationHistoryDialog } from "@/app/[siteId]/[popId]/mesas/components/MesaReservationHistoryDialog"
 import {
   formatReservationArrival,
   MesaReservationForm,
@@ -8,9 +9,18 @@ import {
 } from "@/app/[siteId]/[popId]/mesas/components/MesaReservationForm"
 import {
   describeReservationFloorWindow,
+  isMesaOccupiedNow,
+  mesaOpenInitialFromReservation,
   mesaReservationStatusLabel,
+  reservationOccupiedOpenWarning,
+  reservationOccupiedTablesForOpen,
+  reservationTableIds,
   type MesasReservationSettings,
 } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
+import {
+  reservationStatusBadgeClass,
+  reservationTableMeta,
+} from "@/app/[siteId]/[popId]/mesas/mesasReservationUi"
 import type {
   MesaOpenSessionInput,
   MesaReservation,
@@ -19,6 +29,7 @@ import type {
   MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import {
   ChannelDataEmptyState,
   ChannelDataErrorBanner,
@@ -30,6 +41,7 @@ import {
   ChannelDataPanel,
   ChannelDataSection,
   ChannelDataStatusBadge,
+  ChannelDataWarningBanner,
 } from "@/components/sale-operation/ChannelOperationDataPanel"
 import {
   ChannelDataFormSelectField,
@@ -38,16 +50,18 @@ import {
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { CalendarDays, Clock3, Pencil, Users } from "lucide-react"
+import { ArrowLeft, CalendarDays, Clock3, Pencil, Users } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 type AgendaView = "list" | "create" | "detail" | "edit" | "checkin"
 
 type Props = {
   agenda: MesaReservation[]
+  reservations: MesaReservation[]
   tables: MesaTable[]
   popId: string
   canReadClients: boolean
+  canCreateClient?: boolean
   reservationSettings: MesasReservationSettings
   onSaveReservationSettings?: (
     settings: MesasReservationSettings,
@@ -62,35 +76,11 @@ type Props = {
     input: MesaOpenSessionInput,
   ) => Promise<boolean> | boolean
   onSelectReservation?: (reservation: MesaReservation) => void
-}
-
-function tableLabel(tables: MesaTable[], tableId: string | null): string {
-  if (!tableId) return "Sin mesa asignada"
-  return tables.find((t) => t.id === tableId)?.label ?? "—"
-}
-
-function reservationTableMeta(tables: MesaTable[], tableId: string | null): string {
-  if (!tableId) return tableLabel(tables, tableId)
-  return `Mesa ${tableLabel(tables, tableId)}`
+  openReservationId?: string | null
 }
 
 function agendaTimeLabel(iso: string): string {
   return format(new Date(iso), "HH:mm", { locale: es })
-}
-
-function statusBadgeClass(status: MesaReservation["status"]): string {
-  switch (status) {
-    case "pending":
-      return "bg-[color-mix(in_srgb,#fef3c7_72%,white)] text-[#92400e] ring-[color-mix(in_srgb,#f59e0b_35%,transparent)]"
-    case "confirmed":
-      return "bg-[color-mix(in_srgb,#ede9fe_72%,white)] text-[#5b21b6] ring-[color-mix(in_srgb,#7c3aed_35%,transparent)]"
-    case "seated":
-      return "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,var(--rootsy-bruma-100))] text-[var(--rootsy-savia-800)] ring-[color-mix(in_srgb,var(--rootsy-savia-500)_28%,transparent)]"
-    case "no_show":
-      return "bg-[color-mix(in_srgb,#fee2e2_72%,white)] text-[#991b1b] ring-[color-mix(in_srgb,#ef4444_35%,transparent)]"
-    default:
-      return ""
-  }
 }
 
 function isReservationEditable(status: MesaReservation["status"]): boolean {
@@ -99,9 +89,11 @@ function isReservationEditable(status: MesaReservation["status"]): boolean {
 
 export function MesaAgendaPanel({
   agenda,
+  reservations,
   tables,
   popId,
   canReadClients,
+  canCreateClient = false,
   reservationSettings,
   onSaveReservationSettings,
   waiters,
@@ -111,10 +103,16 @@ export function MesaAgendaPanel({
   onMarkReservationNoShow,
   onCheckInReservation,
   onSelectReservation,
+  openReservationId = null,
 }: Props) {
-  const [view, setView] = useState<AgendaView>("list")
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [view, setView] = useState<AgendaView>(
+    openReservationId ? "detail" : "list",
+  )
+  const [selectedId, setSelectedId] = useState<string | null>(openReservationId)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [confirmCancelOpen, setConfirmCancelOpen] = useState(false)
+  const [confirmNoShowOpen, setConfirmNoShowOpen] = useState(false)
   const [checkInTablePick, setCheckInTablePick] = useState(
     MESA_RESERVATION_UNASSIGNED_TABLE,
   )
@@ -128,27 +126,47 @@ export function MesaAgendaPanel({
   )
 
   const selectedReservation = useMemo(
-    () => agenda.find((r) => r.id === selectedId) ?? null,
-    [agenda, selectedId],
+    () => reservations.find((r) => r.id === selectedId) ?? null,
+    [reservations, selectedId],
+  )
+
+  const reservedTableIds = useMemo(
+    () =>
+      selectedReservation ? reservationTableIds(selectedReservation) : [],
+    [selectedReservation],
   )
 
   const checkInTable = useMemo(() => {
-    if (!selectedReservation?.tableId) return null
-    return tables.find((t) => t.id === selectedReservation.tableId) ?? null
-  }, [selectedReservation, tables])
+    for (const tableId of reservedTableIds) {
+      const table = tables.find((item) => item.id === tableId)
+      if (table && !isMesaOccupiedNow(table.status)) return table
+    }
+    return null
+  }, [reservedTableIds, tables])
+
+  const assignedTablesOccupied =
+    reservedTableIds.length > 0 && checkInTable == null
 
   const checkInPrimaryTable = useMemo(() => {
     if (checkInTable) return checkInTable
     if (checkInTablePick === MESA_RESERVATION_UNASSIGNED_TABLE) return null
-    return tables.find((t) => t.id === checkInTablePick) ?? null
+    const picked = tables.find((t) => t.id === checkInTablePick) ?? null
+    if (!picked || isMesaOccupiedNow(picked.status)) return null
+    return picked
   }, [checkInTable, checkInTablePick, tables])
 
   useEffect(() => {
-    if (selectedId && !agenda.some((r) => r.id === selectedId)) {
+    if (selectedId && !reservations.some((r) => r.id === selectedId)) {
       setSelectedId(null)
       setView("list")
     }
-  }, [agenda, selectedId])
+  }, [reservations, selectedId])
+
+  useEffect(() => {
+    if (!openReservationId) return
+    setSelectedId(openReservationId)
+    setView("detail")
+  }, [openReservationId])
 
   const openDetail = (reservation: MesaReservation) => {
     onSelectReservation?.(reservation)
@@ -162,6 +180,7 @@ export function MesaAgendaPanel({
     try {
       const ok = await onCancelReservation(selectedReservation.id)
       if (ok) {
+        setConfirmCancelOpen(false)
         setSelectedId(null)
         setView("list")
       }
@@ -175,10 +194,20 @@ export function MesaAgendaPanel({
     setBusy(true)
     try {
       const ok = await onMarkReservationNoShow(selectedReservation.id)
-      if (ok) setView("detail")
+      if (ok) {
+        setConfirmNoShowOpen(false)
+        setView("detail")
+      }
     } finally {
       setBusy(false)
     }
+  }
+
+  const goBackToList = () => {
+    setConfirmCancelOpen(false)
+    setConfirmNoShowOpen(false)
+    setSelectedId(null)
+    setView("list")
   }
 
   if (view === "create") {
@@ -187,7 +216,9 @@ export function MesaAgendaPanel({
         tables={reservationTables}
         popId={popId}
         canReadClients={canReadClients}
+        canCreateClient={canCreateClient}
         reservationSettings={reservationSettings}
+        reservations={reservations}
         onSaveReservationSettings={onSaveReservationSettings}
         submitLabel="Crear reserva"
         onSubmit={async (input) => {
@@ -205,7 +236,9 @@ export function MesaAgendaPanel({
         tables={reservationTables}
         popId={popId}
         canReadClients={canReadClients}
+        canCreateClient={canCreateClient}
         reservationSettings={reservationSettings}
+        reservations={reservations}
         onSaveReservationSettings={onSaveReservationSettings}
         initial={selectedReservation}
         submitLabel="Guardar cambios"
@@ -222,24 +255,19 @@ export function MesaAgendaPanel({
   }
 
   if (view === "checkin" && selectedReservation) {
-    if (!checkInPrimaryTable) {
+    if (assignedTablesOccupied) {
+      const occupiedLabels = reservedTableIds
+        .map((id) => tables.find((table) => table.id === id)?.label)
+        .filter((label): label is string => Boolean(label))
+        .join(", ")
       return (
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <ChannelDataPanel className="flex-1">
-            <ChannelDataFormSelectField
-              label="Mesa para sentar"
-              id="mesa-checkin-table-pick"
-              value={checkInTablePick}
-              onValueChange={setCheckInTablePick}
-              placeholder="Elegí una mesa"
-              labelInfo="Esta reserva no tiene mesa asignada. Elegí dónde sentar al cliente."
-            >
-              {reservationTables.map((table) => (
-                <ChannelDataFormSelectItem key={table.id} value={table.id}>
-                  Mesa {table.label}
-                </ChannelDataFormSelectItem>
-              ))}
-            </ChannelDataFormSelectField>
+            <ChannelDataWarningBanner>
+              {occupiedLabels
+                ? `Las mesas ${occupiedLabels} están ocupadas. Liberá una para sentar esta reserva.`
+                : "Las mesas de esta reserva están ocupadas. Liberá una para sentar."}
+            </ChannelDataWarningBanner>
           </ChannelDataPanel>
 
           <ChannelDataOperarFooterBar
@@ -255,15 +283,74 @@ export function MesaAgendaPanel({
       )
     }
 
+    if (!checkInPrimaryTable) {
+      const freeTables = reservationTables.filter(
+        (table) => table.status === "free",
+      )
+      return (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <ChannelDataPanel className="flex-1">
+            {freeTables.length === 0 ? (
+              <ChannelDataWarningBanner>
+                No hay mesas libres para sentar esta reserva.
+              </ChannelDataWarningBanner>
+            ) : (
+              <ChannelDataFormSelectField
+                label="Mesa para sentar"
+                id="mesa-checkin-table-pick"
+                value={checkInTablePick}
+                onValueChange={setCheckInTablePick}
+                placeholder="Elegí una mesa"
+                labelInfo="Esta reserva no tiene mesa asignada. Elegí una mesa libre."
+              >
+                {freeTables.map((table) => (
+                  <ChannelDataFormSelectItem key={table.id} value={table.id}>
+                    Mesa {table.label}
+                  </ChannelDataFormSelectItem>
+                ))}
+              </ChannelDataFormSelectField>
+            )}
+          </ChannelDataPanel>
+
+          <ChannelDataOperarFooterBar
+            actions={[
+              {
+                variant: "secondary",
+                label: "Volver",
+                onClick: () => setView("detail"),
+              },
+            ]}
+          />
+        </div>
+      )
+    }
+
+    const reservedIds = reservationTableIds(selectedReservation)
+    const mergeCandidates = reservationTables.filter(
+      (table) =>
+        table.salonId === checkInPrimaryTable.salonId &&
+        table.id !== checkInPrimaryTable.id &&
+        (table.status === "free" || reservedIds.includes(table.id)) &&
+        !isMesaOccupiedNow(table.status),
+    )
+    const blockedMergeTables = reservationOccupiedTablesForOpen(
+      selectedReservation,
+      tables,
+      checkInPrimaryTable.id,
+    )
+
     return (
       <MesaOpenForm
         primaryTable={checkInPrimaryTable}
-        mergeCandidates={[]}
+        mergeCandidates={mergeCandidates}
+        blockedMergeTables={blockedMergeTables}
+        blockedMergeWarning={reservationOccupiedOpenWarning(blockedMergeTables)}
         waiters={waiters}
-        initial={{
-          tableIds: [checkInPrimaryTable.id],
-          guestCount: selectedReservation.guestCount,
-        }}
+        initial={mesaOpenInitialFromReservation(
+          selectedReservation,
+          checkInPrimaryTable.id,
+          tables,
+        )}
         submitLabel="Sentar / abrir"
         onSubmit={async (input) => {
           const ok = await onCheckInReservation(selectedReservation, input)
@@ -274,7 +361,7 @@ export function MesaAgendaPanel({
           }
         }}
         onCancel={() => {
-          if (selectedReservation.tableId) {
+          if (reservationTableIds(selectedReservation).length > 0) {
             setView("detail")
             return
           }
@@ -290,12 +377,31 @@ export function MesaAgendaPanel({
     const floorWindow = describeReservationFloorWindow(
       selectedReservation.arrivalAt,
       reservationSettings,
-      { hasAssignedTable: selectedReservation.tableId != null },
+      {
+        hasAssignedTable: reservationTableIds(selectedReservation).length > 0,
+        tableCount: reservationTableIds(selectedReservation).length,
+      },
     )
 
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <ChannelDataPanel className="flex-1">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={goBackToList}
+            className={cn(
+              "inline-flex w-fit items-center gap-1 self-start",
+              "font-canopy text-xs font-medium text-[var(--rootsy-bruma-500)]",
+              "transition-colors hover:text-[var(--rootsy-bruma-700)]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_45%,transparent)]",
+              "disabled:pointer-events-none disabled:opacity-45",
+            )}
+          >
+            <ArrowLeft className="size-3.5 shrink-0" aria-hidden />
+            Volver
+          </button>
+
           {sessionError ? (
             <ChannelDataErrorBanner>{sessionError}</ChannelDataErrorBanner>
           ) : null}
@@ -305,13 +411,17 @@ export function MesaAgendaPanel({
               title={selectedReservation.clientName.trim() || "Sin cliente"}
               meta={
                 <>
-                  {reservationTableMeta(tables, selectedReservation.tableId)}
+                  {reservationTableMeta(tables, reservationTableIds(selectedReservation))}
                   {" · "}
                   {formatReservationArrival(selectedReservation.arrivalAt)}
                 </>
               }
               badge={
-                <ChannelDataStatusBadge>
+                <ChannelDataStatusBadge
+                  className={reservationStatusBadgeClass(
+                    selectedReservation.status,
+                  )}
+                >
                   {mesaReservationStatusLabel(selectedReservation.status)}
                 </ChannelDataStatusBadge>
               }
@@ -328,8 +438,17 @@ export function MesaAgendaPanel({
             />
 
             <ChannelDataFields>
-              <ChannelDataField label="Mesa">
-                {reservationTableMeta(tables, selectedReservation.tableId)}
+              <ChannelDataField
+                label={
+                  reservationTableIds(selectedReservation).length > 1
+                    ? "Mesas"
+                    : "Mesa"
+                }
+              >
+                {reservationTableMeta(
+                  tables,
+                  reservationTableIds(selectedReservation),
+                )}
               </ChannelDataField>
               <ChannelDataField label="Llegada">
                 {formatReservationArrival(selectedReservation.arrivalAt)}
@@ -346,48 +465,70 @@ export function MesaAgendaPanel({
               ) : null}
             </ChannelDataFields>
 
-            <ChannelDataHint icon={Clock3}>{floorWindow.summary}</ChannelDataHint>
+            <ChannelDataHint icon={Clock3} className="mt-5">
+              {floorWindow.summary}
+            </ChannelDataHint>
           </ChannelDataSection>
         </ChannelDataPanel>
 
         <ChannelDataOperarFooterBar
-          actions={[
-            {
-              variant: "secondary",
-              label: "Volver",
-              disabled: busy,
-              onClick: () => {
-                setSelectedId(null)
-                setView("list")
-              },
-            },
-            ...(editable
+          actions={
+            editable
               ? [
                   {
-                    variant: "secondary" as const,
-                    label: busy ? "Marcando…" : "No-show",
+                    variant: "secondary",
+                    label: "No vino",
                     disabled: busy,
-                    loading: busy,
-                    loadingLabel: "Marcando…",
-                    onClick: () => void markNoShow(),
+                    onClick: () => setConfirmNoShowOpen(true),
                   },
                   {
-                    variant: "secondary" as const,
-                    label: busy ? "Cancelando…" : "Cancelar",
+                    variant: "destructive",
+                    label: "Cancelar",
                     disabled: busy,
-                    loading: busy,
-                    loadingLabel: "Cancelando…",
-                    onClick: () => void cancelReservation(),
+                    onClick: () => setConfirmCancelOpen(true),
                   },
                   {
-                    variant: "primary" as const,
+                    variant: "primary",
                     label: "Sentar / abrir",
                     disabled: busy,
                     onClick: () => setView("checkin"),
                   },
                 ]
-              : []),
-          ]}
+              : []
+          }
+        />
+
+        <RootsConfirmDialog
+          open={confirmNoShowOpen}
+          onOpenChange={setConfirmNoShowOpen}
+          title="¿El cliente no vino?"
+          description={
+            selectedReservation.clientName.trim()
+              ? `Vas a marcar la reserva de ${selectedReservation.clientName.trim()} como no vino.`
+              : "Vas a marcar esta reserva como no vino."
+          }
+          confirmLabel="No vino"
+          cancelLabel="Volver"
+          busy={busy}
+          busyConfirmLabel="Marcando…"
+          onConfirm={() => void markNoShow()}
+        />
+
+        <RootsConfirmDialog
+          open={confirmCancelOpen}
+          onOpenChange={setConfirmCancelOpen}
+          title="¿Cancelar la reserva?"
+          description={
+            selectedReservation.clientName.trim()
+              ? `La reserva de ${selectedReservation.clientName.trim()} se cancela.`
+              : "Esta reserva se cancela."
+          }
+          confirmLabel="Cancelar reserva"
+          cancelLabel="Volver"
+          destructive
+          busy={busy}
+          busyConfirmLabel="Cancelando…"
+          onConfirm={() => void cancelReservation()}
         />
       </div>
     )
@@ -416,7 +557,7 @@ export function MesaAgendaPanel({
                         {reservation.clientName.trim() || "Sin cliente"}
                       </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {reservationTableMeta(tables, reservation.tableId)}
+                        {reservationTableMeta(tables, reservationTableIds(reservation))}
                         {" · "}
                         {formatReservationArrival(reservation.arrivalAt)}
                       </p>
@@ -424,7 +565,7 @@ export function MesaAgendaPanel({
                     <span
                       className={cn(
                         "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1",
-                        statusBadgeClass(reservation.status),
+                        reservationStatusBadgeClass(reservation.status),
                       )}
                     >
                       {mesaReservationStatusLabel(reservation.status)}
@@ -456,11 +597,27 @@ export function MesaAgendaPanel({
       <ChannelDataOperarFooterBar
         actions={[
           {
+            variant: "secondary",
+            label: "Ver historial",
+            onClick: () => setHistoryOpen(true),
+          },
+          {
             variant: "primary",
             label: "Nueva reserva",
             onClick: () => setView("create"),
           },
         ]}
+      />
+
+      <MesaReservationHistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        reservations={reservations}
+        tables={tables}
+        onSelectReservation={(reservation) => {
+          setHistoryOpen(false)
+          openDetail(reservation)
+        }}
       />
     </div>
   )

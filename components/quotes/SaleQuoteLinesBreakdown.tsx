@@ -25,7 +25,9 @@ import {
   resolveQuoteLineGroups,
 } from "@/lib/saleQuoteDocumentLines"
 import type { SaleQuoteMetadata } from "@/lib/saleQuoteTypes"
+import type { UnresolvedQuoteCartItem } from "@/lib/saleQuoteViewGaps"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
+import { roundSaleMoney } from "@/lib/saleLineDiscount"
 import { cn } from "@/lib/utils"
 import { TableBody, TableCell } from "@/components/ui/table"
 
@@ -34,6 +36,8 @@ type Props = {
   subtotal: number
   discountTotal: number
   total: number
+  unresolvedItems?: UnresolvedQuoteCartItem[]
+  storedSubtotalGap?: number
   className?: string
 }
 
@@ -47,11 +51,23 @@ export function SaleQuoteLinesBreakdown({
   subtotal,
   discountTotal,
   total,
+  unresolvedItems = [],
+  storedSubtotalGap = 0,
   className,
 }: Props) {
   const lineGroups = resolveQuoteLineGroups(metadata)
   const showListSubtotal = quoteHasInlineDiscounts(lineGroups)
   const subtotalSinDescuentos = quoteSubtotalSinDescuentos(lineGroups)
+  const unresolvedAmount = unresolvedItems.reduce(
+    (sum, item) => sum + (item.amount ?? 0),
+    0,
+  )
+  const remainderGap = Math.max(0, storedSubtotalGap - unresolvedAmount)
+  const showRemainder = remainderGap > 0.009
+  const empty =
+    lineGroups.length === 0 &&
+    unresolvedItems.length === 0 &&
+    !showRemainder
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -91,7 +107,7 @@ export function SaleQuoteLinesBreakdown({
             </WorkspaceTableHeaderRow>
           </WorkspaceTableHeader>
           <TableBody>
-            {lineGroups.length === 0 ? (
+            {empty ? (
               <WorkspaceTableBodyRow index={0} noHover>
                 <TableCell
                   colSpan={4}
@@ -101,23 +117,46 @@ export function SaleQuoteLinesBreakdown({
                     "py-6 text-center",
                   )}
                 >
-                  Sin ítems
+                  Sin ítems para listar
                 </TableCell>
               </WorkspaceTableBodyRow>
             ) : (
-              lineGroups.map((group) => (
-                <GroupRows key={group.id} group={group} />
-              ))
+              <>
+                {lineGroups.map((group) => (
+                  <GroupRows key={group.id} group={group} />
+                ))}
+                {unresolvedItems.map((item, index) => (
+                  <UnresolvedRow
+                    key={`unresolved-${item.name}-${index}`}
+                    item={item}
+                    rowIndex={lineGroups.length + index}
+                  />
+                ))}
+                {showRemainder ? (
+                  <UnresolvedRow
+                    item={{
+                      name: "Ítems que ya no se pueden detallar",
+                      quantity: 0,
+                      amount: remainderGap,
+                    }}
+                    rowIndex={lineGroups.length + unresolvedItems.length}
+                    hideQuantity
+                  />
+                ) : null}
+              </>
             )}
           </TableBody>
         </table>
       </div>
 
       <div className="space-y-2 border-t border-[var(--rootsy-bruma-200)] pt-3">
+        <p className={dataWorkspaceEntityCardStatLabelClass}>
+          Importes guardados
+        </p>
         {showListSubtotal ? (
           <div className="flex justify-between gap-4 text-sm">
-            <span className={dataWorkspaceEntityCardStatLabelClass}>
-              Subtotal sin descuentos
+            <span className={workspaceTableNatureTextSecondaryClass}>
+              Suma de ítems visibles, sin descuentos
             </span>
             <span className={workspaceTableNatureMoneyClass}>
               {formatReportMoneyAr(subtotalSinDescuentos)}
@@ -125,14 +164,16 @@ export function SaleQuoteLinesBreakdown({
           </div>
         ) : null}
         <div className="flex justify-between gap-4 text-sm">
-          <span className={dataWorkspaceEntityCardStatLabelClass}>Subtotal</span>
+          <span className={workspaceTableNatureTextSecondaryClass}>
+            Subtotal
+          </span>
           <span className={workspaceTableNatureMoneyClass}>
             {formatReportMoneyAr(subtotal)}
           </span>
         </div>
         {discountTotal > 0 ? (
           <div className="flex justify-between gap-4 text-sm">
-            <span className={dataWorkspaceEntityCardStatLabelClass}>
+            <span className={workspaceTableNatureTextSecondaryClass}>
               Descuento
               {metadata.discountLabel ? ` (${metadata.discountLabel})` : ""}
             </span>
@@ -142,7 +183,9 @@ export function SaleQuoteLinesBreakdown({
           </div>
         ) : null}
         <div className="flex justify-between gap-4">
-          <span className={dataWorkspaceEntityCardStatLabelClass}>Total</span>
+          <span className={cn(workspaceTableNatureTextPrimaryClass, "font-medium")}>
+            Total
+          </span>
           <span
             className={cn(
               workspaceTableNatureMoneyClass,
@@ -157,12 +200,26 @@ export function SaleQuoteLinesBreakdown({
   )
 }
 
+function allocatedGroupPromo(
+  line: ReturnType<typeof resolveQuoteLineGroups>[number]["lines"][number],
+  group: ReturnType<typeof resolveQuoteLineGroups>[number],
+): number {
+  const promo = group.promotionDiscount?.amount ?? 0
+  if (promo <= 0) return 0
+  if (group.lines.length === 1) return promo
+  const listSum = group.lines.reduce((sum, item) => sum + item.listLineTotal, 0)
+  if (listSum <= 0) return roundSaleMoney(promo / group.lines.length)
+  return roundSaleMoney(promo * (line.listLineTotal / listSum))
+}
+
 function GroupRows({
   group,
 }: {
   group: ReturnType<typeof resolveQuoteLineGroups>[number]
 }) {
-  const showHeader = isPromoGroupCategory(group.category)
+  const isDeal = (group.promotionDiscount?.amount ?? 0) > 0
+  const showHeader =
+    isPromoGroupCategory(group.category) && group.lines.length > 1
 
   return (
     <>
@@ -179,19 +236,21 @@ function GroupRows({
           </TableCell>
         </WorkspaceTableBodyRow>
       ) : null}
-      {group.lines.map((line, index) => (
-        <LineRows
-          key={`${group.id}-${line.name}-${index}`}
-          line={line}
-          rowIndex={index}
-        />
-      ))}
-      {group.promotionDiscount ? (
-        <DiscountRow
-          label={group.promotionDiscount.label}
-          amount={group.promotionDiscount.amount}
-        />
-      ) : null}
+      {group.lines.map((line, index) => {
+        const displayNet = Math.max(
+          0,
+          roundSaleMoney(line.lineTotal - allocatedGroupPromo(line, group)),
+        )
+        return (
+          <LineRows
+            key={`${group.id}-${line.name}-${index}`}
+            line={line}
+            rowIndex={index}
+            promoLabel={isDeal ? group.promotionDiscount?.label : undefined}
+            displayNet={displayNet}
+          />
+        )
+      })}
     </>
   )
 }
@@ -199,10 +258,16 @@ function GroupRows({
 function LineRows({
   line,
   rowIndex,
+  promoLabel,
+  displayNet,
 }: {
   line: ReturnType<typeof resolveQuoteLineGroups>[number]["lines"][number]
   rowIndex: number
+  promoLabel?: string
+  displayNet: number
 }) {
+  const showStrike = line.listLineTotal - displayNet > 0.009
+
   return (
     <>
       <WorkspaceTableBodyRow index={rowIndex}>
@@ -213,7 +278,12 @@ function LineRows({
             "!h-auto !max-h-none whitespace-normal py-3",
           )}
         >
-          {line.name}
+          <span className="block font-medium">{line.name}</span>
+          {promoLabel ? (
+            <span className="mt-1 inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+              {promoLabel}
+            </span>
+          ) : null}
         </TableCell>
         <TableCell
           className={cn(
@@ -222,7 +292,7 @@ function LineRows({
             "text-right tabular-nums",
           )}
         >
-          {line.quantity}
+          {line.quantity}x
         </TableCell>
         <TableCell
           className={cn(
@@ -240,17 +310,84 @@ function LineRows({
             "text-right tabular-nums",
           )}
         >
-          {formatReportMoneyAr(line.listLineTotal)}
+          {showStrike ? (
+            <span className="flex flex-col items-end gap-0.5">
+              <span>{formatReportMoneyAr(displayNet)}</span>
+              <span
+                className={cn(
+                  workspaceTableNatureTextSecondaryClass,
+                  "text-xs line-through",
+                )}
+              >
+                {formatReportMoneyAr(line.listLineTotal)}
+              </span>
+            </span>
+          ) : (
+            formatReportMoneyAr(line.listLineTotal)
+          )}
         </TableCell>
       </WorkspaceTableBodyRow>
-      {line.discounts.map((discount, index) => (
-        <DiscountRow
-          key={`${line.name}-discount-${index}`}
-          label={discount.label}
-          amount={discount.amount}
-        />
-      ))}
+      {!showStrike
+        ? line.discounts.map((discount, index) => (
+            <DiscountRow
+              key={`${line.name}-discount-${index}`}
+              label={discount.label}
+              amount={discount.amount}
+            />
+          ))
+        : null}
     </>
+  )
+}
+
+function UnresolvedRow({
+  item,
+  rowIndex,
+  hideQuantity = false,
+}: {
+  item: UnresolvedQuoteCartItem
+  rowIndex: number
+  hideQuantity?: boolean
+}) {
+  return (
+    <WorkspaceTableBodyRow index={rowIndex} noHover>
+      <TableCell
+        className={cn(
+          workspaceTableLayoutBodyCellClass,
+          workspaceTableNatureTextSecondaryClass,
+          "!h-auto !max-h-none whitespace-normal py-3 italic",
+        )}
+      >
+        {item.name}
+      </TableCell>
+      <TableCell
+        className={cn(
+          workspaceTableLayoutBodyCellClass,
+          workspaceTableNatureTextSecondaryClass,
+          "text-right tabular-nums",
+        )}
+      >
+        {hideQuantity || item.quantity <= 0 ? "—" : item.quantity}
+      </TableCell>
+      <TableCell
+        className={cn(
+          workspaceTableLayoutBodyCellClass,
+          workspaceTableNatureTextSecondaryClass,
+          "text-right tabular-nums",
+        )}
+      >
+        —
+      </TableCell>
+      <TableCell
+        className={cn(
+          workspaceTableLayoutBodyCellClass,
+          workspaceTableNatureMoneyClass,
+          "text-right tabular-nums",
+        )}
+      >
+        {item.amount != null ? formatReportMoneyAr(item.amount) : "—"}
+      </TableCell>
+    </WorkspaceTableBodyRow>
   )
 }
 

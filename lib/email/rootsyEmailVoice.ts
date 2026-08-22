@@ -30,7 +30,7 @@ export function popInvitationEmailPreheader(popName: string): string {
 }
 
 export function popInvitationEmailBody(popName: string): string {
-  return `${popName} quiere que te sumes al equipo. Te paso la invitación para que no se te pase.`
+  return `${popName} quiere que te sumes al equipo. Si no tenés cuenta, la creás con el mismo enlace.`
 }
 
 export const POP_INVITATION_EMAIL_MESSAGE_INTRO = "Te dejaron un mensaje:"

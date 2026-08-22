@@ -11,21 +11,22 @@ import type {
   MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import type { MesaReservationWarning } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
-import { mesaOpenInitialFromReservation } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
-import { mesaStatusLabel } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import {
-  clientDialogBodyClass,
-  clientDialogFooterClass,
-  clientDialogHeaderClass,
-  clientDialogSurface,
-} from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
+  mesaOpenInitialFromReservation,
+  reservationOccupiedOpenWarning,
+  reservationOccupiedTablesForOpen,
+} from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
+import { RootsConfirmDialog } from "@/components/rootsy-dialog/RootsConfirmDialog"
+import {
+  mesaStatusBadgeClass,
+  mesaStatusLabel,
+} from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import {
   ChannelDataEmptyState,
   ChannelDataErrorBanner,
   ChannelDataField,
   ChannelDataFields,
   ChannelDataHeader,
-  ChannelDataHint,
   ChannelDataOperarFooterBar,
   ChannelDataPanel,
   ChannelDataSection,
@@ -34,24 +35,12 @@ import {
 } from "@/components/sale-operation/ChannelOperationDataPanel"
 import { ChannelDataFormSegmentField } from "@/components/sale-operation/ChannelDataFormFields"
 import { saleOpChannelStatusBadge } from "@/components/sale-operation/saleOperationStyles"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { rootsFormUiFieldHintClass } from "@/components/rootsy-form/rootsFormUiStyles"
-import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
 import type { ChannelCloseMode } from "@/lib/channelCheckoutClose"
-import { Button } from "@/components/ui/button"
 import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { Clock, Package, Pencil, UtensilsCrossed } from "lucide-react"
+import { ChevronRight, Clock, Pencil, UtensilsCrossed } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { cn } from "@/lib/utils"
 
 type Props = {
   table: MesaTable | null
@@ -59,6 +48,7 @@ type Props = {
   floorReservation?: MesaReservation | null
   reservationWarning?: MesaReservationWarning | null
   sessionTables: MesaTable[]
+  tables: MesaTable[]
   waiters: MesaWaiter[]
   mergeCandidates: MesaTable[]
   sessionError?: string | null
@@ -72,11 +62,13 @@ type Props = {
   closeSessionBlockReason?: string | null
   closeSessionMode?: ChannelCloseMode | null
   closeSessionLoading?: boolean
+  closeSessionError?: string | null
   clientLabel?: string | null
   onSetFloorStatus?: (
     floorStatus: MesaSessionFloorStatus,
   ) => Promise<boolean> | boolean
   floorStatusLoading?: boolean
+  onOpenReservationDetail?: (reservation: MesaReservation) => void
 }
 
 function sessionTitle(table: MesaTable | null, sessionTables: MesaTable[]): string {
@@ -93,6 +85,7 @@ export function MesaSessionPanel({
   floorReservation = null,
   reservationWarning = null,
   sessionTables,
+  tables,
   waiters,
   mergeCandidates,
   sessionError,
@@ -103,9 +96,11 @@ export function MesaSessionPanel({
   closeSessionBlockReason = null,
   closeSessionMode = null,
   closeSessionLoading = false,
+  closeSessionError = null,
   clientLabel,
   onSetFloorStatus,
   floorStatusLoading = false,
+  onOpenReservationDetail,
 }: Props) {
   const [editing, setEditing] = useState(false)
   const [closeDialogOpen, setCloseDialogOpen] = useState(false)
@@ -129,6 +124,8 @@ export function MesaSessionPanel({
     try {
       const ok = await onCloseSession()
       if (ok) setCloseDialogOpen(false)
+    } catch {
+      // El error lo muestra el checkout; no dejar el modal en “Liberando…”.
     } finally {
       setCloseBusy(false)
     }
@@ -138,6 +135,30 @@ export function MesaSessionPanel({
     () => waiters.find((w) => w.id === session?.waiterId),
     [waiters, session?.waiterId],
   )
+
+  const blockedMergeTables = useMemo(() => {
+    if (!floorReservation || !table || table.status !== "reserved") return []
+    return reservationOccupiedTablesForOpen(
+      floorReservation,
+      tables,
+      table.id,
+    )
+  }, [floorReservation, table, tables])
+
+  const blockedMergeWarning = useMemo(
+    () => reservationOccupiedOpenWarning(blockedMergeTables),
+    [blockedMergeTables],
+  )
+
+  const reservationWarningMessage = useMemo(() => {
+    if (!reservationWarning) return null
+    const client = reservationWarning.reservation.clientName.trim() || "Cliente"
+    const time = formatReservationArrival(reservationWarning.reservation.arrivalAt)
+    if (reservationWarning.kind === "overlap") {
+      return `Hay una reserva de ${client} (${time}) y la mesa sigue abierta.`
+    }
+    return `Reserva de ${client} a las ${time.split(" · ").pop()} — entra en ventana en ${reservationWarning.minutesUntilBuffer} min.`
+  }, [reservationWarning])
 
   if (!table) {
     return (
@@ -154,16 +175,6 @@ export function MesaSessionPanel({
   const isPaying = table.status === "paying"
   const title = sessionTitle(table, sessionTables)
   const closeButtonLabel = "Liberar mesa"
-
-  const reservationWarningMessage = useMemo(() => {
-    if (!reservationWarning) return null
-    const client = reservationWarning.reservation.clientName.trim() || "Cliente"
-    const time = formatReservationArrival(reservationWarning.reservation.arrivalAt)
-    if (reservationWarning.kind === "overlap") {
-      return `Hay una reserva de ${client} (${time}) y la mesa sigue abierta.`
-    }
-    return `Reserva de ${client} a las ${time.split(" · ").pop()} — entra en ventana en ${reservationWarning.minutesUntilBuffer} min.`
-  }, [reservationWarning])
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -182,25 +193,23 @@ export function MesaSessionPanel({
               <ChannelDataHeader
                 title={title}
                 meta={
-                  <>
-                    {mesaStatusLabel(table.status)}
-                    {session ? (
-                      <>
-                        {" · "}
-                        <Clock
-                          className="mr-0.5 inline size-3 -translate-y-px"
-                          aria-hidden
-                        />
-                        {formatDistanceToNow(new Date(session.openedAt), {
-                          addSuffix: true,
-                          locale: es,
-                        })}
-                      </>
-                    ) : null}
-                  </>
+                  session ? (
+                    <>
+                      <Clock
+                        className="mr-0.5 inline size-3 -translate-y-px"
+                        aria-hidden
+                      />
+                      {formatDistanceToNow(new Date(session.openedAt), {
+                        addSuffix: true,
+                        locale: es,
+                      })}
+                    </>
+                  ) : undefined
                 }
                 badge={
-                  <ChannelDataStatusBadge>
+                  <ChannelDataStatusBadge
+                    className={mesaStatusBadgeClass(table.status)}
+                  >
                     {isPaying
                       ? "Cobrando"
                       : sessionTables.length > 1
@@ -273,10 +282,6 @@ export function MesaSessionPanel({
             {!canCloseSession && closeSessionBlockReason ? (
               <ChannelDataWarningBanner>{closeSessionBlockReason}</ChannelDataWarningBanner>
             ) : null}
-
-            <ChannelDataHint icon={Package}>
-              Usá la pestaña Pedido para cargar productos y cobrar.
-            </ChannelDataHint>
           </ChannelDataPanel>
 
           <ChannelDataOperarFooterBar
@@ -295,50 +300,24 @@ export function MesaSessionPanel({
         </>
       ) : null}
 
-      <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className={cn(clientDialogSurface, "sm:max-w-md")}
-        >
-          <DialogHeader className={clientDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              ¿Liberar mesa?
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              {closeSessionMode === "release"
-                ? "No hay ítems ni cobros pendientes. La mesa quedará libre."
-                : "El pedido está completamente cobrado. La mesa quedará libre."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className={clientDialogBodyClass}>
-            <p className={cn("text-sm", rootsFormUiFieldHintClass)}>
-              Vas a cerrar{" "}
-              <strong className="font-medium text-[var(--rootsy-bruma-900)]">
-                {closeDialogTitle}
-              </strong>
-              .
-            </p>
-          </div>
-          <DialogFooter className={clientDialogFooterClass}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCloseDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              className={saleOpDialogPrimaryBtn}
-              disabled={closeBusy || closeSessionLoading}
-              onClick={() => void confirmCloseSession()}
-            >
-              {closeBusy || closeSessionLoading ? "Liberando…" : closeButtonLabel}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RootsConfirmDialog
+        open={closeDialogOpen}
+        onOpenChange={setCloseDialogOpen}
+        title="¿Liberar mesa?"
+        description={
+          <>
+            {closeSessionMode === "release"
+              ? "No hay ítems ni cobros pendientes. La mesa quedará libre."
+              : "El pedido está completamente cobrado. La mesa quedará libre."}{" "}
+            Vas a cerrar {closeDialogTitle}.
+          </>
+        }
+        confirmLabel="Liberar mesa"
+        busy={closeBusy || closeSessionLoading}
+        busyConfirmLabel="Liberando…"
+        error={closeSessionError}
+        onConfirm={() => void confirmCloseSession()}
+      />
 
       {!isOpen ? (
         <>
@@ -352,21 +331,25 @@ export function MesaSessionPanel({
               <ChannelDataHeader
                 title={title}
                 meta={
-                  isReserved && floorReservation ? (
-                    <>
-                      {mesaStatusLabel(table.status)}
-                      {" · "}
-                      {floorReservation.clientName.trim() || "Sin cliente"}
-                      {" · "}
-                      {formatReservationArrival(floorReservation.arrivalAt)}
-                    </>
-                  ) : (
-                    mesaStatusLabel(table.status)
-                  )
+                  isReserved && floorReservation
+                    ? `${floorReservation.clientName.trim() || "Sin cliente"} · ${formatReservationArrival(floorReservation.arrivalAt)}`
+                    : undefined
                 }
                 badge={
-                  isReserved ? (
-                    <ChannelDataStatusBadge>Reservada</ChannelDataStatusBadge>
+                  <ChannelDataStatusBadge
+                    className={mesaStatusBadgeClass(table.status)}
+                  >
+                    {mesaStatusLabel(table.status)}
+                  </ChannelDataStatusBadge>
+                }
+                actions={
+                  isReserved && floorReservation && onOpenReservationDetail ? (
+                    <DataWorkspaceTableIconAction
+                      label="Ver reserva"
+                      icon={ChevronRight}
+                      variant="neutral"
+                      onClick={() => onOpenReservationDetail(floorReservation)}
+                    />
                   ) : undefined
                 }
               />
@@ -376,10 +359,16 @@ export function MesaSessionPanel({
           <MesaOpenForm
             primaryTable={table}
             mergeCandidates={mergeCandidates}
+            blockedMergeTables={blockedMergeTables}
+            blockedMergeWarning={blockedMergeWarning}
             waiters={waiters}
             initial={
               floorReservation
-                ? mesaOpenInitialFromReservation(floorReservation, table.id)
+                ? mesaOpenInitialFromReservation(
+                    floorReservation,
+                    table.id,
+                    tables,
+                  )
                 : undefined
             }
             submitLabel={isReserved ? "Sentar / abrir" : "Abrir mesa"}

@@ -22,7 +22,8 @@ export function ColorNewPairingsSection() {
       <div className="space-y-10">
         <ColorDocLead>
           Complementarios derivados de pantallas reales — no teoría cromática abstracta.
-          Cada par resuelve un layout concreto: split POS, workspace claro, hero de marketing.
+          Cada par resuelve un layout concreto: split POS, workspace claro, climas de
+          mundo (cielo / sol) y hero de marketing.
         </ColorDocLead>
 
         <ColorDocSection
@@ -48,6 +49,20 @@ export function ColorNewPairingsSection() {
         >
           <div className="grid gap-4 lg:grid-cols-2">
             {ROOTSY_COMPLEMENTARY_PAIRINGS.filter((p) => p.id.startsWith("marketing")).map(
+              (pairing) => (
+                <PairingCard key={pairing.id} pairing={pairing} />
+              ),
+            )}
+          </div>
+        </ColorDocSection>
+
+        <ColorDocSection
+          id="pairings-climas"
+          title="Climas"
+          description="Cielo y sol — azul de naturaleza y amarillo sol. Mundos de comanda, no estados UX."
+        >
+          <div className="grid gap-4 lg:grid-cols-2">
+            {ROOTSY_COMPLEMENTARY_PAIRINGS.filter((p) => p.id.startsWith("clima-")).map(
               (pairing) => (
                 <PairingCard key={pairing.id} pairing={pairing} />
               ),

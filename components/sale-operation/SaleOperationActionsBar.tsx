@@ -14,10 +14,13 @@ import {
   saleOpActionIconWrapConfirmClass,
   saleOpActionIconWrapConfirmDisabledClass,
   saleOpActionIconWrapDiscardClass,
+  saleOpActionPayClass,
   saleOpActionsBarShellClass,
+  saleOpTicketActionComandasClass,
+  saleOpTicketActionPayClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
-import { CircleDollarSign, HandCoins, Loader2, X } from "lucide-react"
+import { Banknote, ChefHat, CircleDollarSign, HandCoins, Loader2, X } from "lucide-react"
 
 const ticketActionDiscardStyle = {
   borderRadius: layoutsOperarTicketActionCircleRadius,
@@ -37,11 +40,22 @@ export type SaleOperationActionsBarProps = {
   confirmLoading?: boolean
   confirmLabel?: string
   confirmTitle?: string
+  /** Cobrar entra plata (savia). Pagar sale plata (otoño). */
+  confirmTone?: "charge" | "pay"
   onDiscard: () => void
   onConfirm: () => void
+  onComandas?: () => void
+  comandasDisabled?: boolean
   flush?: boolean
-  /** Ticket operar — umbral circular Descartar · Cobrar. */
-  variant?: "default" | "operar"
+  /** Ticket operar — umbral circular Descartar · Cobrar / Pagar. */
+  variant?: "default" | "operar" | "mobile"
+  /** Mesa o pedido — caption arriba, número abajo, alineado con los círculos. */
+  contextLabel?: {
+    caption: string
+    value: string
+    /** Pedido de mostrador: el código puede ser largo. */
+    valueSize?: "prominent" | "compact"
+  }
   className?: string
 }
 
@@ -49,19 +63,105 @@ export function SaleOperationActionsBar({
   discardDisabled = false,
   confirmDisabled = false,
   confirmLoading = false,
-  confirmLabel = "Vender",
+  confirmLabel,
   confirmTitle,
+  confirmTone = "charge",
   onDiscard,
   onConfirm,
+  onComandas,
+  comandasDisabled = false,
   flush = false,
   variant = "default",
+  contextLabel,
   className,
 }: SaleOperationActionsBarProps) {
   const confirmInactive = confirmDisabled || confirmLoading
+  const isPay = confirmTone === "pay"
+  const resolvedConfirmLabel = confirmLabel ?? (isPay ? "Pagar" : "Vender")
+  const ConfirmIcon = isPay ? Banknote : HandCoins
+  const mobileConfirmLabel =
+    isPay
+      ? (confirmLabel ?? "Pagar")
+      : confirmLabel && confirmLabel !== "Vender"
+        ? confirmLabel
+        : "Cobrar"
+
+  if (variant === "mobile") {
+    return (
+      <div
+        className={cn(
+          saleOpActionsBarShellClass,
+          "border-t border-[var(--layouts-operar-border-light)]",
+          className,
+        )}
+      >
+        <button
+          type="button"
+          disabled={discardDisabled}
+          onClick={onDiscard}
+          className={saleOpActionDiscardClass}
+        >
+          <span
+            className={cn(
+              saleOpActionIconWrapDiscardClass,
+              discardDisabled && "bg-slate-200/60 text-slate-500",
+            )}
+            aria-hidden
+          >
+            <X className="size-4 stroke-[2.5]" />
+          </span>
+          Descartar
+        </button>
+        <button
+          type="button"
+          disabled={confirmInactive}
+          onClick={onConfirm}
+          title={confirmTitle}
+          className={isPay ? saleOpActionPayClass : saleOpActionConfirmClass}
+        >
+          <span
+            className={cn(
+              confirmInactive
+                ? saleOpActionIconWrapConfirmDisabledClass
+                : saleOpActionIconWrapConfirmClass,
+            )}
+            aria-hidden
+          >
+            {confirmLoading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : isPay ? (
+              <Banknote className="size-4" />
+            ) : (
+              <CircleDollarSign className="size-4" />
+            )}
+          </span>
+          {confirmLoading ? "Procesando…" : mobileConfirmLabel}
+        </button>
+      </div>
+    )
+  }
 
   if (variant === "operar") {
     return (
-      <>
+      <div className="flex h-full w-full items-center justify-center gap-[var(--rootsy-space-300)]">
+        {contextLabel ? (
+          <p
+            className="flex min-w-[2.5rem] max-w-[7.5rem] flex-col items-center justify-center leading-none text-[var(--rootsy-bruma-800)]"
+            aria-label={`${contextLabel.caption} ${contextLabel.value}`}
+          >
+            <span className="font-canopy text-xs font-bold">
+              {contextLabel.caption}
+            </span>
+            <span
+              className={cn(
+                "-mt-0.5 truncate font-ledger font-bold tabular-nums tracking-tight",
+                contextLabel.valueSize === "compact" ? "text-sm" : "text-2xl",
+              )}
+            >
+              {contextLabel.value}
+            </span>
+          </p>
+        ) : null}
         <RootsIconButton
           label="Descartar"
           theme="workspace"
@@ -78,8 +178,27 @@ export function SaleOperationActionsBar({
             aria-hidden
           />
         </RootsIconButton>
+        {contextLabel ? (
+          <RootsIconButton
+            label="Comandas"
+            theme="pos"
+            emphasis="primary"
+            size="large"
+            sizeChildren={false}
+            disabled={comandasDisabled}
+            onClick={() => onComandas?.()}
+            className={saleOpTicketActionComandasClass}
+            style={ticketActionDiscardStyle}
+          >
+            <ChefHat
+              size={layoutsOperarTicketActionDiscardIconPx}
+              strokeWidth={2}
+              aria-hidden
+            />
+          </RootsIconButton>
+        ) : null}
         <RootsIconButton
-          label={confirmLoading ? "Procesando" : confirmLabel}
+          label={confirmLoading ? "Procesando" : resolvedConfirmLabel}
           theme="pos"
           emphasis="primary"
           size="large"
@@ -88,11 +207,12 @@ export function SaleOperationActionsBar({
           disabled={confirmDisabled}
           title={confirmTitle}
           onClick={onConfirm}
+          className={isPay ? saleOpTicketActionPayClass : undefined}
           style={ticketActionConfirmStyle}
         >
-          <HandCoins size={layoutsOperarTicketActionConfirmIconPx} aria-hidden />
+          <ConfirmIcon size={layoutsOperarTicketActionConfirmIconPx} aria-hidden />
         </RootsIconButton>
-      </>
+      </div>
     )
   }
 
@@ -127,7 +247,10 @@ export function SaleOperationActionsBar({
         disabled={confirmInactive}
         onClick={onConfirm}
         title={confirmTitle}
-        className={cn(saleOpActionConfirmClass, !flush && "rounded-xl")}
+        className={cn(
+          isPay ? saleOpActionPayClass : saleOpActionConfirmClass,
+          !flush && "rounded-xl",
+        )}
       >
         <span
           className={cn(
@@ -139,11 +262,13 @@ export function SaleOperationActionsBar({
         >
           {confirmLoading ? (
             <Loader2 className="size-4 animate-spin" />
+          ) : isPay ? (
+            <Banknote className="size-4" />
           ) : (
             <CircleDollarSign className="size-4" />
           )}
         </span>
-        {confirmLoading ? "Procesando…" : confirmLabel}
+        {confirmLoading ? "Procesando…" : resolvedConfirmLabel}
       </button>
     </div>
   )

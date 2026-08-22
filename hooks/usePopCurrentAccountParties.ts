@@ -1,6 +1,6 @@
 "use client"
 
-import { getPopCurrentAccountParties } from "@/app/[siteId]/[popId]/current-accounts/actions"
+import type { GetPopCurrentAccountPartiesInput } from "@/app/[siteId]/[popId]/current-accounts/actions"
 import type {
   CurrentAccountAgingFilter,
   CurrentAccountDirection,
@@ -10,6 +10,7 @@ import {
   type PopCurrentAccountPartiesQueryParams,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { fetchPopCurrentAccountParties } from "@/lib/rootsyApi/currentAccountsClient"
 import { useQuery } from "@tanstack/react-query"
 
 type UsePopCurrentAccountPartiesOptions = {
@@ -22,19 +23,19 @@ export function usePopCurrentAccountParties(
   options?: UsePopCurrentAccountPartiesOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
+  const queryParams: GetPopCurrentAccountPartiesInput = {
+    q: params.q,
+    page: params.page,
+    pageSize: params.pageSize,
+    direction: params.direction as CurrentAccountDirection | "",
+    aging: params.aging as CurrentAccountAgingFilter | "",
+    sort: params.sort,
+    ord: params.ord,
+  }
 
   return useQuery({
     queryKey: popCurrentAccountPartiesQueryKey(popId ?? "", params),
-    queryFn: () =>
-      getPopCurrentAccountParties(popId!, {
-        q: params.q,
-        page: params.page,
-        pageSize: params.pageSize,
-        direction: params.direction as CurrentAccountDirection | "",
-        aging: params.aging as CurrentAccountAgingFilter | "",
-        sort: params.sort,
-        ord: params.ord,
-      }),
+    queryFn: () => fetchPopCurrentAccountParties(popId!, queryParams),
     enabled,
     ...sessionListQueryOptions,
   })

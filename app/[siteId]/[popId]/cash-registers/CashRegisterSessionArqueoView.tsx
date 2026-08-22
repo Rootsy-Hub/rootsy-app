@@ -17,12 +17,15 @@ import {
   dataWorkspaceFlushBottomPanelClass,
   tdMoneyClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { CashRegisterArqueoPrintDocument } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArqueoPrintDocument"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
+import { RootsSubtleButton } from "@/components/rootsy-button"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import type { CashRegisterClosingComparisonLine } from "@/lib/cashRegisterCloseSettlement"
+import { printSaleComprobanteElement } from "@/lib/saleComprobantePrint"
 import { cn } from "@/lib/utils"
-import { LockOpen } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { LockOpen, Printer } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 const ALL_OPERATIONS_FILTER = "__all__"
 
@@ -134,6 +137,8 @@ export function CashRegisterSessionArqueoView({
   const isOpen = session.status === "open"
   const timeZone = usePopTimeZone()
   const [accountFilter, setAccountFilter] = useState<string | null>(null)
+  const [printing, setPrinting] = useState(false)
+  const printRootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setAccountFilter(null)
@@ -210,9 +215,55 @@ export function CashRegisterSessionArqueoView({
 
   const operationsSegmentValue = accountFilter ?? ALL_OPERATIONS_FILTER
 
+  const handlePrint = async () => {
+    const surface = printRootRef.current?.querySelector<HTMLElement>(
+      ".sale-comprobante-print-surface",
+    )
+    if (!surface || printing) return
+    setPrinting(true)
+    try {
+      await printSaleComprobanteElement(surface, "hoja")
+    } finally {
+      setPrinting(false)
+    }
+  }
+
   return (
-    <div className={cn("flex flex-1 flex-col gap-6", className)}>
+    <div className={cn("relative flex flex-1 flex-col gap-6", className)}>
+      <div
+        ref={printRootRef}
+        aria-hidden
+        className="pointer-events-none h-0 w-0 overflow-hidden"
+      >
+        <CashRegisterArqueoPrintDocument
+          detail={detail}
+          timeZone={timeZone}
+          printedAt={formatCashRegisterDateTime(
+            new Date().toISOString(),
+            timeZone,
+          )}
+        />
+      </div>
+
       <section className={cn(dataWorkspaceDetailPanelClass, "shrink-0 overflow-hidden")}>
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-5">
+          <p className={dataWorkspaceEntityCardStatLabelClass}>
+            Resumen del turno
+          </p>
+          <RootsSubtleButton
+            type="button"
+            size="compact"
+            withIcon
+            loading={printing}
+            loadingLabel="Imprimiendo"
+            onClick={() => {
+              void handlePrint()
+            }}
+          >
+            <Printer className="size-4" aria-hidden />
+            Imprimir
+          </RootsSubtleButton>
+        </div>
         <div className="grid gap-0 lg:grid-cols-2">
           <div className="border-b border-[var(--rootsy-bruma-200)] lg:border-b-0 lg:border-r">
             <ColumnSideHeader

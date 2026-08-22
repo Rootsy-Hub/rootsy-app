@@ -1,7 +1,7 @@
 import type {
   BalanceSheetResult,
   BalanceSheetSectionRow,
-} from "@/app/[siteId]/[popId]/accounting/actions"
+} from "@/app/[siteId]/[popId]/reports/accountingActions"
 import { labelForAccountingCodePrefix } from "@/lib/accountingPlanGroupLabels"
 
 export type BalanceSheetSectionKey = "activo" | "pasivo" | "patrimonio"

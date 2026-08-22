@@ -1,29 +1,29 @@
 /**
- * Puente shadcn → Nature solo en el menú POP.
- * No usar .dark .rootsy-nature-palette global — rompe workspaces light (Stock).
+ * Puente shadcn → mundos Rootsy solo en el menú POP.
+ * Éter de fondo, savia de acción. No usar .dark .rootsy-nature-palette global.
  */
 .dark .menu-nature-shell.rootsy-nature-palette {
-  --background: var(--nature-night-950);
+  --background: var(--rootsy-eter-950);
   --foreground: #ffffff;
-  --card: var(--nature-night-900);
+  --card: var(--rootsy-eter-900);
   --card-foreground: #ffffff;
-  --popover: var(--nature-night-900);
+  --popover: var(--rootsy-eter-900);
   --popover-foreground: #ffffff;
-  --primary: var(--nature-canopy-600);
+  --primary: var(--rootsy-savia-600);
   --primary-foreground: #ffffff;
-  --secondary: color-mix(in srgb, var(--nature-night-700) 42%, transparent);
+  --secondary: color-mix(in srgb, var(--rootsy-sombra-700) 42%, transparent);
   --secondary-foreground: #ffffff;
-  --muted: color-mix(in srgb, var(--nature-night-600) 38%, transparent);
+  --muted: color-mix(in srgb, var(--rootsy-sombra-600) 38%, transparent);
   --muted-foreground: color-mix(in srgb, #ffffff 45%, transparent);
-  --accent: color-mix(in srgb, var(--nature-night-600) 38%, transparent);
+  --accent: color-mix(in srgb, var(--rootsy-sombra-600) 38%, transparent);
   --accent-foreground: #ffffff;
-  --destructive: var(--nature-ember-600);
+  --destructive: var(--rootsy-danger);
   --destructive-foreground: #ffffff;
-  --border: color-mix(in srgb, var(--nature-night-500) 38%, transparent);
-  --input: color-mix(in srgb, var(--nature-night-500) 38%, transparent);
-  --ring: color-mix(in srgb, var(--nature-canopy-600) 45%, transparent);
-  --rootsy-hairline: color-mix(in srgb, #ffffff 4%, transparent);
-  --rootsy-particle: rgba(255, 255, 255, 0.42);
+  --border: color-mix(in srgb, var(--rootsy-sombra-400) 38%, transparent);
+  --input: color-mix(in srgb, var(--rootsy-sombra-400) 38%, transparent);
+  --ring: color-mix(in srgb, var(--rootsy-savia-600) 45%, transparent);
+  --rootsy-hairline: color-mix(in srgb, var(--rootsy-eter-100) 8%, transparent);
+  --rootsy-particle: color-mix(in srgb, var(--rootsy-eter-100) 42%, transparent);
 }
 
 .dark .menu-nature-shell.rootsy-nature-palette .menu-floating-pill,

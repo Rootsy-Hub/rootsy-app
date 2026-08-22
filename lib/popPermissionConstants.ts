@@ -14,11 +14,6 @@ export const POP_PERMS = {
   ARTICLE_UPDATE: { resource: "articles", action: "update" },
   ARTICLE_DELETE: { resource: "articles", action: "delete" },
 
-  ACCOUNTING_READ: { resource: "accounting", action: "read" },
-  ACCOUNTING_CREATE: { resource: "accounting", action: "create" },
-  ACCOUNTING_UPDATE: { resource: "accounting", action: "update" },
-  ACCOUNTING_DELETE: { resource: "accounting", action: "delete" },
-
   ACCOUNTS_READ: { resource: "accounts", action: "read" },
   ACCOUNTS_CREATE: { resource: "accounts", action: "create" },
   ACCOUNTS_UPDATE: { resource: "accounts", action: "update" },

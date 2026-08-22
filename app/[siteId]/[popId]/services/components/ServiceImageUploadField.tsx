@@ -1,6 +1,6 @@
 "use client"
 
-import { uploadServiceImage } from "@/app/[siteId]/[popId]/services/actions"
+import { uploadServiceImage } from "@/lib/rootsyApi/servicesClient"
 import { RootsFormImageUploadField } from "@/components/rootsy-form/RootsFormImageUploadField"
 import {
   compressImageFileToWebp,

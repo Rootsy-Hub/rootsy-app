@@ -5,7 +5,7 @@ import {
   type AccountNature,
   type AccountType,
   type ChartOfAccountsReportRow,
-} from "@/app/[siteId]/[popId]/accounting/actions"
+} from "@/app/[siteId]/[popId]/reports/accountingActions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"

@@ -26,9 +26,13 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
   RootsDialogLoadingState,
+  rootsDialogColumnScrollClass,
+  rootsDialogColumnScrollInnerClass,
+  rootsDialogTwoColAsideClass,
+  rootsDialogTwoColBodyClass,
   useDeferredDialogReset,
 } from "@/components/rootsy-dialog"
-import { rootsFormColumnClass, rootsFormGridDividerClass } from "@/components/rootsy-form"
+import { rootsFormColumnClass } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import {
@@ -47,6 +51,7 @@ type Props = {
   mode: "create" | "edit"
   title: string
   loading?: boolean
+  refreshing?: boolean
   saving?: boolean
   banner?: string | null
   onBannerChange?: (message: string | null) => void
@@ -114,6 +119,7 @@ export function ServiceUpsertDialog({
   mode,
   title,
   loading = false,
+  refreshing = false,
   saving = false,
   banner,
   onBannerChange,
@@ -203,51 +209,52 @@ export function ServiceUpsertDialog({
             title={title}
             description={`Paso ${step}/${LAST_STEP} · ${stepMeta.label}`}
           />
+          {refreshing ? (
+            <div
+              className="h-0.5 w-full overflow-hidden bg-[color:var(--rootsy-bruma-200)]"
+              aria-hidden
+            >
+              <div className="h-full w-1/3 animate-pulse bg-[color:var(--rootsy-savia-500)]/50" />
+            </div>
+          ) : null}
           {loading ? (
             <RootsDialogBody>
               <RootsDialogLoadingState message="Cargando servicio…" />
             </RootsDialogBody>
           ) : (
             <RootsDialogForm onSubmit={handleSubmit} className="min-h-0 flex-1">
-              <RootsDialogBody className="flex min-h-0 flex-1 flex-col overflow-hidden !py-0">
+              <RootsDialogBody className={rootsDialogTwoColBodyClass}>
+                <div className={rootsDialogColumnScrollClass}>
+                  <div
+                    className={cn(
+                      rootsFormColumnClass,
+                      rootsDialogColumnScrollInnerClass,
+                    )}
+                  >
+                    {banner ? (
+                      <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner>
+                    ) : null}
+                    <ServiceUpsertFormFields
+                      idPrefix={idPrefix}
+                      popId={popId}
+                      form={form}
+                      onChange={handleFormChange}
+                      categories={categories}
+                      step={step}
+                      fieldErrors={fieldErrors}
+                      disabled={saving || refreshing}
+                    />
+                  </div>
+                </div>
+
                 <div
                   className={cn(
-                    "grid w-full min-w-0 min-h-0 flex-1 items-stretch gap-5",
-                    "sm:grid-cols-[minmax(0,1fr)_1px_15rem] sm:gap-x-5 sm:gap-y-0",
+                    rootsDialogColumnScrollClass,
+                    rootsDialogTwoColAsideClass,
                   )}
                 >
-                  <div className="flex min-h-0 flex-col">
-                    <div
-                      className={cn(
-                        rootsFormColumnClass,
-                        "rootsy-scroll-minimal min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-[var(--rootsy-space-200)]",
-                      )}
-                    >
-                      {banner ? (
-                        <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner>
-                      ) : null}
-                      <ServiceUpsertFormFields
-                        idPrefix={idPrefix}
-                        popId={popId}
-                        form={form}
-                        onChange={handleFormChange}
-                        categories={categories}
-                        step={step}
-                        fieldErrors={fieldErrors}
-                        disabled={saving}
-                      />
-                    </div>
-                  </div>
-
-                  <div
-                    className={cn(rootsFormGridDividerClass, "hidden sm:block")}
-                    aria-hidden
-                  />
-
-                  <div className="flex min-h-0 flex-col sm:pl-1">
-                    <div className="rootsy-scroll-minimal min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-[var(--rootsy-space-200)]">
-                      <ServiceUpsertSummaryPanel form={form} categories={categories} />
-                    </div>
+                  <div className={rootsDialogColumnScrollInnerClass}>
+                    <ServiceUpsertSummaryPanel form={form} categories={categories} />
                   </div>
                 </div>
               </RootsDialogBody>
@@ -256,7 +263,7 @@ export function ServiceUpsertDialog({
                   <RootsSubtleButton
                     type="button"
                     onClick={step === 1 ? onCancel : handlePrevious}
-                    disabled={saving}
+                    disabled={saving || refreshing}
                     className="shrink-0"
                   >
                     {step === 1 ? "Cancelar" : "Anterior"}
@@ -267,7 +274,7 @@ export function ServiceUpsertDialog({
                       <RootsProgressButton
                         type="button"
                         onClick={handleConfirm}
-                        disabled={saving || categories.length === 0}
+                        disabled={saving || refreshing || categories.length === 0}
                         loading={saving}
                         loadingLabel={confirmLoadingLabel}
                         className="shrink-0"
@@ -278,7 +285,7 @@ export function ServiceUpsertDialog({
                       <RootsPrimaryButton
                         type="button"
                         onClick={handleConfirm}
-                        disabled={saving || categories.length === 0}
+                        disabled={saving || refreshing || categories.length === 0}
                         className="shrink-0"
                       >
                         {confirmLabel}
@@ -288,7 +295,11 @@ export function ServiceUpsertDialog({
                     <RootsPrimaryButton
                       type="button"
                       onClick={handleNext}
-                      disabled={saving || (step === 1 && categories.length === 0)}
+                      disabled={
+                        saving ||
+                        refreshing ||
+                        (step === 1 && categories.length === 0)
+                      }
                       className="shrink-0"
                     >
                       Siguiente

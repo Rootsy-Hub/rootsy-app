@@ -23,10 +23,6 @@ import {
 } from "@/lib/popHelpers"
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
-import {
-  removeCashRegisterArcaPemFiles,
-  uploadCashRegisterArcaPemFiles,
-} from "@/lib/rootsyAfipStorage"
 import { loadSessionCurrentAccountCash } from "@/lib/cashRegisterCurrentAccountCash"
 import { createClient } from "@/utils/supabase/server"
 import {
@@ -34,7 +30,11 @@ import {
   operationPaymentKindLabel,
   type OperationPaymentKind,
 } from "@/lib/operationPaymentKinds"
-import { formatCashRegisterSaleDetail } from "@/lib/cashRegisterOperationDetail"
+import {
+  formatCashRegisterSaleDetail,
+  parseCashRegisterSaleTicket,
+  type CashRegisterOperationSaleLine,
+} from "@/lib/cashRegisterOperationDetail"
 import {
   formatCashRegisterSaleOperationLabel,
   loadCashRegisterSaleContextLabels,
@@ -106,12 +106,20 @@ export type CashTreasuryAccountOption = {
   name: string
 }
 
+export type ArcaSalePointOption = {
+  id: string
+  ptoVta: number
+  configured: boolean
+}
+
 export type CashRegisterRow = {
   id: string
   name: string
   sortOrder: number
   isActive: boolean
   cashTreasuryAccountId: string | null
+  arcaSalePointId: string | null
+  arcaPtoVta: number | null
   openSessionId: string | null
   /** Si hay turno abierto: puede cerrarlo el usuario actual. */
   canCloseOpenSession: boolean
@@ -120,13 +128,6 @@ export type CashRegisterRow = {
   openedAt: string | null
   openSessionMeta: CashRegisterOpenSessionMeta | null
   openSessionTotals: CashRegisterOpenSessionTotals | null
-  arcaPtoVta: number | null
-  arcaCertificateSecretName: string | null
-  arcaCertificateLastFour: string | null
-  /** YYYY-MM-DD */
-  arcaCertificateExpiresAt: string | null
-  arcaCrtUploadedAt: string | null
-  arcaKeyUploadedAt: string | null
 }
 
 export type PaymentMethodOption = {
@@ -211,10 +212,14 @@ export type CashRegisterSessionOperationRow = {
   detail: string
   paymentMethodLabel: string
   amount: number
+  lines: CashRegisterOperationSaleLine[]
+  showLines: boolean
+  generalDiscountAmount: number
 }
 
 export type CashRegisterSessionArqueoDetail = {
   registerName: string
+  popName: string
   session: CashRegisterSummarySession
   closingComparison: CashRegisterClosingComparisonLine[]
   hasAccountingEntry: boolean
@@ -638,21 +643,6 @@ function buildClosingBlocksFromSessions(sessions: CashRegisterSummarySession[]):
   return { closingBlocks, aggregatedClosingLines }
 }
 
-function looksLikePemCert(s: string): boolean {
-  const t = s.trim()
-  return t.includes("BEGIN CERTIFICATE") && t.includes("END CERTIFICATE")
-}
-
-function looksLikePemKey(s: string): boolean {
-  const t = s.trim()
-  return (
-    (t.includes("BEGIN RSA PRIVATE KEY") ||
-      t.includes("BEGIN PRIVATE KEY") ||
-      t.includes("BEGIN EC PRIVATE KEY")) &&
-    t.includes("END")
-  )
-}
-
 async function computeCashBalance(
   supabase: Awaited<ReturnType<typeof createClient>>,
   sessionId: string,
@@ -732,10 +722,8 @@ async function loadCobrosTurnoPorMedio(
 export async function getCashRegistersPageData(popId: string): Promise<
   | {
       success: true
-      popName: string
-      popFiscalCuit: string | null
-      popFiscalRazonSocial: string | null
       registers: CashRegisterRow[]
+      salePoints: ArcaSalePointOption[]
       cashTreasuryAccounts: CashTreasuryAccountOption[]
       paymentMethods: PaymentMethodOption[]
       canRead: boolean
@@ -778,17 +766,6 @@ export async function getCashRegistersPageData(popId: string): Promise<
       POP_PERMS.CASH_REGISTER_DELETE.resource,
       POP_PERMS.CASH_REGISTER_DELETE.action,
     )
-    const popRes = await getPopById(popId)
-    const popName =
-      popRes.success && popRes.pop ? String(popRes.pop.name ?? "") : ""
-    const popFiscalCuit =
-      popRes.success && popRes.pop?.fiscalCuit
-        ? String(popRes.pop.fiscalCuit).trim()
-        : null
-    const popFiscalRazonSocial =
-      popRes.success && popRes.pop?.fiscalRazonSocial
-        ? String(popRes.pop.fiscalRazonSocial).trim()
-        : null
     const supabase = await createClient()
     const {
       data: { user: currentUser },
@@ -797,7 +774,7 @@ export async function getCashRegistersPageData(popId: string): Promise<
     const { data: regs, error: regErr } = await supabase
       .from("cash_registers")
       .select(
-        "id, name, sort_order, is_active, cash_treasury_account_id, arca_pto_vta, arca_certificate_secret_name, arca_certificate_last_four, arca_certificate_expires_at, arca_certificate_crt_uploaded_at, arca_certificate_key_uploaded_at",
+        "id, name, sort_order, is_active, cash_treasury_account_id, arca_sale_point_id",
       )
       .eq("pop_id", popId)
       .order("sort_order", { ascending: true })
@@ -937,36 +914,15 @@ export async function getCashRegistersPageData(popId: string): Promise<
           r.cash_treasury_account_id != null
             ? String(r.cash_treasury_account_id)
             : null,
+        arcaSalePointId:
+          r.arca_sale_point_id != null ? String(r.arca_sale_point_id) : null,
+        arcaPtoVta: null,
         openSessionId,
         canCloseOpenSession,
         cashBalance,
         openedAt,
         openSessionMeta,
         openSessionTotals,
-        arcaPtoVta:
-          r.arca_pto_vta != null && Number.isFinite(Number(r.arca_pto_vta))
-            ? Number(r.arca_pto_vta)
-            : null,
-        arcaCertificateSecretName:
-          r.arca_certificate_secret_name != null
-            ? String(r.arca_certificate_secret_name)
-            : null,
-        arcaCertificateLastFour:
-          r.arca_certificate_last_four != null
-            ? String(r.arca_certificate_last_four)
-            : null,
-        arcaCertificateExpiresAt:
-          r.arca_certificate_expires_at != null
-            ? String(r.arca_certificate_expires_at).slice(0, 10)
-            : null,
-        arcaCrtUploadedAt:
-          r.arca_certificate_crt_uploaded_at != null
-            ? String(r.arca_certificate_crt_uploaded_at)
-            : null,
-        arcaKeyUploadedAt:
-          r.arca_certificate_key_uploaded_at != null
-            ? String(r.arca_certificate_key_uploaded_at)
-            : null,
       })
     }
     const { data: cashTaRows, error: cashTaErr } = await supabase
@@ -990,15 +946,34 @@ export async function getCashRegistersPageData(popId: string): Promise<
       name: String(row.name ?? ""),
     }))
 
+    const { data: salePointRows } = await supabase
+      .from("arca_sale_points")
+      .select(
+        "id, pto_vta, certificate_crt_uploaded_at, certificate_key_uploaded_at",
+      )
+      .eq("pop_id", popId)
+      .order("pto_vta", { ascending: true })
+    const salePoints: ArcaSalePointOption[] = (salePointRows || []).map((row) => ({
+      id: String(row.id),
+      ptoVta: Number(row.pto_vta),
+      configured: Boolean(
+        row.certificate_crt_uploaded_at && row.certificate_key_uploaded_at,
+      ),
+    }))
+    const ptoVtaById = new Map(salePoints.map((row) => [row.id, row.ptoVta]))
+    for (const register of registers) {
+      register.arcaPtoVta = register.arcaSalePointId
+        ? (ptoVtaById.get(register.arcaSalePointId) ?? null)
+        : null
+    }
+
     const paymentMethods: PaymentMethodOption[] = OPERATION_PAYMENT_KINDS.filter(
       (k) => k.value !== "cash",
     ).map((k) => ({ kind: k.value, label: k.label }))
     return {
       success: true,
-      popName,
-      popFiscalCuit,
-      popFiscalRazonSocial,
       registers,
+      salePoints,
       cashTreasuryAccounts,
       paymentMethods,
       canRead,
@@ -1012,9 +987,41 @@ export async function getCashRegistersPageData(popId: string): Promise<
   }
 }
 
+async function resolveArcaSalePointId(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  raw: string | null | undefined,
+): Promise<
+  { success: true; id: string | null } | { success: false; error: string }
+> {
+  const value = (raw ?? "").trim()
+  if (!value || value === "none") return { success: true, id: null }
+  if (!/^[0-9a-f-]{36}$/i.test(value)) {
+    return { success: false, error: "Punto de venta AFIP inválido." }
+  }
+  const { data, error } = await supabase
+    .from("arca_sale_points")
+    .select("id")
+    .eq("id", value)
+    .eq("pop_id", popId)
+    .maybeSingle()
+  if (error || !data?.id) {
+    return {
+      success: false,
+      error: "Ese punto de venta no existe en este negocio.",
+    }
+  }
+  return { success: true, id: String(data.id) }
+}
+
 export async function createCashRegister(
   popId: string,
-  input: { name: string; sortOrder: number; cashTreasuryAccountId: string },
+  input: {
+    name: string
+    sortOrder: number
+    cashTreasuryAccountId: string
+    arcaSalePointId?: string | null
+  },
 ): Promise<
   { success: true; registerId: string } | { success: false; error: string }
 > {
@@ -1046,6 +1053,12 @@ export async function createCashRegister(
       return { success: false, error: "Elegí una cuenta de efectivo destino." }
     }
     const supabase = await createClient()
+    const salePoint = await resolveArcaSalePointId(
+      supabase,
+      popId,
+      input.arcaSalePointId,
+    )
+    if (!salePoint.success) return salePoint
     const { data: inserted, error } = await supabase
       .from("cash_registers")
       .insert({
@@ -1054,6 +1067,7 @@ export async function createCashRegister(
         sort_order: sortOrder,
         is_active: true,
         cash_treasury_account_id: cashTreasuryAccountId,
+        arca_sale_point_id: salePoint.id,
       })
       .select("id")
       .single()
@@ -1078,11 +1092,7 @@ export async function updateCashRegister(
     sortOrder: number
     isActive: boolean
     cashTreasuryAccountId: string
-    arcaPtoVta: number | null
-    arcaCertificateSecretName: string | null
-    arcaCertificateLastFour: string | null
-    /** YYYY-MM-DD o vacío → null */
-    arcaCertificateExpiresAt: string | null
+    arcaSalePointId?: string | null
   },
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
@@ -1108,23 +1118,17 @@ export async function updateCashRegister(
     if (!Number.isFinite(sortOrder)) {
       return { success: false, error: "Invalid sort order." }
     }
-    const pto = input.arcaPtoVta
-    if (
-      pto != null &&
-      (!Number.isFinite(pto) || pto < 0 || pto > 99999)
-    ) {
-      return { success: false, error: "Punto de venta inválido (0–99999)." }
-    }
     const cashTreasuryAccountId = input.cashTreasuryAccountId.trim()
     if (!/^[0-9a-f-]{36}$/i.test(cashTreasuryAccountId)) {
       return { success: false, error: "Elegí una cuenta de efectivo destino." }
     }
     const supabase = await createClient()
-    const secretTrim = input.arcaCertificateSecretName?.trim() ?? ""
-    const lastFourTrim = input.arcaCertificateLastFour?.trim() ?? ""
-    const expRaw = input.arcaCertificateExpiresAt?.trim() ?? ""
-    const arca_certificate_expires_at =
-      expRaw.length > 0 ? expRaw.slice(0, 10) : null
+    const salePoint = await resolveArcaSalePointId(
+      supabase,
+      popId,
+      input.arcaSalePointId,
+    )
+    if (!salePoint.success) return salePoint
     const { error } = await supabase
       .from("cash_registers")
       .update({
@@ -1132,10 +1136,7 @@ export async function updateCashRegister(
         sort_order: sortOrder,
         is_active: input.isActive,
         cash_treasury_account_id: cashTreasuryAccountId,
-        arca_pto_vta: pto,
-        arca_certificate_secret_name: secretTrim.length > 0 ? secretTrim : null,
-        arca_certificate_last_four: lastFourTrim.length > 0 ? lastFourTrim : null,
-        arca_certificate_expires_at,
+        arca_sale_point_id: salePoint.id,
       })
       .eq("id", registerId)
       .eq("pop_id", popId)
@@ -1145,108 +1146,6 @@ export async function updateCashRegister(
     return { success: true }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error"
-    return { success: false, error: message }
-  }
-}
-
-export async function uploadCashRegisterArcaCertificates(
-  popId: string,
-  registerId: string,
-  formData: FormData,
-): Promise<{ success: true } | { success: false; error: string }> {
-  try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
-    }
-    const snap = await loadPopPermissionsSnapshot(popId)
-    if (
-      !permissionKeysInclude(
-        snap.keys,
-        POP_PERMS.CASH_REGISTER_UPDATE.resource,
-        POP_PERMS.CASH_REGISTER_UPDATE.action,
-      )
-    ) {
-      return { success: false, error: "No permission to update." }
-    }
-    const crt = formData.get("crt")
-    const key = formData.get("key")
-    if (!(crt instanceof File) || !(key instanceof File)) {
-      return {
-        success: false,
-        error: "Subí el archivo .crt y el .key (ambos).",
-      }
-    }
-    if (crt.size === 0 || key.size === 0) {
-      return { success: false, error: "Los archivos no pueden estar vacíos." }
-    }
-    const crtName = crt.name.toLowerCase()
-    const keyName = key.name.toLowerCase()
-    if (!crtName.endsWith(".crt")) {
-      return {
-        success: false,
-        error: "El certificado debe ser un archivo .crt.",
-      }
-    }
-    if (!keyName.endsWith(".key")) {
-      return {
-        success: false,
-        error: "La clave privada debe ser un archivo .key.",
-      }
-    }
-    const certText = Buffer.from(await crt.arrayBuffer()).toString("utf8")
-    const keyText = Buffer.from(await key.arrayBuffer()).toString("utf8")
-    if (!looksLikePemCert(certText)) {
-      return {
-        success: false,
-        error: "El .crt no parece un PEM de certificado válido.",
-      }
-    }
-    if (!looksLikePemKey(keyText)) {
-      return {
-        success: false,
-        error: "El .key no parece una clave privada PEM válida.",
-      }
-    }
-    const up = await uploadCashRegisterArcaPemFiles({
-      popId,
-      registerId,
-      certPemUtf8: certText,
-      keyPemUtf8: keyText,
-    })
-    if (!up.success) return up
-    const expField = formData.get("expiresAt")
-    const expStr =
-      typeof expField === "string" && expField.trim().length > 0
-        ? expField.trim().slice(0, 10)
-        : null
-    const now = new Date().toISOString()
-    const supabase = await createClient()
-    const { error } = await supabase
-      .from("cash_registers")
-      .update({
-        arca_certificate_crt_uploaded_at: now,
-        arca_certificate_key_uploaded_at: now,
-        arca_certificate_expires_at: expStr,
-      })
-      .eq("id", registerId)
-      .eq("pop_id", popId)
-    if (error) {
-      return { success: false, error: error.message || "Could not save metadata." }
-    }
-    return { success: true }
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Unknown error"
-    if (
-      message.includes("SUPABASE_SERVICE_ROLE_KEY") ||
-      message.includes("URL de Supabase")
-    ) {
-      return {
-        success: false,
-        error:
-          "Falta configurar el almacenamiento en el servidor (SUPABASE_SERVICE_ROLE_KEY).",
-      }
-    }
     return { success: false, error: message }
   }
 }
@@ -1291,11 +1190,6 @@ export async function deleteCashRegister(
       .eq("pop_id", popId)
     if (error) {
       return { success: false, error: error.message || "Could not delete." }
-    }
-    try {
-      await removeCashRegisterArcaPemFiles(popId, registerId)
-    } catch {
-      /* best-effort: borrar objetos del bucket */
     }
     return { success: true }
   } catch (e: unknown) {
@@ -2129,6 +2023,9 @@ export async function getCashRegisterSessionArqueoDetail(
       .eq("pop_id", popId)
       .maybeSingle()
     const registerName = String(regRow?.name ?? "")
+    const popRes = await getPopById(popId)
+    const popName =
+      popRes.success && popRes.pop ? String(popRes.pop.name ?? "").trim() : ""
 
     const { data: allSessRows } = await supabase
       .from("cash_register_sessions")
@@ -2223,6 +2120,10 @@ export async function getCashRegisterSessionArqueoDetail(
             : row.client_id
               ? "Cliente registrado"
               : "Consumidor final"
+        const ticket = parseCashRegisterSaleTicket(
+          row.line_items,
+          parseAmount(row.discount_total),
+        )
         const detail = formatCashRegisterSaleDetail(
           row.line_items,
           parseAmount(row.discount_total),
@@ -2256,6 +2157,9 @@ export async function getCashRegisterSessionArqueoDetail(
             detail,
             paymentMethodLabel: "—",
             amount: parseAmount(row.total),
+            lines: ticket.lines,
+            showLines: true,
+            generalDiscountAmount: ticket.generalDiscountAmount,
           })
         } else {
           for (const [index, payment] of payList.entries()) {
@@ -2272,6 +2176,9 @@ export async function getCashRegisterSessionArqueoDetail(
               detail,
               paymentMethodLabel: formatTreasuryPaymentLabelFromRow(payment),
               amount,
+              lines: ticket.lines,
+              showLines: index === 0,
+              generalDiscountAmount: ticket.generalDiscountAmount,
             })
           }
         }
@@ -2316,6 +2223,9 @@ export async function getCashRegisterSessionArqueoDetail(
               : "Retiro del cajón",
         paymentMethodLabel: "Efectivo",
         amount: parseAmount(m.amount),
+        lines: [],
+        showLines: false,
+        generalDiscountAmount: 0,
       })
     }
 
@@ -2347,6 +2257,7 @@ export async function getCashRegisterSessionArqueoDetail(
       success: true,
       data: {
         registerName,
+        popName,
         session,
         closingComparison,
         hasAccountingEntry: Boolean(entryRow?.id),

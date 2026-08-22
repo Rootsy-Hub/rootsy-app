@@ -3,7 +3,7 @@
 import {
   searchAccountingChartAccounts,
   type ChartAccountSearchRow,
-} from "@/app/[siteId]/[popId]/accounting/actions"
+} from "@/app/[siteId]/[popId]/reports/accountingActions"
 import { RootsFormSearchField, rootsFormSelectContentClass } from "@/components/rootsy-form"
 import {
   rootsFormDropdownHighlightItemClassForTone,

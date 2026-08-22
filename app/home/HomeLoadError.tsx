@@ -1,5 +1,6 @@
 "use client"
 
+import { HOME_COPY } from "@/app/home/homeCopy"
 import {
   menuRealmChromeShellClass,
   menuRealmLightMutedClass,
@@ -15,12 +16,12 @@ export function HomeLoadError({ onRetry }: HomeLoadErrorProps) {
   return (
     <div
       className={cn(
-        "mx-auto mt-2 max-w-md rounded-2xl px-6 py-5 text-center",
+        "mx-auto mt-2 max-w-md rounded-2xl px-5 py-5 text-center sm:px-6",
         menuRealmChromeShellClass,
       )}
     >
       <p className={cn("text-sm leading-relaxed", menuRealmLightMutedClass)}>
-        No pudimos cargar tus puntos de venta.{" "}
+        {HOME_COPY.loadError}{" "}
         <button
           type="button"
           className={cn(
@@ -36,7 +37,7 @@ export function HomeLoadError({ onRetry }: HomeLoadErrorProps) {
             window.location.reload()
           }}
         >
-          Reintentar
+          {HOME_COPY.retry}
         </button>
       </p>
     </div>

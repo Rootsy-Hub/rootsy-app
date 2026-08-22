@@ -21,6 +21,7 @@ export type DataWorkspaceModuleLayoutProps = DataWorkspaceLayoutProps
 export function DataWorkspaceModuleLayout({
   headerVariant = dataWorkspaceModuleHeaderVariant,
   usePopBackdrop = true,
+  useBackdrop = true,
   contentFlush = false,
   mainClassName,
   ...props
@@ -29,7 +30,8 @@ export function DataWorkspaceModuleLayout({
     <DataWorkspaceLayout
       {...props}
       headerVariant={headerVariant}
-      usePopBackdrop={usePopBackdrop}
+      usePopBackdrop={useBackdrop ? usePopBackdrop : false}
+      useBackdrop={useBackdrop}
       contentFlush={contentFlush}
       mainClassName={cn(
         contentFlush && layoutsModuleContentShellClass,

@@ -1,22 +1,11 @@
 "use client"
 
-import {
-  createPopRecipe,
-  createRecipeCategory,
-  deletePopRecipe,
-  deleteRecipeCategory,
-  getPopRecipeCategories,
-  getPopRecipeDetail,
-  getRecipeIngredientOptions,
-  syncRecipeCategoryMenuLayout,
-  updatePopRecipe,
-  updateRecipeCategory,
-  type RecipeCategoryOption,
-  type RecipeIngredientOption,
-  type RecipeTableRow,
-} from "@/app/[siteId]/[popId]/recipes/actions"
+import type { RecipeTableRow } from "@/app/[siteId]/[popId]/recipes/actions"
 import { ingredientLinesFromDetail } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientEditor"
+import { RecipeCategoryDeleteDialog } from "@/app/[siteId]/[popId]/recipes/RecipeCategoryDeleteDialog"
 import { RecipeCategoriesDialog } from "@/app/[siteId]/[popId]/recipes/RecipeCategoriesDialog"
+import { RecipeStationDeleteDialog } from "@/app/[siteId]/[popId]/recipes/RecipeStationDeleteDialog"
+import { RecipeStationsDialog } from "@/app/[siteId]/[popId]/recipes/RecipeStationsDialog"
 import { RecipeDeleteDialog } from "@/app/[siteId]/[popId]/recipes/RecipeDeleteDialog"
 import { RecipesFiltersDialog } from "@/app/[siteId]/[popId]/recipes/RecipesFiltersDialog"
 import { RecipeUpsertDialog } from "@/app/[siteId]/[popId]/recipes/RecipeUpsertDialog"
@@ -97,10 +86,46 @@ import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTab
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { recipesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { TableBody, TableCell, TableRow } from "@/components/ui/table"
+import { TableBody, TableCell } from "@/components/ui/table"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
+import { usePopComandaStations } from "@/hooks/usePopComandaStations"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import { usePopPriceLists } from "@/hooks/usePopPriceLists"
+import { usePopRecipeCategories } from "@/hooks/usePopRecipeCategories"
 import { usePopRecipesTable } from "@/hooks/usePopRecipesTable"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
-import { popRecipesQueryRoot } from "@/lib/queryKeys"
+import { formatMoneyInputForField } from "@/lib/moneyInput"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
+import {
+  extraPriceLists,
+  parseListPriceFormValues,
+} from "@/lib/salePriceLists"
+import {
+  popComandaStationsQueryKey,
+  popRecipeCategoriesQueryKey,
+  popRecipeQueryKey,
+  popRecipesQueryRoot,
+} from "@/lib/queryKeys"
+import {
+  createPopComandaStation,
+  deletePopComandaStation,
+  fetchPopComandaStationCategoryCount,
+  updatePopComandaStation,
+} from "@/lib/rootsyApi/comandaStationsClient"
+import {
+  createPopRecipeCategory,
+  deletePopRecipeCategory,
+  fetchPopRecipeCategoryCount,
+  syncPopRecipeCategoryLayout,
+  updatePopRecipeCategory,
+} from "@/lib/rootsyApi/recipeCategoriesClient"
+import {
+  createPopRecipe,
+  deletePopRecipe,
+  fetchPopRecipe,
+  updatePopRecipe,
+} from "@/lib/rootsyApi/recipesClient"
 import { useQueryClient } from "@tanstack/react-query"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
@@ -108,7 +133,7 @@ import {
   nextWorkspaceTableSortState,
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
-import { FolderTree, Pencil, Plus, Trash2 } from "lucide-react"
+import { ChefHat, FolderTree, Pencil, Plus, Trash2 } from "lucide-react"
 import {
   useParams,
   usePathname,
@@ -135,25 +160,34 @@ export function RecipesWorkspaceView() {
   const searchParams = useSearchParams()
   const routerRef = useRef(router)
   routerRef.current = router
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
   const ws = useMemo(
-    () => parseRecipesWorkspaceUrl(searchParams),
-    [searchParams],
+    () => parseRecipesWorkspaceUrl(workspaceParams),
+    [workspaceParams],
   )
 
   const searchInputId = useId()
   const filtersButtonId = useId()
   const pageSizeLabelId = useId()
 
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [actionError, setError] = useState<string | null>(null)
-
-  const [categories, setCategories] = useState<RecipeCategoryOption[]>([])
-  const [ingredientOptions, setIngredientOptions] = useState<
-    RecipeIngredientOption[]
-  >([])
-
   const [searchInput, setSearchInput] = useState(ws.q)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
@@ -162,11 +196,12 @@ export function RecipesWorkspaceView() {
   )
 
   const [formOpen, setFormOpen] = useState(false)
-  const [formDetailLoading, setFormDetailLoading] = useState(false)
+  const [formRefreshing, setFormRefreshing] = useState(false)
   const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<RecipeFormState>(defaultRecipeFormState())
+  const editRequestIdRef = useRef(0)
 
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<RecipeTableRow | null>(null)
@@ -175,17 +210,74 @@ export function RecipesWorkspaceView() {
   const [deleteBusy, setDeleteBusy] = useState(false)
 
   const [categoriesOpen, setCategoriesOpen] = useState(false)
+  const [categoriesBanner, setCategoriesBanner] = useState<string | null>(null)
+  const [categoriesBoardKey, setCategoriesBoardKey] = useState(0)
   const [newCategoryName, setNewCategoryName] = useState("")
+  const [newCategoryStationId, setNewCategoryStationId] = useState<string | null>(
+    null,
+  )
+  const [newCategorySaving, setNewCategorySaving] = useState(false)
+  const [pendingCategoryCreate, setPendingCategoryCreate] = useState<{
+    name: string
+    stationName: string
+  } | null>(null)
+  const [pendingCategoryDeleteId, setPendingCategoryDeleteId] = useState<
+    string | null
+  >(null)
   const [categoryBusy, setCategoryBusy] = useState(false)
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
   const [editingCategoryName, setEditingCategoryName] = useState("")
+  const [editingCategoryStationId, setEditingCategoryStationId] = useState<
+    string | null
+  >(null)
+  const [deleteCategoryTarget, setDeleteCategoryTarget] = useState<{
+    id: string
+    name: string
+    recipeCount: number | null
+  } | null>(null)
+  const [deleteCategoryBusy, setDeleteCategoryBusy] = useState(false)
+  const [deleteCategoryBanner, setDeleteCategoryBanner] = useState<string | null>(
+    null,
+  )
+
+  const [stationsOpen, setStationsOpen] = useState(false)
+  const [stationsBanner, setStationsBanner] = useState<string | null>(null)
+  const [newStationName, setNewStationName] = useState("")
+  const [newStationSaving, setNewStationSaving] = useState(false)
+  const [pendingStationCreate, setPendingStationCreate] = useState<{
+    name: string
+  } | null>(null)
+  const [pendingStationDeleteId, setPendingStationDeleteId] = useState<
+    string | null
+  >(null)
+  const [stationBusy, setStationBusy] = useState(false)
+  const [editingStationId, setEditingStationId] = useState<string | null>(null)
+  const [editingStationName, setEditingStationName] = useState("")
+  const [deleteStationTarget, setDeleteStationTarget] = useState<{
+    id: string
+    name: string
+    categoryCount: number | null
+  } | null>(null)
+  const [deleteStationBusy, setDeleteStationBusy] = useState(false)
+  const [deleteStationBanner, setDeleteStationBanner] = useState<string | null>(
+    null,
+  )
 
   const pushWs = useCallback(
     (patch: Parameters<typeof mergeRecipesWorkspaceUrl>[1]) => {
-      const next = mergeRecipesWorkspaceUrl(searchParams, patch)
-      router.replace(`${pathname}?${next.toString()}`)
+      const qs = mergeRecipesWorkspaceUrl(workspaceParams, patch)
+      const next = qs.toString()
+        ? `${pathname}?${qs.toString()}`
+        : pathname
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== next) {
+          window.history.replaceState(window.history.state, "", next)
+        }
+      }
+      setWorkspaceSearch(qs.toString())
     },
-    [pathname, router, searchParams],
+    [pathname, workspaceParams],
   )
 
   const handleSortColumn = useCallback(
@@ -222,17 +314,48 @@ export function RecipesWorkspaceView() {
       sort: ws.sort,
       ord: ws.ord,
     },
-    { enabled: Boolean(popId) },
+    { enabled: Boolean(popId && siteId) },
   )
+  const categoriesNeeded =
+    formOpen || categoriesOpen || filtersModalOpen
+  const categoriesQuery = usePopRecipeCategories(popId, {
+    enabled: categoriesNeeded,
+  })
+  const categories = categoriesQuery.data ?? []
+  const stationsNeeded = categoriesOpen || stationsOpen
+  const stationsQuery = usePopComandaStations(popId, {
+    enabled: stationsNeeded,
+  })
+  const stations = stationsQuery.data ?? []
+  const priceListsNeeded = formOpen
+  const priceListsQuery = usePopPriceLists(popId, {
+    enabled: priceListsNeeded,
+  })
+  const priceLists = priceListsQuery.data ?? []
 
   const recipes = recipesQuery.data?.recipes ?? []
   const totalCount = recipesQuery.data?.totalCount ?? 0
-  const canCreate = recipesQuery.data?.canCreate ?? false
-  const canUpdate = recipesQuery.data?.canUpdate ?? false
-  const canDelete = recipesQuery.data?.canDelete ?? false
+  const recipePerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = recipePerm(POP_PERMS.RECIPE_CREATE)
+  const canUpdate = recipePerm(POP_PERMS.RECIPE_UPDATE)
+  const canDelete = recipePerm(POP_PERMS.RECIPE_DELETE)
   const loading =
-    recipesQuery.isPending ||
-    (recipesQuery.isFetching && !recipesQuery.isFetched)
+    !popId || !siteId
+      ? false
+      : recipesQuery.isPending ||
+        (recipesQuery.isFetching && !recipesQuery.isFetched)
   const tableError =
     recipesQuery.data?.success === false
       ? recipesQuery.data.error
@@ -245,37 +368,39 @@ export function RecipesWorkspaceView() {
 
   const refreshRecipesList = useCallback(async () => {
     if (!popId) return
+    invalidatePopOperateCatalogs(queryClient, popId)
     await queryClient.invalidateQueries({
       queryKey: popRecipesQueryRoot(popId),
     })
   }, [popId, queryClient])
 
-  const loadCategories = useCallback(async () => {
+  const refreshCategories = useCallback(async () => {
     if (!popId) return
-    const res = await getPopRecipeCategories(popId)
-    if (res.success) setCategories(res.categories)
-  }, [popId])
+    await queryClient.invalidateQueries({
+      queryKey: popRecipeCategoriesQueryKey(popId),
+    })
+  }, [popId, queryClient])
 
-  const loadIngredientOptions = useCallback(async () => {
+  const refreshStations = useCallback(async () => {
     if (!popId) return
-    const res = await getRecipeIngredientOptions(popId)
-    if (res.success) setIngredientOptions(res.ingredients)
-  }, [popId])
+    await queryClient.invalidateQueries({
+      queryKey: popComandaStationsQueryKey(popId),
+    })
+  }, [popId, queryClient])
 
   useEffect(() => {
     const res = recipesQuery.data
     if (!res || res.success || !("redirect" in res) || !res.redirect) return
-    routerRef.current.replace(res.redirect)
+    const redirect = res.redirect
+    const timeout = window.setTimeout(() => {
+      routerRef.current.push(redirect)
+    }, 1200)
+    return () => window.clearTimeout(timeout)
   }, [recipesQuery.data])
 
   useEffect(() => {
     setSelected(new Set())
   }, [ws.q, ws.page, ws.pageSize, ws.soloActivos, ws.categoryId, ws.sort, ws.ord])
-
-  useEffect(() => {
-    void loadCategories()
-    void loadIngredientOptions()
-  }, [loadCategories, loadIngredientOptions])
 
   useEffect(() => {
     setSearchInput(ws.q)
@@ -368,49 +493,79 @@ export function RecipesWorkspaceView() {
   }, [pushWs])
 
   const openCreate = () => {
+    if (!canCreate) return
     setEditingId(null)
     setForm(defaultRecipeFormState())
     setFormError(null)
+    setFormRefreshing(false)
     setFormOpen(true)
   }
 
-  const openEdit = async (row: RecipeTableRow) => {
+  const openEdit = (row: RecipeTableRow) => {
+    if (!popId) return
+    const requestId = ++editRequestIdRef.current
     setFormError(null)
-    setFormDetailLoading(true)
-    setFormOpen(true)
     setEditingId(row.id)
-    const res = await getPopRecipeDetail(popId, row.id)
-    setFormDetailLoading(false)
-    if (!res.success) {
-      setFormError(res.error)
-      return
-    }
-    setForm(
-      recipeFormFromDetail(
-        res.recipe,
-        ingredientLinesFromDetail(res.recipe.ingredients),
-      ),
-    )
+    setForm(recipeFormFromDetail(row, []))
+    setFormRefreshing(true)
+    setFormOpen(true)
+    void queryClient
+      .fetchQuery({
+        queryKey: popRecipeQueryKey(popId, row.id),
+        queryFn: () => fetchPopRecipe(popId, row.id),
+        staleTime: 0,
+      })
+      .then((detail) => {
+        if (editRequestIdRef.current !== requestId) return
+        setForm(
+          recipeFormFromDetail(
+            detail,
+            ingredientLinesFromDetail(detail.ingredients),
+            Object.fromEntries(
+              (detail.listPrices ?? []).map((item) => [
+                item.listId,
+                formatMoneyInputForField(item.amount),
+              ]),
+            ),
+          ),
+        )
+      })
+      .catch((err: unknown) => {
+        if (editRequestIdRef.current !== requestId) return
+        setFormError(
+          err instanceof Error ? err.message : "No se pudo cargar la receta",
+        )
+      })
+      .finally(() => {
+        if (editRequestIdRef.current === requestId) setFormRefreshing(false)
+      })
   }
 
   const closeForm = () => {
+    editRequestIdRef.current += 1
     setFormOpen(false)
   }
 
   const finalizeFormClose = () => {
     setEditingId(null)
     setFormError(null)
-    setFormDetailLoading(false)
+    setFormRefreshing(false)
     setFormSaving(false)
     setForm(defaultRecipeFormState())
   }
 
   const submitForm = async (e: FormEvent) => {
     e.preventDefault()
-    if (formSaving || formDetailLoading) return
+    if (formSaving || formRefreshing) return
     setFormSaving(true)
     setFormError(null)
-    const payload = recipeFormToPayload(form)
+    const payload = {
+      ...recipeFormToPayload(form),
+      listPrices: parseListPriceFormValues(
+        form.listPrices,
+        extraPriceLists(priceLists),
+      ),
+    }
     const res = editingId
       ? await updatePopRecipe(popId, editingId, payload)
       : await createPopRecipe(popId, payload)
@@ -457,43 +612,191 @@ export function RecipesWorkspaceView() {
   }
 
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim() || categoryBusy) return
-    setCategoryBusy(true)
-    const res = await createRecipeCategory(popId, newCategoryName)
-    setCategoryBusy(false)
+    const name = newCategoryName.trim()
+    if (!name || newCategorySaving) return
+    const stationId = newCategoryStationId
+    const stationName =
+      stations.find((station) => station.id === stationId)?.name ||
+      "Sin comanda"
+    setCategoriesBanner(null)
+    setNewCategorySaving(true)
+    setPendingCategoryCreate({ name, stationName })
+    setNewCategoryName("")
+    setNewCategoryStationId(null)
+    const res = await createPopRecipeCategory(popId, name, stationId)
     if (!res.success) {
-      setError(res.error)
+      setPendingCategoryCreate(null)
+      setNewCategorySaving(false)
+      setNewCategoryName(name)
+      setCategoriesBanner(res.error)
       return
     }
-    setNewCategoryName("")
-    await loadCategories()
+    await refreshCategories()
+    setCategoriesBoardKey((k) => k + 1)
+    setNewCategorySaving(false)
+    setPendingCategoryCreate(null)
   }
 
   const handleSaveCategoryEdit = async () => {
     if (!editingCategoryId || categoryBusy) return
+    const current = categories.find((category) => category.id === editingCategoryId)
+    if (
+      current &&
+      editingCategoryName.trim() === current.name.trim() &&
+      editingCategoryStationId === current.stationId
+    ) {
+      return
+    }
     setCategoryBusy(true)
-    const res = await updateRecipeCategory(
+    const res = await updatePopRecipeCategory(
       popId,
       editingCategoryId,
       editingCategoryName,
+      editingCategoryStationId,
     )
     setCategoryBusy(false)
     if (!res.success) {
-      setError(res.error)
+      setCategoriesBanner(res.error)
       return
     }
+    setCategoriesBanner(null)
     setEditingCategoryId(null)
     setEditingCategoryName("")
-    await loadCategories()
+    setEditingCategoryStationId(null)
+    await refreshCategories()
   }
 
-  const handleDeleteCategory = async (id: string, name: string) => {
-    if (!window.confirm(`¿Eliminar la categoría «${name}»?`)) return
-    setCategoryBusy(true)
-    const res = await deleteRecipeCategory(popId, id)
-    setCategoryBusy(false)
-    if (!res.success) setError(res.error)
-    else await loadCategories()
+  const requestDeleteCategory = (id: string, name: string) => {
+    if (!popId) return
+    setDeleteCategoryBanner(null)
+    setDeleteCategoryTarget({ id, name, recipeCount: null })
+    void fetchPopRecipeCategoryCount(popId, id).then((res) => {
+      if (!res.success) {
+        setDeleteCategoryTarget(null)
+        setCategoriesBanner(res.error)
+        return
+      }
+      setDeleteCategoryTarget((current) =>
+        current?.id === id ? { ...current, recipeCount: res.count } : current,
+      )
+    })
+  }
+
+  const closeDeleteCategory = () => {
+    setDeleteCategoryTarget(null)
+    setDeleteCategoryBanner(null)
+  }
+
+  const handleDeleteCategory = async () => {
+    if (!popId || !deleteCategoryTarget) return
+    if (deleteCategoryTarget.recipeCount !== 0) return
+    const target = deleteCategoryTarget
+    setDeleteCategoryBusy(true)
+    setDeleteCategoryBanner(null)
+    setPendingCategoryDeleteId(target.id)
+    if (editingCategoryId === target.id) {
+      setEditingCategoryId(null)
+      setEditingCategoryName("")
+      setEditingCategoryStationId(null)
+    }
+    closeDeleteCategory()
+    setDeleteCategoryBusy(false)
+    setCategoriesBanner(null)
+    const res = await deletePopRecipeCategory(popId, target.id)
+    if (!res.success) {
+      setPendingCategoryDeleteId(null)
+      setCategoriesBanner(res.error)
+      return
+    }
+    await refreshCategories()
+    setCategoriesBoardKey((k) => k + 1)
+    setPendingCategoryDeleteId(null)
+  }
+
+  const handleCreateStation = async () => {
+    const name = newStationName.trim()
+    if (!name || newStationSaving) return
+    setStationsBanner(null)
+    setNewStationSaving(true)
+    setPendingStationCreate({ name })
+    setNewStationName("")
+    const res = await createPopComandaStation(popId, name)
+    if (!res.success) {
+      setPendingStationCreate(null)
+      setNewStationSaving(false)
+      setNewStationName(name)
+      setStationsBanner(res.error)
+      return
+    }
+    await refreshStations()
+    setNewStationSaving(false)
+    setPendingStationCreate(null)
+  }
+
+  const handleSaveStationEdit = async () => {
+    if (!editingStationId || stationBusy) return
+    const current = stations.find((station) => station.id === editingStationId)
+    if (current && editingStationName.trim() === current.name.trim()) return
+    setStationBusy(true)
+    const res = await updatePopComandaStation(
+      popId,
+      editingStationId,
+      editingStationName,
+    )
+    setStationBusy(false)
+    if (!res.success) {
+      setStationsBanner(res.error)
+      return
+    }
+    setStationsBanner(null)
+    setEditingStationId(null)
+    setEditingStationName("")
+    await Promise.all([refreshStations(), refreshCategories()])
+  }
+
+  const requestDeleteStation = (id: string, name: string) => {
+    if (!popId) return
+    setDeleteStationBanner(null)
+    setDeleteStationTarget({ id, name, categoryCount: null })
+    void fetchPopComandaStationCategoryCount(popId, id).then((res) => {
+      if (!res.success) {
+        setDeleteStationTarget(null)
+        setStationsBanner(res.error)
+        return
+      }
+      setDeleteStationTarget((current) =>
+        current?.id === id ? { ...current, categoryCount: res.count } : current,
+      )
+    })
+  }
+
+  const closeDeleteStation = () => {
+    setDeleteStationTarget(null)
+    setDeleteStationBanner(null)
+  }
+
+  const handleDeleteStation = async () => {
+    if (!popId || !deleteStationTarget) return
+    if (deleteStationTarget.categoryCount !== 0) return
+    const target = deleteStationTarget
+    setDeleteStationBusy(true)
+    setDeleteStationBanner(null)
+    setPendingStationDeleteId(target.id)
+    if (editingStationId === target.id) {
+      setEditingStationId(null)
+      setEditingStationName("")
+    }
+    closeDeleteStation()
+    setDeleteStationBusy(false)
+    setStationsBanner(null)
+    const res = await deletePopComandaStation(popId, target.id)
+    if (!res.success) {
+      setPendingStationDeleteId(null)
+      setStationsBanner(res.error)
+      return
+    }
+    await Promise.all([refreshStations(), refreshCategories()])
+    setPendingStationDeleteId(null)
   }
 
   if (!popId || !siteId) {
@@ -516,29 +819,33 @@ export function RecipesWorkspaceView() {
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "Menú",
-        headerActions: (
-          <>
-            {canCreate ? (
-              <DataWorkspaceHeaderIconButton
-                label="Nueva receta"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                primary
-                onClick={openCreate}
-              >
-                <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            ) : null}
-            {(canUpdate || canCreate) && (
-              <DataWorkspaceHeaderIconButton
-                label="Gestionar categorías"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                onClick={() => setCategoriesOpen(true)}
-              >
-                <FolderTree className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            )}
-          </>
-        ),
+        headerActions: canCreate ? (
+          <DataWorkspaceHeaderIconButton
+            label="Nueva receta"
+            headerVariant={dataWorkspaceTableListHeaderVariant}
+            primary
+            onClick={openCreate}
+          >
+            <Plus className="size-5" aria-hidden />
+          </DataWorkspaceHeaderIconButton>
+        ) : null,
+        headerMoreActions:
+          canUpdate || canCreate
+            ? [
+                {
+                  label: "Gestionar categorías",
+                  icon: FolderTree,
+                  onClick: () => setCategoriesOpen(true),
+                },
+                {
+                  label: "Gestionar estaciones",
+                  icon: ChefHat,
+                  onClick: () => {
+                    setStationsOpen(true)
+                  },
+                },
+              ]
+            : undefined,
       }}
       error={error}
     >
@@ -845,7 +1152,7 @@ export function RecipesWorkspaceView() {
         idPrefix={editingId ? "recipe-edit" : "recipe-create"}
         title={editingId ? "Editar receta" : "Nueva receta"}
         description="Platos o tragos vendibles por unidad. El costo se calcula desde los ingredientes."
-        loading={formDetailLoading}
+        refreshing={formRefreshing}
         saving={formSaving}
         banner={formError}
         onSubmit={(e) => void submitForm(e)}
@@ -854,9 +1161,12 @@ export function RecipesWorkspaceView() {
         form={form}
         setForm={setForm}
         siteId={siteId}
+        popId={popId}
         categories={categories}
-        ingredientOptions={ingredientOptions}
-        disabled={formDetailLoading || formSaving}
+        categoriesLoading={categoriesQuery.isPending && !categoriesQuery.data}
+        priceLists={priceLists}
+        priceListsLoading={priceListsQuery.isPending && !priceListsQuery.data}
+        disabled={formSaving}
       />
 
       {deleteTarget ? (
@@ -878,13 +1188,43 @@ export function RecipesWorkspaceView() {
 
       <RecipeCategoriesDialog
         open={categoriesOpen}
-        onOpenChange={setCategoriesOpen}
+        onOpenChange={(open) => {
+          setCategoriesOpen(open)
+          if (!open) {
+            setCategoriesBanner(null)
+            setEditingCategoryId(null)
+            setEditingCategoryName("")
+            setEditingCategoryStationId(null)
+            setNewCategoryName("")
+            setNewCategoryStationId(null)
+            setPendingCategoryCreate(null)
+            setPendingCategoryDeleteId(null)
+            setNewCategorySaving(false)
+            closeDeleteCategory()
+          }
+        }}
+        banner={categoriesBanner}
+        loading={categoriesQuery.isPending && !categoriesQuery.data}
         categories={categories}
+        boardKey={categoriesBoardKey}
         canCreate={canCreate}
         canUpdate={canUpdate}
         canDelete={canDelete}
         newCategoryName={newCategoryName}
+        newCategoryStationId={newCategoryStationId}
+        newCategorySaving={newCategorySaving}
+        pendingCreateName={
+          pendingCategoryCreate &&
+          !categories.some(
+            (category) => category.name === pendingCategoryCreate.name,
+          )
+            ? pendingCategoryCreate.name
+            : null
+        }
+        pendingCreateStationName={pendingCategoryCreate?.stationName ?? null}
+        pendingDeleteId={pendingCategoryDeleteId}
         onNewCategoryNameChange={setNewCategoryName}
+        onNewCategoryStationChange={setNewCategoryStationId}
         onCreateCategory={() => void handleCreateCategory()}
         categoryBusy={categoryBusy}
         editingCategoryId={editingCategoryId}
@@ -893,20 +1233,100 @@ export function RecipesWorkspaceView() {
         onStartEdit={(c) => {
           setEditingCategoryId(c.id)
           setEditingCategoryName(c.name)
+          setEditingCategoryStationId(c.stationId)
         }}
         onCancelEdit={() => {
           setEditingCategoryId(null)
           setEditingCategoryName("")
+          setEditingCategoryStationId(null)
         }}
         onSaveEdit={() => void handleSaveCategoryEdit()}
-        onDeleteCategory={(id, name) => void handleDeleteCategory(id, name)}
+        onDeleteCategory={requestDeleteCategory}
         onLayoutChange={async (updates) => {
           setCategoryBusy(true)
-          const res = await syncRecipeCategoryMenuLayout(popId, updates)
+          const res = await syncPopRecipeCategoryLayout(popId, updates)
           setCategoryBusy(false)
-          if (!res.success) setError(res.error)
-          else await loadCategories()
+          if (!res.success) setCategoriesBanner(res.error)
+          else {
+            setCategoriesBanner(null)
+            await refreshCategories()
+          }
         }}
+        stations={stations}
+        editingStationId={editingCategoryStationId}
+        onEditingStationChange={setEditingCategoryStationId}
+      />
+
+      <RecipeCategoryDeleteDialog
+        open={deleteCategoryTarget !== null}
+        target={deleteCategoryTarget}
+        banner={deleteCategoryBanner}
+        busy={deleteCategoryBusy}
+        onOpenChange={(open) => {
+          if (!open && !deleteCategoryBusy) closeDeleteCategory()
+        }}
+        onClose={closeDeleteCategory}
+        onConfirmDelete={() => void handleDeleteCategory()}
+      />
+
+      <RecipeStationsDialog
+        open={stationsOpen}
+        onOpenChange={(open) => {
+          setStationsOpen(open)
+          if (!open) {
+            setStationsBanner(null)
+            setEditingStationId(null)
+            setEditingStationName("")
+            setNewStationName("")
+            setPendingStationCreate(null)
+            setPendingStationDeleteId(null)
+            setNewStationSaving(false)
+            closeDeleteStation()
+          }
+        }}
+        banner={stationsBanner}
+        loading={stationsQuery.isPending && !stationsQuery.data}
+        stations={stations}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        newStationName={newStationName}
+        onNewStationNameChange={setNewStationName}
+        onCreateStation={() => void handleCreateStation()}
+        newStationSaving={newStationSaving}
+        pendingCreateName={
+          pendingStationCreate &&
+          !stations.some((station) => station.name === pendingStationCreate.name)
+            ? pendingStationCreate.name
+            : null
+        }
+        pendingDeleteId={pendingStationDeleteId}
+        stationSaveBusy={stationBusy}
+        editingStationId={editingStationId}
+        editingStationName={editingStationName}
+        onEditingStationNameChange={setEditingStationName}
+        onStartEdit={(station) => {
+          setEditingStationId(station.id)
+          setEditingStationName(station.name)
+        }}
+        onCancelEdit={() => {
+          setEditingStationId(null)
+          setEditingStationName("")
+        }}
+        onSaveEdit={() => void handleSaveStationEdit()}
+        onDeleteStation={requestDeleteStation}
+      />
+
+      <RecipeStationDeleteDialog
+        open={deleteStationTarget !== null}
+        target={deleteStationTarget}
+        banner={deleteStationBanner}
+        busy={deleteStationBusy}
+        onOpenChange={(open) => {
+          if (!open && !deleteStationBusy) closeDeleteStation()
+        }}
+        onClose={closeDeleteStation}
+        onConfirmDelete={() => void handleDeleteStation()}
       />
     </DataWorkspaceTableListPage>
   )

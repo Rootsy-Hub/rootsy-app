@@ -1,9 +1,9 @@
 "use client"
 
-import { getPopCurrentAccountLedger } from "@/app/[siteId]/[popId]/current-accounts/actions"
 import type { CurrentAccountDirection } from "@/lib/currentAccounts"
 import { popCurrentAccountLedgerQueryKey } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { fetchPopCurrentAccountLedger } from "@/lib/rootsyApi/currentAccountsClient"
 import { useQuery } from "@tanstack/react-query"
 
 type UsePopCurrentAccountLedgerOptions = {
@@ -22,7 +22,7 @@ export function usePopCurrentAccountLedger(
   return useQuery({
     queryKey: popCurrentAccountLedgerQueryKey(popId ?? "", direction, partyId),
     queryFn: () =>
-      getPopCurrentAccountLedger(popId!, {
+      fetchPopCurrentAccountLedger(popId!, {
         direction,
         partyId,
       }),

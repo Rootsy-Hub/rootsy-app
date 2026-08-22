@@ -1,6 +1,6 @@
 "use client"
 
-import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
+import type { HomePopListItem, PopAccessModule } from "@/app/home/homeUserDataTypes"
 import {
   canUseMenuDockItemFromPopAccess,
   DEFAULT_MENU_DOCK_IDS,
@@ -13,17 +13,16 @@ import {
   listResolvedMenuDockItems,
   MAX_MENU_DOCK_ITEMS,
   MIN_MENU_DOCK_ITEMS,
+  MOBILE_MAX_MENU_DOCK_ITEMS,
   persistMenuDockIds,
-  readCachedMenuDockIds,
   readInitialMenuDockIds,
   resolveMenuDockIds,
-  sanitizeMenuDockIds,
   writeCachedMenuDockIds,
 } from "@/lib/menuDockPreference"
-import {
-  getPopMenuDockPreference,
-  savePopMenuDockPreference,
-} from "@/app/[siteId]/[popId]/menu/menuDockActions"
+import { useAuth } from "@/context/AuthContextSupabase"
+import { userPopsQueryKey } from "@/lib/queryKeys"
+import { savePopDock } from "@/lib/rootsyApi/dockClient"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   menuHoloGlyphClass,
   menuHoloIconShellForSection,
@@ -32,14 +31,17 @@ import {
 import {
   menuNatureShellClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import { MenuApiReadyBadge } from "@/app/[siteId]/[popId]/menu/MenuApiReadyBadge"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { isMenuApiReady } from "@/lib/menuApiReady"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   pointerWithin,
   useSensor,
@@ -158,6 +160,7 @@ type MenuDockEditContextValue = {
   canDragMenuItem: (link: MenuItemDef["link"]) => boolean
   removeFromDock: (id: MenuDockItemId) => void
   resetDock: () => void
+  isCompactDock: boolean
 }
 
 const MenuDockEditContext = createContext<MenuDockEditContextValue | null>(null)
@@ -329,6 +332,7 @@ function MenuDockDragPreview({
         sectionKey={sectionKey}
         variant="overlay"
         size={fromMenu ? "md" : "lg"}
+        apiReady={isMenuApiReady(getDragItemId(item))}
       />
     </div>
   )
@@ -340,12 +344,18 @@ export function DockIconVisual({
   variant = "dock",
   className,
   size = "md",
+  apiReady = false,
+  busy = false,
+  busyLabel,
 }: {
   icon: LucideIcon
   sectionKey?: MenuSectionKey
   variant?: "default" | "dock" | "muted" | "overlay"
   className?: string
   size?: "md" | "sm" | "lg"
+  apiReady?: boolean
+  busy?: boolean
+  busyLabel?: string
 }) {
   const dim =
     size === "sm" ? "size-10" : size === "lg" ? "size-[72px]" : "size-12"
@@ -353,7 +363,7 @@ export function DockIconVisual({
     size === "sm" ? "size-5" : size === "lg" ? "size-8" : "size-6"
   const radius = size === "lg" ? "rounded-[20px]" : "rounded-[22%]"
   return (
-    <div className="relative flex items-center justify-center">
+    <div className="relative flex items-center justify-center overflow-visible p-1 -m-1">
       <div
         className={cn(
           "relative flex items-center justify-center",
@@ -368,8 +378,18 @@ export function DockIconVisual({
         {variant !== "muted" ? (
           <MenuIconChrome sectionKey={sectionKey} />
         ) : null}
-        <Icon className={cn(menuHoloGlyphClass, iconDim)} />
+        {busy ? (
+          <RootsSpinner
+            size="sm"
+            tone="dark"
+            className={iconDim}
+            label={busyLabel ?? "Cargando"}
+          />
+        ) : (
+          <Icon className={cn(menuHoloGlyphClass, iconDim)} />
+        )}
       </div>
+      {apiReady && !busy ? <MenuApiReadyBadge size="sm" /> : null}
     </div>
   )
 }
@@ -377,15 +397,21 @@ export function DockIconVisual({
 type ProviderProps = {
   popId: string
   enabledModules: readonly PopAccessModule[]
+  initialDockIds?: readonly string[]
   children: ReactNode
 }
 
 export function MenuDockDndProvider({
   popId,
   enabledModules,
+  initialDockIds,
   children,
 }: ProviderProps) {
+  const { user } = useAuth()
+  const userId = user?.id ?? ""
+  const queryClient = useQueryClient()
   const [editing, setEditing] = useState(false)
+  const [isCompactDock, setIsCompactDock] = useState(false)
   const [draggingItem, setDraggingItem] = useState<MenuDockDragItem | null>(null)
   const [activeDragKind, setActiveDragKind] = useState<DragKind | null>(null)
   const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null)
@@ -394,12 +420,30 @@ export function MenuDockDndProvider({
   )
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 4 },
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 6 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 120, tolerance: 6 },
+      activationConstraint: { delay: 420, tolerance: 8 },
     }),
+  )
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)")
+    const sync = () => setIsCompactDock(media.matches)
+    sync()
+    media.addEventListener("change", sync)
+    return () => media.removeEventListener("change", sync)
+  }, [])
+
+  const dockCap = isCompactDock ? MOBILE_MAX_MENU_DOCK_ITEMS : MAX_MENU_DOCK_ITEMS
+  const headDockIds = useMemo(
+    () => dockIds.slice(0, dockCap),
+    [dockIds, dockCap],
+  )
+  const tailDockIds = useMemo(
+    () => dockIds.slice(dockCap),
+    [dockIds, dockCap],
   )
 
   useEffect(() => {
@@ -409,43 +453,18 @@ export function MenuDockDndProvider({
 
   useEffect(() => {
     if (enabledModules.length === 0) return
+    if (initialDockIds === undefined) return
 
-    let cancelled = false
-
-    async function loadDockPreference() {
-      try {
-        const fromDb = await getPopMenuDockPreference(popId)
-        if (cancelled) return
-
-        if (fromDb?.length) {
-          const resolved = resolveMenuDockIds(popId, enabledModules, fromDb)
-          setDockIds(resolved)
-          writeCachedMenuDockIds(popId, resolved)
-          return
-        }
-
-        const cached = readCachedMenuDockIds(popId)
-        if (cached?.length) {
-          const migrated = resolveMenuDockIds(popId, enabledModules, cached)
-          setDockIds(migrated)
-          void savePopMenuDockPreference(popId, migrated)
-          return
-        }
-
-        setDockIds(resolveMenuDockIds(popId, enabledModules))
-      } catch {
-        if (!cancelled) {
-          setDockIds(resolveMenuDockIds(popId, enabledModules))
-        }
-      }
+    const resolved = resolveMenuDockIds(
+      popId,
+      enabledModules,
+      initialDockIds.length > 0 ? initialDockIds : undefined,
+    )
+    setDockIds(resolved)
+    if (initialDockIds.length > 0) {
+      writeCachedMenuDockIds(popId, resolved)
     }
-
-    void loadDockPreference()
-
-    return () => {
-      cancelled = true
-    }
-  }, [popId, enabledModules])
+  }, [popId, enabledModules, initialDockIds])
 
   useEffect(() => {
     if (!editing) return
@@ -464,30 +483,36 @@ export function MenuDockDndProvider({
   }, [editing])
 
   const dockItems = useMemo(
-    () => listResolvedMenuDockItems(popId, enabledModules, dockIds),
-    [popId, enabledModules, dockIds],
+    () => listResolvedMenuDockItems(popId, enabledModules, headDockIds),
+    [popId, enabledModules, headDockIds],
   )
 
   const dockIdSet = useMemo(() => new Set(dockIds), [dockIds])
-  const canAddMore = dockIds.length < MAX_MENU_DOCK_ITEMS
+  const canAddMore = headDockIds.length < dockCap
   const canRemove = dockIds.length > MIN_MENU_DOCK_ITEMS
   const draggingItemId = getDragItemId(draggingItem)
 
   const previewDockIds = useMemo(() => {
     if (dropPreviewIndex === null || !draggingItemId || !activeDragKind) {
-      return dockIds
+      return headDockIds
     }
     if (activeDragKind === "menu") {
-      if (!canAddMore || dockIdSet.has(draggingItemId)) return dockIds
-      if (!canUseMenuDockItemFromPopAccess(draggingItemId, enabledModules)) return dockIds
-      return insertDockId(dockIds, draggingItemId, dropPreviewIndex)
+      if (!canAddMore || dockIdSet.has(draggingItemId)) return headDockIds
+      if (!canUseMenuDockItemFromPopAccess(draggingItemId, enabledModules)) {
+        return headDockIds
+      }
+      return insertDockId(headDockIds, draggingItemId, dropPreviewIndex).slice(
+        0,
+        dockCap,
+      )
     }
-    return moveDockId(dockIds, draggingItemId, dropPreviewIndex)
+    return moveDockId(headDockIds, draggingItemId, dropPreviewIndex)
   }, [
     dropPreviewIndex,
     draggingItemId,
     activeDragKind,
-    dockIds,
+    headDockIds,
+    dockCap,
     canAddMore,
     dockIdSet,
     enabledModules,
@@ -497,9 +522,18 @@ export function MenuDockDndProvider({
     (next: MenuDockItemId[]) => {
       const persisted = persistMenuDockIds(popId, next, enabledModules)
       setDockIds(persisted)
-      void savePopMenuDockPreference(popId, persisted)
+      if (userId) {
+        queryClient.setQueryData<HomePopListItem[]>(
+          userPopsQueryKey(userId),
+          (prev) =>
+            prev?.map((item) =>
+              item.id === popId ? { ...item, dockItemIds: persisted } : item,
+            ),
+        )
+      }
+      void savePopDock(popId, persisted)
     },
-    [popId, enabledModules],
+    [popId, enabledModules, userId, queryClient],
   )
 
   const removeFromDock = useCallback(
@@ -516,14 +550,21 @@ export function MenuDockDndProvider({
 
   const canDragMenuItem = useCallback(
     (link: MenuItemDef["link"]) => {
-      if (!editing) return false
+      if (!editing && !isCompactDock) return false
       const id = menuLinkToDockId(link)
       if (!id) return false
       if (dockIdSet.has(id)) return false
       if (!canAddMore) return false
       return canUseMenuDockItemFromPopAccess(id, enabledModules)
     },
-    [editing, dockIdSet, canAddMore, enabledModules],
+    [editing, isCompactDock, dockIdSet, canAddMore, enabledModules],
+  )
+
+  const commitHeadDockIds = useCallback(
+    (nextHead: MenuDockItemId[]) => {
+      handleDockIdsChange([...nextHead.slice(0, dockCap), ...tailDockIds])
+    },
+    [dockCap, tailDockIds, handleDockIdsChange],
   )
 
   const clearDragState = useCallback(() => {
@@ -554,7 +595,7 @@ export function MenuDockDndProvider({
 
   const handleDragOver = useCallback(
     (event: DragOverEvent) => {
-      const insertIndex = resolveDockInsertIndex(event.over?.id, dockIds)
+      const insertIndex = resolveDockInsertIndex(event.over?.id, headDockIds)
 
       if (insertIndex === null) {
         setDropPreviewIndex((prev) => (prev === null ? prev : null))
@@ -580,7 +621,7 @@ export function MenuDockDndProvider({
 
       setDropPreviewIndex((prev) => (prev === insertIndex ? prev : insertIndex))
     },
-    [dockIds, canAddMore, dockIdSet, enabledModules],
+    [headDockIds, canAddMore, dockIdSet, enabledModules],
   )
 
   const handleDragEnd = useCallback(
@@ -594,7 +635,7 @@ export function MenuDockDndProvider({
         previewIndex !== null &&
         dragMeta != null
       const insertIndex = canDrop
-        ? resolveDockInsertIndex(over.id, dockIds)
+        ? resolveDockInsertIndex(over.id, headDockIds)
         : null
 
       clearDragState()
@@ -604,20 +645,20 @@ export function MenuDockDndProvider({
       if (dragMeta.kind === "menu") {
         if (!canAddMore || dockIdSet.has(dragMeta.itemId)) return
         if (!canUseMenuDockItemFromPopAccess(dragMeta.itemId, enabledModules)) return
-        handleDockIdsChange(insertDockId(dockIds, dragMeta.itemId, insertIndex))
+        commitHeadDockIds(insertDockId(headDockIds, dragMeta.itemId, insertIndex))
         return
       }
 
-      handleDockIdsChange(moveDockId(dockIds, dragMeta.itemId, insertIndex))
+      commitHeadDockIds(moveDockId(headDockIds, dragMeta.itemId, insertIndex))
     },
     [
-      dockIds,
+      headDockIds,
       dropPreviewIndex,
       canAddMore,
       dockIdSet,
       enabledModules,
       clearDragState,
-      handleDockIdsChange,
+      commitHeadDockIds,
     ],
   )
 
@@ -638,7 +679,7 @@ export function MenuDockDndProvider({
       editing,
       setEditing,
       dockIdSet,
-      dockIds,
+      dockIds: headDockIds,
       dockItems,
       previewDockIds,
       dragging: draggingItem != null,
@@ -652,11 +693,12 @@ export function MenuDockDndProvider({
       canDragMenuItem,
       removeFromDock,
       resetDock,
+      isCompactDock,
     }),
     [
       editing,
       dockIdSet,
-      dockIds,
+      headDockIds,
       dockItems,
       previewDockIds,
       draggingItem,
@@ -668,6 +710,7 @@ export function MenuDockDndProvider({
       canDragMenuItem,
       removeFromDock,
       resetDock,
+      isCompactDock,
     ],
   )
 

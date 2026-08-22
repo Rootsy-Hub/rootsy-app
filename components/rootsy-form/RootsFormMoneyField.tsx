@@ -6,11 +6,12 @@ import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFor
 import { RootsFormPrefixedInput } from "@/components/rootsy-form/RootsFormPrefixedInput"
 import { useMoneyInputField } from "@/components/rootsy-form/useMoneyInputField"
 import {
+  clampMoneyInputToMax,
   formatMoneyInputForField,
   MONEY_INPUT_DISPLAY_MAX_LEN,
 } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
-import { useId, type ComponentProps, type ReactNode } from "react"
+import { useCallback, useId, type ComponentProps, type ReactNode } from "react"
 
 type Props = {
   label: string
@@ -25,6 +26,8 @@ type Props = {
   inputClassName?: string
   formatOnBlur?: boolean
   formatValue?: (amount: number) => string
+  /** No deja cargar un monto mayor. */
+  max?: number
 } & RootsFormFieldAssistProps &
   Pick<ComponentProps<"input">, "autoFocus">
 
@@ -46,11 +49,20 @@ export function RootsFormMoneyField({
   inputClassName,
   formatOnBlur = true,
   formatValue = formatMoneyInputForField,
+  max,
   autoFocus,
 }: Props) {
   const autoId = useId()
   const fieldId = id ?? autoId
   const controlProps = useRootsFormFieldControlProps({ invalid })
+  const handleValueChange = useCallback(
+    (next: string) => {
+      onChange(
+        max == null ? next : clampMoneyInputToMax(next, max, formatValue),
+      )
+    },
+    [formatValue, max, onChange],
+  )
 
   const {
     inputRef,
@@ -63,7 +75,7 @@ export function RootsFormMoneyField({
     handleBlur,
   } = useMoneyInputField({
     value,
-    onChange,
+    onChange: handleValueChange,
     formatOnBlur,
     formatValue,
   })

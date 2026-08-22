@@ -1,25 +1,13 @@
 "use client"
 
 import {
-  RootsDangerButton,
-  RootsPrimaryButton,
-  RootsProgressButton,
-  RootsSubtleButton,
-  rootsButtonClassForVariant,
-  rootsButtonVariant,
-} from "@/components/rootsy-button"
-import { RootsDialogErrorBanner } from "@/components/rootsy-dialog"
-import { rootsFormEarthTextClass } from "@/components/rootsy-form/rootsFormEarthTokens"
-import { saleOpAlertDialogContent } from "@/components/sale-operation/saleOperationStyles"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  RootsAlertDialogBodyText,
+  RootsAlertDialogContent,
+  RootsAlertDialogFooter,
+  RootsAlertDialogPanel,
+  RootsDialogErrorBanner,
+} from "@/components/rootsy-dialog"
+import { AlertDialog } from "@/components/ui/alert-dialog"
 import { Spinner } from "@/components/ui/spinner"
 
 type DeleteTarget = {
@@ -38,6 +26,8 @@ type Props = {
   onConfirmDelete: () => void
 }
 
+const nameEmphasisClass = "font-medium text-[var(--rootsy-bruma-900)]"
+
 export function ArticleCategoryDeleteDialog({
   open,
   target,
@@ -48,100 +38,87 @@ export function ArticleCategoryDeleteDialog({
   onConfirmDelete,
 }: Props) {
   const blocked =
-    target != null &&
-    target.articleCount != null &&
-    target.articleCount > 0
+    target != null && target.articleCount != null && target.articleCount > 0
   const ready = target != null && target.articleCount === 0
   const checking = target != null && target.articleCount === null
   const categoryName = target?.name || "seleccionada"
+  const articleCountLabel =
+    target?.articleCount === 1
+      ? "1 artículo asociado"
+      : `${target?.articleCount ?? 0} artículos asociados`
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className={saleOpAlertDialogContent}>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {blocked ? "No se puede eliminar" : "Eliminar categoría"}
-          </AlertDialogTitle>
-          {checking ? (
-            <AlertDialogDescription asChild>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Spinner className="size-4 shrink-0" aria-hidden />
-                <span>Verificando artículos relacionados…</span>
-              </div>
-            </AlertDialogDescription>
-          ) : blocked ? (
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-sm leading-relaxed text-muted-foreground">
-                <p>
-                  La categoría{" "}
-                  <strong className={rootsFormEarthTextClass}>{categoryName}</strong>{" "}
-                  tiene{" "}
-                  <strong className={rootsFormEarthTextClass}>
-                    {target?.articleCount === 1
-                      ? "1 artículo relacionado"
-                      : `${target?.articleCount ?? 0} artículos relacionados`}
-                  </strong>
-                  .
-                </p>
-                <p>
-                  Para eliminar, cambiá la categoría de los artículos que la
-                  utilizan actualmente.
-                </p>
-              </div>
-            </AlertDialogDescription>
-          ) : (
-            <AlertDialogDescription asChild>
-              <p className="text-sm text-muted-foreground">
+    <AlertDialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (busy && !nextOpen) return
+        onOpenChange(nextOpen)
+      }}
+    >
+      <RootsAlertDialogContent nested>
+        {checking ? (
+          <RootsAlertDialogPanel title="Eliminar categoría">
+            <div className="flex items-center gap-2">
+              <Spinner className="size-4 shrink-0" aria-hidden />
+              <RootsAlertDialogBodyText>
+                Verificando artículos relacionados…
+              </RootsAlertDialogBodyText>
+            </div>
+          </RootsAlertDialogPanel>
+        ) : blocked ? (
+          <RootsAlertDialogPanel
+            title="No se puede eliminar"
+            description={
+              <>
+                La categoría{" "}
+                <strong className={nameEmphasisClass}>{categoryName}</strong>{" "}
+                tiene{" "}
+                <strong className={nameEmphasisClass}>{articleCountLabel}</strong>.
+              </>
+            }
+          >
+            <RootsAlertDialogBodyText>
+              Para eliminar, desasociá esos artículos primero: cambiáles la
+              categoría.
+            </RootsAlertDialogBodyText>
+          </RootsAlertDialogPanel>
+        ) : (
+          <RootsAlertDialogPanel
+            title="Eliminar categoría"
+            description={
+              <>
                 ¿Eliminar la categoría{" "}
-                <strong className={rootsFormEarthTextClass}>{categoryName}</strong>
-                ? Esta acción no se puede deshacer.
-              </p>
-            </AlertDialogDescription>
-          )}
-        </AlertDialogHeader>
+                <strong className={nameEmphasisClass}>{categoryName}</strong>?
+                Esta acción no se puede deshacer.
+              </>
+            }
+          />
+        )}
 
-        {banner ? <RootsDialogErrorBanner className="mb-0">{banner}</RootsDialogErrorBanner> : null}
+        {banner ? (
+          <RootsDialogErrorBanner className="mx-[var(--rootsy-space-400)] mb-0 mt-0">
+            {banner}
+          </RootsDialogErrorBanner>
+        ) : null}
 
-        <AlertDialogFooter>
-          {blocked ? (
-            <AlertDialogAction asChild>
-              <RootsPrimaryButton type="button" onClick={onClose}>
-                Entendido
-              </RootsPrimaryButton>
-            </AlertDialogAction>
-          ) : (
-            <>
-              <RootsSubtleButton
-                type="button"
-                onClick={onClose}
-                disabled={busy || checking}
-              >
-                Cancelar
-              </RootsSubtleButton>
-              {busy ? (
-                <RootsProgressButton
-                  type="button"
-                  variant={rootsButtonVariant.destructive}
-                  className={rootsButtonClassForVariant("destructive", "shrink-0")}
-                  loading
-                  loadingLabel="Eliminando…"
-                  disabled
-                >
-                  Eliminar
-                </RootsProgressButton>
-              ) : (
-                <RootsDangerButton
-                  type="button"
-                  disabled={!ready || checking}
-                  onClick={onConfirmDelete}
-                >
-                  Eliminar
-                </RootsDangerButton>
-              )}
-            </>
-          )}
-        </AlertDialogFooter>
-      </AlertDialogContent>
+        {blocked ? (
+          <RootsAlertDialogFooter
+            hideCancel
+            confirmLabel="Entendido"
+            onConfirm={onClose}
+          />
+        ) : (
+          <RootsAlertDialogFooter
+            cancelLabel="Cancelar"
+            confirmLabel={busy ? "Eliminando…" : "Eliminar"}
+            destructive
+            confirmDisabled={busy || checking || !ready}
+            cancelDisabled={busy || checking}
+            onCancel={onClose}
+            onConfirm={onConfirmDelete}
+          />
+        )}
+      </RootsAlertDialogContent>
     </AlertDialog>
   )
 }

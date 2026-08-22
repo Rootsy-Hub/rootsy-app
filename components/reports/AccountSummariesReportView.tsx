@@ -3,7 +3,7 @@
 import {
   getAccountingFinancialSummaries,
   type FinancialSummaryRow,
-} from "@/app/[siteId]/[popId]/accounting/actions"
+} from "@/app/[siteId]/[popId]/reports/accountingActions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"

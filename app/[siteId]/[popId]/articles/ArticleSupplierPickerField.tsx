@@ -1,6 +1,6 @@
 "use client"
 
-import { searchCheckoutSuppliers } from "@/app/[siteId]/[popId]/checkout/partySearchActions"
+import { fetchPopSupplierOptions } from "@/lib/rootsyApi/suppliersClient"
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import {
   getFormInlineIconSearchInputStyle,
@@ -96,18 +96,16 @@ export function ArticleSupplierPickerField({
     const timer = window.setTimeout(() => {
       void (async () => {
         setSearchLoading(true)
-        const res = await searchCheckoutSuppliers(popId, searchTrim)
-        if (gen !== searchGenRef.current) return
-        setSearchLoading(false)
-        if (!res.success) {
+        try {
+          const rows = await fetchPopSupplierOptions(popId, { q: searchTrim })
+          if (gen !== searchGenRef.current) return
+          setResults(rows.filter((row) => row.id !== value))
+        } catch {
+          if (gen !== searchGenRef.current) return
           setResults([])
-          return
+        } finally {
+          if (gen === searchGenRef.current) setSearchLoading(false)
         }
-        const mapped = res.parties.map((party) => ({
-          id: party.id,
-          name: party.name,
-        }))
-        setResults(mapped.filter((row) => row.id !== value))
       })()
     }, 300)
 

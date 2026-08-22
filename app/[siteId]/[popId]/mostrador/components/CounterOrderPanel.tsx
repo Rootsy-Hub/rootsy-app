@@ -13,7 +13,6 @@ import {
   ChannelDataField,
   ChannelDataFields,
   ChannelDataHeader,
-  ChannelDataHint,
   ChannelDataOperarFooterBar,
   ChannelDataPanel,
   ChannelDataSection,
@@ -28,7 +27,7 @@ import {
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import type { ChannelCloseMode } from "@/lib/channelCheckoutClose"
-import { Monitor, Package, Pencil } from "lucide-react"
+import { Monitor, Pencil } from "lucide-react"
 import { useEffect, useState } from "react"
 
 type Props = {
@@ -263,10 +262,6 @@ export function CounterOrderPanel({
         !order.isPaid ? (
           <ChannelDataWarningBanner>{closeOrderBlockReason}</ChannelDataWarningBanner>
         ) : null}
-
-        <ChannelDataHint icon={Package}>
-          Usá la pestaña Pedido para cargar productos y cobrar.
-        </ChannelDataHint>
       </ChannelDataPanel>
 
       <ChannelDataOperarFooterBar actions={footerActions} />

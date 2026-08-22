@@ -4,25 +4,23 @@ import type {
   RecipeIngredientInput,
   RecipeIngredientOption,
 } from "@/app/[siteId]/[popId]/recipes/actions"
-import { RootsSubtleButton } from "@/components/rootsy-button"
+import { getRecipeIngredientOptionsByIds } from "@/lib/rootsyApi/recipesClient"
+import { RecipeIngredientSearchField } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientSearchField"
+import { RootsIconButton, RootsSubtleButton } from "@/components/rootsy-button"
 import {
   RootsFormQuantityField,
-  RootsFormSelectField,
-  RootsFormSelectItem,
   RootsFormTextField,
-  rootsFormEarthTextSecondaryClass,
   rootsFormFieldLabelClass,
 } from "@/components/rootsy-form"
 import { unitOfMeasureAffix } from "@/components/rootsy-form/RootsFormUnitOfMeasureAffix"
 import { computeRecipeCostPrice } from "@/lib/recipeCost"
 import {
-  ARTICLE_ITEM_KIND_STOCK_LABEL,
   isCustomUnitOfMeasure,
   labelUnitOfMeasure,
 } from "@/lib/articleItemKind"
 import { cn } from "@/lib/utils"
 import { Plus, Trash2 } from "lucide-react"
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 export type RecipeIngredientFormLine = {
   key: string
@@ -33,8 +31,8 @@ export type RecipeIngredientFormLine = {
 
 type Props = {
   idPrefix: string
+  popId: string
   lines: RecipeIngredientFormLine[]
-  options: RecipeIngredientOption[]
   onChange: (lines: RecipeIngredientFormLine[]) => void
   disabled?: boolean
 }
@@ -92,15 +90,47 @@ export function ingredientLinesFromDetail(
 
 export function RecipeIngredientEditor({
   idPrefix,
+  popId,
   lines,
-  options,
   onChange,
   disabled,
 }: Props) {
-  const optionsById = useMemo(
-    () => new Map(options.map((o) => [o.id, o])),
-    [options],
-  )
+  const [optionsById, setOptionsById] = useState<
+    Map<string, RecipeIngredientOption>
+  >(() => new Map())
+
+  const selectedIdsKey = lines
+    .map((line) => line.articleId.trim())
+    .filter(Boolean)
+    .sort()
+    .join(",")
+
+  useEffect(() => {
+    const ids = selectedIdsKey ? selectedIdsKey.split(",") : []
+    if (ids.length === 0) return
+    let cancelled = false
+    void getRecipeIngredientOptionsByIds(popId, ids).then((res) => {
+      if (cancelled || !res.success) return
+      setOptionsById((prev) => {
+        const next = new Map(prev)
+        for (const option of res.ingredients) {
+          next.set(option.id, option)
+        }
+        return next
+      })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [popId, selectedIdsKey])
+
+  const rememberOption = (option: RecipeIngredientOption) => {
+    setOptionsById((prev) => {
+      const next = new Map(prev)
+      next.set(option.id, option)
+      return next
+    })
+  }
 
   const computedCost = useMemo(() => {
     const inputs = lines
@@ -147,8 +177,8 @@ export function RecipeIngredientEditor({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className={rootsFormFieldLabelClass}>Ingredientes</h3>
-          <p className={cn("mt-1 text-xs leading-relaxed", rootsFormEarthTextSecondaryClass)}>
-            Materias primas e insumos. Mínimo 1 línea.
+          <p className="mt-1 text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
+            Buscá materia prima del catálogo. Mínimo 1 línea.
           </p>
         </div>
         <p className={cn("text-sm font-semibold tabular-nums", rootsFormFieldLabelClass)}>
@@ -157,12 +187,7 @@ export function RecipeIngredientEditor({
       </div>
 
       {lines.length === 0 ? (
-        <p
-          className={cn(
-            "rounded-lg border border-dashed border-border/70 px-3 py-4 text-center text-sm",
-            rootsFormEarthTextSecondaryClass,
-          )}
-        >
+        <p className="rounded-lg border border-dashed border-[var(--rootsy-bruma-200)] px-3 py-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
           Agregá al menos un ingrediente.
         </p>
       ) : (
@@ -173,46 +198,40 @@ export function RecipeIngredientEditor({
             return (
               <li
                 key={line.key}
-                className="rounded-xl border border-border/70 bg-muted/10 p-3"
+                className="rounded-xl border border-[var(--rootsy-bruma-200)] bg-white p-3"
               >
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-wrap items-end gap-2">
                     <div className="min-w-[12rem] flex-1">
-                      <RootsFormSelectField
-                        label="Ingrediente"
+                      <RecipeIngredientSearchField
                         id={`${idPrefix}-ing-${line.key}`}
-                        value={line.articleId}
-                        onValueChange={(value) =>
-                          updateLine(line.key, { articleId: value })
-                        }
+                        popId={popId}
+                        selected={opt ?? null}
+                        excludeIds={[...usedIds].filter((id) => id !== line.articleId)}
                         disabled={disabled}
-                        placeholder="Elegir ingrediente"
-                      >
-                        {options.map((o) => (
-                          <RootsFormSelectItem
-                            key={o.id}
-                            value={o.id}
-                            disabled={usedIds.has(o.id) && o.id !== line.articleId}
-                          >
-                            {o.name} · {ARTICLE_ITEM_KIND_STOCK_LABEL[o.itemKind]}
-                          </RootsFormSelectItem>
-                        ))}
-                      </RootsFormSelectField>
+                        onSelect={(option) => {
+                          rememberOption(option)
+                          updateLine(line.key, { articleId: option.id })
+                        }}
+                        onClear={() => updateLine(line.key, { articleId: "" })}
+                      />
                     </div>
-                    <button
+                    <RootsIconButton
                       type="button"
+                      className="mb-1"
+                      tone="ghost"
+                      intent="destructive"
                       disabled={disabled || lines.length <= 1}
-                      className="mb-1 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-                      aria-label="Quitar ingrediente"
+                      label="Quitar ingrediente"
                       onClick={() => removeLine(line.key)}
                     >
                       <Trash2 className="size-4" aria-hidden />
-                    </button>
+                    </RootsIconButton>
                   </div>
                   {opt &&
                   (!isCustomUnitOfMeasure(opt.unitOfMeasure) ||
                     opt.defaultWastePct != null) ? (
-                    <p className={cn("text-xs", rootsFormEarthTextSecondaryClass)}>
+                    <p className="text-xs text-[var(--rootsy-bruma-500)]">
                       {!isCustomUnitOfMeasure(opt.unitOfMeasure)
                         ? labelUnitOfMeasure(opt.unitOfMeasure)
                         : null}

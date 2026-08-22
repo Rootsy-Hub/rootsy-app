@@ -9,6 +9,7 @@ import {
   ClipboardList,
   Cog,
   CreditCard,
+  ChefHat,
   Factory,
   FileBarChart,
   FileCheck,
@@ -39,6 +40,7 @@ export type MenuItemLink =
   | "quotes"
   | "purchase-orders"
   | "mesas"
+  | "comandas"
   | "mostrador"
   | "operations"
   | "purchases"
@@ -51,7 +53,6 @@ export type MenuItemLink =
   | "clients"
   | "accounts"
   | "printers"
-  | "accounting"
   | "cash-registers"
   | "inventory"
   | "recipes"
@@ -109,6 +110,7 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Vender", icon: ShoppingCart, link: "sale" },
       { name: "Mostrador", icon: Monitor, link: "mostrador" },
       { name: "Mesas", icon: UtensilsCrossed, link: "mesas" },
+      { name: "Comandas", icon: ChefHat, link: "comandas" },
       { name: "Vender servicio", icon: Banknote, link: "cobrar-servicios" },
       { name: "Comprar", icon: ShoppingBag, link: "purchases" },
       { name: "Gastos", icon: Receipt, link: "expenses" },
@@ -140,7 +142,6 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
     items: [
       { name: "Cuentas", icon: Landmark, link: "accounts" },
       { name: "Recursos Humanos", icon: UserCog, link: "hr" },
-      { name: "Contabilidad", icon: Landmark, link: "accounting" },
       { name: "Cajas", icon: Calculator, link: "cash-registers" },
       { name: "Impresoras", icon: Printer, link: "printers" },
       { name: "Alertas", icon: Bell, link: "section", moduleKey: "alerts" },

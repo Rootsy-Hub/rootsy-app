@@ -1,7 +1,6 @@
 "use client"
 
 import type { ArticleTableRow } from "@/app/[siteId]/[popId]/articles/actions"
-import { getPopArticleCosts } from "@/app/[siteId]/[popId]/articles/articleCostsActions"
 import {
   ArticleTableRowPills,
   formatArticleStockOnHand,
@@ -127,22 +126,14 @@ export function ArticlesTableDetailDialog({
   const [costsLoading, setCostsLoading] = useState(false)
 
   useEffect(() => {
-    if (!open || !row || !popId) {
+    if (!open || !row) {
       setCosts([])
+      setCostsLoading(false)
       return
     }
-    let cancelled = false
-    ;(async () => {
-      setCostsLoading(true)
-      const res = await getPopArticleCosts(popId, row.id)
-      if (cancelled) return
-      setCostsLoading(false)
-      setCosts(res.success ? res.costs : [])
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [open, row, popId])
+    setCosts(row.costs ?? [])
+    setCostsLoading(false)
+  }, [open, row])
 
   if (!row) return null
 

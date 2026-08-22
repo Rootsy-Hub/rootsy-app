@@ -19,10 +19,10 @@ const moneyFormatter = new Intl.NumberFormat("es-AR", {
 export function currentAccountAgingPillVariant(
   bucket: CurrentAccountAgingBucket,
 ): RootsNaturePillVariant {
-  if (bucket === "d61_plus") return "ember"
-  if (bucket === "d31_60") return "earth"
-  if (bucket === "d1_30") return "autumn"
-  return "canopy"
+  if (bucket === "d61_plus") return "danger"
+  if (bucket === "d31_60") return "bruma"
+  if (bucket === "d1_30") return "warning"
+  return "savia"
 }
 
 export function CurrentAccountAgingStrip({

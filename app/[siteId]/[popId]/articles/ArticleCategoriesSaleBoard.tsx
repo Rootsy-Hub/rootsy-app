@@ -8,14 +8,20 @@ import {
   RootsSortableActionList,
   RootsSortableActionListPanel,
   rootsSortableListFooterHintClass,
+  rootsSortableListRowClass,
+  rootsSortableListRowLabelClass,
   type RootsSortableActionListItem,
 } from "@/components/rootsy-list"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 type Props = {
   categories: ArticleCategoryOption[]
   /** Sin panel propio — para usar dentro de un modal con header ya definido. */
   embedded?: boolean
+  pendingCreateName?: string | null
+  pendingDeleteId?: string | null
   canUpdate: boolean
   canDelete: boolean
   editingCategoryId: string | null
@@ -85,6 +91,8 @@ function mergeListOrder(
 export function ArticleCategoriesSaleBoard({
   categories,
   embedded = false,
+  pendingCreateName = null,
+  pendingDeleteId = null,
   canUpdate,
   canDelete,
   editingCategoryId,
@@ -155,35 +163,61 @@ export function ArticleCategoriesSaleBoard({
     [items],
   )
 
-  const list = (
-    <RootsSortableActionList
-      listId="article-categories"
-      items={toListItems(items)}
-      onReorder={handleReorder}
-      emptyMessage="Todavía no hay categorías."
-      canReorder={canUpdate}
-      canToggleVisibility={canUpdate}
-      canEdit={canUpdate}
-      canDelete={canDelete}
-      editingId={editingCategoryId}
-      editingValue={editingCategoryName}
-      editSaveBusy={categorySaveBusy}
-      onStartEdit={(item) => {
-        const category = categoryById(item.id)
-        if (category) onStartEdit(category)
-      }}
-      onCancelEdit={onCancelEdit}
-      onEditingValueChange={onEditingNameChange}
-      onSaveEdit={onSaveEdit}
-      onDelete={(item) => onDelete(item.id, item.label)}
-      onToggleVisibility={toggleVisibility}
-    />
-  )
+  const pendingRow = pendingCreateName ? (
+    <div
+      className={cn(
+        rootsSortableListRowClass,
+        "pointer-events-none h-14 opacity-50",
+      )}
+      aria-busy="true"
+      aria-disabled="true"
+    >
+      <p className={cn(rootsSortableListRowLabelClass, "min-w-0 flex-1")}>
+        {pendingCreateName}
+      </p>
+      <RootsSpinner
+        size="sm"
+        className="shrink-0"
+        label={`Creando ${pendingCreateName}`}
+      />
+    </div>
+  ) : null
+
+  const list =
+    items.length === 0 && pendingCreateName ? null : (
+      <RootsSortableActionList
+        listId="article-categories"
+        rowSize="comfortable"
+        items={toListItems(items)}
+        onReorder={handleReorder}
+        emptyMessage="Todavía no hay categorías."
+        canReorder={canUpdate}
+        canToggleVisibility={canUpdate}
+        canEdit={canUpdate}
+        canDelete={canDelete}
+        editingId={editingCategoryId}
+        editingValue={editingCategoryName}
+        editSaveBusy={categorySaveBusy}
+        busyId={pendingDeleteId}
+        onStartEdit={(item) => {
+          const category = categoryById(item.id)
+          if (category) onStartEdit(category)
+        }}
+        onCancelEdit={onCancelEdit}
+        onEditingValueChange={onEditingNameChange}
+        onSaveEdit={onSaveEdit}
+        onDelete={(item) => onDelete(item.id, item.label)}
+        onToggleVisibility={toggleVisibility}
+      />
+    )
 
   if (embedded) {
     return (
       <div className="space-y-3">
-        {list}
+        <div className="flex flex-col gap-2">
+          {list}
+          {pendingRow}
+        </div>
         {canUpdate ? (
           <p className={rootsSortableListFooterHintClass}>
             Los cambios de orden y visibilidad se guardan al soltar o al tocar
@@ -204,7 +238,10 @@ export function ArticleCategoriesSaleBoard({
           : undefined
       }
     >
-      {list}
+      <div className="flex flex-col gap-2">
+        {list}
+        {pendingRow}
+      </div>
     </RootsSortableActionListPanel>
   )
 }

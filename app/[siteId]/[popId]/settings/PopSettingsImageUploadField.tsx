@@ -1,6 +1,6 @@
 "use client"
 
-import { uploadPopSettingsImage } from "@/app/[siteId]/[popId]/settings/actions"
+import { uploadPopSettingsImage } from "@/lib/rootsyApi/settingsClient"
 import { RootsFormImageUploadField } from "@/components/rootsy-form"
 import {
   compressImageFileToWebp,

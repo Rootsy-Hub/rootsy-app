@@ -20,8 +20,18 @@ import { SaleCatalogSidebarNav } from "@/components/sale-operation/SaleCatalogSi
 import { SaleCatalogSidebarNavSkeleton } from "@/components/sale-operation/SaleCatalogSidebarNavSkeleton"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
+import { SaleCatalogMobileCategoryBar } from "@/components/sale-operation/SaleCatalogMobileCategoryBar"
+import { useOperarCatalogMobileChrome } from "@/components/layouts-module/OperarCatalogMobileChrome"
+import { useRegisterOperarMobileCategoryPicker } from "@/components/layouts-module/OperarMobileStage"
+import { showRootsyToast } from "@/components/rootsy-toast"
 import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
-import { SALE_CATALOG_DEFAULT_PRICE_LIST_ID } from "@/components/sale-operation/saleCatalogPriceLists"
+import {
+  SALE_CATALOG_DEFAULT_PRICE_LIST_ID,
+  SALE_CATALOG_DEFAULT_PRICE_LISTS,
+} from "@/components/sale-operation/saleCatalogPriceLists"
+import { usePopPriceLists } from "@/hooks/usePopPriceLists"
+import { defaultPriceList } from "@/lib/salePriceLists"
+import { setSalePriceListSession } from "@/lib/salePriceListSession"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import {
@@ -35,6 +45,7 @@ import {
 import {
   readSavedSaleCatalogView,
   resolveSaleCatalogView,
+  saleCatalogViewLabel,
   saleCatalogViewToItemsFilter,
   writeSavedSaleCatalogView,
   type SaleCatalogViewPersisted,
@@ -74,6 +85,7 @@ type Props = {
   addDisabled?: boolean
   /** Control externo del panel de categorías (p. ej. botón del header). */
   catalogSidebarOpen?: boolean
+  onCatalogSidebarOpenChange?: (open: boolean) => void
   /** Filtros del rail: venta directa vs catálogo menú (mesas/mostrador). */
   catalogScope?: CatalogScope
   itemsSource?: CatalogScope
@@ -99,6 +111,7 @@ export function SaleCatalogBrowser({
   onAddProduct,
   addDisabled = false,
   catalogSidebarOpen: catalogSidebarOpenProp,
+  onCatalogSidebarOpenChange,
   catalogScope = "menu",
   itemsSource,
   mergeCatalogArticles,
@@ -114,6 +127,9 @@ export function SaleCatalogBrowser({
     catalogSidebarOpenProp === undefined,
   )
   const sidebarOpen = catalogSidebarOpenProp ?? internalSidebar.open
+  const catalogMobileChrome = useOperarCatalogMobileChrome()
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false)
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
 
   const [vistaCatalogo, setVistaCatalogo] = useState<SaleCatalogViewPersisted>(() =>
     resolveSaleCatalogView(
@@ -125,6 +141,8 @@ export function SaleCatalogBrowser({
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
   const [cantidadIngreso, setCantidadIngreso] = useState(1)
+  const priceListsQuery = usePopPriceLists(popId, { enabled: Boolean(popId) })
+  const priceLists = priceListsQuery.data ?? []
   const [priceListId, setPriceListId] = useState(SALE_CATALOG_DEFAULT_PRICE_LIST_ID)
   const busquedaInputRef = useRef<HTMLInputElement>(null)
   const vistaAntesBusquedaRef = useRef<SaleCatalogViewPersisted | null>(null)
@@ -158,30 +176,104 @@ export function SaleCatalogBrowser({
     scanFocus?.focusScanInput()
   }, [keepScanFocused, scanFocus])
 
+  const namedProductsRef = useRef<SaleCatalogProduct[]>(products)
+  namedProductsRef.current = products
+
   const handleAddProduct = useCallback(
     (productId: string, kind?: MenuCartItemKind, quantity = cantidadIngreso) => {
       if (addDisabled) return
       onAddProduct(productId, kind, quantity)
+      if (isMobileViewport && kind !== "promotion") {
+        const nombre =
+          products.find((product) => product.id === productId)?.nombre ??
+          namedProductsRef.current.find((product) => product.id === productId)
+            ?.nombre
+        if (nombre) {
+          showRootsyToast({
+            title: `Se agregó ${nombre} ${quantity}x`,
+            intent: "success",
+          })
+        }
+      }
       setCantidadIngreso(1)
       refocusScan()
     },
-    [addDisabled, cantidadIngreso, onAddProduct, refocusScan],
+    [
+      addDisabled,
+      cantidadIngreso,
+      onAddProduct,
+      refocusScan,
+      isMobileViewport,
+      products,
+    ],
   )
 
   const debouncedSearch = useDebouncedValue(
     busqueda,
     OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
   )
-  const itemsFilter = useMemo(
+  const itemsFilter = useMemo(() => {
+    const base = saleCatalogViewToItemsFilter(
+      vistaCatalogo,
+      debouncedSearch,
+      categories,
+      categorySections,
+    )
+    return { ...base, priceListId }
+  }, [categories, categorySections, debouncedSearch, priceListId, vistaCatalogo])
+
+  useEffect(() => {
+    if (priceLists.length === 0) return
+    const fallback = defaultPriceList(priceLists)
+    setPriceListId((current) => {
+      if (fallback && !priceLists.some((list) => list.id === current)) {
+        return fallback.id
+      }
+      return current
+    })
+  }, [priceLists])
+
+  useEffect(() => {
+    setSalePriceListSession(popId, priceListId)
+  }, [popId, priceListId])
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    const apply = () => setIsMobileViewport(mq.matches)
+    apply()
+    mq.addEventListener("change", apply)
+    return () => mq.removeEventListener("change", apply)
+  }, [])
+
+  const vistaEfectiva = isMobileViewport ? "lista" : modoVista
+  const priceListOptions = useMemo(
     () =>
-      saleCatalogViewToItemsFilter(
-        vistaCatalogo,
-        debouncedSearch,
-        categories,
-        categorySections,
-      ),
-    [categories, categorySections, debouncedSearch, vistaCatalogo],
+      priceLists.length > 0
+        ? priceLists.map((list) => ({ id: list.id, label: list.name }))
+        : SALE_CATALOG_DEFAULT_PRICE_LISTS,
+    [priceLists],
   )
+  const categoryLabel = saleCatalogViewLabel(
+    vistaCatalogo,
+    categories,
+    categorySections,
+  )
+  const usesMobileStage = useRegisterOperarMobileCategoryPicker(
+    categoryLabel || "Categoría",
+    categoryPickerOpen,
+    setCategoryPickerOpen,
+  )
+
+  const registerPriceList = catalogMobileChrome?.registerPriceList
+  useEffect(() => {
+    if (!registerPriceList) return
+    registerPriceList({
+      priceListId,
+      priceLists: priceListOptions,
+      onChange: setPriceListId,
+    })
+    return () => registerPriceList(null)
+  }, [registerPriceList, priceListId, priceListOptions])
 
   const saleItems = useSaleCatalogItems(
     popId,
@@ -208,6 +300,7 @@ export function SaleCatalogBrowser({
     (view: SaleCatalogViewPersisted) => {
       setVistaCatalogo(view)
       writeSavedSaleCatalogView(popId, view)
+      setCategoryPickerOpen(false)
       refocusScan()
     },
     [popId, refocusScan],
@@ -239,6 +332,7 @@ export function SaleCatalogBrowser({
       : []
     return [...promos, ...pagedProducts]
   }, [busqueda, itemsFilter.search, itemsFilter.section, pagedProducts, promotionProducts])
+  namedProductsRef.current = productosFiltrados.length > 0 ? productosFiltrados : products
 
   const handleScanKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -260,7 +354,7 @@ export function SaleCatalogBrowser({
 
       void (async () => {
         if (source === "sale") {
-          const res = await findSaleCatalogArticleByScan(popId, query)
+          const res = await findSaleCatalogArticleByScan(popId, query, priceListId)
           if (!res.success || !res.article) return
           const article = res.article
           flushSync(() => {
@@ -270,7 +364,7 @@ export function SaleCatalogBrowser({
           setBusqueda("")
           return
         }
-        const res = await findMenuCatalogItemByScan(popId, query)
+        const res = await findMenuCatalogItemByScan(popId, query, priceListId)
         if (!res.success) return
         if (res.article) {
           const article = res.article
@@ -297,6 +391,7 @@ export function SaleCatalogBrowser({
       mergeCatalogArticles,
       mergeCatalogRecipes,
       popId,
+      priceListId,
       products,
       productosFiltrados,
       source,
@@ -365,6 +460,7 @@ export function SaleCatalogBrowser({
       <aside
         id="data-workspace-sidebar"
         className={cn(
+          "max-md:hidden",
           layoutsOperarCatalogSidebarClass,
           sidebarOpen
             ? layoutsOperarCatalogSidebarOpenClass
@@ -388,7 +484,44 @@ export function SaleCatalogBrowser({
         </div>
       </aside>
 
-      <section className={layoutsOperarCatalogCanvasClass}>
+      <section
+        className={cn(
+          layoutsOperarCatalogCanvasClass,
+          "relative",
+          !usesMobileStage &&
+            "max-md:[grid-template-rows:var(--layouts-operar-catalog-toolbar-h)_var(--layouts-operar-catalog-toolbar-h)_minmax(0,1fr)]",
+        )}
+      >
+        {!usesMobileStage ? (
+          <SaleCatalogMobileCategoryBar
+            label={categoryLabel || "Categoría"}
+            open={categoryPickerOpen}
+            onToggle={() => setCategoryPickerOpen((current) => !current)}
+          />
+        ) : null}
+        {categoryPickerOpen ? (
+          <div
+            className={cn(
+              "absolute z-30 overflow-hidden md:hidden",
+              "bg-[var(--rootsy-sombra-800)]",
+              usesMobileStage
+                ? "inset-0"
+                : cn(
+                    "inset-x-0 bottom-0 top-[var(--layouts-operar-catalog-toolbar-h)]",
+                    "max-md:col-start-1 max-md:row-start-1",
+                    "border-b border-[var(--layouts-operar-border-dark-hairline)]",
+                  ),
+            )}
+          >
+            <SaleCatalogSidebarNav
+              categories={categories}
+              categorySections={categorySections}
+              vistaCatalogo={vistaCatalogo}
+              onVistaChange={persistVistaCatalogo}
+              density="comfortable"
+            />
+          </div>
+        ) : null}
         <SaleCatalogToolbar
           variant="operar"
           modoVista={modoVista}
@@ -408,6 +541,11 @@ export function SaleCatalogBrowser({
           priceListId={priceListId}
           onPriceListChange={setPriceListId}
           onPriceListSelectClosed={refocusScan}
+          priceLists={
+            priceLists.length > 0
+              ? priceLists.map((list) => ({ id: list.id, label: list.name }))
+              : undefined
+          }
         />
 
         <div className={layoutsOperarCatalogCanvasBodyClass}>
@@ -425,7 +563,7 @@ export function SaleCatalogBrowser({
           )}
         >
           {showGridSkeleton ? (
-            <SaleCatalogBrowserSkeleton variant={modoVista} />
+            <SaleCatalogBrowserSkeleton variant={vistaEfectiva} />
           ) : displayError ? (
             <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
               <p className="max-w-md text-sm text-rose-300">{displayError}</p>
@@ -435,9 +573,9 @@ export function SaleCatalogBrowser({
           ) : (
             <SaleCatalogVirtualGrid
               items={productosFiltrados}
-              modoVista={modoVista}
+              modoVista={vistaEfectiva}
               scrollRoot={scrollRoot}
-              resetKey={`${itemsFilter.section}:${itemsFilter.categoryId ?? ""}:${itemsFilter.search}:${modoVista}`}
+              resetKey={`${itemsFilter.section}:${itemsFilter.categoryId ?? ""}:${itemsFilter.search}:${vistaEfectiva}`}
               getItemKey={(product) => {
                 const productKind =
                   "kind" in product && typeof product.kind === "string"
@@ -453,7 +591,7 @@ export function SaleCatalogBrowser({
                 return (
                   <SaleCatalogProductCard
                     product={product}
-                    variant={modoVista}
+                    variant={vistaEfectiva}
                     disabled={addDisabled}
                     onClick={() => handleAddProduct(product.id, productKind)}
                   />

@@ -7,14 +7,18 @@ import type {
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import {
   describeReservationFloorWindow,
+  findReservationTableConflict,
   mesasReservationSettingsFromDraft,
+  reservationTableIds,
   type MesasReservationSettings,
 } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
+import { mesaSeatsLabel } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import { ChannelDataPanel } from "@/components/sale-operation/ChannelOperationDataPanel"
 import { ChannelDataFormActionsBar } from "@/components/sale-operation/ChannelOperationDataPanel"
-import { ChannelDataHint } from "@/components/sale-operation/ChannelOperationDataPanel"
+import { ChannelDataHint, ChannelDataWarningBanner } from "@/components/sale-operation/ChannelOperationDataPanel"
 import { saleOpChannelPanelSection } from "@/components/sale-operation/saleOperationStyles"
 import {
+  ChannelDataFormCheckboxOption,
   ChannelDataFormDateField,
   ChannelDataFormGrid,
   ChannelDataFormIntegerField,
@@ -42,7 +46,7 @@ import type { OperationPartySelection } from "@/lib/operationPartyPicker"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { CalendarClock, ChevronDown, Clock3, Settings2, UserRound } from "lucide-react"
+import { CalendarClock, ChevronDown, Clock3, Link2, Settings2, UserRound } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 /** Valor del select cuando la reserva no tiene mesa asignada todavía. */
@@ -90,7 +94,9 @@ type Props = {
   defaultTableId?: string | null
   popId: string
   canReadClients: boolean
+  canCreateClient?: boolean
   reservationSettings: MesasReservationSettings
+  reservations?: MesaReservation[]
   onSaveReservationSettings?: (
     settings: MesasReservationSettings,
   ) => Promise<boolean> | boolean
@@ -105,7 +111,9 @@ export function MesaReservationForm({
   defaultTableId = null,
   popId,
   canReadClients,
+  canCreateClient = false,
   reservationSettings,
+  reservations = [],
   onSaveReservationSettings,
   initial = null,
   submitLabel = "Guardar reserva",
@@ -119,10 +127,21 @@ export function MesaReservationForm({
         : defaultArrivalParts(),
     [initial?.arrivalAt],
   )
+  const minArrivalDate = useMemo(() => format(new Date(), "yyyy-MM-dd"), [])
+  const isCreating = initial == null
 
   const [tableId, setTableId] = useState(() => {
-    const assigned = initial?.tableId ?? defaultTableId
+    const assigned =
+      reservationTableIds(initial ?? { tableId: defaultTableId ?? null, tableIds: [] })[0] ??
+      defaultTableId
     return assigned ?? MESA_RESERVATION_UNASSIGNED_TABLE
+  })
+  const [mergedIds, setMergedIds] = useState<string[]>(() => {
+    const ids = reservationTableIds(
+      initial ?? { tableId: defaultTableId ?? null, tableIds: [] },
+    )
+    const primary = ids[0] ?? defaultTableId
+    return ids.filter((id) => id !== primary)
   })
   const [client, setClient] = useState<OperationPartySelection | null>(() =>
     initial
@@ -181,11 +200,54 @@ export function MesaReservationForm({
     const hasAssignedTable = tableId !== MESA_RESERVATION_UNASSIGNED_TABLE
     return describeReservationFloorWindow(arrivalAt, activeSettings, {
       hasAssignedTable,
+      tableCount: hasAssignedTable ? 1 + mergedIds.length : 0,
     })
-  }, [arrivalDate, arrivalTime, activeSettings, tableId])
+  }, [arrivalDate, arrivalTime, activeSettings, tableId, mergedIds.length])
 
   const resolvedTableId =
     tableId === MESA_RESERVATION_UNASSIGNED_TABLE ? null : tableId
+  const resolvedTableIds = resolvedTableId
+    ? [resolvedTableId, ...mergedIds.filter((id) => id !== resolvedTableId)]
+    : []
+
+  const primaryTable = useMemo(
+    () => tables.find((table) => table.id === resolvedTableId) ?? null,
+    [tables, resolvedTableId],
+  )
+
+  const mergeCandidates = useMemo(() => {
+    if (!primaryTable) return []
+    return tables.filter(
+      (table) =>
+        table.salonId === primaryTable.salonId &&
+        table.id !== primaryTable.id,
+    )
+  }, [tables, primaryTable])
+
+  const setPrimaryTable = (nextId: string) => {
+    setTableId(nextId)
+    if (nextId === MESA_RESERVATION_UNASSIGNED_TABLE) {
+      setMergedIds([])
+      return
+    }
+    const nextPrimary = tables.find((table) => table.id === nextId)
+    setMergedIds((prev) =>
+      prev.filter((id) => {
+        const table = tables.find((item) => item.id === id)
+        return (
+          table != null &&
+          table.id !== nextId &&
+          table.salonId === nextPrimary?.salonId
+        )
+      }),
+    )
+  }
+
+  const toggleMerge = (id: string) => {
+    setMergedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    )
+  }
 
   const settingsChanged =
     draftSettings.floorBufferMinutes !==
@@ -197,9 +259,36 @@ export function MesaReservationForm({
   const guestCount = guestCountRaw.trim()
     ? Number.parseInt(guestCountRaw, 10)
     : null
+  const arrivalDateAllowed =
+    !isCreating || arrivalDate >= minArrivalDate
+  const tableConflict = useMemo(() => {
+    if (!arrivalAt || resolvedTableIds.length === 0) return null
+    return findReservationTableConflict({
+      tableIds: resolvedTableIds,
+      arrivalAt,
+      settings: activeSettings,
+      reservations,
+      excludeReservationId: initial?.id ?? null,
+    })
+  }, [arrivalAt, resolvedTableIds, activeSettings, reservations, initial?.id])
+  const tableConflictMessage = useMemo(() => {
+    if (!tableConflict) return null
+    const labels = tableConflict.tableIds.map(
+      (id) => tables.find((table) => table.id === id)?.label ?? "—",
+    )
+    const mesaLabel =
+      labels.length > 1
+        ? `Las mesas ${labels.join(" + ")}`
+        : `La mesa ${labels[0] ?? "—"}`
+    const who = tableConflict.reservation.clientName.trim() || "otro cliente"
+    const verb = labels.length > 1 ? "están reservadas" : "está reservada"
+    return `${mesaLabel} ya ${verb} para ${who} (${formatReservationArrival(tableConflict.reservation.arrivalAt)}). Cambiá la hora o la mesa.`
+  }, [tableConflict, tables])
   const canSubmit =
     Boolean(clientLabel) &&
     arrivalAt != null &&
+    arrivalDateAllowed &&
+    !tableConflict &&
     (guestCountRaw.trim() === "" ||
       (Number.isFinite(guestCount) && guestCount! > 0 && guestCount! <= 50))
 
@@ -219,6 +308,7 @@ export function MesaReservationForm({
               }
               await onSubmit({
                 tableId: resolvedTableId,
+                tableIds: resolvedTableIds,
                 clientId: client?.manual ? null : client?.id ?? null,
                 clientName: (client?.name ?? manualName).trim(),
                 guestCount:
@@ -241,7 +331,7 @@ export function MesaReservationForm({
                 label="Mesa"
                 id={`mesa-reservation-table-${tableId || "new"}`}
                 value={tableId}
-                onValueChange={setTableId}
+                onValueChange={setPrimaryTable}
                 placeholder="Elegí una mesa"
                 labelInfo="Podés dejar la reserva sin mesa y asignarla al sentar al cliente."
               >
@@ -271,6 +361,7 @@ export function MesaReservationForm({
                   onChange={setArrivalDate}
                   placeholder="Elegí una fecha"
                   displayFormat="compact"
+                  minDate={isCreating ? minArrivalDate : undefined}
                 />
 
                 <ChannelDataFormTextField
@@ -285,8 +376,41 @@ export function MesaReservationForm({
               {floorWindow ? (
                 <ChannelDataHint icon={Clock3}>{floorWindow.summary}</ChannelDataHint>
               ) : null}
+
+              {tableConflictMessage ? (
+                <ChannelDataWarningBanner>
+                  {tableConflictMessage}
+                </ChannelDataWarningBanner>
+              ) : null}
             </div>
           </ChannelDataFormSection>
+
+          {mergeCandidates.length > 0 ? (
+            <ChannelDataFormSection
+              className="space-y-3"
+              title={
+                <span className="inline-flex items-center gap-1.5 font-canopy text-sm font-medium text-[var(--rootsy-bruma-700)]">
+                  <Link2 className="size-3.5 text-[var(--rootsy-savia-600)]" aria-hidden />
+                  Juntar mesas
+                </span>
+              }
+              description="Podés unir otras mesas del mismo salón a esta reserva."
+            >
+              <ul className="space-y-2">
+                {mergeCandidates.map((table) => (
+                  <li key={table.id}>
+                    <ChannelDataFormCheckboxOption
+                      checked={mergedIds.includes(table.id)}
+                      onCheckedChange={() => toggleMerge(table.id)}
+                      label={`Mesa ${table.label}`}
+                      meta={mesaSeatsLabel(table.seats)}
+                      aria-label={`Juntar mesa ${table.label}`}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </ChannelDataFormSection>
+          ) : null}
 
           <ChannelDataFormSection>
             <div className={rootsFormColumnClass}>
@@ -388,9 +512,13 @@ export function MesaReservationForm({
 
         <ChannelDataFormActionsBar
           onCancel={onCancel}
+          cancelDisabled={submitting}
           primary={{
             type: "submit",
-            label: submitLabel,
+            label:
+              mergedIds.length > 0
+                ? `${submitLabel} (${resolvedTableIds.length} mesas)`
+                : submitLabel,
             disabled: !canSubmit || submitting,
             loading: submitting,
             loadingLabel: "Guardando…",
@@ -405,6 +533,7 @@ export function MesaReservationForm({
         open={clientModalOpen}
         onOpenChange={setClientModalOpen}
         canSearchCatalog={canReadClients}
+        canCreateClient={canCreateClient}
         manualName={manualName}
         onManualNameChange={setManualName}
         taxId={manualTaxId}

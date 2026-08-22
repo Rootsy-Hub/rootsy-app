@@ -11,7 +11,7 @@ import {
   RootsFormSelectField,
   RootsFormSelectItem,
   RootsFormTextField,
-  rootsFormEarthTextSecondaryClass,
+  rootsFormBrumaTextSecondaryClass,
   rootsFormFieldLabelClass,
 } from "@/components/rootsy-form"
 import { RootsSubtleButton } from "@/components/rootsy-button"
@@ -238,7 +238,7 @@ export function PromotionSlotEditor({
           <h3 className={rootsFormFieldLabelClass}>
             {isQuantityDeal ? "Productos y recetas elegibles" : "Ítems del combo"}
           </h3>
-          <p className={cn("mt-1 text-xs leading-relaxed", rootsFormEarthTextSecondaryClass)}>
+          <p className={cn("mt-1 text-xs leading-relaxed", rootsFormBrumaTextSecondaryClass)}>
             {isQuantityDeal
               ? "Unidades que participan de la oferta por cantidad."
               : "Cada ítem agrupa las opciones que el cliente puede elegir."}
@@ -303,7 +303,7 @@ export function PromotionSlotEditor({
 
             <div className="flex flex-col gap-3">
               {line.options.length === 0 ? (
-                <p className={cn("text-xs", rootsFormEarthTextSecondaryClass)}>
+                <p className={cn("text-xs", rootsFormBrumaTextSecondaryClass)}>
                   Todavía no hay opciones en este ítem.
                 </p>
               ) : (
@@ -357,7 +357,7 @@ export function PromotionSlotEditor({
                         <span
                           className={cn(
                             "pb-3 text-xs",
-                            rootsFormEarthTextSecondaryClass,
+                            rootsFormBrumaTextSecondaryClass,
                           )}
                         >
                           {PROMOTION_OPTION_KIND_LABEL[meta.kind]}

@@ -2,6 +2,8 @@
 
 import type { MesaTableShape } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { MesaOpenDurationLabel } from "@/app/[siteId]/[popId]/mesas/components/MesaOpenDurationLabel"
+import { MesaReservationCountdownLabel } from "@/app/[siteId]/[popId]/mesas/components/MesaReservationCountdownLabel"
+import type { MesasReservationSettings } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
 import {
   mesaSeatsLabel,
   mesaTableDimensions,
@@ -27,6 +29,9 @@ type Props = {
   compact?: boolean
   /** ISO de apertura de sesión — muestra duración en mesas abiertas/cobrando. */
   openedAt?: string | null
+  /** ISO de llegada de la reserva — muestra cuenta regresiva en mesas reservadas. */
+  reservationArrivalAt?: string | null
+  reservationSettings?: MesasReservationSettings | null
 }
 
 export function MesaTableShapeView({
@@ -39,16 +44,22 @@ export function MesaTableShapeView({
   uprightRotation = 0,
   compact = false,
   openedAt = null,
+  reservationArrivalAt = null,
+  reservationSettings = null,
 }: Props) {
   const { width, height } = mesaTableDimensions(shape)
   const isRound = shape.kind === "round"
   const showOpenDuration =
     (status === "open" || status === "paying") && openedAt != null
+  const showReservationCountdown =
+    status === "reserved" &&
+    reservationArrivalAt != null &&
+    reservationSettings != null
 
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center justify-center",
+        "relative flex flex-col items-center justify-center overflow-visible",
         mesaStatusClass(status),
         mesaTableHighlightClass({ selected, layoutSelected }),
         isRound ? "rounded-full" : "rounded-xl",
@@ -68,6 +79,14 @@ export function MesaTableShapeView({
           showOpenDuration ? (
             <MesaOpenDurationLabel
               openedAt={openedAt}
+              className={cn("mt-0.5", mesasTableDurationClass)}
+            />
+          ) : showReservationCountdown &&
+            reservationArrivalAt &&
+            reservationSettings ? (
+            <MesaReservationCountdownLabel
+              arrivalAt={reservationArrivalAt}
+              settings={reservationSettings}
               className={cn("mt-0.5", mesasTableDurationClass)}
             />
           ) : (

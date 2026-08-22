@@ -356,7 +356,7 @@ export function SaleOperationCheckoutConfirmDialog({
             {submitError ? (
               <p
                 role="alert"
-                className="rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
+                className="whitespace-pre-line rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
               >
                 {submitError}
               </p>

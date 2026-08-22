@@ -47,10 +47,10 @@ export function ServiceOperateSelectedServiceDetailSkeleton({
       role="status"
       aria-busy="true"
       aria-label="Cargando detalle del servicio"
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-4"
     >
       {showRow2 ? (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
           <LooseSectionSkeleton
             rows={2}
             className={row2TwoCols ? "md:col-span-6" : "md:col-span-12"}
@@ -62,7 +62,7 @@ export function ServiceOperateSelectedServiceDetailSkeleton({
       ) : null}
 
       {showRow3 ? (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
           <div className="flex flex-col gap-2.5 md:col-span-12">
             <BlockSkeleton className="h-3 w-36 rounded-sm" />
             <BlockSkeleton className="h-28 w-full rounded-2xl" />

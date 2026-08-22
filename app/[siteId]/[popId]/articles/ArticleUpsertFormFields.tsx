@@ -24,7 +24,9 @@ import {
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
 import { labelUnitOfMeasure, type ArticleItemKind } from "@/lib/articleItemKind"
+import { SalePriceListExtraFields } from "@/components/sale-operation/SalePriceListExtraFields"
 import { parseMoneyInput } from "@/lib/moneyInput"
+import type { SalePriceList } from "@/lib/salePriceLists"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -42,6 +44,7 @@ export type ArticleUpsertFormState = ArticleItemFormState &
     allowNegativeStock: boolean
     itemKind: ArticleItemKind
     initialStock?: string
+    listPrices?: Record<string, string>
   }
 
 export type ArticleUpsertWizardStep = 1 | 2 | 3
@@ -72,6 +75,9 @@ type Props = {
   onChange: (patch: Partial<ArticleUpsertFormState>) => void
   onItemKindChange: (kind: ArticleItemKind) => void
   categories: ArticleCategoryOption[]
+  categoriesLoading?: boolean
+  priceLists?: SalePriceList[]
+  priceListsLoading?: boolean
   supplierOptions: { id: string; name: string }[]
   costLines: ArticleCostFormLine[]
   onCostLinesChange: (lines: ArticleCostFormLine[]) => void
@@ -167,6 +173,9 @@ export function ArticleUpsertFormFields({
   onChange,
   onItemKindChange,
   categories,
+  categoriesLoading = false,
+  priceLists = [],
+  priceListsLoading = false,
   supplierOptions,
   costLines,
   onCostLinesChange,
@@ -196,8 +205,11 @@ export function ArticleUpsertFormFields({
           id={`${idPrefix}-cat`}
           value={form.categoryId}
           onValueChange={(value) => onChange({ categoryId: value })}
-          disabled={disabled}
-          placeholder="Elegir categoría…"
+          disabled={disabled || categoriesLoading}
+          placeholder={
+            categoriesLoading ? "Cargando categorías…" : "Elegir categoría…"
+          }
+          valueLabel={categoriesLoading ? "Cargando categorías…" : undefined}
           error={fieldErrors.categoryId}
           invalid={Boolean(fieldErrors.categoryId)}
         >
@@ -304,14 +316,28 @@ export function ArticleUpsertFormFields({
           )}
 
           {isMerchandise ? (
-            <ArticleCatalogDiscountField
-              idPrefix={idPrefix}
-              discountMode={form.discountMode}
-              discountValue={form.discountValue}
-              salePrice={parsedSalePrice}
-              onChange={onChange}
-              disabled={disabled}
-            />
+            <>
+              <SalePriceListExtraFields
+                idPrefix={idPrefix}
+                lists={priceLists}
+                values={form.listPrices ?? {}}
+                onChange={(listId, value) =>
+                  onChange({
+                    listPrices: { ...form.listPrices, [listId]: value },
+                  })
+                }
+                disabled={disabled}
+                loading={priceListsLoading}
+              />
+              <ArticleCatalogDiscountField
+                idPrefix={idPrefix}
+                discountMode={form.discountMode}
+                discountValue={form.discountValue}
+                salePrice={parsedSalePrice}
+                onChange={onChange}
+                disabled={disabled}
+              />
+            </>
           ) : null}
         </WizardSection>
 

@@ -1,30 +1,12 @@
 "use client"
 
-import {
-  getUserPopsAccessBatch,
-  getUserProfileCache,
-} from "@/app/home/homeUserDataActions"
-import { canUserCreatePop } from "@/app/profile/actions"
-import {
-  buildHomePopListFromAccess,
-  buildUserProfileFullName,
-} from "@/app/home/homeUserDataResolve"
-import type {
-  HomePopListItem,
-  UserPopsAccessBatchCache,
-  UserProfileCache,
-} from "@/app/home/homeUserDataTypes"
-import {
-  canUserCreatePopQueryKey,
-  popAccessQueryKey,
-  userPopIdsQueryKey,
-  userPopsAccessBatchQueryKey,
-  userProfileQueryKey,
-} from "@/lib/queryKeys"
+import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
+import type { HomePopListItem, UserProfileCache } from "@/app/home/homeUserDataTypes"
+import { fetchMePops, fetchMeProfile } from "@/lib/rootsyApi/meClient"
+import { userPopsQueryKey, userProfileQueryKey } from "@/lib/queryKeys"
 import { oneDayQueryOptions } from "@/lib/queryStaleTimes"
 import { useQueryPersistReady } from "@/components/providers/QueryProvider"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useMemo } from "react"
 
 export function useHomePageData(userId: string) {
   const persistReady = useQueryPersistReady()
@@ -34,69 +16,38 @@ export function useHomePageData(userId: string) {
   const cachedProfile = userId
     ? queryClient.getQueryData<UserProfileCache>(userProfileQueryKey(userId))
     : undefined
-  const cachedBatch = userId
-    ? queryClient.getQueryData<UserPopsAccessBatchCache>(
-        userPopsAccessBatchQueryKey(userId),
-      )
+  const cachedPops = userId
+    ? queryClient.getQueryData<HomePopListItem[]>(userPopsQueryKey(userId))
     : undefined
 
   const profileQuery = useQuery({
     queryKey: userProfileQueryKey(userId),
-    queryFn: getUserProfileCache,
+    queryFn: fetchMeProfile,
     enabled: queriesEnabled,
     ...oneDayQueryOptions,
   })
 
-  const batchQuery = useQuery({
-    queryKey: userPopsAccessBatchQueryKey(userId),
-    queryFn: getUserPopsAccessBatch,
-    enabled: queriesEnabled,
-    ...oneDayQueryOptions,
-  })
-
-  const createPopQuery = useQuery({
-    queryKey: canUserCreatePopQueryKey(userId),
-    queryFn: canUserCreatePop,
+  const popsQuery = useQuery({
+    queryKey: userPopsQueryKey(userId),
+    queryFn: fetchMePops,
     enabled: queriesEnabled,
     ...oneDayQueryOptions,
   })
 
   const profile = profileQuery.data ?? cachedProfile ?? null
-  const batch = batchQuery.data ?? cachedBatch
+  const pops = popsQuery.data ?? cachedPops ?? []
 
-  useEffect(() => {
-    if (!batch) return
-    queryClient.setQueryData(userPopIdsQueryKey(userId), batch.popIds)
-    for (const popId of batch.popIds) {
-      const access = batch.accessByPopId[popId]
-      if (access) {
-        queryClient.setQueryData(popAccessQueryKey(popId), access)
-      }
-    }
-  }, [batch, queryClient, userId])
-
-  const pops = useMemo((): HomePopListItem[] => {
-    const accessRows = Object.values(batch?.accessByPopId ?? {})
-    return buildHomePopListFromAccess(accessRows)
-  }, [batch])
-
-  const hasCachedBatch = batch !== undefined
-  const isLoading =
-    !hasCachedBatch && (!queriesEnabled || batchQuery.isPending)
-
-  const loadError = batchQuery.isError && !hasCachedBatch
+  const hasCachedPops = cachedPops !== undefined || popsQuery.data !== undefined
+  const isLoading = !hasCachedPops && (!queriesEnabled || popsQuery.isPending)
+  const loadError = popsQuery.isError && !hasCachedPops
 
   const refetchAll = async () => {
-    await Promise.all([
-      profileQuery.refetch(),
-      batchQuery.refetch(),
-      createPopQuery.refetch(),
-    ])
+    await Promise.all([profileQuery.refetch(), popsQuery.refetch()])
   }
 
-  const canCreatePop = createPopQuery.data?.canCreate === true
+  const canCreatePop = profile?.canCreatePop === true
   const createPopPending =
-    createPopQuery.isPending && createPopQuery.data === undefined
+    profileQuery.isPending && profileQuery.data === undefined && !cachedProfile
 
   return {
     profile,
@@ -104,6 +55,7 @@ export function useHomePageData(userId: string) {
     pops,
     canCreatePop,
     createPopPending,
+    profilePending: createPopPending,
     isLoading,
     loadError,
     refetchAll,

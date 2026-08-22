@@ -1,13 +1,10 @@
 "use client"
 
+import { PURCHASE_ORDER_TABLE_PAGE_SIZES } from "@/app/[siteId]/[popId]/purchase-orders/orderConstants"
 import {
-  deletePurchaseOrder,
-  getPurchaseOrderDetail,
-} from "@/app/[siteId]/[popId]/purchase-orders/actions"
-import {
-  DEFAULT_PURCHASE_ORDER_TABLE_PAGE_SIZE,
-  PURCHASE_ORDER_TABLE_PAGE_SIZES,
-} from "@/app/[siteId]/[popId]/purchase-orders/orderConstants"
+  mergePurchaseOrdersWorkspaceUrl,
+  parsePurchaseOrdersWorkspaceUrl,
+} from "@/app/[siteId]/[popId]/purchase-orders/workspaceUrl"
 import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { PurchaseOrderViewDialog } from "@/components/purchase-orders/PurchaseOrderViewDialog"
 import { PurchaseOrderDeleteDialog } from "@/components/purchase-orders/PurchaseOrderDeleteDialog"
@@ -51,9 +48,19 @@ import {
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { usePopPurchaseOrdersTable } from "@/hooks/usePopPurchaseOrdersTable"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { usePurchaseOrderDetail } from "@/hooks/usePurchaseOrderDetail"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
 import { popPurchaseOrdersQueryRoot } from "@/lib/queryKeys"
+import {
+  deletePurchaseOrder,
+  fetchPurchaseOrderDetail,
+} from "@/lib/rootsyApi/purchaseOrdersClient"
+import { emptyPurchaseCheckoutSnapshot } from "@/lib/purchaseOrderCheckoutState"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   computeDataWorkspaceDateBounds,
@@ -72,7 +79,7 @@ import type {
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { Download, Eye, Printer, Trash2, Truck } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -90,16 +97,51 @@ const moneyFmt = new Intl.NumberFormat("es-AR", {
   minimumFractionDigits: 2,
 })
 
-type Props = {
-  siteId: string
-  popId: string
-}
-
-export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
+export function PurchaseOrdersWorkspaceView() {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const params = useParams()
+  const siteId = typeof params?.siteId === "string" ? params.siteId : ""
+  const popId = typeof params?.popId === "string" ? params.popId : ""
   const queryClient = useQueryClient()
   const timeZone = usePopTimeZone()
-  const { bootstrap, popAccess, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap, popAccess, loading: bootstrapLoading, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
+
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
+  const ws = useMemo(
+    () => parsePurchaseOrdersWorkspaceUrl(workspaceParams),
+    [workspaceParams],
+  )
+
+  const pushWs = useCallback(
+    (patch: Parameters<typeof mergePurchaseOrdersWorkspaceUrl>[1]) => {
+      const qs = mergePurchaseOrdersWorkspaceUrl(workspaceParams, patch)
+      const next = qs.toString() ? `${pathname}?${qs.toString()}` : pathname
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== next) {
+          window.history.replaceState(window.history.state, "", next)
+        }
+      }
+      setWorkspaceSearch(qs.toString())
+    },
+    [pathname, workspaceParams],
+  )
 
   const popLogoUrl = useMemo(
     () =>
@@ -127,15 +169,12 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
 
   const [actionError, setError] = useState<string | null>(null)
 
-  const [searchInput, setSearchInput] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [searchInput, setSearchInput] = useState(ws.q)
   const [datePreset, setDatePreset] =
     useState<DataWorkspaceDatePreset>("this_month")
   const [customDateRange, setCustomDateRange] = useState<
     DateRange | undefined
   >(undefined)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(DEFAULT_PURCHASE_ORDER_TABLE_PAGE_SIZE)
 
   const searchInputId = useId()
   const dateFilterLabelId = useId()
@@ -143,7 +182,10 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
   const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  const [viewOrder, setViewOrder] = useState<PurchaseOrderDetail | null>(null)
+  const [viewOrderId, setViewOrderId] = useState<string | null>(null)
+  const [viewPreview, setViewPreview] = useState<PurchaseOrderTableRow | null>(
+    null,
+  )
   const [viewOpen, setViewOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<PurchaseOrderTableRow | null>(
     null,
@@ -162,22 +204,55 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
     [datePreset, dateBounds],
   )
 
+  const orderPerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canDelete =
+    orderPerm(POP_PERMS.OPERATIONS_DELETE) ||
+    orderPerm(POP_PERMS.OPERATIONS_CREATE)
+
   const ordersQuery = usePopPurchaseOrdersTable(
     popId,
     {
-      page,
-      pageSize,
-      q: debouncedSearch,
+      page: ws.page,
+      pageSize: ws.pageSize,
+      q: ws.q,
       dateFrom: dateBounds.from,
       dateTo: dateBounds.to,
     },
-    { enabled: Boolean(popId) },
+    { enabled: Boolean(popId && siteId) },
   )
 
+  const detailQuery = usePurchaseOrderDetail(popId, viewOrderId ?? undefined, {
+    enabled: viewOpen && Boolean(popId) && Boolean(viewOrderId),
+  })
+  const viewOrder: PurchaseOrderDetail | null = useMemo(() => {
+    if (detailQuery.data?.success) return detailQuery.data.order
+    if (!viewPreview) return null
+    return {
+      ...viewPreview,
+      supplierId: null,
+      checkoutSnapshot: emptyPurchaseCheckoutSnapshot(),
+      metadata: {},
+    }
+  }, [detailQuery.data, viewPreview])
+  const viewRefreshing =
+    viewOpen &&
+    (detailQuery.isPending ||
+      (detailQuery.isFetching && !detailQuery.data?.success))
+
   const rows = ordersQuery.data?.success ? ordersQuery.data.rows : []
-  const totalCount = ordersQuery.data?.success
-    ? ordersQuery.data.totalCount
-    : 0
+  const totalCount = ordersQuery.data?.success ? ordersQuery.data.totalCount : 0
   const listFetching =
     ordersQuery.isPending ||
     (ordersQuery.isFetching && !ordersQuery.isFetched)
@@ -201,19 +276,21 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
   useEffect(() => {
     const res = ordersQuery.data
     if (!res?.success) return
-    if (res.page !== page) setPage(res.page)
-  }, [ordersQuery.data, page])
+    if (res.page !== ws.page) pushWs({ page: res.page })
+  }, [ordersQuery.data, pushWs, ws.page])
+
+  useEffect(() => {
+    setSearchInput(ws.q)
+  }, [ws.q])
 
   useEffect(() => {
     const t = window.setTimeout(() => {
-      setDebouncedSearch(searchInput.trim())
+      const next = searchInput.trim()
+      if (next === ws.q.trim()) return
+      pushWs({ q: next, page: 1 })
     }, 300)
     return () => window.clearTimeout(t)
-  }, [searchInput])
-
-  useEffect(() => {
-    setPage(1)
-  }, [debouncedSearch, datePreset, customDateRange, pageSize])
+  }, [pushWs, searchInput, ws.q])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -248,17 +325,12 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
     [timeZone],
   )
 
-  const openView = useCallback(async (orderId: string) => {
-    setActionBusyId(orderId)
-    const res = await getPurchaseOrderDetail(popId, orderId)
-    setActionBusyId(null)
-    if (!res.success) {
-      setError(res.error)
-      return
-    }
-    setViewOrder(res.order)
+  const openView = useCallback((row: PurchaseOrderTableRow) => {
+    setError(null)
+    setViewOrderId(row.id)
+    setViewPreview(row)
     setViewOpen(true)
-  }, [popId])
+  }, [])
 
   const runPdfAction = useCallback(
     async (orderId: string, action: "download" | "print") => {
@@ -282,7 +354,7 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
         const order = loaded
           ? loaded
           : await (async () => {
-              const res = await getPurchaseOrderDetail(popId, orderId)
+              const res = await fetchPurchaseOrderDetail(popId, orderId)
               if (!res.success) {
                 setError(res.error)
                 return null
@@ -342,8 +414,9 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
 
   const clearSearch = useCallback(() => {
     setSearchInput("")
+    pushWs({ q: "", page: 1 })
     searchInputRef.current?.focus()
-  }, [])
+  }, [pushWs])
 
   const clearDateFilter = useCallback(() => {
     setDatePreset("this_month")
@@ -353,8 +426,8 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
   const clearAllFilters = useCallback(() => {
     clearSearch()
     clearDateFilter()
-    setPage(1)
-  }, [clearDateFilter, clearSearch])
+    pushWs({ page: 1 })
+  }, [clearDateFilter, clearSearch, pushWs])
 
   const hasSearchChip = searchInput.trim().length > 0
   const hasFilterChips = hasSearchChip || dateFilterActive
@@ -362,17 +435,17 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
     (hasSearchChip ? 1 : 0) + (dateFilterActive ? 1 : 0)
 
   const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(totalCount / Math.max(1, pageSize))),
-    [totalCount, pageSize],
+    () => Math.max(1, Math.ceil(totalCount / Math.max(1, ws.pageSize))),
+    [totalCount, ws.pageSize],
   )
-  const currentPage = Math.min(Math.max(1, page), totalPages)
+  const currentPage = Math.min(Math.max(1, ws.page), totalPages)
 
   const rangeLabel = useMemo(() => {
     if (totalCount === 0) return { start: 0, end: 0 }
-    const start = (currentPage - 1) * pageSize + 1
-    const end = Math.min(currentPage * pageSize, totalCount)
+    const start = (currentPage - 1) * ws.pageSize + 1
+    const end = Math.min(currentPage * ws.pageSize, totalCount)
     return { start, end }
-  }, [currentPage, pageSize, totalCount])
+  }, [currentPage, totalCount, ws.pageSize])
 
   const paginationItems = useMemo(
     () => buildPaginationItems(totalPages, currentPage),
@@ -380,8 +453,8 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
   )
 
   const skeletonRowCount = useMemo(
-    () => Math.min(12, Math.max(5, pageSize)),
-    [pageSize],
+    () => Math.min(12, Math.max(5, ws.pageSize)),
+    [ws.pageSize],
   )
 
   const resultsSummary = useMemo(() => {
@@ -390,6 +463,19 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
     const noun = totalCount === 1 ? "orden de compra" : "órdenes de compra"
     return `${totalCount.toLocaleString("es-AR")} ${noun}`
   }, [listFetching, totalCount])
+
+  useEffect(() => {
+    if (!viewOpen || !detailQuery.data || detailQuery.data.success) return
+    setError(detailQuery.data.error)
+  }, [detailQuery.data, viewOpen])
+
+  if (!popId || !siteId) {
+    return (
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <p className="text-sm">Punto de venta no encontrado</p>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -413,8 +499,14 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
                   variant="layout"
                   preset={datePreset}
                   customRange={customDateRange}
-                  onPresetChange={setDatePreset}
-                  onCustomRangeChange={setCustomDateRange}
+                  onPresetChange={(preset) => {
+                    setDatePreset(preset)
+                    pushWs({ page: 1 })
+                  }}
+                  onCustomRangeChange={(range) => {
+                    setCustomDateRange(range)
+                    pushWs({ page: 1 })
+                  }}
                   bounds={dateBounds}
                   showActiveState={false}
                   labelId={dateFilterLabelId}
@@ -474,13 +566,15 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
                 rangeEnd={rangeLabel.end}
                 currentPage={currentPage}
                 totalPages={totalPages}
-                pageSize={pageSize}
+                pageSize={ws.pageSize}
                 pageSizeOptions={PURCHASE_ORDER_TABLE_PAGE_SIZES}
                 paginationItems={paginationItems}
-                onPageChange={setPage}
+                onPageChange={(p) => pushWs({ page: p })}
                 onPageSizeChange={(ps) => {
-                  setPageSize(ps)
-                  setPage(1)
+                  pushWs({
+                    pageSize: ps as typeof ws.pageSize,
+                    page: 1,
+                  })
                 }}
                 pageSizeLabelId={pageSizeLabelId}
               />
@@ -569,7 +663,7 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
                                 disabled={busy}
                                 icon={Eye}
                                 variant="neutral"
-                                onClick={() => void openView(row.id)}
+                                onClick={() => openView(row)}
                               />
                               <DataWorkspaceTableIconAction
                                 label="Descargar PDF"
@@ -596,13 +690,15 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
                                   )
                                 }}
                               />
-                              <DataWorkspaceTableIconAction
-                                label="Eliminar"
-                                disabled={busy}
-                                icon={Trash2}
-                                variant="destructive"
-                                onClick={() => setDeleteTarget(row)}
-                              />
+                              {canDelete ? (
+                                <DataWorkspaceTableIconAction
+                                  label="Eliminar"
+                                  disabled={busy}
+                                  icon={Trash2}
+                                  variant="destructive"
+                                  onClick={() => setDeleteTarget(row)}
+                                />
+                              ) : null}
                             </div>
                           </TableCell>
                         </WorkspaceTableBodyRow>
@@ -618,10 +714,17 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
 
       <PurchaseOrderViewDialog
         open={viewOpen}
-        onOpenChange={setViewOpen}
+        onOpenChange={(open) => {
+          setViewOpen(open)
+          if (!open) {
+            setViewOrderId(null)
+            setViewPreview(null)
+          }
+        }}
         order={viewOrder}
         formatCreatedAt={formatCreatedAt}
         popBrand={popBrand}
+        refreshing={viewRefreshing}
       />
 
       <PurchaseOrderDeleteDialog

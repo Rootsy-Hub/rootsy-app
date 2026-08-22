@@ -1,29 +1,35 @@
 "use client"
 
-import { CurrentAccountAgingStrip } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountAgingStrip"
 import { CurrentAccountAgingToolbarFilter } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountAgingToolbarFilter"
 import { CurrentAccountApplyDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountApplyDialog"
-import { CurrentAccountSettleDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountSettleDialog"
+import { CurrentAccountDetailView } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountDetailView"
 import { CurrentAccountDirectionToolbarFilter } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountDirectionToolbarFilter"
-import { CurrentAccountViewToolbarFilter } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountViewToolbarFilter"
+import { CurrentAccountEnrollDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountEnrollDialog"
+import { CurrentAccountSettleDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountSettleDialog"
+import { CurrentAccountTermsDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountTermsDialog"
+import type {
+  CurrentAccountOpenDocument,
+  CurrentAccountPartyRow,
+} from "@/app/[siteId]/[popId]/current-accounts/actions"
 import {
   CurrentAccountCountCell,
-  CurrentAccountLedgerDateCell,
-  CurrentAccountLedgerDocCell,
-  CurrentAccountLedgerMoneyCell,
+  CurrentAccountLimitCell,
   CurrentAccountMoneyCell,
-  CurrentAccountOpenAgingCell,
   CurrentAccountOverdueCell,
   CurrentAccountPartyNameCell,
+  CurrentAccountTermDaysCell,
 } from "@/app/[siteId]/[popId]/current-accounts/currentAccountsTableCells"
 import {
-  currentAccountLedgerDateColumnClass,
-  currentAccountLedgerDocColumnClass,
-  currentAccountLedgerMoneyColumnClass,
-  currentAccountOpenAgingColumnClass,
+  CurrentAccountTableActionsCell,
+  CurrentAccountTableActionsHead,
+  type CurrentAccountRowActionKind,
+} from "@/app/[siteId]/[popId]/current-accounts/currentAccountsTableRowOptions"
+import {
   currentAccountTableAmountColumnClass,
   currentAccountTableCountColumnClass,
+  currentAccountTableLimitColumnClass,
   currentAccountTablePartyColumnClass,
+  currentAccountTableTermColumnClass,
 } from "@/app/[siteId]/[popId]/current-accounts/currentAccountsTableLayout"
 import {
   CURRENT_ACCOUNT_TABLE_PAGE_SIZES,
@@ -43,12 +49,15 @@ import {
   DataWorkspaceTableListShell,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
-import { workspaceTableLayoutClassName } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceBlocksPageMainClass,
+  dataWorkspaceBlocksPageScopeClass,
+  workspaceTableLayoutClassName,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
@@ -57,90 +66,114 @@ import {
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableBodyRow,
-  WorkspaceTableHead,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import { currentAccountsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
-  currentAccountLedgerSkeletonColumns,
-  currentAccountOpenSkeletonColumns,
-  currentAccountsSkeletonColumns,
-} from "@/components/data-workspace/workspaceTableSkeletonPresets"
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
+import { TableBody } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import { usePopCurrentAccountLedger } from "@/hooks/usePopCurrentAccountLedger"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopCurrentAccountParties } from "@/hooks/usePopCurrentAccountParties"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import {
-  popCurrentAccountLedgerQueryRoot,
-  popCurrentAccountPartiesQueryRoot,
-} from "@/lib/queryKeys"
-import { useQueryClient } from "@tanstack/react-query"
-import {
+  CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS,
   currentAccountAgingFilterLabel,
   currentAccountDirectionLabel,
-  currentAccountOpenDocumentAgingLabel,
-  emptyCurrentAccountAgingTotals,
   type CurrentAccountDirection,
 } from "@/lib/currentAccounts"
 import {
-  exportCurrentAccountStatementPdf,
-  printCurrentAccountStatementPdf,
-} from "@/lib/currentAccountStatementPdfExport"
-import { showReportExportInProgressToast } from "@/lib/reportExportInProgressToast"
+  popCurrentAccountLedgerQueryKey,
+  popCurrentAccountLedgerQueryRoot,
+  popCurrentAccountPartiesQueryRoot,
+} from "@/lib/queryKeys"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
 import { popScopedHref } from "@/lib/popRoutes"
+import {
+  fetchPopCurrentAccountLedger,
+  setPopCurrentAccountEnrollment,
+} from "@/lib/rootsyApi/currentAccountsClient"
 import { cn } from "@/lib/utils"
+import { useQueryClient } from "@tanstack/react-query"
+import { Truck, UserPlus } from "lucide-react"
 import {
   nextWorkspaceTableSortState,
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
-import { TableBody } from "@/components/ui/table"
-import { Banknote, Download, Link2, Printer } from "lucide-react"
-import {
-  useParams,
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 
 export function CurrentAccountsWorkspaceView() {
   const params = useParams()
-  const router = useRouter()
-  const routerRef = useRef(router)
-  routerRef.current = router
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const siteId = String(params.siteId ?? "")
   const popId = String(params.popId ?? "")
   const queryClient = useQueryClient()
+  const { bootstrap, loading: bootstrapLoading, popAccess, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
+
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
   const ws = useMemo(
-    () => parseCurrentAccountsWorkspaceUrl(searchParams),
-    [searchParams],
+    () => parseCurrentAccountsWorkspaceUrl(workspaceParams),
+    [workspaceParams],
   )
   const searchInputId = useId()
   const pageSizeLabelId = useId()
-  const { bootstrap, loading: bootstrapLoading, popAccess } = usePopWorkspace()
 
   const [searchInput, setSearchInput] = useState(ws.q)
+  const [enrollOpen, setEnrollOpen] = useState(false)
+  const [enrollDirection, setEnrollDirection] =
+    useState<CurrentAccountDirection>("receivable")
+  const [rowAction, setRowAction] = useState<{
+    kind: CurrentAccountRowActionKind
+    party: CurrentAccountPartyRow
+    documents: CurrentAccountOpenDocument[]
+    unappliedCredit: number
+  } | null>(null)
+  const [rowActionBusyId, setRowActionBusyId] = useState<string | null>(null)
+  const [enrollmentBusy, setEnrollmentBusy] = useState(false)
+  const [rowActionError, setRowActionError] = useState<string | null>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const [actionError, setError] = useState<string | null>(null)
-
-  const [settleOpen, setSettleOpen] = useState(false)
-  const [applyOpen, setApplyOpen] = useState(false)
-  const [pdfBusy, setPdfBusy] = useState(false)
 
   const viewingParty = Boolean(ws.partyId)
 
   const pushWs = useCallback(
     (patch: Parameters<typeof mergeCurrentAccountsWorkspaceUrl>[1]) => {
-      const next = mergeCurrentAccountsWorkspaceUrl(searchParams, patch)
+      const next = mergeCurrentAccountsWorkspaceUrl(workspaceParams, patch)
       const qs = next.toString()
-      if (qs === searchParams.toString()) return
       const href = qs ? `${pathname}?${qs}` : pathname
-      routerRef.current.replace(href, { scroll: false })
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== href) {
+          window.history.replaceState(window.history.state, "", href)
+        }
+      }
+      setWorkspaceSearch(qs)
     },
-    [pathname, searchParams],
+    [pathname, workspaceParams],
   )
 
   const handleSortColumn = useCallback(
@@ -179,64 +212,39 @@ export function CurrentAccountsWorkspaceView() {
     },
     { enabled: Boolean(popId) && !viewingParty },
   )
-  const ledgerQuery = usePopCurrentAccountLedger(
-    popId,
-    ws.direction,
-    ws.partyId,
-    { enabled: Boolean(popId) && viewingParty },
-  )
 
   const parties = partiesQuery.data?.parties ?? []
   const totalCount = partiesQuery.data?.totalCount ?? 0
-  const ledgerLines = ledgerQuery.data?.lines ?? []
-  const ledgerPartyName = ledgerQuery.data?.partyName ?? ""
-  const ledgerBalance = ledgerQuery.data?.balance ?? 0
-  const ledgerOpenCount = ledgerQuery.data?.openCount ?? 0
-  const ledgerAging =
-    ledgerQuery.data?.aging ?? emptyCurrentAccountAgingTotals()
-  const ledgerOpenDocuments = ledgerQuery.data?.openDocuments ?? []
-  const ledgerCanCreate = ledgerQuery.data?.canCreate ?? false
-  const ledgerUnapplied = ledgerQuery.data?.unappliedCredit ?? 0
-  const activeQuery = viewingParty ? ledgerQuery : partiesQuery
+  const checkPerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = checkPerm(POP_PERMS.CURRENT_ACCOUNT_CREATE)
   const loading =
-    activeQuery.isPending ||
-    (activeQuery.isFetching && !activeQuery.isFetched)
+    partiesQuery.isPending ||
+    (partiesQuery.isFetching && !partiesQuery.isFetched)
   const tableError =
-    activeQuery.data?.success === false
-      ? activeQuery.data.error
-      : activeQuery.error instanceof Error
-        ? activeQuery.error.message
-        : activeQuery.error
-          ? String(activeQuery.error)
+    partiesQuery.data?.success === false
+      ? partiesQuery.data.error
+      : partiesQuery.error instanceof Error
+        ? partiesQuery.error.message
+        : partiesQuery.error
+          ? String(partiesQuery.error)
           : null
-  const error = actionError ?? tableError
-
-  const refreshCurrentAccountLedger = useCallback(async () => {
-    if (!popId) return
-    await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: popCurrentAccountLedgerQueryRoot(popId),
-      }),
-      queryClient.invalidateQueries({
-        queryKey: popCurrentAccountPartiesQueryRoot(popId),
-      }),
-    ])
-  }, [popId, queryClient])
-
-  useEffect(() => {
-    const res = activeQuery.data
-    if (!res || res.success || !res.redirect) return
-    routerRef.current.replace(res.redirect)
-  }, [activeQuery.data])
+  const error = rowActionError ?? tableError
 
   useEffect(() => {
     setSearchInput(ws.q)
   }, [ws.q])
-
-  useEffect(() => {
-    setSettleOpen(false)
-    setApplyOpen(false)
-  }, [ws.direction, ws.partyId])
 
   useEffect(() => {
     if (viewingParty) return
@@ -282,10 +290,8 @@ export function CurrentAccountsWorkspaceView() {
   const hasSearchChip = ws.q.trim() !== ""
   const hasAgingChip = ws.aging !== "all"
   const hasFilterChips = hasSearchChip || hasAgingChip
-  const activeFilterCount =
-    Number(hasSearchChip) + Number(hasAgingChip)
-  const partyNoun =
-    ws.direction === "payable" ? "proveedor" : "cliente"
+  const activeFilterCount = Number(hasSearchChip) + Number(hasAgingChip)
+  const partyNoun = ws.direction === "payable" ? "proveedor" : "cliente"
   const partyNounPlural =
     ws.direction === "payable" ? "proveedores" : "clientes"
 
@@ -298,50 +304,95 @@ export function CurrentAccountsWorkspaceView() {
 
   const listHref = popScopedHref(siteId, popId, "current-accounts")
   const listBackHref = useMemo(() => {
-    const next = mergeCurrentAccountsWorkspaceUrl(searchParams, {
+    const next = mergeCurrentAccountsWorkspaceUrl(workspaceParams, {
       partyId: "",
     })
     const qs = next.toString()
     return qs ? `${listHref}?${qs}` : listHref
-  }, [listHref, searchParams])
+  }, [listHref, workspaceParams])
 
   const changeDirection = (direction: CurrentAccountDirection) => {
     pushWs({ direction, partyId: "", page: 1 })
   }
 
-  const viewingOpen = viewingParty && ws.view === "open"
-  const pdfBrand = {
-    popName: bootstrap?.popName,
-    popLogoUrl: popAccess?.pop.imageUrl ?? undefined,
-    popStreetAddress: popAccess?.pop.streetAddress ?? null,
+  const openParty = (
+    partyId: string,
+    direction: CurrentAccountDirection = ws.direction,
+  ) => {
+    pushWs({ partyId, direction, page: 1 })
   }
 
-  const runStatementPdf = async (action: "download" | "print") => {
-    if (!viewingParty) return
-    setPdfBusy(true)
-    const dismiss =
-      action === "download"
-        ? showReportExportInProgressToast({ title: "Generando extracto…" })
-        : null
+  const openEnroll = (direction: CurrentAccountDirection) => {
+    setEnrollDirection(direction)
+    setEnrollOpen(true)
+  }
+
+  const refreshParties = useCallback(async () => {
+    if (!popId) return
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: popCurrentAccountPartiesQueryRoot(popId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: popCurrentAccountLedgerQueryRoot(popId),
+      }),
+    ])
+  }, [popId, queryClient])
+
+  const closeRowAction = () => setRowAction(null)
+
+  const handleRowAction = async (
+    party: CurrentAccountPartyRow,
+    kind: CurrentAccountRowActionKind,
+  ) => {
+    setRowActionError(null)
+    if (kind === "terms" || kind === "enroll" || kind === "unenroll") {
+      setRowAction({
+        kind,
+        party,
+        documents: [],
+        unappliedCredit: party.unappliedCredit,
+      })
+      return
+    }
+
+    setRowActionBusyId(party.partyId)
     try {
-      const payload = {
-        partyName: ledgerPartyName,
-        direction: ws.direction,
-        balance: ledgerBalance,
-        aging: ledgerAging,
-        openDocuments: ledgerOpenDocuments,
-        lines: ledgerLines,
+      const ledger = await queryClient.fetchQuery({
+        queryKey: popCurrentAccountLedgerQueryKey(
+          popId,
+          ws.direction,
+          party.partyId,
+        ),
+        queryFn: () =>
+          fetchPopCurrentAccountLedger(popId, {
+            direction: ws.direction,
+            partyId: party.partyId,
+          }),
+        ...sessionListQueryOptions,
+      })
+      if (!ledger.success) {
+        setRowActionError(ledger.error)
+        return
       }
-      if (action === "download") {
-        await exportCurrentAccountStatementPdf(payload, pdfBrand)
-      } else {
-        await printCurrentAccountStatementPdf(payload, pdfBrand)
-      }
+      setRowAction({
+        kind,
+        party: {
+          ...party,
+          unappliedCredit: ledger.unappliedCredit,
+          creditLimit: ledger.creditLimit,
+          termDays: ledger.termDays,
+          enrolled: ledger.enrolled,
+        },
+        documents: ledger.openDocuments,
+        unappliedCredit: ledger.unappliedCredit,
+      })
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "No se pudo generar el PDF.")
+      setRowActionError(
+        e instanceof Error ? e.message : "No se pudo abrir la acción.",
+      )
     } finally {
-      dismiss?.()
-      setPdfBusy(false)
+      setRowActionBusyId(null)
     }
   }
 
@@ -353,57 +404,73 @@ export function CurrentAccountsWorkspaceView() {
     )
   }
 
+  if (viewingParty && ws.partyId) {
+    return (
+      <DataWorkspaceModuleLayout
+        siteId={siteId}
+        popId={popId}
+        popName={bootstrap?.popName ?? ""}
+        title="Cuentas corrientes"
+        headerVariant={dataWorkspaceModuleHeaderVariant}
+        loading={bootstrapLoading}
+        userName={bootstrap?.userFullName}
+        userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+        userRoleLabel={bootstrap?.roleLabel}
+        contentFlush
+        mainMaxWidthClass="max-w-none"
+        mainClassName={dataWorkspaceBlocksPageMainClass}
+      >
+        <div className={dataWorkspaceBlocksPageScopeClass}>
+          <CurrentAccountDetailView
+            popId={popId}
+            direction={ws.direction}
+            partyId={ws.partyId}
+            view={ws.view}
+            listBackHref={listBackHref}
+            canCreate={canCreate}
+            onViewChange={(view) => pushWs({ view })}
+            pdfBrand={{
+              popName: bootstrap?.popName,
+              popLogoUrl: popAccess?.pop.imageUrl ?? undefined,
+              popStreetAddress: popAccess?.pop.streetAddress ?? null,
+            }}
+          />
+        </div>
+      </DataWorkspaceModuleLayout>
+    )
+  }
+
   return (
+    <>
     <DataWorkspaceTableListPage
       layout={{
         siteId,
         popId,
         popName: bootstrap?.popName ?? "",
-        title: viewingParty
-          ? ledgerPartyName || "Cuenta corriente"
-          : "Cuentas corrientes",
+        title: "Cuentas corrientes",
         loading: bootstrapLoading,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
-        backHref: viewingParty ? listBackHref : undefined,
-        headerActions: viewingParty ? (
-          <div className="flex items-center gap-2">
-            <DataWorkspaceHeaderIconButton
-              label="Descargar extracto"
+        userRoleLabel: bootstrap?.roleLabel,
+        headerActions: canCreate ? (
+          <>
+            <DataWorkspaceHeaderTooltipIconButton
+              label="Dar de alta un cliente"
               headerVariant={dataWorkspaceTableListHeaderVariant}
-              disabled={pdfBusy || loading}
-              onClick={() => void runStatementPdf("download")}
+              primary
+              onClick={() => openEnroll("receivable")}
             >
-              <Download className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
-            <DataWorkspaceHeaderIconButton
-              label="Imprimir extracto"
+              <UserPlus className="size-5" aria-hidden />
+            </DataWorkspaceHeaderTooltipIconButton>
+            <DataWorkspaceHeaderTooltipIconButton
+              label="Dar de alta un proveedor"
               headerVariant={dataWorkspaceTableListHeaderVariant}
-              disabled={pdfBusy || loading}
-              onClick={() => void runStatementPdf("print")}
+              primary
+              onClick={() => openEnroll("payable")}
             >
-              <Printer className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
-            {ledgerCanCreate && ledgerUnapplied > 0.009 ? (
-              <DataWorkspaceHeaderIconButton
-                label="Imputar a cuenta"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                onClick={() => setApplyOpen(true)}
-              >
-                <Link2 className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            ) : null}
-            {ledgerCanCreate ? (
-              <DataWorkspaceHeaderIconButton
-                label={ws.direction === "payable" ? "Pagar" : "Cobrar"}
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                primary
-                onClick={() => setSettleOpen(true)}
-              >
-                <Banknote className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            ) : null}
-          </div>
+              <Truck className="size-5" aria-hidden />
+            </DataWorkspaceHeaderTooltipIconButton>
+          </>
         ) : null,
       }}
       error={error}
@@ -417,64 +484,32 @@ export function CurrentAccountsWorkspaceView() {
                 onChange={changeDirection}
               />
             </div>
-            {viewingParty ? (
-              <div className={dataWorkspaceListFiltersPanelClass}>
-                <CurrentAccountViewToolbarFilter
-                  value={ws.view}
-                  onChange={(view) => pushWs({ view })}
-                />
-              </div>
-            ) : (
-              <div className={dataWorkspaceListFiltersPanelClass}>
-                <CurrentAccountAgingToolbarFilter
-                  value={ws.aging}
-                  onChange={(aging) => pushWs({ aging, page: 1 })}
-                />
-              </div>
-            )}
-            {viewingParty ? (
-              <div className={dataWorkspaceListFiltersPanelLastClass}>
-                <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-                  <p className="shrink-0 text-sm leading-relaxed text-rootsy-bruma-500">
-                    {ledgerOpenCount === 1
-                      ? "1 comprobante abierto"
-                      : `${ledgerOpenCount.toLocaleString("es-AR")} comprobantes abiertos`}
-                    {ledgerUnapplied > 0.009
-                      ? ` · a cuenta ${new Intl.NumberFormat("es-AR", {
-                          style: "currency",
-                          currency: "ARS",
-                        }).format(ledgerUnapplied)}`
-                      : ""}
-                    {` · saldo ${new Intl.NumberFormat("es-AR", {
-                      style: "currency",
-                      currency: "ARS",
-                    }).format(ledgerBalance)}`}
-                  </p>
-                  <CurrentAccountAgingStrip aging={ledgerAging} />
-                </div>
-              </div>
-            ) : (
-              <div className={dataWorkspaceListFiltersPanelLastClass}>
-                <DataWorkspaceListSearchField
-                  id={searchInputId}
-                  inputRef={searchInputRef}
-                  value={searchInput}
-                  onChange={(event) => setSearchInput(event.target.value)}
-                  onClear={() => {
-                    setSearchInput("")
-                    searchInputRef.current?.focus()
-                  }}
-                  placeholder={`${currentAccountDirectionLabel(ws.direction)}… ( / )`}
-                  resultsSummary={resultsSummary}
-                />
-              </div>
-            )}
+            <div className={dataWorkspaceListFiltersPanelClass}>
+              <CurrentAccountAgingToolbarFilter
+                value={ws.aging}
+                onChange={(aging) => pushWs({ aging, page: 1 })}
+              />
+            </div>
+            <div className={dataWorkspaceListFiltersPanelLastClass}>
+              <DataWorkspaceListSearchField
+                id={searchInputId}
+                inputRef={searchInputRef}
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                onClear={() => {
+                  setSearchInput("")
+                  searchInputRef.current?.focus()
+                }}
+                placeholder={`${currentAccountDirectionLabel(ws.direction)}… ( / )`}
+                resultsSummary={resultsSummary}
+              />
+            </div>
           </div>
         </DataWorkspaceTableListFiltersBar>
 
         <DataWorkspaceTableListShell
           activeFiltersBar={
-            !viewingParty && hasFilterChips ? (
+            hasFilterChips ? (
               <DataWorkspaceListActiveFiltersBar
                 activeCount={activeFilterCount}
                 onClearAll={() => {
@@ -504,315 +539,259 @@ export function CurrentAccountsWorkspaceView() {
             ) : null
           }
           overlay={
-            !loading &&
-            (viewingParty
-              ? viewingOpen
-                ? ledgerOpenDocuments.length === 0
-                : ledgerLines.length === 0
-              : totalCount === 0) ? (
-              <DataWorkspaceTableEmptyMascot />
-            ) : null
+            !loading && totalCount === 0 ? <DataWorkspaceTableEmptyMascot /> : null
           }
           footer={
-            viewingParty ? null : (
-              <DataWorkspaceTableListPaginationFooter
-                listFetching={loading}
-                totalCount={totalCount}
-                rangeStart={rangeStart}
-                rangeEnd={rangeEnd}
-                currentPage={ws.page}
-                totalPages={totalPages}
-                pageSize={ws.pageSize}
-                pageSizeOptions={[...CURRENT_ACCOUNT_TABLE_PAGE_SIZES]}
-                paginationItems={paginationItems}
-                onPageChange={(page) => pushWs({ page })}
-                onPageSizeChange={(pageSize) =>
-                  pushWs({
-                    pageSize:
-                      pageSize as (typeof CURRENT_ACCOUNT_TABLE_PAGE_SIZES)[number],
-                    page: 1,
-                  })
-                }
-                pageSizeLabelId={pageSizeLabelId}
-              />
-            )
+            <DataWorkspaceTableListPaginationFooter
+              listFetching={loading}
+              totalCount={totalCount}
+              rangeStart={rangeStart}
+              rangeEnd={rangeEnd}
+              currentPage={ws.page}
+              totalPages={totalPages}
+              pageSize={ws.pageSize}
+              pageSizeOptions={[...CURRENT_ACCOUNT_TABLE_PAGE_SIZES]}
+              paginationItems={paginationItems}
+              onPageChange={(page) => pushWs({ page })}
+              onPageSizeChange={(pageSize) =>
+                pushWs({
+                  pageSize:
+                    pageSize as (typeof CURRENT_ACCOUNT_TABLE_PAGE_SIZES)[number],
+                  page: 1,
+                })
+              }
+              pageSizeLabelId={pageSizeLabelId}
+            />
           }
         >
           <DataWorkspaceListTableFrame>
-            {viewingParty && viewingOpen ? (
-              <table
-                className={cn(workspaceTableLayoutClassName, "min-w-4xl")}
-                aria-busy={loading}
-              >
-                <WorkspaceTableHeader>
-                  <WorkspaceTableHeaderRow>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      className={cn(
-                        currentAccountLedgerDateColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
+            <table
+              className={cn(workspaceTableLayoutClassName, "min-w-4xl")}
+              aria-busy={loading}
+            >
+              <WorkspaceTableHeader>
+                <WorkspaceTableHeaderRow>
+                  <CurrentAccountTableActionsHead />
+                  <WorkspaceTableSortHead
+                    tone="nature"
+                    label={
+                      ws.direction === "payable" ? "Proveedor" : "Cliente"
+                    }
+                    direction={sortDirection("party_name")}
+                    onSort={() => handleSortColumn("party_name")}
+                    className={cn(
+                      currentAccountTablePartyColumnClass,
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  />
+                  <WorkspaceTableSortHead
+                    tone="nature"
+                    align="right"
+                    label="Límite"
+                    direction={sortDirection("credit_limit")}
+                    onSort={() => handleSortColumn("credit_limit")}
+                    className={cn(
+                      currentAccountTableLimitColumnClass,
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  />
+                  <WorkspaceTableSortHead
+                    tone="nature"
+                    label="Plazo"
+                    direction={sortDirection("term_days")}
+                    onSort={() => handleSortColumn("term_days")}
+                    className={cn(
+                      currentAccountTableTermColumnClass,
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  />
+                  <WorkspaceTableSortHead
+                    tone="nature"
+                    label="Abiertos"
+                    direction={sortDirection("open_count")}
+                    onSort={() => handleSortColumn("open_count")}
+                    className={cn(
+                      currentAccountTableCountColumnClass,
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  />
+                  <WorkspaceTableSortHead
+                    tone="nature"
+                    align="right"
+                    label="Vencido"
+                    direction={sortDirection("overdue")}
+                    onSort={() => handleSortColumn("overdue")}
+                    className={cn(
+                      currentAccountTableAmountColumnClass,
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  />
+                  <WorkspaceTableSortHead
+                    tone="nature"
+                    align="right"
+                    label="Saldo"
+                    direction={sortDirection("balance")}
+                    onSort={() => handleSortColumn("balance")}
+                    className={cn(
+                      currentAccountTableAmountColumnClass,
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  />
+                </WorkspaceTableHeaderRow>
+              </WorkspaceTableHeader>
+              <TableBody>
+                {loading ? (
+                  <WorkspaceTableSkeletonRows
+                    rowCount={skeletonRowCount}
+                    rowKeyPrefix="ca-parties-sk"
+                    columns={currentAccountsSkeletonColumns()}
+                    tone="nature"
+                  />
+                ) : (
+                  parties.map((row, index) => (
+                    <WorkspaceTableBodyRow
+                      key={row.partyId}
+                      index={index}
+                      noHover={false}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Ver cuenta de ${row.partyName}`}
+                      className="cursor-pointer"
+                      onClick={() => openParty(row.partyId)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault()
+                          openParty(row.partyId)
+                        }
+                      }}
                     >
-                      Fecha
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      className={cn(
-                        currentAccountLedgerDocColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Comprobante
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      className={cn(
-                        currentAccountLedgerDateColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Vence
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      align="right"
-                      className={cn(
-                        currentAccountLedgerMoneyColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Restante
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      className={cn(
-                        currentAccountOpenAgingColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Tramo
-                    </WorkspaceTableHead>
-                  </WorkspaceTableHeaderRow>
-                </WorkspaceTableHeader>
-                <TableBody>
-                  {loading ? (
-                    <WorkspaceTableSkeletonRows
-                      rowCount={8}
-                      rowKeyPrefix="ca-open-sk"
-                      columns={currentAccountOpenSkeletonColumns()}
-                      tone="nature"
-                    />
-                  ) : (
-                    ledgerOpenDocuments.map((document, index) => (
-                      <WorkspaceTableBodyRow key={document.id} index={index}>
-                        <CurrentAccountLedgerDateCell value={document.date} />
-                        <CurrentAccountLedgerDocCell
-                          label={document.documentLabel}
-                          description={currentAccountOpenDocumentAgingLabel(
-                            document.daysOverdue,
-                          )}
-                        />
-                        <CurrentAccountLedgerDateCell value={document.dueDate} />
-                        <CurrentAccountLedgerMoneyCell value={document.remaining} />
-                        <CurrentAccountOpenAgingCell bucket={document.agingBucket} />
-                      </WorkspaceTableBodyRow>
-                    ))
-                  )}
-                </TableBody>
-              </table>
-            ) : viewingParty ? (
-              <table
-                className={cn(workspaceTableLayoutClassName, "min-w-4xl")}
-                aria-busy={loading}
-              >
-                <WorkspaceTableHeader>
-                  <WorkspaceTableHeaderRow>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      className={cn(
-                        currentAccountLedgerDateColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Fecha
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      className={cn(
-                        currentAccountLedgerDocColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Comprobante
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      align="right"
-                      className={cn(
-                        currentAccountLedgerMoneyColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Debe
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      align="right"
-                      className={cn(
-                        currentAccountLedgerMoneyColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Haber
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      align="right"
-                      className={cn(
-                        currentAccountLedgerMoneyColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Saldo
-                    </WorkspaceTableHead>
-                  </WorkspaceTableHeaderRow>
-                </WorkspaceTableHeader>
-                <TableBody>
-                  {loading ? (
-                    <WorkspaceTableSkeletonRows
-                      rowCount={8}
-                      rowKeyPrefix="ca-ledger-sk"
-                      columns={currentAccountLedgerSkeletonColumns()}
-                      tone="nature"
-                    />
-                  ) : (
-                    ledgerLines.map((line, index) => (
-                      <WorkspaceTableBodyRow key={line.id} index={index}>
-                        <CurrentAccountLedgerDateCell value={line.date} />
-                        <CurrentAccountLedgerDocCell
-                          label={line.documentLabel}
-                          description={line.description}
-                        />
-                        <CurrentAccountLedgerMoneyCell value={line.debit} />
-                        <CurrentAccountLedgerMoneyCell value={line.credit} />
-                        <CurrentAccountLedgerMoneyCell value={line.balance} />
-                      </WorkspaceTableBodyRow>
-                    ))
-                  )}
-                </TableBody>
-              </table>
-            ) : (
-              <table
-                className={cn(workspaceTableLayoutClassName, "min-w-4xl")}
-                aria-busy={loading}
-              >
-                <WorkspaceTableHeader>
-                  <WorkspaceTableHeaderRow>
-                    <WorkspaceTableSortHead
-                      tone="nature"
-                      label={
-                        ws.direction === "payable" ? "Proveedor" : "Cliente"
-                      }
-                      direction={sortDirection("party_name")}
-                      onSort={() => handleSortColumn("party_name")}
-                      className={cn(
-                        currentAccountTablePartyColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    />
-                    <WorkspaceTableSortHead
-                      tone="nature"
-                      label="Abiertos"
-                      direction={sortDirection("open_count")}
-                      onSort={() => handleSortColumn("open_count")}
-                      className={cn(
-                        currentAccountTableCountColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    />
-                    <WorkspaceTableSortHead
-                      tone="nature"
-                      align="right"
-                      label="Vencido"
-                      direction={sortDirection("overdue")}
-                      onSort={() => handleSortColumn("overdue")}
-                      className={cn(
-                        currentAccountTableAmountColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    />
-                    <WorkspaceTableSortHead
-                      tone="nature"
-                      align="right"
-                      label="Saldo"
-                      direction={sortDirection("balance")}
-                      onSort={() => handleSortColumn("balance")}
-                      className={cn(
-                        currentAccountTableAmountColumnClass,
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    />
-                  </WorkspaceTableHeaderRow>
-                </WorkspaceTableHeader>
-                <TableBody>
-                  {loading ? (
-                    <WorkspaceTableSkeletonRows
-                      rowCount={skeletonRowCount}
-                      rowKeyPrefix="ca-parties-sk"
-                      columns={currentAccountsSkeletonColumns()}
-                      tone="nature"
-                    />
-                  ) : (
-                    parties.map((row, index) => (
-                      <WorkspaceTableBodyRow
-                        key={row.partyId}
-                        index={index}
-                        noHover={false}
-                        className="cursor-pointer"
-                        onClick={() => pushWs({ partyId: row.partyId })}
-                      >
-                        <CurrentAccountPartyNameCell value={row.partyName} />
-                        <CurrentAccountCountCell value={row.openCount} />
-                        <CurrentAccountOverdueCell
-                          value={row.overdueAmount}
-                          aging={row.aging}
-                        />
-                        <CurrentAccountMoneyCell value={row.balance} />
-                      </WorkspaceTableBodyRow>
-                    ))
-                  )}
-                </TableBody>
-              </table>
-            )}
+                      <CurrentAccountTableActionsCell
+                        row={row}
+                        direction={ws.direction}
+                        canCreate={canCreate}
+                        busy={rowActionBusyId === row.partyId}
+                        onAction={(kind) => {
+                          void handleRowAction(row, kind)
+                        }}
+                      />
+                      <CurrentAccountPartyNameCell value={row.partyName} />
+                      <CurrentAccountLimitCell
+                        enrolled={row.enrolled}
+                        creditLimit={row.creditLimit}
+                      />
+                      <CurrentAccountTermDaysCell
+                        enrolled={row.enrolled}
+                        termDays={row.termDays}
+                      />
+                      <CurrentAccountCountCell value={row.openCount} />
+                      <CurrentAccountOverdueCell
+                        value={row.overdueAmount}
+                        aging={row.aging}
+                      />
+                      <CurrentAccountMoneyCell value={row.balance} />
+                    </WorkspaceTableBodyRow>
+                  ))
+                )}
+              </TableBody>
+            </table>
           </DataWorkspaceListTableFrame>
         </DataWorkspaceTableListShell>
       </DataWorkspaceTableListNatureShell>
-      {viewingParty && ws.partyId ? (
-        <>
-          <CurrentAccountSettleDialog
-            open={settleOpen}
-            onOpenChange={setSettleOpen}
-            popId={popId}
-            direction={ws.direction}
-            partyId={ws.partyId}
-            partyName={ledgerPartyName}
-            documents={ledgerOpenDocuments}
-            onSettled={() => void refreshCurrentAccountLedger()}
-          />
-          <CurrentAccountApplyDialog
-            open={applyOpen}
-            onOpenChange={setApplyOpen}
-            popId={popId}
-            direction={ws.direction}
-            partyId={ws.partyId}
-            partyName={ledgerPartyName}
-            unappliedCredit={ledgerUnapplied}
-            documents={ledgerOpenDocuments}
-            onApplied={() => void refreshCurrentAccountLedger()}
-          />
-        </>
-      ) : null}
     </DataWorkspaceTableListPage>
+    <CurrentAccountEnrollDialog
+      open={enrollOpen}
+      onOpenChange={setEnrollOpen}
+      popId={popId}
+      direction={enrollDirection}
+      onEnrolled={(partyId) => {
+        void queryClient.invalidateQueries({
+          queryKey: popCurrentAccountPartiesQueryRoot(popId),
+        })
+        openParty(partyId, enrollDirection)
+      }}
+    />
+    <CurrentAccountSettleDialog
+      open={rowAction?.kind === "settle"}
+      onOpenChange={(open) => {
+        if (!open) closeRowAction()
+      }}
+      popId={popId}
+      direction={ws.direction}
+      partyId={rowAction?.party.partyId ?? ""}
+      partyName={rowAction?.party.partyName ?? ""}
+      documents={rowAction?.documents ?? []}
+      onSettled={() => {
+        closeRowAction()
+        void refreshParties()
+      }}
+    />
+    <CurrentAccountApplyDialog
+      open={rowAction?.kind === "apply"}
+      onOpenChange={(open) => {
+        if (!open) closeRowAction()
+      }}
+      popId={popId}
+      direction={ws.direction}
+      partyId={rowAction?.party.partyId ?? ""}
+      partyName={rowAction?.party.partyName ?? ""}
+      unappliedCredit={rowAction?.unappliedCredit ?? 0}
+      documents={rowAction?.documents ?? []}
+      onApplied={() => {
+        closeRowAction()
+        void refreshParties()
+      }}
+    />
+    <CurrentAccountTermsDialog
+      open={rowAction?.kind === "terms" || rowAction?.kind === "enroll"}
+      onOpenChange={(open) => {
+        if (!open) closeRowAction()
+      }}
+      popId={popId}
+      direction={ws.direction}
+      partyId={rowAction?.party.partyId ?? ""}
+      partyName={rowAction?.party.partyName ?? ""}
+      creditLimit={rowAction?.party.creditLimit ?? null}
+      termDays={
+        rowAction?.party.termDays ?? CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS
+      }
+      onSaved={() => {
+        closeRowAction()
+        void refreshParties()
+      }}
+    />
+    <RootsConfirmDialog
+      open={rowAction?.kind === "unenroll"}
+      onOpenChange={(open) => {
+        if (!open) closeRowAction()
+      }}
+      title="Deshabilitar cuenta corriente"
+      description={
+        ws.direction === "payable"
+          ? "Ya no se podrá comprar a cuenta de este proveedor. El saldo y el extracto se mantienen."
+          : "Ya no se podrá vender a cuenta de este cliente. El saldo y el extracto se mantienen."
+      }
+      confirmLabel="Deshabilitar"
+      busy={enrollmentBusy}
+      onConfirm={() => {
+        if (!rowAction) return
+        void (async () => {
+          setEnrollmentBusy(true)
+          setRowActionError(null)
+          const result = await setPopCurrentAccountEnrollment(popId, {
+            direction: ws.direction,
+            partyId: rowAction.party.partyId,
+            enabled: false,
+          })
+          setEnrollmentBusy(false)
+          if (!result.success) {
+            setRowActionError(result.error)
+            return
+          }
+          closeRowAction()
+          await refreshParties()
+        })()
+      }}
+    />
+    </>
   )
 }
-

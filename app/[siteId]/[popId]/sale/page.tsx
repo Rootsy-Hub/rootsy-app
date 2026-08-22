@@ -2,8 +2,11 @@
 
 import dynamic from "next/dynamic"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
-import { createSaleQuote } from "@/app/[siteId]/[popId]/quotes/actions"
-import { getSaleQuoteDetail } from "@/app/[siteId]/[popId]/quotes/actions"
+import { getSalePriceListSession } from "@/lib/salePriceListSession"
+import {
+  createSaleQuote,
+  fetchSaleQuoteDetail,
+} from "@/lib/rootsyApi/quotesClient"
 import {
   type SaleCatalogClient,
   type SaleCatalogPaymentOption,
@@ -69,8 +72,6 @@ import {
   DataWorkspaceOperationsLayout,
   OperationsModuleBackdrop,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
-import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -126,12 +127,16 @@ import {
   formatSaleQuoteDiscountLabel,
   formatSaleQuotePaymentLabel,
 } from "@/lib/saleQuoteCheckout"
+import { partyCanOperateOnCurrentAccount } from "@/lib/currentAccounts"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
 import {
   saleOpFmt,
   saleOpImporteBaseClass,
 } from "@/components/sale-operation/saleOperationStyles"
-import { layoutsOperarSummaryPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  layoutsOperarSummaryPanelClass,
+  layoutsOperarSummaryPanelMobileStackClass,
+} from "@/app/library/layouts/layoutsOperarStyles"
 
 type Producto = MenuCatalogProduct
 
@@ -143,6 +148,7 @@ type ClienteVentaSeleccionado = {
   email?: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
+  currentAccountEnabled?: boolean
 }
 
 /** Tipografía numérica alineada al workspace (tablas de importes). */
@@ -467,7 +473,7 @@ function SalePage() {
       hayItemsEnPedido &&
       pagoConfigurado &&
       (payOnClientAccount
-        ? Boolean(clienteSeleccionado?.id)
+        ? partyCanOperateOnCurrentAccount(clienteSeleccionado)
         : metodoPagoSeleccionado != null) &&
       canCreateSale &&
       canReadCashRegisters &&
@@ -476,7 +482,7 @@ function SalePage() {
       hayItemsEnPedido,
       pagoConfigurado,
       payOnClientAccount,
-      clienteSeleccionado?.id,
+      clienteSeleccionado,
       metodoPagoSeleccionado?.treasuryAccountId,
       canCreateSale,
       canReadCashRegisters,
@@ -547,6 +553,7 @@ function SalePage() {
         : null
       const res = await completeSale(popId, {
         siteId,
+        priceListId: getSalePriceListSession(popId),
         lines: buildCompleteSaleLinesFromCart({
           carrito,
           quantityDealApplications,
@@ -675,8 +682,18 @@ function SalePage() {
     ],
   )
 
+  useEffect(() => {
+    if (
+      payOnClientAccount &&
+      !partyCanOperateOnCurrentAccount(clienteSeleccionado)
+    ) {
+      setPayOnClientAccount(false)
+    }
+  }, [clienteSeleccionado, payOnClientAccount])
+
   const quitarClienteVenta = useCallback(() => {
     setClienteSeleccionado(null)
+    setPayOnClientAccount(false)
     setManualNombreCliente("")
     setFiscalDocVenta("")
     setVentaEmail("")
@@ -884,7 +901,7 @@ function SalePage() {
 
     void (async () => {
       try {
-        const res = await getSaleQuoteDetail(popId, quoteIdFromUrl)
+        const res = await fetchSaleQuoteDetail(popId, quoteIdFromUrl)
         if (!res.success) {
           setVentaError(res.error)
           comprobanteInitRef.current = false
@@ -1008,7 +1025,9 @@ function SalePage() {
       taxId: c.taxId,
       ivaCondition: c.ivaCondition,
       defaultInvoiceTypeLabel: c.defaultInvoiceTypeLabel,
+      currentAccountEnabled: c.currentAccountEnabled === true,
     })
+    if (!c.currentAccountEnabled) setPayOnClientAccount(false)
     setManualNombreCliente(c.name)
     setFiscalDocVenta(c.taxId ?? "")
     setVentaIvaCondition(c.ivaCondition ?? "")
@@ -1025,6 +1044,7 @@ function SalePage() {
     setVentaEmail(payload.email)
     setVentaIvaCondition(payload.ivaCondition)
     setClienteSeleccionado(buildOperationPartyManualSelection(payload))
+    setPayOnClientAccount(false)
     if (payload.ivaCondition) {
       aplicarComprobanteDesdeIva(payload.ivaCondition as ClientIvaConditionValue)
     }
@@ -1129,19 +1149,17 @@ function SalePage() {
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
-        headerActions={
-          <DataWorkspaceHeaderTooltipIconButton
-            label="Crear presupuesto"
-            headerVariant={dataWorkspaceModuleHeaderVariant}
-            disabled={!hayItemsEnPedido || presupuestoSubmitting}
-            onClick={() => {
+        headerMoreActions={[
+          {
+            label: "Crear presupuesto",
+            icon: FileText,
+            onClick: () => {
+              if (!hayItemsEnPedido || presupuestoSubmitting) return
               setPresupuestoError(null)
               setPresupuestoConfirmOpen(true)
-            }}
-          >
-            <FileText className="size-5" aria-hidden />
-          </DataWorkspaceHeaderTooltipIconButton>
-        }
+            },
+          },
+        ]}
       >
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <OperationsModuleBackdrop />
@@ -1179,6 +1197,7 @@ function SalePage() {
                 error={catalogError}
                 onAddProduct={handleAddProduct}
                 catalogSidebarOpen={catalogSidebarOpen}
+                onCatalogSidebarOpenChange={setCatalogSidebarOpen}
                 catalogScope="sale"
                 itemsSource="sale"
                 mergeCatalogArticles={mergeCatalogArticles}
@@ -1222,7 +1241,10 @@ function SalePage() {
             }
             ticket={
               <aside
-                className={layoutsOperarSummaryPanelClass}
+                className={cn(
+                  layoutsOperarSummaryPanelClass,
+                  layoutsOperarSummaryPanelMobileStackClass,
+                )}
                 aria-label="Carrito de la venta"
               >
                 <SaleOperationTicketOrderPanel
@@ -1248,8 +1270,11 @@ function SalePage() {
                       ? "Agregá productos al pedido."
                       : !pagoConfigurado
                         ? "Elegí una forma de pago o usá cuenta corriente del cliente."
-                        : payOnClientAccount && !clienteSeleccionado?.id
-                          ? "Elegí un cliente del catálogo para vender a cuenta corriente."
+                        : payOnClientAccount &&
+                            !partyCanOperateOnCurrentAccount(clienteSeleccionado)
+                          ? clienteSeleccionado?.id
+                            ? "Este cliente no está dado de alta en Cuentas corrientes."
+                            : "Elegí un cliente del catálogo para vender a cuenta corriente."
                           : !canCreateSale
                             ? "No tenés permiso para registrar ventas."
                             : !canReadCashRegisters
@@ -1322,6 +1347,7 @@ function SalePage() {
             taxId: party.taxId ?? null,
             ivaCondition: party.ivaCondition ?? null,
             defaultInvoiceTypeLabel: party.defaultInvoiceTypeLabel ?? null,
+            currentAccountEnabled: party.currentAccountEnabled === true,
           })
         }
         onConfirmManual={confirmarClienteManual}
@@ -1366,6 +1392,7 @@ function SalePage() {
           setPayOnClientAccount(true)
           setMetodoPagoSeleccionado(null)
         }}
+        hideAccountOption={!partyCanOperateOnCurrentAccount(clienteSeleccionado)}
       />
 
       <GeneralDiscountDialog
@@ -1405,6 +1432,7 @@ function SalePage() {
         }}
         title="Generar presupuesto"
         confirmLabel="Generar presupuesto"
+        amountLabel="Total"
         submitting={presupuestoSubmitting}
         submitError={presupuestoError}
         total={total}

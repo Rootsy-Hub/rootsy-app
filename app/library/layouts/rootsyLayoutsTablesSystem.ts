@@ -38,12 +38,12 @@ function semanticHex(id: string): string {
 export type LayoutsTablesStatusId = "activo" | "inactivo" | "pendiente" | "vencido"
 
 export const ROOTSY_LAYOUTS_TABLES_MANIFESTO =
-  "Listado workspace — header universo, toolbar alba, tabla flush al suelo, footer tierra húmeda. Sin paleta Nature en las celdas: bruma · savia · sombra · funcional. El pie ancla el mundo: earth-800 · savia en el umbral."
+  "Listado workspace — header éter, toolbar alba, tabla flush al suelo, footer tierra mojada. Sin paleta Nature en las celdas: bruma · savia · sombra · funcional. El pie ancla el mundo: suelo-900 · savia en el umbral."
 
 export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   {
-    title: "Cielo y tierra",
-    detail: "Header universo · h-17. Footer tierra empapada — casi negra, earth-900 bajo sombra. El listado vive entre dosel y suelo.",
+    title: "Éter y suelo",
+    detail: "Header éter · h-17. Footer tierra mojada — humus oliva bajo sombra. El listado vive entre el espacio y el piso.",
   },
   {
     title: "Toolbar alba",

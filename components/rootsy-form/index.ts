@@ -98,12 +98,12 @@ export {
   rootsFormPortalZClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 export {
-  ROOTSY_FORM_EARTH,
-  rootsFormEarthBorderClass,
-  rootsFormEarthPrefixBgClass,
-  rootsFormEarthPrefixBorderClass,
-  rootsFormEarthPrefixTextClass,
-  rootsFormEarthTextClass,
-  rootsFormEarthTextSecondaryClass,
+  ROOTSY_FORM_BRUMA,
+  rootsFormBrumaBorderClass,
+  rootsFormBrumaPrefixBgClass,
+  rootsFormBrumaPrefixBorderClass,
+  rootsFormBrumaPrefixTextClass,
+  rootsFormBrumaTextClass,
+  rootsFormBrumaTextSecondaryClass,
   rootsFormTextInputSurfaceClass,
-} from "@/components/rootsy-form/rootsFormEarthTokens"
+} from "@/components/rootsy-form/rootsFormBrumaTokens"

@@ -12,6 +12,7 @@ import {
   dataWorkspaceEntityCardLosetaSurfaceClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { RootsDangerSubtleButton, RootsProgressButton } from "@/components/rootsy-button"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -41,6 +42,8 @@ type Props = {
   kind: OperableKind
   family: ExpenseCategoryFamily
   saving: boolean
+  pendingCreate: { name: string; kind: OperableKind } | null
+  pendingDeleteId: string | null
   banner: string | null
   canDelete: boolean
   onNameChange: (value: string) => void
@@ -58,6 +61,8 @@ export function ExpenseCategoriesDialog({
   kind,
   family,
   saving,
+  pendingCreate,
+  pendingDeleteId,
   banner,
   canDelete,
   onNameChange,
@@ -103,6 +108,7 @@ export function ExpenseCategoriesDialog({
             <RootsFormSegmentField
               label="Tipo"
               value={kind}
+              disabled={saving}
               onValueChange={(value) => onKindChange(value as OperableKind)}
               options={[
                 { value: "fijo", label: "Fijo" },
@@ -112,6 +118,7 @@ export function ExpenseCategoriesDialog({
             <RootsFormSegmentField
               label="Familia"
               value={family}
+              disabled={saving}
               onValueChange={(value) =>
                 onFamilyChange(value as ExpenseCategoryFamily)
               }
@@ -134,14 +141,12 @@ export function ExpenseCategoriesDialog({
             <RootsProgressButton
               type="submit"
               disabled={!canAdd}
-              loading={saving}
-              loadingLabel="Agregando…"
             >
               Agregar
             </RootsProgressButton>
           </form>
 
-          {active.length === 0 ? (
+          {active.length === 0 && !pendingCreate ? (
             <p className={dataWorkspaceBlocksEmptyStateClass}>
               Todavía no hay. El primero vive acá.
             </p>
@@ -151,6 +156,8 @@ export function ExpenseCategoriesDialog({
             >
               {EXPENSE_WORLD_ORDER.map((world, index) => {
                 const ofKind = active.filter((category) => category.kind === world)
+                const pendingHere =
+                  pendingCreate?.kind === world ? pendingCreate : null
                 return (
                   <div
                     key={world}
@@ -166,16 +173,23 @@ export function ExpenseCategoriesDialog({
                     >
                       {KIND_LABEL[world]}
                     </p>
-                    {ofKind.length === 0 ? (
+                    {ofKind.length === 0 && !pendingHere ? (
                       <p className="px-4 pb-3.5 font-canopy text-xs text-rootsy-bruma-500">
                         Ninguna todavía
                       </p>
                     ) : (
                       <ul>
-                        {ofKind.map((category) => (
+                        {ofKind.map((category) => {
+                          const isDeleting = pendingDeleteId === category.id
+                          return (
                           <li
                             key={category.id}
-                            className="flex items-center justify-between gap-3 px-4 py-2.5"
+                            className={cn(
+                              "flex items-center justify-between gap-3 px-4 py-2.5",
+                              isDeleting && "pointer-events-none opacity-50",
+                            )}
+                            aria-busy={isDeleting || undefined}
+                            aria-disabled={isDeleting || undefined}
                           >
                             <div className="min-w-0">
                               <p className="truncate font-canopy text-sm font-semibold text-rootsy-bruma-900">
@@ -187,7 +201,13 @@ export function ExpenseCategoriesDialog({
                                 </p>
                               ) : null}
                             </div>
-                            {canDelete && category.canDelete ? (
+                            {isDeleting ? (
+                              <RootsSpinner
+                                size="sm"
+                                className="shrink-0"
+                                label={`Eliminando ${category.name}`}
+                              />
+                            ) : canDelete && category.canDelete ? (
                               <RootsDangerSubtleButton
                                 type="button"
                                 size="compact"
@@ -199,7 +219,24 @@ export function ExpenseCategoriesDialog({
                               </RootsDangerSubtleButton>
                             ) : null}
                           </li>
-                        ))}
+                          )
+                        })}
+                        {pendingHere ? (
+                          <li
+                            className="flex items-center justify-between gap-3 px-4 py-2.5 opacity-50"
+                            aria-busy="true"
+                            aria-disabled="true"
+                          >
+                            <p className="truncate font-canopy text-sm font-semibold text-rootsy-bruma-900">
+                              {pendingHere.name}
+                            </p>
+                            <RootsSpinner
+                              size="sm"
+                              className="shrink-0"
+                              label={`Creando ${pendingHere.name}`}
+                            />
+                          </li>
+                        ) : null}
                       </ul>
                     )}
                   </div>

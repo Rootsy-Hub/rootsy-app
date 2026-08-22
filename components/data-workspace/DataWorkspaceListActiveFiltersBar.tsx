@@ -30,7 +30,7 @@ export function DataWorkspaceListActiveFiltersBar({
       aria-label="Filtros activos"
     >
       <div className="flex shrink-0 items-center gap-1.5">
-        <p className={toolbarBlockLabelClass}>
+        <p className={cn(toolbarBlockLabelClass, "max-md:hidden")}>
           Filtros activos
           <span className="sr-only">: {activeCount}</span>
         </p>

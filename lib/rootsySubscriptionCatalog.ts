@@ -152,6 +152,7 @@ const ROOTS_PUBLIC_BUSINESS_TYPE_MODULES: Record<
       operar: [
         { key: "mostrador", label: "Mostrador" },
         { key: "mesas", label: "Mesas" },
+        { key: "comandas", label: "Comandas" },
         { key: "inventory", label: "Inventario" },
       ],
       administrar: [
@@ -203,22 +204,22 @@ function buildPlatformFullBusinessTypeModules(): RootsBusinessTypeModulesConfig 
     displayName: "Plataforma completa",
     description: "Uso interno Rootsy: todos los módulos de todos los rubros.",
     specific: {
-      operar: dedupeModulesByKey(
-        ROOTS_BUSINESS_TYPE_ORDER.flatMap(
+      operar: dedupeModulesByKey([
+        ...ROOTS_BUSINESS_TYPE_ORDER.flatMap(
           (key) => ROOTS_PUBLIC_BUSINESS_TYPE_MODULES[key].specific.operar,
         ),
-      ),
+        { key: "comandas", label: "Comandas" },
+      ]),
       administrar: dedupeModulesByKey(
         ROOTS_BUSINESS_TYPE_ORDER.flatMap(
           (key) => ROOTS_PUBLIC_BUSINESS_TYPE_MODULES[key].specific.administrar,
         ),
       ),
-      configurar: dedupeModulesByKey([
-        ...ROOTS_BUSINESS_TYPE_ORDER.flatMap(
+      configurar: dedupeModulesByKey(
+        ROOTS_BUSINESS_TYPE_ORDER.flatMap(
           (key) => ROOTS_PUBLIC_BUSINESS_TYPE_MODULES[key].specific.configurar,
         ),
-        { key: "accounting", label: "Contabilidad" },
-      ]),
+      ),
     },
     extras: dedupeModulesByKey(
       ROOTS_BUSINESS_TYPE_ORDER.flatMap(

@@ -1,58 +1,31 @@
-"use client"
-
-import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
+import { menuGhostBarClass, menuGhostTileClass } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
 import {
-  menuHoloDormantPlanetShellClass,
-  menuHoloDormantRimClass,
-  menuHoloLabelDockPlacedClass,
-  menuHoloPlanetLifeClass,
-  menuPlanetLifeStyle,
-} from "@/lib/menu/menuHoloStyles"
+  menuPlanetGridClass,
+  menuPlanetIconShellClass,
+  menuPlanetTileClass,
+} from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
 import { cn } from "@/lib/utils"
 
-/** Planeta en reposo — mismo ser que el menú cargado, aún sin destino ni color. */
-export function MenuGridItemDormant({ index }: { index: number }) {
-  const lifeStyle = menuPlanetLifeStyle(`menu-dormant-${index}`)
+const DORMANT_TILE_COUNT = 12
 
+function MenuGridItemGhost() {
   return (
     <div
       aria-hidden
-      className="flex h-[7.125rem] w-24 flex-col items-center gap-2.5 justify-self-center"
+      className={cn(menuPlanetTileClass, "justify-self-center")}
     >
-      <div className={menuHoloPlanetLifeClass} style={lifeStyle}>
-        <div
-          className={cn(
-            "relative flex size-[72px] items-center justify-center rounded-[20px]",
-            menuHoloDormantPlanetShellClass,
-            menuHoloDormantRimClass,
-          )}
-        >
-          <span
-            aria-hidden
-            className="size-6 rounded-full bg-[rgba(228,242,248,0.08)] ring-1 ring-[rgba(228,242,248,0.06)]"
-          />
-        </div>
-      </div>
-      <span
-        className={cn(
-          menuHoloLabelDockPlacedClass,
-          "h-8 w-[3.25rem] max-w-full opacity-35",
-        )}
-      >
-        {"\u00a0"}
-      </span>
+      <div className={cn(menuPlanetIconShellClass, menuGhostTileClass)} />
+      <span className={cn(menuGhostBarClass, "h-3 w-[3.25rem]")} />
     </div>
   )
 }
 
-const DORMANT_TILE_COUNT = 12
-
 export function MenuDormantGrid() {
   return (
-    <div className="w-full px-8" aria-hidden>
-      <div className="mx-auto grid min-h-[280px] max-w-4xl grid-cols-6 gap-x-0 gap-y-8 px-6 pb-6 pt-2">
+    <div className="w-full px-4 md:px-8" aria-hidden>
+      <div className={menuPlanetGridClass}>
         {Array.from({ length: DORMANT_TILE_COUNT }, (_, index) => (
-          <MenuGridItemDormant key={index} index={index} />
+          <MenuGridItemGhost key={index} />
         ))}
       </div>
     </div>

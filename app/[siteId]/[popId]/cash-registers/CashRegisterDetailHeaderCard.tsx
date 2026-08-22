@@ -20,7 +20,7 @@ import {
   dataWorkspaceEntityCardStatusOpenClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { RootsDefaultButton, RootsIconButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
+import { RootsDefaultButton, RootsIconButton } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, Calculator, History } from "lucide-react"
 
@@ -199,20 +199,20 @@ export function CashRegisterDetailHeaderCard({
                   {showBack ? (
                     <RootsDefaultButton
                       type="button"
-                      className={cn(rootsButtonCompactSizeClass, "gap-1.5 px-3 text-xs")}
+                      withIcon
                       onClick={onBack}
                     >
-                      <ArrowLeft className="size-3.5" aria-hidden />
+                      <ArrowLeft className="size-4" aria-hidden />
                       Volver al historial
                     </RootsDefaultButton>
                   ) : null}
                   {showHistorialAction && onShowHistory ? (
                     <RootsDefaultButton
                       type="button"
-                      className={cn(rootsButtonCompactSizeClass, "gap-1.5 px-3 text-xs")}
+                      withIcon
                       onClick={onShowHistory}
                     >
-                      <History className="size-3.5" aria-hidden />
+                      <History className="size-4" aria-hidden />
                       Historial de arqueos
                     </RootsDefaultButton>
                   ) : null}

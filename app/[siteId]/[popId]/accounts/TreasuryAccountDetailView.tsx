@@ -57,7 +57,11 @@ import {
   dataWorkspaceFlushBottomPanelChromeClass,
   dataWorkspaceFlushBottomPanelClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { RootsDefaultButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
+import {
+  RootsDefaultButton,
+  RootsIconButton,
+  RootsPrimaryButton,
+} from "@/components/rootsy-button"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import {
@@ -650,12 +654,12 @@ export function TreasuryAccountDetailView({
   const exportPeriodButton = (
     <RootsDefaultButton
       type="button"
-      size="sm"
+      withIcon
       disabled={
         detailLoading || !detailData || detailData.movements.length === 0
       }
       onClick={handleExportPeriod}
-      className={cn(rootsButtonCompactSizeClass, "self-end lg:self-auto")}
+      className="self-end lg:self-auto"
     >
       <Download className="size-4 shrink-0" aria-hidden />
       Resumen del período
@@ -827,16 +831,16 @@ export function TreasuryAccountDetailView({
                 <div className={dataWorkspaceDetailCardHeaderClass}>
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                      <Button
-                        asChild
-                        variant="ghost-neutral"
-                        size="icon"
-                        className="size-9 shrink-0"
+                      <RootsIconButton
+                        theme="workspace"
+                        emphasis="ghost"
+                        size="default"
+                        label="Volver a cuentas"
+                        href={accountsBasePath}
+                        className="shrink-0"
                       >
-                        <Link href={accountsBasePath} aria-label="Volver a cuentas">
-                          <ArrowLeft className="size-5" aria-hidden />
-                        </Link>
-                      </Button>
+                        <ArrowLeft aria-hidden />
+                      </RootsIconButton>
                       <TreasuryBrandIsotype
                         brandKey={brand?.key}
                         monogram={
@@ -932,10 +936,9 @@ export function TreasuryAccountDetailView({
                 </div>
 
                 {!isMother && account.isCardPayable && canSettle ? (
-                  <div className="border-t border-[color:var(--wt-border)] bg-card px-4 py-3 sm:px-6 lg:px-8">
-                    <Button
+                  <div className="border-t border-[var(--rootsy-bruma-200)] bg-white px-4 py-3 sm:px-6 lg:px-8">
+                    <RootsPrimaryButton
                       type="button"
-                      size="sm"
                       disabled={account.outstandingBalance <= 0}
                       onClick={() =>
                         openPayCard({
@@ -951,7 +954,7 @@ export function TreasuryAccountDetailView({
                       }
                     >
                       Pagar resumen
-                    </Button>
+                    </RootsPrimaryButton>
                   </div>
                 ) : null}
 
@@ -960,10 +963,9 @@ export function TreasuryAccountDetailView({
                 (account.ledgerBalance ?? 0) > 0 &&
                 canUpdate &&
                 parentAccount ? (
-                  <div className="border-t border-[color:var(--wt-border)] bg-card px-4 py-3 sm:px-6 lg:px-8">
-                    <Button
+                  <div className="border-t border-[var(--rootsy-bruma-200)] bg-white px-4 py-3 sm:px-6 lg:px-8">
+                    <RootsPrimaryButton
                       type="button"
-                      size="sm"
                       onClick={() =>
                         openPosAcredit({
                           id: account.id,
@@ -978,7 +980,7 @@ export function TreasuryAccountDetailView({
                       }
                     >
                       Registrar acreditación
-                    </Button>
+                    </RootsPrimaryButton>
                   </div>
                 ) : null}
 

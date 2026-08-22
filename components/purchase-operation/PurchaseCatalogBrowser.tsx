@@ -10,6 +10,9 @@ import {
 } from "@/components/purchase-operation/purchaseCatalogTypes"
 import { PurchaseCatalogProductCard } from "@/components/purchase-operation/PurchaseCatalogProductCard"
 import { PurchaseCatalogSidebarNav } from "@/components/purchase-operation/PurchaseCatalogSidebarNav"
+import { useRegisterOperarMobileCategoryPicker } from "@/components/layouts-module/OperarMobileStage"
+import { showRootsyToast } from "@/components/rootsy-toast"
+import { SaleCatalogMobileCategoryBar } from "@/components/sale-operation/SaleCatalogMobileCategoryBar"
 import { PurchaseCatalogToolbar } from "@/components/purchase-operation/PurchaseCatalogToolbar"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
 import { SaleCatalogEmptyMascot } from "@/components/sale-operation/SaleCatalogEmptyMascot"
@@ -46,6 +49,7 @@ type Props = {
   error: string | null
   onAddProduct: (productId: string, quantity?: number) => void
   catalogSidebarOpen?: boolean
+  onCatalogSidebarOpenChange?: (open: boolean) => void
   className?: string
 }
 
@@ -94,18 +98,44 @@ export function PurchaseCatalogBrowser({
   error,
   onAddProduct,
   catalogSidebarOpen = true,
+  onCatalogSidebarOpenChange,
   className,
 }: Props) {
   const [vistaCatalogo, setVistaCatalogo] = useState<PurchaseCatalogView>(() =>
     defaultPurchaseCatalogView(categorySections),
   )
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false)
   const [busqueda, setBusqueda] = useState("")
   const [cantidadIngreso, setCantidadIngreso] = useState(1)
   const vistaAntesBusquedaRef = useRef<PurchaseCatalogView | null>(null)
   const busquedaTrimPrevRef = useRef("")
   const [scrollRoot, setScrollRoot] = useState<HTMLElement | null>(null)
   const [sentinel, setSentinel] = useState<HTMLElement | null>(null)
+  const vistaEfectiva = isMobileViewport ? "lista" : modoVista
+  const categoryLabel = useMemo(() => {
+    const key = vistaCatalogo.categoria
+    for (const section of categorySections) {
+      for (const cat of section.categories) {
+        if (`${section.id}:${cat.id}` === key) return cat.name
+      }
+    }
+    return "Categoría"
+  }, [categorySections, vistaCatalogo.categoria])
+  const usesMobileStage = useRegisterOperarMobileCategoryPicker(
+    categoryLabel,
+    categoryPickerOpen,
+    setCategoryPickerOpen,
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    const apply = () => setIsMobileViewport(mq.matches)
+    apply()
+    mq.addEventListener("change", apply)
+    return () => mq.removeEventListener("change", apply)
+  }, [])
 
   const debouncedSearch = useDebouncedValue(
     busqueda,
@@ -183,6 +213,7 @@ export function PurchaseCatalogBrowser({
       <aside
         id="data-workspace-sidebar"
         className={cn(
+          "max-md:hidden",
           layoutsOperarCatalogSidebarClass,
           catalogSidebarOpen
             ? layoutsOperarCatalogSidebarOpenClass
@@ -205,9 +236,44 @@ export function PurchaseCatalogBrowser({
         </div>
       </aside>
 
-      <section className={layoutsOperarCatalogCanvasClass}>
+      <section
+        className={cn(
+          layoutsOperarCatalogCanvasClass,
+          "relative",
+          !usesMobileStage &&
+            "max-md:[grid-template-rows:var(--layouts-operar-catalog-toolbar-h)_var(--layouts-operar-catalog-toolbar-h)_minmax(0,1fr)]",
+        )}
+      >
+        {!usesMobileStage ? (
+          <SaleCatalogMobileCategoryBar
+            label={categoryLabel}
+            open={categoryPickerOpen}
+            onToggle={() => setCategoryPickerOpen((current) => !current)}
+          />
+        ) : null}
+        {categoryPickerOpen ? (
+          <div
+            className={cn(
+              "absolute z-30 overflow-hidden md:hidden",
+              "bg-[var(--rootsy-sombra-800)]",
+              "[&_button]:min-h-12 [&_button]:px-3 [&_button]:text-base",
+              usesMobileStage
+                ? "inset-0"
+                : "inset-x-0 bottom-0 top-[var(--layouts-operar-catalog-toolbar-h)] max-md:col-start-1 max-md:row-start-1",
+            )}
+          >
+            <PurchaseCatalogSidebarNav
+              categorySections={categorySections}
+              vistaCatalogo={vistaCatalogo}
+              onVistaChange={(view) => {
+                setVistaCatalogo(view)
+                setCategoryPickerOpen(false)
+              }}
+            />
+          </div>
+        ) : null}
         <PurchaseCatalogToolbar
-          modoVista={modoVista}
+          modoVista={vistaEfectiva}
           onModoVistaChange={setModoVista}
           busqueda={busqueda}
           onBusquedaChange={setBusqueda}
@@ -231,7 +297,7 @@ export function PurchaseCatalogBrowser({
           )}
         >
           {showGridSkeleton ? (
-            <SaleCatalogBrowserSkeleton variant={modoVista} />
+            <SaleCatalogBrowserSkeleton variant={vistaEfectiva} />
           ) : displayError ? (
             <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
               <p className="max-w-md text-sm text-rose-300">{displayError}</p>
@@ -241,16 +307,22 @@ export function PurchaseCatalogBrowser({
           ) : (
             <SaleCatalogVirtualGrid
               items={productosFiltrados}
-              modoVista={modoVista}
+              modoVista={vistaEfectiva}
               scrollRoot={scrollRoot}
-              resetKey={`${itemsFilter.section}:${itemsFilter.categoryId ?? ""}:${itemsFilter.search}:${modoVista}`}
+              resetKey={`${itemsFilter.section}:${itemsFilter.categoryId ?? ""}:${itemsFilter.search}:${vistaEfectiva}`}
               getItemKey={(product) => product.id}
               renderItem={(product) => (
                 <PurchaseCatalogProductCard
                   product={product}
-                  variant={modoVista}
+                  variant={vistaEfectiva}
                   onClick={() => {
                     onAddProduct(product.id, cantidadIngreso)
+                    if (isMobileViewport && product.nombre) {
+                      showRootsyToast({
+                        title: `Se agregó ${product.nombre} ${cantidadIngreso}x`,
+                        intent: "success",
+                      })
+                    }
                     setCantidadIngreso(1)
                   }}
                 />

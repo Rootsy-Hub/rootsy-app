@@ -2,6 +2,7 @@
 
 import {
   layoutsOperarCatalogGridClass,
+  layoutsOperarCatalogGridTemplate,
   layoutsOperarCatalogSkeletonGhostClass,
   layoutsOperarProductCardGridBodyClass,
   layoutsOperarProductCardListBodyClass,
@@ -10,9 +11,11 @@ import {
   layoutsOperarProductCardMediaClass,
   layoutsOperarProductCardSkeletonShellClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import { useLayoutsOperarCatalogColumnCount } from "@/hooks/useLayoutsOperarCatalogColumnCount"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
 
-const GRID_CARD_COUNT = 6
+const GRID_ROWS = 2
 const LIST_CARD_COUNT = 4
 
 const ghost = layoutsOperarCatalogSkeletonGhostClass
@@ -57,15 +60,27 @@ type Props = {
 
 export function SaleCatalogBrowserSkeleton({ variant = "grid" }: Props) {
   const isList = variant === "lista"
+  const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null)
+  const columns = useLayoutsOperarCatalogColumnCount(
+    isList ? "lista" : "grid",
+    gridEl,
+  )
+  const cardCount = isList ? LIST_CARD_COUNT : columns * GRID_ROWS
 
   return (
     <div
+      ref={setGridEl}
       role="status"
       aria-busy="true"
       aria-label="Cargando productos"
       className={isList ? "flex flex-col gap-2" : layoutsOperarCatalogGridClass}
+      style={
+        isList
+          ? undefined
+          : { gridTemplateColumns: layoutsOperarCatalogGridTemplate(columns) }
+      }
     >
-      {Array.from({ length: isList ? LIST_CARD_COUNT : GRID_CARD_COUNT }, (_, index) =>
+      {Array.from({ length: cardCount }, (_, index) =>
         isList ? (
           <SaleCatalogProductCardListSkeleton key={index} />
         ) : (

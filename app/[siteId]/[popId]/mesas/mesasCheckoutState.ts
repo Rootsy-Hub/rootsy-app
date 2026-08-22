@@ -1,7 +1,9 @@
-import type { MenuCartItemKind } from "@/lib/menuCart"
+import type { ComandaStatus } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
+import type { MenuCartItemKind, MenuCartItemSnapshot } from "@/lib/menuCart"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import type { SaleCatalogPaymentOption } from "@/app/[siteId]/[popId]/sale/actions"
 import { healLegacyLockedGeneralDiscount } from "@/lib/generalDiscountLock"
+import { parseComandaStatus } from "@/lib/comandaCartLine"
 
 export type MesasCartItem = {
   lineId?: string
@@ -9,7 +11,9 @@ export type MesasCartItem = {
   cantidad: number
   kind?: MenuCartItemKind
   promotionSelections?: PromotionCartSelection[]
+  snapshot?: MenuCartItemSnapshot
   paidLocked?: boolean
+  comandaStatus?: ComandaStatus
 }
 
 export type MesasClienteSeleccionado = {
@@ -20,6 +24,7 @@ export type MesasClienteSeleccionado = {
   email?: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
+  currentAccountEnabled?: boolean
 }
 
 export type TableSessionCheckoutSnapshot = {
@@ -125,13 +130,41 @@ function parseCartItem(v: unknown): MesasCartItem | null {
     typeof v.lineId === "string" && v.lineId.trim()
       ? v.lineId.trim()
       : undefined
+  const snapshot = parseCartItemSnapshot(v.snapshot)
+  const comandaStatus = parseComandaStatus(v.comandaStatus)
   return {
     ...(lineId ? { lineId } : {}),
     productoId,
     cantidad: Math.round(cantidad),
     ...(kind ? { kind } : {}),
     ...(promotionSelections ? { promotionSelections } : {}),
+    ...(snapshot ? { snapshot } : {}),
     ...(v.paidLocked === true ? { paidLocked: true } : {}),
+    ...(comandaStatus ? { comandaStatus } : {}),
+  }
+}
+
+function parseCartItemSnapshot(v: unknown): MenuCartItemSnapshot | undefined {
+  if (!isRecord(v)) return undefined
+  const nombre = typeof v.nombre === "string" ? v.nombre.trim() : ""
+  const precio = Number(v.precio)
+  if (!nombre || !Number.isFinite(precio)) return undefined
+  const precioOriginal = Number(v.precioOriginal)
+  const iva = Number(v.iva)
+  return {
+    nombre,
+    precio,
+    ...(Number.isFinite(precioOriginal) ? { precioOriginal } : {}),
+    ...(typeof v.imagen === "string" && v.imagen.trim()
+      ? { imagen: v.imagen.trim() }
+      : {}),
+    ...(typeof v.descripcion === "string" && v.descripcion.trim()
+      ? { descripcion: v.descripcion.trim() }
+      : {}),
+    ...(Number.isFinite(iva) ? { iva } : {}),
+    ...(typeof v.categoria === "string" && v.categoria.trim()
+      ? { categoria: v.categoria.trim() }
+      : {}),
   }
 }
 
@@ -148,6 +181,7 @@ function parseCliente(v: unknown): MesasClienteSeleccionado | null {
       typeof v.defaultInvoiceTypeLabel === "string"
         ? v.defaultInvoiceTypeLabel
         : null,
+    currentAccountEnabled: v.currentAccountEnabled === true,
   }
 }
 

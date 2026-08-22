@@ -16,7 +16,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import {
   createContext,
   useContext,
-  useLayoutEffect,
+  useEffect,
   useState,
   type ReactNode,
 } from "react"
@@ -73,7 +73,7 @@ export function QueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => createQueryClient())
   const [persistReady, setPersistReady] = useState(false)
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     restorePersistedQueries(queryClient)
     setPersistReady(true)
 
@@ -96,7 +96,7 @@ export function QueryProvider({ children }: { children: ReactNode }) {
       <PersistReadyContext.Provider value={persistReady}>
         {children}
         {process.env.NODE_ENV === "development" ? (
-          <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-right" />
+          <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
         ) : null}
       </PersistReadyContext.Provider>
     </QueryClientProvider>

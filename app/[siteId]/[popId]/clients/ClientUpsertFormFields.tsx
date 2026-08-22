@@ -1,6 +1,7 @@
 "use client"
 
 import type { UpsertPopClientInput } from "@/app/[siteId]/[popId]/clients/actions"
+import { CurrentAccountTermsFields } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountTermsFields"
 import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import type { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import type { SaleComprobantePickerOption } from "@/lib/saleComprobantePicker"
@@ -11,10 +12,10 @@ import {
   RootsFormTextField,
   RootsFormTextareaField,
   rootsFormColumnClass,
-  rootsFormEarthTextSecondaryClass,
+  rootsFormBrumaTextSecondaryClass,
   rootsFormFieldLabelClass,
 } from "@/components/rootsy-form"
-import { rootsFormEarthDividerClass } from "@/components/rootsy-form/rootsFormEarthTokens"
+import { rootsFormBrumaDividerClass } from "@/components/rootsy-form/rootsFormBrumaTokens"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Dispatch, ReactNode, SetStateAction } from "react"
@@ -33,7 +34,7 @@ export const clientDialogBodyClass =
 export const clientDialogFooterClass =
   "shrink-0 gap-2 border-t border-border/50 bg-muted/10 px-6 py-4 sm:flex-row sm:justify-end"
 
-const sectionDividerClass = cn("h-px w-full shrink-0", rootsFormEarthDividerClass)
+const sectionDividerClass = cn("h-px w-full shrink-0", rootsFormBrumaDividerClass)
 
 function FormSection({
   title,
@@ -52,7 +53,7 @@ function FormSection({
           <p
             className={cn(
               "mt-1 text-xs leading-relaxed",
-              rootsFormEarthTextSecondaryClass,
+              rootsFormBrumaTextSecondaryClass,
             )}
           >
             {description}
@@ -81,7 +82,7 @@ function PadronFiscalHint({
   }
 
   return (
-    <p className={cn("text-xs leading-relaxed", rootsFormEarthTextSecondaryClass)}>
+    <p className={cn("text-xs leading-relaxed", rootsFormBrumaTextSecondaryClass)}>
       {lines.join(" · ")}
     </p>
   )
@@ -269,6 +270,30 @@ export function ClientUpsertFormFields({
             setForm((f) => ({ ...f, isActive: checked }))
           }
         />
+
+        <RootsFormSwitchField
+          label="Cuenta corriente"
+          description="Solo con alta se puede vender a cuenta. También se habilita desde Cuentas corrientes."
+          id={`${idPrefix}-current-account`}
+          checked={form.currentAccountEnabled}
+          onCheckedChange={(checked) =>
+            setForm((f) => ({ ...f, currentAccountEnabled: checked }))
+          }
+        />
+
+        {form.currentAccountEnabled ? (
+          <CurrentAccountTermsFields
+            idPrefix={`${idPrefix}-cc`}
+            creditLimit={form.currentAccountCreditLimit}
+            termDays={form.currentAccountTermDays}
+            onCreditLimitChange={(value) =>
+              setForm((f) => ({ ...f, currentAccountCreditLimit: value }))
+            }
+            onTermDaysChange={(value) =>
+              setForm((f) => ({ ...f, currentAccountTermDays: value }))
+            }
+          />
+        ) : null}
 
         <RootsFormTextareaField
           label="Notas internas"

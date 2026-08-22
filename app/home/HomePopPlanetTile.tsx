@@ -1,73 +1,97 @@
 "use client"
 
-import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
-import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
+import { POP_HOME_ACCENTS } from "@/app/library/logos/rootsyLogoSystem"
+import { HOME_COPY } from "@/app/home/homeCopy"
 import {
-  menuHoloFloatLiftClass,
-  menuHoloGlyphClass,
-  menuHoloIconHoverForSection,
-  menuHoloIconShellForSection,
-  menuHoloPlanetLifeClass,
-  menuPlanetLifeStyle,
-} from "@/lib/menu/menuHoloStyles"
-import type { MenuSectionKey } from "@/lib/menuCatalog"
+  homePopTileTitleClass,
+  homePopTileTitleMutedClass,
+} from "@/app/home/HomeCreatePopTile"
+import {
+  HOME_POP_AVATAR_SIZE_CLASS,
+  HOME_POP_TILE_MAX_CLASS,
+} from "@/app/home/homePopTileLayout"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
 
 type Props = {
-  sectionKey: MenuSectionKey
   name: string
   imageUrl: string | null
   initials: string
-  alive?: boolean
-  solo?: boolean
+  address?: string | null
+  active?: boolean
+  trial?: boolean
+  loading?: boolean
 }
 
-/** Planeta POP — luz propia que dialoga con el firmamento. */
 export function HomePopPlanetTile({
-  sectionKey,
   name,
   imageUrl,
   initials,
-  alive = true,
-  solo = false,
+  address,
+  active = false,
+  trial = false,
+  loading = false,
 }: Props) {
-  const lifeStyle = menuPlanetLifeStyle(`home-${sectionKey}-${name}`)
-  const shellVariant = alive ? "default" : "placed"
+  const hasImage = Boolean(imageUrl?.trim())
 
   return (
-    <div className="relative flex flex-col items-center">
-      <div
-        className={cn(alive && menuHoloPlanetLifeClass)}
-        style={alive ? lifeStyle : undefined}
-      >
+    <div className={cn("mx-auto flex w-full flex-col items-center", HOME_POP_TILE_MAX_CLASS)}>
+      <div className="relative">
+        {active && hasImage ? (
+          <div
+            className={cn(
+              "absolute inset-0 rounded-full opacity-70 blur-xl",
+              POP_HOME_ACCENTS.glow,
+            )}
+            aria-hidden
+          />
+        ) : null}
+
         <div
           className={cn(
             "relative flex items-center justify-center overflow-hidden rounded-full",
-            solo ? "size-32 sm:size-36" : "size-28",
-            menuHoloIconShellForSection(sectionKey, shellVariant),
-            alive && cn(menuHoloFloatLiftClass, menuHoloIconHoverForSection(sectionKey)),
+            HOME_POP_AVATAR_SIZE_CLASS,
+            "shadow-xl ring-2 ring-white/14 transition-[box-shadow,ring-color] duration-300",
+            "group-hover:ring-white/28 group-hover:shadow-[0_12px_28px_-10px_rgba(0,0,0,0.45)]",
+            !hasImage && cn("bg-linear-to-br", POP_HOME_ACCENTS.accent),
           )}
         >
-          <MenuIconChrome sectionKey={sectionKey} alive={alive} />
-          {imageUrl ? (
+          {hasImage ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={imageUrl}
-              alt=""
-              className="relative z-[1] size-full object-cover ring-1 ring-inset ring-white/10"
-            />
+            <img src={imageUrl!} alt="" className="size-full object-cover" />
           ) : (
-            <span
-              className={cn(
-                "relative z-[1] text-2xl font-semibold tracking-tight",
-                menuHoloGlyphClass,
-              )}
-            >
+            <span className="text-[1.35rem] font-black tracking-tight text-white drop-shadow sm:text-[1.72rem]">
               {initials}
             </span>
           )}
+          {loading ? (
+            <span className="absolute inset-0 flex items-center justify-center bg-black/45">
+              <RootsSpinner size="default" tone="dark" label={HOME_COPY.enteringPop} />
+            </span>
+          ) : null}
         </div>
+
+        {trial ? (
+          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200">
+            {HOME_COPY.popTrial}
+          </span>
+        ) : null}
       </div>
+
+      <span
+        className={cn(
+          "line-clamp-2 transition-colors duration-300",
+          active ? homePopTileTitleClass : homePopTileTitleMutedClass,
+          active && "group-hover:text-white/92",
+        )}
+      >
+        {name}
+      </span>
+      {address ? (
+        <span className="mt-1 line-clamp-2 max-w-32 text-center text-[10px] leading-snug text-white/50 sm:max-w-40">
+          {address}
+        </span>
+      ) : null}
     </div>
   )
 }

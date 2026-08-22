@@ -29,7 +29,12 @@ import {
 import {
   addIsoCalendarDays,
   CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS,
+  currentAccountNotEnrolledMessage,
 } from "@/lib/currentAccounts"
+import {
+  assertPartyCurrentAccountCredit,
+  loadPartyCurrentAccountEnabled,
+} from "@/lib/currentAccountEnrollment"
 import { toPopCalendarDate } from "@/lib/popTimezone"
 import { resolveLedgerAccountForTreasuryPayment } from "@/lib/treasuryPaymentLedger"
 import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
@@ -44,6 +49,8 @@ import { SALE_COMPROBANTE_RECIBO_X_LABEL, saleComprobanteAccruesOutputVat } from
 import { siteIdFromPopRow } from "@/lib/popRoutes"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { consumptionQuantity, effectiveWastePct } from "@/lib/recipeCost"
+import { loadPriceListOverrideMap } from "@/app/[siteId]/[popId]/articles/priceListActions"
+import { applyOverrideMap } from "@/lib/salePriceLists"
 import { priceComboPromotion, type PromotionCartSelection } from "@/lib/promotionPricing"
 import {
   hasSaleLineManualDiscount,
@@ -56,6 +63,10 @@ import {
   computeSnapshotTotals,
   snapshotTotalsToMetadata,
 } from "@/lib/saleSnapshot"
+import {
+  formatStockShortageMessage,
+  type StockShortage,
+} from "@/lib/stockShortageMessage"
 
 function parseQty(v: unknown): number {
   const n = Number(v)
@@ -177,7 +188,9 @@ async function cancelAccountingEntry(
 type StockDeductionNeed = {
   articleId: string
   qty: number
-  label: string
+  articleName: string
+  sources: string[]
+  allowNegativeQty: number
 }
 
 async function collectStockDeductionNeeds(
@@ -201,13 +214,73 @@ async function collectStockDeductionNeeds(
   | { success: true; needs: StockDeductionNeed[] }
   | { success: false; error: string }
 > {
-  const byArticle = new Map<string, { qty: number; labels: Set<string> }>()
+  const byArticle = new Map<
+    string,
+    {
+      qty: number
+      allowNegativeQty: number
+      articleName: string
+      sources: Set<string>
+    }
+  >()
 
-  const addNeed = (articleId: string, qty: number, label: string) => {
+  const recipeIds = new Set<string>()
+  for (const line of built) {
+    if (line.lineKind === "recipe" && line.recipeId) {
+      recipeIds.add(line.recipeId)
+    }
+    if (line.lineKind === "promotion" && line.promotionComponents?.length) {
+      for (const comp of line.promotionComponents) {
+        if (comp.kind === "recipe" && comp.recipeId) {
+          recipeIds.add(comp.recipeId)
+        }
+      }
+    }
+  }
+
+  const recipeAllowNegative = new Map<string, boolean>()
+  if (recipeIds.size > 0) {
+    const { data: recipeFlagRows, error: recipeFlagErr } = await supabase
+      .from("recipes")
+      .select("id, allow_negative_stock")
+      .eq("pop_id", popId)
+      .in("id", [...recipeIds])
+    if (recipeFlagErr) {
+      return {
+        success: false,
+        error:
+          recipeFlagErr.message ||
+          "No se pudo leer si las recetas permiten stock negativo.",
+      }
+    }
+    for (const row of recipeFlagRows ?? []) {
+      recipeAllowNegative.set(
+        String(row.id),
+        Boolean(row.allow_negative_stock),
+      )
+    }
+  }
+
+  const addNeed = (
+    articleId: string,
+    qty: number,
+    articleName: string,
+    sourceName: string | null,
+    allowNegative = false,
+  ) => {
     if (qty <= 0) return
-    const prev = byArticle.get(articleId) ?? { qty: 0, labels: new Set<string>() }
+    const name = articleName.trim() || "Insumo"
+    const prev = byArticle.get(articleId) ?? {
+      qty: 0,
+      allowNegativeQty: 0,
+      articleName: name,
+      sources: new Set<string>(),
+    }
     prev.qty += qty
-    prev.labels.add(label)
+    if (allowNegative) prev.allowNegativeQty += qty
+    if (name) prev.articleName = name
+    const source = sourceName?.trim()
+    if (source) prev.sources.add(source)
     byArticle.set(articleId, prev)
   }
 
@@ -216,7 +289,7 @@ async function collectStockDeductionNeeds(
       for (const comp of line.promotionComponents) {
         const compQty = parseQty(comp.quantity)
         if (comp.kind === "article" && comp.articleId) {
-          addNeed(comp.articleId, compQty, `${line.name} — ${comp.name}`)
+          addNeed(comp.articleId, compQty, comp.name, line.name)
         } else if (comp.kind === "recipe" && comp.recipeId) {
           const { data: ingRows, error: ingErr } = await supabase
             .from("recipe_ingredients")
@@ -258,7 +331,9 @@ async function collectStockDeductionNeeds(
             addNeed(
               String(art.id),
               consumo,
-              `${line.name} — ${comp.name} — ${String(art.name ?? "Ingrediente")}`,
+              String(art.name ?? "Ingrediente"),
+              line.name,
+              recipeAllowNegative.get(comp.recipeId) === true,
             )
           }
         }
@@ -266,7 +341,7 @@ async function collectStockDeductionNeeds(
       continue
     }
     if (line.lineKind === "article" && line.articleId) {
-      addNeed(line.articleId, line.qty, line.name)
+      addNeed(line.articleId, line.qty, line.name, null)
       continue
     }
     if (line.lineKind !== "recipe" || !line.recipeId) continue
@@ -308,8 +383,13 @@ async function collectStockDeductionNeeds(
         art.default_waste_pct != null ? Number(art.default_waste_pct) : null,
         line.qty,
       )
-      const ingLabel = String(art.name ?? "Ingrediente")
-      addNeed(String(art.id), consumo, `${line.name} — ${ingLabel}`)
+      addNeed(
+        String(art.id),
+        consumo,
+        String(art.name ?? "Ingrediente"),
+        line.name,
+        recipeAllowNegative.get(line.recipeId) === true,
+      )
     }
   }
 
@@ -318,7 +398,9 @@ async function collectStockDeductionNeeds(
     needs.push({
       articleId,
       qty: parseQty(entry.qty),
-      label: [...entry.labels].join(", "),
+      allowNegativeQty: parseQty(entry.allowNegativeQty),
+      articleName: entry.articleName,
+      sources: [...entry.sources],
     })
   }
   return { success: true, needs }
@@ -335,7 +417,7 @@ async function assertStockForSaleNeeds(
   const articleIds = [...new Set(needs.map((need) => need.articleId))]
   const { data: flagRows, error: flagErr } = await supabase
     .from("articles")
-    .select("id, allow_negative_stock")
+    .select("id, name, allow_negative_stock, unit_of_measure")
     .eq("pop_id", popId)
     .in("id", articleIds)
   if (flagErr) {
@@ -345,13 +427,24 @@ async function assertStockForSaleNeeds(
     }
   }
 
-  const allowNegativeById = new Map<string, boolean>()
+  const articleById = new Map<
+    string,
+    { allowNegative: boolean; name: string; unitOfMeasure: string | null }
+  >()
   for (const row of flagRows ?? []) {
-    allowNegativeById.set(String(row.id), Boolean(row.allow_negative_stock))
+    articleById.set(String(row.id), {
+      allowNegative: Boolean(row.allow_negative_stock),
+      name: String(row.name ?? "").trim(),
+      unitOfMeasure: row.unit_of_measure != null ? String(row.unit_of_measure) : null,
+    })
   }
 
+  const shortages: StockShortage[] = []
   for (const need of needs) {
-    if (allowNegativeById.get(need.articleId)) continue
+    const article = articleById.get(need.articleId)
+    if (article?.allowNegative) continue
+    const gatedQty = Math.max(0, need.qty - need.allowNegativeQty)
+    if (gatedQty <= 1e-6) continue
     const oh = await sumInventoryOnHandForArticle(
       supabase,
       popId,
@@ -361,11 +454,20 @@ async function assertStockForSaleNeeds(
     if (!oh.success) {
       return { success: false, error: oh.error }
     }
-    if (need.qty > oh.onHand + 1e-6) {
-      return {
-        success: false,
-        error: `Stock insuficiente para «${need.label || "Insumo"}».`,
-      }
+    if (gatedQty > oh.onHand + 1e-6) {
+      shortages.push({
+        articleName: need.articleName || article?.name || "Insumo",
+        sources: need.sources,
+        needed: gatedQty,
+        onHand: Math.max(0, oh.onHand),
+        unitOfMeasure: article?.unitOfMeasure,
+      })
+    }
+  }
+  if (shortages.length > 0) {
+    return {
+      success: false,
+      error: formatStockShortageMessage(shortages),
     }
   }
   return { success: true }
@@ -390,7 +492,7 @@ async function deductArticleStockForSale(
     .eq("id", need.articleId)
     .eq("pop_id", popId)
     .maybeSingle()
-  const articleName = String(artRow?.name ?? need.label ?? "")
+  const articleName = String(artRow?.name ?? need.articleName ?? "")
   const articleCostRef = roundMoney(
     await resolveArticleReferenceUnitCost(supabase, popId, need.articleId),
   )
@@ -575,6 +677,8 @@ export type CompleteSaleInput = {
   channelPaidAccumulated?: number
   /** Cobro parcial de mesa/mostrador (no cierra sesión/pedido). */
   isPartialChannelPayment?: boolean
+  /** Lista de precios de esta sesión de Operar. Vacío = Principal. */
+  priceListId?: string | null
 }
 
 export async function completeSale(
@@ -631,6 +735,40 @@ export async function completeSale(
     }
 
     const supabase = await createClient()
+    const articleIdsForList = [
+      ...linesIn.map((line) => line.articleId).filter(Boolean),
+      ...linesIn.flatMap(
+        (line) =>
+          line.promotionSelections
+            ?.filter((sel) => sel.kind === "article")
+            .map((sel) => sel.refId) ?? [],
+      ),
+    ] as string[]
+    const recipeIdsForList = [
+      ...linesIn.map((line) => line.recipeId).filter(Boolean),
+      ...linesIn.flatMap(
+        (line) =>
+          line.promotionSelections
+            ?.filter((sel) => sel.kind === "recipe")
+            .map((sel) => sel.refId) ?? [],
+      ),
+    ] as string[]
+    const [articleListOverrides, recipeListOverrides] = await Promise.all([
+      loadPriceListOverrideMap(
+        supabase,
+        popId,
+        input.priceListId,
+        "article",
+        articleIdsForList,
+      ),
+      loadPriceListOverrideMap(
+        supabase,
+        popId,
+        input.priceListId,
+        "recipe",
+        recipeIdsForList,
+      ),
+    ])
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -719,6 +857,19 @@ export async function completeSale(
       return {
         success: false,
         error: "Para vender a cuenta corriente tenés que elegir un cliente.",
+      }
+    }
+
+    if (payOnClientAccount && input.clientId?.trim()) {
+      const enrolled = await loadPartyCurrentAccountEnabled(supabase, {
+        direction: "receivable",
+        partyId: input.clientId.trim(),
+      })
+      if (!enrolled) {
+        return {
+          success: false,
+          error: currentAccountNotEnrolledMessage("receivable"),
+        }
       }
     }
 
@@ -935,7 +1086,11 @@ export async function completeSale(
               }
             }
             selName = String(art.name ?? "")
-            listUnitPrice = roundMoney(Number(art.sale_price ?? 0))
+            listUnitPrice = applyOverrideMap(
+              roundMoney(Number(art.sale_price ?? 0)),
+              String(art.id),
+              articleListOverrides,
+            )
             iva = Number(art.iva ?? 0) || 0
           } else {
             const { data: recipe } = await supabase
@@ -952,7 +1107,11 @@ export async function completeSale(
               }
             }
             selName = String(recipe.name ?? "")
-            listUnitPrice = roundMoney(Number(recipe.sale_price ?? 0))
+            listUnitPrice = applyOverrideMap(
+              roundMoney(Number(recipe.sale_price ?? 0)),
+              String(recipe.id),
+              recipeListOverrides,
+            )
             iva = Number(recipe.iva ?? 0) || 0
           }
 
@@ -1045,7 +1204,11 @@ export async function completeSale(
         lineKind = "recipe"
         resolvedRecipeId = String(recipe.id)
         name = String(recipe.name ?? "")
-        unitPrice = roundMoney(Number(recipe.sale_price ?? 0))
+        unitPrice = applyOverrideMap(
+          roundMoney(Number(recipe.sale_price ?? 0)),
+          String(recipe.id),
+          recipeListOverrides,
+        )
         ivaPct = Math.max(0, Number(recipe.iva ?? 0) || 0)
 
         const lineDiscount = resolveSaleLineDiscount({
@@ -1073,7 +1236,11 @@ export async function completeSale(
         lineKind = "article"
         resolvedArticleId = String(art.id)
         name = String(art.name ?? "")
-        unitPrice = roundMoney(Number(art.sale_price ?? 0))
+        unitPrice = applyOverrideMap(
+          roundMoney(Number(art.sale_price ?? 0)),
+          String(art.id),
+          articleListOverrides,
+        )
         ivaPct = Math.max(0, Number(art.iva ?? 0) || 0)
 
         const rawDiscountMode = art.discount_mode
@@ -1160,6 +1327,19 @@ export async function completeSale(
     const total = roundMoney(subtotalAfterItems - generalDiscount)
     if (total <= 0) {
       return { success: false, error: "El total de la venta debe ser mayor que cero." }
+    }
+
+    let accountTermDays = CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS
+    if (payOnClientAccount && input.clientId?.trim()) {
+      const gate = await assertPartyCurrentAccountCredit(supabase, popId, {
+        direction: "receivable",
+        partyId: input.clientId.trim(),
+        addAmount: total,
+      })
+      if (!gate.ok) {
+        return { success: false, error: gate.error }
+      }
+      accountTermDays = gate.termDays
     }
 
     const scale =
@@ -1392,7 +1572,7 @@ export async function completeSale(
       payOnClientAccount
         ? /^\d{4}-\d{2}-\d{2}$/.test(dueDateInput)
           ? dueDateInput
-          : addIsoCalendarDays(soldDate, CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS)
+          : addIsoCalendarDays(soldDate, accountTermDays)
         : soldDate
 
     const { data: saleIns, error: saleErr } = await supabase

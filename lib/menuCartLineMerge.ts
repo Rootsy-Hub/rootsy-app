@@ -7,6 +7,7 @@ import {
   type MenuCartItem,
   type MenuCartItemKind,
 } from "@/lib/menuCart"
+import { isComandaLocked } from "@/lib/comandaCartLine"
 import {
   cartLineHasPaidUnits,
 } from "@/lib/partialCheckoutSelection"
@@ -114,7 +115,8 @@ export function findMergeableCartLine(
     const lineId = resolveCartLineId(item)
     if (
       cartLineHasPaidUnits(lineId, item, paidPartialUnits ?? {}) ||
-      item.paidLocked
+      item.paidLocked ||
+      isComandaLocked(item.comandaStatus)
     ) {
       return false
     }
@@ -171,7 +173,7 @@ export function peelCartLineUnits(
   const idx = carrito.findIndex((i) => resolveCartLineId(i) === sourceLineId)
   if (idx < 0) return null
   const item = carrito[idx]!
-  if (item.paidLocked || peelCount >= item.cantidad) return null
+  if (item.paidLocked || isComandaLocked(item.comandaStatus) || peelCount >= item.cantidad) return null
 
   const peeledLineId = createCartLineId()
   const peeled: MenuCartItem = {
@@ -230,7 +232,7 @@ export function applyCartLineQuantityDelta(
   return carrito
     .map((i) => {
       if (resolveCartLineId(i) !== lineId) return i
-      if (i.paidLocked) return i
+      if (i.paidLocked || isComandaLocked(i.comandaStatus)) return i
       return { ...i, cantidad: Math.max(0, i.cantidad + delta) }
     })
     .filter((i) => i.cantidad > 0)

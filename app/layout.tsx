@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, Nunito_Sans, Source_Sans_3 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/context/AuthContextSupabase'
@@ -26,6 +26,12 @@ const inter = Inter({
   variable: '--font-inter',
   weight: ['400', '500', '600', '700'],
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
 
 export const metadata: Metadata = {
   title: ROOTSY_BRAND_TITLE,
@@ -62,7 +68,12 @@ export default async function RootLayout({
   const initialUser = await getInitialAuthUser()
 
   return (
-    <html lang="es" className="dark scroll-smooth" data-scroll-behavior="smooth">
+    <html
+      lang="es"
+      className="dark scroll-smooth"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <body className={`${nunitoSans.variable} ${sourceSans.variable} ${inter.variable} font-sans antialiased`}>
         <AuthProvider initialUser={initialUser}>
           <QueryProvider>

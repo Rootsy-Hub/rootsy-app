@@ -42,16 +42,9 @@ export function mesaTableDimensions(shape: MesaTableShape): {
   return { width: RECT[shape.size].w, height: RECT[shape.size].h }
 }
 
-/** Selección que sigue el border-radius del elemento (pseudo-elemento, sin borde blanco). */
+/** Selección — outline 2px pegado + 3px del mismo color con transparencia. */
 export function mesaItemSelectionClass(options?: { active?: boolean }): string {
-  return cn(
-    "relative",
-    "before:pointer-events-none before:absolute before:rounded-[inherit] before:content-['']",
-    "before:-inset-[3px] before:border-2",
-    "before:border-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]",
-    "transition-[transform] duration-200",
-    options?.active && "z-10",
-  )
+  return cn("mesa-table-select-ring z-10 border-2", options?.active && "z-10")
 }
 
 export function mesaTableHighlightClass(options: {
@@ -74,24 +67,28 @@ export function mesaDecorHighlightClass(layoutSelected: boolean): string {
 
 export function mesaStatusClass(status: MesaTableStatus): string {
   const base = cn(
-    "border shadow-none",
-    "transition-[border-color,background-color] duration-200 ease-out",
+    "border",
+    "transition-[border-color,background-color,box-shadow] duration-200 ease-out",
   )
 
   const statusMap: Record<MesaTableStatus, string> = {
     free: cn(
+      "[--mesa-select:var(--rootsy-savia-400)]",
       "border-[color-mix(in_srgb,var(--rootsy-savia-400)_70%,transparent)]",
       "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_48%,var(--rootsy-sombra-800))]",
     ),
     open: cn(
+      "[--mesa-select:var(--destructive)]",
       "border-[color-mix(in_srgb,var(--destructive)_78%,transparent)]",
       "bg-[color-mix(in_srgb,var(--destructive)_46%,var(--rootsy-sombra-800))]",
     ),
     paying: cn(
+      "[--mesa-select:#f59e0b]",
       "border-[color-mix(in_srgb,#f59e0b_78%,transparent)]",
       "bg-[color-mix(in_srgb,#d97706_46%,var(--rootsy-sombra-800))]",
     ),
     reserved: cn(
+      "[--mesa-select:#7c3aed]",
       "border-[color-mix(in_srgb,#7c3aed_74%,transparent)]",
       "bg-[color-mix(in_srgb,#6d28d9_46%,var(--rootsy-sombra-800))]",
     ),
@@ -102,6 +99,20 @@ export function mesaStatusClass(status: MesaTableStatus): string {
 
 export function mesaSeatsLabel(seats: number): string {
   return seats === 1 ? "1 persona" : `${seats} personas`
+}
+
+/** Pill de ficha — mismos colores que el plano (libre / abierta / cobrando / reservada). */
+export function mesaStatusBadgeClass(status: MesaTableStatus): string {
+  switch (status) {
+    case "free":
+      return "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,var(--rootsy-bruma-100))] text-[var(--rootsy-savia-800)] ring-[color-mix(in_srgb,var(--rootsy-savia-500)_28%,transparent)]"
+    case "open":
+      return "bg-[color-mix(in_srgb,#fee2e2_72%,white)] text-[#991b1b] ring-[color-mix(in_srgb,#ef4444_35%,transparent)]"
+    case "paying":
+      return "bg-[color-mix(in_srgb,#fef3c7_72%,white)] text-[#92400e] ring-[color-mix(in_srgb,#f59e0b_35%,transparent)]"
+    case "reserved":
+      return "bg-[color-mix(in_srgb,#ede9fe_72%,white)] text-[#5b21b6] ring-[color-mix(in_srgb,#7c3aed_35%,transparent)]"
+  }
 }
 
 export function mesaStatusLabel(status: MesaTableStatus): string {

@@ -38,7 +38,7 @@ export function MenuSectionNavigator({
   return (
     <div
       className={cn(
-        "mx-auto flex w-full max-w-4xl shrink-0 justify-center px-6 pb-1 pt-0",
+        "mx-auto flex w-full max-w-4xl shrink-0 justify-center px-4 pb-1 pt-0 sm:px-6",
         className,
       )}
     >
@@ -53,7 +53,10 @@ export function MenuSectionNavigator({
           const isLast = index === sections.length - 1
 
           return (
-            <div key={section.key} className="flex items-stretch">
+            <div
+              key={section.key}
+              className="flex min-w-0 flex-none items-stretch"
+            >
               <button
                 type="button"
                 role="tab"
@@ -73,7 +76,7 @@ export function MenuSectionNavigator({
                       : menuSectionRealmTabIdleClass,
                 )}
               >
-                {section.title}
+                <span className="block truncate">{section.title}</span>
                 {selected ? (
                   <span
                     aria-hidden

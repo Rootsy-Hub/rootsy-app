@@ -75,6 +75,8 @@ export function MesasSalonsDialog({
   const [form, setForm] = useState<UpsertMesasSalonInput>(defaultSalonForm(0))
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<MesasSalonRow | null>(null)
+  const [pendingCreateName, setPendingCreateName] = useState<string | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   const sortedRows = useMemo(
     () => sortMesasByOrder(rows, (row) => row.name),
@@ -98,6 +100,8 @@ export function MesasSalonsDialog({
     setError(null)
     setForm(defaultSalonForm(0))
     setDeleteTarget(null)
+    setPendingCreateName(null)
+    setPendingDeleteId(null)
   })
 
   useEffect(() => {
@@ -106,33 +110,50 @@ export function MesasSalonsDialog({
   }, [open, loadRows])
 
   const handleSave = async () => {
+    const payload = form
+    const isCreate = !payload.id
+    const createdName = payload.name.trim()
     setSaving(true)
     setError(null)
-    const res = await upsertMesasSalon(popId, siteId, form)
-    setSaving(false)
+    if (isCreate) {
+      setPendingCreateName(createdName)
+      setForm(defaultSalonForm(rows.length + 1))
+    }
+    const res = await upsertMesasSalon(popId, siteId, payload)
     if (!res.success) {
+      if (isCreate) {
+        setPendingCreateName(null)
+        setForm((current) => ({ ...current, name: createdName }))
+      }
+      setSaving(false)
       setError(res.error)
       return
     }
-    setForm(defaultSalonForm(rows.length + (form.id ? 0 : 1)))
     await loadRows()
     await onLayoutChanged()
+    setPendingCreateName(null)
+    setSaving(false)
   }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
+    const target = deleteTarget
     setSaving(true)
     setError(null)
-    const res = await deleteMesasSalon(popId, siteId, deleteTarget.id)
-    setSaving(false)
+    setPendingDeleteId(target.id)
+    if (form.id === target.id) setForm(defaultSalonForm(rows.length - 1))
+    setDeleteTarget(null)
+    const res = await deleteMesasSalon(popId, siteId, target.id)
     if (!res.success) {
+      setPendingDeleteId(null)
+      setSaving(false)
       setError(res.error)
       return
     }
-    if (form.id === deleteTarget.id) setForm(defaultSalonForm(rows.length - 1))
-    setDeleteTarget(null)
     await loadRows()
     await onLayoutChanged()
+    setPendingDeleteId(null)
+    setSaving(false)
   }
 
   const handleReorder = useCallback(
@@ -208,8 +229,8 @@ export function MesasSalonsDialog({
                   footer={
                     <MesasLayoutDialogFormActions
                       editing={Boolean(form.id)}
-                      saving={saving}
-                      canSave={Boolean(form.name.trim())}
+                      saving={saving && Boolean(form.id)}
+                      canSave={Boolean(form.name.trim()) && !saving}
                       onCancelEdit={() => setForm(defaultSalonForm(rows.length))}
                       onSave={() => void handleSave()}
                       createLabel="Agregar salón"
@@ -220,6 +241,7 @@ export function MesasSalonsDialog({
                     label="Nombre"
                     id="mesas-salon-name"
                     value={form.name}
+                    disabled={saving}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, name: e.target.value }))
                     }
@@ -229,14 +251,23 @@ export function MesasSalonsDialog({
               }
               list={
                 <MesasLayoutDialogListColumn title="Salones existentes">
-                  {loading && sortedRows.length === 0 ? (
+                  {loading && sortedRows.length === 0 && !pendingCreateName ? (
                     <RootsDialogLoadingState message="Cargando salones" />
                   ) : (
                     <MesasLayoutSortableList
                       listId="mesas-salons"
                       items={toListItems(sortedRows)}
                       canReorder={!saving}
-                      canToggleVisibility
+                      canEdit={!saving}
+                      canDelete={!saving}
+                      canToggleVisibility={!saving}
+                      pendingCreateName={
+                        pendingCreateName &&
+                        !sortedRows.some((row) => row.name === pendingCreateName)
+                          ? pendingCreateName
+                          : null
+                      }
+                      pendingDeleteId={pendingDeleteId}
                       emptyMessage="Todavía no hay salones."
                       reorderHint="Arrastrá para ordenar las pestañas del plano. El ojo activa o desactiva el salón."
                       onReorder={(ordered) => void handleReorder(ordered)}

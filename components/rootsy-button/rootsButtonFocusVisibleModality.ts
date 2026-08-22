@@ -19,7 +19,8 @@ function attachFocusModalityListeners() {
         key === "Tab" ||
         key.startsWith("Arrow") ||
         key === "Enter" ||
-        key === " "
+        key === " " ||
+        key === "Escape"
       ) {
         keyboardFocusModality = true
       }
@@ -36,7 +37,7 @@ function attachFocusModalityListeners() {
   )
 }
 
-export function shouldApplyButtonFocusVisible(target: HTMLElement): boolean {
+export function shouldApplyButtonFocusVisible(_target: HTMLElement): boolean {
   attachFocusModalityListeners()
-  return keyboardFocusModality || target.matches(":focus-visible")
+  return keyboardFocusModality
 }

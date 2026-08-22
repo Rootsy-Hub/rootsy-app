@@ -3404,11 +3404,72 @@ function mapSaleToChargeRow(sale: OperationSaleRow): OperationSaleChargeRow {
   }
 }
 
+async function resolveOperationChargeSaleIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  input: {
+    saleId: string
+    groupedSaleIds?: string[]
+    tableSessionId?: string | null
+    counterOrderId?: string | null
+  },
+): Promise<{ ok: true; saleIds: string[] } | { ok: false; error: string }> {
+  const uniqueIds = (ids: string[]) =>
+    [...new Set(ids.map((id) => id.trim()).filter(Boolean))]
+
+  if (input.groupedSaleIds?.length) {
+    return { ok: true, saleIds: uniqueIds(input.groupedSaleIds) }
+  }
+
+  let sessionId = input.tableSessionId?.trim() || ""
+  let orderId = input.counterOrderId?.trim() || ""
+
+  if (!sessionId && !orderId) {
+    const { data, error } = await supabase
+      .from("sales")
+      .select("id, table_session_id, counter_order_id")
+      .eq("pop_id", popId)
+      .eq("id", input.saleId)
+      .maybeSingle()
+    if (error || !data) {
+      return {
+        ok: false,
+        error: error?.message || "No se encontró la venta.",
+      }
+    }
+    sessionId =
+      data.table_session_id != null ? String(data.table_session_id).trim() : ""
+    orderId =
+      data.counter_order_id != null ? String(data.counter_order_id).trim() : ""
+  }
+
+  if (!sessionId && !orderId) {
+    return { ok: true, saleIds: [input.saleId] }
+  }
+
+  let query = supabase
+    .from("sales")
+    .select("id")
+    .eq("pop_id", popId)
+    .neq("status", "cancelled")
+  query = sessionId
+    ? query.eq("table_session_id", sessionId)
+    : query.eq("counter_order_id", orderId)
+
+  const { data, error } = await query
+  if (error) return { ok: false, error: error.message }
+
+  const saleIds = uniqueIds((data ?? []).map((row) => String(row.id)))
+  return { ok: true, saleIds: saleIds.length > 0 ? saleIds : [input.saleId] }
+}
+
 export async function getOperationSaleDetailCharges(
   popId: string,
   input: {
     saleId: string
     groupedSaleIds?: string[]
+    tableSessionId?: string | null
+    counterOrderId?: string | null
   },
 ): Promise<
   | { success: true; charges: OperationSaleChargeRow[] }
@@ -3444,15 +3505,6 @@ export async function getOperationSaleDetailCharges(
       return { success: false, error: "Venta inválida." }
     }
 
-    const saleIds = [
-      ...new Set(
-        (input.groupedSaleIds?.length
-          ? input.groupedSaleIds
-          : [primarySaleId]
-        ).map((id) => id.trim()).filter(Boolean),
-      ),
-    ]
-
     const popRes = await getPopById(popId)
     const fiscalSiteId =
       popRes.success && popRes.pop
@@ -3460,11 +3512,27 @@ export async function getOperationSaleDetailCharges(
         : DEFAULT_SALE_SITE_ID
 
     const supabase = await createClient()
+    const resolvedIds = await resolveOperationChargeSaleIds(
+      supabase,
+      popId,
+      {
+        saleId: primarySaleId,
+        groupedSaleIds: input.groupedSaleIds,
+        tableSessionId: input.tableSessionId,
+        counterOrderId: input.counterOrderId,
+      },
+    )
+    if (!resolvedIds.ok) {
+      return { success: false, error: resolvedIds.error }
+    }
+    const saleIds = resolvedIds.saleIds
+
     const { data: rows, error } = await supabase
       .from("sales")
       .select(SALE_LIST_SELECT)
       .eq("pop_id", popId)
       .in("id", saleIds)
+      .neq("status", "cancelled")
 
     if (error) {
       return { success: false, error: error.message }

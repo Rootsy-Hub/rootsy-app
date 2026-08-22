@@ -4,6 +4,7 @@ import type { PopPageKey } from "@/lib/popPageCrudConstants"
 export const POP_ACCESS_MODULE_TO_PAGE_KEY: Record<string, PopPageKey | null> = {
   sale: "sale",
   mesas: "mesas",
+  comandas: null,
   mostrador: "mostrador",
   purchases: "purchases",
   expenses: "expenses",
@@ -19,7 +20,6 @@ export const POP_ACCESS_MODULE_TO_PAGE_KEY: Record<string, PopPageKey | null> = 
   invoices: "invoices",
   reports: null,
   accounts: "accounts",
-  accounting: "accounting",
   hr: "hr",
   settings: "settings",
   printers: "printers",

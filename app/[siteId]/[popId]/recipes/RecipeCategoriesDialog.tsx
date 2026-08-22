@@ -1,30 +1,50 @@
 "use client"
 
 import type {
+  ComandaStationOption,
   RecipeCategoryLayoutUpdate,
   RecipeCategoryOption,
 } from "@/app/[siteId]/[popId]/recipes/actions"
 import { RecipeCategoriesMenuBoard } from "@/app/[siteId]/[popId]/recipes/components/RecipeCategoriesMenuBoard"
 import {
+  RootsProgressButton,
+  rootsButtonClassForVariant,
+  rootsButtonVariant,
+} from "@/components/rootsy-button"
+import {
   RootsDialogBody,
   RootsDialogContent,
+  RootsDialogErrorBanner,
   RootsDialogHeader,
-  RootsDialogSingleActionFooter,
+  RootsDialogLoadingState,
 } from "@/components/rootsy-dialog"
-import { RootsFormTextField } from "@/components/rootsy-form"
-import { RootsPrimaryButton } from "@/components/rootsy-button"
+import {
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  RootsFormTextField,
+} from "@/components/rootsy-form"
+import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
 import { Dialog } from "@/components/ui/dialog"
-import { useEffect, useRef, useState } from "react"
+import { cn } from "@/lib/utils"
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  banner: string | null
+  loading?: boolean
   categories: RecipeCategoryOption[]
+  boardKey: number
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
   newCategoryName: string
+  newCategoryStationId: string | null
+  newCategorySaving: boolean
+  pendingCreateName: string | null
+  pendingCreateStationName: string | null
+  pendingDeleteId: string | null
   onNewCategoryNameChange: (value: string) => void
+  onNewCategoryStationChange: (stationId: string | null) => void
   onCreateCategory: () => void
   categoryBusy: boolean
   editingCategoryId: string | null
@@ -35,18 +55,29 @@ type Props = {
   onSaveEdit: () => void
   onDeleteCategory: (id: string, name: string) => void
   onLayoutChange: (updates: RecipeCategoryLayoutUpdate[]) => void | Promise<void>
-  onAfterClose?: () => void
+  stations: ComandaStationOption[]
+  editingStationId: string | null
+  onEditingStationChange: (stationId: string | null) => void
 }
 
 export function RecipeCategoriesDialog({
   open,
   onOpenChange,
+  banner,
+  loading = false,
   categories,
+  boardKey,
   canCreate,
   canUpdate,
   canDelete,
   newCategoryName,
+  newCategoryStationId,
+  newCategorySaving,
+  pendingCreateName,
+  pendingCreateStationName,
+  pendingDeleteId,
   onNewCategoryNameChange,
+  onNewCategoryStationChange,
   onCreateCategory,
   categoryBusy,
   editingCategoryId,
@@ -57,60 +88,80 @@ export function RecipeCategoriesDialog({
   onSaveEdit,
   onDeleteCategory,
   onLayoutChange,
-  onAfterClose,
+  stations,
+  editingStationId,
+  onEditingStationChange,
 }: Props) {
-  const wasOpenRef = useRef(false)
-  const [mounted, setMounted] = useState(open)
-
-  useEffect(() => {
-    if (open) {
-      wasOpenRef.current = true
-      setMounted(true)
-      return
-    }
-    if (!wasOpenRef.current) return
-    const timer = window.setTimeout(() => {
-      wasOpenRef.current = false
-      setMounted(false)
-      onAfterClose?.()
-    }, 220)
-    return () => window.clearTimeout(timer)
-  }, [open, onAfterClose])
-
-  if (!mounted) return null
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <RootsDialogContent size="wide">
+      <RootsDialogContent
+        size="wide"
+        className="max-h-[min(90vh,720px)] sm:max-w-2xl"
+      >
         <RootsDialogHeader
-          title="Categorías de recetas"
-          description="Organizá el menú de Mesas y Mostrador."
+          title="Categorías"
+          description="Ordená las categorías, cuáles se muestran en el menú y a qué estación va la comanda."
         />
         <RootsDialogBody>
+          {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
           {canCreate ? (
-            <div className="mb-4 flex flex-wrap items-end gap-2">
-              <div className="min-w-[12rem] flex-1">
-                <RootsFormTextField
-                  label="Nueva categoría"
-                  id="recipe-new-category"
-                  value={newCategoryName}
-                  onChange={(e) => onNewCategoryNameChange(e.target.value)}
-                  placeholder="Nombre de la categoría"
-                  disabled={categoryBusy}
-                />
-              </div>
-              <RootsPrimaryButton
+            <div className="mb-4 grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_auto]">
+              <RootsFormTextField
+                label="Nueva categoría"
+                id="recipe-new-category"
+                value={newCategoryName}
+                onChange={(event) => onNewCategoryNameChange(event.target.value)}
+                placeholder="Nombre"
+                className="min-w-0"
+                disabled={newCategorySaving}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault()
+                    onCreateCategory()
+                  }
+                }}
+              />
+              <RootsFormSelectField
+                label="Comanda"
+                id="recipe-new-category-station"
+                value={newCategoryStationId ?? "__none__"}
+                onValueChange={(value) =>
+                  onNewCategoryStationChange(value === "__none__" ? null : value)
+                }
+                className="min-w-0"
+                disabled={newCategorySaving}
+              >
+                <RootsFormSelectItem value="__none__">Sin comanda</RootsFormSelectItem>
+                {stations.map((station) => (
+                  <RootsFormSelectItem key={station.id} value={station.id}>
+                    {station.name || "—"}
+                  </RootsFormSelectItem>
+                ))}
+              </RootsFormSelectField>
+              <RootsProgressButton
                 type="button"
-                className="shrink-0"
-                disabled={categoryBusy || !newCategoryName.trim()}
+                variant={rootsButtonVariant.primary}
+                className={cn(
+                  saleOpDialogPrimaryBtn,
+                  rootsButtonClassForVariant("primary"),
+                  "h-11 w-full shrink-0 sm:w-auto",
+                )}
+                disabled={newCategorySaving || !newCategoryName.trim()}
                 onClick={onCreateCategory}
               >
                 Agregar
-              </RootsPrimaryButton>
+              </RootsProgressButton>
             </div>
           ) : null}
+          {loading && categories.length === 0 ? (
+            <RootsDialogLoadingState message="Cargando categorías" />
+          ) : (
           <RecipeCategoriesMenuBoard
+            key={boardKey}
             categories={categories}
+            pendingCreateName={pendingCreateName}
+            pendingCreateStationName={pendingCreateStationName}
+            pendingDeleteId={pendingDeleteId}
             canUpdate={canUpdate}
             canDelete={canDelete}
             editingCategoryId={editingCategoryId}
@@ -122,12 +173,12 @@ export function RecipeCategoriesDialog({
             onSaveEdit={onSaveEdit}
             onDelete={onDeleteCategory}
             onLayoutChange={onLayoutChange}
+            stations={stations}
+            editingStationId={editingStationId}
+            onEditingStationChange={onEditingStationChange}
           />
+          )}
         </RootsDialogBody>
-        <RootsDialogSingleActionFooter
-          label="Cerrar"
-          onAction={() => onOpenChange(false)}
-        />
       </RootsDialogContent>
     </Dialog>
   )

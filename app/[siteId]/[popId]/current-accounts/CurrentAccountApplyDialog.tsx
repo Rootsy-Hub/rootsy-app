@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  applyPopCurrentAccountCredit,
-  type CurrentAccountOpenDocument,
-} from "@/app/[siteId]/[popId]/current-accounts/actions"
+import type { CurrentAccountOpenDocument } from "@/app/[siteId]/[popId]/current-accounts/actions"
+import { applyPopCurrentAccountCredit } from "@/lib/rootsyApi/currentAccountsClient"
 import {
   currentAccountSettleTotals,
   emptyCurrentAccountSettleDraft,
@@ -31,7 +29,7 @@ import {
 } from "@/lib/currentAccounts"
 import { formatMoneyInputForField, parseMoneyInput } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
-import { useEffect, useMemo, useState, type FormEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -78,12 +76,14 @@ export function CurrentAccountApplyDialog({
   )
   const [banner, setBanner] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const applyingRef = useRef(false)
 
   useEffect(() => {
     if (!open) return
     setDraft(initCurrentAccountSettleDraft(documents))
     setBanner(null)
     setSaving(false)
+    applyingRef.current = false
   }, [documents, open])
 
   const totals = useMemo(
@@ -98,10 +98,12 @@ export function CurrentAccountApplyDialog({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (applyingRef.current) return
     if (applied <= 0.009) {
       setBanner("Elegí a qué comprobantes imputar.")
       return
     }
+    applyingRef.current = true
     setSaving(true)
     setBanner(null)
     const selected = new Set(draft.selectedIds)
@@ -116,18 +118,27 @@ export function CurrentAccountApplyDialog({
       }))
       .filter((row) => row.amount > 0.009)
 
-    const res = await applyPopCurrentAccountCredit(popId, {
-      direction,
-      partyId,
-      applications,
-    })
-    setSaving(false)
-    if (!res.success) {
-      setBanner(res.error)
-      return
+    try {
+      const res = await applyPopCurrentAccountCredit(popId, {
+        direction,
+        partyId,
+        applications,
+      })
+      if (!res.success) {
+        applyingRef.current = false
+        setBanner(res.error)
+        return
+      }
+      onOpenChange(false)
+      onApplied()
+    } catch (error: unknown) {
+      applyingRef.current = false
+      setBanner(
+        error instanceof Error ? error.message : "No se pudo imputar.",
+      )
+    } finally {
+      setSaving(false)
     }
-    onOpenChange(false)
-    onApplied()
   }
 
   return (
@@ -185,6 +196,8 @@ export function CurrentAccountApplyDialog({
                             <RootsFormMoneyField
                               id={`ca-apply-amount-${document.id}`}
                               label="Imputar"
+                              hint={`Hasta ${moneyFormatter.format(document.remaining)}`}
+                              max={document.remaining}
                               value={draft.amounts[document.id] ?? ""}
                               onChange={(value) =>
                                 setDraft((current) => ({

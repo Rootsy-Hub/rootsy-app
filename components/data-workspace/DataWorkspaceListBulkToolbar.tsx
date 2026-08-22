@@ -58,6 +58,7 @@ export function DataWorkspaceListBulkToolbar({
           (tone === "nature"
             ? workspaceTableNatureBulkBarClass
             : "border-b border-border/80 bg-muted/35"),
+        "max-md:flex-col max-md:items-start",
         disabled && "pointer-events-none opacity-60",
         className,
       )}
@@ -68,7 +69,7 @@ export function DataWorkspaceListBulkToolbar({
         <span className="font-semibold">{selectedCount}</span>{" "}
         <span className={listBulkToolbarCountMutedClass}>seleccionados</span>
       </span>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 max-md:w-full">
         {children ??
           actions.map((action) => (
             <BulkToolbarActionButton key={action.label} action={action} />

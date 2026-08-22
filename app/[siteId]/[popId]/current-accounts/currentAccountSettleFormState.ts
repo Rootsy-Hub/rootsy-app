@@ -43,12 +43,18 @@ export function initCurrentAccountSettleDraft(
   }
 }
 
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
 export function currentAccountSettleTotals(
   draft: CurrentAccountSettleDraft,
   documents: CurrentAccountOpenDocument[] = [],
 ): {
   applied: number
   extra: number
+  surplus: number
+  onAccount: number
   total: number
 } {
   const remainingById = new Map(
@@ -56,16 +62,49 @@ export function currentAccountSettleTotals(
   )
   const selected = new Set(draft.selectedIds)
   let applied = 0
+  let surplus = 0
   for (const [documentId, raw] of Object.entries(draft.amounts)) {
     if (!selected.has(documentId)) continue
     const remaining = remainingById.get(documentId) ?? 0
-    const amount = Math.min(parseMoneyInput(raw, 0), remaining)
-    applied = Math.round((applied + amount) * 100) / 100
+    const typed = parseMoneyInput(raw, 0)
+    applied = roundMoney(applied + Math.min(typed, remaining))
+    surplus = roundMoney(surplus + Math.max(0, typed - remaining))
   }
   const extra = parseMoneyInput(draft.extraAmount, 0)
+  const onAccount = roundMoney(extra + surplus)
   return {
     applied,
     extra,
-    total: Math.round((applied + extra) * 100) / 100,
+    surplus,
+    onAccount,
+    total: roundMoney(applied + onAccount),
+  }
+}
+
+/** El excedente sobre un comprobante pasa a cuenta. */
+export function normalizeCurrentAccountSettleDraft(
+  draft: CurrentAccountSettleDraft,
+  documents: CurrentAccountOpenDocument[],
+): CurrentAccountSettleDraft {
+  const remainingById = new Map(
+    documents.map((document) => [document.id, document.remaining]),
+  )
+  const selected = new Set(draft.selectedIds)
+  const amounts = { ...draft.amounts }
+  let surplus = 0
+  for (const documentId of selected) {
+    const remaining = remainingById.get(documentId) ?? 0
+    const typed = parseMoneyInput(amounts[documentId] ?? "", 0)
+    if (typed > remaining + 0.009) {
+      surplus = roundMoney(surplus + (typed - remaining))
+    }
+    amounts[documentId] =
+      remaining > 0.009 ? formatMoneyInputForField(Math.min(typed, remaining)) : ""
+  }
+  const extra = roundMoney(parseMoneyInput(draft.extraAmount, 0) + surplus)
+  return {
+    ...draft,
+    amounts,
+    extraAmount: extra > 0.009 ? formatMoneyInputForField(extra) : "",
   }
 }

@@ -8,8 +8,10 @@ import {
   getPopHrDashboard,
   getRolePermissionsEditorData,
   inviteUserToPop,
+  renewPopInvitation,
   revokePopInvitation,
   savePopRolePermissions,
+  updatePopMemberRole,
   type MemberRow,
   type PendingInviteRow,
   type PermissionCatalogRow,
@@ -19,12 +21,14 @@ import {
   clockEmployeeIn,
   clockEmployeeOut,
   markEmployeeLeft,
+  markEmployeeReturned,
   upsertPopEmployee,
 } from "@/app/[siteId]/[popId]/hr/employeeActions"
 import type {
   EmployeeRow,
   UpsertEmployeeInput,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
+import { HrChangeRoleDialog } from "@/app/[siteId]/[popId]/hr/HrChangeRoleDialog"
 import { HrInviteCard } from "@/app/[siteId]/[popId]/hr/HrInviteCard"
 import { HrInviteDialog, type HrInviteResult } from "@/app/[siteId]/[popId]/hr/HrInviteDialog"
 import { HrPageSkeleton } from "@/app/[siteId]/[popId]/hr/HrPageSkeleton"
@@ -76,6 +80,7 @@ type ConfirmAction =
   | { kind: "delete-member"; member: MemberRow }
   | { kind: "revoke"; invite: PendingInviteRow }
   | { kind: "leave"; person: EmployeeRow }
+  | { kind: "return"; person: EmployeeRow }
 
 function memberDisplayName(member: MemberRow): string {
   return `${member.firstName} ${member.lastName}`.trim() || "Sin nombre"
@@ -179,6 +184,9 @@ function HrPage() {
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviteResult, setInviteResult] = useState<HrInviteResult | null>(null)
+  const [roleMember, setRoleMember] = useState<MemberRow | null>(null)
+  const [roleSaving, setRoleSaving] = useState(false)
+  const [roleError, setRoleError] = useState<string | null>(null)
   const [actionKey, setActionKey] = useState<string | null>(null)
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null)
 
@@ -281,20 +289,27 @@ function HrPage() {
 
   const confirmCopy = useMemo(() => {
     if (!confirmAction) {
-      return { title: "", description: "", confirmLabel: "Confirmar" }
+      return {
+        title: "",
+        description: "",
+        confirmLabel: "Confirmar",
+        destructive: true,
+      }
     }
     if (confirmAction.kind === "delete-role") {
       return {
         title: "Eliminar rol",
         description: `¿Eliminar “${confirmAction.role.displayName}”? Se quitan sus permisos y no se va a poder usar en invitaciones nuevas.`,
         confirmLabel: "Eliminar rol",
+        destructive: true,
       }
     }
     if (confirmAction.kind === "deactivate") {
       return {
-        title: "Quitar del equipo",
-        description: `¿Desvincular a ${memberDisplayName(confirmAction.member)} de este negocio? Va a pasar a inactivos.`,
-        confirmLabel: "Quitar",
+        title: "Quitar acceso a Rootsy",
+        description: `¿Sacar a ${memberDisplayName(confirmAction.member)} de Rootsy en este local? Sigue en el equipo. No va a poder abrir el sistema.`,
+        confirmLabel: "Quitar acceso",
+        destructive: true,
       }
     }
     if (confirmAction.kind === "revoke") {
@@ -302,30 +317,43 @@ function HrPage() {
         title: "Revocar invitación",
         description: `¿Cancelar la invitación a ${confirmAction.invite.email}? Ya no va a poder entrar con ese enlace.`,
         confirmLabel: "Revocar",
+        destructive: true,
       }
     }
     if (confirmAction.kind === "leave") {
-      const linked = members.find(
-        (item) => item.userId === confirmAction.person.userId,
+      const stillHasAccess = Boolean(
+        confirmAction.person.userId &&
+          members.some(
+            (item) =>
+              item.userId === confirmAction.person.userId &&
+              item.isActive &&
+              !item.isOwner,
+          ),
       )
-      const alsoRevokesAccess =
-        canManageInvites &&
-        Boolean(confirmAction.person.userId) &&
-        !linked?.isOwner
       return {
-        title: "Deja el negocio",
-        description: alsoRevokesAccess
-          ? `¿${personDisplayName(confirmAction.person)} deja de trabajar acá? Queda en el historial y ya no entra a Rootsy.`
+        title: "Ya no trabaja acá",
+        description: stillHasAccess
+          ? `¿${personDisplayName(confirmAction.person)} deja de trabajar acá? Queda en el historial. El acceso a Rootsy se saca aparte.`
           : `¿${personDisplayName(confirmAction.person)} deja de trabajar acá? Queda en el historial.`,
-        confirmLabel: "Registrar salida",
+        confirmLabel: "Ya no trabaja acá",
+        destructive: true,
+      }
+    }
+    if (confirmAction.kind === "return") {
+      return {
+        title: "Volver al equipo",
+        description: `¿${personDisplayName(confirmAction.person)} vuelve a trabajar acá? El acceso a Rootsy se da aparte, si lo necesita.`,
+        confirmLabel: "Volver al equipo",
+        destructive: false,
       }
     }
     return {
       title: "Eliminar usuario",
       description: `¿Eliminar a ${memberDisplayName(confirmAction.member)} de este negocio? No va a figurar más en RRHH.`,
       confirmLabel: "Eliminar",
+      destructive: true,
     }
-  }, [canManageInvites, confirmAction, members])
+  }, [confirmAction, members])
 
   const closePermModal = () => {
     setPermModalOpen(false)
@@ -470,6 +498,26 @@ function HrPage() {
     await loadDashboard()
   }
 
+  const openChangeRole = (member: MemberRow) => {
+    setRoleMember(member)
+    setRoleError(null)
+  }
+
+  const handleChangeRole = async (roleId: string) => {
+    if (!popId || !siteId || !roleMember) return
+    setRoleSaving(true)
+    setRoleError(null)
+    const res = await updatePopMemberRole(popId, roleMember.userId, roleId)
+    setRoleSaving(false)
+    if (!res.success) {
+      setRoleError(res.error || "No se pudo cambiar el rol.")
+      return
+    }
+    setRoleMember(null)
+    setBanner({ type: "ok", text: "Rol de Rootsy actualizado." })
+    await Promise.all([loadDashboard(), refresh()])
+  }
+
   const openNewPerson = () => {
     setPersonEditing(null)
     setPersonError(null)
@@ -535,6 +583,22 @@ function HrPage() {
     await loadDashboard()
   }
 
+  const handleRenewInvite = async (invite: PendingInviteRow) => {
+    if (!popId || !siteId) return
+    setActionKey(`renew-${invite.id}`)
+    const res = await renewPopInvitation(popId, invite.id)
+    setActionKey(null)
+    if (!res.success) {
+      setBanner({ type: "err", text: res.error || "No se pudo renovar." })
+      return
+    }
+    setBanner({
+      type: "ok",
+      text: "Invitación renovada. El enlace sirve 7 días más.",
+    })
+    await loadDashboard()
+  }
+
   const runConfirmAction = async () => {
     if (!popId || !siteId || !confirmAction) return
 
@@ -543,36 +607,36 @@ function HrPage() {
       return
     }
 
+    if (confirmAction.kind === "return") {
+      setActionKey(`return-${confirmAction.person.id}`)
+      const res = await markEmployeeReturned(popId, confirmAction.person.id)
+      setActionKey(null)
+      if (!res.success) {
+        setBanner({ type: "err", text: res.error || "No se pudo volver a cargar." })
+        return
+      }
+      setConfirmAction(null)
+      setPeopleFilter("negocio")
+      setBanner({
+        type: "ok",
+        text: "Volvió al equipo. El acceso a Rootsy se da aparte.",
+      })
+      await loadDashboard()
+      return
+    }
+
     if (confirmAction.kind === "leave") {
       setActionKey(`leave-${confirmAction.person.id}`)
       const res = await markEmployeeLeft(popId, confirmAction.person.id)
+      setActionKey(null)
       if (!res.success) {
-        setActionKey(null)
         setBanner({ type: "err", text: res.error || "No se pudo registrar." })
         return
       }
-      const linked = members.find(
-        (item) => item.userId === confirmAction.person.userId,
-      )
-      let revokedAccess = false
-      if (
-        canManageInvites &&
-        confirmAction.person.userId &&
-        !linked?.isOwner
-      ) {
-        const accessRes = await deactivatePopMember(
-          popId,
-          confirmAction.person.userId,
-        )
-        revokedAccess = accessRes.success
-      }
-      setActionKey(null)
       setConfirmAction(null)
       setBanner({
         type: "ok",
-        text: revokedAccess
-          ? "Quedó registrada la salida. Ya no entra a Rootsy."
-          : "Quedó registrada la salida del negocio.",
+        text: "Quedó en el historial. Ya no trabaja acá.",
       })
       await loadDashboard()
       return
@@ -601,7 +665,7 @@ function HrPage() {
         return
       }
       setConfirmAction(null)
-      setBanner({ type: "ok", text: "Usuario desvinculado del equipo." })
+      setBanner({ type: "ok", text: "Ya no entra a Rootsy. Sigue en el equipo." })
       await loadDashboard()
       return
     }
@@ -731,6 +795,8 @@ function HrPage() {
                           onRevoke={() =>
                             setConfirmAction({ kind: "revoke", invite })
                           }
+                          renewBusy={actionKey === `renew-${invite.id}`}
+                          onRenew={() => void handleRenewInvite(invite)}
                         />
                       ))}
                     </div>
@@ -742,7 +808,7 @@ function HrPage() {
                       : peopleFilter === "acceso"
                         ? "Nadie de estas personas usa Rootsy todavía."
                         : peopleFilter === "baja"
-                          ? "Nadie dejó el negocio todavía."
+                          ? "Nadie figura como que ya no trabaja acá."
                           : "Todavía no hay personas cargadas."}
                   </p>
                 ) : (
@@ -757,6 +823,9 @@ function HrPage() {
                           person={person}
                           imageUrl={member?.imageUrl}
                           isOwner={Boolean(member?.isOwner)}
+                          rootsyRole={
+                            member?.isActive ? member.roleDisplayName : null
+                          }
                           canManagePeople={canManagePeople}
                           canManageInvites={canManageInvites}
                           clockBusy={actionKey === `clock-${person.id}`}
@@ -767,8 +836,28 @@ function HrPage() {
                           }}
                           onClock={() => void handleClock(person)}
                           onInvite={() => openInvite(person.email ?? undefined)}
+                          onChangeRole={
+                            member &&
+                            member.isActive &&
+                            !member.isOwner &&
+                            assignableRoles.length > 0
+                              ? () => openChangeRole(member)
+                              : undefined
+                          }
+                          onRevokeAccess={
+                            member && member.isActive && !member.isOwner
+                              ? () =>
+                                  setConfirmAction({
+                                    kind: "deactivate",
+                                    member,
+                                  })
+                              : undefined
+                          }
                           onLeave={() =>
                             setConfirmAction({ kind: "leave", person })
+                          }
+                          onReturn={() =>
+                            setConfirmAction({ kind: "return", person })
                           }
                         />
                       )
@@ -779,7 +868,7 @@ function HrPage() {
 
               <DataWorkspaceBlocksSection
                 title="Si entra a Rootsy"
-                description="Qué puede hacer cuando abre el sistema. No aplica a quien solo trabaja acá."
+                description="Qué puede hacer en el sistema. Distinto del puesto en el local."
                 action={
                   canManageInvites ? (
                     <RootsDefaultButton
@@ -855,6 +944,7 @@ function HrPage() {
       <HrPersonDialog
         open={personOpen}
         person={personEditing}
+        readOnly={!canManagePeople}
         saving={personSaving}
         error={personError}
         onOpenChange={(open) => {
@@ -865,6 +955,22 @@ function HrPage() {
           }
         }}
         onSubmit={handleSavePerson}
+      />
+
+      <HrChangeRoleDialog
+        open={roleMember !== null}
+        personName={roleMember ? memberDisplayName(roleMember) : ""}
+        roles={assignableRoles}
+        currentRoleId={roleMember?.roleId ?? ""}
+        saving={roleSaving}
+        error={roleError}
+        onOpenChange={(open) => {
+          if (!open && !roleSaving) {
+            setRoleMember(null)
+            setRoleError(null)
+          }
+        }}
+        onSubmit={handleChangeRole}
       />
 
       <HrInviteDialog
@@ -924,7 +1030,7 @@ function HrPage() {
         confirmLabel={confirmCopy.confirmLabel}
         busy={Boolean(actionKey)}
         busyConfirmLabel="Procesando…"
-        destructive
+        destructive={confirmCopy.destructive}
         onConfirm={() => void runConfirmAction()}
       />
     </>

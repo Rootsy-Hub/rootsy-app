@@ -84,6 +84,15 @@ type Props = {
   popId?: string
   defaultPartyName?: string
   defaultPartyId?: string
+  /** Bloquea opciones y cierre mientras se registra el cobro o pago. */
+  busy?: boolean
+  /**
+   * Si está, elegir un medio no cobra: queda marcado y hay que confirmar.
+   * Evita un click accidental en Efectivo.
+   */
+  confirmLabel?: string
+  /** Flecha de volver en el menú (p. ej. volver al cobro de cuenta corriente). */
+  showMenuBack?: boolean
 }
 
 function kindIcon(kind: OperationPaymentKind) {
@@ -190,6 +199,9 @@ export function PaymentMethodDialog({
   popId = "",
   defaultPartyName = "",
   defaultPartyId = "",
+  busy = false,
+  confirmLabel,
+  showMenuBack = false,
 }: Props) {
   const [step, setStep] = useState<PaymentCheckoutStep>(() =>
     initialDestinationKind ? "destination" : "menu",
@@ -203,6 +215,8 @@ export function PaymentMethodDialog({
     checkFormFromDetails(flow, undefined, defaultPartyName, defaultPartyId),
   )
   const [stepError, setStepError] = useState<string | null>(null)
+  const [stagedSelection, setStagedSelection] =
+    useState<PaymentMethodSelection | null>(null)
 
   useEffect(() => {
     if (!open) {
@@ -210,6 +224,7 @@ export function PaymentMethodDialog({
       setPendingKind(initialDestinationKind ?? null)
       setPendingCheckSelection(null)
       setStepError(null)
+      setStagedSelection(null)
       return
     }
 
@@ -232,22 +247,28 @@ export function PaymentMethodDialog({
   }, [flow, initialDestinationKind, open, payOnAccount, selected?.kind])
 
   const finishSelection = useCallback(
-    (option: PaymentMethodSelection) => {
-      onSelectImmediate(option)
+    (option: PaymentMethodSelection, options?: { skipConfirm?: boolean }) => {
       if (shouldStayOpenAfterSelection(flow, option)) {
+        onSelectImmediate(option)
         setPendingKind(option.kind)
         setStep("installments")
         setStepError(null)
         return
       }
+      if (confirmLabel && !options?.skipConfirm) {
+        setStagedSelection(option)
+        setStepError(null)
+        return
+      }
+      onSelectImmediate(option)
       onOpenChange(false)
     },
-    [flow, onOpenChange, onSelectImmediate],
+    [confirmLabel, flow, onOpenChange, onSelectImmediate],
   )
 
   const handleKindPick = useCallback(
     (kind: OperationPaymentKind) => {
-      if (!treasuryContext) return
+      if (busy || !treasuryContext) return
       const result = resolvePaymentKindSelection(
         flow,
         kind,
@@ -260,11 +281,13 @@ export function PaymentMethodDialog({
       }
       setStepError(null)
       if (result.action === "destination") {
+        setStagedSelection(null)
         setPendingKind(result.kind)
         setStep("destination")
         return
       }
       if (result.action === "check") {
+        setStagedSelection(null)
         setPendingKind("check")
         setPendingCheckSelection(result.selection)
         setCheckForm(
@@ -281,6 +304,7 @@ export function PaymentMethodDialog({
       finishSelection(result.selection)
     },
     [
+      busy,
       cashTreasuryAccountId,
       defaultPartyId,
       defaultPartyName,
@@ -293,7 +317,7 @@ export function PaymentMethodDialog({
 
   const handleDestinationPick = useCallback(
     (destinationId: string, destinationName: string) => {
-      if (!treasuryContext || !pendingKind) return
+      if (busy || !treasuryContext || !pendingKind) return
       finishSelection(
         buildPaymentCheckoutSelection(
           flow,
@@ -304,10 +328,16 @@ export function PaymentMethodDialog({
         ),
       )
     },
-    [finishSelection, flow, pendingKind, treasuryContext],
+    [busy, finishSelection, flow, pendingKind, treasuryContext],
   )
 
   const handleBack = useCallback(() => {
+    setStagedSelection(null)
+    if (step === "menu" && showMenuBack) {
+      onOpenChange(false)
+      setStepError(null)
+      return
+    }
     if (initialDestinationKind) {
       onOpenChange(false)
       setStepError(null)
@@ -339,7 +369,15 @@ export function PaymentMethodDialog({
     setStep("menu")
     setPendingKind(null)
     setStepError(null)
-  }, [flow, initialDestinationKind, onOpenChange, pendingKind, step, treasuryContext])
+  }, [
+    flow,
+    initialDestinationKind,
+    onOpenChange,
+    pendingKind,
+    showMenuBack,
+    step,
+    treasuryContext,
+  ])
 
   const destinationItems = useMemo(() => {
     if (!treasuryContext || !pendingKind || step !== "destination") return []
@@ -364,15 +402,19 @@ export function PaymentMethodDialog({
         return
       }
       setStepError(null)
-      finishSelection({
-        ...pendingCheckSelection,
-        label: checkoutCheckSelectionLabel(parsed.details),
-        checkDetails: parsed.details,
-      })
+      finishSelection(
+        {
+          ...pendingCheckSelection,
+          label: checkoutCheckSelectionLabel(parsed.details),
+          checkDetails: parsed.details,
+        },
+        { skipConfirm: true },
+      )
     },
     [checkForm, finishSelection, pendingCheckSelection],
   )
 
+  const activeSelection = stagedSelection ?? selected
   const paymentKinds = getPaymentCheckoutKinds(flow)
   const sectionTitle =
     immediateSectionTitle ?? (flow === "sale" ? "Cobro inmediato" : "Pago inmediato")
@@ -382,9 +424,15 @@ export function PaymentMethodDialog({
       : "El cheque queda en cartera. El importe es el de esta operación."
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && busy) return
+        onOpenChange(next)
+      }}
+    >
       <RootsDialogContent className="flex flex-col">
-        {step === "menu" ? (
+        {step === "menu" && !showMenuBack ? (
           <RootsDialogHeader
             title="Formas de pago"
             description={
@@ -452,10 +500,12 @@ export function PaymentMethodDialog({
               onCancel={handleBack}
               confirmLabel="Usar este cheque"
               confirmType="submit"
-              confirmDisabled={!popId}
+              confirmDisabled={!popId || busy}
+              confirmLoading={busy}
             />
           </RootsDialogForm>
         ) : (
+        <>
         <RootsDialogBody className="space-y-4">
           {stepError ? (
             <RootsDialogErrorBanner>{stepError}</RootsDialogErrorBanner>
@@ -483,13 +533,13 @@ export function PaymentMethodDialog({
                         )
                       const isSelected =
                         !payOnAccount &&
-                        selected?.kind === kind &&
+                        activeSelection?.kind === kind &&
                         (kind === "cash" ||
                           kind === "transfer" ||
-                          selected.treasuryAccountId != null)
+                          activeSelection.treasuryAccountId != null)
                       const subtitle =
-                        isSelected && selected
-                          ? selected.label
+                        isSelected && activeSelection
+                          ? activeSelection.label
                           : paymentCheckoutKindSubtitle(flow, kind, treasuryContext, {
                               cashTreasuryAccountId,
                               cashRegisterName,
@@ -501,6 +551,7 @@ export function PaymentMethodDialog({
                             title={paymentCheckoutKindLabel(flow, kind)}
                             subtitle={subtitle}
                             selected={isSelected}
+                            disabled={busy}
                             onClick={() => handleKindPick(kind)}
                             icon={kindIcon(kind)}
                             trailing={
@@ -536,14 +587,15 @@ export function PaymentMethodDialog({
                 const Icon = destinationIcon(pendingKind!)
                 const isSelected =
                   !payOnAccount &&
-                  selected != null &&
-                  pendingKind === selected.kind &&
-                  selected.treasuryAccountId === dest.id
+                  activeSelection != null &&
+                  pendingKind === activeSelection.kind &&
+                  activeSelection.treasuryAccountId === dest.id
                 return (
                   <li key={dest.id}>
                     <CheckoutOptionCard
                       title={dest.name}
                       selected={isSelected}
+                      disabled={busy}
                       onClick={() => handleDestinationPick(dest.id, dest.name)}
                       icon={Icon}
                       trailing={isSelected ? "check" : "none"}
@@ -583,6 +635,24 @@ export function PaymentMethodDialog({
             </div>
           ) : null}
         </RootsDialogBody>
+        {confirmLabel && stagedSelection ? (
+          <RootsDialogDualActionFooter
+            cancelLabel="Volver"
+            confirmLabel={confirmLabel}
+            confirmDisabled={busy}
+            confirmLoading={busy}
+            confirmLoadingLabel="Registrando…"
+            onCancel={() => {
+              if (busy) return
+              setStagedSelection(null)
+            }}
+            onConfirm={() => {
+              if (busy || !stagedSelection) return
+              onSelectImmediate(stagedSelection)
+            }}
+          />
+        ) : null}
+        </>
         )}
       </RootsDialogContent>
     </Dialog>

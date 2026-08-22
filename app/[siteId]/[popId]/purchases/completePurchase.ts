@@ -40,6 +40,12 @@ import {
   resolveCheckTreasuryAccountId,
   type CheckoutCheckDetails,
 } from "@/lib/checkoutCheck"
+import { assertPartyCurrentAccountCredit } from "@/lib/currentAccountEnrollment"
+import {
+  addIsoCalendarDays,
+  CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS,
+  currentAccountNotEnrolledMessage,
+} from "@/lib/currentAccounts"
 
 export type CompletePurchaseInput = CreatePurchaseInput & {
   /** Sin pago inmediato: queda deuda en Proveedores. */
@@ -170,12 +176,18 @@ export async function completePurchase(
     if (supplierId) {
       const { data: supRow, error: supErr } = await supabase
         .from("suppliers")
-        .select("id, name, tax_id")
+        .select("id, name, tax_id, current_account_enabled")
         .eq("id", supplierId)
         .eq("pop_id", popId)
         .maybeSingle()
       if (supErr || !supRow) {
         return { success: false, error: "Proveedor inválido." }
+      }
+      if (payOnAccount && supRow.current_account_enabled !== true) {
+        return {
+          success: false,
+          error: currentAccountNotEnrolledMessage("payable"),
+        }
       }
       supplierName = String(supRow.name ?? "")
       supplierTaxId =
@@ -261,6 +273,19 @@ export async function completePurchase(
       return { success: false, error: "El total de la compra debe ser mayor que cero." }
     }
 
+    let accountTermDays = CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS
+    if (payOnAccount && supplierId) {
+      const gate = await assertPartyCurrentAccountCredit(supabase, popId, {
+        direction: "payable",
+        partyId: supplierId,
+        addAmount: checkout.total,
+      })
+      if (!gate.ok) {
+        return { success: false, error: gate.error }
+      }
+      accountTermDays = gate.termDays
+    }
+
     const {
       generalDiscount,
       itemDiscountTotal,
@@ -315,7 +340,15 @@ export async function completePurchase(
         purchase_kind: kind,
         document_number: input.documentNumber?.trim() || null,
         document_date: input.documentDate?.trim() || null,
-        due_date: input.dueDate?.trim() || null,
+        due_date:
+          input.dueDate?.trim() ||
+          (payOnAccount
+            ? addIsoCalendarDays(
+                input.documentDate?.trim() ||
+                  new Date().toISOString().slice(0, 10),
+                accountTermDays,
+              )
+            : null),
         received_at: receivedAt,
         line_items: lineItemsToPersist,
         subtotal: persistedSubtotal,

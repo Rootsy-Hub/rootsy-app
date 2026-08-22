@@ -25,6 +25,7 @@ import type {
   SaleCatalogClient,
   SaleOpenCashSession,
 } from "@/app/[siteId]/[popId]/sale/actions"
+import { loadPriceListOverrideMap } from "@/app/[siteId]/[popId]/articles/priceListActions"
 import {
   mapSaleCatalogArticleRow,
   SALE_CATALOG_ARTICLE_SELECT,
@@ -47,6 +48,7 @@ export type MenuCatalogRecipe = {
   categoryId: string
   categoryName: string
   imageUrl: string | null
+  stationId: string | null
 }
 
 export type MenuCatalogArticle = {
@@ -473,7 +475,7 @@ export async function getMenuCatalog(
         iva,
         image_url,
         category_id,
-        recipe_categories ( id, name )
+        recipe_categories ( id, name, station_id )
       `,
             )
             .eq("pop_id", popId)
@@ -537,23 +539,7 @@ export async function getMenuCatalog(
         const categoryId = String(row.category_id ?? "")
         return categoryId !== "" && visibleRecipeCategoryIds.has(categoryId)
       })
-      .map((row) => {
-        const cat = row.recipe_categories as { name?: string } | null
-        const rawImg = row.image_url
-        return {
-          id: String(row.id),
-          name: String(row.name ?? ""),
-          description: String(row.description ?? ""),
-          salePrice: Number(row.sale_price ?? 0) || 0,
-          iva: Number(row.iva ?? 0) || 0,
-          categoryId: String(row.category_id ?? ""),
-          categoryName: cat?.name ? String(cat.name) : "—",
-          imageUrl:
-            typeof rawImg === "string" && rawImg.trim() !== ""
-              ? rawImg.trim()
-              : null,
-        }
-      })
+      .map((row) => mapMenuRecipeRow(row as Record<string, unknown>))
 
     const productCategories: SaleCatalogCategory[] = (productCatRows ?? []).map(
       (c) => ({
@@ -648,22 +634,37 @@ const MENU_RECIPE_SELECT = `
   iva,
   image_url,
   category_id,
-  recipe_categories ( id, name )
+  recipe_categories ( id, name, station_id )
 ` as const
 
-function mapMenuRecipeRow(row: Record<string, unknown>): MenuCatalogRecipe {
-  const cat = row.recipe_categories as { name?: string } | null
+function mapMenuRecipeRow(
+  row: Record<string, unknown>,
+  listPriceOverride?: number,
+): MenuCatalogRecipe {
+  const cat = row.recipe_categories as {
+    name?: string
+    station_id?: string | null
+  } | null
   const rawImg = row.image_url
+  const principal = Number(row.sale_price ?? 0) || 0
+  const stationId =
+    typeof cat?.station_id === "string" && cat.station_id.trim()
+      ? cat.station_id.trim()
+      : null
   return {
     id: String(row.id),
     name: String(row.name ?? ""),
     description: String(row.description ?? ""),
-    salePrice: Number(row.sale_price ?? 0) || 0,
+    salePrice:
+      listPriceOverride != null && Number.isFinite(listPriceOverride)
+        ? listPriceOverride
+        : principal,
     iva: Number(row.iva ?? 0) || 0,
     categoryId: String(row.category_id ?? ""),
     categoryName: cat?.name ? String(cat.name) : "—",
     imageUrl:
       typeof rawImg === "string" && rawImg.trim() !== "" ? rawImg.trim() : null,
+    stationId,
   }
 }
 
@@ -802,9 +803,17 @@ export async function getMenuCatalogItemsPage(
       if (error) return { success: false, error: error.message }
       const rows = (data ?? []) as Record<string, unknown>[]
       articleHasMore = rows.length > OPERATE_CATALOG_PAGE_SIZE
-      articles = rows
-        .slice(0, OPERATE_CATALOG_PAGE_SIZE)
-        .map(mapSaleCatalogArticleRow)
+      const pageRows = rows.slice(0, OPERATE_CATALOG_PAGE_SIZE)
+      const overrides = await loadPriceListOverrideMap(
+        supabase,
+        popId,
+        filter.priceListId,
+        "article",
+        pageRows.map((row) => String(row.id)),
+      )
+      articles = pageRows.map((row) =>
+        mapSaleCatalogArticleRow(row, overrides.get(String(row.id))),
+      )
     }
 
     if (wantRecipes && visibleRecipeIds.length > 0) {
@@ -827,7 +836,17 @@ export async function getMenuCatalogItemsPage(
       if (error) return { success: false, error: error.message }
       const rows = (data ?? []) as Record<string, unknown>[]
       recipeHasMore = rows.length > OPERATE_CATALOG_PAGE_SIZE
-      recipes = rows.slice(0, OPERATE_CATALOG_PAGE_SIZE).map(mapMenuRecipeRow)
+      const pageRows = rows.slice(0, OPERATE_CATALOG_PAGE_SIZE)
+      const overrides = await loadPriceListOverrideMap(
+        supabase,
+        popId,
+        filter.priceListId,
+        "recipe",
+        pageRows.map((row) => String(row.id)),
+      )
+      recipes = pageRows.map((row) =>
+        mapMenuRecipeRow(row, overrides.get(String(row.id))),
+      )
     }
 
     return {
@@ -847,10 +866,45 @@ export async function getMenuCatalogItemsPage(
   }
 }
 
+async function mapMenuArticlesWithPriceList(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  priceListId: string | undefined,
+  rows: Record<string, unknown>[],
+) {
+  const overrides = await loadPriceListOverrideMap(
+    supabase,
+    popId,
+    priceListId,
+    "article",
+    rows.map((row) => String(row.id)),
+  )
+  return rows.map((row) =>
+    mapSaleCatalogArticleRow(row, overrides.get(String(row.id))),
+  )
+}
+
+async function mapMenuRecipesWithPriceList(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  priceListId: string | undefined,
+  rows: Record<string, unknown>[],
+) {
+  const overrides = await loadPriceListOverrideMap(
+    supabase,
+    popId,
+    priceListId,
+    "recipe",
+    rows.map((row) => String(row.id)),
+  )
+  return rows.map((row) => mapMenuRecipeRow(row, overrides.get(String(row.id))))
+}
+
 export async function getMenuCatalogItemsByIds(
   popId: string,
   articleIds: string[],
   recipeIds: string[],
+  priceListId?: string,
 ): Promise<
   | {
       success: true
@@ -883,14 +937,24 @@ export async function getMenuCatalogItemsByIds(
     ])
     if (artRes.error) return { success: false, error: artRes.error.message }
     if (recipeRes.error) return { success: false, error: recipeRes.error.message }
+    const [articles, recipes] = await Promise.all([
+      mapMenuArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        (artRes.data ?? []) as Record<string, unknown>[],
+      ),
+      mapMenuRecipesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        (recipeRes.data ?? []) as Record<string, unknown>[],
+      ),
+    ])
     return {
       success: true,
-      articles: ((artRes.data ?? []) as Record<string, unknown>[]).map(
-        mapSaleCatalogArticleRow,
-      ),
-      recipes: ((recipeRes.data ?? []) as Record<string, unknown>[]).map(
-        mapMenuRecipeRow,
-      ),
+      articles,
+      recipes,
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
@@ -901,6 +965,7 @@ export async function getMenuCatalogItemsByIds(
 export async function findMenuCatalogItemByScan(
   popId: string,
   rawQuery: string,
+  priceListId?: string,
 ): Promise<
   | {
       success: true
@@ -931,11 +996,15 @@ export async function findMenuCatalogItemByScan(
       return { success: false, error: barcodeError.message }
     }
     if ((barcodeRows ?? []).length === 1) {
+      const [article] = await mapMenuArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        [barcodeRows![0] as Record<string, unknown>],
+      )
       return {
         success: true,
-        article: mapSaleCatalogArticleRow(
-          barcodeRows![0] as Record<string, unknown>,
-        ),
+        article: article ?? null,
         recipe: null,
       }
     }
@@ -956,11 +1025,15 @@ export async function findMenuCatalogItemByScan(
       return { success: false, error: articleNameError.message }
     }
     if ((articleNameRows ?? []).length === 1) {
+      const [article] = await mapMenuArticlesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        [articleNameRows![0] as Record<string, unknown>],
+      )
       return {
         success: true,
-        article: mapSaleCatalogArticleRow(
-          articleNameRows![0] as Record<string, unknown>,
-        ),
+        article: article ?? null,
         recipe: null,
       }
     }
@@ -976,10 +1049,16 @@ export async function findMenuCatalogItemByScan(
       return { success: false, error: recipeNameError.message }
     }
     if ((recipeNameRows ?? []).length === 1) {
+      const [recipe] = await mapMenuRecipesWithPriceList(
+        supabase,
+        popId,
+        priceListId,
+        [recipeNameRows![0] as Record<string, unknown>],
+      )
       return {
         success: true,
         article: null,
-        recipe: mapMenuRecipeRow(recipeNameRows![0] as Record<string, unknown>),
+        recipe: recipe ?? null,
       }
     }
     return { success: true, article: null, recipe: null }

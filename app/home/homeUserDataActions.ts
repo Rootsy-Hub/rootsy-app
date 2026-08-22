@@ -3,7 +3,6 @@
 import type {
   PopAccessCache,
   PopAccessRole,
-  UserPopIdsCache,
   UserPopsAccessBatchCache,
   UserProfileCache,
 } from "@/app/home/homeUserDataTypes"
@@ -168,13 +167,6 @@ async function loadUserPopIds(
     ids.add(String(row.pop_id))
   }
   return Array.from(ids)
-}
-
-/** Cache `_user-pop-ids` — POPs propios + POPs con rol activo. */
-export async function getUserPopIdsCache(): Promise<UserPopIdsCache> {
-  const user = await requireAuthenticatedUser()
-  const supabase = await createClient()
-  return loadUserPopIds(supabase, user.uid)
 }
 
 /** Cache `_pop-access` por popId. */

@@ -6,16 +6,20 @@ const orderCardBaseClass = cn(
   "layouts-operar-product-card relative w-full overflow-hidden rounded-2xl text-left",
   "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-600)]",
   "px-3 py-3",
-  "cursor-grab active:cursor-grabbing",
   "transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5",
 )
 
-export function mostradorOrderCardClass(options?: { selected?: boolean }): string {
-  if (options?.selected) {
-    return cn(orderCardBaseClass, layoutsOperarProductCardSelectedClass)
-  }
-
-  return orderCardBaseClass
+export function mostradorOrderCardClass(options?: {
+  selected?: boolean
+  draggable?: boolean
+}): string {
+  return cn(
+    orderCardBaseClass,
+    options?.draggable === false
+      ? "cursor-pointer"
+      : "cursor-grab active:cursor-grabbing",
+    options?.selected && layoutsOperarProductCardSelectedClass,
+  )
 }
 
 export function mostradorOrderDragOverlayClass(): string {

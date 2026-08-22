@@ -1,0 +1,12 @@
+export const RECIPE_IMAGE_STORAGE_BUCKET = "rootsy_catalog_public" as const
+
+export function buildRecipeImageStoragePath(popId: string, fileName: string): string {
+  return `${popId}/recipes/${fileName}`
+}
+
+export function buildRecipeImageFileName(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `${crypto.randomUUID()}.webp`
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.webp`
+}

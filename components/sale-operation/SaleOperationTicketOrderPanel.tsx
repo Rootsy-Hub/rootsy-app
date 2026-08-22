@@ -6,11 +6,13 @@ import type { OperationCartLineOverrideState } from "@/components/sale-operation
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
 import {
+  layoutsOperarSummaryCartHeadingClass,
   layoutsOperarSummaryCartListSurfaceClass,
   layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
   layoutsOperarTicketScrollColumnClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import { OperarMobileToolboxIcons } from "@/components/layouts-module/OperarMobileToolbox"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { dataWorkspaceBlocksSkeletonTone } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
@@ -46,7 +48,11 @@ type Props = {
   actions: ActionsProps
   totalBar: TotalProps
   listTitle?: string
-  listSubtitle?: string
+  contextLabel?: {
+    caption: string
+    value: string
+    valueSize?: "prominent" | "compact"
+  }
   emptyTitle?: string
   flush?: boolean
   loading?: boolean
@@ -90,7 +96,7 @@ export function SaleOperationTicketOrderPanel({
   actions,
   totalBar,
   listTitle = "Pedido",
-  listSubtitle,
+  contextLabel,
   emptyTitle = "Pedido vacío",
   loading = false,
   cartScrollHighlight,
@@ -109,10 +115,35 @@ export function SaleOperationTicketOrderPanel({
   const hasTicketItems = ticketLineCount > 0
 
   const panel = (
-    <>
+    <div className="flex h-full min-h-0 flex-1 flex-col md:contents">
+      {contextLabel ? (
+        <div
+          className={cn(
+            "md:hidden shrink-0 px-3 py-2.5",
+            "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_90%,transparent)]",
+            "bg-[var(--rootsy-bruma-50)]",
+          )}
+          aria-label={`${contextLabel.caption} ${contextLabel.value}`}
+        >
+          <p className={layoutsOperarSummaryCartHeadingClass}>
+            {contextLabel.caption}
+          </p>
+          <p
+            className={cn(
+              "font-ledger font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]",
+              contextLabel.valueSize === "compact" ? "text-xl" : "text-2xl",
+            )}
+          >
+            {contextLabel.value}
+          </p>
+        </div>
+      ) : null}
       <div
         ref={cartScrollContainerRef}
-        className={layoutsOperarTicketScrollColumnClass}
+        className={cn(
+          layoutsOperarTicketScrollColumnClass,
+          "max-md:h-auto max-md:flex-1",
+        )}
         role="region"
         aria-label="Pedido"
         aria-busy={loading || undefined}
@@ -120,11 +151,6 @@ export function SaleOperationTicketOrderPanel({
         <div className={layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL)}>
           <div className="min-w-0">
             <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
-            {listSubtitle ? (
-              <p className="mt-0.5 truncate text-xs font-medium text-[var(--layouts-operar-light-cart-line-meta)]">
-                {listSubtitle}
-              </p>
-            ) : null}
           </div>
         </div>
 
@@ -188,12 +214,29 @@ export function SaleOperationTicketOrderPanel({
         ) : null}
       </div>
 
+      {!loading ? <OperarMobileToolboxIcons /> : null}
+
       {!loading && hasTicketItems ? (
-        <div className={layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL)}>
-          <SaleOperationActionsBar {...actions} variant="operar" />
+        <div className={cn(layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL), "max-md:hidden")}>
+          <SaleOperationActionsBar
+            {...actions}
+            variant="operar"
+            contextLabel={contextLabel}
+          />
         </div>
       ) : null}
-    </>
+
+      {!loading ? (
+        <div className="shrink-0 md:hidden">
+          <SaleOperationActionsBar
+            {...actions}
+            variant="mobile"
+            discardDisabled={actions.discardDisabled || !hasTicketItems}
+            confirmDisabled={actions.confirmDisabled || !hasTicketItems}
+          />
+        </div>
+      ) : null}
+    </div>
   )
 
   if (cartScrollHighlight) {

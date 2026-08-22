@@ -1,9 +1,9 @@
 "use client"
 
 import { ArticleIvaSelect } from "@/app/[siteId]/[popId]/articles/ArticleIvaSelect"
+import { RecipeImageUploadField } from "@/app/[siteId]/[popId]/recipes/RecipeImageUploadField"
 import type { RecipeCategoryOption } from "@/app/[siteId]/[popId]/recipes/actions"
 import { RecipeIngredientEditor } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientEditor"
-import type { RecipeIngredientOption } from "@/app/[siteId]/[popId]/recipes/actions"
 import type { RecipeFormState } from "@/app/[siteId]/[popId]/recipes/recipeFormState"
 import {
   RootsFormGrid,
@@ -14,15 +14,15 @@ import {
   RootsFormTextField,
   RootsFormTextareaField,
   rootsFormColumnClass,
-  rootsFormEarthTextSecondaryClass,
   rootsFormFieldLabelClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
-import { rootsFormEarthDividerClass } from "@/components/rootsy-form/rootsFormEarthTokens"
+import { SalePriceListExtraFields } from "@/components/sale-operation/SalePriceListExtraFields"
+import type { SalePriceList } from "@/lib/salePriceLists"
 import { cn } from "@/lib/utils"
 import type { Dispatch, ReactNode, SetStateAction } from "react"
 
-const sectionDividerClass = cn("h-px w-full shrink-0", rootsFormEarthDividerClass)
+const sectionDividerClass = "h-px w-full shrink-0 bg-[var(--rootsy-bruma-200)]"
 
 function FormSection({
   title,
@@ -38,12 +38,7 @@ function FormSection({
       <div>
         <h3 className={rootsFormFieldLabelClass}>{title}</h3>
         {description ? (
-          <p
-            className={cn(
-              "mt-1 text-xs leading-relaxed",
-              rootsFormEarthTextSecondaryClass,
-            )}
-          >
+          <p className="mt-1 text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
             {description}
           </p>
         ) : null}
@@ -56,20 +51,26 @@ function FormSection({
 type Props = {
   idPrefix: string
   siteId: string
+  popId: string
   form: RecipeFormState
   setForm: Dispatch<SetStateAction<RecipeFormState>>
   categories: RecipeCategoryOption[]
-  ingredientOptions: RecipeIngredientOption[]
+  categoriesLoading?: boolean
+  priceLists?: SalePriceList[]
+  priceListsLoading?: boolean
   disabled?: boolean
 }
 
 export function RecipeUpsertFormFields({
   idPrefix,
   siteId,
+  popId,
   form,
   setForm,
   categories,
-  ingredientOptions,
+  categoriesLoading = false,
+  priceLists = [],
+  priceListsLoading = false,
   disabled = false,
 }: Props) {
   const activeCategories = categories.filter((c) => c.isActive)
@@ -108,8 +109,10 @@ export function RecipeUpsertFormFields({
               onValueChange={(value) =>
                 setForm((f) => ({ ...f, categoryId: value }))
               }
-              disabled={disabled}
-              placeholder="Elegir categoría"
+              disabled={disabled || categoriesLoading}
+              placeholder={
+                categoriesLoading ? "Cargando categorías…" : "Elegir categoría"
+              }
             >
               {activeCategories.map((category) => (
                 <RootsFormSelectItem key={category.id} value={category.id}>
@@ -117,14 +120,13 @@ export function RecipeUpsertFormFields({
                 </RootsFormSelectItem>
               ))}
             </RootsFormSelectField>
-            <RootsFormTextField
-              label="Imagen (URL)"
+            <RecipeImageUploadField
               id={`${idPrefix}-image`}
+              popId={popId}
               value={form.imageUrl}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, imageUrl: e.target.value }))
+              onChange={(imageUrl) =>
+                setForm((f) => ({ ...f, imageUrl }))
               }
-              placeholder="https://…"
               disabled={disabled}
             />
           </FormSection>
@@ -150,6 +152,18 @@ export function RecipeUpsertFormFields({
                 disabled={disabled}
               />
             </div>
+            <SalePriceListExtraFields
+              idPrefix={idPrefix}
+              lists={priceListsLoading ? [] : priceLists}
+              values={form.listPrices ?? {}}
+              onChange={(listId, value) =>
+                setForm((f) => ({
+                  ...f,
+                  listPrices: { ...f.listPrices, [listId]: value },
+                }))
+              }
+              disabled={disabled}
+            />
           </FormSection>
         </div>
 
@@ -164,14 +178,24 @@ export function RecipeUpsertFormFields({
               }
               disabled={disabled}
             />
+            <RootsFormSwitchField
+              label="Vender con stock negativo"
+              description="Permite vender aunque algún ingrediente quede por debajo de cero."
+              id={`${idPrefix}-allow-negative-stock`}
+              checked={form.allowNegativeStock}
+              onCheckedChange={(checked) =>
+                setForm((f) => ({ ...f, allowNegativeStock: checked }))
+              }
+              disabled={disabled}
+            />
           </FormSection>
 
           <div className={sectionDividerClass} />
 
           <RecipeIngredientEditor
             idPrefix={idPrefix}
+            popId={popId}
             lines={form.ingredients}
-            options={ingredientOptions}
             disabled={disabled}
             onChange={(ingredients) =>
               setForm((f) => ({ ...f, ingredients }))

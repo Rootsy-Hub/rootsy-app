@@ -2,7 +2,9 @@ import { cn } from "@/lib/utils"
 
 /** Anclado al suelo del planeta — esquina inferior izquierda. */
 export const menuRootsyPresenceHostClass = cn(
-  "pointer-events-none absolute bottom-0 left-3 z-[28] sm:left-5",
+  "pointer-events-none absolute z-[28]",
+  "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3",
+  "md:bottom-0 md:left-5",
 )
 
 export const menuRootsyPresenceStageClass = cn(
@@ -10,7 +12,7 @@ export const menuRootsyPresenceStageClass = cn(
 )
 
 export const menuRootsyPresenceGroundClass = cn(
-  "menu-rootsy-presence-ground pointer-events-none absolute bottom-0 left-3 z-0 sm:left-4",
+  "menu-rootsy-presence-ground pointer-events-none absolute bottom-0 left-3 z-0 hidden md:block md:left-4",
 )
 
 export const menuRootsyPresenceTriggerClass = cn(
@@ -24,14 +26,14 @@ export const menuRootsyPresenceTriggerClass = cn(
 )
 
 export const menuRootsyPresenceImageClass = cn(
-  "menu-rootsy-presence-image relative z-[1] pointer-events-none h-[8.75rem] w-auto max-w-none object-contain object-bottom sm:h-[10.5rem]",
+  "menu-rootsy-presence-image relative z-[1] pointer-events-none h-14 w-auto max-w-none object-contain object-bottom md:h-[10.5rem]",
   "drop-shadow-[0_10px_28px_rgba(0,0,0,0.42)]",
   "transition-[transform,filter] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]",
   "group-hover/rootsy:drop-shadow-[0_14px_34px_rgba(0,0,0,0.48)]",
 )
 
 export const menuRootsyPresencePanelClass = cn(
-  "menu-rootsy-presence-panel pointer-events-auto absolute bottom-[calc(100%+0.35rem)] left-0 z-50 w-[21rem] max-w-[calc(100vw-2rem)]",
+  "menu-rootsy-presence-panel pointer-events-auto absolute bottom-[calc(100%+0.35rem)] left-0 z-50 hidden w-[21rem] max-w-[calc(100vw-2rem)] md:block",
   "overflow-hidden rounded-2xl border border-[rgba(228,242,248,0.1)]",
   "bg-[linear-gradient(168deg,rgba(4,10,14,0.94)_0%,rgba(2,6,10,0.97)_100%)]",
   "backdrop-blur-[12px] backdrop-saturate-[1.02]",

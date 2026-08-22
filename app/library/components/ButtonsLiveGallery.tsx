@@ -3,6 +3,7 @@
 import {
   BUTTONS_UI_APPEARANCE_LABELS,
   BUTTONS_UI_APPEARANCE_META,
+  BUTTONS_UI_POS_TEXT_APPEARANCES,
   BUTTONS_WITH_ICON_SPECS,
   ICON_BUTTON_UI_POS_PANEL,
   ICON_BUTTON_UI_POS_VARIANTS,
@@ -105,10 +106,14 @@ function DemoRow({ children }: { children: ReactNode }) {
 
 function appearanceButton(
   appearance: ButtonsUiAppearanceId,
-  props?: { size?: RootsButtonSpecSize; loading?: boolean },
+  props?: { size?: RootsButtonSpecSize; loading?: boolean; theme?: "workspace" | "pos" },
 ) {
   const label = BUTTONS_UI_APPEARANCE_LABELS[appearance]
-  const common = { size: props?.size ?? "default", loading: props?.loading }
+  const common = {
+    size: props?.size ?? "default",
+    loading: props?.loading,
+    theme: props?.theme,
+  }
 
   switch (appearance) {
     case "primary":
@@ -176,6 +181,42 @@ export function ButtonsLiveGallery() {
           </SpecBlock>
         </div>
       </FoundationBrumaStage>
+
+      <div
+        className="overflow-hidden rounded-2xl"
+        style={{
+          background: ICON_BUTTON_UI_POS_PANEL.background,
+          border: ICON_BUTTON_UI_POS_PANEL.border,
+        }}
+      >
+        <div className="space-y-8 p-5 sm:p-6">
+          <SectionHeading
+            title="Botones de texto · tema POS"
+            description="Default · Borde · Sutil · Enlace — mismos estados, paleta sombra."
+            darkPanel
+          />
+
+          {BUTTONS_UI_POS_TEXT_APPEARANCES.map((appearance) => {
+            const meta = BUTTONS_UI_APPEARANCE_META.find((item) => item.id === appearance)!
+            return (
+              <SpecBlock
+                key={appearance}
+                title={`${meta.title} · ${meta.natureName}`}
+                hint={`Roots*Button · theme=pos · ${meta.token}`}
+                darkPanel
+              >
+                <DemoRow>
+                  {(["compact", "default", "large"] as const).map((sizeId) => (
+                    <div key={sizeId}>
+                      {appearanceButton(appearance, { size: sizeId, theme: "pos" })}
+                    </div>
+                  ))}
+                </DemoRow>
+              </SpecBlock>
+            )
+          })}
+        </div>
+      </div>
 
       <FoundationBrumaStage caption="Botones con ícono · icon.size.medium · space.100.">
         <div className="space-y-8">

@@ -38,12 +38,14 @@ export type MesaReservationStatus =
   | "confirmed"
   | "seated"
   | "completed"
+  | "expired"
   | "no_show"
   | "cancelled"
 
 export type MesaReservation = {
   id: string
   tableId: string | null
+  tableIds: string[]
   clientId: string | null
   clientName: string
   guestCount: number | null
@@ -54,7 +56,8 @@ export type MesaReservation = {
 }
 
 export type MesaReservationInput = {
-  tableId: string | null
+  tableId?: string | null
+  tableIds?: string[]
   clientId: string | null
   clientName: string
   guestCount?: number | null
@@ -87,6 +90,7 @@ export type MesaOpenSessionInput = {
   waiterId: string
   guestCount: number | null
   note: string
+  reservationId?: string | null
 }
 
 export type MesasLeftPanelView = "floor" | "catalog"

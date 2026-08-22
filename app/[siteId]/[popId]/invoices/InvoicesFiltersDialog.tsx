@@ -1,9 +1,9 @@
 "use client"
 
 import {
-  INVOICE_REGIMEN_LABEL,
-  INVOICE_REGIMEN_VALUES,
-  type InvoiceRegimenValue,
+  INVOICE_STATUS_LABEL,
+  INVOICE_STATUS_VALUES,
+  type InvoiceStatusValue,
 } from "@/app/[siteId]/[popId]/invoices/invoiceConstants"
 import {
   defaultInvoicesFilters,
@@ -41,26 +41,26 @@ export function InvoicesFiltersDialog({
       <RootsDialogContent size="default" className="sm:max-w-md">
         <RootsDialogHeader
           title="Filtros"
-          description="Combinan con la búsqueda y el estado del toolbar. El listado se pagina en el servidor."
+          description="Filtrá por el estado del comprobante. Combinan con el período y la búsqueda."
         />
         <RootsDialogBody>
           <RootsFormSelectField
-            label="Régimen"
-            id="invoices-filter-regimen"
-            value={draft.regimen.trim() || "__all__"}
+            label="Estado"
+            id="invoices-filter-status"
+            value={draft.status.trim() || "__all__"}
             onValueChange={(value) =>
               onDraftChange({
                 ...draft,
-                regimen:
-                  value === "__all__" ? "" : (value as InvoiceRegimenValue),
+                status:
+                  value === "__all__" ? "" : (value as InvoiceStatusValue),
               })
             }
             placeholder="Todos"
           >
             <RootsFormSelectItem value="__all__">Todos</RootsFormSelectItem>
-            {INVOICE_REGIMEN_VALUES.map((regimen) => (
-              <RootsFormSelectItem key={regimen} value={regimen}>
-                {INVOICE_REGIMEN_LABEL[regimen]}
+            {INVOICE_STATUS_VALUES.map((status) => (
+              <RootsFormSelectItem key={status} value={status}>
+                {INVOICE_STATUS_LABEL[status]}
               </RootsFormSelectItem>
             ))}
           </RootsFormSelectField>

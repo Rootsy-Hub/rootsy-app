@@ -19,12 +19,25 @@ import {
   menuHoloTileMotionClass,
   menuPlanetLifeStyle,
 } from "@/lib/menu/menuHoloStyles"
+import {
+  menuPlanetIconGlyphClass,
+  menuPlanetIconShellClass,
+  menuPlanetTileClass,
+  menuPlanetTileLabelClass,
+} from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
+import { MenuApiReadyBadge } from "@/app/[siteId]/[popId]/menu/MenuApiReadyBadge"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
-import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
+import {
+  isOptimisticNavTarget,
+  usePopOptimisticNav,
+} from "@/context/PopOptimisticNavContext"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { isMenuApiReady } from "@/lib/menuApiReady"
 import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
 import Link from "next/link"
+import { useEffect, useRef } from "react"
 
 type Props = {
   item: MenuItemDef
@@ -41,13 +54,15 @@ export function MenuGridItemButton({
   href,
   onActivate,
 }: Props) {
-  const { start: startOptimisticNav } = usePopOptimisticNav()
+  const { pending, start: startOptimisticNav } = usePopOptimisticNav()
+  const isLeaving = isOptimisticNavTarget(href, pending)
   const {
     editing,
     canDragMenuItem,
     isInDock,
     activeDragKind,
     draggingItemId,
+    isCompactDock,
   } = useMenuDockEdit()
   const dockId = menuLinkToDockId(item.link)
   const draggable = dockId != null && canDragMenuItem(item.link)
@@ -61,10 +76,16 @@ export function MenuGridItemButton({
     data: { kind: "menu" as const, itemId: dockId, menuItem: item },
     disabled: !draggable,
   })
+  const skipClickAfterDrag = useRef(false)
+
+  useEffect(() => {
+    if (isDragging) skipClickAfterDrag.current = true
+  }, [isDragging])
 
   const isThisMenuDrag =
     isDragging && activeDragKind === "menu" && dockId === draggingItemId
-  const showDockPlacedStyle = editing && alreadyInDock && !isThisMenuDrag
+  const showDockPlacedStyle =
+    (editing || isCompactDock) && alreadyInDock && !isThisMenuDrag
   const isDragGhost = isThisMenuDrag
   const isAlive = !showDockPlacedStyle && !isDragGhost
   const lifeSeed = `${sectionKey}-${item.link}-${item.name}`
@@ -74,19 +95,22 @@ export function MenuGridItemButton({
 
   const Icon = item.icon
   const tileClassName = cn(
-    "group flex h-[7.125rem] w-24 flex-col items-center gap-2.5",
+    menuPlanetTileClass,
     !editing && menuHoloTileMotionClass,
   )
 
   const tileInner = (
     <>
       <div
-        className={cn(isAlive && menuHoloPlanetLifeClass)}
+        className={cn(
+          "relative overflow-visible p-1 -m-1",
+          isAlive && menuHoloPlanetLifeClass,
+        )}
         style={isAlive ? lifeStyle : undefined}
       >
         <div
           className={cn(
-            "flex size-[72px] items-center justify-center rounded-[20px]",
+            menuPlanetIconShellClass,
             menuHoloIconShellForSection(sectionKey, shellVariant),
             !isDragGhost &&
               menuHoloRealmWorldRimClass(sectionKey, showDockPlacedStyle),
@@ -98,13 +122,26 @@ export function MenuGridItemButton({
           {!isDragGhost ? (
             <MenuIconChrome sectionKey={sectionKey} alive={isAlive} />
           ) : null}
-          <Icon className={cn("size-8", menuHoloGlyphClass)} />
+          {isLeaving ? (
+            <RootsSpinner
+              size="default"
+              tone="dark"
+              className={menuPlanetIconGlyphClass}
+              label={`Abriendo ${item.name}`}
+            />
+          ) : (
+            <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
+          )}
         </div>
+        {!isDragGhost && !isLeaving && isMenuApiReady(item.link) ? (
+          <MenuApiReadyBadge />
+        ) : null}
       </div>
 
       <span
         className={cn(
           "flex h-8 w-full items-center justify-center text-center line-clamp-2",
+          menuPlanetTileLabelClass,
           showDockPlacedStyle || isDragGhost
             ? menuHoloLabelDockPlacedClass
             : menuHoloLabelClass,
@@ -128,7 +165,7 @@ export function MenuGridItemButton({
       }}
       className={cn(
         "justify-self-center transition-[opacity,transform] duration-200",
-        editing && draggable && "touch-none",
+        (editing || isDragging) && draggable && "touch-none",
         editing && draggable && "animate-dock-wiggle",
         showDockPlacedStyle && "scale-[0.985]",
         isDragGhost && "scale-[0.96] opacity-55",
@@ -139,6 +176,11 @@ export function MenuGridItemButton({
         <Link
           href={href}
           onClick={(event) => {
+            if (skipClickAfterDrag.current) {
+              event.preventDefault()
+              skipClickAfterDrag.current = false
+              return
+            }
             if (
               event.metaKey ||
               event.ctrlKey ||
@@ -147,8 +189,13 @@ export function MenuGridItemButton({
             ) {
               return
             }
+            if (pending && !isLeaving) {
+              event.preventDefault()
+              return
+            }
             startOptimisticNav({ href, title: item.name })
           }}
+          aria-busy={isLeaving || undefined}
           className={cn(tileClassName, menuHoloFocusRingForSection(sectionKey))}
         >
           {tileInner}

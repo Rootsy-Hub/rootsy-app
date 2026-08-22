@@ -73,10 +73,10 @@ export function invoiceStatusLabel(status: string) {
 export function invoiceStatusPillVariant(
   status: string,
 ): RootsNaturePillVariant {
-  if (status === "authorized") return "canopy"
-  if (status === "rejected" || status === "cancelled") return "earthMuted"
-  if (status === "pending_afip") return "earth"
-  return "autumn"
+  if (status === "authorized") return "savia"
+  if (status === "rejected" || status === "cancelled") return "brumaMuted"
+  if (status === "pending_afip") return "bruma"
+  return "warning"
 }
 
 export function invoiceJsonPretty(value: unknown): string {

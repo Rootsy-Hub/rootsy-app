@@ -1,3 +1,4 @@
+import type { ComandaStatus } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
 import { resolveCartLineId, type MenuCartItemKind } from "@/lib/menuCart"
 import type { CartLineOverrideSnapshot } from "@/lib/menuCartLineMerge"
@@ -56,6 +57,7 @@ export type MostradorCartDisplayRow = {
   readOnlyPricing?: MostradorCartGroupPricing
   /** Línea del carrito ya cobrada; solo lectura en el ticket. */
   paidLocked?: boolean
+  comandaStatus?: ComandaStatus
 }
 
 export type MostradorCartGroupPricing = {
@@ -104,6 +106,7 @@ export type MostradorCartDetailItem = {
   producto: MenuCatalogProduct | null
   promotionSelections?: PromotionCartSelection[]
   paidLocked?: boolean
+  comandaStatus?: ComandaStatus
 }
 
 function discountCloudLabel(
@@ -225,6 +228,8 @@ function pushQuantityDealGroupRows(
       quantityDealDiscountTotal: dealDiscount,
       quantityDealApplicationId: app.id,
       hidePrice: true,
+      paidLocked: partItem.paidLocked,
+      comandaStatus: partItem.comandaStatus,
     })
   }
 
@@ -256,6 +261,7 @@ export function buildMostradorCartDisplayRows(input: {
     const lineId = item.lineId
     const comment = cartLineCommentFingerprint(lineId, input.overrides)
     const itemPaidLocked = item.paidLocked === true
+    const itemComandaStatus = item.comandaStatus
 
     if (item.kind === "promotion" && item.promotionSelections?.length) {
       const promoMeta = item.producto?.promotionMeta
@@ -282,6 +288,7 @@ export function buildMostradorCartDisplayRows(input: {
         commentEditingDisabled: false,
         showGreenBorder: false,
         paidLocked: itemPaidLocked,
+        comandaStatus: itemComandaStatus,
         comment: comment || undefined,
       })
       continue
@@ -347,6 +354,7 @@ export function buildMostradorCartDisplayRows(input: {
         commentEditingDisabled: false,
         showGreenBorder: cloud.variant === "discount",
         paidLocked: itemPaidLocked,
+        comandaStatus: itemComandaStatus,
       })
     }
   }
@@ -716,6 +724,7 @@ export function cartDetailItemsFromCarrito(
     producto: MenuCatalogProduct | null
     promotionSelections?: PromotionCartSelection[]
     paidLocked?: boolean
+    comandaStatus?: ComandaStatus
   }>,
 ): MostradorCartDetailItem[] {
   return items.map((item) => ({
@@ -732,6 +741,7 @@ export function cartDetailItemsFromCarrito(
     producto: item.producto,
     promotionSelections: item.promotionSelections,
     paidLocked: item.paidLocked,
+    comandaStatus: item.comandaStatus,
   }))
 }
 

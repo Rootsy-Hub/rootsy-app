@@ -188,7 +188,7 @@ export function RecipeTableStatusCell({ row }: { row: RecipeTableRow }) {
     >
       <div className={workspaceTableLayoutCellStackClass}>
         <div className="flex min-h-4 min-w-0 items-center">
-          <RootsNaturePill variant={row.isActive ? "canopy" : "earthMuted"}>
+          <RootsNaturePill variant={row.isActive ? "savia" : "brumaMuted"}>
             {row.isActive ? "Activa" : "Inactiva"}
           </RootsNaturePill>
         </div>

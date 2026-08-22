@@ -7,8 +7,10 @@ import {
   rootsAlertDialogFooterClass,
   rootsAlertDialogSurfaceClass,
   rootsAlertDialogTitleClass,
+  rootsDialogContentNestedZClass,
   rootsDialogContentZClass,
   rootsDialogOverlayClass,
+  rootsDialogOverlayNestedClass,
 } from "@/components/rootsy-dialog/rootsDialogProductStyles"
 import {
   RootsDangerButton,
@@ -26,18 +28,28 @@ import type { ComponentProps, ReactNode } from "react"
 
 type AlertContentProps = ComponentProps<typeof AlertDialogContent> & {
   overlayClassName?: string
+  /** Abrí este alert encima de otro diálogo: el velo cubre el modal de abajo. */
+  nested?: boolean
 }
 
 export function RootsAlertDialogContent({
   className,
   overlayClassName,
+  nested = false,
   children,
   ...props
 }: AlertContentProps) {
   return (
     <AlertDialogContent
-      className={cn(rootsAlertDialogSurfaceClass, rootsDialogContentZClass, className)}
-      overlayClassName={cn(rootsDialogOverlayClass, overlayClassName)}
+      className={cn(
+        rootsAlertDialogSurfaceClass,
+        nested ? rootsDialogContentNestedZClass : rootsDialogContentZClass,
+        className,
+      )}
+      overlayClassName={cn(
+        nested ? rootsDialogOverlayNestedClass : rootsDialogOverlayClass,
+        overlayClassName,
+      )}
       {...props}
     >
       {children}
@@ -48,6 +60,7 @@ export function RootsAlertDialogContent({
 type PanelProps = {
   title: ReactNode
   description?: ReactNode
+  descriptionClassName?: string
   children?: ReactNode
   className?: string
 }
@@ -55,6 +68,7 @@ type PanelProps = {
 export function RootsAlertDialogPanel({
   title,
   description,
+  descriptionClassName,
   children,
   className,
 }: PanelProps) {
@@ -65,7 +79,9 @@ export function RootsAlertDialogPanel({
           {title}
         </AlertDialogTitle>
         {description != null ? (
-          <AlertDialogDescription className={rootsAlertDialogDescriptionClass}>
+          <AlertDialogDescription
+            className={cn(rootsAlertDialogDescriptionClass, descriptionClassName)}
+          >
             {description}
           </AlertDialogDescription>
         ) : null}
@@ -94,6 +110,9 @@ type FooterProps = {
   onConfirm?: () => void
   destructive?: boolean
   confirmDisabled?: boolean
+  cancelDisabled?: boolean
+  /** dialog.footer.single — solo la acción primaria a la derecha. */
+  hideCancel?: boolean
   className?: string
 }
 
@@ -104,15 +123,29 @@ export function RootsAlertDialogFooter({
   onConfirm,
   destructive = false,
   confirmDisabled,
+  cancelDisabled,
+  hideCancel = false,
   className,
 }: FooterProps) {
   const ConfirmButton = destructive ? RootsDangerButton : RootsPrimaryButton
 
   return (
-    <AlertDialogFooter className={cn(rootsAlertDialogFooterClass, className)}>
-      <RootsSubtleButton type="button" onClick={onCancel}>
-        {cancelLabel}
-      </RootsSubtleButton>
+    <AlertDialogFooter
+      className={cn(
+        rootsAlertDialogFooterClass,
+        hideCancel && "sm:justify-end",
+        className,
+      )}
+    >
+      {hideCancel ? null : (
+        <RootsSubtleButton
+          type="button"
+          disabled={cancelDisabled}
+          onClick={onCancel}
+        >
+          {cancelLabel}
+        </RootsSubtleButton>
+      )}
       <ConfirmButton type="button" onClick={onConfirm} disabled={confirmDisabled}>
         {confirmLabel}
       </ConfirmButton>

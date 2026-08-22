@@ -22,7 +22,7 @@ export const menuOuterEntityFootClass = cn(
 /** Dock flotante — universo exterior sin consumir altura del planeta. */
 export const menuOuterEntityFootFloatingClass = cn(
   "menu-outer-entity menu-outer-entity--foot menu-outer-entity--foot-floating",
-  "pointer-events-none absolute bottom-3 left-1/2 z-30 w-auto max-w-[calc(100%-1.5rem)] -translate-x-1/2 overflow-visible",
+  "pointer-events-none absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-30 w-auto max-w-[calc(100%-1rem)] -translate-x-1/2 overflow-visible",
 )
 
 export const menuOuterEntityVeilClass =

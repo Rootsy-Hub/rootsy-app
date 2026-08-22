@@ -18,6 +18,7 @@ import {
   type PurchaseCartLineOverrides,
   type PurchaseLineEditInput,
 } from "@/components/purchase-operation/PurchaseCartLineCard"
+import { OperarMobileToolboxIcons } from "@/components/layouts-module/OperarMobileToolbox"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
@@ -61,10 +62,13 @@ export function PurchaseOperationTicketOrderPanel({
   const hasTicketItems = ticketLineCount > 0
 
   const panel = (
-    <>
+    <div className="flex h-full min-h-0 flex-1 flex-col md:contents">
       <div
         ref={cartScrollContainerRef}
-        className={layoutsOperarTicketScrollColumnClass}
+        className={cn(
+          layoutsOperarTicketScrollColumnClass,
+          "max-md:h-auto max-md:flex-1",
+        )}
         role="region"
         aria-label="Pedido"
       >
@@ -106,12 +110,23 @@ export function PurchaseOperationTicketOrderPanel({
         ) : null}
       </div>
 
+      <OperarMobileToolboxIcons />
+
       {hasTicketItems ? (
-        <div className={layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL)}>
+        <div className={cn(layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL), "max-md:hidden")}>
           <SaleOperationActionsBar {...actions} variant="operar" />
         </div>
       ) : null}
-    </>
+
+      <div className="shrink-0 md:hidden">
+        <SaleOperationActionsBar
+          {...actions}
+          variant="mobile"
+          discardDisabled={actions.discardDisabled || !hasTicketItems}
+          confirmDisabled={actions.confirmDisabled || !hasTicketItems}
+        />
+      </div>
+    </div>
   )
 
   if (cartScrollHighlight) {

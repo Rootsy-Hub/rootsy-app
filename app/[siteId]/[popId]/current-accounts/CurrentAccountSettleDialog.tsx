@@ -1,13 +1,12 @@
 "use client"
 
-import {
-  settlePopCurrentAccount,
-  type CurrentAccountOpenDocument,
-} from "@/app/[siteId]/[popId]/current-accounts/actions"
+import type { CurrentAccountOpenDocument } from "@/app/[siteId]/[popId]/current-accounts/actions"
+import { settlePopCurrentAccount } from "@/lib/rootsyApi/currentAccountsClient"
 import {
   currentAccountSettleTotals,
   emptyCurrentAccountSettleDraft,
   initCurrentAccountSettleDraft,
+  normalizeCurrentAccountSettleDraft,
   type CurrentAccountSettleDraft,
 } from "@/app/[siteId]/[popId]/current-accounts/currentAccountSettleFormState"
 import { PaymentMethodDialog } from "@/components/payment/PaymentMethodDialog"
@@ -19,6 +18,7 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
+import { RootsDefaultButton } from "@/components/rootsy-button"
 import {
   RootsFormCheckboxChoiceRow,
   RootsFormDateField,
@@ -26,6 +26,7 @@ import {
   RootsFormTextareaField,
   rootsFormCheckboxChoiceListClass,
   rootsFormColumnClass,
+  rootsFormFieldLabelTypographyClass,
 } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
 import {
@@ -34,10 +35,8 @@ import {
 } from "@/lib/currentAccounts"
 import { formatMoneyInputForField, parseMoneyInput } from "@/lib/moneyInput"
 import type { PaymentMethodSelection } from "@/lib/paymentMethodCheckout"
-import {
-  getTreasuryPaymentContext,
-  type TreasuryPaymentContext,
-} from "@/lib/treasuryPaymentContext"
+import { fetchCurrentAccountPaymentContext } from "@/lib/rootsyApi/currentAccountsClient"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { cn } from "@/lib/utils"
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 
@@ -87,16 +86,27 @@ export function CurrentAccountSettleDialog({
   const [treasury, setTreasury] = useState<TreasuryPaymentContext | null>(null)
   const [banner, setBanner] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [paymentSelection, setPaymentSelection] =
+    useState<PaymentMethodSelection | null>(null)
   const settlingRef = useRef(false)
+  const wasOpenRef = useRef(false)
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      wasOpenRef.current = false
+      settlingRef.current = false
+      return
+    }
+    const openedNow = !wasOpenRef.current
+    wasOpenRef.current = true
+    if (!openedNow) return
     setDraft(initCurrentAccountSettleDraft(documents))
     setStep("allocate")
     setBanner(null)
     setSaving(false)
+    setPaymentSelection(null)
     settlingRef.current = false
-    void getTreasuryPaymentContext(popId).then((res) => {
+    void fetchCurrentAccountPaymentContext(popId).then((res) => {
       if (!res.success) {
         setTreasury(null)
         setBanner(res.error)
@@ -132,7 +142,10 @@ export function CurrentAccountSettleDialog({
 
   const handleAllocateSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (totals.total <= 0.009) {
+    if (saving || settlingRef.current) return
+    const normalized = normalizeCurrentAccountSettleDraft(draft, documents)
+    const nextTotals = currentAccountSettleTotals(normalized, documents)
+    if (nextTotals.total <= 0.009) {
       setBanner("El cobro o pago tiene que ser mayor a cero.")
       return
     }
@@ -140,46 +153,63 @@ export function CurrentAccountSettleDialog({
       setBanner("No se pudieron cargar los medios de cobro o pago.")
       return
     }
+    setDraft(normalized)
     setBanner(null)
+    if (paymentSelection) {
+      void handlePayment(paymentSelection)
+      return
+    }
     setStep("payment")
   }
 
   const handlePayment = async (selection: PaymentMethodSelection) => {
+    if (settlingRef.current) return
     settlingRef.current = true
     setSaving(true)
     setBanner(null)
-    const selected = new Set(draft.selectedIds)
+    const normalized = normalizeCurrentAccountSettleDraft(draft, documents)
+    const nextTotals = currentAccountSettleTotals(normalized, documents)
+    const selected = new Set(normalized.selectedIds)
     const applications = openDocuments
       .filter((document) => selected.has(document.id))
       .map((document) => ({
         documentId: document.id,
         amount: Math.min(
-          parseMoneyInput(draft.amounts[document.id] ?? "", 0),
+          parseMoneyInput(normalized.amounts[document.id] ?? "", 0),
           document.remaining,
         ),
       }))
       .filter((row) => row.amount > 0.009)
 
-    const res = await settlePopCurrentAccount(popId, {
-      direction,
-      partyId,
-      paidAt: draft.paidAt,
-      paymentKind: selection.kind,
-      treasuryAccountId: selection.treasuryAccountId,
-      checkDetails: selection.checkDetails,
-      applications,
-      extraAmount: totals.extra,
-      notes: draft.notes,
-    })
-    setSaving(false)
-    if (!res.success) {
+    try {
+      const res = await settlePopCurrentAccount(popId, {
+        direction,
+        partyId,
+        paidAt: normalized.paidAt,
+        paymentKind: selection.kind,
+        treasuryAccountId: selection.treasuryAccountId,
+        checkDetails: selection.checkDetails,
+        applications,
+        extraAmount: nextTotals.onAccount,
+        notes: normalized.notes,
+      })
+      if (!res.success) {
+        settlingRef.current = false
+        setBanner(res.error)
+        setStep("allocate")
+        return
+      }
+      onOpenChange(false)
+      onSettled()
+    } catch (error: unknown) {
       settlingRef.current = false
-      setBanner(res.error)
+      setBanner(
+        error instanceof Error ? error.message : "No se pudo registrar el cobro.",
+      )
       setStep("allocate")
-      return
+    } finally {
+      setSaving(false)
     }
-    onOpenChange(false)
-    onSettled()
   }
 
   const title = isPayable ? "Pagar" : "Cobrar"
@@ -239,6 +269,8 @@ export function CurrentAccountSettleDialog({
                               <RootsFormMoneyField
                                 id={`ca-settle-amount-${document.id}`}
                                 label="Imputar"
+                                hint={`Hasta ${moneyFormatter.format(document.remaining)}`}
+                                max={document.remaining}
                                 value={draft.amounts[document.id] ?? ""}
                                 onChange={(value) =>
                                   setDraft((current) => ({
@@ -285,14 +317,53 @@ export function CurrentAccountSettleDialog({
                   }
                   disabled={saving}
                 />
-                <p className="text-sm font-medium tabular-nums text-rootsy-bruma-800">
-                  Total {moneyFormatter.format(totals.total)}
-                </p>
+                <div className="space-y-1 text-sm tabular-nums text-rootsy-bruma-800">
+                  <p>Imputado {moneyFormatter.format(totals.applied)}</p>
+                  {totals.onAccount > 0.009 ? (
+                    <p>
+                      A cuenta {moneyFormatter.format(totals.onAccount)}
+                      {totals.surplus > 0.009
+                        ? ` · incluye excedente ${moneyFormatter.format(totals.surplus)}`
+                        : ""}
+                    </p>
+                  ) : null}
+                  <p className="font-medium">
+                    Total {moneyFormatter.format(totals.total)}
+                  </p>
+                </div>
+
+                {paymentSelection ? (
+                  <div className="space-y-1.5">
+                    <p className={rootsFormFieldLabelTypographyClass}>
+                      {isPayable ? "Medio de pago" : "Medio de cobro"}
+                    </p>
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-rootsy-bruma-200 bg-white px-3 py-2.5">
+                      <p className="min-w-0 truncate text-sm font-medium text-rootsy-bruma-900">
+                        {paymentSelection.label}
+                      </p>
+                      <RootsDefaultButton
+                        type="button"
+                        disabled={saving}
+                        onClick={() => setStep("payment")}
+                      >
+                        Cambiar
+                      </RootsDefaultButton>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </RootsDialogBody>
             <RootsDialogDualActionFooter
               cancelLabel="Cancelar"
-              confirmLabel="Continuar"
+              confirmLabel={
+                paymentSelection
+                  ? isPayable
+                    ? `Pagar ${moneyFormatter.format(totals.total)}`
+                    : `Cobrar ${moneyFormatter.format(totals.total)}`
+                  : isPayable
+                    ? "Elegir medio de pago"
+                    : "Elegir medio de cobro"
+              }
               confirmType="submit"
               confirmDisabled={saving || totals.total <= 0.009}
               confirmLoading={saving}
@@ -311,11 +382,12 @@ export function CurrentAccountSettleDialog({
           setStep("allocate")
         }}
         treasuryContext={treasury}
-        selected={null}
+        selected={paymentSelection}
         payOnAccount={false}
         onSelectImmediate={(selection) => {
           if (!selection) return
-          void handlePayment(selection)
+          setPaymentSelection(selection)
+          setStep("allocate")
         }}
         onSelectAccount={() => undefined}
         hideAccountOption
@@ -326,6 +398,7 @@ export function CurrentAccountSettleDialog({
         popId={popId}
         defaultPartyName={partyName}
         defaultPartyId={partyId}
+        showMenuBack
       />
     </>
   )

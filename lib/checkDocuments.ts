@@ -72,18 +72,18 @@ export function isCheckSourceKind(value: string): value is CheckSourceKind {
 
 export function checkStatusPillVariant(
   status: CheckStatus | string,
-): "canopy" | "earth" | "earthMuted" | "autumn" | "ember" {
-  if (status === "cleared") return "canopy"
-  if (status === "deposited") return "autumn"
-  if (status === "rejected") return "ember"
-  if (status === "voided") return "earthMuted"
-  return "earth"
+): "savia" | "bruma" | "brumaMuted" | "warning" | "danger" {
+  if (status === "cleared") return "savia"
+  if (status === "deposited") return "warning"
+  if (status === "rejected") return "danger"
+  if (status === "voided") return "brumaMuted"
+  return "bruma"
 }
 
 export function checkDirectionPillVariant(
   direction: CheckDirection | string,
-): "canopy" | "earth" {
-  return direction === "issued" ? "earth" : "canopy"
+): "savia" | "bruma" {
+  return direction === "issued" ? "bruma" : "savia"
 }
 
 export type CheckLifecycleAction = "deposit" | "clear" | "reject" | "void"

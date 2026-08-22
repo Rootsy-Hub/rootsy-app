@@ -107,6 +107,11 @@ export function MesasTablesDialog({
   const [form, setForm] = useState<UpsertMesasTableInput>(defaultTableForm("", 0))
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<MesasTableRow | null>(null)
+  const [pendingCreate, setPendingCreate] = useState<{
+    name: string
+    salonId: string
+  } | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   const salonOptions = dialogSalons.length > 0 ? dialogSalons : salons
   const canReorderList = filterSalonId !== "all"
@@ -148,6 +153,8 @@ export function MesasTablesDialog({
     setFilterSalonId("all")
     setForm(defaultTableForm("", 0))
     setDeleteTarget(null)
+    setPendingCreate(null)
+    setPendingDeleteId(null)
   })
 
   useEffect(() => {
@@ -177,31 +184,50 @@ export function MesasTablesDialog({
     [canReorderList, filteredRows, salonOptions],
   )
 
+  const visiblePendingCreateName =
+    pendingCreate &&
+    (filterSalonId === "all" || filterSalonId === pendingCreate.salonId) &&
+    !rows.some(
+      (row) =>
+        row.label === pendingCreate.name &&
+        row.salonId === pendingCreate.salonId,
+    )
+      ? pendingCreate.name
+      : null
+
   const handleSave = async () => {
+    const payload = form
+    const isCreate = !payload.id
+    const createdName = payload.label.trim()
     setSaving(true)
     setError(null)
-    const res = await upsertMesasTable(popId, siteId, form)
-    setSaving(false)
+    if (isCreate) {
+      setPendingCreate({ name: createdName, salonId: payload.salonId })
+      setForm(defaultTableForm(payload.salonId, rows.length + 1))
+    }
+    const res = await upsertMesasTable(popId, siteId, payload)
     if (!res.success) {
+      if (isCreate) {
+        setPendingCreate(null)
+        setForm((current) => ({ ...current, label: createdName }))
+      }
+      setSaving(false)
       setError(res.error)
       return
     }
-    setForm(defaultTableForm(form.salonId, rows.length + (form.id ? 0 : 1)))
     await loadRows()
     await onLayoutChanged()
+    setPendingCreate(null)
+    setSaving(false)
   }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
+    const target = deleteTarget
     setSaving(true)
     setError(null)
-    const res = await deleteMesasTable(popId, siteId, deleteTarget.id)
-    setSaving(false)
-    if (!res.success) {
-      setError(res.error)
-      return
-    }
-    if (form.id === deleteTarget.id) {
+    setPendingDeleteId(target.id)
+    if (form.id === target.id) {
       setForm(
         defaultTableForm(
           resolveFormSalonId(filterSalonId, form.salonId || salonOptions[0]?.id || ""),
@@ -210,8 +236,17 @@ export function MesasTablesDialog({
       )
     }
     setDeleteTarget(null)
+    const res = await deleteMesasTable(popId, siteId, target.id)
+    if (!res.success) {
+      setPendingDeleteId(null)
+      setSaving(false)
+      setError(res.error)
+      return
+    }
     await loadRows()
     await onLayoutChanged()
+    setPendingDeleteId(null)
+    setSaving(false)
   }
 
   const handleReorder = useCallback(
@@ -305,8 +340,10 @@ export function MesasTablesDialog({
                       footer={
                         <MesasLayoutDialogFormActions
                           editing={Boolean(form.id)}
-                          saving={saving}
-                          canSave={Boolean(form.salonId && form.label.trim())}
+                          saving={saving && Boolean(form.id)}
+                          canSave={
+                            Boolean(form.salonId && form.label.trim()) && !saving
+                          }
                           onCancelEdit={() =>
                             setForm(
                               defaultTableForm(
@@ -327,6 +364,7 @@ export function MesasTablesDialog({
                         <RootsFormSelectField
                           label="Salón"
                           value={form.salonId}
+                          disabled={saving}
                           onValueChange={(salonId) =>
                             setForm((f) => ({ ...f, salonId }))
                           }
@@ -341,6 +379,7 @@ export function MesasTablesDialog({
                           label="Número / nombre"
                           id="mesas-table-label"
                           value={form.label}
+                          disabled={saving}
                           onChange={(e) =>
                             setForm((f) => ({ ...f, label: e.target.value }))
                           }
@@ -349,6 +388,7 @@ export function MesasTablesDialog({
                         <RootsFormSelectField
                           label="Forma"
                           value={form.shape.kind}
+                          disabled={saving}
                           onValueChange={(kind) =>
                             setForm((f) => ({
                               ...f,
@@ -368,6 +408,7 @@ export function MesasTablesDialog({
                         <RootsFormSelectField
                           label="Tamaño"
                           value={form.shape.size}
+                          disabled={saving}
                           onValueChange={(size) =>
                             setForm((f) => ({
                               ...f,
@@ -387,6 +428,7 @@ export function MesasTablesDialog({
                           min={1}
                           max={99}
                           value={String(form.seats)}
+                          disabled={saving}
                           onChange={(value) =>
                             setForm((f) => ({
                               ...f,
@@ -417,17 +459,22 @@ export function MesasTablesDialog({
                       onValueChange={setFilterSalonId}
                       salons={salonOptions}
                       showAll
+                      disabled={saving}
                       totalCount={rows.length}
                       filteredCount={filteredRows.length}
                     />
-                    {loading && rows.length === 0 ? (
+                    {loading && rows.length === 0 && !visiblePendingCreateName ? (
                       <RootsDialogLoadingState message="Cargando mesas" />
                     ) : (
                       <MesasLayoutSortableList
                         listId="mesas-tables"
                         items={listItems}
                         canReorder={canReorderList && !saving}
-                        canToggleVisibility
+                        canEdit={!saving}
+                        canDelete={!saving}
+                        canToggleVisibility={!saving}
+                        pendingCreateName={visiblePendingCreateName}
+                        pendingDeleteId={pendingDeleteId}
                         emptyMessage={
                           rows.length === 0
                             ? "Todavía no hay mesas."

@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  getPopInvoicesArcaTable,
-  type InvoiceArcaTableRow,
-} from "@/app/[siteId]/[popId]/invoices/actions"
+import type { InvoiceArcaTableRow } from "@/app/[siteId]/[popId]/invoices/actions"
+import { fetchPopInvoicesTable } from "@/lib/rootsyApi/invoicesClient"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -68,7 +66,7 @@ async function fetchInvoicesPeriodTotals(
   let count = 0
 
   while (page <= 50) {
-    const res = await getPopInvoicesArcaTable(popId, {
+    const res = await fetchPopInvoicesTable(popId, {
       page,
       pageSize: 100,
       dateFrom: from,
@@ -100,7 +98,7 @@ async function fetchAllIssuedInvoicesReportRows(
   let page = 1
 
   while (page <= 100) {
-    const res = await getPopInvoicesArcaTable(popId, {
+    const res = await fetchPopInvoicesTable(popId, {
       page,
       pageSize: 100,
       dateFrom: from,
@@ -163,7 +161,7 @@ export function IssuedInvoicesReportView({
         setListError(null)
       }
 
-      const res = await getPopInvoicesArcaTable(popId, {
+      const res = await fetchPopInvoicesTable(popId, {
         page: pageNum,
         pageSize: PAGE_SIZE,
         dateFrom: from,

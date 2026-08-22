@@ -1,13 +1,13 @@
 /**
- * Slots del suelo — piedras en relieve sobre tierra empapada.
- * Configurado: savia brota como raíz y hoja. Tokens: earth + savia + sombra.
+ * Slots del suelo — piedras en relieve sobre tierra mojada.
+ * Configurado: savia brota como raíz y hoja. Tokens: suelo + savia + sombra.
  */
 
 .layouts-operar-earth-slot {
-  --earth-900: var(--nature-earth-900, #292524);
-  --earth-800: var(--nature-earth-800, #44403c);
-  --earth-700: var(--nature-earth-700, #57534e);
-  --earth-400: var(--nature-earth-400, #d6d3d1);
+  --earth-900: var(--rootsy-suelo-900);
+  --earth-800: var(--rootsy-suelo-800);
+  --earth-700: var(--rootsy-suelo-700);
+  --earth-400: var(--rootsy-suelo-400);
   --earth-slot-idle-bg: linear-gradient(
     180deg,
     color-mix(in srgb, var(--earth-700) 46%, var(--rootsy-sombra-900)) 0%,

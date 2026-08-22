@@ -1,12 +1,13 @@
 "use client"
 
-import { getPopChecksTable } from "@/app/[siteId]/[popId]/checks/actions"
+import type { GetPopChecksTableInput } from "@/app/[siteId]/[popId]/checks/actions"
 import type { CheckDirection, CheckStatus } from "@/lib/checkDocuments"
 import {
   popChecksQueryKey,
   type PopChecksQueryParams,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { fetchPopChecksTable } from "@/lib/rootsyApi/checksClient"
 import { useQuery } from "@tanstack/react-query"
 
 type UsePopChecksTableOptions = {
@@ -19,19 +20,19 @@ export function usePopChecksTable(
   options?: UsePopChecksTableOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
+  const queryParams: GetPopChecksTableInput = {
+    q: params.q,
+    page: params.page,
+    pageSize: params.pageSize,
+    direction: params.direction as CheckDirection | "",
+    status: params.status as CheckStatus | "",
+    sort: params.sort,
+    ord: params.ord,
+  }
 
   return useQuery({
     queryKey: popChecksQueryKey(popId ?? "", params),
-    queryFn: () =>
-      getPopChecksTable(popId!, {
-        q: params.q,
-        page: params.page,
-        pageSize: params.pageSize,
-        direction: params.direction as CheckDirection | "",
-        status: params.status as CheckStatus | "",
-        sort: params.sort,
-        ord: params.ord,
-      }),
+    queryFn: () => fetchPopChecksTable(popId!, queryParams),
     enabled,
     ...sessionListQueryOptions,
   })

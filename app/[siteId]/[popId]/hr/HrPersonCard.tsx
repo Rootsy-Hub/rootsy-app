@@ -30,7 +30,17 @@ import {
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { RootsDefaultButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
-import { DoorClosed, DoorOpen, KeyRound, MoreVertical, NotebookPen, UserRound } from "lucide-react"
+import {
+  DoorClosed,
+  DoorOpen,
+  KeyRound,
+  MoreVertical,
+  NotebookPen,
+  Shield,
+  Undo2,
+  UserRound,
+  UserX,
+} from "lucide-react"
 
 const salaryFmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -116,34 +126,53 @@ type Props = {
   person: EmployeeRow
   imageUrl?: string | null
   isOwner: boolean
+  rootsyRole?: string | null
   canManagePeople: boolean
   canManageInvites: boolean
   clockBusy: boolean
   onOpen: () => void
   onClock: () => void
   onInvite: () => void
+  onChangeRole?: () => void
+  onRevokeAccess?: () => void
   onLeave: () => void
+  onReturn?: () => void
 }
 
 export function HrPersonCard({
   person,
   imageUrl,
   isOwner,
+  rootsyRole,
   canManagePeople,
   canManageInvites,
   clockBusy,
   onOpen,
   onClock,
   onInvite,
+  onChangeRole,
+  onRevokeAccess,
   onLeave,
+  onReturn,
 }: Props) {
   const name = personDisplayName(person)
   const salary =
     person.monthlySalary == null ? "—" : salaryFmt.format(person.monthlySalary)
   const showClock = canManagePeople && !person.leftAt
   const showInvite = canManageInvites && !person.userId && !person.leftAt
+  const showChangeRole = Boolean(onChangeRole) && canManageInvites && !isOwner
+  const showRevokeAccess = Boolean(onRevokeAccess) && canManageInvites && !isOwner
   const showLeave = canManagePeople && !person.leftAt && !isOwner
-  const showMenu = canManagePeople || showInvite
+  const showReturn = canManagePeople && Boolean(person.leftAt)
+  const showMenu =
+    canManagePeople || showInvite || showChangeRole || showRevokeAccess || showReturn
+  const metaLine = person.leftAt
+    ? "Quedó en el historial"
+    : rootsyRole
+      ? `Rootsy · ${rootsyRole}`
+      : person.hiredAt
+        ? `Desde ${formatHired(person.hiredAt)}`
+        : person.documentNumber || "Falta CUIL"
 
   return (
     <article className={dataWorkspaceEntityCardLosetaClass}>
@@ -177,7 +206,7 @@ export function HrPersonCard({
                   "truncate pr-28",
                 )}
               >
-                {person.jobTitle || "En el negocio"}
+                {person.jobTitle || "En el local"}
               </p>
               <h3
                 className={cn(
@@ -188,9 +217,7 @@ export function HrPersonCard({
                 {name}
               </h3>
               <p className="mt-0.5 truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
-                {person.hiredAt
-                  ? `Desde ${formatHired(person.hiredAt)}`
-                  : person.documentNumber || "Falta CUIL"}
+                {metaLine}
               </p>
             </div>
             {showMenu ? (
@@ -214,13 +241,40 @@ export function HrPersonCard({
                     {canManagePeople ? (
                       <RootsDropdownItem theme="light" onSelect={onOpen}>
                         <NotebookPen className="size-4 shrink-0 opacity-70" aria-hidden />
-                        <span>Ver datos</span>
+                        <span>Editar datos</span>
                       </RootsDropdownItem>
                     ) : null}
                     {showInvite ? (
                       <RootsDropdownItem theme="light" onSelect={onInvite}>
                         <KeyRound className="size-4 shrink-0 opacity-70" aria-hidden />
                         <span>Dar acceso a Rootsy</span>
+                      </RootsDropdownItem>
+                    ) : null}
+                    {showChangeRole ? (
+                      <RootsDropdownItem
+                        theme="light"
+                        onSelect={() => onChangeRole?.()}
+                      >
+                        <Shield className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span>Cambiar rol de Rootsy</span>
+                      </RootsDropdownItem>
+                    ) : null}
+                    {showRevokeAccess ? (
+                      <RootsDropdownItem
+                        theme="light"
+                        onSelect={() => onRevokeAccess?.()}
+                      >
+                        <UserX className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span>Quitar acceso a Rootsy</span>
+                      </RootsDropdownItem>
+                    ) : null}
+                    {showReturn ? (
+                      <RootsDropdownItem
+                        theme="light"
+                        onSelect={() => onReturn?.()}
+                      >
+                        <Undo2 className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span>Volver al equipo</span>
                       </RootsDropdownItem>
                     ) : null}
                     {showLeave ? (
@@ -235,7 +289,7 @@ export function HrPersonCard({
                           onSelect={onLeave}
                         >
                           <DoorClosed className="size-4 shrink-0 opacity-70" aria-hidden />
-                          <span>Deja el negocio</span>
+                          <span>Ya no trabaja acá</span>
                         </RootsDropdownItem>
                       </>
                     ) : null}
@@ -290,6 +344,16 @@ export function HrPersonCard({
                   <DoorOpen className="size-3.5" aria-hidden />
                 )}
                 {person.isClockedIn ? "Salió" : "Llegó"}
+              </RootsDefaultButton>
+            ) : showReturn ? (
+              <RootsDefaultButton
+                type="button"
+                size="sm"
+                className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
+                onClick={() => onReturn?.()}
+              >
+                <Undo2 className="size-3.5" aria-hidden />
+                Volver
               </RootsDefaultButton>
             ) : person.leftAt ? (
               <p className="font-canopy text-xs text-[var(--rootsy-bruma-500)]">

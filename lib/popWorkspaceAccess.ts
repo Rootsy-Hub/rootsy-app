@@ -62,6 +62,19 @@ export function settingsAccessFromKeys(keys: readonly string[]): {
   }
 }
 
+export function comandasAccessFromKeys(
+  keys: readonly string[],
+): ModuleAccessSnapshot {
+  const mesas = mesasAccessFromKeys(keys)
+  const mostrador = mostradorAccessFromKeys(keys)
+  return {
+    canRead: mesas.canRead || mostrador.canRead,
+    canCreate: mesas.canCreate || mostrador.canCreate,
+    canUpdate: mesas.canUpdate || mostrador.canUpdate,
+    canDelete: mesas.canDelete || mostrador.canDelete,
+  }
+}
+
 export function mostradorAccessFromKeys(
   keys: readonly string[],
 ): ModuleAccessSnapshot {

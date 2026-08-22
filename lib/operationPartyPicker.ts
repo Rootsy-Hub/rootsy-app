@@ -5,6 +5,7 @@ export type OperationPartyCatalogItem = {
   email?: string | null
   ivaCondition?: string | null
   defaultInvoiceTypeLabel?: string | null
+  currentAccountEnabled?: boolean
 }
 
 export type OperationPartySelection = {
@@ -15,6 +16,7 @@ export type OperationPartySelection = {
   email?: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
+  currentAccountEnabled?: boolean
 }
 
 export type OperationPartyManualConfirmPayload = {
@@ -39,6 +41,7 @@ export function buildOperationPartyManualSelection(
     email: payload.email || null,
     ivaCondition: payload.ivaCondition || null,
     defaultInvoiceTypeLabel: null,
+    currentAccountEnabled: false,
   }
 }
 

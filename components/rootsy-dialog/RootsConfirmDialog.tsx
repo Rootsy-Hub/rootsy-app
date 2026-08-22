@@ -48,7 +48,13 @@ export function RootsConfirmDialog({
   )
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (busy && !nextOpen) return
+        onOpenChange(nextOpen)
+      }}
+    >
       <RootsAlertDialogContent>
         <RootsAlertDialogPanel
           title={frozenTitle}
@@ -64,7 +70,11 @@ export function RootsConfirmDialog({
           confirmLabel={frozenConfirmLabel}
           destructive={destructive}
           confirmDisabled={busy || confirmDisabled}
-          onCancel={() => onOpenChange(false)}
+          cancelDisabled={busy}
+          onCancel={() => {
+            if (busy) return
+            onOpenChange(false)
+          }}
           onConfirm={onConfirm}
         />
       </RootsAlertDialogContent>

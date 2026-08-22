@@ -3,6 +3,52 @@
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { siteIdFromPopRow } from "@/lib/popRoutes"
 import { createClient } from "@/utils/supabase/server"
+import { createServiceRoleClient } from "@/utils/supabase/service-role"
+
+export type PopInvitationPreview =
+  | {
+      success: true
+      popName: string
+      email: string
+      expired: boolean
+      usable: boolean
+    }
+  | { success: false; error: string }
+
+export async function getPopInvitationPreview(
+  token: string,
+): Promise<PopInvitationPreview> {
+  const t = token?.trim()
+  if (!t) return { success: false, error: "Enlace inválido." }
+
+  try {
+    const admin = createServiceRoleClient()
+    const { data, error } = await admin
+      .from("pop_invitations")
+      .select("email, expires_at, status, pops:pop_id ( name )")
+      .eq("token", t)
+      .maybeSingle()
+
+    if (error || !data) {
+      return { success: false, error: "Invitación no encontrada." }
+    }
+
+    const pop = data.pops as unknown as { name: string } | null
+    const expired =
+      Boolean(data.expires_at) && new Date(data.expires_at).getTime() < Date.now()
+    const usable = data.status === "pending" && !expired
+
+    return {
+      success: true,
+      popName: pop?.name?.trim() || "este local",
+      email: String(data.email || "").trim().toLowerCase(),
+      expired,
+      usable,
+    }
+  } catch {
+    return { success: false, error: "No se pudo leer la invitación." }
+  }
+}
 
 type AcceptPayload = {
   ok?: boolean

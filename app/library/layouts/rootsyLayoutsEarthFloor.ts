@@ -1,38 +1,31 @@
 /**
- * Suelo empapado — pie de tablas y toolbox de operar.
- * Tierra casi negra: earth-900 bajo sombra, savia-990 en el fondo.
+ * Suelo · tierra mojada — pie de tablas y toolbox de operar.
+ * Humus oliva bajo el dosel, humedad savia. No es earth de forms ni sombra sola.
  */
 
-import { EARTH_FAMILY } from "@/app/library/color/rootsyNaturePalette"
-import { rootsyColorHex } from "@/lib/design-system"
+import { ROOTSY_SUELO, rootsyColorHex } from "@/lib/design-system"
 
 const hx = rootsyColorHex
 
-function earthHex(label: string): string {
-  const step = EARTH_FAMILY.steps.find((item) => item.label === label)
-  if (!step) throw new Error(`Unknown earth step: ${label}`)
-  return step.hex
-}
-
 export const ROOTSY_LAYOUTS_EARTH_FLOOR = {
-  background: `linear-gradient(180deg, color-mix(in srgb, ${earthHex("900")} 52%, ${hx("sombra", "900")}) 0%, color-mix(in srgb, ${earthHex("900")} 22%, ${hx("sombra", "950")}) 55%, color-mix(in srgb, ${hx("savia", "990")} 38%, ${hx("sombra", "950")}) 100%)`,
-  borderTop: `1px solid color-mix(in srgb, ${earthHex("800")} 26%, transparent)`,
-  dividerColor: `color-mix(in srgb, ${earthHex("800")} 20%, transparent)`,
+  background: `linear-gradient(180deg, color-mix(in srgb, ${ROOTSY_SUELO["900"]} 56%, ${hx("sombra", "900")}) 0%, color-mix(in srgb, ${ROOTSY_SUELO["900"]} 28%, ${hx("sombra", "950")}) 52%, color-mix(in srgb, ${hx("savia", "900")} 22%, ${hx("sombra", "950")}) 100%)`,
+  borderTop: `1px solid color-mix(in srgb, ${ROOTSY_SUELO["700"]} 32%, transparent)`,
+  dividerColor: `color-mix(in srgb, ${ROOTSY_SUELO["800"]} 20%, transparent)`,
   baseCss: hx("sombra", "950"),
-  textColor: earthHex("50"),
-  mutedColor: earthHex("400"),
+  textColor: ROOTSY_SUELO["50"],
+  mutedColor: ROOTSY_SUELO["400"],
   moistureColor: hx("savia", "800"),
-  chromeToken: "tierra empapada · earth-900 / sombra-950 · savia-990",
+  chromeToken: "tierra mojada · suelo-900 / sombra-950 · savia",
 } as const
 
 export const rootsyLayoutsEarthFloorSurfaceClass =
-  "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--nature-earth-900,#292524)_52%,var(--rootsy-sombra-900))_0%,color-mix(in_srgb,var(--nature-earth-900,#292524)_22%,var(--rootsy-sombra-950))_55%,color-mix(in_srgb,var(--rootsy-savia-990)_38%,var(--rootsy-sombra-950))_100%)]"
+  "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--rootsy-suelo-900)_56%,var(--rootsy-sombra-900))_0%,color-mix(in_srgb,var(--rootsy-suelo-900)_28%,var(--rootsy-sombra-950))_52%,color-mix(in_srgb,var(--rootsy-savia-900)_22%,var(--rootsy-sombra-950))_100%)]"
 
 export const rootsyLayoutsEarthFloorBorderClass =
-  "border-t border-[color-mix(in_srgb,var(--nature-earth-800,#44403C)_28%,transparent)]"
+  "border-t border-[color-mix(in_srgb,var(--rootsy-suelo-700)_32%,transparent)]"
 
 export const rootsyLayoutsEarthFloorShadowClass =
-  "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--nature-earth-700,#57534E)_14%,transparent),inset_0_18px_36px_color-mix(in_srgb,var(--rootsy-savia-950)_22%,transparent)]"
+  "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-suelo-400)_14%,transparent),inset_0_18px_36px_color-mix(in_srgb,var(--rootsy-savia-950)_26%,transparent)]"
 
 /** Piedra sobre el barro — ver rootsyLayoutsEarthFloor.css */
 export const rootsyLayoutsEarthFloorSlotClass = "layouts-operar-earth-slot"

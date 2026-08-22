@@ -12,9 +12,11 @@ import {
   layoutsOperarToolboxSlotClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
+import { useRegisterOperarMobileToolbox } from "@/components/layouts-module/OperarMobileToolbox"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { Banknote, Percent, Receipt, Truck } from "lucide-react"
+import { useMemo } from "react"
 
 const TOOLBOX_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL
 
@@ -56,6 +58,62 @@ export function PurchaseOperationToolbox({
   className,
 }: PurchaseOperationToolboxProps) {
   const PagoIcon = PagoIconProp ?? Banknote
+
+  const mobileItems = useMemo(
+    () => [
+      {
+        id: "proveedor",
+        icon: Truck,
+        configured: proveedorConfigurado,
+        disabled: false,
+        ariaLabel: `Proveedor: ${proveedorLabel}`,
+        onClick: onProveedorClick,
+      },
+      {
+        id: "comprobante",
+        icon: Receipt,
+        configured: comprobanteConfigurado,
+        disabled: false,
+        ariaLabel: `Comprobante: ${comprobanteLabel}`,
+        onClick: onComprobanteClick,
+      },
+      {
+        id: "pago",
+        icon: PagoIcon,
+        configured: pagoConfigurado,
+        disabled: false,
+        ariaLabel: pagoSubLabel
+          ? `Pago: ${pagoLabel}, ${pagoSubLabel}`
+          : `Pago: ${pagoLabel}`,
+        onClick: onPagoClick,
+      },
+      {
+        id: "descuento",
+        icon: Percent,
+        configured: hayDescuento,
+        disabled: false,
+        ariaLabel: `Descuento: ${descuentoLabel}`,
+        onClick: onDescuentoClick,
+      },
+    ],
+    [
+      proveedorConfigurado,
+      proveedorLabel,
+      onProveedorClick,
+      comprobanteConfigurado,
+      comprobanteLabel,
+      onComprobanteClick,
+      PagoIcon,
+      pagoConfigurado,
+      pagoSubLabel,
+      pagoLabel,
+      onPagoClick,
+      hayDescuento,
+      descuentoLabel,
+      onDescuentoClick,
+    ],
+  )
+  useRegisterOperarMobileToolbox(mobileItems)
 
   return (
     <div className={cn(layoutsOperarToolboxBandClass, className)}>

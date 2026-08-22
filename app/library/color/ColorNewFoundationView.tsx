@@ -13,6 +13,7 @@ import { ColorNewExamplesSection } from "@/app/library/color/sections/ColorNewEx
 import { ColorNewFamilySection } from "@/app/library/color/sections/ColorNewFamilySection"
 import { ColorNewOverviewSection } from "@/app/library/color/sections/ColorNewOverviewSection"
 import { ColorNewPairingsSection } from "@/app/library/color/sections/ColorNewPairingsSection"
+import { ColorNewMundosSection } from "@/app/library/color/sections/ColorNewMundosSection"
 import { ColorNewPalettesSection } from "@/app/library/color/sections/ColorNewPalettesSection"
 import { ColorNewSemanticSection } from "@/app/library/color/sections/ColorNewSemanticSection"
 import { ColorNewThemesSection } from "@/app/library/color/sections/ColorNewThemesSection"
@@ -37,6 +38,9 @@ export function ColorNewFoundationView({ sectionId }: Props) {
       break
     case "colors-new-pairings":
       content = <ColorNewPairingsSection />
+      break
+    case "colors-new-mundos":
+      content = <ColorNewMundosSection />
       break
     case "colors-new-contrast":
       content = <ColorNewContrastSection />

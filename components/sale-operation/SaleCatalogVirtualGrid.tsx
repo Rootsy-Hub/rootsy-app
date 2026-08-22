@@ -1,42 +1,16 @@
 "use client"
 
+import {
+  LAYOUTS_OPERAR_CATALOG_GRID_GAP_PX,
+  layoutsOperarCatalogGridTemplate,
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { ROOTSY_LAYOUTS_OPERAR_ANATOMY } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
+import { useLayoutsOperarCatalogColumnCount } from "@/hooks/useLayoutsOperarCatalogColumnCount"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { Fragment, useEffect, useState, type ReactNode } from "react"
+import { Fragment, useEffect, type ReactNode } from "react"
 
-const GRID_GAP_PX = 16
 const LIST_GAP_PX = 8
 const FOOTER_SIZE_PX = 56
-const XL_MQ = "(min-width: 1280px)"
-
-function catalogColumnCount(modoVista: "grid" | "lista") {
-  if (modoVista === "lista") return 1
-  if (typeof window === "undefined") return 2
-  return window.matchMedia(XL_MQ).matches
-    ? ROOTSY_LAYOUTS_OPERAR_ANATOMY.catalogGridColsDesktop
-    : 2
-}
-
-function useCatalogColumnCount(modoVista: "grid" | "lista") {
-  const [columns, setColumns] = useState(() => catalogColumnCount(modoVista))
-
-  useEffect(() => {
-    if (modoVista === "lista") {
-      setColumns(1)
-      return
-    }
-    const media = window.matchMedia(XL_MQ)
-    const sync = () =>
-      setColumns(
-        media.matches ? ROOTSY_LAYOUTS_OPERAR_ANATOMY.catalogGridColsDesktop : 2,
-      )
-    sync()
-    media.addEventListener("change", sync)
-    return () => media.removeEventListener("change", sync)
-  }, [modoVista])
-
-  return columns
-}
 
 type Props<T> = {
   items: T[]
@@ -57,11 +31,11 @@ export function SaleCatalogVirtualGrid<T>({
   renderItem,
   footer,
 }: Props<T>) {
-  const columns = useCatalogColumnCount(modoVista)
+  const columns = useLayoutsOperarCatalogColumnCount(modoVista, scrollRoot)
   const rowCount = Math.ceil(items.length / columns)
   const hasFooter = footer != null
   const count = rowCount + (hasFooter ? 1 : 0)
-  const rowGap = modoVista === "grid" ? GRID_GAP_PX : LIST_GAP_PX
+  const rowGap = modoVista === "grid" ? LAYOUTS_OPERAR_CATALOG_GRID_GAP_PX : LIST_GAP_PX
   const rowEstimate =
     modoVista === "grid"
       ? ROOTSY_LAYOUTS_OPERAR_ANATOMY.productCardHeightPx
@@ -112,7 +86,7 @@ export function SaleCatalogVirtualGrid<T>({
               transform: `translateY(${virtualRow.start}px)`,
               gridTemplateColumns:
                 !isFooter && modoVista === "grid"
-                  ? `repeat(${columns}, minmax(0, 1fr))`
+                  ? layoutsOperarCatalogGridTemplate(columns)
                   : undefined,
             }}
           >

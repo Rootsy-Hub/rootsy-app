@@ -9,10 +9,18 @@ import { cn } from "@/lib/utils"
 /** z-index elevación — blanket 500 · panel 510. */
 export const rootsDialogOverlayZClass = "z-[500]"
 export const rootsDialogContentZClass = "z-[510]"
+/** Segunda capa — el velo cubre el modal de abajo. */
+export const rootsDialogOverlayNestedZClass = "z-[520]"
+export const rootsDialogContentNestedZClass = "z-[530]"
 
 /** Scrim sombra-950 40% — velo suave, sin universo. */
 export const rootsDialogOverlayClass = cn(
   rootsDialogOverlayZClass,
+  "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_40%,transparent)]",
+)
+
+export const rootsDialogOverlayNestedClass = cn(
+  rootsDialogOverlayNestedZClass,
   "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_40%,transparent)]",
 )
 
@@ -96,17 +104,39 @@ export const rootsDialogDescriptionClass = cn(
 
 /** Valle — bruma viva entre dos claros. */
 export const rootsDialogBodyClass = cn(
-  "roots-dialog-clearing-body min-h-0 flex-1 overflow-y-auto overscroll-contain",
+  "roots-dialog-clearing-body game-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-200)]",
 )
 
-/** Body compacto — mismo claro. */
+/** Body compacto — mismo claro; min-h-0 para que scrollee si el panel llega al tope. */
 export const rootsDialogBodyCompactClass = cn(
-  "roots-dialog-clearing-body flex-none overflow-y-auto overscroll-contain",
+  "roots-dialog-clearing-body game-scroll min-h-0 overflow-y-auto overscroll-contain",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-200)]",
 )
+
+/** Body twoCol — 2 columnas; cada una scrollea. Sin gutter extra. */
+export const rootsDialogTwoColBodyClass = cn(
+  "grid min-h-0 flex-1 overflow-hidden overflow-y-hidden p-0",
+  "grid-cols-1 sm:grid-cols-[minmax(0,1fr)_15rem]",
+)
+
+/** Columna-bloque — el scroll vive acá, a la derecha. */
+export const rootsDialogColumnScrollClass = cn(
+  "game-scroll min-h-0 min-w-0 overflow-y-auto overscroll-contain",
+)
+
+/** Contenido interno — padding del panel; no pega al scroll ni al divisor. */
+export const rootsDialogColumnScrollInnerClass = cn(
+  "min-w-0 w-full",
+  rootsDialogPanelPaddingXClass,
+  "py-[var(--rootsy-space-200)]",
+)
+
+/** Divisor entre las dos columnas-bloque. */
+export const rootsDialogTwoColAsideClass =
+  "sm:border-l sm:border-[var(--rootsy-bruma-200)]"
 
 export const rootsDialogLoadingBodyClass = cn(
   "roots-dialog-clearing-body flex min-h-48 flex-col items-center justify-center",

@@ -11,6 +11,7 @@ import {
   saleCatalogQueryKey,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { useSalePriceListId } from "@/lib/salePriceListSession"
 import { DEFAULT_SALE_SITE_ID } from "@/lib/saleInvoiceTypes"
 import { useQuery } from "@tanstack/react-query"
 import { useCallback } from "react"
@@ -39,8 +40,9 @@ export function useSaleCatalogLoader(
   })
 
   const data = catalogQuery.data
+  const priceListId = useSalePriceListId(popId)
   const articleCache = useCatalogItemCache<SaleCatalogArticle>(
-    saleCatalogKnownArticlesQueryKey(popId ?? ""),
+    saleCatalogKnownArticlesQueryKey(popId ?? "", priceListId),
   )
   const reloadCatalog = useCallback(async () => {
     await catalogQuery.refetch()
@@ -54,10 +56,10 @@ export function useSaleCatalogLoader(
       const known = new Set(knownArticles.map((row) => row.id))
       const missing = [...new Set(ids)].filter((id) => id && !known.has(id))
       if (missing.length === 0) return
-      const res = await getSaleCatalogArticlesByIds(popId, missing)
+      const res = await getSaleCatalogArticlesByIds(popId, missing, priceListId)
       if (res.success) mergeArticles(res.articles)
     },
-    [knownArticles, mergeArticles, popId],
+    [knownArticles, mergeArticles, popId, priceListId],
   )
 
   return {

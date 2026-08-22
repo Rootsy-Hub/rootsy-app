@@ -18,6 +18,8 @@ export type CurrentAccountTablePageSize =
 
 export const CURRENT_ACCOUNT_TABLE_SORT_KEYS = [
   "party_name",
+  "credit_limit",
+  "term_days",
   "open_count",
   "overdue",
   "balance",

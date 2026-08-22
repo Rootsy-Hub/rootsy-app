@@ -9,12 +9,14 @@ import type { BannerIntentId } from "@/components/rootsy-banner/rootsBannerSpecR
 type Props = {
   email: string
   message: string
+  next?: string
   intent?: BannerIntentId
 }
 
 export function AuthResendConfirmation({
   email,
   message,
+  next,
   intent = "success",
 }: Props) {
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle")
@@ -24,7 +26,7 @@ export function AuthResendConfirmation({
     if (status === "sending") return
     setError("")
     setStatus("sending")
-    const result = await resendSignupConfirmationEmail({ email })
+    const result = await resendSignupConfirmationEmail({ email, next })
     if (!result.success) {
       setError(result.error)
       setStatus("idle")

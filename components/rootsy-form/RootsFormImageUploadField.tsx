@@ -17,7 +17,7 @@ import {
 import { RootsFormImageUploadIcon } from "@/components/rootsy-form/RootsFormImageUploadIcon"
 import type { FormImageUploadDisplayStateId } from "@/app/library/ui-components/formsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
-import { ImagePlus, Loader2, Trash2, type LucideIcon } from "lucide-react"
+import { FileUp, ImagePlus, Loader2, Trash2, type LucideIcon } from "lucide-react"
 import { useId, useRef, useState, type DragEvent } from "react"
 
 const DEFAULT_ACCEPT =
@@ -38,6 +38,8 @@ type Props = {
   filled?: boolean
   /** Ícono del thumb cuando no hay imagen de preview. */
   documentIcon?: LucideIcon
+  /** Acción de la derecha. Por defecto cámara si es imagen, archivo si hay `documentIcon`. */
+  actionIcon?: LucideIcon
   changeAriaLabel?: string
   removeAriaLabel?: string
   onFileSelect: (file: File) => void
@@ -58,6 +60,7 @@ export function RootsFormImageUploadField({
   accept = DEFAULT_ACCEPT,
   filled = false,
   documentIcon: DocumentIcon,
+  actionIcon: ActionIcon,
   changeAriaLabel = "Cambiar imagen",
   removeAriaLabel = "Quitar imagen",
   onFileSelect,
@@ -85,6 +88,7 @@ export function RootsFormImageUploadField({
   const isDisabled = disabled || busy
   const uploadMode = hasFile ? "filled" : "empty"
   const showDocumentThumb = hasFile && !hasPreviewImage && DocumentIcon
+  const ChangeIcon = ActionIcon ?? (DocumentIcon ? FileUp : ImagePlus)
   const displayState: FormImageUploadDisplayStateId = dragOver ? "drag" : interactionState
   const shellStyle = getFormImageUploadShellStyle(uploadMode, displayState)
   const thumbStyle = getFormImageUploadThumbStyle(uploadMode, displayState)
@@ -193,7 +197,7 @@ export function RootsFormImageUploadField({
             ) : null}
             {busy ? (
               <span className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
-                <Loader2 className="size-5 animate-spin text-[#57534e]" aria-hidden />
+                <Loader2 className="size-5 animate-spin text-[color:var(--rootsy-bruma-600)]" aria-hidden />
               </span>
             ) : null}
           </button>
@@ -215,7 +219,7 @@ export function RootsFormImageUploadField({
               className={rootsFormImageUploadActionClass}
               onClick={openPicker}
             >
-              <ImagePlus className="size-4" aria-hidden />
+              <ChangeIcon className="size-4" aria-hidden />
             </button>
             {onRemove ? (
               <button
@@ -247,7 +251,7 @@ export function RootsFormImageUploadField({
         >
           <span style={thumbStyle}>
             {busy ? (
-              <Loader2 className="size-5 animate-spin text-[#57534e]" aria-hidden />
+              <Loader2 className="size-5 animate-spin text-[color:var(--rootsy-bruma-600)]" aria-hidden />
             ) : DocumentIcon ? (
               <DocumentIcon className="size-5 text-[var(--rootsy-bruma-500)]" aria-hidden />
             ) : (
@@ -256,7 +260,11 @@ export function RootsFormImageUploadField({
           </span>
           <span className="min-w-0 flex-1 text-left">
             <span className={cn("block", rootsFormImageUploadTitleClass)}>
-              {busy ? "Procesando imagen…" : emptyTitle}
+              {busy
+                ? DocumentIcon
+                  ? "Procesando archivo…"
+                  : "Procesando imagen…"
+                : emptyTitle}
             </span>
             <span className={cn("block", rootsFormImageUploadMetaClass)}>
               {emptySubtitle}

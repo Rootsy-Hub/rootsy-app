@@ -4,6 +4,7 @@ import {
   BUTTONS_UI_APPEARANCE_LABELS,
   BUTTONS_UI_APPEARANCE_META,
   BUTTONS_UI_INTERACTION_STATES,
+  BUTTONS_UI_POS_TEXT_APPEARANCES,
   BUTTONS_UI_SIZE_SPECS,
   BUTTONS_WITH_ICON_FONT_WEIGHT,
   BUTTONS_WITH_ICON_SPECS,
@@ -245,13 +246,15 @@ function HardcodedButton({
   appearance,
   sizeId = "default",
   state = "default",
+  theme = "workspace",
 }: {
   appearance: ButtonsUiAppearanceId
   sizeId?: ButtonsUiSizeId
   state?: ButtonsUiInteractionState
+  theme?: IconButtonThemeId
 }) {
   const size = BUTTONS_UI_SIZE_SPECS[sizeId]
-  const surface = getButtonsUiAppearanceSurface(appearance, state)
+  const surface = getButtonsUiAppearanceSurface(appearance, state, theme)
   const label = surface.loadingLabel ?? BUTTONS_UI_APPEARANCE_LABELS[appearance]
 
   const style: CSSProperties = {
@@ -388,26 +391,34 @@ function HardcodedIconButton({
   )
 }
 
-function TextButtonAppearanceBlock({ appearance }: { appearance: ButtonsUiAppearanceId }) {
+function TextButtonAppearanceBlock({
+  appearance,
+  theme = "workspace",
+  darkPanel = false,
+}: {
+  appearance: ButtonsUiAppearanceId
+  theme?: IconButtonThemeId
+  darkPanel?: boolean
+}) {
   const meta = BUTTONS_UI_APPEARANCE_META.find((item) => item.id === appearance)!
 
   return (
     <div className="space-y-4">
-      <SpecBlock title={`${meta.title} · ${meta.natureName}`}>
-        <StateRow>
+      <SpecBlock title={`${meta.title} · ${meta.natureName}`} darkPanel={darkPanel}>
+        <StateRow darkPanel={darkPanel}>
           {SIZE_ORDER.map((sizeId) => (
-            <StateSpecCell key={sizeId} label={sizeId}>
-              <HardcodedButton appearance={appearance} sizeId={sizeId} />
+            <StateSpecCell key={sizeId} label={sizeId} darkPanel={darkPanel}>
+              <HardcodedButton appearance={appearance} sizeId={sizeId} theme={theme} />
             </StateSpecCell>
           ))}
         </StateRow>
       </SpecBlock>
 
-      <SpecBlock title="estados · default size">
-        <StateRow>
+      <SpecBlock title="estados · default size" darkPanel={darkPanel}>
+        <StateRow darkPanel={darkPanel}>
           {STATE_ORDER.map((state) => (
-            <StateSpecCell key={state.id} label={state.label}>
-              <HardcodedButton appearance={appearance} state={state.id} />
+            <StateSpecCell key={state.id} label={state.label} darkPanel={darkPanel}>
+              <HardcodedButton appearance={appearance} state={state.id} theme={theme} />
             </StateSpecCell>
           ))}
         </StateRow>
@@ -501,6 +512,31 @@ export function ButtonsUiHardcodedGallery() {
           ))}
         </div>
       </FoundationBrumaStage>
+
+      <div
+        className="overflow-hidden rounded-2xl"
+        style={{
+          background: ICON_BUTTON_UI_POS_PANEL.background,
+          border: ICON_BUTTON_UI_POS_PANEL.border,
+        }}
+      >
+        <div className="space-y-8 p-5 sm:p-6">
+          <SectionHeading
+            title="Botones de texto · tema POS"
+            description="Default · Borde · Sutil · Enlace — mismos estados, paleta sombra."
+            darkPanel
+          />
+
+          {BUTTONS_UI_POS_TEXT_APPEARANCES.map((appearance) => (
+            <TextButtonAppearanceBlock
+              key={appearance}
+              appearance={appearance}
+              theme="pos"
+              darkPanel
+            />
+          ))}
+        </div>
+      </div>
 
       <FoundationBrumaStage caption="Botones con ícono · mismos estados · icon.size.medium · space.100.">
         <div className="space-y-8">

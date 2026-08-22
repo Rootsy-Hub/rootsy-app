@@ -1,15 +1,5 @@
-"use client"
-
-import { libraryHomeHref } from "@/app/library/layoutLibraryShared"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { redirect } from "next/navigation"
 
 export default function LibraryIndexPage() {
-  const router = useRouter()
-
-  useEffect(() => {
-    router.replace(libraryHomeHref())
-  }, [router])
-
-  return null
+  redirect("/library/concept")
 }
