@@ -102,11 +102,13 @@ export async function completePurchase(
       return { success: false, error: access.error || "Sin acceso" }
     }
     const snap = await loadPopPermissionsSnapshot(popId)
-    const canCreate = permissionKeysInclude(
-      snap.keys,
-      POP_PERMS.OPERATIONS_CREATE.resource,
-      POP_PERMS.OPERATIONS_CREATE.action,
-    )
+    const canCreate =
+      permissionKeysInclude(snap.keys, "purchases", "create") ||
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.OPERATIONS_CREATE.resource,
+        POP_PERMS.OPERATIONS_CREATE.action,
+      )
     if (!canCreate) {
       return { success: false, error: "Sin permiso para registrar compras." }
     }

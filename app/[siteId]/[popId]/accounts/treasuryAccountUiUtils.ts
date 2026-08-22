@@ -285,6 +285,8 @@ export function treasuryMovementKindLabel(
       return "Compra"
     case "expense":
       return "Gasto"
+    case "employee_payment":
+      return "Sueldo"
     case "funding_out":
       return "Resumen tarjeta"
     case "card_settlement":

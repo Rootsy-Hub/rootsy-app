@@ -7,8 +7,6 @@ export type PopSettingsSectionDef = {
   label: string
   description: string
   icon: LucideIcon
-  /** Solo visible para el titular del POP. */
-  ownerOnly?: boolean
 }
 
 export const POP_SETTINGS_SECTIONS: PopSettingsSectionDef[] = [
@@ -23,7 +21,6 @@ export const POP_SETTINGS_SECTIONS: PopSettingsSectionDef[] = [
     label: "Datos fiscales",
     description: "CUIT, razón social y datos para facturar en este POP.",
     icon: Receipt,
-    ownerOnly: true,
   },
   {
     id: "images",
@@ -33,15 +30,8 @@ export const POP_SETTINGS_SECTIONS: PopSettingsSectionDef[] = [
   },
 ]
 
-export function visiblePopSettingsSections(
-  isOwner: boolean,
-  options?: { includeSectionIds?: readonly PopSettingsSectionId[] },
-): PopSettingsSectionDef[] {
-  const includeIds = new Set(options?.includeSectionIds ?? [])
-  return POP_SETTINGS_SECTIONS.filter(
-    (section) =>
-      !section.ownerOnly || isOwner || includeIds.has(section.id),
-  )
+export function visiblePopSettingsSections(): PopSettingsSectionDef[] {
+  return POP_SETTINGS_SECTIONS
 }
 
 export function popSettingsSectionById(

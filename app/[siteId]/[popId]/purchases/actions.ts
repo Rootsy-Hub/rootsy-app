@@ -177,11 +177,10 @@ async function purchasesAccess(popId: string) {
     return { ok: false as const, error: access.error || "Sin acceso" }
   }
   const snap = await loadPopPermissionsSnapshot(popId)
-  const canRead = permissionKeysInclude(
-    snap.keys,
-    POP_PERMS.OPERATIONS_READ.resource,
-    POP_PERMS.OPERATIONS_READ.action,
-  )
+  const purchaseKey = (action: "read" | "create" | "update" | "delete") =>
+    permissionKeysInclude(snap.keys, "purchases", action) ||
+    permissionKeysInclude(snap.keys, "operations", action)
+  const canRead = purchaseKey("read")
   if (!canRead) {
     return {
       ok: false as const,
@@ -189,21 +188,9 @@ async function purchasesAccess(popId: string) {
       redirect: popMenuHref(await getPopSiteId(popId), popId),
     }
   }
-  const canCreate = permissionKeysInclude(
-    snap.keys,
-    POP_PERMS.OPERATIONS_CREATE.resource,
-    POP_PERMS.OPERATIONS_CREATE.action,
-  )
-  const canUpdate = permissionKeysInclude(
-    snap.keys,
-    POP_PERMS.OPERATIONS_UPDATE.resource,
-    POP_PERMS.OPERATIONS_UPDATE.action,
-  )
-  const canDelete = permissionKeysInclude(
-    snap.keys,
-    POP_PERMS.OPERATIONS_DELETE.resource,
-    POP_PERMS.OPERATIONS_DELETE.action,
-  )
+  const canCreate = purchaseKey("create")
+  const canUpdate = purchaseKey("update")
+  const canDelete = purchaseKey("delete")
   const canUpdateArticles = permissionKeysInclude(
     snap.keys,
     POP_PERMS.ARTICLE_UPDATE.resource,

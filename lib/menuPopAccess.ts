@@ -7,6 +7,7 @@ import type {
 import { POP_ACCESS_MODULE_TO_PAGE_KEY } from "@/lib/popAccessModuleMap"
 import { POP_PAGES, type PopPageKey } from "@/lib/popPageCrudConstants"
 import type { MenuItemDef, MenuItemLink, MenuSectionKey } from "@/lib/menuCatalog"
+import { isPopMenuPathname, popModuleKeyFromPath } from "@/lib/popRoutes"
 import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
 import {
   ROOTS_BUSINESS_TYPE_MODULES,
@@ -44,6 +45,9 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   settings: "settings",
   checks: "checks",
   "current-accounts": "current_accounts",
+  alerts: "alerts",
+  chat: "chat",
+  manufacturing: "manufacturing",
 }
 
 /** Módulo de suscripción → link principal del menú (sin alias como cobrar-servicios). */
@@ -253,6 +257,7 @@ export function hasModuleReadPermission(
   if (isOwner) return true
   if (moduleKey === "comandas") {
     return (
+      permissions.includes("comandas:read") ||
       permissions.includes("mesas:read") ||
       permissions.includes("mostrador:read")
     )
@@ -377,6 +382,47 @@ export function homePopToMenuAccess(
   }
 }
 
+const PATH_SEGMENT_TO_MENU_LINK: Record<string, MenuItemLink> = {
+  sale: "sale",
+  quotes: "quotes",
+  "purchase-orders": "purchase-orders",
+  mesas: "mesas",
+  comandas: "comandas",
+  mostrador: "mostrador",
+  operations: "operations",
+  purchases: "purchases",
+  expenses: "expenses",
+  suppliers: "suppliers",
+  invoices: "invoices",
+  settings: "settings",
+  hr: "hr",
+  articles: "articles",
+  clients: "clients",
+  accounts: "accounts",
+  printers: "printers",
+  "cash-registers": "cash-registers",
+  inventory: "inventory",
+  recipes: "recipes",
+  services: "services",
+  "cobrar-servicios": "cobrar-servicios",
+  promotions: "promotions",
+  reports: "reports",
+  statistics: "statistics",
+  checks: "checks",
+  "current-accounts": "current-accounts",
+  "active-services": "operations",
+  alerts: "alerts",
+  chat: "chat",
+  manufacturing: "manufacturing",
+}
+
+/** Segmento de URL POP → ítem de menú, o null si la ruta no se controla. */
+export function menuLinkFromPopPath(pathname: string): MenuItemLink | null {
+  if (isPopMenuPathname(pathname)) return null
+  const segment = popModuleKeyFromPath(pathname)
+  return PATH_SEGMENT_TO_MENU_LINK[segment] ?? null
+}
+
 export function canAccessMenuItemFromPopAccess(
   enabledModules: readonly PopAccessModule[],
   menuLink?: MenuItemLink,
@@ -385,7 +431,9 @@ export function canAccessMenuItemFromPopAccess(
   if (menuLink === "comandas") {
     return enabledModules.some(
       (mod) =>
-        (mod.key === "mesas" || mod.key === "mostrador") &&
+        (mod.key === "mesas" ||
+          mod.key === "mostrador" ||
+          mod.key === "comandas") &&
         Boolean(mod.permissions?.read),
     )
   }
