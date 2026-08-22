@@ -116,6 +116,28 @@ export const rootsDialogBodyCompactClass = cn(
   "py-[var(--rootsy-space-200)]",
 )
 
+/** Body twoCol — 2 columnas; cada una scrollea. Sin gutter extra. */
+export const rootsDialogTwoColBodyClass = cn(
+  "grid min-h-0 flex-1 overflow-hidden overflow-y-hidden p-0",
+  "grid-cols-1 sm:grid-cols-[minmax(0,1fr)_15rem]",
+)
+
+/** Columna-bloque — el scroll vive acá, a la derecha. */
+export const rootsDialogColumnScrollClass = cn(
+  "game-scroll min-h-0 min-w-0 overflow-y-auto overscroll-contain",
+)
+
+/** Contenido interno — padding del panel; no pega al scroll ni al divisor. */
+export const rootsDialogColumnScrollInnerClass = cn(
+  "min-w-0 w-full",
+  rootsDialogPanelPaddingXClass,
+  "py-[var(--rootsy-space-200)]",
+)
+
+/** Divisor entre las dos columnas-bloque. */
+export const rootsDialogTwoColAsideClass =
+  "sm:border-l sm:border-[var(--rootsy-bruma-200)]"
+
 export const rootsDialogLoadingBodyClass = cn(
   "roots-dialog-clearing-body flex min-h-48 flex-col items-center justify-center",
   rootsDialogPanelPaddingXClass,

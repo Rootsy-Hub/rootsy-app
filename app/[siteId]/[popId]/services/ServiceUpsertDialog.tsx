@@ -26,9 +26,13 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
   RootsDialogLoadingState,
+  rootsDialogColumnScrollClass,
+  rootsDialogColumnScrollInnerClass,
+  rootsDialogTwoColAsideClass,
+  rootsDialogTwoColBodyClass,
   useDeferredDialogReset,
 } from "@/components/rootsy-dialog"
-import { rootsFormColumnClass, rootsFormGridDividerClass } from "@/components/rootsy-form"
+import { rootsFormColumnClass } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import {
@@ -209,45 +213,38 @@ export function ServiceUpsertDialog({
             </RootsDialogBody>
           ) : (
             <RootsDialogForm onSubmit={handleSubmit} className="min-h-0 flex-1">
-              <RootsDialogBody className="flex min-h-0 flex-1 flex-col overflow-hidden !py-0">
+              <RootsDialogBody className={rootsDialogTwoColBodyClass}>
+                <div className={rootsDialogColumnScrollClass}>
+                  <div
+                    className={cn(
+                      rootsFormColumnClass,
+                      rootsDialogColumnScrollInnerClass,
+                    )}
+                  >
+                    {banner ? (
+                      <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner>
+                    ) : null}
+                    <ServiceUpsertFormFields
+                      idPrefix={idPrefix}
+                      popId={popId}
+                      form={form}
+                      onChange={handleFormChange}
+                      categories={categories}
+                      step={step}
+                      fieldErrors={fieldErrors}
+                      disabled={saving}
+                    />
+                  </div>
+                </div>
+
                 <div
                   className={cn(
-                    "grid w-full min-w-0 min-h-0 flex-1 items-stretch gap-5",
-                    "sm:grid-cols-[minmax(0,1fr)_1px_15rem] sm:gap-x-5 sm:gap-y-0",
+                    rootsDialogColumnScrollClass,
+                    rootsDialogTwoColAsideClass,
                   )}
                 >
-                  <div className="flex min-h-0 flex-col">
-                    <div
-                      className={cn(
-                        rootsFormColumnClass,
-                        "rootsy-scroll-minimal min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-[var(--rootsy-space-200)]",
-                      )}
-                    >
-                      {banner ? (
-                        <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner>
-                      ) : null}
-                      <ServiceUpsertFormFields
-                        idPrefix={idPrefix}
-                        popId={popId}
-                        form={form}
-                        onChange={handleFormChange}
-                        categories={categories}
-                        step={step}
-                        fieldErrors={fieldErrors}
-                        disabled={saving}
-                      />
-                    </div>
-                  </div>
-
-                  <div
-                    className={cn(rootsFormGridDividerClass, "hidden sm:block")}
-                    aria-hidden
-                  />
-
-                  <div className="flex min-h-0 flex-col sm:pl-1">
-                    <div className="rootsy-scroll-minimal min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-[var(--rootsy-space-200)]">
-                      <ServiceUpsertSummaryPanel form={form} categories={categories} />
-                    </div>
+                  <div className={rootsDialogColumnScrollInnerClass}>
+                    <ServiceUpsertSummaryPanel form={form} categories={categories} />
                   </div>
                 </div>
               </RootsDialogBody>

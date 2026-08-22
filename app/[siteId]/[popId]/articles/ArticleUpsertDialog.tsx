@@ -27,9 +27,13 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
   RootsDialogLoadingState,
+  rootsDialogColumnScrollClass,
+  rootsDialogColumnScrollInnerClass,
+  rootsDialogTwoColAsideClass,
+  rootsDialogTwoColBodyClass,
   useDeferredDialogReset,
 } from "@/components/rootsy-dialog"
-import { rootsFormColumnClass, rootsFormGridDividerClass } from "@/components/rootsy-form"
+import { rootsFormColumnClass } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { useCallback, useState, type FormEvent, type FormEventHandler } from "react"
@@ -197,63 +201,56 @@ export function ArticleUpsertDialog({
           </RootsDialogBody>
         ) : (
           <RootsDialogForm onSubmit={handleSubmit} className="min-h-0 flex-1">
-            <RootsDialogBody className="flex min-h-0 flex-1 flex-col overflow-hidden !py-0">
+            <RootsDialogBody className={rootsDialogTwoColBodyClass}>
+              <div className={rootsDialogColumnScrollClass}>
+                <div
+                  className={cn(
+                    rootsFormColumnClass,
+                    rootsDialogColumnScrollInnerClass,
+                  )}
+                >
+                  {banner ? (
+                    <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner>
+                  ) : null}
+                  <ArticleUpsertFormFields
+                    idPrefix={idPrefix}
+                    popId={popId}
+                    mode={mode}
+                    form={form}
+                    siteId={siteId}
+                    step={step}
+                    fieldErrors={fieldErrors}
+                    onChange={handleFormChange}
+                    onItemKindChange={onItemKindChange}
+                    categories={categories}
+                    categoriesLoading={categoriesLoading}
+                    priceLists={priceLists}
+                    priceListsLoading={priceListsLoading}
+                    supplierOptions={supplierOptions}
+                    costLines={costLines}
+                    onCostLinesChange={formProps.onCostLinesChange}
+                    canPostInitialStock={canPostInitialStock}
+                    disabled={formProps.disabled}
+                  />
+                </div>
+              </div>
+
               <div
                 className={cn(
-                  "grid w-full min-w-0 min-h-0 flex-1 items-stretch gap-5",
-                  "sm:grid-cols-[minmax(0,1fr)_1px_15rem] sm:gap-x-5 sm:gap-y-0",
+                  rootsDialogColumnScrollClass,
+                  rootsDialogTwoColAsideClass,
                 )}
               >
-                <div className="flex min-h-0 flex-col">
-                  <div
-                    className={cn(
-                      rootsFormColumnClass,
-                      "rootsy-scroll-minimal min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-[var(--rootsy-space-200)]",
-                    )}
-                  >
-                    {banner ? (
-                      <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner>
-                    ) : null}
-                    <ArticleUpsertFormFields
-                      idPrefix={idPrefix}
-                      popId={popId}
-                      mode={mode}
-                      form={form}
-                      siteId={siteId}
-                      step={step}
-                      fieldErrors={fieldErrors}
-                      onChange={handleFormChange}
-                      onItemKindChange={onItemKindChange}
-                      categories={categories}
-                      categoriesLoading={categoriesLoading}
-                      priceLists={priceLists}
-                      priceListsLoading={priceListsLoading}
-                      supplierOptions={supplierOptions}
-                      costLines={costLines}
-                      onCostLinesChange={formProps.onCostLinesChange}
-                      canPostInitialStock={canPostInitialStock}
-                      disabled={formProps.disabled}
-                    />
-                  </div>
-                </div>
-
-                <div
-                  className={cn(rootsFormGridDividerClass, "hidden sm:block")}
-                  aria-hidden
-                />
-
-                <div className="flex min-h-0 flex-col sm:pl-1">
-                  <div className="rootsy-scroll-minimal min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-[var(--rootsy-space-200)]">
-                    <ArticleUpsertSummaryPanel
-                      form={form}
-                      siteId={siteId}
-                      mode={mode}
-                      categories={categories}
-                      supplierOptions={supplierOptions}
-                      costLines={costLines}
-                      canPostInitialStock={canPostInitialStock}
-                    />
-                  </div>
+                <div className={rootsDialogColumnScrollInnerClass}>
+                  <ArticleUpsertSummaryPanel
+                    form={form}
+                    siteId={siteId}
+                    mode={mode}
+                    categories={categories}
+                    supplierOptions={supplierOptions}
+                    costLines={costLines}
+                    canPostInitialStock={canPostInitialStock}
+                  />
                 </div>
               </div>
             </RootsDialogBody>
