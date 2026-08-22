@@ -1,11 +1,14 @@
 "use client"
 
-import {
-  getAccountingEntryLines,
-  getAccountingJournalEntries,
-  type JournalEntryLineRow,
-  type JournalEntrySummaryRow,
+import type {
+  JournalEntryLineRow,
+  JournalEntrySummaryRow,
 } from "@/app/[siteId]/[popId]/reports/accountingActions"
+import {
+  fetchAccountingEntryLines as getAccountingEntryLines,
+  fetchAccountingJournalEntries,
+  fetchAccountingJournalTotals,
+} from "@/lib/rootsyApi/reportsClient"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
@@ -144,34 +147,42 @@ export function JournalReportView({
     setHasMore(false)
     setTotalCount(null)
     setPeriodTotals(null)
-    const res = await getAccountingJournalEntries(popId, from, to, {
-      limit: JOURNAL_PAGE_SIZE,
-      offset: 0,
-    })
+    const [listRes, totalsRes] = await Promise.all([
+      fetchAccountingJournalEntries(popId, from, to, {
+        page: 1,
+        pageSize: JOURNAL_PAGE_SIZE,
+      }),
+      fetchAccountingJournalTotals(popId, from, to),
+    ])
     setLoading(false)
-    if (res.success) {
-      setEntries(res.entries)
-      setHasMore(res.hasMore)
-      setTotalCount(res.totalCount ?? res.entries.length)
-      setPeriodTotals(
-        res.periodTotalDebit != null && res.periodTotalCredit != null
-          ? { debit: res.periodTotalDebit, credit: res.periodTotalCredit }
-          : null,
-      )
+    if (listRes.success) {
+      setEntries(listRes.entries)
+      setHasMore(listRes.hasMore)
+      setTotalCount(listRes.totalCount)
+    } else {
+      setEntries([])
+      setError(listRes.error)
+    }
+    if (totalsRes.success) {
+      setTotalCount(totalsRes.totalCount)
+      setPeriodTotals({
+        debit: totalsRes.periodTotalDebit,
+        credit: totalsRes.periodTotalCredit,
+      })
       return
     }
-    setEntries([])
-    setPeriodTotals(null)
-    setError(res.error)
+    if (!listRes.success) setPeriodTotals(null)
+    if (!totalsRes.success && !listRes.success) setError(totalsRes.error)
   }, [popId, from, to])
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMore || loading) return
     loadingMoreRef.current = true
     setLoadingMore(true)
-    const res = await getAccountingJournalEntries(popId, from, to, {
-      limit: JOURNAL_PAGE_SIZE,
-      offset: entries.length,
+    const nextPage = Math.floor(entries.length / JOURNAL_PAGE_SIZE) + 1
+    const res = await fetchAccountingJournalEntries(popId, from, to, {
+      page: nextPage,
+      pageSize: JOURNAL_PAGE_SIZE,
     })
     loadingMoreRef.current = false
     setLoadingMore(false)

@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  searchAccountingChartAccounts,
-  type ChartAccountSearchRow,
-} from "@/app/[siteId]/[popId]/reports/accountingActions"
+import type { ChartAccountSearchRow } from "@/app/[siteId]/[popId]/reports/accountingActions"
+import { searchAccountingChartAccounts } from "@/lib/rootsyApi/reportsClient"
 import { RootsFormSearchField, rootsFormSelectContentClass } from "@/components/rootsy-form"
 import {
   rootsFormDropdownHighlightItemClassForTone,

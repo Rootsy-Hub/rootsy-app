@@ -35,8 +35,9 @@ import {
 } from "@/components/rootsy-dialog"
 import { rootsFormColumnClass } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
-import { useCallback, useState, type FormEvent, type FormEventHandler } from "react"
+import { useCallback, useEffect, useState, type FormEvent, type FormEventHandler } from "react"
 
 type FormFieldsProps = {
   idPrefix: string
@@ -71,7 +72,8 @@ type Props = FormFieldsProps & {
   onCancel: () => void
 }
 
-const LAST_STEP: ArticleUpsertWizardStep = 3
+const DESKTOP_LAST_STEP: ArticleUpsertWizardStep = 3
+const MOBILE_LAST_STEP: ArticleUpsertWizardStep = 4
 
 function clearErrorsForPatch(
   errors: ArticleUpsertFieldErrors,
@@ -120,6 +122,7 @@ export function ArticleUpsertDialog({
 }: Props) {
   const [step, setStep] = useState<ArticleUpsertWizardStep>(1)
   const [fieldErrors, setFieldErrors] = useState<ArticleUpsertFieldErrors>({})
+  const isMobile = useIsMobile()
 
   const resetWizard = useCallback(() => {
     setStep(1)
@@ -128,8 +131,17 @@ export function ArticleUpsertDialog({
 
   useDeferredDialogReset(open, resetWizard)
 
+  const lastStep = isMobile ? MOBILE_LAST_STEP : DESKTOP_LAST_STEP
+  const isSummaryStep = isMobile && step === MOBILE_LAST_STEP
+
+  useEffect(() => {
+    if (!isMobile && step > DESKTOP_LAST_STEP) {
+      setStep(DESKTOP_LAST_STEP)
+    }
+  }, [isMobile, step])
+
   const stepMeta = ARTICLE_UPSERT_WIZARD_STEPS.find((item) => item.step === step)!
-  const isLastStep = step === LAST_STEP
+  const isLastStep = step === lastStep
   const confirmLabel = mode === "create" ? "Crear" : "Guardar"
   const confirmLoadingLabel = mode === "create" ? "Creando…" : "Guardando…"
 
@@ -160,7 +172,7 @@ export function ArticleUpsertDialog({
     // sobre el botón "Crear" (submit) que ocupa el mismo lugar al paso 3.
     window.setTimeout(() => {
       setStep((current) =>
-        current < LAST_STEP ? ((current + 1) as ArticleUpsertWizardStep) : current,
+        current < lastStep ? ((current + 1) as ArticleUpsertWizardStep) : current,
       )
     }, 0)
   }
@@ -185,7 +197,7 @@ export function ArticleUpsertDialog({
       <RootsDialogContent size="twoCol" className="sm:!max-w-[47rem]">
         <RootsDialogHeader
           title={title}
-          description={`Paso ${step}/${LAST_STEP} · ${stepMeta.label}`}
+          description={`Paso ${step}/${lastStep} · ${stepMeta.label}`}
         />
         {refreshing ? (
           <div
@@ -201,7 +213,9 @@ export function ArticleUpsertDialog({
           </RootsDialogBody>
         ) : (
           <RootsDialogForm onSubmit={handleSubmit} className="min-h-0 flex-1">
-            <RootsDialogBody className={rootsDialogTwoColBodyClass}>
+            <RootsDialogBody
+              className={cn(rootsDialogTwoColBodyClass, "max-md:!grid-cols-1")}
+            >
               <div className={rootsDialogColumnScrollClass}>
                 <div
                   className={cn(
@@ -212,47 +226,62 @@ export function ArticleUpsertDialog({
                   {banner ? (
                     <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner>
                   ) : null}
-                  <ArticleUpsertFormFields
-                    idPrefix={idPrefix}
-                    popId={popId}
-                    mode={mode}
-                    form={form}
-                    siteId={siteId}
-                    step={step}
-                    fieldErrors={fieldErrors}
-                    onChange={handleFormChange}
-                    onItemKindChange={onItemKindChange}
-                    categories={categories}
-                    categoriesLoading={categoriesLoading}
-                    priceLists={priceLists}
-                    priceListsLoading={priceListsLoading}
-                    supplierOptions={supplierOptions}
-                    costLines={costLines}
-                    onCostLinesChange={formProps.onCostLinesChange}
-                    canPostInitialStock={canPostInitialStock}
-                    disabled={formProps.disabled}
-                  />
+                  {isSummaryStep ? (
+                    <ArticleUpsertSummaryPanel
+                      form={form}
+                      siteId={siteId}
+                      mode={mode}
+                      categories={categories}
+                      supplierOptions={supplierOptions}
+                      costLines={costLines}
+                      canPostInitialStock={canPostInitialStock}
+                    />
+                  ) : (
+                    <ArticleUpsertFormFields
+                      idPrefix={idPrefix}
+                      popId={popId}
+                      mode={mode}
+                      form={form}
+                      siteId={siteId}
+                      step={step}
+                      fieldErrors={fieldErrors}
+                      onChange={handleFormChange}
+                      onItemKindChange={onItemKindChange}
+                      categories={categories}
+                      categoriesLoading={categoriesLoading}
+                      priceLists={priceLists}
+                      priceListsLoading={priceListsLoading}
+                      supplierOptions={supplierOptions}
+                      costLines={costLines}
+                      onCostLinesChange={formProps.onCostLinesChange}
+                      canPostInitialStock={canPostInitialStock}
+                      disabled={formProps.disabled}
+                    />
+                  )}
                 </div>
               </div>
 
-              <div
-                className={cn(
-                  rootsDialogColumnScrollClass,
-                  rootsDialogTwoColAsideClass,
-                )}
-              >
-                <div className={rootsDialogColumnScrollInnerClass}>
-                  <ArticleUpsertSummaryPanel
-                    form={form}
-                    siteId={siteId}
-                    mode={mode}
-                    categories={categories}
-                    supplierOptions={supplierOptions}
-                    costLines={costLines}
-                    canPostInitialStock={canPostInitialStock}
-                  />
+              {!isMobile ? (
+                <div
+                  className={cn(
+                    rootsDialogColumnScrollClass,
+                    rootsDialogTwoColAsideClass,
+                    "max-md:hidden",
+                  )}
+                >
+                  <div className={rootsDialogColumnScrollInnerClass}>
+                    <ArticleUpsertSummaryPanel
+                      form={form}
+                      siteId={siteId}
+                      mode={mode}
+                      categories={categories}
+                      supplierOptions={supplierOptions}
+                      costLines={costLines}
+                      canPostInitialStock={canPostInitialStock}
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </RootsDialogBody>
             <RootsDialogFooter>
               <div className="flex w-full items-center justify-between gap-3">

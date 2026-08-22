@@ -47,7 +47,7 @@ export type ArticleUpsertFormState = ArticleItemFormState &
     listPrices?: Record<string, string>
   }
 
-export type ArticleUpsertWizardStep = 1 | 2 | 3
+export type ArticleUpsertWizardStep = 1 | 2 | 3 | 4
 
 export const ARTICLE_UPSERT_WIZARD_STEPS: {
   step: ArticleUpsertWizardStep
@@ -56,6 +56,7 @@ export const ARTICLE_UPSERT_WIZARD_STEPS: {
   { step: 1, label: "Datos" },
   { step: 2, label: "Precios" },
   { step: 3, label: "Detalles" },
+  { step: 4, label: "Resumen" },
 ]
 
 const SKU_LABEL_INFO =
@@ -189,6 +190,10 @@ export function ArticleUpsertFormFields({
   const parsedSalePrice = parseMoneyInput(form.salePrice, 0)
   const saleUomLabel = labelUnitOfMeasure(form.unitOfMeasure)
   const showInitialStock = mode === "create" && canPostInitialStock
+
+  if (step === 4) {
+    return null
+  }
 
   if (step === 1) {
     return (

@@ -20,6 +20,13 @@ export const ARTICLE_ITEM_KIND_STOCK_LABEL: Record<ArticleItemKind, string> = {
   supply: "Insumo",
 }
 
+/** Etiqueta corta para el segmento en mobile. */
+export const ARTICLE_ITEM_KIND_STOCK_LABEL_COMPACT: Record<ArticleItemKind, string> = {
+  merchandise: "Producto",
+  raw_material: "M. prima",
+  supply: "Insumo",
+}
+
 /** Texto corto en selector al crear/editar artículo. */
 export const ARTICLE_ITEM_KIND_SELECTOR_HINT: Record<ArticleItemKind, string> = {
   merchandise: "Para venta al público",

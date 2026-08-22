@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  getAccountingIncomeStatement,
-  type IncomeStatementResult,
-} from "@/app/[siteId]/[popId]/reports/accountingActions"
+import type { IncomeStatementResult } from "@/app/[siteId]/[popId]/reports/accountingActions"
+import { fetchAccountingIncomeStatement as getAccountingIncomeStatement } from "@/lib/rootsyApi/reportsClient"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"

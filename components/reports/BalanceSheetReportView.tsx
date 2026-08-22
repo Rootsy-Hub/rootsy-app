@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  getAccountingBalanceSheet,
-  type BalanceSheetResult,
-} from "@/app/[siteId]/[popId]/reports/accountingActions"
+import type { BalanceSheetResult } from "@/app/[siteId]/[popId]/reports/accountingActions"
+import { fetchAccountingBalanceSheet as getAccountingBalanceSheet } from "@/lib/rootsyApi/reportsClient"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"

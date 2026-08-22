@@ -1,11 +1,13 @@
 "use client"
 
-import {
-  getAccountingLedgerForAccount,
-  type AccountNature,
-  type LedgerMovementRow,
+import type {
+  AccountNature,
+  LedgerMovementRow,
 } from "@/app/[siteId]/[popId]/reports/accountingActions"
-import { useTreasuryInfiniteScroll } from "@/app/[siteId]/[popId]/accounts/treasuryInfiniteScroll"
+import {
+  fetchAccountingLedgerForAccount,
+  fetchAccountingLedgerTotals,
+} from "@/lib/rootsyApi/reportsClient"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
@@ -56,7 +58,7 @@ import {
 } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
 import { BookOpen } from "lucide-react"
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { DateRange } from "react-day-picker"
 import { Table, TableBody, TableCell } from "@/components/ui/table"
 import "@/components/layouts-tables/rootsLayoutsTablesScope.css"
@@ -84,16 +86,6 @@ function formatAccountNature(nature: AccountNature): string {
   return nature === "acreedora" ? "Acreedora" : "Deudora"
 }
 
-function sumLedgerTotals(rows: LedgerMovementRow[]) {
-  return rows.reduce(
-    (acc, row) => ({
-      debit: acc.debit + row.debitAmount,
-      credit: acc.credit + row.creditAmount,
-    }),
-    { debit: 0, credit: 0 },
-  )
-}
-
 export function LedgerReportView({
   popId,
   from,
@@ -111,9 +103,18 @@ export function LedgerReportView({
   const [accountName, setAccountName] = useState("")
   const [accountNature, setAccountNature] = useState<AccountNature | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [page, setPage] = useState(1)
   const [error, setError] = useState<string | null>(null)
+  const [periodTotals, setPeriodTotals] = useState<{
+    count: number
+    debit: number
+    credit: number
+    closing: number
+  } | null>(null)
   const scrollRootRef = useRef<HTMLDivElement | null>(null)
-  const [scrollRoot, setScrollRoot] = useState<HTMLElement | null>(null)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
 
   const periodSummary = useMemo(
     () => formatReportPeriodSummary(preset, { from, to }),
@@ -128,10 +129,6 @@ export function LedgerReportView({
   const trimmedCode = accountCode.trim()
   const hasAccountQuery = trimmedCode.length > 0
 
-  useLayoutEffect(() => {
-    setScrollRoot(scrollRootRef.current)
-  }, [loading, hasAccountQuery, rows.length])
-
   const load = useCallback(async () => {
     if (!trimmedCode) {
       setRows([])
@@ -139,30 +136,82 @@ export function LedgerReportView({
       setAccountNature(null)
       setError(null)
       setLoading(false)
+      setHasMore(false)
+      setPage(1)
+      setPeriodTotals(null)
       return
     }
     setLoading(true)
     setError(null)
-    const res = await getAccountingLedgerForAccount(popId, trimmedCode, from, to)
+    const [listRes, totalsRes] = await Promise.all([
+      fetchAccountingLedgerForAccount(popId, trimmedCode, from, to, {
+        page: 1,
+        pageSize: LEDGER_VISIBLE_PAGE_SIZE,
+      }),
+      fetchAccountingLedgerTotals(popId, trimmedCode, from, to),
+    ])
     setLoading(false)
-    if (res.success) {
-      setRows(res.rows)
-      setAccountName(res.accountName)
-      setAccountNature(res.nature)
+    if (listRes.success) {
+      setRows(listRes.rows)
+      setAccountName(listRes.accountName)
+      setAccountNature(listRes.nature)
+      setHasMore(listRes.hasMore)
+      setPage(listRes.page)
+    } else {
+      setRows([])
+      setAccountName("")
+      setAccountNature(null)
+      setHasMore(false)
+      setError(listRes.error)
+    }
+    if (totalsRes.success) {
+      setAccountName(totalsRes.accountName)
+      setAccountNature(totalsRes.nature)
+      setPeriodTotals({
+        count: totalsRes.totalCount,
+        debit: totalsRes.totalDebit,
+        credit: totalsRes.totalCredit,
+        closing: totalsRes.closingBalance,
+      })
+    } else if (!listRes.success) {
+      setPeriodTotals(null)
+    }
+  }, [popId, trimmedCode, from, to])
+
+  const loadMore = useCallback(async () => {
+    if (!trimmedCode || loading || loadingMore || !hasMore) return
+    setLoadingMore(true)
+    const res = await fetchAccountingLedgerForAccount(popId, trimmedCode, from, to, {
+      page: page + 1,
+      pageSize: LEDGER_VISIBLE_PAGE_SIZE,
+    })
+    setLoadingMore(false)
+    if (!res.success) {
+      setError(res.error)
       return
     }
-    setRows([])
-    setAccountName("")
-    setAccountNature(null)
-    setError(res.error)
-  }, [popId, trimmedCode, from, to])
+    setRows((prev) => [...prev, ...res.rows])
+    setHasMore(res.hasMore)
+    setPage(res.page)
+  }, [from, hasMore, loading, loadingMore, page, popId, to, trimmedCode])
 
   useEffect(() => {
     void load()
   }, [load])
 
-  const totals = useMemo(() => sumLedgerTotals(rows), [rows])
-  const closingBalance = rows.length > 0 ? rows[rows.length - 1]!.runningBalance : 0
+  useEffect(() => {
+    const root = scrollRootRef.current
+    const sentinel = sentinelRef.current
+    if (!root || !sentinel || !hasMore || loading || loadingMore) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void loadMore()
+      },
+      { root, rootMargin: "240px" },
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMore, loadMore, loading, loadingMore])
 
   const accountSummary = useMemo(() => {
     if (!hasAccountQuery || !accountName) return null
@@ -170,20 +219,35 @@ export function LedgerReportView({
     return `${trimmedCode} · ${accountName} · Naturaleza ${natureLabel.toLowerCase()}`
   }, [accountName, accountNature, hasAccountQuery, trimmedCode])
 
-  const { visibleItems, hasMore, sentinelRef } = useTreasuryInfiniteScroll(
-    rows,
-    scrollRoot,
-    LEDGER_VISIBLE_PAGE_SIZE,
-  )
-
   const loadedCountLabel = useMemo(() => {
-    const count = rows.length
+    const count = periodTotals?.count ?? rows.length
     return count === 1 ? "1 movimiento" : `${count.toLocaleString("es-AR")} movimientos`
-  }, [rows.length])
+  }, [periodTotals?.count, rows.length])
+
+  const exportAllRows = useCallback(async () => {
+    const all: LedgerMovementRow[] = []
+    let nextPage = 1
+    let more = true
+    while (more) {
+      const res = await fetchAccountingLedgerForAccount(
+        popId,
+        trimmedCode,
+        from,
+        to,
+        { page: nextPage, pageSize: 100 },
+      )
+      if (!res.success) throw new Error(res.error)
+      all.push(...res.rows)
+      more = res.hasMore
+      nextPage += 1
+    }
+    return all
+  }, [from, popId, to, trimmedCode])
 
   const exportDocument = useCallback(
     async (format: SalesReportExportFormat, context: ReportExportContext) => {
-      await exportLedgerReportDocument(rows, format, {
+      const exportRows = await exportAllRows()
+      await exportLedgerReportDocument(exportRows, format, {
         periodLabel: exportPeriodLabel,
         exportContext: context,
         timeZone,
@@ -191,12 +255,13 @@ export function LedgerReportView({
         accountName,
       })
     },
-    [accountName, exportPeriodLabel, rows, timeZone, trimmedCode],
+    [accountName, exportAllRows, exportPeriodLabel, timeZone, trimmedCode],
   )
 
   const printDocument = useCallback(
     async (context: ReportExportContext) => {
-      await exportLedgerReportDocument(rows, "print", {
+      const exportRows = await exportAllRows()
+      await exportLedgerReportDocument(exportRows, "print", {
         periodLabel: exportPeriodLabel,
         exportContext: context,
         timeZone,
@@ -204,7 +269,7 @@ export function LedgerReportView({
         accountName,
       })
     },
-    [accountName, exportPeriodLabel, rows, timeZone, trimmedCode],
+    [accountName, exportAllRows, exportPeriodLabel, timeZone, trimmedCode],
   )
 
   const { exportBusy, exportError, handleExport, handlePrint } = useReportDocumentExport({
@@ -235,25 +300,31 @@ export function LedgerReportView({
                 <ReportStatValue loading={loading && hasAccountQuery}>
                   {!hasAccountQuery
                     ? "—"
-                    : rows.length.toLocaleString("es-AR")}
+                    : (periodTotals?.count ?? rows.length).toLocaleString("es-AR")}
                 </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total debe</p>
                 <ReportStatValue loading={loading && hasAccountQuery}>
-                  {!hasAccountQuery ? "—" : formatReportMoneyAr(totals.debit)}
+                  {!hasAccountQuery
+                    ? "—"
+                    : formatReportMoneyAr(periodTotals?.debit ?? 0)}
                 </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total haber</p>
                 <ReportStatValue loading={loading && hasAccountQuery}>
-                  {!hasAccountQuery ? "—" : formatReportMoneyAr(totals.credit)}
+                  {!hasAccountQuery
+                    ? "—"
+                    : formatReportMoneyAr(periodTotals?.credit ?? 0)}
                 </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Saldo</p>
                 <ReportStatValue loading={loading && hasAccountQuery}>
-                  {!hasAccountQuery ? "—" : formatReportMoneyAr(closingBalance)}
+                  {!hasAccountQuery
+                    ? "—"
+                    : formatReportMoneyAr(periodTotals?.closing ?? 0)}
                 </ReportStatValue>
               </div>
             </>
@@ -379,7 +450,7 @@ export function LedgerReportView({
                     </WorkspaceTableHeaderRow>
                   </WorkspaceTableHeader>
                   <TableBody>
-                    {visibleItems.map((row, index) => (
+                    {rows.map((row, index) => (
                       <WorkspaceTableBodyRow key={row.id} index={index}>
                         <TableCell className={workspaceTableLayoutBodyCellClass}>
                           <span

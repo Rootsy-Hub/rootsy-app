@@ -2,6 +2,7 @@
 
 import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
 import { fetchPopOperationsList } from "@/lib/rootsyApi/operationsClient"
+import { fetchReportOperationalTotals } from "@/lib/rootsyApi/reportsClient"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -18,7 +19,6 @@ import {
   exportSalesDetailReportPdf,
   printSalesDetailReportPdf,
 } from "@/lib/salesReportPdfExport"
-import { displayOperationSaleCollected } from "@/lib/channelOperationSales"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
@@ -48,40 +48,6 @@ type Props = {
   onPresetChange: (preset: DataWorkspaceDatePreset) => void
   onCustomRangeChange: (range: DateRange | undefined) => void
   onBack: () => void
-}
-
-async function fetchSalesPeriodTotal(
-  popId: string,
-  from: string | null,
-  to: string | null,
-): Promise<{ count: number; total: number } | { error: string }> {
-  let page = 1
-  let total = 0
-  let count = 0
-
-  while (page <= 50) {
-    const res = await fetchPopOperationsList(popId, {
-      view: "sales-report",
-      dateFrom: from,
-      dateTo: to,
-      search: "",
-      page,
-      pageSize: 100,
-      sort: "sold_at",
-      ord: "desc",
-    })
-    if (!res.success) {
-      return { error: res.error || "Error al cargar ventas" }
-    }
-    count = res.totalCount
-    for (const row of res.sales) {
-      total += displayOperationSaleCollected(row)
-    }
-    if (page * 100 >= res.totalCount) break
-    page += 1
-  }
-
-  return { count, total }
 }
 
 async function fetchAllSalesReportRows(
@@ -263,16 +229,16 @@ export function SalesDetailReportView({
     let cancelled = false
     setPeriodTotalBusy(true)
     setPeriodTotalError(null)
-    void fetchSalesPeriodTotal(popId, from, to).then((result) => {
+    void fetchReportOperationalTotals(popId, "sales", from, to).then((result) => {
       if (cancelled) return
       setPeriodTotalBusy(false)
-      if ("error" in result) {
+      if (!result.success) {
         setPeriodTotal(null)
         setPeriodTotalError(result.error)
         return
       }
-      setPeriodTotal(result.total)
-      setTotalCount((prev) => (prev === 0 ? result.count : prev))
+      setPeriodTotal(result.data.total)
+      setTotalCount((prev) => (prev === 0 ? result.data.count : prev))
     })
     return () => {
       cancelled = true
