@@ -12,7 +12,6 @@ import { ArticleItemKindToolbarFilter, articleItemKindFilterToQuery, resolveArti
 import {
   createPopArticle,
   deletePopArticle,
-  getPopArticleSupplierOptions,
   updatePopArticle,
   type ArticleCategoryOption,
   type CategoryLayoutUpdate,
@@ -385,10 +384,6 @@ export function ArticlesWorkspaceView() {
   const [createBanner, setCreateBanner] = useState<string | null>(null)
   const [createForm, setCreateForm] = useState<ArticleFormState>(defaultCreateFormState)
   const [createCostLines, setCreateCostLines] = useState<ArticleCostFormLine[]>([])
-  const [supplierOptions, setSupplierOptions] = useState<
-    { id: string; name: string }[]
-  >([])
-
   const [priceListsOpen, setPriceListsOpen] = useState(false)
   const [categoriesOpen, setCategoriesOpen] = useState(false)
   const [categoriesBanner, setCategoriesBanner] = useState<string | null>(null)
@@ -474,23 +469,23 @@ export function ArticlesWorkspaceView() {
 
   const articles = articlesTableQuery.data?.articles ?? []
   const totalCount = articlesTableQuery.data?.totalCount ?? 0
-  const canCreate =
-    afterHydration &&
-    (hasPermission(
-      POP_PERMS.ARTICLE_CREATE.resource,
-      POP_PERMS.ARTICLE_CREATE.action,
-    ) ||
-      (menuCache.popAccess
-        ? hasPopAccessPermission(
-            menuCache.popAccess,
-            POP_PERMS.ARTICLE_CREATE.resource,
-            POP_PERMS.ARTICLE_CREATE.action,
-          )
-        : false))
-  const canPostInitialStock =
-    articlesTableQuery.data?.canPostInitialStock ?? false
-  const canUpdate = articlesTableQuery.data?.canUpdate ?? false
-  const canDelete = articlesTableQuery.data?.canDelete ?? false
+  const articlePerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = articlePerm(POP_PERMS.ARTICLE_CREATE)
+  const canUpdate = articlePerm(POP_PERMS.ARTICLE_UPDATE)
+  const canDelete = articlePerm(POP_PERMS.ARTICLE_DELETE)
+  const canPostInitialStock = canCreate
   const listFetching =
     !popId || !siteId
       ? false
@@ -605,23 +600,6 @@ export function ArticlesWorkspaceView() {
     setCreateBanner(null)
     setCreateForm(defaultCreateFormState())
   }, [createOpen, popId])
-
-  useEffect(() => {
-    if (!popId || (!createOpen && !editRow)) return
-    let cancelled = false
-    ;(async () => {
-      const res = await getPopArticleSupplierOptions(popId)
-      if (cancelled) return
-      if (res.success) {
-        setSupplierOptions(res.suppliers)
-      } else {
-        setSupplierOptions([])
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [popId, createOpen, editRow])
 
   const openEdit = (row: ArticleTableRow) => {
     if (!popId || !siteId) return
@@ -1690,7 +1668,7 @@ export function ArticlesWorkspaceView() {
         categoriesLoading={categoriesQuery.isPending && !categoriesQuery.data}
         priceLists={priceLists}
         priceListsLoading={priceListsQuery.isPending && !priceListsQuery.data}
-        supplierOptions={supplierOptions}
+        supplierOptions={[]}
         costLines={editCostLines}
         onCostLinesChange={setEditCostLines}
         disabled={editSaving}
@@ -1731,7 +1709,7 @@ export function ArticlesWorkspaceView() {
         categoriesLoading={categoriesQuery.isPending && !categoriesQuery.data}
         priceLists={priceLists}
         priceListsLoading={priceListsQuery.isPending && !priceListsQuery.data}
-        supplierOptions={supplierOptions}
+        supplierOptions={[]}
         costLines={createCostLines}
         onCostLinesChange={setCreateCostLines}
         canPostInitialStock={canPostInitialStock}

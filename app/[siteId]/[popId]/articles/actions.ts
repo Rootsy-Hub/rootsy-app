@@ -74,11 +74,6 @@ export type ArticleTableRow = {
   listPrices: { listId: string; amount: number }[]
 }
 
-export type ArticleSupplierOption = {
-  id: string
-  name: string
-}
-
 export type ArticleCategoryOption = {
   id: string
   name: string
@@ -314,51 +309,6 @@ function normalizeCatalogFields(
   return {
     ok: true,
     fields: { brand, discountMode, discountValue },
-  }
-}
-
-export async function getPopArticleSupplierOptions(popId: string): Promise<
-  | { success: true; suppliers: ArticleSupplierOption[] }
-  | { success: false; error: string }
-> {
-  try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
-    }
-    const snap = await loadPopPermissionsSnapshot(popId)
-    if (
-      !permissionKeysInclude(
-        snap.keys,
-        POP_PERMS.ARTICLE_READ.resource,
-        POP_PERMS.ARTICLE_READ.action,
-      )
-    ) {
-      return {
-        success: false,
-        error: "Sin permiso para ver proveedores en este punto de venta.",
-      }
-    }
-    const supabase = await createClient()
-    const { data, error } = await supabase
-      .from("suppliers")
-      .select("id, name")
-      .eq("pop_id", popId)
-      .eq("is_active", true)
-      .order("name", { ascending: true })
-    if (error) {
-      return { success: false, error: error.message }
-    }
-    return {
-      success: true,
-      suppliers: (data ?? []).map((r) => ({
-        id: String(r.id),
-        name: String(r.name ?? ""),
-      })),
-    }
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "Error desconocido"
-    return { success: false, error: message }
   }
 }
 

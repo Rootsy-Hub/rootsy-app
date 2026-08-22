@@ -37,6 +37,7 @@ export function usePopAccessData(
     ? queryClient.getQueryData<PopAccessCache | null>(popAccessQueryKey(popId))
     : undefined
   const queriesEnabled =
+    persistReady &&
     (options?.enabled ?? true) &&
     !authLoading &&
     Boolean(userId) &&
