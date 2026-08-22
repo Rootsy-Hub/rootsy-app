@@ -209,8 +209,12 @@ export function MenuGridItemButton({
             ? `${(item.name.length % 5) * 45}ms`
             : undefined,
       }}
+      onContextMenu={(event) => {
+        if (draggable) event.preventDefault()
+      }}
       className={cn(
         "justify-self-center transition-[opacity,transform] duration-200",
+        draggable && "select-none [-webkit-touch-callout:none]",
         (editing || isDragging) && draggable && "touch-none",
         editing && draggable && "animate-dock-wiggle",
         showDockPlacedStyle && "scale-[0.985]",
@@ -221,6 +225,10 @@ export function MenuGridItemButton({
       {href && !editing && !disabled ? (
         <Link
           href={href}
+          draggable={false}
+          onContextMenu={(event) => {
+            if (draggable) event.preventDefault()
+          }}
           onClick={(event) => {
             if (skipClickAfterDrag.current) {
               event.preventDefault()

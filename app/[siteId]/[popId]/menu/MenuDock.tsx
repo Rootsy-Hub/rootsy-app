@@ -181,6 +181,8 @@ function DockSlotItem({
             {href ? (
               <Link
                 href={href}
+                draggable={false}
+                onContextMenu={(event) => event.preventDefault()}
                 onClick={(event) => {
                   if (skipClickAfterDrag.current) {
                     event.preventDefault()
