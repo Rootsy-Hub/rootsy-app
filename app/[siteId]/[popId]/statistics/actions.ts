@@ -45,7 +45,7 @@ import {
   fetchLatestLayerUnitCostsByArticleId,
   resolveArticleReferenceUnitCostsByArticleId,
 } from "@/lib/articleReferenceUnitCost"
-import { getTreasuryPeriodReport } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
+import { fetchTreasuryPeriodReportServer } from "@/lib/rootsyApi/treasuryServer"
 import {
   CHART_CUENTAS_POR_COBRAR_CODES,
   CHART_DOCUMENTOS_A_PAGAR_CODES,
@@ -2838,7 +2838,7 @@ async function buildFinanceSection(
     chequesPorCobrar,
     chequesPorPagar,
   ] = await Promise.all([
-    getTreasuryPeriodReport(popId, { from, to }),
+    fetchTreasuryPeriodReportServer(popId, from, to),
     fetchTreasuryMotherDailyFlow(
       popId,
       from,

@@ -1,13 +1,14 @@
 "use client"
 
-import {
-  getCashRegistersPeriodReport,
-  type CashRegistersPeriodReportPopInfo,
-  type CashRegistersPeriodReportRow,
+import type {
+  CashRegistersPeriodReportPopInfo,
+  CashRegistersPeriodReportRow,
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import {
-  computePopArqueoPeriodSummary,
-} from "@/app/[siteId]/[popId]/cash-registers/cashRegisterDetailUtils"
+  fetchCashRegistersPeriodReport,
+  fetchCashRegistersPeriodTotals,
+  type CashRegistersPeriodTotals,
+} from "@/lib/rootsyApi/cashRegistersClient"
 import {
   arqueoDifferenceToneClass,
   formatArqueoDifferenceDisplay,
@@ -161,6 +162,8 @@ export function CashRegistersReportView({
     null,
   )
   const [registerCount, setRegisterCount] = useState(0)
+  const [totals, setTotals] = useState<CashRegistersPeriodTotals | null>(null)
+  const [totalsBusy, setTotalsBusy] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [exportBusy, setExportBusy] = useState(false)
@@ -190,14 +193,39 @@ export function CashRegistersReportView({
   )
 
   const summary = useMemo(
-    () => computePopArqueoPeriodSummary(rows),
-    [rows],
+    () =>
+      totals ?? {
+        registerCount,
+        closedCount: 0,
+        totalCobrado: 0,
+        netDifference: 0,
+        sessionsWithVariance: 0,
+      },
+    [registerCount, totals],
   )
+
+  useEffect(() => {
+    let cancelled = false
+    setTotalsBusy(true)
+    void fetchCashRegistersPeriodTotals(popId, from, to).then((res) => {
+      if (cancelled) return
+      setTotalsBusy(false)
+      if (res.success) {
+        setTotals(res.data)
+        setRegisterCount(res.data.registerCount)
+        return
+      }
+      setTotals(null)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [from, popId, to])
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const res = await getCashRegistersPeriodReport(popId, { from, to })
+    const res = await fetchCashRegistersPeriodReport(popId, from, to)
     setLoading(false)
     if (res.success) {
       setRows(res.data.rows)
@@ -297,25 +325,25 @@ export function CashRegistersReportView({
             <>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Arqueos</p>
-                <ReportStatValue loading={loading}>
+                <ReportStatValue loading={totalsBusy}>
                   {summary.closedCount.toLocaleString("es-AR")}
                 </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total cobrado</p>
-                <ReportStatValue loading={loading}>
+                <ReportStatValue loading={totalsBusy}>
                   {formatReportMoneyAr(summary.totalCobrado)}
                 </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Diferencia neta</p>
-                <ReportStatValue loading={loading}>
+                <ReportStatValue loading={totalsBusy}>
                   {formatReportMoneyAr(summary.netDifference)}
                 </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Con faltante/sobrante</p>
-                <ReportStatValue loading={loading}>
+                <ReportStatValue loading={totalsBusy}>
                   {summary.sessionsWithVariance.toLocaleString("es-AR")}
                 </ReportStatValue>
               </div>

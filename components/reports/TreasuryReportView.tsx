@@ -1,9 +1,11 @@
 "use client"
 
+import type { TreasuryPeriodReportRow } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
 import {
-  getTreasuryPeriodReport,
-  type TreasuryPeriodReportRow,
-} from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
+  fetchTreasuryPeriodReport,
+  fetchTreasuryPeriodTotals,
+  type TreasuryPeriodTotals,
+} from "@/lib/rootsyApi/treasuryClient"
 import {
   TreasuryBrandIsotype,
   TreasuryBrandName,
@@ -79,23 +81,6 @@ function formatOptionalReportMoney(value: number | null | undefined): string {
   return formatReportMoneyAr(value)
 }
 
-function computeTreasuryReportSummary(rows: TreasuryPeriodReportRow[]) {
-  return rows.reduce(
-    (acc, row) => ({
-      accountCount: acc.accountCount + 1,
-      closingBalance: acc.closingBalance + row.closingBalance,
-      periodIn: acc.periodIn + row.periodIn,
-      periodOut: acc.periodOut + row.periodOut,
-    }),
-    {
-      accountCount: 0,
-      closingBalance: 0,
-      periodIn: 0,
-      periodOut: 0,
-    },
-  )
-}
-
 function TreasuryReportMoneyCell({
   children,
   muted,
@@ -138,6 +123,8 @@ export function TreasuryReportView({
 }: Props) {
   const timeZone = usePopTimeZone()
   const [rows, setRows] = useState<TreasuryPeriodReportRow[]>([])
+  const [totals, setTotals] = useState<TreasuryPeriodTotals | null>(null)
+  const [totalsBusy, setTotalsBusy] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -151,13 +138,39 @@ export function TreasuryReportView({
     [from, to],
   )
 
-  const summary = useMemo(() => computeTreasuryReportSummary(rows), [rows])
+  const summary = useMemo(
+    () =>
+      totals ?? {
+        accountCount: 0,
+        closingBalance: 0,
+        periodIn: 0,
+        periodOut: 0,
+      },
+    [totals],
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    setTotalsBusy(true)
+    void fetchTreasuryPeriodTotals(popId, from, to).then((res) => {
+      if (cancelled) return
+      setTotalsBusy(false)
+      if (res.success) {
+        setTotals(res.data)
+        return
+      }
+      setTotals(null)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [from, popId, to])
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     setRows([])
-    const res = await getTreasuryPeriodReport(popId, { from, to })
+    const res = await fetchTreasuryPeriodReport(popId, from, to)
     setLoading(false)
     if (res.success) {
       setRows(res.data.rows)
@@ -230,7 +243,7 @@ export function TreasuryReportView({
             <>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Cuentas</p>
-                <ReportStatValue loading={loading}>
+                <ReportStatValue loading={totalsBusy}>
                   {summary.accountCount.toLocaleString("es-AR")}
                 </ReportStatValue>
               </div>
@@ -238,19 +251,19 @@ export function TreasuryReportView({
                 <p className={dataWorkspaceEntityCardStatLabelClass}>
                   Saldo al cierre
                 </p>
-                <ReportStatValue loading={loading}>
+                <ReportStatValue loading={totalsBusy}>
                   {formatReportMoneyAr(summary.closingBalance)}
                 </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Ingresos</p>
-                <ReportStatValue loading={loading}>
+                <ReportStatValue loading={totalsBusy}>
                   {formatReportMoneyAr(summary.periodIn)}
                 </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Egresos</p>
-                <ReportStatValue loading={loading}>
+                <ReportStatValue loading={totalsBusy}>
                   {formatReportMoneyAr(summary.periodOut)}
                 </ReportStatValue>
               </div>
