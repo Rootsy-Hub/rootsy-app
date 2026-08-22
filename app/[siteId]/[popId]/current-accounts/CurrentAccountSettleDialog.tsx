@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  settlePopCurrentAccount,
-  type CurrentAccountOpenDocument,
-} from "@/app/[siteId]/[popId]/current-accounts/actions"
+import type { CurrentAccountOpenDocument } from "@/app/[siteId]/[popId]/current-accounts/actions"
+import { settlePopCurrentAccount } from "@/lib/rootsyApi/currentAccountsClient"
 import {
   currentAccountSettleTotals,
   emptyCurrentAccountSettleDraft,
@@ -37,10 +35,8 @@ import {
 } from "@/lib/currentAccounts"
 import { formatMoneyInputForField, parseMoneyInput } from "@/lib/moneyInput"
 import type { PaymentMethodSelection } from "@/lib/paymentMethodCheckout"
-import {
-  getTreasuryPaymentContext,
-  type TreasuryPaymentContext,
-} from "@/lib/treasuryPaymentContext"
+import { fetchCurrentAccountPaymentContext } from "@/lib/rootsyApi/currentAccountsClient"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { cn } from "@/lib/utils"
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 
@@ -110,7 +106,7 @@ export function CurrentAccountSettleDialog({
     setSaving(false)
     setPaymentSelection(null)
     settlingRef.current = false
-    void getTreasuryPaymentContext(popId).then((res) => {
+    void fetchCurrentAccountPaymentContext(popId).then((res) => {
       if (!res.success) {
         setTreasury(null)
         setBanner(res.error)

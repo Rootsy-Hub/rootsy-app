@@ -10,7 +10,7 @@ import {
 } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountDetailSkeleton"
 import { CurrentAccountSettleDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountSettleDialog"
 import { CurrentAccountTermsDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountTermsDialog"
-import { setPopCurrentAccountEnrollment } from "@/app/[siteId]/[popId]/current-accounts/actions"
+import { setPopCurrentAccountEnrollment } from "@/lib/rootsyApi/currentAccountsClient"
 import {
   CurrentAccountLedgerDateCell,
   CurrentAccountLedgerDocCell,
@@ -63,7 +63,6 @@ import { showReportExportInProgressToast } from "@/lib/reportExportInProgressToa
 import { cn } from "@/lib/utils"
 import { useQueryClient } from "@tanstack/react-query"
 import { Download, FileText, Printer, Receipt } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/components/layouts-tables/rootsLayoutsTablesScope.css"
@@ -76,6 +75,7 @@ type Props = {
   partyId: string
   view: PartyView
   listBackHref: string
+  canCreate: boolean
   onViewChange: (view: PartyView) => void
   pdfBrand: {
     popName?: string
@@ -90,10 +90,10 @@ export function CurrentAccountDetailView({
   partyId,
   view,
   listBackHref,
+  canCreate,
   onViewChange,
   pdfBrand,
 }: Props) {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const [settleOpen, setSettleOpen] = useState(false)
   const [applyOpen, setApplyOpen] = useState(false)
@@ -118,7 +118,6 @@ export function CurrentAccountDetailView({
   const aging = ledger?.aging ?? emptyCurrentAccountAgingTotals()
   const openDocuments = ledger?.openDocuments ?? []
   const lines = ledger?.lines ?? []
-  const canCreate = ledger?.canCreate ?? false
   const enrolled = ledger?.enrolled ?? false
   const creditLimit = ledger?.creditLimit ?? null
   const termDays = ledger?.termDays ?? 30
@@ -146,12 +145,6 @@ export function CurrentAccountDetailView({
       }),
     ])
   }, [popId, queryClient])
-
-  useEffect(() => {
-    const res = ledgerQuery.data
-    if (!res || res.success || !res.redirect) return
-    router.replace(res.redirect)
-  }, [ledgerQuery.data, router])
 
   useEffect(() => {
     setSettleOpen(false)

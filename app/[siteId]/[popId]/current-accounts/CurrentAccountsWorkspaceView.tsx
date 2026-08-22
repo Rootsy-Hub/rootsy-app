@@ -7,11 +7,9 @@ import { CurrentAccountDirectionToolbarFilter } from "@/app/[siteId]/[popId]/cur
 import { CurrentAccountEnrollDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountEnrollDialog"
 import { CurrentAccountSettleDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountSettleDialog"
 import { CurrentAccountTermsDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountTermsDialog"
-import {
-  getPopCurrentAccountLedger,
-  setPopCurrentAccountEnrollment,
-  type CurrentAccountOpenDocument,
-  type CurrentAccountPartyRow,
+import type {
+  CurrentAccountOpenDocument,
+  CurrentAccountPartyRow,
 } from "@/app/[siteId]/[popId]/current-accounts/actions"
 import {
   CurrentAccountCountCell,
@@ -82,7 +80,9 @@ import {
 import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { TableBody } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopCurrentAccountParties } from "@/hooks/usePopCurrentAccountParties"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import {
   CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS,
   currentAccountAgingFilterLabel,
@@ -95,7 +95,13 @@ import {
   popCurrentAccountPartiesQueryRoot,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
 import { popScopedHref } from "@/lib/popRoutes"
+import {
+  fetchPopCurrentAccountLedger,
+  setPopCurrentAccountEnrollment,
+} from "@/lib/rootsyApi/currentAccountsClient"
 import { cn } from "@/lib/utils"
 import { useQueryClient } from "@tanstack/react-query"
 import { Truck, UserPlus } from "lucide-react"
@@ -103,31 +109,39 @@ import {
   nextWorkspaceTableSortState,
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
-import {
-  useParams,
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 
 export function CurrentAccountsWorkspaceView() {
   const params = useParams()
-  const router = useRouter()
-  const routerRef = useRef(router)
-  routerRef.current = router
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const siteId = String(params.siteId ?? "")
   const popId = String(params.popId ?? "")
+  const queryClient = useQueryClient()
+  const { bootstrap, loading: bootstrapLoading, popAccess, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
+
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
   const ws = useMemo(
-    () => parseCurrentAccountsWorkspaceUrl(searchParams),
-    [searchParams],
+    () => parseCurrentAccountsWorkspaceUrl(workspaceParams),
+    [workspaceParams],
   )
   const searchInputId = useId()
   const pageSizeLabelId = useId()
-  const { bootstrap, loading: bootstrapLoading, popAccess } = usePopWorkspace()
-  const queryClient = useQueryClient()
 
   const [searchInput, setSearchInput] = useState(ws.q)
   const [enrollOpen, setEnrollOpen] = useState(false)
@@ -148,13 +162,18 @@ export function CurrentAccountsWorkspaceView() {
 
   const pushWs = useCallback(
     (patch: Parameters<typeof mergeCurrentAccountsWorkspaceUrl>[1]) => {
-      const next = mergeCurrentAccountsWorkspaceUrl(searchParams, patch)
+      const next = mergeCurrentAccountsWorkspaceUrl(workspaceParams, patch)
       const qs = next.toString()
-      if (qs === searchParams.toString()) return
       const href = qs ? `${pathname}?${qs}` : pathname
-      routerRef.current.replace(href, { scroll: false })
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== href) {
+          window.history.replaceState(window.history.state, "", href)
+        }
+      }
+      setWorkspaceSearch(qs)
     },
-    [pathname, searchParams],
+    [pathname, workspaceParams],
   )
 
   const handleSortColumn = useCallback(
@@ -196,9 +215,20 @@ export function CurrentAccountsWorkspaceView() {
 
   const parties = partiesQuery.data?.parties ?? []
   const totalCount = partiesQuery.data?.totalCount ?? 0
-  const canCreate = partiesQuery.data?.success
-    ? partiesQuery.data.canCreate
-    : false
+  const checkPerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = checkPerm(POP_PERMS.CURRENT_ACCOUNT_CREATE)
   const loading =
     partiesQuery.isPending ||
     (partiesQuery.isFetching && !partiesQuery.isFetched)
@@ -211,12 +241,6 @@ export function CurrentAccountsWorkspaceView() {
           ? String(partiesQuery.error)
           : null
   const error = rowActionError ?? tableError
-
-  useEffect(() => {
-    const res = partiesQuery.data
-    if (!res || res.success || !res.redirect) return
-    routerRef.current.replace(res.redirect)
-  }, [partiesQuery.data])
 
   useEffect(() => {
     setSearchInput(ws.q)
@@ -280,12 +304,12 @@ export function CurrentAccountsWorkspaceView() {
 
   const listHref = popScopedHref(siteId, popId, "current-accounts")
   const listBackHref = useMemo(() => {
-    const next = mergeCurrentAccountsWorkspaceUrl(searchParams, {
+    const next = mergeCurrentAccountsWorkspaceUrl(workspaceParams, {
       partyId: "",
     })
     const qs = next.toString()
     return qs ? `${listHref}?${qs}` : listHref
-  }, [listHref, searchParams])
+  }, [listHref, workspaceParams])
 
   const changeDirection = (direction: CurrentAccountDirection) => {
     pushWs({ direction, partyId: "", page: 1 })
@@ -295,14 +319,7 @@ export function CurrentAccountsWorkspaceView() {
     partyId: string,
     direction: CurrentAccountDirection = ws.direction,
   ) => {
-    const next = mergeCurrentAccountsWorkspaceUrl(searchParams, {
-      partyId,
-      direction,
-      page: 1,
-    })
-    const qs = next.toString()
-    const href = qs ? `${pathname}?${qs}` : pathname
-    router.push(href, { scroll: false })
+    pushWs({ partyId, direction, page: 1 })
   }
 
   const openEnroll = (direction: CurrentAccountDirection) => {
@@ -348,7 +365,7 @@ export function CurrentAccountsWorkspaceView() {
           party.partyId,
         ),
         queryFn: () =>
-          getPopCurrentAccountLedger(popId, {
+          fetchPopCurrentAccountLedger(popId, {
             direction: ws.direction,
             partyId: party.partyId,
           }),
@@ -410,6 +427,7 @@ export function CurrentAccountsWorkspaceView() {
             partyId={ws.partyId}
             view={ws.view}
             listBackHref={listBackHref}
+            canCreate={canCreate}
             onViewChange={(view) => pushWs({ view })}
             pdfBrand={{
               popName: bootstrap?.popName,

@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  applyPopCurrentAccountCredit,
-  type CurrentAccountOpenDocument,
-} from "@/app/[siteId]/[popId]/current-accounts/actions"
+import type { CurrentAccountOpenDocument } from "@/app/[siteId]/[popId]/current-accounts/actions"
+import { applyPopCurrentAccountCredit } from "@/lib/rootsyApi/currentAccountsClient"
 import {
   currentAccountSettleTotals,
   emptyCurrentAccountSettleDraft,

@@ -1,7 +1,7 @@
 "use client"
 
 import { CurrentAccountTermsFields } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountTermsFields"
-import { setPopCurrentAccountEnrollment } from "@/app/[siteId]/[popId]/current-accounts/actions"
+import { setPopCurrentAccountEnrollment } from "@/lib/rootsyApi/currentAccountsClient"
 import {
   RootsDialogBody,
   RootsDialogContent,

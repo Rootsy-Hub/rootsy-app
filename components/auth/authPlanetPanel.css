@@ -490,7 +490,7 @@
   .auth-shell-main {
     /* Mismo aire: viewport → logo y logo → card (mb-4 + padding top de la entidad). */
     --auth-shell-logo-gap: calc(1rem + 0.85rem);
-    padding-top: var(--auth-shell-logo-gap);
+    padding-top: calc(var(--auth-shell-logo-gap) + 5px);
   }
 
   .auth-shell-logo {

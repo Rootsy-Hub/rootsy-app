@@ -1,10 +1,10 @@
 "use client"
 
+import type { CurrentAccountEnrollmentCandidate } from "@/app/[siteId]/[popId]/current-accounts/actions"
 import {
   searchPopCurrentAccountEnrollmentCandidates,
   setPopCurrentAccountEnrollment,
-  type CurrentAccountEnrollmentCandidate,
-} from "@/app/[siteId]/[popId]/current-accounts/actions"
+} from "@/lib/rootsyApi/currentAccountsClient"
 import { CurrentAccountTermsFields } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountTermsFields"
 import {
   RootsDialogBody,
