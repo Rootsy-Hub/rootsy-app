@@ -2,6 +2,7 @@ import type {
   ArcaSalePointOption,
   CashRegisterOpenSessionTotals,
   CashRegisterRow,
+  CashRegisterSessionArqueoDetail,
   CashRegisterSummaryData,
   CashRegisterSummaryMovement,
   CashRegisterSummarySession,
@@ -235,6 +236,18 @@ export async function fetchCashRegisterTotals(
 > {
   return getJson<CashRegisterTotalsData>(
     `/api/pops/${popId}/cash-registers/${registerId}/totals`,
+  )
+}
+
+export async function fetchCashRegisterSessionArqueo(
+  popId: string,
+  sessionId: string,
+): Promise<
+  | { success: true; data: CashRegisterSessionArqueoDetail }
+  | { success: false; error: string }
+> {
+  return getJson<CashRegisterSessionArqueoDetail>(
+    `/api/pops/${popId}/cash-registers/sessions/${sessionId}/arqueo`,
   )
 }
 
