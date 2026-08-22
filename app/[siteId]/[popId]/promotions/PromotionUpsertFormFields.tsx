@@ -71,6 +71,7 @@ type Props = {
   form: PromotionFormState
   setForm: Dispatch<SetStateAction<PromotionFormState>>
   catalogOptions: PromotionCatalogOption[]
+  catalogLoading?: boolean
   disabled?: boolean
 }
 
@@ -79,6 +80,7 @@ export function PromotionUpsertFormFields({
   form,
   setForm,
   catalogOptions,
+  catalogLoading = false,
   disabled = false,
 }: Props) {
   return (
@@ -314,12 +316,15 @@ export function PromotionUpsertFormFields({
 
           <div className={sectionDividerClass} />
 
+          {catalogLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando catálogo…</p>
+          ) : null}
           <PromotionSlotEditor
             idPrefix={idPrefix}
             promotionType={form.promotionType}
             lines={form.slots}
             catalogOptions={catalogOptions}
-            disabled={disabled}
+            disabled={disabled || catalogLoading}
             onChange={(slots) => setForm((p) => ({ ...p, slots }))}
           />
 

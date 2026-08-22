@@ -21,6 +21,8 @@ type Props = {
   categorySections?: MenuCatalogCategorySection[]
   vistaCatalogo: SaleCatalogViewPersisted
   onVistaChange: (view: SaleCatalogViewPersisted) => void
+  /** Ítems más grandes para el desplegable mobile. */
+  density?: "default" | "comfortable"
 }
 
 export function SaleCatalogSidebarNav({
@@ -28,9 +30,17 @@ export function SaleCatalogSidebarNav({
   categorySections,
   vistaCatalogo,
   onVistaChange,
+  density = "default",
 }: Props) {
+  const comfortable = density === "comfortable"
   return (
-    <nav className={layoutsOperarCatalogRailNavClass} aria-label="Filtros del catálogo">
+    <nav
+      className={cn(
+        layoutsOperarCatalogRailNavClass,
+        comfortable && "p-3 [&_button]:min-h-12 [&_button]:px-3 [&_button]:text-base",
+      )}
+      aria-label="Filtros del catálogo"
+    >
       {!categorySections?.length ? (
         <ul className={layoutsOperarCatalogRailListClass} role="list">
           {categories.map((cat) => {

@@ -233,7 +233,7 @@ export function SaleCatalogToolbar({
 
   return (
     <div className={cn(variantShellClass(variant), className)}>
-      <div className={viewToggleShellClass(variant)}>
+      <div className={cn(viewToggleShellClass(variant), "max-md:hidden")}>
         {variant === "pos-dark" ? (
           <span
             aria-hidden
@@ -381,7 +381,7 @@ export function SaleCatalogToolbar({
       </div>
 
       {showPriceList ? (
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="hidden shrink-0 items-center gap-1 md:flex">
           <label id={priceListLabelId} className="sr-only">
             Lista de precio
           </label>

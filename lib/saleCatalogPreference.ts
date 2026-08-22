@@ -121,6 +121,27 @@ export function readSavedSaleCatalogView(
   }
 }
 
+/** Nombre visible de la vista actual — trigger mobile de categorías. */
+export function saleCatalogViewLabel(
+  vista: SaleCatalogViewPersisted,
+  categories: CategoryRef[],
+  categorySections?: CategorySectionRef[],
+): string {
+  if (vista.modo === "promociones") return "Promociones"
+  if (vista.modo === "con_descuento") return "Con descuento"
+  const key = vista.categoria.trim()
+  if (!key) return "Categoría"
+  if (categorySections?.length) {
+    for (const section of categorySections) {
+      for (const cat of section.categories) {
+        if (`${section.id}:${cat.id}` === key) return cat.name
+      }
+    }
+  }
+  const match = categories.find((cat) => cat.name === key)
+  return match?.name ?? key
+}
+
 export function writeSavedSaleCatalogView(
   popId: string,
   view: SaleCatalogViewPersisted,

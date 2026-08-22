@@ -9,6 +9,10 @@ import {
   layoutsOperationsBodyShellClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
+  OperarCatalogMobileChromeProvider,
+  useOperarCatalogMobileChrome,
+} from "@/components/layouts-module/OperarCatalogMobileChrome"
+import {
   DataWorkspaceModuleLayout,
   type DataWorkspaceModuleLayoutProps,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
@@ -27,11 +31,41 @@ export function DataWorkspaceOperationsLayout({
   children,
   contentFlush = true,
   mainClassName,
+  headerMobileMoreActions,
   ...props
 }: DataWorkspaceOperationsLayoutProps) {
   return (
+    <OperarCatalogMobileChromeProvider>
+      <OperationsLayoutWithChrome
+        {...props}
+        contentFlush={contentFlush}
+        mainClassName={mainClassName}
+        headerMobileMoreActions={headerMobileMoreActions}
+      >
+        {children}
+      </OperationsLayoutWithChrome>
+    </OperarCatalogMobileChromeProvider>
+  )
+}
+
+function OperationsLayoutWithChrome({
+  children,
+  contentFlush = true,
+  mainClassName,
+  headerMobileMoreActions,
+  ...props
+}: DataWorkspaceOperationsLayoutProps) {
+  const chrome = useOperarCatalogMobileChrome()
+  const mobileMore = [
+    ...(chrome?.moreActions ?? []),
+    ...(headerMobileMoreActions ?? []),
+  ]
+
+  return (
     <DataWorkspaceModuleLayout
       {...props}
+      hideSidebarToggleOnMobile
+      headerMobileMoreActions={mobileMore.length > 0 ? mobileMore : undefined}
       contentFlush={contentFlush}
       mainClassName={cn(
         "flex min-h-0 flex-1 flex-col overflow-hidden p-0",

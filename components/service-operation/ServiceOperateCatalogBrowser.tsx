@@ -9,7 +9,6 @@ import {
   layoutsOperarCatalogColumnClass,
   layoutsOperarCatalogGridClass,
   layoutsOperarCatalogGridStyle,
-  layoutsOperarCatalogRailBackdropClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
@@ -24,6 +23,7 @@ import {
 } from "@/components/rootsy-dialog"
 import { AlertDialog } from "@/components/ui/alert-dialog"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
+import { SaleCatalogMobileCategoryBar } from "@/components/sale-operation/SaleCatalogMobileCategoryBar"
 import { SaleCatalogSidebarNav } from "@/components/sale-operation/SaleCatalogSidebarNav"
 import { SaleCatalogSidebarNavSkeleton } from "@/components/sale-operation/SaleCatalogSidebarNavSkeleton"
 import { ServiceOperateCatalogToolbar } from "@/components/service-operation/ServiceOperateCatalogToolbar"
@@ -77,6 +77,8 @@ export function ServiceOperateCatalogBrowser({
   onClearSelectedService,
 }: Props) {
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false)
   const [busqueda, setBusqueda] = useState("")
   const [vistaCatalogo, setVistaCatalogo] = useState<SaleCatalogViewPersisted>({
     modo: "categoria",
@@ -85,6 +87,15 @@ export function ServiceOperateCatalogBrowser({
   const [clearServiceConfirmOpen, setClearServiceConfirmOpen] = useState(false)
 
   const showSelectedDetail = Boolean(selectedService && popId?.trim())
+  const vistaEfectiva = isMobileViewport ? "lista" : modoVista
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)")
+    const apply = () => setIsMobileViewport(mq.matches)
+    apply()
+    mq.addEventListener("change", apply)
+    return () => mq.removeEventListener("change", apply)
+  }, [])
 
   useEffect(() => {
     const categoryName = selectedService?.categoryName.trim()
@@ -127,18 +138,10 @@ export function ServiceOperateCatalogBrowser({
     <>
       <div className={layoutsOperarCatalogColumnClass}>
         {showSelectedDetail ? null : (
-          <>
-          {catalogSidebarOpen && onCatalogSidebarOpenChange ? (
-            <button
-              type="button"
-              className={layoutsOperarCatalogRailBackdropClass}
-              aria-label="Cerrar categorías"
-              onClick={() => onCatalogSidebarOpenChange(false)}
-            />
-          ) : null}
           <aside
             id="data-workspace-sidebar"
             className={cn(
+              "max-md:hidden",
               layoutsOperarCatalogSidebarClass,
               catalogSidebarOpen
                 ? layoutsOperarCatalogSidebarOpenClass
@@ -160,13 +163,15 @@ export function ServiceOperateCatalogBrowser({
               )}
             </div>
           </aside>
-          </>
         )}
 
         <section
           className={cn(
             layoutsOperarCatalogCanvasClass,
+            "relative",
             showSelectedDetail && "[grid-template-rows:minmax(0,1fr)]",
+            !showSelectedDetail &&
+              "max-md:[grid-template-rows:var(--layouts-operar-catalog-toolbar-h)_var(--layouts-operar-catalog-toolbar-h)_minmax(0,1fr)]",
           )}
         >
           {showSelectedDetail ? (
@@ -203,8 +208,33 @@ export function ServiceOperateCatalogBrowser({
             </div>
           ) : (
             <>
+              <SaleCatalogMobileCategoryBar
+                label={vistaCatalogo.modo === "categoria" ? vistaCatalogo.categoria || "Categoría" : "Categoría"}
+                open={categoryPickerOpen}
+                onToggle={() => setCategoryPickerOpen((current) => !current)}
+              />
+              {categoryPickerOpen ? (
+                <div
+                  className={cn(
+                    "absolute inset-x-0 bottom-0 z-30 overflow-hidden md:hidden",
+                    "top-[var(--layouts-operar-catalog-toolbar-h)]",
+                    "max-md:col-start-1 max-md:row-start-1",
+                    "bg-[var(--rootsy-sombra-800)]",
+                  )}
+                >
+                  <SaleCatalogSidebarNav
+                    categories={saleCategories}
+                    vistaCatalogo={vistaCatalogo}
+                    onVistaChange={(view) => {
+                      setVistaCatalogo(view)
+                      setCategoryPickerOpen(false)
+                    }}
+                    density="comfortable"
+                  />
+                </div>
+              ) : null}
               <ServiceOperateCatalogToolbar
-                modoVista={modoVista}
+                modoVista={vistaEfectiva}
                 onModoVistaChange={setModoVista}
                 busqueda={busqueda}
                 onBusquedaChange={setBusqueda}
@@ -222,7 +252,7 @@ export function ServiceOperateCatalogBrowser({
                   )}
                 >
                   {loading && !error ? (
-                    <SaleCatalogBrowserSkeleton variant={modoVista} />
+                    <SaleCatalogBrowserSkeleton variant={vistaEfectiva} />
                   ) : error ? (
                     <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
                       <p className="max-w-md text-sm text-rose-300">{error}</p>
@@ -244,12 +274,12 @@ export function ServiceOperateCatalogBrowser({
                   ) : (
                     <div
                       className={
-                        modoVista === "grid"
+                        vistaEfectiva === "grid"
                           ? layoutsOperarCatalogGridClass
                           : "flex flex-col gap-2"
                       }
                       style={
-                        modoVista === "grid"
+                        vistaEfectiva === "grid"
                           ? layoutsOperarCatalogGridStyle
                           : undefined
                       }
@@ -258,7 +288,7 @@ export function ServiceOperateCatalogBrowser({
                         <ServiceOperateServiceCard
                           key={service.id}
                           service={service}
-                          variant={modoVista}
+                          variant={vistaEfectiva}
                           selected={selectedServiceId === service.id}
                           disabled={disabled}
                           onClick={() => onSelectService(service.id)}

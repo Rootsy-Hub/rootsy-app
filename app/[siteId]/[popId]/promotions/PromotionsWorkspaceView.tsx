@@ -1,14 +1,6 @@
 "use client"
 
-import {
-  createPopPromotion,
-  deletePopPromotion,
-  getPopPromotionDetail,
-  getPromotionCatalogOptions,
-  updatePopPromotion,
-  type PromotionCatalogOption,
-  type PromotionTableRow,
-} from "@/app/[siteId]/[popId]/promotions/actions"
+import type { PromotionTableRow } from "@/app/[siteId]/[popId]/promotions/actions"
 import { PromotionDeleteDialog } from "@/app/[siteId]/[popId]/promotions/PromotionDeleteDialog"
 import { PromotionUpsertDialog } from "@/app/[siteId]/[popId]/promotions/PromotionUpsertDialog"
 import {
@@ -110,9 +102,23 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import { usePopPromotionCatalog } from "@/hooks/usePopPromotionCatalog"
 import { usePopPromotionsTable } from "@/hooks/usePopPromotionsTable"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
-import { popPromotionsQueryRoot } from "@/lib/queryKeys"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
+import {
+  popPromotionQueryKey,
+  popPromotionsQueryRoot,
+} from "@/lib/queryKeys"
+import {
+  createPopPromotion,
+  deletePopPromotion,
+  fetchPopPromotion,
+  updatePopPromotion,
+} from "@/lib/rootsyApi/promotionsClient"
 import { useQueryClient } from "@tanstack/react-query"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import {
@@ -150,15 +156,30 @@ export function PromotionsWorkspaceView() {
   const queryClient = useQueryClient()
   const routerRef = useRef(router)
   routerRef.current = router
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
   const ws = useMemo(
-    () => parsePromotionsWorkspaceUrl(searchParams),
-    [searchParams],
+    () => parsePromotionsWorkspaceUrl(workspaceParams),
+    [workspaceParams],
   )
   const searchInputId = useId()
   const filtersButtonId = useId()
   const pageSizeLabelId = useId()
 
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
@@ -169,10 +190,19 @@ export function PromotionsWorkspaceView() {
 
   const pushWs = useCallback(
     (patch: Parameters<typeof mergePromotionsWorkspaceUrl>[1]) => {
-      const next = mergePromotionsWorkspaceUrl(searchParams, patch)
-      router.replace(`${pathname}?${next.toString()}`)
+      const qs = mergePromotionsWorkspaceUrl(workspaceParams, patch)
+      const next = qs.toString()
+        ? `${pathname}?${qs.toString()}`
+        : pathname
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== next) {
+          window.history.replaceState(window.history.state, "", next)
+        }
+      }
+      setWorkspaceSearch(qs.toString())
     },
-    [pathname, router, searchParams],
+    [pathname, workspaceParams],
   )
 
   const handleSortColumn = useCallback(
@@ -203,16 +233,13 @@ export function PromotionsWorkspaceView() {
     [ws.promotionType],
   )
 
-  const [catalogOptions, setCatalogOptions] = useState<PromotionCatalogOption[]>(
-    [],
-  )
-
   const [formOpen, setFormOpen] = useState(false)
-  const [formDetailLoading, setFormDetailLoading] = useState(false)
+  const [formRefreshing, setFormRefreshing] = useState(false)
   const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<PromotionFormState>(defaultPromotionFormState())
+  const editRequestIdRef = useRef(0)
 
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<PromotionTableRow | null>(
@@ -233,17 +260,35 @@ export function PromotionsWorkspaceView() {
       sort: ws.sort,
       ord: ws.ord,
     },
-    { enabled: Boolean(popId) },
+    { enabled: Boolean(popId && siteId) },
   )
+  const catalogQuery = usePopPromotionCatalog(popId, { enabled: formOpen })
+  const catalogOptions = catalogQuery.data ?? []
+  const catalogLoading = catalogQuery.isPending && !catalogQuery.data
 
   const promotions = promotionsQuery.data?.promotions ?? []
   const totalCount = promotionsQuery.data?.totalCount ?? 0
-  const canCreate = promotionsQuery.data?.canCreate ?? false
-  const canUpdate = promotionsQuery.data?.canUpdate ?? false
-  const canDelete = promotionsQuery.data?.canDelete ?? false
+  const promoPerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = promoPerm(POP_PERMS.PROMOTION_CREATE)
+  const canUpdate = promoPerm(POP_PERMS.PROMOTION_UPDATE)
+  const canDelete = promoPerm(POP_PERMS.PROMOTION_DELETE)
   const loading =
-    promotionsQuery.isPending ||
-    (promotionsQuery.isFetching && !promotionsQuery.isFetched)
+    !popId || !siteId
+      ? false
+      : promotionsQuery.isPending ||
+        (promotionsQuery.isFetching && !promotionsQuery.isFetched)
   const error =
     promotionsQuery.data?.success === false
       ? promotionsQuery.data.error
@@ -262,8 +307,12 @@ export function PromotionsWorkspaceView() {
 
   useEffect(() => {
     const res = promotionsQuery.data
-    if (!res || res.success || !res.redirect) return
-    routerRef.current.replace(res.redirect)
+    if (!res || res.success || !("redirect" in res) || !res.redirect) return
+    const redirect = res.redirect
+    const timeout = window.setTimeout(() => {
+      routerRef.current.push(redirect)
+    }, 1200)
+    return () => window.clearTimeout(timeout)
   }, [promotionsQuery.data])
 
   useEffect(() => {
@@ -277,13 +326,6 @@ export function PromotionsWorkspaceView() {
     ws.sort,
     ws.ord,
   ])
-
-  useEffect(() => {
-    if (!popId) return
-    void getPromotionCatalogOptions(popId).then((res) => {
-      if (res.success) setCatalogOptions(res.options)
-    })
-  }, [popId])
 
   useEffect(() => {
     setSearchInput(ws.q)
@@ -366,41 +408,61 @@ export function PromotionsWorkspaceView() {
   }, [pushWs])
 
   const openCreate = () => {
+    if (!canCreate) return
     setEditingId(null)
     setForm(defaultPromotionFormState())
     setFormError(null)
+    setFormRefreshing(false)
     setFormOpen(true)
   }
 
-  const openEdit = async (row: PromotionTableRow) => {
+  const openEdit = (row: PromotionTableRow) => {
+    if (!popId) return
+    const requestId = ++editRequestIdRef.current
     setFormError(null)
-    setFormDetailLoading(true)
-    setFormOpen(true)
     setEditingId(row.id)
-    const res = await getPopPromotionDetail(popId, row.id)
-    setFormDetailLoading(false)
-    if (!res.success) {
-      setFormError(res.error)
-      return
-    }
-    setForm(promotionFormFromDetail(res.promotion))
+    setForm(promotionFormFromDetail({ ...row, slots: [] }))
+    setFormRefreshing(true)
+    setFormOpen(true)
+    void queryClient
+      .fetchQuery({
+        queryKey: popPromotionQueryKey(popId, row.id),
+        queryFn: () => fetchPopPromotion(popId, row.id),
+        staleTime: 0,
+      })
+      .then((detail) => {
+        if (editRequestIdRef.current !== requestId) return
+        setForm(promotionFormFromDetail(detail))
+      })
+      .catch((err: unknown) => {
+        if (editRequestIdRef.current !== requestId) return
+        setFormError(
+          err instanceof Error
+            ? err.message
+            : "No se pudo cargar la promoción",
+        )
+      })
+      .finally(() => {
+        if (editRequestIdRef.current === requestId) setFormRefreshing(false)
+      })
   }
 
   const closeForm = () => {
+    editRequestIdRef.current += 1
     setFormOpen(false)
   }
 
   const finalizeFormClose = () => {
     setEditingId(null)
     setFormError(null)
-    setFormDetailLoading(false)
+    setFormRefreshing(false)
     setFormSaving(false)
     setForm(defaultPromotionFormState())
   }
 
   const submitForm = async (e: FormEvent) => {
     e.preventDefault()
-    if (formSaving || formDetailLoading) return
+    if (formSaving || formRefreshing) return
     setFormSaving(true)
     setFormError(null)
     const payload = promotionFormToPayload(form)
@@ -837,7 +899,7 @@ export function PromotionsWorkspaceView() {
         idPrefix={editingId ? "promo-edit" : "promo-create"}
         title={editingId ? "Editar promoción" : "Nueva promoción"}
         description="Combos con ítems configurables u ofertas por cantidad (2x1, etc.)."
-        loading={formDetailLoading}
+        refreshing={formRefreshing}
         saving={formSaving}
         banner={formError}
         onSubmit={(e) => void submitForm(e)}
@@ -846,7 +908,8 @@ export function PromotionsWorkspaceView() {
         form={form}
         setForm={setForm}
         catalogOptions={catalogOptions}
-        disabled={formDetailLoading || formSaving}
+        catalogLoading={catalogLoading}
+        disabled={formSaving}
       />
 
       {deleteTarget ? (

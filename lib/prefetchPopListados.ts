@@ -5,8 +5,6 @@ import { articlesModalFiltersFromWorkspace } from "@/app/[siteId]/[popId]/articl
 import type { ArticlesWorkspaceUrlState } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
 import { getPopChecksTable } from "@/app/[siteId]/[popId]/checks/actions"
 import type { ChecksWorkspaceUrlState } from "@/app/[siteId]/[popId]/checks/workspaceUrl"
-import { getPopClientsTable } from "@/app/[siteId]/[popId]/clients/actions"
-import type { ClientsWorkspaceUrlState } from "@/app/[siteId]/[popId]/clients/workspaceUrl"
 import {
   getPopCurrentAccountLedger,
   getPopCurrentAccountParties,
@@ -15,8 +13,6 @@ import type { CurrentAccountsWorkspaceUrlState } from "@/app/[siteId]/[popId]/cu
 import { getPopInvoicesArcaTable } from "@/app/[siteId]/[popId]/invoices/actions"
 import type { InvoicesWorkspaceUrlState } from "@/app/[siteId]/[popId]/invoices/workspaceUrl"
 import { getOperationsList } from "@/app/[siteId]/[popId]/operations/actions"
-import { getPopPromotionsTable } from "@/app/[siteId]/[popId]/promotions/actions"
-import type { PromotionsWorkspaceUrlState } from "@/app/[siteId]/[popId]/promotions/workspaceUrl"
 import { getPurchaseOrdersTable } from "@/app/[siteId]/[popId]/purchase-orders/actions"
 import { DEFAULT_PURCHASE_ORDER_TABLE_PAGE_SIZE } from "@/app/[siteId]/[popId]/purchase-orders/orderConstants"
 import { DEFAULT_QUOTE_TABLE_PAGE_SIZE } from "@/app/[siteId]/[popId]/quotes/quoteConstants"
@@ -29,46 +25,17 @@ import { prefetchPopListQuery } from "@/lib/prefetchPopListQuery"
 import {
   popArticlesQueryKey,
   popChecksQueryKey,
-  popClientsQueryKey,
   popCurrentAccountLedgerQueryKey,
   popCurrentAccountPartiesQueryKey,
   popInvoicesQueryKey,
   popOperationsQueryKey,
-  popPromotionsQueryKey,
   popPurchaseOrdersQueryKey,
   popQuotesQueryKey,
   popServicesQueryKey,
   popSuppliersQueryKey,
-  type PopClientsQueryParams,
   type PopOperationsQueryParams,
 } from "@/lib/queryKeys"
 import type { DehydratedState } from "@tanstack/react-query"
-
-function clientsQueryParamsFromUrl(
-  url: ClientsWorkspaceUrlState,
-): PopClientsQueryParams {
-  return {
-    page: url.page,
-    pageSize: url.pageSize,
-    search: url.q,
-    soloActivos: url.soloActivos,
-    withEmail: url.withEmail,
-    withTaxId: url.withTaxId,
-    sort: url.sort,
-    ord: url.ord,
-  }
-}
-
-export async function prefetchPopClientsTable(
-  popId: string,
-  url: ClientsWorkspaceUrlState,
-): Promise<DehydratedState | null> {
-  const params = clientsQueryParamsFromUrl(url)
-  return prefetchPopListQuery({
-    queryKey: popClientsQueryKey(popId, params),
-    queryFn: () => getPopClientsTable(popId, params),
-  })
-}
 
 export async function prefetchPopArticlesTable(
   popId: string,
@@ -125,25 +92,6 @@ export async function prefetchPopChecksTable(
   return prefetchPopListQuery({
     queryKey: popChecksQueryKey(popId, params),
     queryFn: () => getPopChecksTable(popId, params),
-  })
-}
-
-export async function prefetchPopPromotionsTable(
-  popId: string,
-  url: PromotionsWorkspaceUrlState,
-): Promise<DehydratedState | null> {
-  const params = {
-    q: url.q,
-    page: url.page,
-    pageSize: url.pageSize,
-    soloActivos: url.soloActivos,
-    promotionType: url.promotionType,
-    sort: url.sort,
-    ord: url.ord,
-  }
-  return prefetchPopListQuery({
-    queryKey: popPromotionsQueryKey(popId, params),
-    queryFn: () => getPopPromotionsTable(popId, params),
   })
 }
 

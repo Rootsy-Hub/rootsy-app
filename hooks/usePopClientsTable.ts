@@ -1,14 +1,12 @@
 "use client"
 
-import {
-  getPopClientsTable,
-  type GetPopClientsTableInput,
-} from "@/app/[siteId]/[popId]/clients/actions"
+import type { GetPopClientsTableInput } from "@/app/[siteId]/[popId]/clients/actions"
 import {
   popClientsQueryKey,
   type PopClientsQueryParams,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { fetchPopClientsTable } from "@/lib/rootsyApi/clientsClient"
 import { useQuery } from "@tanstack/react-query"
 
 type UsePopClientsTableOptions = {
@@ -34,7 +32,7 @@ export function usePopClientsTable(
 
   return useQuery({
     queryKey: popClientsQueryKey(popId ?? "", params),
-    queryFn: () => getPopClientsTable(popId!, queryParams),
+    queryFn: () => fetchPopClientsTable(popId!, queryParams),
     enabled,
     ...sessionListQueryOptions,
   })

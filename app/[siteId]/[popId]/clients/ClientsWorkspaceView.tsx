@@ -1,12 +1,9 @@
 "use client"
 
 import "@/app/library/color/rootsyNaturePalette.css"
-import {
-  createPopClient,
-  deletePopClient,
-  updatePopClient,
-  type ClientTableRow,
-  type UpsertPopClientInput,
+import type {
+  ClientTableRow,
+  UpsertPopClientInput,
 } from "@/app/[siteId]/[popId]/clients/actions"
 import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import {
@@ -88,11 +85,20 @@ import {
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
+import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { usePopClientsTable } from "@/hooks/usePopClientsTable"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
 import { popClientsQueryRoot } from "@/lib/queryKeys"
 import { formatMoneyInputForField } from "@/lib/moneyInput"
+import {
+  createPopClient,
+  deletePopClient,
+  updatePopClient,
+} from "@/lib/rootsyApi/clientsClient"
 import { cn } from "@/lib/utils"
-import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   Pencil,
@@ -170,21 +176,41 @@ export function ClientsWorkspaceView() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
   const queryClient = useQueryClient()
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
 
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
   const workspaceParsed = useMemo(
-    () => parseClientsWorkspaceUrl(searchParams),
-    [searchParams],
+    () => parseClientsWorkspaceUrl(workspaceParams),
+    [workspaceParams],
   )
 
   const replaceWorkspaceQuery = useCallback(
     (patch: Parameters<typeof mergeClientsWorkspaceUrl>[1]) => {
-      const qs = mergeClientsWorkspaceUrl(searchParams, patch)
+      const qs = mergeClientsWorkspaceUrl(workspaceParams, patch)
       const next = qs ? `${pathname}?${qs}` : pathname
-      router.replace(next, { scroll: false })
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== next) {
+          window.history.replaceState(window.history.state, "", next)
+        }
+      }
+      setWorkspaceSearch(qs)
     },
-    [pathname, router, searchParams],
+    [pathname, workspaceParams],
   )
 
   const listQueryParams = useMemo(
@@ -239,12 +265,27 @@ export function ClientsWorkspaceView() {
 
   const rows = clientsTableQuery.data?.clients ?? []
   const totalCount = clientsTableQuery.data?.totalCount ?? 0
-  const canCreate = clientsTableQuery.data?.canCreate ?? false
-  const canUpdate = clientsTableQuery.data?.canUpdate ?? false
-  const canDelete = clientsTableQuery.data?.canDelete ?? false
+  const clientPerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = clientPerm(POP_PERMS.CLIENT_CREATE)
+  const canUpdate = clientPerm(POP_PERMS.CLIENT_UPDATE)
+  const canDelete = clientPerm(POP_PERMS.CLIENT_DELETE)
   const listFetching =
-    clientsTableQuery.isPending ||
-    (clientsTableQuery.isFetching && !clientsTableQuery.isFetched)
+    !popId || !siteId
+      ? false
+      : clientsTableQuery.isPending ||
+        (clientsTableQuery.isFetching && !clientsTableQuery.isFetched)
   const error =
     clientsTableQuery.data?.success === false
       ? clientsTableQuery.data.error || "Error"
@@ -379,7 +420,16 @@ export function ClientsWorkspaceView() {
 
   useEffect(() => {
     setSelected(new Set())
-  }, [searchParams])
+  }, [
+    workspaceParsed.q,
+    workspaceParsed.page,
+    workspaceParsed.pageSize,
+    workspaceParsed.soloActivos,
+    workspaceParsed.withEmail,
+    workspaceParsed.withTaxId,
+    workspaceParsed.sort,
+    workspaceParsed.ord,
+  ])
 
   useEffect(() => {
     if (workspaceParsed.view === "new-client") {
@@ -453,10 +503,11 @@ export function ClientsWorkspaceView() {
   ])
 
   const openCreate = useCallback(() => {
+    if (!canCreate) return
     setCreateBanner(null)
     setCreateForm(emptyForm())
     setCreateOpen(true)
-  }, [])
+  }, [canCreate])
 
   const closeCreate = useCallback(() => {
     setCreateOpen(false)
@@ -641,7 +692,7 @@ export function ClientsWorkspaceView() {
   if (!popId || !siteId) {
     return (
       <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
-        <p className="text-sm">Store ID not found</p>
+        <p className="text-sm">Punto de venta no encontrado</p>
       </div>
     )
   }

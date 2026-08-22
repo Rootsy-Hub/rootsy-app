@@ -55,6 +55,8 @@ export type DataWorkspaceLayoutProps = {
   headerActions?: ReactNode
   /** Acciones secundarias — íconos en desktop, menú “más” en mobile. */
   headerMoreActions?: readonly DataWorkspaceHeaderMoreAction[]
+  headerMobileMoreActions?: readonly DataWorkspaceHeaderMoreAction[]
+  hideSidebarToggleOnMobile?: boolean
   /** Fila opcional bajo el header (filtros, período, búsqueda). */
   toolbar?: ReactNode
   /** Barra lateral opcional (p. ej. `DataWorkspaceSidebar`) para varias vistas en la misma sección. */
@@ -107,6 +109,8 @@ export function DataWorkspaceLayout({
   titleAdornment,
   headerActions,
   headerMoreActions,
+  headerMobileMoreActions,
+  hideSidebarToggleOnMobile = false,
   toolbar,
   sidebar,
   sidebarCollapsible = true,
@@ -320,6 +324,8 @@ export function DataWorkspaceLayout({
           titleAdornment={titleAdornment}
           headerActions={headerActions}
           headerMoreActions={headerMoreActions}
+          headerMobileMoreActions={headerMobileMoreActions}
+          hideSidebarToggleOnMobile={hideSidebarToggleOnMobile}
           sectionMenu={sectionMenu}
           toolbar={toolbar}
           mainMaxWidthClass={mainMaxWidthClass}

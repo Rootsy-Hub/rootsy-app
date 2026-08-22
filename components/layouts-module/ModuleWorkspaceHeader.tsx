@@ -46,6 +46,10 @@ export type ModuleWorkspaceHeaderProps = {
   titleAdornment?: ReactNode
   headerActions?: ReactNode
   headerMoreActions?: readonly DataWorkspaceHeaderMoreAction[]
+  /** Solo el ⋯ mobile (p. ej. listas de precios en operar). */
+  headerMobileMoreActions?: readonly DataWorkspaceHeaderMoreAction[]
+  /** En operar mobile las categorías van en el canvas, no en el header. */
+  hideSidebarToggleOnMobile?: boolean
   sectionMenu?: ReactNode
   toolbar?: ReactNode
   mainMaxWidthClass?: string
@@ -75,6 +79,8 @@ export function ModuleWorkspaceHeader({
   titleAdornment,
   headerActions,
   headerMoreActions,
+  headerMobileMoreActions,
+  hideSidebarToggleOnMobile = false,
   sectionMenu,
   toolbar,
   mainMaxWidthClass = "max-w-6xl",
@@ -98,16 +104,28 @@ export function ModuleWorkspaceHeader({
   const userPending = userPendingProp || (loading && !userName)
   const showBrand = brandPending || Boolean(popLogoSrc || popName)
   const showUser = userPending || Boolean(userName)
-  const hasMoreActions = Boolean(headerMoreActions?.length)
-  const showActions = Boolean(headerActions || hasMoreActions || sectionMenu)
-  const renderMoreMenu = (presentation: "icons" | "menu") =>
-    hasMoreActions ? (
+  const desktopMoreActions = headerMoreActions ?? []
+  const mobileMoreActions = [
+    ...(headerMobileMoreActions ?? []),
+    ...desktopMoreActions,
+  ]
+  const hasMoreActions = desktopMoreActions.length > 0
+  const hasMobileMoreActions = mobileMoreActions.length > 0
+  const showActions = Boolean(
+    headerActions || hasMoreActions || hasMobileMoreActions || sectionMenu,
+  )
+  const renderMoreMenu = (presentation: "icons" | "menu") => {
+    const actions =
+      presentation === "menu" ? mobileMoreActions : desktopMoreActions
+    if (actions.length === 0) return null
+    return (
       <DataWorkspaceHeaderMoreMenu
-        actions={headerMoreActions!}
+        actions={actions}
         headerVariant={headerVariant}
         presentation={presentation}
       />
-    ) : null
+    )
+  }
 
   return (
     <>
@@ -123,7 +141,7 @@ export function ModuleWorkspaceHeader({
             </EterIconButton>
           ) : null}
 
-          {showSidebarToggle ? (
+          {showSidebarToggle && !hideSidebarToggleOnMobile ? (
             <EterIconButton
               size="default"
               intent={sidebarOpen ? "subtle" : "danger"}

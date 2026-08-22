@@ -370,6 +370,14 @@ export function popPromotionsQueryRoot(popId: string) {
   return ["pop-promotions", popId] as const
 }
 
+export function popPromotionQueryKey(popId: string, promotionId: string) {
+  return ["pop-promotion", popId, promotionId] as const
+}
+
+export function popPromotionCatalogQueryKey(popId: string) {
+  return ["pop-promotion-catalog", popId] as const
+}
+
 export type PopServicesQueryParams = {
   q: string
   page: number

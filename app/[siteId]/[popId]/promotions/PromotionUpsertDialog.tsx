@@ -27,6 +27,7 @@ type FormFieldsProps = {
   form: PromotionFormState
   setForm: Dispatch<SetStateAction<PromotionFormState>>
   catalogOptions: PromotionCatalogOption[]
+  catalogLoading?: boolean
   disabled?: boolean
 }
 
@@ -39,6 +40,7 @@ type Props = FormFieldsProps & {
   description: string
   loading?: boolean
   loadingMessage?: string
+  refreshing?: boolean
   saving?: boolean
   banner?: string | null
   onSubmit: FormEventHandler<HTMLFormElement>
@@ -54,6 +56,7 @@ export function PromotionUpsertDialog({
   description,
   loading = false,
   loadingMessage = "Cargando promoción…",
+  refreshing = false,
   saving = false,
   banner,
   onSubmit,
@@ -88,6 +91,14 @@ export function PromotionUpsertDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <RootsDialogContent size="twoCol">
         <RootsDialogHeader title={title} description={description} />
+        {refreshing ? (
+          <div
+            className="h-0.5 w-full overflow-hidden bg-[color:var(--rootsy-bruma-200)]"
+            aria-hidden
+          >
+            <div className="h-full w-1/3 animate-pulse bg-[color:var(--rootsy-savia-500)]/50" />
+          </div>
+        ) : null}
         {loading ? (
           <RootsDialogBody>
             <RootsDialogLoadingState message={loadingMessage} />
@@ -105,7 +116,7 @@ export function PromotionUpsertDialog({
               confirmLabel={confirmLabel}
               confirmLoadingLabel={confirmLoadingLabel}
               confirmType="submit"
-              confirmDisabled={saving}
+              confirmDisabled={saving || refreshing}
               confirmLoading={saving}
             />
           </RootsDialogForm>
