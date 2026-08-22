@@ -303,18 +303,37 @@ export function ArticlesWorkspaceView() {
   const afterHydration = useAfterHydration()
   const menuCache = usePopMenuCache(popId ?? "")
 
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
+
   const workspaceParsed = useMemo(
-    () => parseArticlesWorkspaceUrl(searchParams),
-    [searchParams],
+    () => parseArticlesWorkspaceUrl(workspaceParams),
+    [workspaceParams],
   )
 
   const replaceWorkspaceQuery = useCallback(
     (patch: Parameters<typeof mergeArticlesWorkspaceUrl>[1]) => {
-      const qs = mergeArticlesWorkspaceUrl(searchParams, patch)
+      const qs = mergeArticlesWorkspaceUrl(workspaceParams, patch)
       const next = qs ? `${pathname}?${qs}` : pathname
-      router.replace(next, { scroll: false })
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== next) {
+          window.history.replaceState(window.history.state, "", next)
+        }
+      }
+      setWorkspaceSearch(qs)
     },
-    [pathname, router, searchParams],
+    [pathname, workspaceParams],
   )
 
   const handleSortColumn = useCallback(
