@@ -3,8 +3,11 @@
 import {
   clockEmployeeIn,
   clockEmployeeOut,
-  getPopEmployeeDetail,
-} from "@/app/[siteId]/[popId]/hr/employeeActions"
+  fetchHrEmployeeDetail,
+  markEmployeeFranco,
+  removeEmployeeFranco,
+} from "@/lib/rootsyApi/hrClient"
+import { HrFrancoDialog } from "@/app/[siteId]/[popId]/hr/HrFrancoDialog"
 import {
   formatAttendanceDuration,
   HrPersonAttendancePanel,
@@ -13,6 +16,7 @@ import {
 import type {
   AttendancePunchRow,
   EmployeeRow,
+  FrancoRow,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import {
   dataWorkspaceDetailCardClass,
@@ -35,7 +39,7 @@ import {
   computeDataWorkspaceDateBounds,
   type DataWorkspaceDatePreset,
 } from "@/lib/dataWorkspaceDateFilter"
-import { isoTimestampInDateBounds } from "@/lib/popTimezone"
+import { isoTimestampInDateBounds, todayPopCalendarDate } from "@/lib/popTimezone"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, DoorClosed, DoorOpen, UserRound } from "lucide-react"
@@ -81,11 +85,16 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
   const hrBasePath = `/${siteId}/${popId}/hr`
   const [employee, setEmployee] = useState<EmployeeRow | null>(null)
   const [punches, setPunches] = useState<AttendancePunchRow[]>([])
+  const [francos, setFrancos] = useState<FrancoRow[]>([])
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [canManagePeople, setCanManagePeople] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [clockBusy, setClockBusy] = useState(false)
+  const [francoOpen, setFrancoOpen] = useState(false)
+  const [francoSaving, setFrancoSaving] = useState(false)
+  const [francoError, setFrancoError] = useState<string | null>(null)
+  const [francoBusyId, setFrancoBusyId] = useState<string | null>(null)
   const [datePreset, setDatePreset] =
     useState<DataWorkspaceDatePreset>("this_month")
   const [customDateRange, setCustomDateRange] = useState<
@@ -102,18 +111,20 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
       setLoading(true)
       setError(null)
     }
-    const res = await getPopEmployeeDetail(popId, employeeId)
+    const res = await fetchHrEmployeeDetail(popId, employeeId)
     if (!opts?.silent) setLoading(false)
     if (!res.success) {
       if (!opts?.silent) {
         setEmployee(null)
         setPunches([])
+        setFrancos([])
       }
       setError(res.error)
       return
     }
     setEmployee(res.employee)
     setPunches(res.punches)
+    setFrancos(res.francos)
     setImageUrl(res.imageUrl)
     setCanManagePeople(res.canManagePeople)
     setError(null)
@@ -144,6 +155,20 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
     return periodPunches.length === 0 ? "—" : formatAttendanceDuration(totalMs)
   }, [periodPunches])
 
+  const periodFrancos = useMemo(
+    () =>
+      francos.filter((franco) => {
+        const day = franco.day
+        if (dateBounds.from && day < dateBounds.from) return false
+        if (dateBounds.to && day > dateBounds.to) return false
+        return true
+      }),
+    [francos, dateBounds.from, dateBounds.to],
+  )
+
+  const today = todayPopCalendarDate(timeZone)
+  const todayIsFranco = francos.some((franco) => franco.day === today)
+
   async function handleClock() {
     if (!employee || clockBusy) return
     setClockBusy(true)
@@ -158,12 +183,43 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
     await loadDetail({ silent: true })
   }
 
+  async function handleMarkFranco(day: string) {
+    if (francoSaving) return
+    setFrancoSaving(true)
+    setFrancoError(null)
+    const res = await markEmployeeFranco(popId, employeeId, day)
+    setFrancoSaving(false)
+    if (!res.success) {
+      setFrancoError(res.error || "No se pudo marcar el franco.")
+      return
+    }
+    setFrancoOpen(false)
+    await loadDetail({ silent: true })
+  }
+
+  async function handleRemoveFranco(francoId: string) {
+    if (francoBusyId) return
+    setFrancoBusyId(francoId)
+    const res = await removeEmployeeFranco(popId, employeeId, francoId)
+    setFrancoBusyId(null)
+    if (!res.success) {
+      setError(res.error || "No se pudo sacar el franco.")
+      return
+    }
+    await loadDetail({ silent: true })
+  }
+
   const name = employee ? personDisplayName(employee) : ""
   const salary =
     employee?.monthlySalary == null
       ? "—"
       : salaryFmt.format(employee.monthlySalary)
-  const showClock = Boolean(canManagePeople && employee && !employee.leftAt)
+  const showClock = Boolean(
+    canManagePeople &&
+      employee &&
+      !employee.leftAt &&
+      (employee.isClockedIn || !todayIsFranco),
+  )
 
   return (
     <div className="relative flex w-full min-h-full flex-1 flex-col">
@@ -230,6 +286,10 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
                         />
                         En el local
                       </span>
+                    ) : todayIsFranco ? (
+                      <span className={dataWorkspaceEntityCardStatusClosedClass}>
+                        Franco
+                      </span>
                     ) : null}
                   </div>
                 </div>
@@ -254,7 +314,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
                 ) : null}
               </div>
             </div>
-            <div className={cn(dataWorkspaceDetailCardStatsClass, "sm:grid-cols-3")}>
+            <div className={cn(dataWorkspaceDetailCardStatsClass, "sm:grid-cols-2 lg:grid-cols-4")}>
               <HeaderKpi label="Sueldo" value={salary} />
               <HeaderKpi label="Horas del período" value={periodHoursLabel} />
               <HeaderKpi
@@ -263,6 +323,12 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
                   loading && !employee
                     ? "—"
                     : String(periodPunches.length)
+                }
+              />
+              <HeaderKpi
+                label="Francos"
+                value={
+                  loading && !employee ? "—" : String(periodFrancos.length)
                 }
               />
             </div>
@@ -278,13 +344,34 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
         {employee ? (
           <HrPersonAttendancePanel
             punches={punches}
+            francos={francos}
             datePreset={datePreset}
             customDateRange={customDateRange}
             dateBounds={dateBounds}
+            canManagePeople={canManagePeople && !employee.leftAt}
+            francoBusyId={francoBusyId}
             onPresetChange={setDatePreset}
             onCustomRangeChange={setCustomDateRange}
+            onMarkFranco={() => {
+              setFrancoError(null)
+              setFrancoOpen(true)
+            }}
+            onRemoveFranco={(francoId) => void handleRemoveFranco(francoId)}
           />
         ) : null}
+
+        <HrFrancoDialog
+          open={francoOpen}
+          defaultDay={today}
+          saving={francoSaving}
+          error={francoError}
+          onOpenChange={(open) => {
+            if (!open && francoSaving) return
+            setFrancoOpen(open)
+            if (!open) setFrancoError(null)
+          }}
+          onSubmit={(day) => void handleMarkFranco(day)}
+        />
       </div>
     </div>
   )

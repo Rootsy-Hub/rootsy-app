@@ -1,6 +1,6 @@
 "use client"
 
-import type { PendingInviteRow } from "@/app/[siteId]/[popId]/hr/actions"
+import type { PendingInviteRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import type { EmployeeRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import {
   dataWorkspaceLightDropdownContentClass,

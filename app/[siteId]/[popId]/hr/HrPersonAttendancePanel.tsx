@@ -1,11 +1,15 @@
 "use client"
 
-import type { AttendancePunchRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
+import type {
+  AttendancePunchRow,
+  FrancoRow,
+} from "@/app/[siteId]/[popId]/hr/hrTypes"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import {
   dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceDetailToolbarClass,
+  dataWorkspaceEntityCardStatusClosedClass,
   dataWorkspaceEntityCardStatusOpenClass,
   workspaceTableLayoutClassName,
   workspaceTableNatureMoneyClass,
@@ -25,27 +29,38 @@ import {
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { RootsDefaultButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
 import { Table, TableBody, TableCell } from "@/components/ui/table"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import {
   formatPopTime,
   isoTimestampInDateBounds,
+  toPopCalendarDate,
 } from "@/lib/popTimezone"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
-import { History } from "lucide-react"
+import { CalendarOff, History } from "lucide-react"
 import { useMemo } from "react"
 import type { DateRange } from "react-day-picker"
 import "@/components/layouts-tables/rootsLayoutsTablesScope.css"
 
 type Props = {
   punches: AttendancePunchRow[]
+  francos: FrancoRow[]
   datePreset: DataWorkspaceDatePreset
   customDateRange: DateRange | undefined
   dateBounds: { from: string | null; to: string | null }
+  canManagePeople: boolean
+  francoBusyId?: string | null
   onPresetChange: (preset: DataWorkspaceDatePreset) => void
   onCustomRangeChange: (range: DateRange | undefined) => void
+  onMarkFranco?: () => void
+  onRemoveFranco?: (francoId: string) => void
 }
+
+type HistoryRow =
+  | { kind: "punch"; id: string; day: string; punch: AttendancePunchRow }
+  | { kind: "franco"; id: string; day: string; franco: FrancoRow }
 
 export function formatAttendanceDuration(ms: number): string {
   const safe = Math.max(0, ms)
@@ -71,39 +86,95 @@ export function punchDurationMs(
   return Math.max(0, end - start)
 }
 
-function formatPunchDay(iso: string, timeZone: string): string {
-  const date = new Date(iso)
+function calendarDateInBounds(
+  day: string,
+  from: string | null,
+  to: string | null,
+): boolean {
+  if (from && day < from) return false
+  if (to && day > to) return false
+  return true
+}
+
+function formatCalendarDay(isoDate: string, timeZone?: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+    const [year, month, day] = isoDate.split("-").map(Number)
+    if (!year || !month || !day) return isoDate
+    return new Intl.DateTimeFormat("es-AR", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    }).format(new Date(year, month - 1, day))
+  }
+  const date = new Date(isoDate)
   if (Number.isNaN(date.getTime())) return "—"
   return new Intl.DateTimeFormat("es-AR", {
     weekday: "short",
     day: "numeric",
     month: "short",
-    timeZone,
+    ...(timeZone ? { timeZone } : {}),
   }).format(date)
 }
 
 export function HrPersonAttendancePanel({
   punches,
+  francos,
   datePreset,
   customDateRange,
   dateBounds,
+  canManagePeople,
+  francoBusyId = null,
   onPresetChange,
   onCustomRangeChange,
+  onMarkFranco,
+  onRemoveFranco,
 }: Props) {
   const timeZone = usePopTimeZone()
   const nowMs = Date.now()
-  const filtered = useMemo(
-    () =>
-      punches.filter((punch) =>
+
+  const rows = useMemo(() => {
+    const punchRows: HistoryRow[] = punches
+      .filter((punch) =>
         isoTimestampInDateBounds(
           punch.clockedInAt,
           dateBounds.from,
           dateBounds.to,
           timeZone,
         ),
-      ),
-    [punches, dateBounds.from, dateBounds.to, timeZone],
-  )
+      )
+      .map((punch) => ({
+        kind: "punch" as const,
+        id: punch.id,
+        day: toPopCalendarDate(punch.clockedInAt, timeZone),
+        punch,
+      }))
+
+    const francoRows: HistoryRow[] = francos
+      .filter((franco) =>
+        calendarDateInBounds(franco.day, dateBounds.from, dateBounds.to),
+      )
+      .map((franco) => ({
+        kind: "franco" as const,
+        id: franco.id,
+        day: franco.day,
+        franco,
+      }))
+
+    return [...punchRows, ...francoRows].sort((a, b) => {
+      if (a.day !== b.day) return a.day < b.day ? 1 : -1
+      if (a.kind === b.kind) return 0
+      return a.kind === "punch" ? -1 : 1
+    })
+  }, [punches, francos, dateBounds.from, dateBounds.to, timeZone])
+
+  const jornadaCount = rows.filter((row) => row.kind === "punch").length
+  const francoCount = rows.filter((row) => row.kind === "franco").length
+  const showActions = canManagePeople && Boolean(onRemoveFranco)
+
+  const summary = [
+    `${jornadaCount} ${jornadaCount === 1 ? "jornada" : "jornadas"}`,
+    `${francoCount} ${francoCount === 1 ? "franco" : "francos"}`,
+  ].join(" · ")
 
   return (
     <article className={dataWorkspaceDetailFlushBottomCardClass}>
@@ -117,17 +188,29 @@ export function HrPersonAttendancePanel({
           onCustomRangeChange={onCustomRangeChange}
           bounds={dateBounds}
         />
-        <p className={cn("text-xs lg:text-right", workspaceTableNatureTextSecondaryClass)}>
-          {filtered.length}{" "}
-          {filtered.length === 1 ? "jornada" : "jornadas"} en el período
-        </p>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <p className={cn("text-xs", workspaceTableNatureTextSecondaryClass)}>
+            {summary}
+          </p>
+          {canManagePeople && onMarkFranco ? (
+            <RootsDefaultButton
+              type="button"
+              size="sm"
+              className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
+              onClick={onMarkFranco}
+            >
+              <CalendarOff className="size-3.5" aria-hidden />
+              Franco
+            </RootsDefaultButton>
+          ) : null}
+        </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {rows.length === 0 ? (
         <DataWorkspaceDetailEmptyState
           icon={History}
           title="Sin marcas en este período"
-          description="Cuando marquen llegada y salida, van a aparecer acá."
+          description="Cuando marquen llegada, salida o un franco, van a aparecer acá."
         />
       ) : (
         <div
@@ -166,15 +249,77 @@ export function HrPersonAttendancePanel({
                 >
                   Horas
                 </WorkspaceTableHead>
+                {showActions ? (
+                  <WorkspaceTableHead
+                    tone="nature"
+                    align="right"
+                    className={cn("w-24", workspaceTableLayoutHeaderHeadClass)}
+                  >
+                    <span className="sr-only">Acciones</span>
+                  </WorkspaceTableHead>
+                ) : null}
               </WorkspaceTableHeaderRow>
             </WorkspaceTableHeader>
             <TableBody>
-              {filtered.map((punch, index) => {
-                const open = punch.clockedOutAt == null
-                const duration = punchDurationMs(punch, nowMs)
+              {rows.map((row, index) => {
+                if (row.kind === "franco") {
+                  return (
+                    <WorkspaceTableBodyRow key={row.id} index={index} noHover>
+                      <TableCell className={workspaceTableLayoutBodyCellClass}>
+                        <span
+                          className={cn(
+                            "capitalize",
+                            workspaceTableNatureTextPrimaryClass,
+                          )}
+                        >
+                          {formatCalendarDay(row.day)}
+                        </span>
+                      </TableCell>
+                      <TableCell className={workspaceTableLayoutBodyCellClass}>
+                        <span
+                          className={cn(
+                            dataWorkspaceEntityCardStatusClosedClass,
+                            "px-2 py-0.5",
+                          )}
+                        >
+                          Franco
+                        </span>
+                      </TableCell>
+                      <TableCell className={workspaceTableLayoutBodyCellClass}>
+                        <span className={workspaceTableNatureTextSecondaryClass}>
+                          —
+                        </span>
+                      </TableCell>
+                      <TableCell
+                        className={cn(workspaceTableLayoutBodyCellClass, "text-right")}
+                      >
+                        <span className={workspaceTableNatureTextSecondaryClass}>
+                          —
+                        </span>
+                      </TableCell>
+                      {showActions ? (
+                        <TableCell
+                          className={cn(workspaceTableLayoutBodyCellClass, "text-right")}
+                        >
+                          <button
+                            type="button"
+                            disabled={francoBusyId === row.id}
+                            onClick={() => onRemoveFranco?.(row.id)}
+                            className="font-canopy text-xs text-[var(--rootsy-bruma-500)] underline-offset-2 outline-none hover:text-[var(--rootsy-bruma-900)] hover:underline focus-visible:underline"
+                          >
+                            {francoBusyId === row.id ? "Sacando…" : "Quitar"}
+                          </button>
+                        </TableCell>
+                      ) : null}
+                    </WorkspaceTableBodyRow>
+                  )
+                }
+
+                const open = row.punch.clockedOutAt == null
+                const duration = punchDurationMs(row.punch, nowMs)
                 return (
                   <WorkspaceTableBodyRow
-                    key={punch.id}
+                    key={row.id}
                     index={index}
                     noHover
                     className={
@@ -190,12 +335,12 @@ export function HrPersonAttendancePanel({
                           workspaceTableNatureTextPrimaryClass,
                         )}
                       >
-                        {formatPunchDay(punch.clockedInAt, timeZone)}
+                        {formatCalendarDay(row.day, timeZone)}
                       </span>
                     </TableCell>
                     <TableCell className={workspaceTableLayoutBodyCellClass}>
                       <span className={cn("tabular-nums", workspaceTableNatureMoneyClass)}>
-                        {formatPopTime(punch.clockedInAt, timeZone) || "—"}
+                        {formatPopTime(row.punch.clockedInAt, timeZone) || "—"}
                       </span>
                     </TableCell>
                     <TableCell className={workspaceTableLayoutBodyCellClass}>
@@ -214,7 +359,7 @@ export function HrPersonAttendancePanel({
                         </span>
                       ) : (
                         <span className={cn("tabular-nums", workspaceTableNatureMoneyClass)}>
-                          {formatPopTime(punch.clockedOutAt ?? "", timeZone) || "—"}
+                          {formatPopTime(row.punch.clockedOutAt ?? "", timeZone) || "—"}
                         </span>
                       )}
                     </TableCell>
@@ -232,6 +377,9 @@ export function HrPersonAttendancePanel({
                         {duration == null ? "—" : formatAttendanceDuration(duration)}
                       </span>
                     </TableCell>
+                    {showActions ? (
+                      <TableCell className={workspaceTableLayoutBodyCellClass} />
+                    ) : null}
                   </WorkspaceTableBodyRow>
                 )
               })}

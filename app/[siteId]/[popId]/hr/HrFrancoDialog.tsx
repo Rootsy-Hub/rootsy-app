@@ -1,6 +1,5 @@
 "use client"
 
-import type { PopRoleRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -9,47 +8,40 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
-import {
-  RootsFormSelectField,
-  RootsFormSelectItem,
-} from "@/components/rootsy-form"
+import { RootsFormDateField } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
 import { useEffect, useState, type FormEvent } from "react"
 
 type Props = {
   open: boolean
-  personName: string
-  roles: PopRoleRow[]
-  currentRoleId: string
+  defaultDay: string
   saving: boolean
   error: string | null
   onOpenChange: (open: boolean) => void
-  onSubmit: (roleId: string) => void | Promise<void>
+  onSubmit: (day: string) => void | Promise<void>
 }
 
-export function HrChangeRoleDialog({
+export function HrFrancoDialog({
   open,
-  personName,
-  roles,
-  currentRoleId,
+  defaultDay,
   saving,
   error,
   onOpenChange,
   onSubmit,
 }: Props) {
-  const [roleId, setRoleId] = useState(currentRoleId)
+  const [day, setDay] = useState(defaultDay)
 
   useEffect(() => {
     if (!open) return
-    setRoleId(currentRoleId || roles[0]?.id || "")
-  }, [open, currentRoleId, roles])
+    setDay(defaultDay)
+  }, [open, defaultDay])
 
-  const canSubmit = Boolean(roleId) && roleId !== currentRoleId && roles.length > 0
+  const canSubmit = /^\d{4}-\d{2}-\d{2}$/.test(day.trim())
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (!canSubmit) return
-    void onSubmit(roleId)
+    void onSubmit(day.trim())
   }
 
   return (
@@ -58,29 +50,21 @@ export function HrChangeRoleDialog({
         <RootsDialogForm onSubmit={handleSubmit}>
           <RootsDialogHeader
             open={open}
-            title="Cambiar rol de Rootsy"
-            description={`${personName} sigue en el equipo. Esto solo cambia qué puede hacer cuando abre el sistema.`}
+            title="Marcar franco"
+            description="Un día libre. No descuenta sueldo: eso va aparte, cuando le pagues."
           />
           <RootsDialogBody className="space-y-4">
-            <RootsFormSelectField
-              label="Rol"
-              id="hr-change-role"
-              value={roleId}
-              onValueChange={setRoleId}
-              placeholder="Elegir rol"
-              hint="No cambia el puesto en el local."
-            >
-              {roles.map((role) => (
-                <RootsFormSelectItem key={role.id} value={role.id}>
-                  {role.displayName}
-                </RootsFormSelectItem>
-              ))}
-            </RootsFormSelectField>
+            <RootsFormDateField
+              label="Día"
+              id="hr-franco-day"
+              value={day}
+              onChange={setDay}
+            />
             {error ? <RootsDialogErrorBanner>{error}</RootsDialogErrorBanner> : null}
           </RootsDialogBody>
           <RootsDialogDualActionFooter
             onCancel={() => onOpenChange(false)}
-            confirmLabel="Cambiar rol"
+            confirmLabel="Marcar franco"
             confirmLoadingLabel="Guardando…"
             confirmType="submit"
             confirmDisabled={!canSubmit}
