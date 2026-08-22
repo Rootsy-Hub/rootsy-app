@@ -1,5 +1,6 @@
 "use client"
 
+import type { DayMarkKind } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -14,6 +15,7 @@ import { useEffect, useState, type FormEvent } from "react"
 
 type Props = {
   open: boolean
+  kind: DayMarkKind
   defaultDay: string
   saving: boolean
   error: string | null
@@ -21,8 +23,25 @@ type Props = {
   onSubmit: (day: string) => void | Promise<void>
 }
 
+const COPY: Record<
+  DayMarkKind,
+  { title: string; description: string; confirm: string }
+> = {
+  franco: {
+    title: "Marcar franco",
+    description: "Un día libre previsto. No descuenta sueldo: eso va aparte, cuando le pagues.",
+    confirm: "Marcar franco",
+  },
+  falta: {
+    title: "Marcar falta",
+    description: "Tenía que venir y no vino. No descuenta sueldo: eso va aparte, cuando le pagues.",
+    confirm: "Marcar falta",
+  },
+}
+
 export function HrFrancoDialog({
   open,
+  kind,
   defaultDay,
   saving,
   error,
@@ -30,6 +49,7 @@ export function HrFrancoDialog({
   onSubmit,
 }: Props) {
   const [day, setDay] = useState(defaultDay)
+  const copy = COPY[kind]
 
   useEffect(() => {
     if (!open) return
@@ -50,13 +70,13 @@ export function HrFrancoDialog({
         <RootsDialogForm onSubmit={handleSubmit}>
           <RootsDialogHeader
             open={open}
-            title="Marcar franco"
-            description="Un día libre. No descuenta sueldo: eso va aparte, cuando le pagues."
+            title={copy.title}
+            description={copy.description}
           />
           <RootsDialogBody className="space-y-4">
             <RootsFormDateField
               label="Día"
-              id="hr-franco-day"
+              id="hr-day-mark-day"
               value={day}
               onChange={setDay}
             />
@@ -64,7 +84,7 @@ export function HrFrancoDialog({
           </RootsDialogBody>
           <RootsDialogDualActionFooter
             onCancel={() => onOpenChange(false)}
-            confirmLabel="Marcar franco"
+            confirmLabel={copy.confirm}
             confirmLoadingLabel="Guardando…"
             confirmType="submit"
             confirmDisabled={!canSubmit}

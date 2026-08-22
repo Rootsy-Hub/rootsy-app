@@ -8,9 +8,11 @@ import {
   markEmployeeFranco,
   recordEmployeePayment,
   removeEmployeeFranco,
+  upsertPopEmployee,
 } from "@/lib/rootsyApi/hrClient"
 import { HrFrancoDialog } from "@/app/[siteId]/[popId]/hr/HrFrancoDialog"
 import { HrPayDialog } from "@/app/[siteId]/[popId]/hr/HrPayDialog"
+import { HrPersonDialog } from "@/app/[siteId]/[popId]/hr/HrPersonDialog"
 import { HrPersonPaymentsPanel } from "@/app/[siteId]/[popId]/hr/HrPersonPaymentsPanel"
 import {
   formatAttendanceDuration,
@@ -19,9 +21,11 @@ import {
 } from "@/app/[siteId]/[popId]/hr/HrPersonAttendancePanel"
 import type {
   AttendancePunchRow,
+  DayMarkKind,
   EmployeePaymentRow,
   EmployeeRow,
   FrancoRow,
+  UpsertEmployeeInput,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import {
   dataWorkspaceDetailCardClass,
@@ -35,6 +39,7 @@ import {
   dataWorkspaceEntityCardStatusOpenClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { WorkspaceTableStatusBadge } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   RootsDefaultButton,
   RootsIconButton,
@@ -52,7 +57,7 @@ import {
 } from "@/lib/treasuryPaymentOptions"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
-import { ArrowLeft, DoorClosed, DoorOpen, UserRound } from "lucide-react"
+import { ArrowLeft, DoorClosed, DoorOpen, Pencil, UserRound } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { DateRange } from "react-day-picker"
 
@@ -102,10 +107,14 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [clockBusy, setClockBusy] = useState(false)
+  const [dayMarkKind, setDayMarkKind] = useState<DayMarkKind>("franco")
   const [francoOpen, setFrancoOpen] = useState(false)
   const [francoSaving, setFrancoSaving] = useState(false)
   const [francoError, setFrancoError] = useState<string | null>(null)
   const [francoBusyId, setFrancoBusyId] = useState<string | null>(null)
+  const [personOpen, setPersonOpen] = useState(false)
+  const [personSaving, setPersonSaving] = useState(false)
+  const [personError, setPersonError] = useState<string | null>(null)
   const [payOpen, setPayOpen] = useState(false)
   const [paySaving, setPaySaving] = useState(false)
   const [payError, setPayError] = useState<string | null>(null)
@@ -174,7 +183,9 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
   }, [periodPunches])
 
   const today = todayPopCalendarDate(timeZone)
-  const todayIsFranco = francos.some((franco) => franco.day === today)
+  const todayMark = francos.find((franco) => franco.day === today)
+  const todayIsFranco = todayMark?.kind === "franco"
+  const todayIsFalta = todayMark?.kind === "falta"
 
   const periodPayments = useMemo(
     () =>
@@ -206,17 +217,36 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
     await loadDetail({ silent: true })
   }
 
-  async function handleMarkFranco(day: string) {
+  async function handleMarkDay(day: string) {
     if (francoSaving) return
     setFrancoSaving(true)
     setFrancoError(null)
-    const res = await markEmployeeFranco(popId, employeeId, day)
+    const res = await markEmployeeFranco(popId, employeeId, day, dayMarkKind)
     setFrancoSaving(false)
     if (!res.success) {
-      setFrancoError(res.error || "No se pudo marcar el franco.")
+      setFrancoError(
+        res.error ||
+          (dayMarkKind === "falta"
+            ? "No se pudo marcar la falta."
+            : "No se pudo marcar el franco."),
+      )
       return
     }
     setFrancoOpen(false)
+    await loadDetail({ silent: true })
+  }
+
+  async function handleSavePerson(input: UpsertEmployeeInput) {
+    if (personSaving) return
+    setPersonSaving(true)
+    setPersonError(null)
+    const res = await upsertPopEmployee(popId, { ...input, id: employeeId })
+    setPersonSaving(false)
+    if (!res.success) {
+      setPersonError(res.error || "No se pudo guardar.")
+      return
+    }
+    setPersonOpen(false)
     await loadDetail({ silent: true })
   }
 
@@ -276,7 +306,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
     canManagePeople &&
       employee &&
       !employee.leftAt &&
-      (employee.isClockedIn || !todayIsFranco),
+      (employee.isClockedIn || !todayMark),
   )
 
   return (
@@ -345,12 +375,31 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
                         En el local
                       </span>
                     ) : todayIsFranco ? (
-                      <span className={dataWorkspaceEntityCardStatusClosedClass}>
+                      <WorkspaceTableStatusBadge status="info">
                         Franco
-                      </span>
+                      </WorkspaceTableStatusBadge>
+                    ) : todayIsFalta ? (
+                      <WorkspaceTableStatusBadge status="vencido">
+                        Falta
+                      </WorkspaceTableStatusBadge>
                     ) : null}
                   </div>
                 </div>
+                <div className="flex shrink-0 items-center gap-2">
+                {canManagePeople && employee ? (
+                  <RootsIconButton
+                    theme="workspace"
+                    emphasis="ghost"
+                    size="default"
+                    label="Editar datos"
+                    onClick={() => {
+                      setPersonError(null)
+                      setPersonOpen(true)
+                    }}
+                  >
+                    <Pencil aria-hidden />
+                  </RootsIconButton>
+                ) : null}
                 {showClock ? (
                   <RootsDefaultButton
                     type="button"
@@ -370,6 +419,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
                     {employee?.isClockedIn ? "Salió" : "Llegó"}
                   </RootsDefaultButton>
                 ) : null}
+                </div>
               </div>
             </div>
             <div className={cn(dataWorkspaceDetailCardStatsClass, "sm:grid-cols-2 lg:grid-cols-4")}>
@@ -415,6 +465,12 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
             onPresetChange={setDatePreset}
             onCustomRangeChange={setCustomDateRange}
             onMarkFranco={() => {
+              setDayMarkKind("franco")
+              setFrancoError(null)
+              setFrancoOpen(true)
+            }}
+            onMarkFalta={() => {
+              setDayMarkKind("falta")
               setFrancoError(null)
               setFrancoOpen(true)
             }}
@@ -422,8 +478,23 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
           />
         ) : null}
 
+        <HrPersonDialog
+          open={personOpen}
+          person={employee}
+          readOnly={!canManagePeople}
+          saving={personSaving}
+          error={personError}
+          onOpenChange={(open) => {
+            if (!open && personSaving) return
+            setPersonOpen(open)
+            if (!open) setPersonError(null)
+          }}
+          onSubmit={(input) => void handleSavePerson(input)}
+        />
+
         <HrFrancoDialog
           open={francoOpen}
+          kind={dayMarkKind}
           defaultDay={today}
           saving={francoSaving}
           error={francoError}
@@ -432,7 +503,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
             setFrancoOpen(open)
             if (!open) setFrancoError(null)
           }}
-          onSubmit={(day) => void handleMarkFranco(day)}
+          onSubmit={(day) => void handleMarkDay(day)}
         />
 
         <HrPayDialog

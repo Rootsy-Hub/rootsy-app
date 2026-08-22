@@ -440,7 +440,7 @@ export const workspaceTableNatureIconButtonClass = cn(
 )
 
 export const workspaceTableNatureStatusBadgeClass: Record<
-  "activo" | "inactivo" | "pendiente" | "vencido",
+  "activo" | "inactivo" | "pendiente" | "vencido" | "info",
   string
 > = {
   activo:
@@ -451,6 +451,8 @@ export const workspaceTableNatureStatusBadgeClass: Record<
     "border-[color-mix(in_srgb,#f59e0b_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#f59e0b_10%,white)] text-[#78350f]",
   vencido:
     "border-[color-mix(in_srgb,#ef4444_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#ef4444_10%,white)] text-[#dc2626]",
+  info:
+    "border-[color-mix(in_srgb,var(--rootsy-cielo-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-cielo-500)_10%,white)] text-[var(--rootsy-cielo-800)]",
 }
 
 /** Fila con señal de importancia — aviso / peligro (stock, vencido). */

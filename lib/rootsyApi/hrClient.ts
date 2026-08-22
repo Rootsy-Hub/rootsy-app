@@ -1,5 +1,6 @@
 import type {
   AttendancePunchRow,
+  DayMarkKind,
   EmployeePaymentRow,
   EmployeeRow,
   FrancoRow,
@@ -138,13 +139,14 @@ export async function markEmployeeFranco(
   popId: string,
   employeeId: string,
   day: string,
+  kind: DayMarkKind = "franco",
 ) {
   const res = await fetch(
     `/api/pops/${popId}/hr/employees/${employeeId}/francos`,
     {
       method: "POST",
       headers: { accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify({ day }),
+      body: JSON.stringify({ day, kind }),
     },
   )
   return parseMutate(res)
@@ -252,6 +254,14 @@ export async function renewPopInvitation(popId: string, invitationId: string) {
 export async function deactivatePopMember(popId: string, memberUserId: string) {
   const res = await fetch(
     `/api/pops/${popId}/hr/members/${memberUserId}/deactivate`,
+    { method: "POST", headers: { accept: "application/json" } },
+  )
+  return parseMutate(res)
+}
+
+export async function reactivatePopMember(popId: string, memberUserId: string) {
+  const res = await fetch(
+    `/api/pops/${popId}/hr/members/${memberUserId}/reactivate`,
     { method: "POST", headers: { accept: "application/json" } },
   )
   return parseMutate(res)

@@ -23,9 +23,12 @@ export type AttendancePunchRow = {
   clockedOutAt: string | null
 }
 
+export type DayMarkKind = "franco" | "falta"
+
 export type FrancoRow = {
   id: string
   day: string
+  kind: DayMarkKind
 }
 
 export type EmployeePaymentRow = {

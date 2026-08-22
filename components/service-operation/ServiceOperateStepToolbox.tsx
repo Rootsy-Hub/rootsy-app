@@ -7,10 +7,11 @@ import {
 import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import {
   layoutsOperarToolboxBandClass,
-  layoutsOperarToolboxBarClass,
+  layoutsOperarToolboxBarGridClass,
   layoutsOperarToolboxIconWrapClass,
   layoutsOperarToolboxSlotClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import { LayoutsOperarToolboxFloor } from "@/components/layouts-module/LayoutsOperarToolboxFloor"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { SERVICE_OPERATE_STEP_LIST } from "@/components/service-operation/serviceOperateStepMeta"
 import type { ServiceOperateStep } from "@/lib/serviceOperateSteps"
@@ -51,15 +52,17 @@ export function ServiceOperateStepToolbox({
   className,
 }: Props) {
   return (
-    <div className={cn(layoutsOperarToolboxBandClass, className)}>
+    <LayoutsOperarToolboxFloor
+      className={cn(
+        edge === "top" &&
+          "[&_.menu-header-entity-body]:border-t-0 [&_.menu-header-entity-body]:border-b [&_.menu-header-entity-body]:border-(--layouts-operar-border-dark-default)",
+        className,
+      )}
+    >
       <div
         role="toolbar"
         aria-label="Pasos y descuento del cargo"
-        className={cn(
-          layoutsOperarToolboxBarClass,
-          edge === "top" &&
-            "border-t-0 border-b border-[var(--layouts-operar-border-dark-default)]",
-        )}
+        className={cn(layoutsOperarToolboxBandClass, layoutsOperarToolboxBarGridClass)}
       >
         {SERVICE_OPERATE_STEP_LIST.map(({ step, label }) => {
           const slot = slots.find((entry) => entry.step === step)
@@ -138,6 +141,6 @@ export function ServiceOperateStepToolbox({
           </span>
         </button>
       </div>
-    </div>
+    </LayoutsOperarToolboxFloor>
   )
 }

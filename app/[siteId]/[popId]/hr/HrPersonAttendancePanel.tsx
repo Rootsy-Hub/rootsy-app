@@ -2,6 +2,7 @@
 
 import type {
   AttendancePunchRow,
+  DayMarkKind,
   FrancoRow,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
@@ -9,7 +10,6 @@ import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataW
 import {
   dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceDetailToolbarClass,
-  dataWorkspaceEntityCardStatusClosedClass,
   dataWorkspaceEntityCardStatusOpenClass,
   workspaceTableLayoutClassName,
   workspaceTableNatureMoneyClass,
@@ -29,6 +29,7 @@ import {
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableStatusBadge } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { RootsDefaultButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
 import { Table, TableBody, TableCell } from "@/components/ui/table"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
@@ -39,7 +40,7 @@ import {
 } from "@/lib/popTimezone"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
-import { CalendarOff, History } from "lucide-react"
+import { CalendarOff, History, UserX } from "lucide-react"
 import { useMemo } from "react"
 import type { DateRange } from "react-day-picker"
 import "@/components/layouts-tables/rootsLayoutsTablesScope.css"
@@ -55,12 +56,13 @@ type Props = {
   onPresetChange: (preset: DataWorkspaceDatePreset) => void
   onCustomRangeChange: (range: DateRange | undefined) => void
   onMarkFranco?: () => void
+  onMarkFalta?: () => void
   onRemoveFranco?: (francoId: string) => void
 }
 
 type HistoryRow =
   | { kind: "punch"; id: string; day: string; punch: AttendancePunchRow }
-  | { kind: "franco"; id: string; day: string; franco: FrancoRow }
+  | { kind: "mark"; id: string; day: string; mark: FrancoRow }
 
 export function formatAttendanceDuration(ms: number): string {
   const safe = Math.max(0, ms)
@@ -127,6 +129,7 @@ export function HrPersonAttendancePanel({
   onPresetChange,
   onCustomRangeChange,
   onMarkFranco,
+  onMarkFalta,
   onRemoveFranco,
 }: Props) {
   const timeZone = usePopTimeZone()
@@ -149,18 +152,18 @@ export function HrPersonAttendancePanel({
         punch,
       }))
 
-    const francoRows: HistoryRow[] = francos
+    const markRows: HistoryRow[] = francos
       .filter((franco) =>
         calendarDateInBounds(franco.day, dateBounds.from, dateBounds.to),
       )
       .map((franco) => ({
-        kind: "franco" as const,
+        kind: "mark" as const,
         id: franco.id,
         day: franco.day,
-        franco,
+        mark: franco,
       }))
 
-    return [...punchRows, ...francoRows].sort((a, b) => {
+    return [...punchRows, ...markRows].sort((a, b) => {
       if (a.day !== b.day) return a.day < b.day ? 1 : -1
       if (a.kind === b.kind) return 0
       return a.kind === "punch" ? -1 : 1
@@ -168,12 +171,18 @@ export function HrPersonAttendancePanel({
   }, [punches, francos, dateBounds.from, dateBounds.to, timeZone])
 
   const jornadaCount = rows.filter((row) => row.kind === "punch").length
-  const francoCount = rows.filter((row) => row.kind === "franco").length
+  const francoCount = rows.filter(
+    (row) => row.kind === "mark" && row.mark.kind === "franco",
+  ).length
+  const faltaCount = rows.filter(
+    (row) => row.kind === "mark" && row.mark.kind === "falta",
+  ).length
   const showActions = canManagePeople && Boolean(onRemoveFranco)
 
   const summary = [
     `${jornadaCount} ${jornadaCount === 1 ? "jornada" : "jornadas"}`,
     `${francoCount} ${francoCount === 1 ? "franco" : "francos"}`,
+    `${faltaCount} ${faltaCount === 1 ? "falta" : "faltas"}`,
   ].join(" · ")
 
   return (
@@ -203,6 +212,17 @@ export function HrPersonAttendancePanel({
               Franco
             </RootsDefaultButton>
           ) : null}
+          {canManagePeople && onMarkFalta ? (
+            <RootsDefaultButton
+              type="button"
+              size="sm"
+              className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
+              onClick={onMarkFalta}
+            >
+              <UserX className="size-3.5" aria-hidden />
+              Falta
+            </RootsDefaultButton>
+          ) : null}
         </div>
       </div>
 
@@ -210,7 +230,7 @@ export function HrPersonAttendancePanel({
         <DataWorkspaceDetailEmptyState
           icon={History}
           title="Sin marcas en este período"
-          description="Cuando marquen llegada, salida o un franco, van a aparecer acá."
+          description="Cuando marquen llegada, un franco o una falta, van a aparecer acá."
         />
       ) : (
         <div
@@ -262,7 +282,9 @@ export function HrPersonAttendancePanel({
             </WorkspaceTableHeader>
             <TableBody>
               {rows.map((row, index) => {
-                if (row.kind === "franco") {
+                if (row.kind === "mark") {
+                  const markKind: DayMarkKind =
+                    row.mark.kind === "falta" ? "falta" : "franco"
                   return (
                     <WorkspaceTableBodyRow key={row.id} index={index} noHover>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
@@ -276,14 +298,11 @@ export function HrPersonAttendancePanel({
                         </span>
                       </TableCell>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
-                        <span
-                          className={cn(
-                            dataWorkspaceEntityCardStatusClosedClass,
-                            "px-2 py-0.5",
-                          )}
+                        <WorkspaceTableStatusBadge
+                          status={markKind === "falta" ? "vencido" : "info"}
                         >
-                          Franco
-                        </span>
+                          {markKind === "falta" ? "Falta" : "Franco"}
+                        </WorkspaceTableStatusBadge>
                       </TableCell>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
                         <span className={workspaceTableNatureTextSecondaryClass}>

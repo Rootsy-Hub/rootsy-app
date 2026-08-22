@@ -557,6 +557,13 @@ export const layoutsOperarToolboxBandClass = cn(
   "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
 )
 
+/**
+ * Chrome de piso — MenuHeaderEntity footer (tierra mojada).
+ * overflow visible para que los slots en relieve no se recorten.
+ */
+export const layoutsOperarToolboxFloorClass =
+  "[&_.menu-header-entity-body]:overflow-visible"
+
 /** Grid interno toolbox — superficie en banda padre (zone style o bar surface). */
 export const layoutsOperarToolboxBarGridClass = cn(
   "box-border grid h-full min-h-0 grid-cols-2 gap-2 lg:grid-cols-4",

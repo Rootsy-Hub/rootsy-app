@@ -15,6 +15,7 @@ import {
   createPopRole,
   deactivatePopMember,
   deleteInactivePopMember,
+  reactivatePopMember,
   deletePopRole,
   fetchHrDashboard,
   getRolePermissionsEditorData,
@@ -85,6 +86,7 @@ function pendingInviteForPerson(
 type ConfirmAction =
   | { kind: "delete-role"; role: PopRoleRow }
   | { kind: "deactivate"; member: MemberRow }
+  | { kind: "reactivate"; member: MemberRow }
   | { kind: "delete-member"; member: MemberRow }
   | { kind: "revoke"; invite: PendingInviteRow }
   | { kind: "leave"; person: EmployeeRow }
@@ -312,8 +314,13 @@ export function HrWorkspaceView() {
     [activePeople],
   )
   const peopleWithAccess = useMemo(
-    () => activePeople.filter((person) => Boolean(person.userId)),
-    [activePeople],
+    () =>
+      activePeople.filter((person) =>
+        members.some(
+          (member) => member.userId === person.userId && member.isActive,
+        ),
+      ),
+    [activePeople, members],
   )
   const peopleLeft = useMemo(
     () => employees.filter((person) => Boolean(person.leftAt)),
@@ -366,6 +373,14 @@ export function HrWorkspaceView() {
         description: `¿Sacar a ${memberDisplayName(confirmAction.member)} de Rootsy en este local? Sigue en el equipo. No va a poder abrir el sistema.`,
         confirmLabel: "Quitar acceso",
         destructive: true,
+      }
+    }
+    if (confirmAction.kind === "reactivate") {
+      return {
+        title: "Restaurar acceso a Rootsy",
+        description: `¿${memberDisplayName(confirmAction.member)} vuelve a entrar a este local con el rol ${confirmAction.member.roleDisplayName}?`,
+        confirmLabel: "Restaurar acceso",
+        destructive: false,
       }
     }
     if (confirmAction.kind === "revoke") {
@@ -689,7 +704,9 @@ export function HrWorkspaceView() {
       setPeopleFilter("negocio")
       setBanner({
         type: "ok",
-        text: "Volvió al equipo. El acceso a Rootsy se da aparte.",
+        text: confirmAction.person.userId
+          ? "Volvió al equipo. Si tiene que entrar a Rootsy, restaurá el acceso desde la ficha."
+          : "Volvió al equipo. El acceso a Rootsy se da aparte.",
       })
       await loadDashboard()
       return
@@ -736,6 +753,23 @@ export function HrWorkspaceView() {
       }
       setConfirmAction(null)
       setBanner({ type: "ok", text: "Ya no entra a Rootsy. Sigue en el equipo." })
+      await loadDashboard()
+      return
+    }
+
+    if (confirmAction.kind === "reactivate") {
+      setActionKey(`react-${confirmAction.member.userId}`)
+      const res = await reactivatePopMember(popId, confirmAction.member.userId)
+      setActionKey(null)
+      if (!res.success) {
+        setBanner({
+          type: "err",
+          text: res.error || "No se pudo restaurar el acceso.",
+        })
+        return
+      }
+      setConfirmAction(null)
+      setBanner({ type: "ok", text: "Ya puede entrar al pop de nuevo." })
       await loadDashboard()
       return
     }
@@ -913,6 +947,15 @@ export function HrWorkspaceView() {
                               ? () =>
                                   setConfirmAction({
                                     kind: "deactivate",
+                                    member,
+                                  })
+                              : undefined
+                          }
+                          onRestoreAccess={
+                            member && !member.isActive && !member.isOwner && !person.leftAt
+                              ? () =>
+                                  setConfirmAction({
+                                    kind: "reactivate",
                                     member,
                                   })
                               : undefined

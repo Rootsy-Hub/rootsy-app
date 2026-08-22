@@ -132,10 +132,12 @@ function PersonStatus({
   person,
   isOwner,
   pendingInvite,
+  hasActiveAccess,
 }: {
   person: EmployeeRow
   isOwner: boolean
   pendingInvite: boolean
+  hasActiveAccess: boolean
 }) {
   if (person.leftAt) {
     return (
@@ -146,7 +148,7 @@ function PersonStatus({
   }
 
   const showClockedIn = person.isClockedIn
-  const showUsesRootsy = Boolean(person.userId)
+  const showUsesRootsy = hasActiveAccess
   const showPending = pendingInvite && !showUsesRootsy
   const showOwnerPill = isOwner && !showClockedIn && !showUsesRootsy && !showPending
 
@@ -211,6 +213,7 @@ type Props = {
   onRevokeInvite?: () => void
   onChangeRole?: () => void
   onRevokeAccess?: () => void
+  onRestoreAccess?: () => void
   onLeave: () => void
   onReturn?: () => void
 }
@@ -234,6 +237,7 @@ export function HrPersonCard({
   onRevokeInvite,
   onChangeRole,
   onRevokeAccess,
+  onRestoreAccess,
   onLeave,
   onReturn,
 }: Props) {
@@ -242,16 +246,29 @@ export function HrPersonCard({
     person.monthlySalary == null ? "—" : salaryFmt.format(person.monthlySalary)
   const showClock = canManagePeople && !person.leftAt
   const hasEmail = Boolean(person.email?.trim())
+  const hasActiveAccess = Boolean(rootsyRole) || isOwner
   const showInvite =
-    canManageInvites && !person.userId && !person.leftAt && !pendingInvite && hasEmail
+    canManageInvites &&
+    !hasActiveAccess &&
+    !onRestoreAccess &&
+    !person.leftAt &&
+    !pendingInvite &&
+    hasEmail
   const showInviteNeedsEmail =
-    canManageInvites && !person.userId && !person.leftAt && !pendingInvite && !hasEmail
-  const showPendingInvite = Boolean(pendingInvite) && canManageInvites && !person.userId
+    canManageInvites &&
+    !hasActiveAccess &&
+    !onRestoreAccess &&
+    !person.leftAt &&
+    !pendingInvite &&
+    !hasEmail
+  const showPendingInvite =
+    Boolean(pendingInvite) && canManageInvites && !hasActiveAccess
   const inviteExpired = pendingInvite
     ? new Date(pendingInvite.expiresAt).getTime() < Date.now()
     : false
   const showChangeRole = Boolean(onChangeRole) && canManageInvites && !isOwner
   const showRevokeAccess = Boolean(onRevokeAccess) && canManageInvites && !isOwner
+  const showRestoreAccess = Boolean(onRestoreAccess) && canManageInvites && !isOwner
   const showLeave = canManagePeople && !person.leftAt && !isOwner
   const showReturn = canManagePeople && Boolean(person.leftAt)
   const showMenu =
@@ -261,6 +278,7 @@ export function HrPersonCard({
     showPendingInvite ||
     showChangeRole ||
     showRevokeAccess ||
+    showRestoreAccess ||
     showReturn
   const metaLine = person.leftAt
     ? "Quedó en el historial"
@@ -270,9 +288,11 @@ export function HrPersonCard({
         : `Invitación pendiente · ${pendingInvite.roleDisplayName}`
       : rootsyRole
         ? `Rootsy · ${rootsyRole}`
-        : person.hiredAt
-          ? `Desde ${formatHired(person.hiredAt)}`
-          : person.documentNumber || "Falta CUIL"
+        : showRestoreAccess
+          ? "Sin acceso a Rootsy"
+          : person.hiredAt
+            ? `Desde ${formatHired(person.hiredAt)}`
+            : person.documentNumber || "Falta CUIL"
 
   return (
     <article className={dataWorkspaceEntityCardLosetaClass}>
@@ -305,6 +325,7 @@ export function HrPersonCard({
                   person={person}
                   isOwner={isOwner}
                   pendingInvite={Boolean(pendingInvite)}
+                  hasActiveAccess={hasActiveAccess}
                 />
               </div>
               <p
@@ -400,6 +421,15 @@ export function HrPersonCard({
                       >
                         <Shield className="size-4 shrink-0 opacity-70" aria-hidden />
                         <span>Cambiar rol de Rootsy</span>
+                      </RootsDropdownItem>
+                    ) : null}
+                    {showRestoreAccess ? (
+                      <RootsDropdownItem
+                        theme="light"
+                        onSelect={() => onRestoreAccess?.()}
+                      >
+                        <KeyRound className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span>Restaurar acceso a Rootsy</span>
                       </RootsDropdownItem>
                     ) : null}
                     {showRevokeAccess ? (

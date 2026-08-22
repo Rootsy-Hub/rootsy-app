@@ -7,10 +7,11 @@ import {
 import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import {
   layoutsOperarToolboxBandClass,
-  layoutsOperarToolboxBarClass,
+  layoutsOperarToolboxBarGridClass,
   layoutsOperarToolboxIconWrapClass,
   layoutsOperarToolboxSlotClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import { LayoutsOperarToolboxFloor } from "@/components/layouts-module/LayoutsOperarToolboxFloor"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { useRegisterOperarMobileToolbox } from "@/components/layouts-module/OperarMobileToolbox"
 import { cn } from "@/lib/utils"
@@ -132,11 +133,11 @@ export function SaleOperationToolbox({
   useRegisterOperarMobileToolbox(mobileItems)
 
   return (
-    <div className={cn(layoutsOperarToolboxBandClass, className)}>
+    <LayoutsOperarToolboxFloor className={className}>
       <div
         role="toolbar"
         aria-label="Configuración de la operación"
-        className={layoutsOperarToolboxBarClass}
+        className={cn(layoutsOperarToolboxBandClass, layoutsOperarToolboxBarGridClass)}
       >
         <button
           type="button"
@@ -266,6 +267,6 @@ export function SaleOperationToolbox({
           </span>
         </button>
       </div>
-    </div>
+    </LayoutsOperarToolboxFloor>
   )
 }
