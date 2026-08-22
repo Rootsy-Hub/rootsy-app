@@ -75,7 +75,9 @@ type Props = {
   onChange: (patch: Partial<ArticleUpsertFormState>) => void
   onItemKindChange: (kind: ArticleItemKind) => void
   categories: ArticleCategoryOption[]
+  categoriesLoading?: boolean
   priceLists?: SalePriceList[]
+  priceListsLoading?: boolean
   supplierOptions: { id: string; name: string }[]
   costLines: ArticleCostFormLine[]
   onCostLinesChange: (lines: ArticleCostFormLine[]) => void
@@ -171,7 +173,9 @@ export function ArticleUpsertFormFields({
   onChange,
   onItemKindChange,
   categories,
+  categoriesLoading = false,
   priceLists = [],
+  priceListsLoading = false,
   supplierOptions,
   costLines,
   onCostLinesChange,
@@ -201,8 +205,11 @@ export function ArticleUpsertFormFields({
           id={`${idPrefix}-cat`}
           value={form.categoryId}
           onValueChange={(value) => onChange({ categoryId: value })}
-          disabled={disabled}
-          placeholder="Elegir categoría…"
+          disabled={disabled || categoriesLoading}
+          placeholder={
+            categoriesLoading ? "Cargando categorías…" : "Elegir categoría…"
+          }
+          valueLabel={categoriesLoading ? "Cargando categorías…" : undefined}
           error={fieldErrors.categoryId}
           invalid={Boolean(fieldErrors.categoryId)}
         >
@@ -320,6 +327,7 @@ export function ArticleUpsertFormFields({
                   })
                 }
                 disabled={disabled}
+                loading={priceListsLoading}
               />
               <ArticleCatalogDiscountField
                 idPrefix={idPrefix}

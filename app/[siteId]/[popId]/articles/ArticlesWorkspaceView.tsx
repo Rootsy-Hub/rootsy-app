@@ -1687,7 +1687,9 @@ export function ArticlesWorkspaceView() {
         onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))}
         onItemKindChange={handleEditItemKindChange}
         categories={categoryOptions}
+        categoriesLoading={categoriesQuery.isPending && !categoriesQuery.data}
         priceLists={priceLists}
+        priceListsLoading={priceListsQuery.isPending && !priceListsQuery.data}
         supplierOptions={supplierOptions}
         costLines={editCostLines}
         onCostLinesChange={setEditCostLines}
@@ -1714,7 +1716,6 @@ export function ArticlesWorkspaceView() {
         onOpenChange={(open) => !open && closeCreate()}
         mode="create"
         title="Nuevo artículo"
-        loading={categoriesQuery.isPending && !categoriesQuery.data}
         saving={createSaving}
         banner={createBanner}
         onBannerChange={setCreateBanner}
@@ -1727,7 +1728,9 @@ export function ArticlesWorkspaceView() {
         onChange={(patch) => setCreateForm((f) => ({ ...f, ...patch }))}
         onItemKindChange={handleCreateItemKindChange}
         categories={categoryOptions}
+        categoriesLoading={categoriesQuery.isPending && !categoriesQuery.data}
         priceLists={priceLists}
+        priceListsLoading={priceListsQuery.isPending && !priceListsQuery.data}
         supplierOptions={supplierOptions}
         costLines={createCostLines}
         onCostLinesChange={setCreateCostLines}

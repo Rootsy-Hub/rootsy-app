@@ -9,6 +9,7 @@ type Props = {
   values: Record<string, string>
   onChange: (listId: string, value: string) => void
   disabled?: boolean
+  loading?: boolean
 }
 
 export function SalePriceListExtraFields({
@@ -17,7 +18,29 @@ export function SalePriceListExtraFields({
   values,
   onChange,
   disabled,
+  loading = false,
 }: Props) {
+  if (loading && lists.length === 0) {
+    const pendingIds = Object.keys(values).filter((id) => values[id]?.trim())
+    return (
+      <div className="flex flex-col gap-3" role="status">
+        {pendingIds.map((listId) => (
+          <RootsFormMoneyField
+            key={listId}
+            label="Precio · …"
+            id={`${idPrefix}-list-${listId}`}
+            value={values[listId] ?? ""}
+            onChange={() => {}}
+            disabled
+          />
+        ))}
+        <p className="text-xs leading-relaxed text-rootsy-bruma-500">
+          Cargando listas de precios…
+        </p>
+      </div>
+    )
+  }
+
   const extras = extraPriceLists(lists)
   if (extras.length === 0) return null
 

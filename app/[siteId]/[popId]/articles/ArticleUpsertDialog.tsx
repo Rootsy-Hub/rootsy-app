@@ -42,7 +42,9 @@ type FormFieldsProps = {
   onChange: (patch: Partial<ArticleUpsertFormState>) => void
   onItemKindChange: (kind: ArticleItemKind) => void
   categories: ArticleCategoryOption[]
+  categoriesLoading?: boolean
   priceLists?: SalePriceList[]
+  priceListsLoading?: boolean
   supplierOptions: { id: string; name: string }[]
   costLines: ArticleCostFormLine[]
   onCostLinesChange: (lines: ArticleCostFormLine[]) => void
@@ -102,7 +104,9 @@ export function ArticleUpsertDialog({
   onChange,
   onItemKindChange,
   categories,
+  categoriesLoading = false,
   priceLists,
+  priceListsLoading = false,
   supplierOptions,
   costLines,
   canPostInitialStock,
@@ -221,7 +225,9 @@ export function ArticleUpsertDialog({
                       onChange={handleFormChange}
                       onItemKindChange={onItemKindChange}
                       categories={categories}
+                      categoriesLoading={categoriesLoading}
                       priceLists={priceLists}
+                      priceListsLoading={priceListsLoading}
                       supplierOptions={supplierOptions}
                       costLines={costLines}
                       onCostLinesChange={formProps.onCostLinesChange}
