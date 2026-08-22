@@ -1,9 +1,8 @@
 "use client"
 
-import {
-  getStatisticsSectionData,
-  type StatisticsFilters,
-  type StatisticsSectionData,
+import type {
+  StatisticsFilters,
+  StatisticsSectionData,
 } from "@/app/[siteId]/[popId]/statistics/actions"
 import {
   dataWorkspaceBlocksPageMainClass,
@@ -31,9 +30,17 @@ import {
   statisticsSectionHref,
 } from "@/lib/statisticsUrl"
 import {
+  computePreviousSummaryDateBounds,
   computeSummaryDateBounds,
   type SummaryDatePreset,
 } from "@/lib/summaryDateFilter"
+import {
+  buildComingSoonStatisticsSection,
+  fetchStatisticsSectionDetails,
+  fetchStatisticsSectionSummary,
+  isComingSoonStatisticsSection,
+  mergeStatisticsSectionData,
+} from "@/lib/rootsyApi/statisticsClient"
 import { useIsHydrated } from "@/hooks/useIsHydrated"
 import { cn } from "@/lib/utils"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -102,6 +109,7 @@ export function StatisticsWorkspaceView({
   )
   const [filters, setFilters] = useState<StatisticsFilters>(EMPTY_FILTERS)
   const [loading, setLoading] = useState(true)
+  const [detailsLoading, setDetailsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<StatisticsSectionData | null>(null)
 
@@ -147,55 +155,96 @@ export function StatisticsWorkspaceView({
   }, [activeSectionId])
 
   useEffect(() => {
-    let cancelled = false
     const requestedSectionId = activeSectionId
+    if (isComingSoonStatisticsSection(requestedSectionId)) {
+      setLoading(false)
+      setDetailsLoading(false)
+      setError(null)
+      setData(buildComingSoonStatisticsSection(requestedSectionId))
+      return
+    }
+
+    const controller = new AbortController()
+    const prevBounds = computePreviousSummaryDateBounds(preset, bounds)
+    const query = {
+      from: bounds.from,
+      to: bounds.to,
+      prevFrom: prevBounds.from,
+      prevTo: prevBounds.to,
+      channel: filters.channel,
+      supplier: filters.supplier,
+    }
 
     async function loadSection() {
       setLoading(true)
+      setDetailsLoading(true)
       setError(null)
 
-      const res = await getStatisticsSectionData({
-        popId,
-        sectionId: requestedSectionId,
-        preset,
-        from: bounds.from,
-        to: bounds.to,
-        compareEnabled: true,
-        filters,
-      })
+      try {
+        const summaryRes = await fetchStatisticsSectionSummary(
+          popId,
+          requestedSectionId,
+          query,
+          controller.signal,
+        )
+        if (controller.signal.aborted) return
 
-      if (cancelled) return
+        if (!summaryRes.success) {
+          setError(summaryRes.error)
+          setData(null)
+          setLoading(false)
+          setDetailsLoading(false)
+          return
+        }
+        if (summaryRes.data.sectionId !== requestedSectionId) return
 
-      if (!res.success) {
-        setError(res.error)
-        setData(null)
-      } else if (res.data.sectionId !== requestedSectionId) {
-        return
-      } else {
-        setData(res.data)
+        setData(summaryRes.data)
+        setLoading(false)
+
+        const detailsRes = await fetchStatisticsSectionDetails(
+          popId,
+          requestedSectionId,
+          query,
+          controller.signal,
+        )
+        if (controller.signal.aborted) return
+
+        if (!detailsRes.success) {
+          setError(detailsRes.error)
+          setDetailsLoading(false)
+          return
+        }
+        if (detailsRes.data.sectionId !== requestedSectionId) return
+
+        setData(mergeStatisticsSectionData(summaryRes.data, detailsRes.data))
+        setDetailsLoading(false)
+      } catch (err) {
+        if (controller.signal.aborted) return
+        setError(err instanceof Error ? err.message : "Error desconocido")
+        setLoading(false)
+        setDetailsLoading(false)
       }
-
-      setLoading(false)
     }
 
     void loadSection()
 
     return () => {
-      cancelled = true
+      controller.abort()
     }
   }, [
     popId,
     activeSectionId,
     preset,
-    bounds.from,
-    bounds.to,
-    filters,
+    bounds,
+    filters.channel,
+    filters.supplier,
   ])
 
   const handleSectionClick = useCallback(
     (sectionId: StatisticsSectionId) => {
       if (sectionId === activeSectionId) return
       setLoading(true)
+      setDetailsLoading(true)
       setData(null)
       setError(null)
     },
@@ -254,6 +303,7 @@ export function StatisticsWorkspaceView({
             section={activeSection}
             data={data}
             loading={loading}
+            detailsLoading={detailsLoading}
             preset={preset}
             customRange={customRange}
             bounds={bounds}

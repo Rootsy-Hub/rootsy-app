@@ -23,6 +23,7 @@ import {
 } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import { cn } from "@/lib/utils"
 import { popHeaderGlassBorderClass } from "@/components/layouts/popHeaderBackdropStyles"
+import { eterHeaderDropdownSurfaceClass } from "@/lib/eter/eterChrome"
 
 export type DataWorkspaceHeaderVariant = "default" | "dark" | "night" | "tables"
 export const nightForestSurfaceClass =
@@ -246,11 +247,20 @@ export function dataWorkspaceDropdownCheckIconClass(
     : "text-[var(--rootsy-savia-600)]"
 }
 
+const dataWorkspaceHeaderDropdownMotionClass =
+  "data-[side=bottom]:slide-in-from-top-0 data-[side=top]:slide-in-from-bottom-0 data-[side=left]:slide-in-from-right-0 data-[side=right]:slide-in-from-left-0"
+
 export const dataWorkspaceNightHeaderDropdownContentClass = cn(
   "relative w-56",
   rootsDropdownContentDarkClass,
-  "data-[side=bottom]:slide-in-from-top-0 data-[side=top]:slide-in-from-bottom-0",
-  "data-[side=left]:slide-in-from-right-0 data-[side=right]:slide-in-from-left-0",
+  eterHeaderDropdownSurfaceClass,
+  dataWorkspaceHeaderDropdownMotionClass,
+)
+
+export const dataWorkspaceTablesHeaderDropdownContentClass = cn(
+  "relative w-56",
+  rootsDropdownContentDarkClass,
+  dataWorkspaceHeaderDropdownMotionClass,
 )
 
 /** @deprecated Alias de dataWorkspaceNightHeaderDropdownContentClass */
@@ -260,7 +270,10 @@ export const dataWorkspaceHeaderDropdownContentClass =
 export function dataWorkspaceHeaderDropdownContentClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
-  if (isDarkChromeHeader(headerVariant)) {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return dataWorkspaceTablesHeaderDropdownContentClass
+  }
+  if (isNightForestHeader(headerVariant)) {
     return dataWorkspaceNightHeaderDropdownContentClass
   }
   return dataWorkspaceLightDropdownContentClass
@@ -278,7 +291,10 @@ export const dataWorkspaceHeaderUserDropdownContentClass =
 export function dataWorkspaceHeaderUserDropdownContentClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
-  if (isDarkChromeHeader(headerVariant)) {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return cn(dataWorkspaceTablesHeaderDropdownContentClass, "origin-top-right")
+  }
+  if (isNightForestHeader(headerVariant)) {
     return dataWorkspaceNightHeaderUserDropdownContentClass
   }
   return cn(dataWorkspaceLightDropdownContentClass, "origin-top-right")

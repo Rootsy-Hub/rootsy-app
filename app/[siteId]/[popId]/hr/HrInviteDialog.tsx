@@ -1,6 +1,6 @@
 "use client"
 
-import type { PopRoleRow } from "@/app/[siteId]/[popId]/hr/actions"
+import type { PopRoleRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -8,6 +8,7 @@ import {
   RootsDialogErrorBanner,
   RootsDialogForm,
   RootsDialogHeader,
+  RootsDialogSingleActionFooter,
 } from "@/components/rootsy-dialog"
 import {
   RootsFormSelectField,
@@ -29,55 +30,51 @@ export type HrInviteResult = {
 type Props = {
   open: boolean
   roles: PopRoleRow[]
-  initialEmail?: string
+  personName: string
+  email: string
   saving: boolean
   error: string | null
   result: HrInviteResult | null
   onOpenChange: (open: boolean) => void
   onSubmit: (input: {
-    email: string
     roleId: string
     message: string
   }) => void | Promise<void>
-  onInviteAnother: () => void
   onCreateRole: () => void
 }
 
 export function HrInviteDialog({
   open,
   roles,
-  initialEmail = "",
+  personName,
+  email,
   saving,
   error,
   result,
   onOpenChange,
   onSubmit,
-  onInviteAnother,
   onCreateRole,
 }: Props) {
-  const [email, setEmail] = useState("")
   const [roleId, setRoleId] = useState("")
   const [message, setMessage] = useState("")
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!open) {
-      setEmail("")
       setRoleId(roles[0]?.id ?? "")
       setMessage("")
       setCopied(false)
       return
     }
-    setEmail(initialEmail)
     setRoleId((prev) => prev || roles[0]?.id || "")
-  }, [open, roles, initialEmail])
+  }, [open, roles])
 
   const canSubmit = email.trim().length > 0 && Boolean(roleId) && roles.length > 0
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (!canSubmit) return
-    void onSubmit({ email, roleId, message })
+    void onSubmit({ roleId, message })
   }
 
   const copyInviteUrl = async () => {
@@ -115,19 +112,17 @@ export function HrInviteDialog({
                 {copied ? "Copiado" : "Copiar enlace"}
               </RootsDefaultButton>
             </RootsDialogBody>
-            <RootsDialogDualActionFooter
-              cancelLabel="Invitar a otra persona"
-              confirmLabel="Listo"
-              onCancel={onInviteAnother}
-              onConfirm={() => onOpenChange(false)}
+            <RootsDialogSingleActionFooter
+              label="Listo"
+              onAction={() => onOpenChange(false)}
             />
           </>
         ) : (
           <RootsDialogForm onSubmit={handleSubmit}>
             <RootsDialogHeader
               open={open}
-              title="Dar acceso a Rootsy"
-              description="Esto no la carga al negocio: es para que pueda abrir Rootsy en este local. Si no tiene cuenta, la crea con el mismo enlace."
+              title={`Dar acceso a ${personName || "esta persona"}`}
+              description="Si no tiene cuenta de Rootsy, la crea con el mismo enlace y queda en esta ficha."
             />
             <RootsDialogBody className="space-y-4">
               {roles.length === 0 ? (
@@ -146,11 +141,12 @@ export function HrInviteDialog({
                     id="hr-invite-email"
                     type="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="nombre@ejemplo.com"
-                    autoComplete="email"
-                    autoFocus
-                    required
+                    readOnly
+                    hint={
+                      email
+                        ? "El de la ficha. Ahí le llega el enlace."
+                        : "Cargá el correo en la ficha antes de dar acceso."
+                    }
                   />
                   <RootsFormSelectField
                     label="Rol"

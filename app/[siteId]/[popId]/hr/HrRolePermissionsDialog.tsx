@@ -1,6 +1,6 @@
 "use client"
 
-import type { PermissionCatalogRow } from "@/app/[siteId]/[popId]/hr/actions"
+import type { PermissionCatalogRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import {
   RootsDialogBody,
   RootsDialogContent,

@@ -3,7 +3,7 @@
 import {
   disconnectPopMercadoPago,
   startPopMercadoPagoConnect,
-} from "@/app/[siteId]/[popId]/accounts/mercadopagoConnectionActions"
+} from "@/lib/rootsyApi/treasuryClient"
 import { RootsBanner } from "@/components/rootsy-banner"
 import {
   RootsDangerSubtleButton,

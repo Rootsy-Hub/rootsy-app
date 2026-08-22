@@ -74,7 +74,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "relative flex cursor-default items-center overflow-hidden rounded-[4px] outline-none select-none transition-[color,background-color] duration-150 ease-out data-[disabled]:pointer-events-none data-[disabled]:opacity-[0.55] data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "relative flex cursor-default items-center overflow-hidden rounded-none outline-none select-none transition-[color,background-color] duration-150 ease-out data-[disabled]:pointer-events-none data-[disabled]:opacity-[0.55] data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}

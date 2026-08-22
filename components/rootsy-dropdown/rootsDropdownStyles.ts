@@ -1,6 +1,6 @@
 /**
- * Estilos RootsDropdown — radius.xlarge panel (16px) · space.050 ítems (4px).
- * Hover/selección: bruma-50 · savia-100 · motion.duration.short (150ms).
+ * Estilos RootsDropdown — radius.xlarge panel (16px).
+ * Hover rectangular a todo el ancho · bruma-50 · savia-100 · 150ms.
  */
 
 import { ROOTSY_SEMANTIC_TOKENS } from "@/app/library/color/rootsyColorSystem"
@@ -12,8 +12,8 @@ const statusDangerHex =
 /** radius.xlarge — 16px (ROOTSY_DROPDOWN_ANATOMY.panelRadiusPx). */
 export const rootsDropdownPanelRadiusClass = "rounded-[16px]"
 
-/** space.050 — 4px en hover/selección de ítem. */
-export const rootsDropdownItemRadiusClass = "rounded-[4px]"
+/** Hover rectangular — sin radio de pastilla. */
+export const rootsDropdownItemRadiusClass = "rounded-none"
 
 /** space.025 — separación entre pastillas de ítem. */
 export const rootsDropdownItemStackGapClass = "gap-0.5"
@@ -44,7 +44,7 @@ export const rootsDropdownContentMotionClass = cn(
 export const rootsDropdownContentListClass = cn(
   "flex flex-col",
   rootsDropdownItemStackGapClass,
-  "px-1 py-2",
+  "px-0 py-2",
 )
 
 export const rootsDropdownContentSurfaceLightClass = cn(

@@ -120,8 +120,8 @@ export function HrPersonDialog({
               locked
                 ? "Solo lectura. Estos datos no se pueden cambiar desde acá."
                 : isEdit
-                  ? "Sueldo, CUIL e ingreso. No le da acceso a Rootsy."
-                  : "Cargala aunque no use Rootsy. El acceso al sistema se da aparte."
+                  ? "Sueldo, CUIL e ingreso. El acceso a Rootsy se da desde su ficha."
+                  : "Cargala aunque no use Rootsy. Si tiene correo, después le das acceso desde acá."
             }
           />
           <RootsDialogBody className="space-y-4">

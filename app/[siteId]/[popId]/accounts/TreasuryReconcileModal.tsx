@@ -5,10 +5,10 @@ import type {
   TreasuryFundingOption,
 } from "@/app/[siteId]/[popId]/accounts/actions"
 import {
-  getTreasuryChildPendingBalanceAsOf,
+  fetchTreasuryChildPendingBalance,
   recordPosAcreditationForAccount,
   recordTreasurySettlementForAccount,
-} from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
+} from "@/lib/rootsyApi/treasuryClient"
 import {
   TREASURY_CARD_OTHER_CHARGES_LABEL,
   TREASURY_CARD_STATEMENT_CHARGES_ACCOUNT_HINT,
@@ -95,8 +95,9 @@ export function TreasuryReconcileModal({
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return
       setBalanceLoading(true)
       setBalanceError(null)
-      const res = await getTreasuryChildPendingBalanceAsOf(
+      const res = await fetchTreasuryChildPendingBalance(
         popId,
+        motherAccountId,
         child.id,
         child.childRole,
         date,
@@ -108,7 +109,7 @@ export function TreasuryReconcileModal({
       }
       setBalanceAsOf(res.balance)
     },
-    [popId, child.id, child.childRole],
+    [popId, motherAccountId, child.id, child.childRole],
   )
 
   useEffect(() => {

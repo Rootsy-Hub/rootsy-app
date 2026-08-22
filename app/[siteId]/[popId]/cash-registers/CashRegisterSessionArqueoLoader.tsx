@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  getCashRegisterSessionArqueoDetail,
-  type CashRegisterSessionArqueoDetail,
-} from "@/app/[siteId]/[popId]/cash-registers/actions"
+import type { CashRegisterSessionArqueoDetail } from "@/app/[siteId]/[popId]/cash-registers/actions"
+import { fetchCashRegisterSessionArqueo } from "@/lib/rootsyApi/cashRegistersClient"
 import { CashRegisterSessionArqueoView } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterSessionArqueoView"
 import { CashRegisterSessionArqueoSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDetailSkeleton"
 import { cn } from "@/lib/utils"
@@ -33,7 +31,7 @@ export function CashRegisterSessionArqueoLoader({
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const res = await getCashRegisterSessionArqueoDetail(popId, sessionId)
+    const res = await fetchCashRegisterSessionArqueo(popId, sessionId)
     setLoading(false)
     if (!res.success) {
       setDetail(null)

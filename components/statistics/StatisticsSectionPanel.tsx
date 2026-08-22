@@ -177,6 +177,7 @@ export function StatisticsSectionPanel({
   section,
   data,
   loading,
+  detailsLoading,
   preset,
   customRange,
   bounds,
@@ -189,6 +190,7 @@ export function StatisticsSectionPanel({
   section: StatisticsSectionDef | undefined
   data: StatisticsSectionData | null
   loading?: boolean
+  detailsLoading?: boolean
   preset: SummaryDatePreset
   customRange: DateRange | undefined
   bounds: { from: string | null; to: string | null }
@@ -201,6 +203,7 @@ export function StatisticsSectionPanel({
   const rankFormat =
     data?.sectionId === "inventory" ? ("number" as const) : ("money" as const)
 
+  const chartsLoading = Boolean(loading || detailsLoading)
   const sectionDataReady =
     Boolean(data) && data!.sectionId === section?.id && !loading
 
@@ -297,13 +300,13 @@ export function StatisticsSectionPanel({
       </section>
 
       {isProductsSection ? (
-        <StatisticsProductsSectionBlock data={data} loading={loading} />
+        <StatisticsProductsSectionBlock data={data} loading={chartsLoading} />
       ) : isInventorySection ? (
-        <StatisticsInventorySectionBlock data={data} loading={loading} />
+        <StatisticsInventorySectionBlock data={data} loading={chartsLoading} />
       ) : isClientsSection ? (
-        <StatisticsClientsSectionBlock data={data} loading={loading} />
+        <StatisticsClientsSectionBlock data={data} loading={chartsLoading} />
       ) : isSuppliersSection ? (
-        <StatisticsSuppliersSectionBlock data={data} loading={loading} />
+        <StatisticsSuppliersSectionBlock data={data} loading={chartsLoading} />
       ) : (
         <>
       <div className="grid items-stretch gap-6 lg:grid-cols-12">
@@ -327,7 +330,7 @@ export function StatisticsSectionPanel({
                   : "Comportamiento en el tiempo dentro del período"
             }
             points={data?.evolution ?? []}
-            loading={loading}
+            loading={chartsLoading}
             valueFormat={rankFormat}
             dualSeries={
               data?.sectionId === "sales"
@@ -369,7 +372,7 @@ export function StatisticsSectionPanel({
                     ? data.costDistribution ?? []
                     : []
                 }
-                loading={loading}
+                loading={chartsLoading}
               />
             ) : isPurchasesSection ? (
               <StatisticsCostDistributionChart
@@ -380,7 +383,7 @@ export function StatisticsSectionPanel({
                     ? data.purchaseDistribution ?? []
                     : []
                 }
-                loading={loading}
+                loading={chartsLoading}
                 emptyMessage="Sin compras clasificadas por tipo en este período"
               />
             ) : (
@@ -392,7 +395,7 @@ export function StatisticsSectionPanel({
                     : "Distribución por segmento dentro del total"
                 }
                 segments={data?.segments ?? []}
-                loading={loading}
+                loading={chartsLoading}
                 valueFormat={rankFormat}
               />
             )}
@@ -435,7 +438,7 @@ export function StatisticsSectionPanel({
                 maxValue: 0,
               }
             }
-            loading={loading}
+            loading={chartsLoading}
             valueFormat={rankFormat}
             emptyMessage="Sin ventas por hora en este período"
           />
@@ -465,7 +468,7 @@ export function StatisticsSectionPanel({
                   : "Top 10 del período"
             }
             rows={data?.rankings ?? []}
-            loading={loading}
+            loading={chartsLoading}
             valueFormat={rankFormat}
           />
         </section>

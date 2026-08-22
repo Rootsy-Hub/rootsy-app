@@ -1,3 +1,5 @@
+import type { HrPermissionCatalogRow } from "@/lib/hrPermissionCatalog"
+
 export type EmployeeRow = {
   id: string
   userId: string | null
@@ -13,6 +15,65 @@ export type EmployeeRow = {
   notes: string | null
   isClockedIn: boolean
   clockedInAt: string | null
+}
+
+export type AttendancePunchRow = {
+  id: string
+  clockedInAt: string
+  clockedOutAt: string | null
+}
+
+export type FrancoRow = {
+  id: string
+  day: string
+}
+
+export type PopRoleRow = {
+  id: string
+  name: string
+  displayName: string
+  description: string | null
+  isSystem: boolean
+  popId: string | null
+}
+
+export type MemberRow = {
+  userId: string
+  roleId: string
+  roleDisplayName: string
+  roleName: string
+  firstName: string
+  lastName: string
+  imageUrl: string | null
+  invitedAt: string | null
+  isOwner: boolean
+  isActive: boolean
+}
+
+export type PendingInviteRow = {
+  id: string
+  email: string
+  employeeId: string | null
+  roleId: string
+  roleDisplayName: string
+  message: string | null
+  createdAt: string
+  expiresAt: string
+  inviteUrl: string
+}
+
+export type PermissionCatalogRow = HrPermissionCatalogRow
+
+export type HrDashboardData = {
+  popName: string
+  isOwner: boolean
+  canManageInvites: boolean
+  canManagePeople: boolean
+  permissionKeys: string[]
+  roles: PopRoleRow[]
+  members: MemberRow[]
+  employees: EmployeeRow[]
+  pendingInvites: PendingInviteRow[]
 }
 
 export type UpsertEmployeeInput = {

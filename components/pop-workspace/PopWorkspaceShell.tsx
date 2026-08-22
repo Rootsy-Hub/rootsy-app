@@ -6,6 +6,7 @@ import {
   navigationArrived,
   usePopOptimisticNav,
 } from "@/context/PopOptimisticNavContext"
+import { PopRealtimeProvider } from "@/context/PopRealtimeContext"
 import { PopWorkspaceProvider } from "@/context/PopWorkspaceContext"
 import { hasPopTableListSessionCache } from "@/lib/popTableListSessionCache"
 import {
@@ -33,9 +34,11 @@ export function PopWorkspaceShell({ children }: { children: ReactNode }) {
       popId={popId}
       accessEnabled={!isPopMenuPathname(pathname)}
     >
-      <PopOptimisticNavProvider>
-        <PopOptimisticNavGate>{children}</PopOptimisticNavGate>
-      </PopOptimisticNavProvider>
+      <PopRealtimeProvider>
+        <PopOptimisticNavProvider>
+          <PopOptimisticNavGate>{children}</PopOptimisticNavGate>
+        </PopOptimisticNavProvider>
+      </PopRealtimeProvider>
     </PopWorkspaceProvider>
   )
 }

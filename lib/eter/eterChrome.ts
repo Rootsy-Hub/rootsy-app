@@ -146,3 +146,18 @@ export const eterHeaderHairlineClass =
 
 export const eterHeaderFocusRingClass =
   "focus-visible:ring-2 focus-visible:ring-white/22"
+
+/** Overlay del header éter — mismo vacío y hairline, no el panel sombra. */
+export const eterHeaderDropdownSurfaceClass = cn(
+  "!border-[color-mix(in_srgb,var(--rootsy-eter-100)_16%,transparent)]",
+  "!bg-[var(--rootsy-eter-950)]",
+  "text-white/96",
+  "!shadow-[0_24px_64px_-18px_rgb(1_3_6/0.72)]",
+  "[&_[data-slot=dropdown-menu-item]:not([data-variant=destructive])]:text-white/96",
+  "[&_[data-slot=dropdown-menu-item]:not([data-variant=destructive])]:data-[highlighted]:bg-[color-mix(in_srgb,var(--rootsy-eter-100)_8%,transparent)]",
+  "[&_[data-slot=dropdown-menu-item]:not([data-variant=destructive])]:data-[highlighted]:text-white",
+  "[&_[data-slot=dropdown-menu-item]:not([data-variant=destructive])_svg:not([class*='text-'])]:text-[color-mix(in_srgb,var(--rootsy-eter-100)_52%,transparent)]",
+  "[&_[data-slot=dropdown-menu-item][data-variant=destructive]]:data-[highlighted]:bg-[color-mix(in_srgb,var(--color-status-danger,#dc2626)_8%,var(--rootsy-eter-950))]",
+  "[&_[data-slot=dropdown-menu-separator]]:!bg-[color-mix(in_srgb,var(--rootsy-eter-100)_18%,transparent)]",
+  "[&_[data-slot=dropdown-menu-label]]:text-[color-mix(in_srgb,var(--rootsy-eter-100)_52%,transparent)]",
+)

@@ -1,29 +1,20 @@
 "use client"
 
 import { TreasuryAccountDetailContentSkeleton, TreasuryAccountDetailSkeleton, resolveTreasuryDetailSkeletonProfile } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDetailSkeleton"
-import {
-  getTreasuryAccountPageData,
-  type TreasuryAccountTableRow,
-  type TreasuryChildAccountRow,
-  type TreasuryFundingOption,
+import type {
+  TreasuryAccountTableRow,
+  TreasuryChildAccountRow,
+  TreasuryFundingOption,
 } from "@/app/[siteId]/[popId]/accounts/actions"
 import {
   TreasuryBrandIsotype,
   TreasuryBrandName,
 } from "@/app/[siteId]/[popId]/accounts/TreasuryBrandMark"
-import {
-  addManualBankStatementLine,
-  clearMovementReconciliation,
-  deleteBankStatementLine,
-  getTreasuryAccountDetail,
-  importBankStatementCsv,
-  recordPosAcreditationForAccount,
-  recordTreasurySettlementForAccount,
-  setMovementReconciliation,
-  type BankStatementLineRow,
-  type PaymentMethodMovementRow,
-  type TreasuryAccountDetailResult,
-  type TreasurySettlementRow,
+import type {
+  BankStatementLineRow,
+  PaymentMethodMovementRow,
+  TreasuryAccountDetailResult,
+  TreasurySettlementRow,
 } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
 import { TreasuryCashMovementsTable } from "@/app/[siteId]/[popId]/accounts/TreasuryCashMovementsTable"
 import { TreasuryGroupedMovementsList } from "@/app/[siteId]/[popId]/accounts/TreasuryGroupedMovementsList"
@@ -76,10 +67,28 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
 import {
   treasuryAccountOffersMercadoPagoConnection,
   type PopMercadoPagoConnectionPublic,
 } from "@/lib/popMercadoPago"
+import {
+  addManualBankStatementLine,
+  clearMovementReconciliation,
+  deleteBankStatementLine,
+  fetchTreasuryAccountMovements,
+  fetchTreasuryAccountPage,
+  fetchTreasuryAccountTotals,
+  importBankStatementCsv,
+  mergeTreasuryAccountRow,
+  recordPosAcreditationForAccount,
+  recordTreasurySettlementForAccount,
+  setMovementReconciliation,
+} from "@/lib/rootsyApi/treasuryClient"
 import { resolveTreasuryAccountBrand } from "@/lib/treasuryAccountBrands"
 import { treasuryKindLabel } from "@/lib/treasuryAccountKinds"
 import type { TreasuryAccountKind } from "@/lib/treasuryAccountKinds"
@@ -254,6 +263,23 @@ export function TreasuryAccountDetailView({
   const kindFromQuery = parseAccountKindHint(searchParams.get("kind"))
   const resolvedKindHint = accountKindHint ?? kindFromQuery
   const accountsBasePath = `/${siteId}/${popId}/accounts`
+  const { hasPermission } = usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
+  const canUpdate = afterHydration && (
+    hasPermission(
+      POP_PERMS.PAYMENT_METHOD_UPDATE.resource,
+      POP_PERMS.PAYMENT_METHOD_UPDATE.action,
+    ) ||
+    (menuCache.popAccess
+      ? hasPopAccessPermission(
+          menuCache.popAccess,
+          POP_PERMS.PAYMENT_METHOD_UPDATE.resource,
+          POP_PERMS.PAYMENT_METHOD_UPDATE.action,
+        )
+      : false)
+  )
+  const canSettle = canUpdate
   const [account, setAccount] = useState<TreasuryAccountTableRow | null>(null)
   const [children, setChildren] = useState<TreasuryChildAccountRow[]>([])
   const [isMother, setIsMother] = useState(true)
@@ -264,8 +290,6 @@ export function TreasuryAccountDetailView({
   const [fundingAccounts, setFundingAccounts] = useState<TreasuryFundingOption[]>(
     [],
   )
-  const [canUpdate, setCanUpdate] = useState(false)
-  const [canSettle, setCanSettle] = useState(false)
   const [mercadopagoConnection, setMercadopagoConnection] =
     useState<PopMercadoPagoConnectionPublic | null>(null)
   const [loading, setLoading] = useState(true)
@@ -330,48 +354,100 @@ export function TreasuryAccountDetailView({
 
   const loadPage = useCallback(async () => {
     if (!popId || !accountId) return null
-    const res = await getTreasuryAccountPageData(popId, accountId)
+    const res = await fetchTreasuryAccountPage(popId, accountId)
     if (!res.success) {
       setError(res.error || "Error")
       return null
     }
-    setAccount(res.account)
-    setChildren(res.children)
-    setIsMother(res.isMother)
-    setParentAccount(res.parentAccount)
-    setFundingAccounts(res.fundingAccounts)
-    setCanUpdate(res.canUpdate)
-    setCanSettle(res.canSettle)
-    setMercadopagoConnection(res.mercadopagoConnection)
+    setAccount(mergeTreasuryAccountRow(res.data.account))
+    setChildren(res.data.children)
+    setIsMother(res.data.isMother)
+    setParentAccount(res.data.parentAccount)
+    setFundingAccounts(res.data.fundingAccounts)
+    setMercadopagoConnection(res.data.mercadopagoConnection)
     setError(null)
-    return res
+    return res.data
   }, [popId, accountId])
 
   const loadDetail = useCallback(
-    async (pageRes?: Awaited<ReturnType<typeof getTreasuryAccountPageData>>) => {
+    async (pageData?: Awaited<ReturnType<typeof loadPage>>) => {
       if (!popId || !accountId) return
       setDetailLoading(true)
       setDetailError(null)
 
       let childIds: string[] = []
-      if (pageRes?.success && pageRes.isMother) {
-        childIds = pageRes.children.map((c) => c.id)
+      if (pageData?.isMother) {
+        childIds = pageData.children.map((c) => c.id)
       } else if (isMother && children.length > 0) {
         childIds = children.map((c) => c.id)
       }
 
-      const res = await getTreasuryAccountDetail(popId, accountId, {
-        dateFrom: dateBounds.from ?? "",
-        dateTo: dateBounds.to ?? "",
-        includeRelatedAccounts: childIds.length > 0,
-        relatedTreasuryAccountIds: childIds,
-      })
+      const [totalsRes, movementsRes] = await Promise.all([
+        fetchTreasuryAccountTotals(
+          popId,
+          accountId,
+          dateBounds.from,
+          dateBounds.to,
+        ),
+        fetchTreasuryAccountMovements(
+          popId,
+          accountId,
+          dateBounds.from,
+          dateBounds.to,
+          childIds,
+        ),
+      ])
       setDetailLoading(false)
-      if (!res.success) {
-        setDetailError(res.error)
+
+      if (totalsRes.success) {
+        setAccount((current) =>
+          current
+            ? {
+                ...current,
+                ledgerBalance: totalsRes.data.ledgerBalance,
+                toLiquidateBalance: totalsRes.data.toLiquidateBalance,
+                toPayBalance: totalsRes.data.toPayBalance,
+              }
+            : current,
+        )
+        const byId = new Map(
+          totalsRes.data.children.map((child) => [child.id, child]),
+        )
+        setChildren((current) =>
+          current.map((child) => {
+            const extra = byId.get(child.id)
+            if (!extra) return child
+            return {
+              ...child,
+              ledgerBalance: extra.ledgerBalance,
+              outstandingBalance: extra.outstandingBalance,
+              settledTotal: extra.settledTotal,
+            }
+          }),
+        )
+      }
+
+      if (!movementsRes.success) {
+        setDetailError(movementsRes.error)
         return
       }
-      setDetailData(res.data)
+      setDetailData({
+        ...movementsRes.data,
+        periodSummary:
+          totalsRes.success && totalsRes.data.currentBalance != null
+            ? {
+                openingBalance: totalsRes.data.openingBalance,
+                currentBalance: totalsRes.data.currentBalance,
+              }
+            : movementsRes.data.periodSummary,
+        movementTotals: totalsRes.success
+          ? {
+              in: totalsRes.data.periodIn,
+              out: totalsRes.data.periodOut,
+              net: totalsRes.data.periodIn - totalsRes.data.periodOut,
+            }
+          : movementsRes.data.movementTotals,
+      })
     },
     [popId, accountId, dateBounds.from, dateBounds.to, isMother, children],
   )
@@ -422,7 +498,7 @@ export function TreasuryAccountDetailView({
     setLoading(true)
     try {
       const pageRes = await loadPage()
-      if (pageRes?.success) await loadDetail(pageRes)
+      if (pageRes) await loadDetail(pageRes)
     } finally {
       setLoading(false)
     }
@@ -470,7 +546,7 @@ export function TreasuryAccountDetailView({
 
   const handleDeleteStatementLine = async (lineId: string) => {
     if (!popId) return
-    const res = await deleteBankStatementLine(popId, lineId)
+    const res = await deleteBankStatementLine(popId, accountId, lineId)
     if (!res.success) {
       setCsvBanner(res.error)
       return
@@ -505,7 +581,12 @@ export function TreasuryAccountDetailView({
     if (!popId) return
     const key = `${m.kind}:${m.movementRefId}`
     setReconcileBusyKey(key)
-    const res = await clearMovementReconciliation(popId, m.kind, m.movementRefId)
+    const res = await clearMovementReconciliation(
+      popId,
+      accountId,
+      m.kind,
+      m.movementRefId,
+    )
     setReconcileBusyKey(null)
     if (!res.success) {
       setDetailError(res.error)
