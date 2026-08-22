@@ -7,13 +7,13 @@ import {
   userPopsAccessBatchQueryKey,
   userProfileQueryKey,
 } from "@/lib/queryKeys"
-import { oneDayQueryOptions } from "@/lib/queryStaleTimes"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { QueryClient, dehydrate, type DehydratedState } from "@tanstack/react-query"
 
 function seedHomeSidecarQueryClient(sidecar: HomeSidecar): QueryClient {
   const queryClient = new QueryClient({
     defaultOptions: {
-      queries: oneDayQueryOptions,
+      queries: sessionListQueryOptions,
     },
   })
 
