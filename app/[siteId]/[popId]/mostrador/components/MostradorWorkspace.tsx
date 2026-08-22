@@ -12,10 +12,12 @@ import { useMostradorSaleCheckout } from "@/app/[siteId]/[popId]/mostrador/useMo
 import { useMostradorState } from "@/app/[siteId]/[popId]/mostrador/useMostradorState"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import { useOperarMobileStage } from "@/components/layouts-module/OperarMobileStage"
+import { OperarMobileToolboxIcons } from "@/components/layouts-module/OperarMobileToolbox"
 import {
   layoutsOperarCatalogColumnClass,
   layoutsOperarCatalogCanvasClass,
-  layoutsOperarSummaryPanelClass,
+  layoutsOperarSummaryPanelTabsClass,
   layoutsOperarSummaryPanelInnerGridClass,
   layoutsOperarSummaryPanelTabBodyClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
@@ -55,6 +57,7 @@ export function MostradorWorkspace({
     reloadOrders,
   } = useMostradorState(popId, siteId)
 
+  const mobileStage = useOperarMobileStage()
   const [rightView, setRightView] = useState<MostradorRightPanelView>("detail")
   const [creating, setCreating] = useState(false)
   const showCatalog = rightView === "cart"
@@ -107,11 +110,52 @@ export function MostradorWorkspace({
       selectOrder(null)
       setCreating(true)
       setRightView("detail")
+      mobileStage?.setStage("ticket")
     })
     return () => onRegisterStartCreateOrder(null)
-  }, [onRegisterStartCreateOrder, selectOrder])
+  }, [onRegisterStartCreateOrder, selectOrder, mobileStage])
 
   const orderLabel = selectedOrder ? `#${selectedOrder.orderNumber}` : null
+
+  useEffect(() => {
+    if (mobileStage?.stage === "catalog") {
+      setRightView("cart")
+    }
+  }, [mobileStage?.stage])
+
+  const boardCanvas = (
+    <section className={cn(layoutsOperarCatalogColumnClass, "flex-col")}>
+      <div
+        className={cn(
+          layoutsOperarCatalogCanvasClass,
+          "[grid-template-rows:minmax(0,1fr)]",
+        )}
+      >
+        <MostradorBoard
+          orders={orders}
+          loading={loading}
+          orderError={orderError}
+          selectedOrderId={selectedOrderId}
+          onSelectOrder={(id) => {
+            selectOrder(id)
+            setCreating(false)
+            mobileStage?.setStage("ticket")
+          }}
+          onMoveOrder={moveOrderStatus}
+        />
+      </div>
+    </section>
+  )
+
+  const catalogPanel = (
+    <MostradorCatalogPanel
+      siteId={siteId}
+      popId={popId}
+      checkout={checkout}
+      catalogSidebarOpen={catalogSidebarOpen}
+      onCatalogSidebarOpenChange={onCatalogSidebarOpenChange}
+    />
+  )
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
@@ -131,46 +175,17 @@ export function MostradorWorkspace({
       ) : null}
 
       <LayoutsOperarMainGrid
-        catalog={
-          !showCatalog ? (
-            <section className={cn(layoutsOperarCatalogColumnClass, "flex-col")}>
-              <div
-                className={cn(
-                  layoutsOperarCatalogCanvasClass,
-                  "[grid-template-rows:minmax(0,1fr)]",
-                )}
-              >
-                <MostradorBoard
-                  orders={orders}
-                  loading={loading}
-                  orderError={orderError}
-                  selectedOrderId={selectedOrderId}
-                  onSelectOrder={(id) => {
-                    selectOrder(id)
-                    setCreating(false)
-                  }}
-                  onMoveOrder={moveOrderStatus}
-                />
-              </div>
-            </section>
-          ) : (
-            <MostradorCatalogPanel
-              siteId={siteId}
-              popId={popId}
-              checkout={checkout}
-              catalogSidebarOpen={catalogSidebarOpen}
-              onCatalogSidebarOpenChange={onCatalogSidebarOpenChange}
-            />
-          )
-        }
-        toolbox={
-          showCatalog ? <SaleOperationToolbox {...checkout.toolbox} /> : null
-        }
+        mobileHomeLabel="Mostrador"
+        mobileHome={boardCanvas}
+        mobileCatalog={catalogPanel}
+        catalog={!showCatalog ? boardCanvas : catalogPanel}
+        toolbox={<SaleOperationToolbox {...checkout.toolbox} />}
+        desktopToolbox={showCatalog}
         ticket={
           <aside
             className={cn(
-              layoutsOperarSummaryPanelClass,
-              "[grid-template-rows:auto_minmax(0,1fr)]",
+              layoutsOperarSummaryPanelTabsClass,
+              rightView !== "cart" && "max-md:grid-rows-[auto_minmax(0,1fr)_auto]",
             )}
             aria-label="Panel de pedido"
           >
@@ -215,6 +230,7 @@ export function MostradorWorkspace({
                 </div>
               </div>
             )}
+            {rightView !== "cart" ? <OperarMobileToolboxIcons /> : null}
           </aside>
         }
       />

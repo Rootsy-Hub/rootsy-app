@@ -3,8 +3,10 @@
 import dynamic from "next/dynamic"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import { getSalePriceListSession } from "@/lib/salePriceListSession"
-import { createSaleQuote } from "@/app/[siteId]/[popId]/quotes/actions"
-import { getSaleQuoteDetail } from "@/app/[siteId]/[popId]/quotes/actions"
+import {
+  createSaleQuote,
+  fetchSaleQuoteDetail,
+} from "@/lib/rootsyApi/quotesClient"
 import {
   type SaleCatalogClient,
   type SaleCatalogPaymentOption,
@@ -131,7 +133,10 @@ import {
   saleOpFmt,
   saleOpImporteBaseClass,
 } from "@/components/sale-operation/saleOperationStyles"
-import { layoutsOperarSummaryPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  layoutsOperarSummaryPanelClass,
+  layoutsOperarSummaryPanelMobileStackClass,
+} from "@/app/library/layouts/layoutsOperarStyles"
 
 type Producto = MenuCatalogProduct
 
@@ -896,7 +901,7 @@ function SalePage() {
 
     void (async () => {
       try {
-        const res = await getSaleQuoteDetail(popId, quoteIdFromUrl)
+        const res = await fetchSaleQuoteDetail(popId, quoteIdFromUrl)
         if (!res.success) {
           setVentaError(res.error)
           comprobanteInitRef.current = false
@@ -1236,7 +1241,10 @@ function SalePage() {
             }
             ticket={
               <aside
-                className={layoutsOperarSummaryPanelClass}
+                className={cn(
+                  layoutsOperarSummaryPanelClass,
+                  layoutsOperarSummaryPanelMobileStackClass,
+                )}
                 aria-label="Carrito de la venta"
               >
                 <SaleOperationTicketOrderPanel

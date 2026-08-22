@@ -65,7 +65,7 @@ export const layoutsOperarBodyShellClass = cn(
   "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--rootsy-sombra-950)]",
 )
 
-/** Grid principal 1 · mobile: canvas + dock. Desktop: operación | ticket. */
+/** Grid principal 1 · mobile: escena única. Desktop: operación | ticket. */
 export const layoutsOperarBodyMainGridClass = cn(
   "flex min-h-0 flex-1 flex-col",
   "md:grid md:[grid-template-columns:var(--layouts-operar-grid-cols)]",
@@ -634,7 +634,7 @@ export const layoutsOperarSummaryPanelTabBodyClass = cn(
   "rootsy-app-light layouts-operar-ticket-shell h-full min-h-0 w-full",
 )
 
-/** Panel ticket 1.2 — col derecha en desktop; full en el sheet mobile. */
+/** Panel ticket 1.2 — col derecha en desktop; escena mobile a full. */
 export const layoutsOperarSummaryPanelClass = cn(
   layoutsOperarSummaryPanelSurfaceClass,
   "min-h-0 h-full w-full",
@@ -643,10 +643,25 @@ export const layoutsOperarSummaryPanelClass = cn(
   "md:w-[var(--layouts-operar-ticket-w)] md:max-w-[var(--layouts-operar-ticket-w)]",
 )
 
+/** Ticket con tabs (Mesas · Mostrador) — sin mezclar grid-template-rows en `cn`. */
+export const layoutsOperarSummaryPanelTabsClass = cn(
+  "layouts-operar-ticket-shell rootsy-app-light grid min-h-0 h-full w-full overflow-hidden",
+  "grid-rows-[auto_minmax(0,1fr)]",
+  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
+  "md:col-start-2 md:row-start-1",
+  "md:border-l md:border-[var(--layouts-operar-border-split)]",
+  "md:w-[var(--layouts-operar-ticket-w)] md:max-w-[var(--layouts-operar-ticket-w)]",
+)
+
+/** Ticket simple (Vender · Compras) — una escena en mobile. */
+export const layoutsOperarSummaryPanelMobileStackClass =
+  "max-md:[grid-template-rows:minmax(0,1fr)]"
+
 /** Vender servicio — panel derecho con fila de totales operar. */
 export const serviceOperateSnapshotPanelClass = cn(
   layoutsOperarSummaryPanelClass,
   "service-operate-snapshot-panel",
+  "max-md:[grid-template-rows:auto_minmax(0,1fr)_auto_auto]",
 )
 
 /** Panel ticket aislado — sección 4 · demo sin grid padre. */

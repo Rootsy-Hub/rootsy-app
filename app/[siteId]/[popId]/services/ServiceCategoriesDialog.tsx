@@ -14,7 +14,9 @@ import {
   RootsDialogSingleActionFooter,
 } from "@/components/rootsy-dialog"
 import { RootsFormTextField } from "@/components/rootsy-form"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { Dialog } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 import { Check, Pencil, Trash2, X } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
@@ -29,6 +31,8 @@ type Props = {
   onNewCategoryNameChange: (value: string) => void
   onCreateCategory: () => void
   categoryBusy: boolean
+  pendingCreateName: string | null
+  pendingDeleteId: string | null
   editingCategoryId: string | null
   editingCategoryName: string
   onEditingCategoryNameChange: (value: string) => void
@@ -50,6 +54,8 @@ export function ServiceCategoriesDialog({
   onNewCategoryNameChange,
   onCreateCategory,
   categoryBusy,
+  pendingCreateName,
+  pendingDeleteId,
   editingCategoryId,
   editingCategoryName,
   onEditingCategoryNameChange,
@@ -111,19 +117,38 @@ export function ServiceCategoriesDialog({
           ) : null}
 
           <div className={serviceDialogListShellClass}>
-            {categories.length === 0 ? (
+            {categories.length === 0 && !pendingCreateName ? (
               <p className={serviceDialogEmptyHintClass}>
                 Todavía no hay categorías cargadas.
               </p>
             ) : (
               categories.map((category) => {
                 const editing = editingCategoryId === category.id
+                const isDeleting = pendingDeleteId === category.id
                 return (
                   <div
                     key={category.id}
-                    className="flex flex-wrap items-center gap-2 p-3"
+                    className={cn(
+                      "flex flex-wrap items-center gap-2 p-3",
+                      isDeleting && "pointer-events-none opacity-50",
+                    )}
+                    aria-busy={isDeleting || undefined}
+                    aria-disabled={isDeleting || undefined}
                   >
-                    {editing ? (
+                    {isDeleting ? (
+                      <>
+                        <div className="min-w-0 flex-1">
+                          <p className={serviceDialogListItemTitleClass}>
+                            {category.name}
+                          </p>
+                        </div>
+                        <RootsSpinner
+                          size="sm"
+                          className="shrink-0"
+                          label={`Eliminando ${category.name}`}
+                        />
+                      </>
+                    ) : editing ? (
                       <>
                         <div className="min-w-[12rem] flex-1">
                           <RootsFormTextField
@@ -192,6 +217,24 @@ export function ServiceCategoriesDialog({
                 )
               })
             )}
+            {pendingCreateName ? (
+              <div
+                className="flex items-center gap-2 p-3 opacity-50"
+                aria-busy="true"
+                aria-disabled="true"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className={serviceDialogListItemTitleClass}>
+                    {pendingCreateName}
+                  </p>
+                </div>
+                <RootsSpinner
+                  size="sm"
+                  className="shrink-0"
+                  label={`Creando ${pendingCreateName}`}
+                />
+              </div>
+            ) : null}
           </div>
         </RootsDialogBody>
         <RootsDialogSingleActionFooter

@@ -6,8 +6,15 @@ import { MesasTablesDialog } from "@/app/[siteId]/[popId]/mesas/components/Mesas
 import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
 import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
+import {
+  RootsAlertDialogContent,
+  RootsAlertDialogFooter,
+  RootsAlertDialogPanel,
+} from "@/components/rootsy-dialog/RootsAlertDialog"
+import { AlertDialog } from "@/components/ui/alert-dialog"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { LayoutGrid, MapPin, Shapes } from "lucide-react"
-import { useMemo, useState, type ReactNode } from "react"
+import { useCallback, useMemo, useState, type ReactNode } from "react"
 
 type Props = {
   popId: string
@@ -30,9 +37,22 @@ export function MesasLayoutAdmin({
   getLayoutData,
   children,
 }: Props) {
+  const isMobile = useIsMobile()
   const [salonsOpen, setSalonsOpen] = useState(false)
   const [tablesOpen, setTablesOpen] = useState(false)
   const [decorsOpen, setDecorsOpen] = useState(false)
+  const [desktopOnlyOpen, setDesktopOnlyOpen] = useState(false)
+
+  const openLayoutEditor = useCallback(
+    (open: () => void) => {
+      if (isMobile) {
+        setDesktopOnlyOpen(true)
+        return
+      }
+      open()
+    },
+    [isMobile],
+  )
 
   const moreActions = useMemo<DataWorkspaceHeaderMoreAction[]>(
     () =>
@@ -41,21 +61,21 @@ export function MesasLayoutAdmin({
             {
               label: "Salones",
               icon: MapPin,
-              onClick: () => setSalonsOpen(true),
+              onClick: () => openLayoutEditor(() => setSalonsOpen(true)),
             },
             {
               label: "Mesas",
               icon: LayoutGrid,
-              onClick: () => setTablesOpen(true),
+              onClick: () => openLayoutEditor(() => setTablesOpen(true)),
             },
             {
               label: "Elementos del plano",
               icon: Shapes,
-              onClick: () => setDecorsOpen(true),
+              onClick: () => openLayoutEditor(() => setDecorsOpen(true)),
             },
           ]
         : [],
-    [canUpdate],
+    [canUpdate, openLayoutEditor],
   )
 
   return (
@@ -88,6 +108,19 @@ export function MesasLayoutAdmin({
             getLayoutData={getLayoutData}
             onLayoutChanged={onLayoutChanged}
           />
+          <AlertDialog open={desktopOnlyOpen} onOpenChange={setDesktopOnlyOpen}>
+            <RootsAlertDialogContent>
+              <RootsAlertDialogPanel
+                title="Solo en escritorio"
+                description="La edición de mesas, salones y elementos del plano solo se puede realizar en desktop."
+              />
+              <RootsAlertDialogFooter
+                hideCancel
+                confirmLabel="Entendido"
+                onConfirm={() => setDesktopOnlyOpen(false)}
+              />
+            </RootsAlertDialogContent>
+          </AlertDialog>
         </>
       ) : null}
     </>

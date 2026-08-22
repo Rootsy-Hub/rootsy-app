@@ -44,14 +44,6 @@ export type CategoryLayoutUpdate = {
   showInSale: boolean
 }
 
-export type ArticleItemFieldsInput = {
-  itemKind: ArticleItemKind
-  unitOfMeasure: string
-  isSellable: boolean
-  defaultWastePct: number | null
-  minStockLevel: number | null
-}
-
 export type UpdatePopArticleInput = {
   name: string
   description: string
@@ -66,9 +58,14 @@ export type UpdatePopArticleInput = {
   discountMode: ArticleDiscountMode | null
   discountValue: number | null
   allowNegativeStock: boolean
+  itemKind: ArticleItemKind
+  unitOfMeasure: string
+  isSellable: boolean
+  defaultWastePct: number | null
+  minStockLevel: number | null
   costs?: ArticleCostLineInput[]
   listPrices?: SalePriceListAmountInput[]
-} & ArticleItemFieldsInput
+}
 
 export type CreatePopArticleInput = UpdatePopArticleInput & {
   siteId?: string

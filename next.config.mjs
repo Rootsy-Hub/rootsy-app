@@ -17,9 +17,9 @@ const nextConfig = {
   },
   outputFileTracingRoot: projectRoot,
   allowedDevOrigins: [
+    '192.168.0.3',
     '192.168.1.56',
-    // IP del otro equipo que abre el dev (cambiá si no coincide):
-    '192.168.1.72'
+    '192.168.1.72',
   ],
   typescript: {
     ignoreBuildErrors: true

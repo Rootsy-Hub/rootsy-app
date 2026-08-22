@@ -23,6 +23,7 @@ import {
 } from "@/components/rootsy-dialog"
 import { AlertDialog } from "@/components/ui/alert-dialog"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
+import { useRegisterOperarMobileCategoryPicker } from "@/components/layouts-module/OperarMobileStage"
 import { SaleCatalogMobileCategoryBar } from "@/components/sale-operation/SaleCatalogMobileCategoryBar"
 import { SaleCatalogSidebarNav } from "@/components/sale-operation/SaleCatalogSidebarNav"
 import { SaleCatalogSidebarNavSkeleton } from "@/components/sale-operation/SaleCatalogSidebarNavSkeleton"
@@ -88,6 +89,15 @@ export function ServiceOperateCatalogBrowser({
 
   const showSelectedDetail = Boolean(selectedService && popId?.trim())
   const vistaEfectiva = isMobileViewport ? "lista" : modoVista
+  const categoryLabel =
+    vistaCatalogo.modo === "categoria"
+      ? vistaCatalogo.categoria || "Categoría"
+      : "Categoría"
+  const usesMobileStage = useRegisterOperarMobileCategoryPicker(
+    categoryLabel,
+    categoryPickerOpen,
+    setCategoryPickerOpen,
+  )
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)")
@@ -171,6 +181,7 @@ export function ServiceOperateCatalogBrowser({
             "relative",
             showSelectedDetail && "[grid-template-rows:minmax(0,1fr)]",
             !showSelectedDetail &&
+              !usesMobileStage &&
               "max-md:[grid-template-rows:var(--layouts-operar-catalog-toolbar-h)_var(--layouts-operar-catalog-toolbar-h)_minmax(0,1fr)]",
           )}
         >
@@ -208,18 +219,21 @@ export function ServiceOperateCatalogBrowser({
             </div>
           ) : (
             <>
-              <SaleCatalogMobileCategoryBar
-                label={vistaCatalogo.modo === "categoria" ? vistaCatalogo.categoria || "Categoría" : "Categoría"}
-                open={categoryPickerOpen}
-                onToggle={() => setCategoryPickerOpen((current) => !current)}
-              />
+              {!usesMobileStage ? (
+                <SaleCatalogMobileCategoryBar
+                  label={categoryLabel}
+                  open={categoryPickerOpen}
+                  onToggle={() => setCategoryPickerOpen((current) => !current)}
+                />
+              ) : null}
               {categoryPickerOpen ? (
                 <div
                   className={cn(
-                    "absolute inset-x-0 bottom-0 z-30 overflow-hidden md:hidden",
-                    "top-[var(--layouts-operar-catalog-toolbar-h)]",
-                    "max-md:col-start-1 max-md:row-start-1",
+                    "absolute z-30 overflow-hidden md:hidden",
                     "bg-[var(--rootsy-sombra-800)]",
+                    usesMobileStage
+                      ? "inset-0"
+                      : "inset-x-0 bottom-0 top-[var(--layouts-operar-catalog-toolbar-h)] max-md:col-start-1 max-md:row-start-1",
                   )}
                 >
                   <SaleCatalogSidebarNav

@@ -182,6 +182,13 @@ function ExpensesPage() {
     useState<ExpenseCategoryFamily>("comercializacion")
   const [catSaving, setCatSaving] = useState(false)
   const [catBanner, setCatBanner] = useState<string | null>(null)
+  const [pendingCategoryCreate, setPendingCategoryCreate] = useState<{
+    name: string
+    kind: ExpenseOperableKind
+  } | null>(null)
+  const [pendingCategoryDeleteId, setPendingCategoryDeleteId] = useState<
+    string | null
+  >(null)
   const [confirmAction, setConfirmAction] = useState<
     | { kind: "delete-expense"; row: ExpenseListRow }
     | { kind: "delete-category"; category: ExpenseCategoryRow }
@@ -430,34 +437,41 @@ function ExpensesPage() {
       await reloadList()
       return
     }
-    const res = await deleteExpenseCategory(popId, confirmAction.category.id)
+    const category = confirmAction.category
+    setPendingCategoryDeleteId(category.id)
+    setConfirmAction(null)
     setConfirmBusy(false)
+    const res = await deleteExpenseCategory(popId, category.id)
     if (!res.success) {
+      setPendingCategoryDeleteId(null)
       if (catOpen) setCatBanner(res.error)
       else setError(res.error)
       return
     }
-    setConfirmAction(null)
     await loadPage()
+    setPendingCategoryDeleteId(null)
   }
 
   const submitNewCategory = async () => {
-    if (!popId) return
+    const name = newCatName.trim()
+    if (!popId || !name || catSaving) return
+    const kind = newCatKind
+    const family = newCatFamily
     setCatSaving(true)
     setCatBanner(null)
-    const res = await createExpenseCategory(
-      popId,
-      newCatName,
-      newCatKind,
-      newCatFamily,
-    )
-    setCatSaving(false)
+    setPendingCategoryCreate({ name, kind })
+    setNewCatName("")
+    const res = await createExpenseCategory(popId, name, kind, family)
     if (!res.success) {
+      setPendingCategoryCreate(null)
+      setCatSaving(false)
+      setNewCatName(name)
       setCatBanner(res.error)
       return
     }
-    setNewCatName("")
     await loadPage()
+    setCatSaving(false)
+    setPendingCategoryCreate(null)
   }
 
   const onDeleteCategory = (c: ExpenseCategoryRow) => {
@@ -764,13 +778,30 @@ function ExpensesPage() {
         open={catOpen}
         onOpenChange={(open) => {
           setCatOpen(open)
-          if (!open) setCatBanner(null)
+          if (!open) {
+            setCatBanner(null)
+            setPendingCategoryCreate(null)
+            setPendingCategoryDeleteId(null)
+            setCatSaving(false)
+          }
         }}
         categories={categories}
         name={newCatName}
         kind={newCatKind}
         family={newCatFamily}
         saving={catSaving}
+        pendingCreate={
+          pendingCategoryCreate &&
+          !categories.some(
+            (category) =>
+              category.deletedAt == null &&
+              category.name === pendingCategoryCreate.name &&
+              category.kind === pendingCategoryCreate.kind,
+          )
+            ? pendingCategoryCreate
+            : null
+        }
+        pendingDeleteId={pendingCategoryDeleteId}
         banner={catBanner}
         canDelete={canDelete}
         onNameChange={setNewCatName}

@@ -54,6 +54,7 @@ function PopOptimisticNavGate({ children }: { children: ReactNode }) {
     const moduleKey = popModuleKeyFromPath(targetPath)
 
     if (
+      isPopMenuPathname(pathname) ||
       moduleKey === "articles" ||
       hasPopTableListSessionCache(queryClient, popId, moduleKey)
     ) {

@@ -413,7 +413,28 @@ function resolveComprobanteRowPricing(
 }
 
 function isPromotionGroupRow(row: MostradorCartDisplayRow): boolean {
-  return Boolean(row.promoGroupKey?.trim() && row.promoGroupVariant === "promotion")
+  return Boolean(
+    (row.promoGroupKey?.trim() && row.promoGroupVariant === "promotion") ||
+      row.quantityDealApplicationId,
+  )
+}
+
+function isSamePromotionPreviewGroup(
+  first: MostradorCartDisplayRow,
+  next: MostradorCartDisplayRow,
+  promoKey: string,
+): boolean {
+  if (!isPromotionGroupRow(next)) return false
+  if (first.promoGroupKey?.trim() && next.promoGroupKey === first.promoGroupKey) {
+    return true
+  }
+  if (
+    first.quantityDealApplicationId &&
+    next.quantityDealApplicationId === first.quantityDealApplicationId
+  ) {
+    return true
+  }
+  return next.promoGroupKey === promoKey
 }
 
 function shouldOmitFromRegularPreview(row: MostradorCartDisplayRow): boolean {
@@ -574,13 +595,12 @@ export function buildSaleComprobantePreviewLineGroups(
     const row = rows[index]
 
     if (isPromotionGroupRow(row)) {
-      const promoKey = row.promoGroupKey!
+      const promoKey =
+        row.promoGroupKey?.trim() ||
+        row.quantityDealApplicationId ||
+        `promo-row:${index}`
       const batch: MostradorCartDisplayRow[] = []
-      while (
-        index < rows.length &&
-        rows[index].promoGroupKey === promoKey &&
-        rows[index].promoGroupVariant === "promotion"
-      ) {
+      while (index < rows.length && isSamePromotionPreviewGroup(row, rows[index]!, promoKey)) {
         batch.push(rows[index]!)
         index += 1
       }

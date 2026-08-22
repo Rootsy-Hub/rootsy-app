@@ -123,6 +123,33 @@ function parsePaymentOption(v: unknown): PurchaseCatalogPaymentOption | null {
   return { kind: kindRaw, treasuryAccountId, label }
 }
 
+export function emptyPurchaseCheckoutSnapshot(): PurchaseCheckoutSnapshot {
+  return {
+    carrito: [],
+    proveedorSeleccionado: null,
+    manualNombreProveedor: "",
+    proveedorTaxId: "",
+    compraIvaCondition: "",
+    documentNumber: "",
+    documentDate: "",
+    dueDate: "",
+    comprobanteTipo: null,
+    attachmentFileName: null,
+    payOnSupplierAccount: false,
+    metodoPagoSeleccionado: null,
+    cardInstallments: "1",
+    modoDescuento: "porcentaje",
+    valorDescuentoPorcentaje: 0,
+    valorDescuentoFijo: 0,
+    itemUnitCosts: {},
+    itemUpdateArticleCost: {},
+    itemDescuentoModo: {},
+    itemDescuentoDraft: {},
+    itemComentarios: {},
+    itemExpiresAt: {},
+  }
+}
+
 export function parsePurchaseCheckoutSnapshot(
   raw: unknown,
 ): PurchaseCheckoutSnapshot | null {

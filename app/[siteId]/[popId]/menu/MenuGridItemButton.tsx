@@ -25,8 +25,14 @@ import {
   menuPlanetTileClass,
   menuPlanetTileLabelClass,
 } from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
+import { MenuApiReadyBadge } from "@/app/[siteId]/[popId]/menu/MenuApiReadyBadge"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
-import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
+import {
+  isOptimisticNavTarget,
+  usePopOptimisticNav,
+} from "@/context/PopOptimisticNavContext"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { isMenuApiReady } from "@/lib/menuApiReady"
 import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
@@ -48,7 +54,8 @@ export function MenuGridItemButton({
   href,
   onActivate,
 }: Props) {
-  const { start: startOptimisticNav } = usePopOptimisticNav()
+  const { pending, start: startOptimisticNav } = usePopOptimisticNav()
+  const isLeaving = isOptimisticNavTarget(href, pending)
   const {
     editing,
     canDragMenuItem,
@@ -95,7 +102,10 @@ export function MenuGridItemButton({
   const tileInner = (
     <>
       <div
-        className={cn(isAlive && menuHoloPlanetLifeClass)}
+        className={cn(
+          "relative overflow-visible p-1 -m-1",
+          isAlive && menuHoloPlanetLifeClass,
+        )}
         style={isAlive ? lifeStyle : undefined}
       >
         <div
@@ -112,8 +122,20 @@ export function MenuGridItemButton({
           {!isDragGhost ? (
             <MenuIconChrome sectionKey={sectionKey} alive={isAlive} />
           ) : null}
-          <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
+          {isLeaving ? (
+            <RootsSpinner
+              size="default"
+              tone="dark"
+              className={menuPlanetIconGlyphClass}
+              label={`Abriendo ${item.name}`}
+            />
+          ) : (
+            <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
+          )}
         </div>
+        {!isDragGhost && !isLeaving && isMenuApiReady(item.link) ? (
+          <MenuApiReadyBadge />
+        ) : null}
       </div>
 
       <span
@@ -167,8 +189,13 @@ export function MenuGridItemButton({
             ) {
               return
             }
+            if (pending && !isLeaving) {
+              event.preventDefault()
+              return
+            }
             startOptimisticNav({ href, title: item.name })
           }}
+          aria-busy={isLeaving || undefined}
           className={cn(tileClassName, menuHoloFocusRingForSection(sectionKey))}
         >
           {tileInner}

@@ -9,12 +9,19 @@ import { RecipeCategoryStationSelect } from "@/app/[siteId]/[popId]/recipes/comp
 import {
   RootsSortableActionList,
   rootsSortableListFooterHintClass,
+  rootsSortableListRowClass,
+  rootsSortableListRowLabelClass,
   type RootsSortableActionListItem,
 } from "@/components/rootsy-list"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 type Props = {
   categories: RecipeCategoryOption[]
+  pendingCreateName?: string | null
+  pendingCreateStationName?: string | null
+  pendingDeleteId?: string | null
   canUpdate: boolean
   canDelete: boolean
   editingCategoryId: string | null
@@ -90,6 +97,9 @@ function mergeListOrder(
 
 export function RecipeCategoriesMenuBoard({
   categories,
+  pendingCreateName = null,
+  pendingCreateStationName = null,
+  pendingDeleteId = null,
   canUpdate,
   canDelete,
   editingCategoryId,
@@ -170,8 +180,31 @@ export function RecipeCategoriesMenuBoard({
     (editingCategoryName.trim() !== editingCategory.name.trim() ||
       editingStationId !== editingCategory.stationId)
 
-  return (
-    <div className="space-y-3">
+  const pendingRow = pendingCreateName ? (
+    <div
+      className={cn(
+        rootsSortableListRowClass,
+        "pointer-events-none h-14 opacity-50",
+      )}
+      aria-busy="true"
+      aria-disabled="true"
+    >
+      <p className={cn(rootsSortableListRowLabelClass, "min-w-0 flex-1")}>
+        {pendingCreateName}
+      </p>
+      <span className="flex w-40 shrink-0 items-center truncate text-sm text-[var(--rootsy-bruma-500)]">
+        {pendingCreateStationName || "Sin comanda"}
+      </span>
+      <RootsSpinner
+        size="sm"
+        className="shrink-0"
+        label={`Creando ${pendingCreateName}`}
+      />
+    </div>
+  ) : null
+
+  const list =
+    items.length === 0 && pendingCreateName ? null : (
       <RootsSortableActionList
         listId="recipe-categories"
         rowSize="comfortable"
@@ -186,6 +219,7 @@ export function RecipeCategoriesMenuBoard({
         editingValue={editingCategoryName}
         editSaveBusy={categorySaveBusy}
         editHasChanges={editHasChanges}
+        busyId={pendingDeleteId}
         onStartEdit={(item) => {
           const category = categoryById(item.id)
           if (category) onStartEdit(category)
@@ -217,6 +251,14 @@ export function RecipeCategoriesMenuBoard({
           )
         }}
       />
+    )
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-col gap-2">
+        {list}
+        {pendingRow}
+      </div>
       {canUpdate ? (
         <p className={rootsSortableListFooterHintClass}>
           Los cambios de orden y visibilidad se guardan al soltar o al tocar el

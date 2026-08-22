@@ -60,7 +60,7 @@ async function resolvePopEmisorIva(input: {
 
 export async function getPopComprobanteEmitterPreview(
   popId: string,
-  cashRegisterId?: string | null,
+  _cashRegisterId?: string | null,
 ): Promise<
   | { success: true; emitter: SaleComprobanteEmitterContext }
   | { success: false; error: string }
@@ -77,19 +77,17 @@ export async function getPopComprobanteEmitterPreview(
     const pop = popRes.pop
     const hasValidFiscalCuit = hasValidPopFiscalCuit(pop.fiscalCuit)
     let arcaPtoVta: number | null = null
-
-    if (cashRegisterId?.trim()) {
-      const supabase = await createClient()
-      const { data, error } = await supabase
-        .from("cash_registers")
-        .select("arca_pto_vta")
-        .eq("id", cashRegisterId.trim())
-        .maybeSingle()
-
-      if (!error && data?.arca_pto_vta != null) {
-        const parsed = Number(data.arca_pto_vta)
-        if (Number.isFinite(parsed)) arcaPtoVta = parsed
-      }
+    const supabase = await createClient()
+    const { data: salePoint } = await supabase
+      .from("arca_sale_points")
+      .select("pto_vta")
+      .eq("pop_id", popId)
+      .order("pto_vta", { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (salePoint?.pto_vta != null) {
+      const parsed = Number(salePoint.pto_vta)
+      if (Number.isFinite(parsed)) arcaPtoVta = parsed
     }
 
     const { ivaCondition, ivaConditionLabel } = hasValidFiscalCuit

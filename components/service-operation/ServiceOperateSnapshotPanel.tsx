@@ -18,6 +18,7 @@ import {
   ServiceOperateSnapshotPanelTabs,
   type ServiceOperateSnapshotPanelView,
 } from "@/components/service-operation/ServiceOperateSnapshotPanelTabs"
+import { OperarMobileToolboxIcons } from "@/components/layouts-module/OperarMobileToolbox"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
@@ -164,8 +165,10 @@ export function ServiceOperateSnapshotPanel({
         ) : null}
       </div>
 
+      <OperarMobileToolboxIcons className="max-md:row-start-3" />
+
       {showCargoFooter ? (
-        <div className={cn(layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL), "!row-start-3")}>
+        <div className={cn(layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL), "!row-start-3 max-md:hidden")}>
           <SaleOperationActionsBar
             variant="operar"
             discardDisabled={disabled || saving}
@@ -178,6 +181,19 @@ export function ServiceOperateSnapshotPanel({
           />
         </div>
       ) : null}
+
+      <div className="shrink-0 md:hidden max-md:row-start-4">
+        <SaleOperationActionsBar
+          variant="mobile"
+          discardDisabled={disabled || saving || !selectedService}
+          confirmDisabled={!canCreate || disabled || saving || !selectedService}
+          confirmLoading={saving}
+          confirmLabel="Crear cargo"
+          confirmTitle={confirmTitle}
+          onDiscard={onDiscard}
+          onConfirm={onConfirm}
+        />
+      </div>
     </>
   )
 }

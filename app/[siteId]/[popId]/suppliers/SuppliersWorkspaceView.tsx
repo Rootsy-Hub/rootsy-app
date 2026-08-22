@@ -1,12 +1,9 @@
 "use client"
 
 import "@/app/library/color/rootsyNaturePalette.css"
-import {
-  createPopSupplier,
-  deletePopSupplier,
-  updatePopSupplier,
-  type SupplierTableRow,
-  type UpsertPopSupplierInput,
+import type {
+  SupplierTableRow,
+  UpsertPopSupplierInput,
 } from "@/app/[siteId]/[popId]/suppliers/actions"
 import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { SupplierDeleteDialog } from "@/app/[siteId]/[popId]/suppliers/SupplierDeleteDialog"
@@ -41,9 +38,7 @@ import {
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { suppliersSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
-  selectColumnInnerClass,
   workspaceTableLayoutClassName,
-  workspaceTableNatureCheckboxClass,
   workspaceTableNatureLinkClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
@@ -55,7 +50,6 @@ import {
   workspaceTableLayoutActionsBodyCellClass,
   workspaceTableLayoutBodyCellClass,
   workspaceTableLayoutHeaderHeadClass,
-  workspaceTableLayoutSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableBodyRow,
@@ -68,30 +62,47 @@ import {
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { RootsNaturePill } from "@/components/rootsy-pill"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   TableBody,
   TableCell,
 } from "@/components/ui/table"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { usePopSuppliersTable } from "@/hooks/usePopSuppliersTable"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
 import { popSuppliersQueryRoot } from "@/lib/queryKeys"
+import {
+  createPopSupplier,
+  deletePopSupplier,
+  updatePopSupplier,
+} from "@/lib/rootsyApi/suppliersClient"
 import { useQueryClient } from "@tanstack/react-query"
 import { formatMoneyInputForField } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
 import {
   nextWorkspaceTableSortState,
-  sortRowsInMemory,
   workspaceTableSortDisplayDirection,
-  type WorkspaceTableSortDirection,
 } from "@/lib/workspaceTableSort"
+import {
+  SUPPLIER_TABLE_PAGE_SIZES,
+  mergeSuppliersWorkspaceUrl,
+  parseSuppliersWorkspaceUrl,
+  type SupplierTableSortKey,
+} from "@/app/[siteId]/[popId]/suppliers/workspaceUrl"
 import {
   Pencil,
   Plus,
   Trash2,
 } from "lucide-react"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -101,9 +112,6 @@ import {
   useState,
   type FormEvent,
 } from "react"
-
-const SUPPLIER_PAGE_SIZES = [10, 25, 50, 100] as const
-const DEFAULT_PAGE_SIZE = 25
 
 function emptyForm(): UpsertPopSupplierInput {
   return {
@@ -125,28 +133,6 @@ const IVA_LABEL_BY_VALUE = Object.fromEntries(
   CLIENT_IVA_CONDITION_OPTIONS.map((o) => [o.value, o.label]),
 ) as Record<string, string>
 
-const SUPPLIER_TABLE_SORT_KEYS = [
-  "name",
-  "email",
-  "phone",
-  "tax_id",
-  "iva",
-] as const
-
-type SupplierTableSortKey = (typeof SUPPLIER_TABLE_SORT_KEYS)[number]
-
-const SUPPLIER_LIST_SORT = {
-  allowed: {
-    name: (row: SupplierTableRow) => row.name,
-    email: (row: SupplierTableRow) => row.email,
-    phone: (row: SupplierTableRow) => row.phone,
-    tax_id: (row: SupplierTableRow) => row.taxId,
-    iva: (row: SupplierTableRow) => row.ivaCondition,
-  },
-  defaultColumn: "name",
-  defaultAscending: true,
-}
-
 type SuppliersAppliedFilters = SuppliersModalFilters
 
 const defaultSupplierFilters = defaultSuppliersModalFilters
@@ -154,6 +140,7 @@ const defaultSupplierFilters = defaultSuppliersModalFilters
 export function SuppliersWorkspaceView() {
   const params = useParams()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const router = useRouter()
   const queryClient = useQueryClient()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
@@ -161,15 +148,86 @@ export function SuppliersWorkspaceView() {
   const routerRef = useRef(router)
   routerRef.current = router
 
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId)
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
 
-  const suppliersQuery = usePopSuppliersTable(popId, {
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
+  const workspaceParsed = useMemo(
+    () => parseSuppliersWorkspaceUrl(workspaceParams),
+    [workspaceParams],
+  )
+
+  const replaceWorkspaceQuery = useCallback(
+    (patch: Parameters<typeof mergeSuppliersWorkspaceUrl>[1]) => {
+      const qs = mergeSuppliersWorkspaceUrl(workspaceParams, patch)
+      const next = qs ? `${pathname}?${qs}` : pathname
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== next) {
+          window.history.replaceState(window.history.state, "", next)
+        }
+      }
+      setWorkspaceSearch(qs)
+    },
+    [pathname, workspaceParams],
+  )
+
+  const listQueryParams = useMemo(
+    () => ({
+      page: workspaceParsed.page,
+      pageSize: workspaceParsed.pageSize,
+      search: workspaceParsed.q,
+      soloActivos: workspaceParsed.soloActivos,
+      withEmail: workspaceParsed.withEmail,
+      withTaxId: workspaceParsed.withTaxId,
+      sort: workspaceParsed.sort,
+      ord: workspaceParsed.ord,
+    }),
+    [
+      workspaceParsed.page,
+      workspaceParsed.pageSize,
+      workspaceParsed.q,
+      workspaceParsed.soloActivos,
+      workspaceParsed.withEmail,
+      workspaceParsed.withTaxId,
+      workspaceParsed.sort,
+      workspaceParsed.ord,
+    ],
+  )
+
+  const suppliersQuery = usePopSuppliersTable(popId, listQueryParams, {
     enabled: Boolean(popId && siteId),
   })
   const rows = suppliersQuery.data?.suppliers ?? []
-  const canCreate = suppliersQuery.data?.canCreate ?? false
-  const canUpdate = suppliersQuery.data?.canUpdate ?? false
-  const canDelete = suppliersQuery.data?.canDelete ?? false
+  const totalCount = suppliersQuery.data?.totalCount ?? 0
+  const supplierPerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = supplierPerm(POP_PERMS.SUPPLIER_CREATE)
+  const canUpdate = supplierPerm(POP_PERMS.SUPPLIER_UPDATE)
+  const canDelete = supplierPerm(POP_PERMS.SUPPLIER_DELETE)
   const listFetching =
     !popId || !siteId
       ? false
@@ -186,20 +244,13 @@ export function SuppliersWorkspaceView() {
             ? String(suppliersQuery.error)
             : null
 
-  const [searchInput, setSearchInput] = useState("")
+  const [searchInput, setSearchInput] = useState(workspaceParsed.q)
   const searchInputId = useId()
   const filtersButtonId = useId()
   const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const createTaxInputRef = useRef<HTMLInputElement>(null)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const [sort, setSort] = useState<SupplierTableSortKey | null>(null)
-  const [ord, setOrd] = useState<WorkspaceTableSortDirection>("asc")
 
-  const [appliedFilters, setAppliedFilters] = useState<SuppliersAppliedFilters>(
-    defaultSupplierFilters,
-  )
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
   const [draftFilters, setDraftFilters] = useState<SuppliersAppliedFilters>(
     defaultSupplierFilters,
@@ -240,32 +291,69 @@ export function SuppliersWorkspaceView() {
   }, [popId, queryClient])
 
   useEffect(() => {
-    const q = searchParams.get("q")?.trim()
-    if (q) setSearchInput(q)
-  }, [searchParams])
+    setSearchInput(workspaceParsed.q)
+  }, [workspaceParsed.q])
 
   useEffect(() => {
     const res = suppliersQuery.data
-    if (!res || res.success || !res.redirect) return
-    routerRef.current.replace(res.redirect)
+    if (!res || res.success || !("redirect" in res) || !res.redirect) return
+    const redirect = res.redirect
+    const timeout = window.setTimeout(() => {
+      routerRef.current.push(redirect)
+    }, 1200)
+    return () => window.clearTimeout(timeout)
   }, [suppliersQuery.data])
 
   useEffect(() => {
-    setPage(1)
-    setSelected(new Set())
-  }, [searchInput, appliedFilters, sort, ord])
+    if (suppliersQuery.data?.success !== true) return
+    if (suppliersQuery.data.page !== workspaceParsed.page) {
+      replaceWorkspaceQuery({ page: suppliersQuery.data.page })
+    }
+  }, [suppliersQuery.data, workspaceParsed.page, replaceWorkspaceQuery])
 
-  const handleSortColumn = useCallback((column: SupplierTableSortKey) => {
-    const next = nextWorkspaceTableSortState({ sort, ord }, column)
-    setSort(next.sort as SupplierTableSortKey | null)
-    setOrd(next.ord)
-    setPage(1)
-  }, [sort, ord])
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const next = searchInput.trim()
+      if (next === workspaceParsed.q.trim()) return
+      replaceWorkspaceQuery({ q: next, page: 1 })
+    }, 400)
+    return () => window.clearTimeout(t)
+  }, [searchInput, workspaceParsed.q, replaceWorkspaceQuery])
+
+  useEffect(() => {
+    setSelected(new Set())
+  }, [
+    workspaceParsed.q,
+    workspaceParsed.page,
+    workspaceParsed.pageSize,
+    workspaceParsed.soloActivos,
+    workspaceParsed.withEmail,
+    workspaceParsed.withTaxId,
+    workspaceParsed.sort,
+    workspaceParsed.ord,
+  ])
+
+  const handleSortColumn = useCallback(
+    (column: SupplierTableSortKey) => {
+      const next = nextWorkspaceTableSortState(
+        { sort: workspaceParsed.sort, ord: workspaceParsed.ord },
+        column,
+      )
+      replaceWorkspaceQuery({
+        sort: next.sort as SupplierTableSortKey | null,
+        ord: next.ord,
+      })
+    },
+    [replaceWorkspaceQuery, workspaceParsed.ord, workspaceParsed.sort],
+  )
 
   const sortDirection = useCallback(
     (column: SupplierTableSortKey) =>
-      workspaceTableSortDisplayDirection({ sort, ord }, column),
-    [ord, sort],
+      workspaceTableSortDisplayDirection(
+        { sort: workspaceParsed.sort, ord: workspaceParsed.ord },
+        column,
+      ),
+    [workspaceParsed.ord, workspaceParsed.sort],
   )
 
   useEffect(() => {
@@ -452,47 +540,12 @@ export function SuppliersWorkspaceView() {
     setDeleteOpen(true)
   }
 
-  const filteredRows = useMemo(() => {
-    let list = rows
-    if (appliedFilters.soloActivos) {
-      list = list.filter((r) => r.isActive)
-    }
-    if (appliedFilters.withEmail) {
-      list = list.filter((r) => r.email.trim().length > 0)
-    }
-    if (appliedFilters.withTaxId) {
-      list = list.filter((r) => r.taxId.trim().length > 0)
-    }
-    const q = searchInput.trim().toLowerCase()
-    if (q) {
-      list = list.filter(
-        (r) =>
-          r.name.toLowerCase().includes(q) ||
-          r.email.toLowerCase().includes(q) ||
-          r.phone.toLowerCase().includes(q) ||
-          r.taxId.toLowerCase().includes(q) ||
-          r.addressLine.toLowerCase().includes(q) ||
-          (r.ivaCondition &&
-            (IVA_LABEL_BY_VALUE[r.ivaCondition] ?? r.ivaCondition)
-              .toLowerCase()
-              .includes(q)) ||
-          r.notes.toLowerCase().includes(q),
-      )
-    }
-    return sortRowsInMemory(list, { sort, ord }, SUPPLIER_LIST_SORT)
-  }, [rows, searchInput, appliedFilters, sort, ord])
-
-  const totalCount = filteredRows.length
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(totalCount / Math.max(1, pageSize))),
-    [totalCount, pageSize],
+  const pageRows = rows
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalCount / Math.max(1, workspaceParsed.pageSize)),
   )
-  const currentPage = Math.min(Math.max(1, page), totalPages)
-
-  const pageRows = useMemo(() => {
-    const start = (currentPage - 1) * pageSize
-    return filteredRows.slice(start, start + pageSize)
-  }, [filteredRows, currentPage, pageSize])
+  const currentPage = Math.min(Math.max(1, workspaceParsed.page), totalPages)
 
   const visibleIds = useMemo(() => pageRows.map((r) => r.id), [pageRows])
   const allVisibleSelected =
@@ -501,10 +554,10 @@ export function SuppliersWorkspaceView() {
 
   const rangeLabel = useMemo(() => {
     if (totalCount === 0) return { start: 0, end: 0 }
-    const start = (currentPage - 1) * pageSize + 1
-    const end = Math.min(currentPage * pageSize, totalCount)
+    const start = (currentPage - 1) * workspaceParsed.pageSize + 1
+    const end = Math.min(currentPage * workspaceParsed.pageSize, totalCount)
     return { start, end }
-  }, [currentPage, pageSize, totalCount])
+  }, [currentPage, workspaceParsed.pageSize, totalCount])
 
   const paginationItems = useMemo(
     () => buildPaginationItems(totalPages, currentPage),
@@ -513,43 +566,49 @@ export function SuppliersWorkspaceView() {
 
   const modalFiltersActiveCount = useMemo(() => {
     let count = 0
-    if (appliedFilters.withEmail) count++
-    if (appliedFilters.withTaxId) count++
-    if (appliedFilters.soloActivos) count++
+    if (workspaceParsed.withEmail) count++
+    if (workspaceParsed.withTaxId) count++
+    if (workspaceParsed.soloActivos) count++
     return count
-  }, [appliedFilters])
+  }, [
+    workspaceParsed.withEmail,
+    workspaceParsed.withTaxId,
+    workspaceParsed.soloActivos,
+  ])
 
   const hasFilterChips =
-    searchInput.trim() !== "" ||
-    appliedFilters.withEmail ||
-    appliedFilters.withTaxId ||
-    appliedFilters.soloActivos
+    workspaceParsed.q.trim() !== "" ||
+    workspaceParsed.withEmail ||
+    workspaceParsed.withTaxId ||
+    workspaceParsed.soloActivos
 
   const activeFilterCount = useMemo(() => {
     let count = 0
-    if (searchInput.trim()) count++
+    if (workspaceParsed.q.trim()) count++
     count += modalFiltersActiveCount
     return count
-  }, [searchInput, modalFiltersActiveCount])
+  }, [workspaceParsed.q, modalFiltersActiveCount])
 
   const resultsSummary = useMemo(() => {
     if (listFetching && totalCount === 0) return "…"
     if (totalCount === 0) return "Sin resultados"
     const noun = totalCount === 1 ? "proveedor" : "proveedores"
-    if (searchInput.trim() && totalCount !== rows.length) {
-      return `${totalCount.toLocaleString("es-AR")} de ${rows.length.toLocaleString("es-AR")} ${noun}`
-    }
     return `${totalCount.toLocaleString("es-AR")} ${noun}`
-  }, [listFetching, totalCount, rows.length, searchInput])
+  }, [listFetching, totalCount])
 
   const clearAllFilters = useCallback(() => {
     setSearchInput("")
-    setAppliedFilters(defaultSupplierFilters())
-    setPage(1)
+    replaceWorkspaceQuery({
+      q: "",
+      withEmail: false,
+      withTaxId: false,
+      soloActivos: false,
+      page: 1,
+    })
     searchInputRef.current?.focus()
-  }, [])
+  }, [replaceWorkspaceQuery])
 
-  const skeletonRowCount = Math.min(12, Math.max(5, pageSize))
+  const skeletonRowCount = Math.min(12, Math.max(5, workspaceParsed.pageSize))
 
   if (!popId || !siteId) {
     return (
@@ -569,6 +628,7 @@ export function SuppliersWorkspaceView() {
         loading: bootstrapLoading,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
+        userRoleLabel: bootstrap?.roleLabel,
         headerActions: canCreate ? (
           <DataWorkspaceHeaderIconButton
             label="Nuevo proveedor"
@@ -592,7 +652,11 @@ export function SuppliersWorkspaceView() {
                     activeCount={modalFiltersActiveCount}
                     expanded={filtersModalOpen}
                     onClick={() => {
-                      setDraftFilters({ ...appliedFilters })
+                      setDraftFilters({
+                        withEmail: workspaceParsed.withEmail,
+                        withTaxId: workspaceParsed.withTaxId,
+                        soloActivos: workspaceParsed.soloActivos,
+                      })
                       setFiltersModalOpen(true)
                     }}
                   />
@@ -619,15 +683,23 @@ export function SuppliersWorkspaceView() {
             open={filtersModalOpen}
             onOpenChange={(open) => {
               if (open) {
-                setDraftFilters({ ...appliedFilters })
+                setDraftFilters({
+                  withEmail: workspaceParsed.withEmail,
+                  withTaxId: workspaceParsed.withTaxId,
+                  soloActivos: workspaceParsed.soloActivos,
+                })
               }
               setFiltersModalOpen(open)
             }}
             draft={draftFilters}
             onDraftChange={setDraftFilters}
             onApply={() => {
-              setAppliedFilters({ ...draftFilters })
-              setPage(1)
+              replaceWorkspaceQuery({
+                withEmail: draftFilters.withEmail,
+                withTaxId: draftFilters.withTaxId,
+                soloActivos: draftFilters.soloActivos,
+                page: 1,
+              })
               setFiltersModalOpen(false)
             }}
           />
@@ -639,39 +711,40 @@ export function SuppliersWorkspaceView() {
                   activeCount={activeFilterCount}
                   onClearAll={clearAllFilters}
                 >
-                  {searchInput.trim() ? (
+                  {workspaceParsed.q.trim() ? (
                     <DataWorkspaceListFilterChip
-                      label={`Buscar: «${searchInput.trim()}»`}
+                      label={`Buscar: «${workspaceParsed.q.trim()}»`}
                       onRemove={() => {
                         setSearchInput("")
+                        replaceWorkspaceQuery({ q: "", page: 1 })
                         searchInputRef.current?.focus()
                       }}
                       removeAriaLabel="Quitar búsqueda"
                     />
                   ) : null}
-                  {appliedFilters.withEmail ? (
+                  {workspaceParsed.withEmail ? (
                     <DataWorkspaceListFilterChip
                       label="Con e-mail"
                       onRemove={() =>
-                        setAppliedFilters((f) => ({ ...f, withEmail: false }))
+                        replaceWorkspaceQuery({ withEmail: false, page: 1 })
                       }
                       removeAriaLabel="Quitar filtro con e-mail"
                     />
                   ) : null}
-                  {appliedFilters.withTaxId ? (
+                  {workspaceParsed.withTaxId ? (
                     <DataWorkspaceListFilterChip
                       label="Con CUIT / ID fiscal"
                       onRemove={() =>
-                        setAppliedFilters((f) => ({ ...f, withTaxId: false }))
+                        replaceWorkspaceQuery({ withTaxId: false, page: 1 })
                       }
                       removeAriaLabel="Quitar filtro CUIT"
                     />
                   ) : null}
-                  {appliedFilters.soloActivos ? (
+                  {workspaceParsed.soloActivos ? (
                     <DataWorkspaceListFilterChip
                       label="Solo activos"
                       onRemove={() =>
-                        setAppliedFilters((f) => ({ ...f, soloActivos: false }))
+                        replaceWorkspaceQuery({ soloActivos: false, page: 1 })
                       }
                       removeAriaLabel="Quitar filtro solo activos"
                     />
@@ -714,13 +787,12 @@ export function SuppliersWorkspaceView() {
                 rangeEnd={rangeLabel.end}
                 currentPage={currentPage}
                 totalPages={totalPages}
-                pageSize={pageSize}
-                pageSizeOptions={SUPPLIER_PAGE_SIZES}
+                pageSize={workspaceParsed.pageSize}
+                pageSizeOptions={SUPPLIER_TABLE_PAGE_SIZES}
                 paginationItems={paginationItems}
-                onPageChange={setPage}
+                onPageChange={(p) => replaceWorkspaceQuery({ page: p })}
                 onPageSizeChange={(ps) => {
-                  setPageSize(ps)
-                  setPage(1)
+                  replaceWorkspaceQuery({ pageSize: ps, page: 1 })
                 }}
               pageSizeLabelId={pageSizeLabelId}
             />

@@ -69,8 +69,8 @@ import {
 import { completePurchase } from "@/app/[siteId]/[popId]/purchases/completePurchase"
 import {
   createPurchaseOrder,
-  getPurchaseOrderDetail,
-} from "@/app/[siteId]/[popId]/purchase-orders/actions"
+  fetchPurchaseOrderDetail,
+} from "@/lib/rootsyApi/purchaseOrdersClient"
 import { resolveCatalogProductImage } from "@/lib/menuCatalogProduct"
 import { resolveSaleLineDiscount } from "@/lib/saleLineDiscount"
 import { SUPPLIER_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
@@ -87,7 +87,10 @@ import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/Da
 import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
-import { layoutsOperarSummaryPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  layoutsOperarSummaryPanelClass,
+  layoutsOperarSummaryPanelMobileStackClass,
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
@@ -799,7 +802,7 @@ function PurchasesPage() {
 
     void (async () => {
       try {
-        const res = await getPurchaseOrderDetail(popId, orderIdFromUrl)
+        const res = await fetchPurchaseOrderDetail(popId, orderIdFromUrl)
         if (!res.success) {
           setCompraError(res.error)
           setOrderRestorePending(false)
@@ -1265,7 +1268,10 @@ function PurchasesPage() {
             }
             ticket={
               <aside
-                className={layoutsOperarSummaryPanelClass}
+                className={cn(
+                  layoutsOperarSummaryPanelClass,
+                  layoutsOperarSummaryPanelMobileStackClass,
+                )}
                 aria-label="Carrito de la compra"
               >
                 <PurchaseOperationTicketOrderPanel

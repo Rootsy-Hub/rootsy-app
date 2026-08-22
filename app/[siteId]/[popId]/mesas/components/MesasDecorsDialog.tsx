@@ -108,6 +108,11 @@ export function MesasDecorsDialog({
   )
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<MesasFloorDecorRow | null>(null)
+  const [pendingCreate, setPendingCreate] = useState<{
+    name: string
+    salonId: string
+  } | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   const salonOptions = dialogSalons.length > 0 ? dialogSalons : salons
   const canReorderList = filterSalonId !== "all"
@@ -149,6 +154,8 @@ export function MesasDecorsDialog({
     setFilterSalonId("all")
     setForm(defaultDecorForm("", 0))
     setDeleteTarget(null)
+    setPendingCreate(null)
+    setPendingDeleteId(null)
   })
 
   useEffect(() => {
@@ -178,31 +185,55 @@ export function MesasDecorsDialog({
     [canReorderList, filteredRows, salonOptions],
   )
 
+  const visiblePendingCreateName =
+    pendingCreate &&
+    (filterSalonId === "all" || filterSalonId === pendingCreate.salonId) &&
+    !rows.some((row) => {
+      const text = row.label?.trim() || decorKindLabel(row.kind)
+      return (
+        text === pendingCreate.name && row.salonId === pendingCreate.salonId
+      )
+    })
+      ? pendingCreate.name
+      : null
+
   const handleSave = async () => {
+    const payload = form
+    const isCreate = !payload.id
+    const createdName = payload.label.trim() || decorKindLabel(payload.kind)
     setSaving(true)
     setError(null)
-    const res = await upsertMesasFloorDecor(popId, siteId, form)
-    setSaving(false)
+    if (isCreate) {
+      setPendingCreate({ name: createdName, salonId: payload.salonId })
+      setForm(defaultDecorForm(payload.salonId, rows.length + 1))
+    }
+    const res = await upsertMesasFloorDecor(popId, siteId, payload)
     if (!res.success) {
+      if (isCreate) {
+        setPendingCreate(null)
+        setForm((current) => ({
+          ...current,
+          label: payload.label,
+          kind: payload.kind,
+        }))
+      }
+      setSaving(false)
       setError(res.error)
       return
     }
-    setForm(defaultDecorForm(form.salonId, rows.length + (form.id ? 0 : 1)))
     await loadRows()
     await onLayoutChanged()
+    setPendingCreate(null)
+    setSaving(false)
   }
 
   const handleDelete = async () => {
     if (!deleteTarget) return
+    const target = deleteTarget
     setSaving(true)
     setError(null)
-    const res = await deleteMesasFloorDecor(popId, siteId, deleteTarget.id)
-    setSaving(false)
-    if (!res.success) {
-      setError(res.error)
-      return
-    }
-    if (form.id === deleteTarget.id) {
+    setPendingDeleteId(target.id)
+    if (form.id === target.id) {
       setForm(
         defaultDecorForm(
           resolveFormSalonId(filterSalonId, form.salonId || salonOptions[0]?.id || ""),
@@ -211,8 +242,17 @@ export function MesasDecorsDialog({
       )
     }
     setDeleteTarget(null)
+    const res = await deleteMesasFloorDecor(popId, siteId, target.id)
+    if (!res.success) {
+      setPendingDeleteId(null)
+      setSaving(false)
+      setError(res.error)
+      return
+    }
     await loadRows()
     await onLayoutChanged()
+    setPendingDeleteId(null)
+    setSaving(false)
   }
 
   const handleReorder = useCallback(
@@ -301,8 +341,8 @@ export function MesasDecorsDialog({
                       footer={
                         <MesasLayoutDialogFormActions
                           editing={Boolean(form.id)}
-                          saving={saving}
-                          canSave={Boolean(form.salonId)}
+                          saving={saving && Boolean(form.id)}
+                          canSave={Boolean(form.salonId) && !saving}
                           onCancelEdit={() =>
                             setForm(
                               defaultDecorForm(
@@ -323,6 +363,7 @@ export function MesasDecorsDialog({
                         <RootsFormSelectField
                           label="Salón"
                           value={form.salonId}
+                          disabled={saving}
                           onValueChange={(salonId) =>
                             setForm((f) => ({ ...f, salonId }))
                           }
@@ -336,6 +377,7 @@ export function MesasDecorsDialog({
                         <RootsFormSelectField
                           label="Tipo"
                           value={form.kind}
+                          disabled={saving}
                           onValueChange={(kind) => {
                             const k = kind as MesaFloorDecorKind
                             const size = defaultDecorSize(k)
@@ -357,6 +399,7 @@ export function MesasDecorsDialog({
                           label="Texto visible"
                           id="mesas-decor-label"
                           value={form.label}
+                          disabled={saving}
                           onChange={(e) =>
                             setForm((f) => ({ ...f, label: e.target.value }))
                           }
@@ -369,6 +412,7 @@ export function MesasDecorsDialog({
                           min={4}
                           max={9999}
                           value={String(form.width)}
+                          disabled={saving}
                           onChange={(value) =>
                             setForm((f) => ({
                               ...f,
@@ -386,6 +430,7 @@ export function MesasDecorsDialog({
                           min={4}
                           max={9999}
                           value={String(form.height)}
+                          disabled={saving}
                           onChange={(value) =>
                             setForm((f) => ({
                               ...f,
@@ -418,17 +463,22 @@ export function MesasDecorsDialog({
                       onValueChange={setFilterSalonId}
                       salons={salonOptions}
                       showAll
+                      disabled={saving}
                       totalCount={rows.length}
                       filteredCount={filteredRows.length}
                     />
-                    {loading && rows.length === 0 ? (
+                    {loading && rows.length === 0 && !visiblePendingCreateName ? (
                       <RootsDialogLoadingState message="Cargando elementos" />
                     ) : (
                       <MesasLayoutSortableList
                         listId="mesas-decors"
                         items={listItems}
                         canReorder={canReorderList && !saving}
-                        canToggleVisibility
+                        canEdit={!saving}
+                        canDelete={!saving}
+                        canToggleVisibility={!saving}
+                        pendingCreateName={visiblePendingCreateName}
+                        pendingDeleteId={pendingDeleteId}
                         emptyMessage={
                           rows.length === 0
                             ? "Todavía no hay elementos."

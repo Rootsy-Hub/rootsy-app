@@ -19,7 +19,11 @@ import {
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
-import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
+import { isMenuApiReady } from "@/lib/menuApiReady"
+import {
+  isOptimisticNavTarget,
+  usePopOptimisticNav,
+} from "@/context/PopOptimisticNavContext"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { menuDockEditBadgeClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
@@ -102,7 +106,8 @@ function DockSlotItem({
   href: string | null
   onRemove: () => void
 }) {
-  const { start: startOptimisticNav } = usePopOptimisticNav()
+  const { pending, start: startOptimisticNav } = usePopOptimisticNav()
+  const isLeaving = isOptimisticNavTarget(href, pending)
   const {
     attributes,
     listeners,
@@ -161,7 +166,11 @@ function DockSlotItem({
             className="relative cursor-grab active:cursor-grabbing"
             aria-label={item.name}
           >
-            <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
+            <DockIconVisual
+              icon={item.icon}
+              sectionKey={item.sectionKey}
+              apiReady={isMenuApiReady(item.id)}
+            />
           </button>
         ) : (
           <div
@@ -187,12 +196,23 @@ function DockSlotItem({
                   ) {
                     return
                   }
+                  if (pending && !isLeaving) {
+                    event.preventDefault()
+                    return
+                  }
                   startOptimisticNav({ href, title: item.name })
                 }}
                 className="relative block transition-transform duration-200 hover:scale-110 active:scale-95"
                 aria-label={item.name}
+                aria-busy={isLeaving || undefined}
               >
-                <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
+                <DockIconVisual
+                  icon={item.icon}
+                  sectionKey={item.sectionKey}
+                  apiReady={isMenuApiReady(item.id)}
+                  busy={isLeaving}
+                  busyLabel={`Abriendo ${item.name}`}
+                />
               </Link>
             ) : (
               <button
@@ -201,7 +221,11 @@ function DockSlotItem({
                 className="relative cursor-default opacity-70"
                 aria-label={item.name}
               >
-                <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
+                <DockIconVisual
+                  icon={item.icon}
+                  sectionKey={item.sectionKey}
+                  apiReady={isMenuApiReady(item.id)}
+                />
               </button>
             )}
             <span
@@ -368,7 +392,7 @@ export function MenuDock({ siteId, popId }: Props) {
   )
 
   return (
-    <div className="flex w-full max-w-full justify-center overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex w-full max-w-full justify-center overflow-x-auto overflow-y-visible overscroll-x-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div
         className={cn(
           "flex items-end overflow-visible",

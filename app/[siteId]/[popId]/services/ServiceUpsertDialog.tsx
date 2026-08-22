@@ -51,6 +51,7 @@ type Props = {
   mode: "create" | "edit"
   title: string
   loading?: boolean
+  refreshing?: boolean
   saving?: boolean
   banner?: string | null
   onBannerChange?: (message: string | null) => void
@@ -118,6 +119,7 @@ export function ServiceUpsertDialog({
   mode,
   title,
   loading = false,
+  refreshing = false,
   saving = false,
   banner,
   onBannerChange,
@@ -207,6 +209,14 @@ export function ServiceUpsertDialog({
             title={title}
             description={`Paso ${step}/${LAST_STEP} · ${stepMeta.label}`}
           />
+          {refreshing ? (
+            <div
+              className="h-0.5 w-full overflow-hidden bg-[color:var(--rootsy-bruma-200)]"
+              aria-hidden
+            >
+              <div className="h-full w-1/3 animate-pulse bg-[color:var(--rootsy-savia-500)]/50" />
+            </div>
+          ) : null}
           {loading ? (
             <RootsDialogBody>
               <RootsDialogLoadingState message="Cargando servicio…" />
@@ -232,7 +242,7 @@ export function ServiceUpsertDialog({
                       categories={categories}
                       step={step}
                       fieldErrors={fieldErrors}
-                      disabled={saving}
+                      disabled={saving || refreshing}
                     />
                   </div>
                 </div>
@@ -253,7 +263,7 @@ export function ServiceUpsertDialog({
                   <RootsSubtleButton
                     type="button"
                     onClick={step === 1 ? onCancel : handlePrevious}
-                    disabled={saving}
+                    disabled={saving || refreshing}
                     className="shrink-0"
                   >
                     {step === 1 ? "Cancelar" : "Anterior"}
@@ -264,7 +274,7 @@ export function ServiceUpsertDialog({
                       <RootsProgressButton
                         type="button"
                         onClick={handleConfirm}
-                        disabled={saving || categories.length === 0}
+                        disabled={saving || refreshing || categories.length === 0}
                         loading={saving}
                         loadingLabel={confirmLoadingLabel}
                         className="shrink-0"
@@ -275,7 +285,7 @@ export function ServiceUpsertDialog({
                       <RootsPrimaryButton
                         type="button"
                         onClick={handleConfirm}
-                        disabled={saving || categories.length === 0}
+                        disabled={saving || refreshing || categories.length === 0}
                         className="shrink-0"
                       >
                         {confirmLabel}
@@ -285,7 +295,11 @@ export function ServiceUpsertDialog({
                     <RootsPrimaryButton
                       type="button"
                       onClick={handleNext}
-                      disabled={saving || (step === 1 && categories.length === 0)}
+                      disabled={
+                        saving ||
+                        refreshing ||
+                        (step === 1 && categories.length === 0)
+                      }
                       className="shrink-0"
                     >
                       Siguiente

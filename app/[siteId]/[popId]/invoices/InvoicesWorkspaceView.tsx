@@ -1,17 +1,13 @@
 "use client"
 
-import {
-  createArcaInvoiceWithOpenCashRegister,
-  getInvoiceFormContext,
-  testArcaInvoiceHomologacion,
-} from "@/app/[siteId]/[popId]/invoices/actions"
+import type { InvoiceFormContextResult } from "@/app/[siteId]/[popId]/invoices/actions"
 import {
   formatInvoiceCbteFch,
   invoiceMoneyFormatter,
-  invoiceRegimenLabel,
   invoiceStatusLabel,
 } from "@/app/[siteId]/[popId]/invoices/invoiceConstants"
 import { InvoiceComposeDialog } from "@/app/[siteId]/[popId]/invoices/InvoiceComposeDialog"
+import { InvoiceFiscalConfigDialog } from "@/app/[siteId]/[popId]/invoices/InvoiceFiscalConfigDialog"
 import {
   defaultInvoiceComposeFormState,
   invoiceComposeFormToFormData,
@@ -22,11 +18,7 @@ import {
   type InvoicesAppliedFilters,
 } from "@/app/[siteId]/[popId]/invoices/invoiceFormState"
 import { InvoicesFiltersDialog } from "@/app/[siteId]/[popId]/invoices/InvoicesFiltersDialog"
-import {
-  InvoiceStatusToolbarFilter,
-  invoiceStatusFilterToQuery,
-  resolveInvoiceStatusFilterId,
-} from "@/app/[siteId]/[popId]/invoices/InvoiceStatusToolbarFilter"
+import { InvoiceTypeToolbarFilter } from "@/app/[siteId]/[popId]/invoices/InvoiceTypeToolbarFilter"
 import {
   InvoiceTableCaeCell,
   InvoiceTableDateCell,
@@ -50,6 +42,7 @@ import {
   invoiceTableTypeColumnClass,
 } from "@/app/[siteId]/[popId]/invoices/invoicesTableLayout"
 import {
+  INVOICE_RECIBO_X_FILTER,
   INVOICE_TABLE_PAGE_SIZES,
   mergeInvoicesWorkspaceUrl,
   parseInvoicesWorkspaceUrl,
@@ -78,8 +71,9 @@ import {
   workspaceTableLayoutClassName,
   workspaceTableStaticRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import {
-  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersGridFourClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
@@ -103,8 +97,23 @@ import {
 } from "@/components/ui/sheet"
 import { TableBody, TableRow } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
+import { useInvoiceFormContext } from "@/hooks/useInvoiceFormContext"
 import { usePopInvoicesTable } from "@/hooks/usePopInvoicesTable"
-import { popInvoicesQueryRoot } from "@/lib/queryKeys"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import {
+  computeDataWorkspaceDateBounds,
+  type DataWorkspaceDatePreset,
+} from "@/lib/dataWorkspaceDateFilter"
+import { SALE_COMPROBANTE_RECIBO_X_LABEL } from "@/lib/saleComprobantePicker"
+import { findSaleInvoiceTypeByArcaCbteTipo } from "@/lib/saleInvoiceTypes"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
+import { popInvoicesFormContextQueryKey, popInvoicesQueryRoot } from "@/lib/queryKeys"
+import {
+  createArcaInvoiceWithOpenCashRegister,
+  testArcaInvoiceHomologacion,
+} from "@/lib/rootsyApi/invoicesClient"
 import { useQueryClient } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 import {
@@ -114,6 +123,7 @@ import {
 import {
   CheckCircle2,
   Plus,
+  Settings,
   Sparkles,
 } from "lucide-react"
 import {
@@ -132,6 +142,7 @@ import {
   useState,
   type FormEvent,
 } from "react"
+import type { DateRange } from "react-day-picker"
 
 export function InvoicesWorkspaceView() {
   const router = useRouter()
@@ -144,19 +155,34 @@ export function InvoicesWorkspaceView() {
   const popId = typeof params?.popId === "string" ? params.popId : undefined
   const queryClient = useQueryClient()
 
-  const ws = useMemo(
-    () => parseInvoicesWorkspaceUrl(searchParams),
-    [searchParams],
-  )
   const searchInputId = useId()
   const filtersButtonId = useId()
+  const dateFilterLabelId = useId()
+  const dateFilterTriggerId = useId()
   const pageSizeLabelId = useId()
 
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId ?? "")
 
-  const [formCtx, setFormCtx] = useState<Awaited<
-    ReturnType<typeof getInvoiceFormContext>
-  > | null>(null)
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
+  const ws = useMemo(
+    () => parseInvoicesWorkspaceUrl(workspaceParams),
+    [workspaceParams],
+  )
+
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const [searchInput, setSearchInput] = useState(ws.q)
@@ -164,10 +190,20 @@ export function InvoicesWorkspaceView() {
   const [draftFilters, setDraftFilters] = useState<InvoicesAppliedFilters>(
     defaultInvoicesFilters(),
   )
+  const [datePreset, setDatePreset] =
+    useState<DataWorkspaceDatePreset>("this_month")
+  const [customDateRange, setCustomDateRange] = useState<
+    DateRange | undefined
+  >(undefined)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const dateBounds = useMemo(
+    () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
+    [datePreset, customDateRange],
+  )
 
   const composeIdPrefix = "invoice-compose"
 
+  const [fiscalConfigOpen, setFiscalConfigOpen] = useState(false)
   const [composeOpen, setComposeOpen] = useState(false)
   const [composeForm, setComposeForm] = useState<InvoiceComposeFormState>(
     defaultInvoiceComposeFormState(),
@@ -193,10 +229,17 @@ export function InvoicesWorkspaceView() {
 
   const pushWs = useCallback(
     (patch: Parameters<typeof mergeInvoicesWorkspaceUrl>[1]) => {
-      const next = mergeInvoicesWorkspaceUrl(searchParams, patch)
-      router.replace(`${pathname}?${next.toString()}`)
+      const qs = mergeInvoicesWorkspaceUrl(workspaceParams, patch)
+      const next = qs.toString() ? `${pathname}?${qs.toString()}` : pathname
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== next) {
+          window.history.replaceState(window.history.state, "", next)
+        }
+      }
+      setWorkspaceSearch(qs.toString())
     },
-    [pathname, router, searchParams],
+    [pathname, workspaceParams],
   )
 
   const handleSortColumn = useCallback(
@@ -222,11 +265,6 @@ export function InvoicesWorkspaceView() {
     [ws.ord, ws.sort],
   )
 
-  const activeStatusFilterId = useMemo(
-    () => resolveInvoiceStatusFilterId(ws.status),
-    [ws.status],
-  )
-
   const invoicesQuery = usePopInvoicesTable(
     popId,
     {
@@ -234,16 +272,42 @@ export function InvoicesWorkspaceView() {
       page: ws.page,
       pageSize: ws.pageSize,
       status: ws.status,
-      regimen: ws.regimen,
+      cbteTipo: ws.cbteTipo,
+      dateFrom: dateBounds.from,
+      dateTo: dateBounds.to,
       sort: ws.sort,
       ord: ws.ord,
     },
     { enabled: Boolean(popId) },
   )
 
+  const invoicePerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = invoicePerm(POP_PERMS.INVOICES_CREATE)
+  const canReadInvoices = invoicePerm(POP_PERMS.INVOICES_READ)
+
+  const formCtxQuery = useInvoiceFormContext(popId, {
+    enabled: Boolean(popId) && composeOpen && canCreate,
+  })
+  const formCtx: InvoiceFormContextResult | null = formCtxQuery.data ?? null
+  const formRefreshing =
+    composeOpen &&
+    (formCtxQuery.isPending ||
+      (formCtxQuery.isFetching && !formCtxQuery.isFetched))
+
   const invoices = invoicesQuery.data?.invoices ?? []
   const totalCount = invoicesQuery.data?.totalCount ?? 0
-  const canCreate = invoicesQuery.data?.canCreate ?? false
   const loading =
     invoicesQuery.isPending ||
     (invoicesQuery.isFetching && !invoicesQuery.isFetched)
@@ -268,18 +332,6 @@ export function InvoicesWorkspaceView() {
     if (!res || res.success || !res.redirect) return
     routerRef.current.replace(res.redirect)
   }, [invoicesQuery.data])
-
-  useEffect(() => {
-    if (!popId) return
-    let cancelled = false
-    void getInvoiceFormContext(popId).then((ctx) => {
-      if (cancelled || !ctx.success) return
-      setFormCtx(ctx)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [popId, composeOpen])
 
   useEffect(() => {
     setSearchInput(ws.q)
@@ -324,16 +376,26 @@ export function InvoicesWorkspaceView() {
     [totalPages, ws.page],
   )
 
-  const modalFiltersActiveCount = ws.regimen ? 1 : 0
+  const modalFiltersActiveCount = ws.status ? 1 : 0
   const hasFilterChips =
-    ws.q.trim() !== "" || ws.status !== "" || ws.regimen !== ""
+    ws.q.trim() !== "" || ws.status !== "" || ws.cbteTipo !== ""
   const activeFilterCount = useMemo(() => {
     let count = 0
     if (ws.q.trim()) count++
     if (ws.status) count++
-    if (ws.regimen) count++
+    if (ws.cbteTipo !== "") count++
     return count
-  }, [ws.q, ws.status, ws.regimen])
+  }, [ws.q, ws.status, ws.cbteTipo])
+  const cbteTipoChipLabel = useMemo(() => {
+    if (ws.cbteTipo === "") return ""
+    if (ws.cbteTipo === INVOICE_RECIBO_X_FILTER) {
+      return SALE_COMPROBANTE_RECIBO_X_LABEL
+    }
+    return (
+      findSaleInvoiceTypeByArcaCbteTipo(siteId, ws.cbteTipo)?.label ??
+      `Tipo ${ws.cbteTipo}`
+    )
+  }, [siteId, ws.cbteTipo])
 
   const resultsSummary = useMemo(() => {
     if (loading && totalCount === 0) return "…"
@@ -344,19 +406,23 @@ export function InvoicesWorkspaceView() {
 
   const clearAllFilters = useCallback(() => {
     setSearchInput("")
-    pushWs({ q: "", status: "", regimen: "", page: 1 })
+    pushWs({ q: "", status: "", cbteTipo: "", page: 1 })
     searchInputRef.current?.focus()
   }, [pushWs])
 
-  const canEmit = formCtx?.success === true && formCtx.canCreateInvoice === true
+  const canEmit =
+    canCreate &&
+    formCtx?.success === true &&
+    formCtx.canCreateInvoice === true
 
   const hasOpenCashSession =
     formCtx?.success === true && formCtx.cashSession != null
 
+  const selectedSalePoint =
+    formCtx?.success === true ? formCtx.cashSession?.salePoint ?? null : null
+
   const cashEmitReady =
-    hasOpenCashSession &&
-    Boolean(formCtx?.cashSession?.hasCertificates) &&
-    formCtx?.cashSession?.ptoVta != null
+    hasOpenCashSession && Boolean(selectedSalePoint?.configured)
 
   const submitCompose = async (e: FormEvent) => {
     e.preventDefault()
@@ -409,8 +475,9 @@ export function InvoicesWorkspaceView() {
       setExpandedId(res.invoiceId)
     }
     if (popId) {
-      const ctx = await getInvoiceFormContext(popId)
-      if (ctx.success) setFormCtx(ctx)
+      await queryClient.invalidateQueries({
+        queryKey: popInvoicesFormContextQueryKey(popId),
+      })
     }
     await refreshInvoicesList()
   }
@@ -428,6 +495,7 @@ export function InvoicesWorkspaceView() {
 
   const composeConfirmDisabled =
     composeSaving ||
+    formRefreshing ||
     (composeForm.tab === "caja"
       ? !cashEmitReady || !canEmit
       : !crtFile ||
@@ -461,42 +529,78 @@ export function InvoicesWorkspaceView() {
           userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
           userRoleLabel: bootstrap?.roleLabel ?? undefined,
           pillLabel: "ARCA / AFIP",
-          headerActions: canCreate ? (
-            <DataWorkspaceHeaderIconButton
-              label="Nueva factura"
-              headerVariant={dataWorkspaceTableListHeaderVariant}
-              primary
-              onClick={openCompose}
-            >
-              <Plus className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
-          ) : null,
+          headerActions: (
+            <>
+              {canReadInvoices ? (
+                <DataWorkspaceHeaderIconButton
+                  label="Configuración fiscal"
+                  headerVariant={dataWorkspaceTableListHeaderVariant}
+                  onClick={() => setFiscalConfigOpen(true)}
+                >
+                  <Settings className="size-5" aria-hidden />
+                </DataWorkspaceHeaderIconButton>
+              ) : null}
+              {canCreate ? (
+                <DataWorkspaceHeaderIconButton
+                  label="Nueva factura"
+                  headerVariant={dataWorkspaceTableListHeaderVariant}
+                  primary
+                  onClick={openCompose}
+                >
+                  <Plus className="size-5" aria-hidden />
+                </DataWorkspaceHeaderIconButton>
+              ) : null}
+            </>
+          ),
         }}
         error={error}
       >
         <DataWorkspaceTableListNatureShell>
           <DataWorkspaceTableListFiltersBar>
-                <div className={dataWorkspaceListFiltersGridClass}>
+                <div className={dataWorkspaceListFiltersGridFourClass}>
                   <div className={dataWorkspaceListFiltersPanelClass}>
-                    <InvoiceStatusToolbarFilter
-                      value={activeStatusFilterId}
-                      onChange={(id) =>
-                        pushWs({
-                          status: invoiceStatusFilterToQuery(id),
-                          page: 1,
-                        })
+                    <DataWorkspacePeriodFilter
+                      variant="layout"
+                      preset={datePreset}
+                      customRange={customDateRange}
+                      onPresetChange={(preset) => {
+                        setDatePreset(preset)
+                        pushWs({ page: 1 })
+                      }}
+                      onCustomRangeChange={(range) => {
+                        setCustomDateRange(range)
+                        pushWs({ page: 1 })
+                      }}
+                      bounds={dateBounds}
+                      showActiveState={false}
+                      labelId={dateFilterLabelId}
+                      triggerId={dateFilterTriggerId}
+                    />
+                  </div>
+
+                  <div className={dataWorkspaceListFiltersPanelClass}>
+                    <InvoiceTypeToolbarFilter
+                      siteId={siteId}
+                      emisorIva={
+                        bootstrap?.popEmisorIvaCondition ??
+                        "responsable_inscripto"
                       }
+                      hasValidFiscalCuit={
+                        bootstrap?.hasValidPopFiscalCuit ?? false
+                      }
+                      value={ws.cbteTipo}
+                      onChange={(cbteTipo) => pushWs({ cbteTipo, page: 1 })}
                     />
                   </div>
 
                   <div className={dataWorkspaceListFiltersPanelClass}>
                     <DataWorkspaceListFiltersDialogTrigger
                       id={filtersButtonId}
-                      placeholder="Régimen"
+                      placeholder="Estado"
                       activeCount={modalFiltersActiveCount}
                       expanded={filtersModalOpen}
                       onClick={() => {
-                        setDraftFilters({ regimen: ws.regimen })
+                        setDraftFilters({ status: ws.status })
                         setFiltersModalOpen(true)
                       }}
                     />
@@ -533,18 +637,18 @@ export function InvoicesWorkspaceView() {
                         removeAriaLabel="Quitar búsqueda"
                       />
                     ) : null}
+                    {ws.cbteTipo !== "" ? (
+                      <DataWorkspaceListFilterChip
+                        label={`Tipo: ${cbteTipoChipLabel}`}
+                        onRemove={() => pushWs({ cbteTipo: "", page: 1 })}
+                        removeAriaLabel="Quitar filtro de tipo de comprobante"
+                      />
+                    ) : null}
                     {ws.status ? (
                       <DataWorkspaceListFilterChip
                         label={`Estado: ${invoiceStatusLabel(ws.status)}`}
                         onRemove={() => pushWs({ status: "", page: 1 })}
                         removeAriaLabel="Quitar filtro de estado"
-                      />
-                    ) : null}
-                    {ws.regimen ? (
-                      <DataWorkspaceListFilterChip
-                        label={`Régimen: ${invoiceRegimenLabel(ws.regimen)}`}
-                        onRemove={() => pushWs({ regimen: "", page: 1 })}
-                        removeAriaLabel="Quitar filtro de régimen"
                       />
                     ) : null}
                   </DataWorkspaceListActiveFiltersBar>
@@ -716,9 +820,16 @@ export function InvoicesWorkspaceView() {
           draft={draftFilters}
           onDraftChange={setDraftFilters}
           onApply={() => {
-            pushWs({ regimen: draftFilters.regimen, page: 1 })
+            pushWs({ status: draftFilters.status, page: 1 })
             setFiltersModalOpen(false)
           }}
+        />
+
+        <InvoiceFiscalConfigDialog
+          open={fiscalConfigOpen}
+          onOpenChange={setFiscalConfigOpen}
+          popId={popId}
+          siteId={siteId}
         />
 
         <InvoiceComposeDialog
@@ -753,8 +864,9 @@ export function InvoicesWorkspaceView() {
         keyFile={keyFile}
         onKeyFileChange={setKeyFile}
         keyInputRef={keyInputRef}
-        disabled={composeSaving}
+        disabled={composeSaving || formRefreshing}
         saving={composeSaving}
+        refreshing={formRefreshing}
         banner={composeBanner}
         debugFecae={composeDebugFecae}
         confirmDisabled={composeConfirmDisabled}

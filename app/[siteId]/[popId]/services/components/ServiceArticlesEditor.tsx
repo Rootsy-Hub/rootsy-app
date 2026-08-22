@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  getServiceArticleOptions,
-  type ServiceArticleOption,
-} from "@/app/[siteId]/[popId]/services/actions"
+import type { ServiceArticleOption } from "@/app/[siteId]/[popId]/services/actions"
+import { searchServiceArticleOptions } from "@/lib/rootsyApi/servicesClient"
 import { RootsSubtleButton } from "@/components/rootsy-button"
 import { RootsFormPrefixedInput } from "@/components/rootsy-form/RootsFormPrefixedInput"
 import { useRootsFormFieldControlProps, useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
@@ -180,7 +178,7 @@ function ServiceArticleLineRow({
     const requestId = ++searchRequestRef.current
     setSearching(true)
 
-    void getServiceArticleOptions(popId, {
+    void searchServiceArticleOptions(popId, {
       query: q,
       limit: MAX_SEARCH_RESULTS,
       excludeIds: [...usedIds].filter((id) => id !== line.articleId),

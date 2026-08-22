@@ -480,3 +480,20 @@
     animation: none !important;
   }
 }
+
+.auth-shell-main {
+  --auth-shell-logo-gap: 1rem;
+  padding-top: 2.5rem;
+}
+
+@media (max-width: 1023px) {
+  .auth-shell-main {
+    /* Mismo aire: viewport → logo y logo → card (mb-4 + padding top de la entidad). */
+    --auth-shell-logo-gap: calc(1rem + 0.85rem);
+    padding-top: var(--auth-shell-logo-gap);
+  }
+
+  .auth-shell-logo {
+    margin-bottom: 1rem;
+  }
+}

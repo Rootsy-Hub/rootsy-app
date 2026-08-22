@@ -79,8 +79,7 @@ function LoginPage() {
     return !errors.email && !errors.password
   }, [email, password])
 
-  const handleSubmit = async (ev: React.FormEvent) => {
-    ev.preventDefault()
+  const submitAccount = async () => {
     setError("")
     setNeedsConfirmation(false)
     setOfferRecovery(false)
@@ -185,7 +184,15 @@ function LoginPage() {
       ) : null}
 
       <RootsFormToneProvider tone="dark">
-        <form className="mt-7 space-y-5" noValidate onSubmit={handleSubmit}>
+        <form
+          className="mt-7 space-y-5"
+          noValidate
+          suppressHydrationWarning
+          onSubmit={(event) => {
+            event.preventDefault()
+            void submitAccount()
+          }}
+        >
           <AuthEmailField
             value={email}
             onChange={(next) => {
@@ -215,12 +222,15 @@ function LoginPage() {
           />
 
           <RootsPrimaryButton
-            type="submit"
+            type="button"
             size="large"
             loading={isLoading}
             loadingLabel={LOGIN_COPY.submitLoading}
             disabled={googleLoading}
             className="w-full"
+            onClick={() => {
+              void submitAccount()
+            }}
           >
             {LOGIN_COPY.submit}
           </RootsPrimaryButton>

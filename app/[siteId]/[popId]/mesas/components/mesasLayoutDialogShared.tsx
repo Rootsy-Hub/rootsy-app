@@ -262,6 +262,7 @@ export function MesasLayoutDialogSalonFilterBar({
   showAll = false,
   totalCount,
   filteredCount,
+  disabled = false,
 }: {
   label: string
   value: string
@@ -270,6 +271,7 @@ export function MesasLayoutDialogSalonFilterBar({
   showAll?: boolean
   totalCount: number
   filteredCount: number
+  disabled?: boolean
 }) {
   return (
     <div className="space-y-2 rounded-xl border border-[var(--rootsy-bruma-200)] bg-white px-3 py-2.5">
@@ -282,6 +284,7 @@ export function MesasLayoutDialogSalonFilterBar({
       <RootsFormSelectField
         label={label}
         value={value || "all"}
+        disabled={disabled}
         onValueChange={onValueChange}
         className="[&>label]:sr-only"
       >

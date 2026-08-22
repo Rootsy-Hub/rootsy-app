@@ -42,6 +42,14 @@ export function navigationArrived(pathname: string, href: string): boolean {
   return pathname === target || pathname.startsWith(`${target}/`)
 }
 
+export function isOptimisticNavTarget(
+  href: string | null | undefined,
+  pending: PopOptimisticNav | null,
+): boolean {
+  if (!href || !pending) return false
+  return pathOf(href) === pathOf(pending.href)
+}
+
 export function PopOptimisticNavProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [pending, setPending] = useState<PopOptimisticNav | null>(null)

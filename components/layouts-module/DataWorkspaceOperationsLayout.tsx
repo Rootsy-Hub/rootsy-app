@@ -12,6 +12,8 @@ import {
   OperarCatalogMobileChromeProvider,
   useOperarCatalogMobileChrome,
 } from "@/components/layouts-module/OperarCatalogMobileChrome"
+import { OperarMobileStageProvider } from "@/components/layouts-module/OperarMobileStage"
+import { OperarMobileToolboxProvider } from "@/components/layouts-module/OperarMobileToolbox"
 import {
   DataWorkspaceModuleLayout,
   type DataWorkspaceModuleLayoutProps,
@@ -36,14 +38,18 @@ export function DataWorkspaceOperationsLayout({
 }: DataWorkspaceOperationsLayoutProps) {
   return (
     <OperarCatalogMobileChromeProvider>
-      <OperationsLayoutWithChrome
-        {...props}
-        contentFlush={contentFlush}
-        mainClassName={mainClassName}
-        headerMobileMoreActions={headerMobileMoreActions}
-      >
-        {children}
-      </OperationsLayoutWithChrome>
+      <OperarMobileStageProvider>
+        <OperarMobileToolboxProvider>
+          <OperationsLayoutWithChrome
+            {...props}
+            contentFlush={contentFlush}
+            mainClassName={mainClassName}
+            headerMobileMoreActions={headerMobileMoreActions}
+          >
+            {children}
+          </OperationsLayoutWithChrome>
+        </OperarMobileToolboxProvider>
+      </OperarMobileStageProvider>
     </OperarCatalogMobileChromeProvider>
   )
 }

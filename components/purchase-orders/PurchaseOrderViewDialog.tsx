@@ -26,6 +26,7 @@ type Props = {
   order: PurchaseOrderDetail | null
   formatCreatedAt: (iso: string) => string
   popBrand?: PopBrandProps | null
+  refreshing?: boolean
 }
 
 const fieldValueClass = cn(
@@ -47,6 +48,7 @@ export function PurchaseOrderViewDialog({
   order,
   formatCreatedAt,
   popBrand,
+  refreshing = false,
 }: Props) {
   if (!order) return null
 
@@ -57,6 +59,14 @@ export function PurchaseOrderViewDialog({
           open={open}
           title={`Orden de compra N.º ${order.orderNumber}`}
         />
+        {refreshing ? (
+          <div
+            className="h-0.5 w-full overflow-hidden bg-[color:var(--rootsy-bruma-200)]"
+            aria-hidden
+          >
+            <div className="h-full w-1/3 animate-pulse bg-[color:var(--rootsy-savia-500)]/50" />
+          </div>
+        ) : null}
 
         <RootsDialogBody className="space-y-4">
           {popBrand ? (

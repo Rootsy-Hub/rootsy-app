@@ -40,6 +40,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react"
+import { formatArcaPtoVta } from "@/lib/arcaPtoVta"
 import { formatLocaleDateTime } from "@/lib/popTimezone"
 import Link from "next/link"
 import { cashRegisterEntityEyebrowLabel } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
@@ -235,15 +236,20 @@ export function CashRegisterCard({
               <h3 className={cn("mt-0.5 truncate pr-24", dataWorkspaceEntityCardTitleClass)}>
                 {row.name}
               </h3>
+              {row.arcaPtoVta != null ? (
+                <p className="mt-0.5 truncate font-canopy text-xs tabular-nums text-[var(--rootsy-bruma-500)]">
+                  Punto de venta {formatArcaPtoVta(row.arcaPtoVta)}
+                </p>
+              ) : null}
               {isOpen && openedLabel ? (
                 <p className="mt-0.5 truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
                   Desde {openedLabel}
                 </p>
-              ) : (
+              ) : row.arcaPtoVta == null ? (
                 <p className="mt-0.5 text-xs text-transparent" aria-hidden>
                   &nbsp;
                 </p>
-              )}
+              ) : null}
             </div>
             {menuSections.length > 0 ? (
               <div

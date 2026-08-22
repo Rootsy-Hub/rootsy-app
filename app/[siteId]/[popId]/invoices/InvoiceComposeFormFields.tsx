@@ -1,6 +1,6 @@
 "use client"
 
-import type { getInvoiceFormContext } from "@/app/[siteId]/[popId]/invoices/actions"
+import type { InvoiceFormContextResult } from "@/app/[siteId]/[popId]/invoices/actions"
 import type { InvoiceComposeFormState } from "@/app/[siteId]/[popId]/invoices/invoiceComposeFormState"
 import { RootsBanner } from "@/components/rootsy-banner"
 import {
@@ -14,12 +14,13 @@ import {
   rootsFormTextFieldClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
+import { formatArcaPtoVta } from "@/lib/arcaPtoVta"
 import { rootsFormImageUploadShellEmptyClass } from "@/components/rootsy-form/rootsFormStyles"
 import { cn } from "@/lib/utils"
 import { FileKey, FileText, Upload, X } from "lucide-react"
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from "react"
 
-type FormCtx = Awaited<ReturnType<typeof getInvoiceFormContext>>
+type FormCtx = InvoiceFormContextResult
 
 type Props = {
   idPrefix: string
@@ -176,12 +177,14 @@ export function InvoiceComposeFormFields({
               <p className="font-medium text-[color:var(--rootsy-bruma-900)]">
                 {formCtx.cashSession.cashRegisterName || "Caja"}
               </p>
-              <p className={cn("mt-1 text-xs", rootsFormBrumaTextSecondaryClass)}>
-                Punto de venta AFIP:{" "}
-                <span className="tabular-nums text-[color:var(--rootsy-bruma-900)]">
-                  {formCtx.cashSession.ptoVta ?? "—"}
-                </span>
-              </p>
+              {formCtx.cashSession.salePoint ? (
+                <p className={cn("mt-1 text-xs", rootsFormBrumaTextSecondaryClass)}>
+                  Punto de venta AFIP:{" "}
+                  <span className="tabular-nums text-[color:var(--rootsy-bruma-900)]">
+                    {formatArcaPtoVta(formCtx.cashSession.salePoint.ptoVta)}
+                  </span>
+                </p>
+              ) : null}
             </div>
           ) : null}
 
@@ -192,15 +195,21 @@ export function InvoiceComposeFormFields({
             </StatusNotice>
           ) : null}
 
-          {hasOpenCashSession && !cashEmitReady ? (
-            <StatusNotice title="Falta configuración ARCA en la caja">
-              {formCtx?.success &&
-              !formCtx.cashSession?.hasCertificates
-                ? "Cargá certificado y clave ARCA en el almacenamiento seguro (editar caja). "
-                : null}
-              {formCtx?.success && formCtx.cashSession?.ptoVta == null
-                ? "Definí el punto de venta AFIP en la configuración de la caja."
-                : null}
+          {hasOpenCashSession &&
+          formCtx?.success === true &&
+          !formCtx.cashSession?.salePoint ? (
+            <StatusNotice title="Falta punto de venta">
+              Asigná un punto de venta AFIP a esta caja en Cajas.
+            </StatusNotice>
+          ) : null}
+
+          {hasOpenCashSession &&
+          formCtx?.success === true &&
+          formCtx.cashSession?.salePoint &&
+          !cashEmitReady ? (
+            <StatusNotice title="Falta configuración fiscal">
+              Ese punto de venta no tiene certificado. Cargalo en Configuración
+              fiscal.
             </StatusNotice>
           ) : null}
 

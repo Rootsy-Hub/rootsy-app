@@ -6,6 +6,12 @@ import type {
   CounterOrderStatus,
 } from "@/app/[siteId]/[popId]/mostrador/mostradorTypes"
 import {
+  canMoveMostradorOrderTo,
+  MOSTRADOR_BOARD_COLUMNS,
+  mostradorOrderSubtitle,
+} from "@/app/[siteId]/[popId]/mostrador/mostradorBoardModel"
+import { MostradorMobileBoard } from "@/app/[siteId]/[popId]/mostrador/components/MostradorMobileBoard"
+import {
   mostradorBoardColumnBodyBg,
   mostradorEmptyTextClass,
   mostradorErrorBannerClass,
@@ -41,18 +47,7 @@ import {
 import { CSS } from "@dnd-kit/utilities"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { Bike, CheckCircle2, ChefHat } from "lucide-react"
 import { useMemo, useState } from "react"
-
-const BOARD_COLUMNS: {
-  id: CounterBoardTab
-  label: string
-  icon: typeof ChefHat
-}[] = [
-  { id: "preparing", label: "Preparando", icon: ChefHat },
-  { id: "dispatched", label: "Enviados", icon: Bike },
-  { id: "delivered", label: "Entregados", icon: CheckCircle2 },
-]
 
 type Props = {
   orders: CounterOrder[]
@@ -64,24 +59,6 @@ type Props = {
     orderId: string,
     status: CounterOrderStatus,
   ) => Promise<boolean> | boolean
-}
-
-function orderSubtitle(order: CounterOrder): string {
-  if (order.fulfillmentType === "delivery") {
-    return order.phone || order.deliveryAddress || "Delivery"
-  }
-  return "Mostrador"
-}
-
-function canMoveOrderTo(
-  order: CounterOrder,
-  targetColumn: CounterBoardTab,
-): boolean {
-  if (order.status === targetColumn) return false
-  if (targetColumn === "dispatched" && order.fulfillmentType !== "delivery") {
-    return false
-  }
-  return true
 }
 
 function OrderCardContent({
@@ -117,10 +94,10 @@ function OrderCardContent({
         </div>
       </div>
       <p className={cn("mt-2", mostradorOrderSubtitleClass)}>
-        {orderSubtitle(order)}
+        {mostradorOrderSubtitle(order)}
       </p>
       <p className={cn("mt-1", mostradorOrderDetailClass)}>
-        ETA {order.estimatedMinutes} min
+        Listo en {order.estimatedMinutes} min
         {order.fulfillmentType === "delivery" && order.driverName
           ? ` · ${order.driverName}`
           : ""}
@@ -184,7 +161,7 @@ function KanbanColumnBody({
   draggingOrder,
   onSelectOrder,
 }: {
-  column: (typeof BOARD_COLUMNS)[number]
+  column: (typeof MOSTRADOR_BOARD_COLUMNS)[number]
   orders: CounterOrder[]
   selectedOrderId: string | null
   draggingOrder: CounterOrder | null
@@ -195,11 +172,11 @@ function KanbanColumnBody({
     data: { columnId: column.id },
     disabled:
       draggingOrder != null &&
-      !canMoveOrderTo(draggingOrder, column.id),
+      !canMoveMostradorOrderTo(draggingOrder, column.id),
   })
 
   const canDrop =
-    draggingOrder == null || canMoveOrderTo(draggingOrder, column.id)
+    draggingOrder == null || canMoveMostradorOrderTo(draggingOrder, column.id)
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -281,11 +258,11 @@ export function MostradorBoard({
     if (!order) return
 
     const overId = String(over.id)
-    const targetColumn = BOARD_COLUMNS.some((c) => c.id === overId)
+    const targetColumn = MOSTRADOR_BOARD_COLUMNS.some((c) => c.id === overId)
       ? (overId as CounterBoardTab)
       : (orders.find((o) => o.id === overId)?.status as CounterBoardTab | undefined)
 
-    if (!targetColumn || !canMoveOrderTo(order, targetColumn)) return
+    if (!targetColumn || !canMoveMostradorOrderTo(order, targetColumn)) return
 
     void onMoveOrder(orderId, targetColumn)
   }
@@ -295,23 +272,34 @@ export function MostradorBoard({
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div className="flex min-h-0 flex-1 flex-col">
-        {orderError ? (
-          <p className={cn("shrink-0", mostradorErrorBannerClass)}>{orderError}</p>
-        ) : null}
-        {loading ? (
-          <MostradorBoardSkeleton />
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <div className="hidden md:block">
+    <>
+      <div className="flex min-h-0 flex-1 flex-col md:hidden">
+        <MostradorMobileBoard
+          orders={orders}
+          loading={loading}
+          orderError={orderError}
+          selectedOrderId={selectedOrderId}
+          onSelectOrder={onSelectOrder}
+          onMoveOrder={onMoveOrder}
+        />
+      </div>
+
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="hidden min-h-0 flex-1 flex-col md:flex">
+          {orderError ? (
+            <p className={cn("shrink-0", mostradorErrorBannerClass)}>{orderError}</p>
+          ) : null}
+          {loading ? (
+            <MostradorBoardSkeleton />
+          ) : (
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <OperarCanvasToolbarColumnHeaderRow>
-                {BOARD_COLUMNS.map((column) => (
+                {MOSTRADOR_BOARD_COLUMNS.map((column) => (
                   <OperarCanvasToolbarColumnHeader
                     key={column.id}
                     icon={column.icon}
@@ -320,51 +308,42 @@ export function MostradorBoard({
                   />
                 ))}
               </OperarCanvasToolbarColumnHeaderRow>
-            </div>
-            <div
-              className={cn(
-                "grid min-h-0 flex-1 overflow-auto md:overflow-hidden",
-                "grid-cols-1 md:grid-cols-3",
-                "divide-y divide-[var(--layouts-operar-border-dark-hairline)]",
-                "md:divide-x md:divide-y-0",
-              )}
-            >
-              {BOARD_COLUMNS.map((column) => (
-                <div
-                  key={column.id}
-                  className="flex min-h-0 min-w-0 flex-col max-md:min-h-72"
-                >
-                  <div className="md:hidden">
-                    <OperarCanvasToolbarColumnHeader
-                      icon={column.icon}
-                      label={column.label}
-                      count={ordersByColumn[column.id].length}
+              <div
+                className={cn(
+                  "grid min-h-0 flex-1 grid-cols-3 overflow-hidden",
+                  "divide-x divide-[var(--layouts-operar-border-dark-hairline)]",
+                )}
+              >
+                {MOSTRADOR_BOARD_COLUMNS.map((column) => (
+                  <div
+                    key={column.id}
+                    className="flex min-h-0 min-w-0 flex-col"
+                  >
+                    <KanbanColumnBody
+                      column={column}
+                      orders={ordersByColumn[column.id]}
+                      selectedOrderId={selectedOrderId}
+                      draggingOrder={draggingOrder}
+                      onSelectOrder={onSelectOrder}
                     />
                   </div>
-                  <KanbanColumnBody
-                    column={column}
-                    orders={ordersByColumn[column.id]}
-                    selectedOrderId={selectedOrderId}
-                    draggingOrder={draggingOrder}
-                    onSelectOrder={onSelectOrder}
-                  />
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      <DragOverlay dropAnimation={null}>
-        {draggingOrder ? (
-          <div className={mostradorOrderDragOverlayClass()}>
-            <OrderCardContent
-              order={draggingOrder}
-              showPayment
-            />
-          </div>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+        <DragOverlay dropAnimation={null}>
+          {draggingOrder ? (
+            <div className={mostradorOrderDragOverlayClass()}>
+              <OrderCardContent
+                order={draggingOrder}
+                showPayment
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+    </>
   )
 }

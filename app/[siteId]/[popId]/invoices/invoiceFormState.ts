@@ -1,9 +1,9 @@
-import type { InvoiceRegimenValue } from "@/app/[siteId]/[popId]/invoices/invoiceConstants"
+import type { InvoiceStatusValue } from "@/app/[siteId]/[popId]/invoices/invoiceConstants"
 
 export type InvoicesAppliedFilters = {
-  regimen: InvoiceRegimenValue | ""
+  status: InvoiceStatusValue | ""
 }
 
 export function defaultInvoicesFilters(): InvoicesAppliedFilters {
-  return { regimen: "" }
+  return { status: "" }
 }

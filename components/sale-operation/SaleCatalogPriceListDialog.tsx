@@ -10,14 +10,14 @@ import {
   RootsDialogHeader,
   RootsDialogSingleActionFooter,
 } from "@/components/rootsy-dialog"
-import { Dialog } from "@/components/ui/dialog"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  RootsFormSelectContent,
+  RootsFormSelectItem,
+  RootsFormSelectTrigger,
+  RootsFormSelectValue,
+} from "@/components/rootsy-form"
+import { Dialog } from "@/components/ui/dialog"
+import { Select } from "@/components/ui/select"
 
 type Props = {
   open: boolean
@@ -25,6 +25,16 @@ type Props = {
   priceListId: string
   priceLists: SaleCatalogPriceListOption[]
   onPriceListChange: (priceListId: string) => void
+}
+
+function isSelectPortalEvent(event: { target: EventTarget | null }) {
+  const target = event.target
+  if (!(target instanceof Element)) return false
+  return Boolean(
+    target.closest(
+      "[data-slot=select-content], [data-slot=roots-form-select-content], [data-radix-select-content]",
+    ),
+  )
 }
 
 export function SaleCatalogPriceListDialog({
@@ -36,25 +46,47 @@ export function SaleCatalogPriceListDialog({
 }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <RootsDialogContent>
+      <RootsDialogContent
+        onPointerDownOutside={(event) => {
+          if (isSelectPortalEvent(event)) event.preventDefault()
+        }}
+        onInteractOutside={(event) => {
+          if (isSelectPortalEvent(event)) event.preventDefault()
+        }}
+        onFocusOutside={(event) => {
+          if (isSelectPortalEvent(event)) event.preventDefault()
+        }}
+      >
         <RootsDialogHeader
           open={open}
           title="Lista de precios"
           description={SALE_CATALOG_PRICE_LIST_HELP}
         />
         <RootsDialogBody>
-          <Select value={priceListId} onValueChange={onPriceListChange}>
-            <SelectTrigger aria-label="Lista de precios" className="w-full">
-              <SelectValue placeholder="Principal" />
-            </SelectTrigger>
-            <SelectContent>
-              {priceLists.map((list) => (
-                <SelectItem key={list.id} value={list.id}>
-                  {list.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div
+            onPointerDown={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <Select
+              modal={false}
+              value={priceListId}
+              onValueChange={onPriceListChange}
+            >
+              <RootsFormSelectTrigger
+                aria-label="Lista de precios"
+                className="w-full"
+              >
+                <RootsFormSelectValue placeholder="Principal" />
+              </RootsFormSelectTrigger>
+              <RootsFormSelectContent className="z-[540] pointer-events-auto">
+                {priceLists.map((list) => (
+                  <RootsFormSelectItem key={list.id} value={list.id}>
+                    {list.label}
+                  </RootsFormSelectItem>
+                ))}
+              </RootsFormSelectContent>
+            </Select>
+          </div>
         </RootsDialogBody>
         <RootsDialogSingleActionFooter
           label="Listo"

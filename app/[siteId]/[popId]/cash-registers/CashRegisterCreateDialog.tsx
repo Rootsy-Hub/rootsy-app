@@ -1,12 +1,14 @@
 "use client"
 
-import type { CashTreasuryAccountOption } from "@/app/[siteId]/[popId]/cash-registers/actions"
-import { CashRegisterTreasuryAccountSelect } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogSelects"
-import { CashRegisterArcaPopFiscalPanel } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaPopFiscalPanel"
+import type {
+  ArcaSalePointOption,
+  CashTreasuryAccountOption,
+} from "@/app/[siteId]/[popId]/cash-registers/actions"
 import {
-  CashRegisterArcaConfigFields,
-  type CashRegisterArcaFormPayload,
-} from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaConfigFields"
+  CASH_REGISTER_SALE_POINT_NONE,
+  CashRegisterSalePointSelect,
+  CashRegisterTreasuryAccountSelect,
+} from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogSelects"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -15,11 +17,7 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
-import {
-  RootsFormGrid,
-  RootsFormTextField,
-  rootsFormColumnClass,
-} from "@/components/rootsy-form"
+import { RootsFormTextField } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
 import { RootsBanner } from "@/components/rootsy-banner"
 import { useEffect, useState, type FormEvent } from "react"
@@ -27,7 +25,8 @@ import { useEffect, useState, type FormEvent } from "react"
 export type CashRegisterCreateInput = {
   name: string
   cashTreasuryAccountId: string
-} & CashRegisterArcaFormPayload
+  arcaSalePointId: string | null
+}
 
 type Props = {
   open: boolean
@@ -35,9 +34,7 @@ type Props = {
   saving: boolean
   banner: string | null
   cashTreasuryAccounts: CashTreasuryAccountOption[]
-  popFiscalCuit: string | null
-  popFiscalRazonSocial: string | null
-  settingsHref?: string
+  salePoints: ArcaSalePointOption[]
   onSubmit: (input: CashRegisterCreateInput) => void | Promise<void>
 }
 
@@ -47,30 +44,29 @@ export function CashRegisterCreateDialog({
   saving,
   banner,
   cashTreasuryAccounts,
-  popFiscalCuit,
-  popFiscalRazonSocial,
-  settingsHref,
+  salePoints,
   onSubmit,
 }: Props) {
   const [name, setName] = useState("")
   const [cashTreasuryAccountId, setCashTreasuryAccountId] = useState("")
-  const [arcaPtoVta, setArcaPtoVta] = useState("")
-  const [arcaExpiresAt, setArcaExpiresAt] = useState("")
-  const [crtFile, setCrtFile] = useState<File | null>(null)
-  const [keyFile, setKeyFile] = useState<File | null>(null)
+  const [arcaSalePointId, setArcaSalePointId] = useState(
+    CASH_REGISTER_SALE_POINT_NONE,
+  )
 
   useEffect(() => {
     if (!open) {
       setName("")
       setCashTreasuryAccountId("")
-      setArcaPtoVta("")
-      setArcaExpiresAt("")
-      setCrtFile(null)
-      setKeyFile(null)
+      setArcaSalePointId(CASH_REGISTER_SALE_POINT_NONE)
       return
     }
     setCashTreasuryAccountId(cashTreasuryAccounts[0]?.id ?? "")
-  }, [open, cashTreasuryAccounts])
+    setArcaSalePointId(
+      salePoints.length === 1
+        ? salePoints[0]!.id
+        : CASH_REGISTER_SALE_POINT_NONE,
+    )
+  }, [open, cashTreasuryAccounts, salePoints])
 
   const canSubmit =
     name.trim().length > 0 &&
@@ -83,71 +79,60 @@ export function CashRegisterCreateDialog({
     void onSubmit({
       name: name.trim(),
       cashTreasuryAccountId,
-      arcaPtoVta,
-      arcaExpiresAt,
-      crtFile,
-      keyFile,
+      arcaSalePointId:
+        arcaSalePointId === CASH_REGISTER_SALE_POINT_NONE
+          ? null
+          : arcaSalePointId,
     })
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <RootsDialogContent size="twoCol">
+      <RootsDialogContent size="default">
         <RootsDialogHeader
           title="Nueva caja"
-          description="Nombre, cuenta de efectivo y facturación electrónica."
+          description="Nombre y cuenta de efectivo."
           descriptionHidden
         />
         <RootsDialogForm onSubmit={handleSubmit}>
           <RootsDialogBody>
             {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
-            <RootsFormGrid>
-              <div className={rootsFormColumnClass}>
-                <RootsFormTextField
-                  label="Nombre"
-                  id="cr-create-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  placeholder="Ej. Caja mostrador, Caja 1"
-                />
+            <RootsFormTextField
+              label="Nombre"
+              id="cr-create-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Ej. Caja mostrador, Caja 1"
+            />
 
-                <CashRegisterTreasuryAccountSelect
-                  id="cr-create-treasury"
-                  label="Cuenta de efectivo destino"
-                  value={cashTreasuryAccountId}
-                  onValueChange={setCashTreasuryAccountId}
-                  accounts={cashTreasuryAccounts}
-                />
-                <RootsBanner
-                  intent="neutral"
-                  layout="message"
-                  density="compact"
-                  message="Los cobros en efectivo del turno se imputan a esta cuenta de tesorería."
-                />
+            <div className="pt-4">
+              <CashRegisterTreasuryAccountSelect
+                id="cr-create-treasury"
+                label="Cuenta de efectivo destino"
+                value={cashTreasuryAccountId}
+                onValueChange={setCashTreasuryAccountId}
+                accounts={cashTreasuryAccounts}
+              />
+            </div>
 
-                <CashRegisterArcaPopFiscalPanel
-                  fiscalCuit={popFiscalCuit}
-                  fiscalRazonSocial={popFiscalRazonSocial}
-                  settingsHref={settingsHref}
-                />
-              </div>
+            <div className="pt-4">
+              <CashRegisterSalePointSelect
+                id="cr-create-sale-point"
+                value={arcaSalePointId}
+                onValueChange={setArcaSalePointId}
+                salePoints={salePoints}
+              />
+            </div>
 
-              <div className={rootsFormColumnClass}>
-                <CashRegisterArcaConfigFields
-                  idPrefix="cr-create"
-                  arcaPtoVta={arcaPtoVta}
-                  onArcaPtoVtaChange={setArcaPtoVta}
-                  arcaExpiresAt={arcaExpiresAt}
-                  onArcaExpiresAtChange={setArcaExpiresAt}
-                  crtFile={crtFile}
-                  onCrtFileChange={setCrtFile}
-                  keyFile={keyFile}
-                  onKeyFileChange={setKeyFile}
-                  filesHint="Subí ambos archivos (.crt y .key) juntos, o dejalos vacíos si los cargás después."
-                />
-              </div>
-            </RootsFormGrid>
+            <div className="pt-4">
+              <RootsBanner
+                intent="neutral"
+                layout="message"
+                density="compact"
+                message="Los cobros en efectivo del turno se imputan a esta cuenta de tesorería."
+              />
+            </div>
           </RootsDialogBody>
           <RootsDialogDualActionFooter
             onCancel={() => onOpenChange(false)}

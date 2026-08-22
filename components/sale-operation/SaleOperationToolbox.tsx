@@ -12,9 +12,11 @@ import {
   layoutsOperarToolboxSlotClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
+import { useRegisterOperarMobileToolbox } from "@/components/layouts-module/OperarMobileToolbox"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { Banknote, Percent, Receipt, User } from "lucide-react"
+import { useMemo } from "react"
 
 const TOOLBOX_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL
 
@@ -68,6 +70,66 @@ export function SaleOperationToolbox({
   const pagoButtonDisabled = pagoDisabled ?? toolbarDisabled
   const comprobanteListo = comprobanteConfigurado ?? comprobanteLabel !== "Sin comprobante"
   const PagoIcon = PagoIconProp ?? Banknote
+
+  const mobileItems = useMemo(
+    () => [
+      {
+        id: "cliente",
+        icon: User,
+        configured: clienteConfigurado,
+        disabled: clienteDisabled || toolbarDisabled,
+        ariaLabel: `Cliente: ${clienteLabel}`,
+        onClick: onClienteClick,
+      },
+      {
+        id: "comprobante",
+        icon: Receipt,
+        configured: comprobanteListo,
+        disabled: toolbarDisabled,
+        ariaLabel: `Comprobante: ${comprobanteLabel}`,
+        onClick: onComprobanteClick,
+      },
+      {
+        id: "pago",
+        icon: PagoIcon,
+        configured: pagoConfigurado,
+        disabled: pagoButtonDisabled,
+        ariaLabel: pagoSubLabel
+          ? `Pago: ${pagoLabel}, ${pagoSubLabel}`
+          : `Pago: ${pagoLabel}`,
+        onClick: onPagoClick,
+      },
+      {
+        id: "descuento",
+        icon: Percent,
+        configured: hayDescuento,
+        disabled: toolbarDisabled || descuentoDisabled,
+        ariaLabel: `Descuento: ${descuentoLabel}${descuentoDisabled ? " (bloqueado)" : ""}`,
+        onClick: onDescuentoClick,
+      },
+    ],
+    [
+      clienteConfigurado,
+      clienteDisabled,
+      toolbarDisabled,
+      clienteLabel,
+      onClienteClick,
+      comprobanteListo,
+      comprobanteLabel,
+      onComprobanteClick,
+      PagoIcon,
+      pagoConfigurado,
+      pagoButtonDisabled,
+      pagoSubLabel,
+      pagoLabel,
+      onPagoClick,
+      hayDescuento,
+      descuentoDisabled,
+      descuentoLabel,
+      onDescuentoClick,
+    ],
+  )
+  useRegisterOperarMobileToolbox(mobileItems)
 
   return (
     <div className={cn(layoutsOperarToolboxBandClass, className)}>

@@ -22,13 +22,15 @@ import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSi
 import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
 import { SaleCatalogMobileCategoryBar } from "@/components/sale-operation/SaleCatalogMobileCategoryBar"
 import { useOperarCatalogMobileChrome } from "@/components/layouts-module/OperarCatalogMobileChrome"
+import { useRegisterOperarMobileCategoryPicker } from "@/components/layouts-module/OperarMobileStage"
+import { showRootsyToast } from "@/components/rootsy-toast"
 import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
 import {
   SALE_CATALOG_DEFAULT_PRICE_LIST_ID,
   SALE_CATALOG_DEFAULT_PRICE_LISTS,
 } from "@/components/sale-operation/saleCatalogPriceLists"
-import { getPopPriceLists } from "@/app/[siteId]/[popId]/articles/priceListActions"
-import { defaultPriceList, type SalePriceList } from "@/lib/salePriceLists"
+import { usePopPriceLists } from "@/hooks/usePopPriceLists"
+import { defaultPriceList } from "@/lib/salePriceLists"
 import { setSalePriceListSession } from "@/lib/salePriceListSession"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
@@ -139,7 +141,8 @@ export function SaleCatalogBrowser({
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
   const [cantidadIngreso, setCantidadIngreso] = useState(1)
-  const [priceLists, setPriceLists] = useState<SalePriceList[]>([])
+  const priceListsQuery = usePopPriceLists(popId, { enabled: Boolean(popId) })
+  const priceLists = priceListsQuery.data ?? []
   const [priceListId, setPriceListId] = useState(SALE_CATALOG_DEFAULT_PRICE_LIST_ID)
   const busquedaInputRef = useRef<HTMLInputElement>(null)
   const vistaAntesBusquedaRef = useRef<SaleCatalogViewPersisted | null>(null)
@@ -173,14 +176,36 @@ export function SaleCatalogBrowser({
     scanFocus?.focusScanInput()
   }, [keepScanFocused, scanFocus])
 
+  const namedProductsRef = useRef<SaleCatalogProduct[]>(products)
+  namedProductsRef.current = products
+
   const handleAddProduct = useCallback(
     (productId: string, kind?: MenuCartItemKind, quantity = cantidadIngreso) => {
       if (addDisabled) return
       onAddProduct(productId, kind, quantity)
+      if (isMobileViewport && kind !== "promotion") {
+        const nombre =
+          products.find((product) => product.id === productId)?.nombre ??
+          namedProductsRef.current.find((product) => product.id === productId)
+            ?.nombre
+        if (nombre) {
+          showRootsyToast({
+            title: `Se agregó ${nombre} ${quantity}x`,
+            intent: "success",
+          })
+        }
+      }
       setCantidadIngreso(1)
       refocusScan()
     },
-    [addDisabled, cantidadIngreso, onAddProduct, refocusScan],
+    [
+      addDisabled,
+      cantidadIngreso,
+      onAddProduct,
+      refocusScan,
+      isMobileViewport,
+      products,
+    ],
   )
 
   const debouncedSearch = useDebouncedValue(
@@ -198,22 +223,15 @@ export function SaleCatalogBrowser({
   }, [categories, categorySections, debouncedSearch, priceListId, vistaCatalogo])
 
   useEffect(() => {
-    let cancelled = false
-    void getPopPriceLists(popId).then((res) => {
-      if (cancelled || !res.success) return
-      setPriceLists(res.lists)
-      const fallback = defaultPriceList(res.lists)
-      setPriceListId((current) => {
-        if (fallback && !res.lists.some((list) => list.id === current)) {
-          return fallback.id
-        }
-        return current
-      })
+    if (priceLists.length === 0) return
+    const fallback = defaultPriceList(priceLists)
+    setPriceListId((current) => {
+      if (fallback && !priceLists.some((list) => list.id === current)) {
+        return fallback.id
+      }
+      return current
     })
-    return () => {
-      cancelled = true
-    }
-  }, [popId])
+  }, [priceLists])
 
   useEffect(() => {
     setSalePriceListSession(popId, priceListId)
@@ -239,6 +257,11 @@ export function SaleCatalogBrowser({
     vistaCatalogo,
     categories,
     categorySections,
+  )
+  const usesMobileStage = useRegisterOperarMobileCategoryPicker(
+    categoryLabel || "Categoría",
+    categoryPickerOpen,
+    setCategoryPickerOpen,
   )
 
   const registerPriceList = catalogMobileChrome?.registerPriceList
@@ -309,6 +332,7 @@ export function SaleCatalogBrowser({
       : []
     return [...promos, ...pagedProducts]
   }, [busqueda, itemsFilter.search, itemsFilter.section, pagedProducts, promotionProducts])
+  namedProductsRef.current = productosFiltrados.length > 0 ? productosFiltrados : products
 
   const handleScanKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -463,22 +487,30 @@ export function SaleCatalogBrowser({
       <section
         className={cn(
           layoutsOperarCatalogCanvasClass,
-          "relative max-md:[grid-template-rows:var(--layouts-operar-catalog-toolbar-h)_var(--layouts-operar-catalog-toolbar-h)_minmax(0,1fr)]",
+          "relative",
+          !usesMobileStage &&
+            "max-md:[grid-template-rows:var(--layouts-operar-catalog-toolbar-h)_var(--layouts-operar-catalog-toolbar-h)_minmax(0,1fr)]",
         )}
       >
-        <SaleCatalogMobileCategoryBar
-          label={categoryLabel || "Categoría"}
-          open={categoryPickerOpen}
-          onToggle={() => setCategoryPickerOpen((current) => !current)}
-        />
+        {!usesMobileStage ? (
+          <SaleCatalogMobileCategoryBar
+            label={categoryLabel || "Categoría"}
+            open={categoryPickerOpen}
+            onToggle={() => setCategoryPickerOpen((current) => !current)}
+          />
+        ) : null}
         {categoryPickerOpen ? (
           <div
             className={cn(
-              "absolute inset-x-0 bottom-0 z-30 overflow-hidden md:hidden",
-              "top-[var(--layouts-operar-catalog-toolbar-h)]",
-              "max-md:col-start-1 max-md:row-start-1",
+              "absolute z-30 overflow-hidden md:hidden",
               "bg-[var(--rootsy-sombra-800)]",
-              "border-b border-[var(--layouts-operar-border-dark-hairline)]",
+              usesMobileStage
+                ? "inset-0"
+                : cn(
+                    "inset-x-0 bottom-0 top-[var(--layouts-operar-catalog-toolbar-h)]",
+                    "max-md:col-start-1 max-md:row-start-1",
+                    "border-b border-[var(--layouts-operar-border-dark-hairline)]",
+                  ),
             )}
           >
             <SaleCatalogSidebarNav

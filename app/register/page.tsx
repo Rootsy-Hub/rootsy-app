@@ -99,8 +99,7 @@ function RegisterPage() {
     return !Object.values(errors).some(Boolean)
   }
 
-  const handleSubmit = async (ev: React.FormEvent) => {
-    ev.preventDefault()
+  const submitAccount = async () => {
     setError("")
     setIsSuccess(false)
     if (!validateForm()) return
@@ -206,7 +205,15 @@ function RegisterPage() {
       ) : null}
 
       <RootsFormToneProvider tone="dark">
-        <form className="mt-7 space-y-5" noValidate onSubmit={handleSubmit}>
+        <form
+          className="mt-7 space-y-5"
+          noValidate
+          suppressHydrationWarning
+          onSubmit={(event) => {
+            event.preventDefault()
+            void submitAccount()
+          }}
+        >
           <AuthEmailField
             id="correo"
             value={email}
@@ -276,12 +283,15 @@ function RegisterPage() {
           </div>
 
           <RootsPrimaryButton
-            type="submit"
+            type="button"
             size="large"
             loading={isLoading}
             loadingLabel={REGISTER_COPY.submitLoading}
             disabled={googleLoading}
             className="w-full"
+            onClick={() => {
+              void submitAccount()
+            }}
           >
             {REGISTER_COPY.submit}
           </RootsPrimaryButton>

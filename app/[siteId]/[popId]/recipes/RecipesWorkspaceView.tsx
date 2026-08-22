@@ -217,6 +217,13 @@ export function RecipesWorkspaceView() {
     null,
   )
   const [newCategorySaving, setNewCategorySaving] = useState(false)
+  const [pendingCategoryCreate, setPendingCategoryCreate] = useState<{
+    name: string
+    stationName: string
+  } | null>(null)
+  const [pendingCategoryDeleteId, setPendingCategoryDeleteId] = useState<
+    string | null
+  >(null)
   const [categoryBusy, setCategoryBusy] = useState(false)
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
   const [editingCategoryName, setEditingCategoryName] = useState("")
@@ -237,6 +244,12 @@ export function RecipesWorkspaceView() {
   const [stationsBanner, setStationsBanner] = useState<string | null>(null)
   const [newStationName, setNewStationName] = useState("")
   const [newStationSaving, setNewStationSaving] = useState(false)
+  const [pendingStationCreate, setPendingStationCreate] = useState<{
+    name: string
+  } | null>(null)
+  const [pendingStationDeleteId, setPendingStationDeleteId] = useState<
+    string | null
+  >(null)
   const [stationBusy, setStationBusy] = useState(false)
   const [editingStationId, setEditingStationId] = useState<string | null>(null)
   const [editingStationName, setEditingStationName] = useState("")
@@ -599,23 +612,29 @@ export function RecipesWorkspaceView() {
   }
 
   const handleCreateCategory = async () => {
-    if (!newCategoryName.trim() || newCategorySaving) return
+    const name = newCategoryName.trim()
+    if (!name || newCategorySaving) return
+    const stationId = newCategoryStationId
+    const stationName =
+      stations.find((station) => station.id === stationId)?.name ||
+      "Sin comanda"
+    setCategoriesBanner(null)
     setNewCategorySaving(true)
-    const res = await createPopRecipeCategory(
-      popId,
-      newCategoryName,
-      newCategoryStationId,
-    )
-    setNewCategorySaving(false)
+    setPendingCategoryCreate({ name, stationName })
+    setNewCategoryName("")
+    setNewCategoryStationId(null)
+    const res = await createPopRecipeCategory(popId, name, stationId)
     if (!res.success) {
+      setPendingCategoryCreate(null)
+      setNewCategorySaving(false)
+      setNewCategoryName(name)
       setCategoriesBanner(res.error)
       return
     }
-    setCategoriesBanner(null)
-    setNewCategoryName("")
-    setNewCategoryStationId(null)
-    setCategoriesBoardKey((k) => k + 1)
     await refreshCategories()
+    setCategoriesBoardKey((k) => k + 1)
+    setNewCategorySaving(false)
+    setPendingCategoryCreate(null)
   }
 
   const handleSaveCategoryEdit = async () => {
@@ -671,32 +690,47 @@ export function RecipesWorkspaceView() {
   const handleDeleteCategory = async () => {
     if (!popId || !deleteCategoryTarget) return
     if (deleteCategoryTarget.recipeCount !== 0) return
+    const target = deleteCategoryTarget
     setDeleteCategoryBusy(true)
     setDeleteCategoryBanner(null)
-    const res = await deletePopRecipeCategory(popId, deleteCategoryTarget.id)
-    setDeleteCategoryBusy(false)
-    if (!res.success) {
-      setDeleteCategoryBanner(res.error)
-      return
+    setPendingCategoryDeleteId(target.id)
+    if (editingCategoryId === target.id) {
+      setEditingCategoryId(null)
+      setEditingCategoryName("")
+      setEditingCategoryStationId(null)
     }
     closeDeleteCategory()
+    setDeleteCategoryBusy(false)
     setCategoriesBanner(null)
-    setCategoriesBoardKey((k) => k + 1)
+    const res = await deletePopRecipeCategory(popId, target.id)
+    if (!res.success) {
+      setPendingCategoryDeleteId(null)
+      setCategoriesBanner(res.error)
+      return
+    }
     await refreshCategories()
+    setCategoriesBoardKey((k) => k + 1)
+    setPendingCategoryDeleteId(null)
   }
 
   const handleCreateStation = async () => {
-    if (!newStationName.trim() || newStationSaving) return
+    const name = newStationName.trim()
+    if (!name || newStationSaving) return
+    setStationsBanner(null)
     setNewStationSaving(true)
-    const res = await createPopComandaStation(popId, newStationName)
-    setNewStationSaving(false)
+    setPendingStationCreate({ name })
+    setNewStationName("")
+    const res = await createPopComandaStation(popId, name)
     if (!res.success) {
+      setPendingStationCreate(null)
+      setNewStationSaving(false)
+      setNewStationName(name)
       setStationsBanner(res.error)
       return
     }
-    setStationsBanner(null)
-    setNewStationName("")
     await refreshStations()
+    setNewStationSaving(false)
+    setPendingStationCreate(null)
   }
 
   const handleSaveStationEdit = async () => {
@@ -744,17 +778,25 @@ export function RecipesWorkspaceView() {
   const handleDeleteStation = async () => {
     if (!popId || !deleteStationTarget) return
     if (deleteStationTarget.categoryCount !== 0) return
+    const target = deleteStationTarget
     setDeleteStationBusy(true)
     setDeleteStationBanner(null)
-    const res = await deletePopComandaStation(popId, deleteStationTarget.id)
-    setDeleteStationBusy(false)
-    if (!res.success) {
-      setDeleteStationBanner(res.error)
-      return
+    setPendingStationDeleteId(target.id)
+    if (editingStationId === target.id) {
+      setEditingStationId(null)
+      setEditingStationName("")
     }
     closeDeleteStation()
+    setDeleteStationBusy(false)
     setStationsBanner(null)
+    const res = await deletePopComandaStation(popId, target.id)
+    if (!res.success) {
+      setPendingStationDeleteId(null)
+      setStationsBanner(res.error)
+      return
+    }
     await Promise.all([refreshStations(), refreshCategories()])
+    setPendingStationDeleteId(null)
   }
 
   if (!popId || !siteId) {
@@ -1155,6 +1197,9 @@ export function RecipesWorkspaceView() {
             setEditingCategoryStationId(null)
             setNewCategoryName("")
             setNewCategoryStationId(null)
+            setPendingCategoryCreate(null)
+            setPendingCategoryDeleteId(null)
+            setNewCategorySaving(false)
             closeDeleteCategory()
           }
         }}
@@ -1168,6 +1213,16 @@ export function RecipesWorkspaceView() {
         newCategoryName={newCategoryName}
         newCategoryStationId={newCategoryStationId}
         newCategorySaving={newCategorySaving}
+        pendingCreateName={
+          pendingCategoryCreate &&
+          !categories.some(
+            (category) => category.name === pendingCategoryCreate.name,
+          )
+            ? pendingCategoryCreate.name
+            : null
+        }
+        pendingCreateStationName={pendingCategoryCreate?.stationName ?? null}
+        pendingDeleteId={pendingCategoryDeleteId}
         onNewCategoryNameChange={setNewCategoryName}
         onNewCategoryStationChange={setNewCategoryStationId}
         onCreateCategory={() => void handleCreateCategory()}
@@ -1223,6 +1278,9 @@ export function RecipesWorkspaceView() {
             setEditingStationId(null)
             setEditingStationName("")
             setNewStationName("")
+            setPendingStationCreate(null)
+            setPendingStationDeleteId(null)
+            setNewStationSaving(false)
             closeDeleteStation()
           }
         }}
@@ -1236,6 +1294,13 @@ export function RecipesWorkspaceView() {
         onNewStationNameChange={setNewStationName}
         onCreateStation={() => void handleCreateStation()}
         newStationSaving={newStationSaving}
+        pendingCreateName={
+          pendingStationCreate &&
+          !stations.some((station) => station.name === pendingStationCreate.name)
+            ? pendingStationCreate.name
+            : null
+        }
+        pendingDeleteId={pendingStationDeleteId}
         stationSaveBusy={stationBusy}
         editingStationId={editingStationId}
         editingStationName={editingStationName}

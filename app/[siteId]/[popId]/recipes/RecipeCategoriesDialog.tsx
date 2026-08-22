@@ -40,6 +40,9 @@ type Props = {
   newCategoryName: string
   newCategoryStationId: string | null
   newCategorySaving: boolean
+  pendingCreateName: string | null
+  pendingCreateStationName: string | null
+  pendingDeleteId: string | null
   onNewCategoryNameChange: (value: string) => void
   onNewCategoryStationChange: (stationId: string | null) => void
   onCreateCategory: () => void
@@ -70,6 +73,9 @@ export function RecipeCategoriesDialog({
   newCategoryName,
   newCategoryStationId,
   newCategorySaving,
+  pendingCreateName,
+  pendingCreateStationName,
+  pendingDeleteId,
   onNewCategoryNameChange,
   onNewCategoryStationChange,
   onCreateCategory,
@@ -141,8 +147,6 @@ export function RecipeCategoriesDialog({
                   "h-11 w-full shrink-0 sm:w-auto",
                 )}
                 disabled={newCategorySaving || !newCategoryName.trim()}
-                loading={newCategorySaving}
-                loadingLabel="Agregando…"
                 onClick={onCreateCategory}
               >
                 Agregar
@@ -155,6 +159,9 @@ export function RecipeCategoriesDialog({
           <RecipeCategoriesMenuBoard
             key={boardKey}
             categories={categories}
+            pendingCreateName={pendingCreateName}
+            pendingCreateStationName={pendingCreateStationName}
+            pendingDeleteId={pendingDeleteId}
             canUpdate={canUpdate}
             canDelete={canDelete}
             editingCategoryId={editingCategoryId}

@@ -1,9 +1,6 @@
 "use client"
 
-import {
-  searchCheckoutClients,
-  searchCheckoutSuppliers,
-} from "@/app/[siteId]/[popId]/checkout/partySearchActions"
+import { searchCheckParties } from "@/lib/rootsyApi/checksClient"
 import {
   RootsFormSearchField,
   rootsFormColumnClass,
@@ -14,7 +11,7 @@ import {
   rootsFormSelectContentClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 import type { CheckDirection } from "@/lib/checkDocuments"
-import type { OperationPartyCatalogItem } from "@/lib/operationPartyPicker"
+import type { CheckPartySearchItem } from "@/app/[siteId]/[popId]/checks/actions"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 
@@ -34,7 +31,7 @@ export function CheckPartySearchField({
   onChange,
 }: Props) {
   const [query, setQuery] = useState(partyName)
-  const [results, setResults] = useState<OperationPartyCatalogItem[]>([])
+  const [results, setResults] = useState<CheckPartySearchItem[]>([])
   const [open, setOpen] = useState(false)
   const isReceived = direction === "received"
   const label = isReceived ? "Cliente / librador" : "Proveedor / beneficiario"
@@ -50,13 +47,11 @@ export function CheckPartySearchField({
       return
     }
     const timer = window.setTimeout(async () => {
-      const res = isReceived
-        ? await searchCheckoutClients(popId, trimmed)
-        : await searchCheckoutSuppliers(popId, trimmed)
+      const res = await searchCheckParties(popId, direction, trimmed)
       if (res.success) setResults(res.parties)
     }, 300)
     return () => window.clearTimeout(timer)
-  }, [isReceived, partyId, popId, query])
+  }, [direction, partyId, popId, query])
 
   return (
     <div className={cn(rootsFormColumnClass, "relative")}>

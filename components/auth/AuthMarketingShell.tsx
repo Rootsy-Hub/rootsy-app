@@ -12,6 +12,7 @@ import {
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
+import "@/components/auth/authPlanetPanel.css"
 
 type Props = {
   children: ReactNode
@@ -59,15 +60,24 @@ export function AuthMarketingShell({
 
         <main
           className={cn(
-            "relative flex h-dvh min-h-0 min-w-0 flex-1 justify-center overflow-x-hidden overflow-y-auto px-5 py-10 sm:px-8 sm:py-12",
-            contentAlign === "start" ? "items-start" : "items-center",
+            "auth-shell-main relative flex h-dvh min-h-0 min-w-0 flex-1 justify-center overflow-x-hidden overflow-y-auto",
+            "px-5 pb-8 sm:px-8 sm:pb-12",
+            contentAlign === "start"
+              ? "items-start"
+              : "items-start lg:items-stretch",
           )}
         >
-          <div className={cn("relative w-full min-w-0 max-w-[26rem] pb-8", cardWidthClassName)}>
+          <div
+            className={cn(
+              "relative w-full min-w-0 max-w-[26rem] pb-8",
+              contentAlign === "center" && "lg:my-auto",
+              cardWidthClassName,
+            )}
+          >
             <Link
               href="/"
               aria-label="Rootsy — inicio"
-              className="mb-8 flex justify-center lg:hidden"
+              className="auth-shell-logo mb-4 flex justify-center lg:hidden"
             >
               <Image
                 src="/rootsy-logo.svg"

@@ -13,3 +13,17 @@ export async function GET(request: Request, ctx: RouteCtx) {
     return rootsyApiErrorResponse(error)
   }
 }
+
+export async function POST(request: Request, ctx: RouteCtx) {
+  try {
+    const { popId } = await ctx.params
+    const data = await rootsyApiFetch(`/v1/pops/${popId}/suppliers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: await request.text(),
+    })
+    return NextResponse.json(data, { status: 201 })
+  } catch (error) {
+    return rootsyApiErrorResponse(error)
+  }
+}

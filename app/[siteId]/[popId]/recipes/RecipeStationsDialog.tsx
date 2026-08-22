@@ -16,8 +16,11 @@ import {
 import { RootsFormTextField } from "@/components/rootsy-form"
 import {
   RootsSortableActionList,
+  rootsSortableListRowClass,
+  rootsSortableListRowLabelClass,
   type RootsSortableActionListItem,
 } from "@/components/rootsy-list"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
 import { Dialog } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
@@ -36,6 +39,8 @@ type Props = {
   onNewStationNameChange: (value: string) => void
   onCreateStation: () => void
   newStationSaving: boolean
+  pendingCreateName: string | null
+  pendingDeleteId: string | null
   stationSaveBusy: boolean
   editingStationId: string | null
   editingStationName: string
@@ -69,6 +74,8 @@ export function RecipeStationsDialog({
   onNewStationNameChange,
   onCreateStation,
   newStationSaving,
+  pendingCreateName,
+  pendingDeleteId,
   stationSaveBusy,
   editingStationId,
   editingStationName,
@@ -144,41 +151,63 @@ export function RecipeStationsDialog({
                   "h-11 shrink-0",
                 )}
                 disabled={newStationSaving || !newStationName.trim()}
-                loading={newStationSaving}
-                loadingLabel="Agregando…"
                 onClick={onCreateStation}
               >
                 Agregar
               </RootsProgressButton>
             </div>
           ) : null}
-          {loading ? (
+          {loading && stations.length === 0 ? (
             <RootsDialogLoadingState message="Cargando estaciones" />
           ) : (
-            <RootsSortableActionList
-              listId="recipe-stations"
-              rowSize="comfortable"
-              items={toListItems(stations)}
-              onReorder={() => {}}
-              emptyMessage="Todavía no hay estaciones. Agregá Cocina, Barra u otra."
-              canReorder={false}
-              canToggleVisibility={false}
-              canEdit={canUpdate}
-              canDelete={canDelete}
-              editingId={editingStationId}
-              editingValue={editingStationName}
-              editSaveBusy={stationSaveBusy}
-              editHasChanges={editHasChanges}
-              onStartEdit={(item) => {
-                const station = stations.find((row) => row.id === item.id)
-                if (station) onStartEdit(station)
-              }}
-              onCancelEdit={onCancelEdit}
-              onEditingValueChange={onEditingStationNameChange}
-              onSaveEdit={onSaveEdit}
-              onDelete={(item) => onDeleteStation(item.id, item.label)}
-              onToggleVisibility={() => {}}
-            />
+            <div className="flex flex-col gap-2">
+              {stations.length === 0 && pendingCreateName ? null : (
+                <RootsSortableActionList
+                  listId="recipe-stations"
+                  rowSize="comfortable"
+                  items={toListItems(stations)}
+                  onReorder={() => {}}
+                  emptyMessage="Todavía no hay estaciones. Agregá Cocina, Barra u otra."
+                  canReorder={false}
+                  canToggleVisibility={false}
+                  canEdit={canUpdate}
+                  canDelete={canDelete}
+                  editingId={editingStationId}
+                  editingValue={editingStationName}
+                  editSaveBusy={stationSaveBusy}
+                  editHasChanges={editHasChanges}
+                  busyId={pendingDeleteId}
+                  onStartEdit={(item) => {
+                    const station = stations.find((row) => row.id === item.id)
+                    if (station) onStartEdit(station)
+                  }}
+                  onCancelEdit={onCancelEdit}
+                  onEditingValueChange={onEditingStationNameChange}
+                  onSaveEdit={onSaveEdit}
+                  onDelete={(item) => onDeleteStation(item.id, item.label)}
+                  onToggleVisibility={() => {}}
+                />
+              )}
+              {pendingCreateName ? (
+                <div
+                  className={cn(
+                    rootsSortableListRowClass,
+                    "pointer-events-none h-14 opacity-50",
+                  )}
+                  aria-busy="true"
+                  aria-disabled="true"
+                >
+                  <p className={cn(rootsSortableListRowLabelClass, "min-w-0 flex-1")}>
+                    {pendingCreateName}
+                  </p>
+                  <RootsSpinner
+                    size="sm"
+                    className="shrink-0"
+                    label={`Creando ${pendingCreateName}`}
+                  />
+                </div>
+              ) : null}
+            </div>
           )}
         </RootsDialogBody>
       </RootsDialogContent>

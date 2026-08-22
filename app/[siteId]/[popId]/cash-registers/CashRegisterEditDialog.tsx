@@ -1,16 +1,15 @@
 "use client"
 
 import type {
+  ArcaSalePointOption,
   CashRegisterRow,
   CashTreasuryAccountOption,
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
-import { CashRegisterTreasuryAccountSelect } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogSelects"
-import type { CashRegisterArcaFormPayload } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaConfigFields"
-import { CashRegisterArcaPopFiscalPanel } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaPopFiscalPanel"
 import {
-  CashRegisterArcaConfigFields,
-  formatArcaExpiryLabel,
-} from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaConfigFields"
+  CASH_REGISTER_SALE_POINT_NONE,
+  CashRegisterSalePointSelect,
+  CashRegisterTreasuryAccountSelect,
+} from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogSelects"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -21,9 +20,7 @@ import {
 } from "@/components/rootsy-dialog"
 import {
   RootsFormCheckboxField,
-  RootsFormGrid,
   RootsFormTextField,
-  rootsFormColumnClass,
 } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
 import { useEffect, useState, type FormEvent } from "react"
@@ -32,7 +29,8 @@ export type CashRegisterEditSubmitPayload = {
   name: string
   isActive: boolean
   cashTreasuryAccountId: string
-} & CashRegisterArcaFormPayload
+  arcaSalePointId: string | null
+}
 
 type Props = {
   open: boolean
@@ -41,20 +39,8 @@ type Props = {
   saving: boolean
   banner: string | null
   cashTreasuryAccounts: CashTreasuryAccountOption[]
-  popFiscalCuit: string | null
-  popFiscalRazonSocial: string | null
-  settingsHref?: string
-  formatDateTime: (iso: string) => string
+  salePoints: ArcaSalePointOption[]
   onSubmit: (payload: CashRegisterEditSubmitPayload) => void | Promise<void>
-}
-
-function storedCertificateLabel(row: CashRegisterRow): string {
-  const secret = row.arcaCertificateSecretName?.trim()
-  if (secret) return secret
-  if (row.arcaCertificateLastFour?.trim()) {
-    return `certificado ••••${row.arcaCertificateLastFour.trim()}`
-  }
-  return "certificado.crt"
 }
 
 export function CashRegisterEditDialog({
@@ -64,19 +50,15 @@ export function CashRegisterEditDialog({
   saving,
   banner,
   cashTreasuryAccounts,
-  popFiscalCuit,
-  popFiscalRazonSocial,
-  settingsHref,
-  formatDateTime,
+  salePoints,
   onSubmit,
 }: Props) {
   const [name, setName] = useState("")
   const [isActive, setIsActive] = useState(true)
   const [cashTreasuryAccountId, setCashTreasuryAccountId] = useState("")
-  const [arcaPtoVta, setArcaPtoVta] = useState("")
-  const [arcaExpiresAt, setArcaExpiresAt] = useState("")
-  const [crtFile, setCrtFile] = useState<File | null>(null)
-  const [keyFile, setKeyFile] = useState<File | null>(null)
+  const [arcaSalePointId, setArcaSalePointId] = useState(
+    CASH_REGISTER_SALE_POINT_NONE,
+  )
 
   useEffect(() => {
     if (!open || !row) return
@@ -85,28 +67,13 @@ export function CashRegisterEditDialog({
     setCashTreasuryAccountId(
       row.cashTreasuryAccountId ?? cashTreasuryAccounts[0]?.id ?? "",
     )
-    setArcaPtoVta(row.arcaPtoVta != null ? String(row.arcaPtoVta) : "")
-    setArcaExpiresAt(row.arcaCertificateExpiresAt ?? "")
-    setCrtFile(null)
-    setKeyFile(null)
+    setArcaSalePointId(row.arcaSalePointId ?? CASH_REGISTER_SALE_POINT_NONE)
   }, [open, row, cashTreasuryAccounts])
 
   const canSubmit =
     name.trim().length > 0 &&
     cashTreasuryAccountId.length > 0 &&
     cashTreasuryAccounts.length > 0
-
-  const storedCrtName = row?.arcaCrtUploadedAt ? storedCertificateLabel(row) : null
-  const storedKeyName = row?.arcaKeyUploadedAt ? "clave.key" : null
-  const storedCrtUploadedAt = row?.arcaCrtUploadedAt
-    ? formatDateTime(row.arcaCrtUploadedAt)
-    : null
-  const storedKeyUploadedAt = row?.arcaKeyUploadedAt
-    ? formatDateTime(row.arcaKeyUploadedAt)
-    : null
-  const certExpiryLabel = formatArcaExpiryLabel(
-    arcaExpiresAt || row?.arcaCertificateExpiresAt,
-  )
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -115,79 +82,63 @@ export function CashRegisterEditDialog({
       name: name.trim(),
       isActive,
       cashTreasuryAccountId,
-      arcaPtoVta,
-      arcaExpiresAt,
-      crtFile,
-      keyFile,
+      arcaSalePointId:
+        arcaSalePointId === CASH_REGISTER_SALE_POINT_NONE
+          ? null
+          : arcaSalePointId,
     })
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <RootsDialogContent size="twoCol">
+      <RootsDialogContent size="default">
         <RootsDialogHeader
           title="Editar caja"
           description={
             row?.name
               ? `Configuración de ${row.name}`
-              : "Nombre, cuenta de efectivo y facturación electrónica."
+              : "Nombre y cuenta de efectivo."
           }
           descriptionHidden
         />
         <RootsDialogForm onSubmit={handleSubmit}>
           <RootsDialogBody>
             {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
-            <RootsFormGrid>
-              <div className={rootsFormColumnClass}>
-                <RootsFormTextField
-                  label="Nombre"
-                  id="cr-edit-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
+            <RootsFormTextField
+              label="Nombre"
+              id="cr-edit-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
 
-                <RootsFormCheckboxField
-                  id="cr-edit-active"
-                  label="Caja activa"
-                  checked={isActive}
-                  onCheckedChange={setIsActive}
-                />
+            <div className="pt-4">
+              <RootsFormCheckboxField
+                id="cr-edit-active"
+                label="Caja activa"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
+            </div>
 
-                <CashRegisterTreasuryAccountSelect
-                  id="cr-edit-treasury"
-                  label="Cuenta de efectivo destino"
-                  value={cashTreasuryAccountId}
-                  onValueChange={setCashTreasuryAccountId}
-                  accounts={cashTreasuryAccounts}
-                />
+            <div className="pt-4">
+              <CashRegisterTreasuryAccountSelect
+                id="cr-edit-treasury"
+                label="Cuenta de efectivo destino"
+                value={cashTreasuryAccountId}
+                onValueChange={setCashTreasuryAccountId}
+                accounts={cashTreasuryAccounts}
+              />
+            </div>
 
-                <CashRegisterArcaPopFiscalPanel
-                  fiscalCuit={popFiscalCuit}
-                  fiscalRazonSocial={popFiscalRazonSocial}
-                  settingsHref={settingsHref}
-                />
-              </div>
-
-              <div className={rootsFormColumnClass}>
-                <CashRegisterArcaConfigFields
-                  idPrefix="cr-edit"
-                  arcaPtoVta={arcaPtoVta}
-                  onArcaPtoVtaChange={setArcaPtoVta}
-                  arcaExpiresAt={arcaExpiresAt}
-                  onArcaExpiresAtChange={setArcaExpiresAt}
-                  crtFile={crtFile}
-                  onCrtFileChange={setCrtFile}
-                  keyFile={keyFile}
-                  onKeyFileChange={setKeyFile}
-                  storedCrtName={storedCrtName}
-                  storedKeyName={storedKeyName}
-                  storedCrtUploadedAt={storedCrtUploadedAt}
-                  storedKeyUploadedAt={storedKeyUploadedAt}
-                  certExpiryLabel={certExpiryLabel}
-                />
-              </div>
-            </RootsFormGrid>
+            <div className="pt-4">
+              <CashRegisterSalePointSelect
+                id="cr-edit-sale-point"
+                value={arcaSalePointId}
+                onValueChange={setArcaSalePointId}
+                salePoints={salePoints}
+              />
+            </div>
           </RootsDialogBody>
           <RootsDialogDualActionFooter
             onCancel={() => onOpenChange(false)}

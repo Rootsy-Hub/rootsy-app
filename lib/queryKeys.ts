@@ -234,7 +234,9 @@ export type PopInvoicesQueryParams = {
   page: number
   pageSize: number
   status: string
-  regimen: string
+  cbteTipo: number | "recibo_x" | ""
+  dateFrom: string | null
+  dateTo: string | null
   sort: string | null
   ord: "asc" | "desc"
 }
@@ -250,7 +252,9 @@ export function popInvoicesQueryKey(
     params.page,
     params.pageSize,
     params.status,
-    params.regimen,
+    params.cbteTipo,
+    params.dateFrom,
+    params.dateTo,
     params.sort,
     params.ord,
   ] as const
@@ -258,6 +262,14 @@ export function popInvoicesQueryKey(
 
 export function popInvoicesQueryRoot(popId: string) {
   return ["pop-invoices", popId] as const
+}
+
+export function popInvoicesFormContextQueryKey(popId: string) {
+  return ["pop-invoices", popId, "form-context"] as const
+}
+
+export function popArcaFiscalConfigQueryKey(popId: string) {
+  return ["pop-invoices", popId, "fiscal-config"] as const
 }
 
 export type PopChecksQueryParams = {
@@ -288,8 +300,33 @@ export function popChecksQueryRoot(popId: string) {
   return ["pop-checks", popId] as const
 }
 
-export function popSuppliersQueryKey(popId: string) {
-  return ["pop-suppliers", popId] as const
+export type PopSuppliersQueryParams = {
+  page: number
+  pageSize: number
+  search: string
+  soloActivos: boolean
+  withEmail: boolean
+  withTaxId: boolean
+  sort: string | null
+  ord: "asc" | "desc"
+}
+
+export function popSuppliersQueryKey(
+  popId: string,
+  params: PopSuppliersQueryParams,
+) {
+  return [
+    "pop-suppliers",
+    popId,
+    params.page,
+    params.pageSize,
+    params.search.trim(),
+    params.soloActivos,
+    params.withEmail,
+    params.withTaxId,
+    params.sort,
+    params.ord,
+  ] as const
 }
 
 export function popSuppliersQueryRoot(popId: string) {
@@ -409,6 +446,14 @@ export function popServicesQueryRoot(popId: string) {
   return ["pop-services", popId] as const
 }
 
+export function popServiceQueryKey(popId: string, serviceId: string) {
+  return ["pop-service", popId, serviceId] as const
+}
+
+export function popServiceCategoriesQueryKey(popId: string) {
+  return ["pop-service-categories", popId] as const
+}
+
 export type PopCurrentAccountPartiesQueryParams = {
   q: string
   page: number
@@ -476,6 +521,10 @@ export function popQuotesQueryRoot(popId: string) {
   return ["pop-quotes", popId] as const
 }
 
+export function popQuoteDetailQueryKey(popId: string, quoteId: string) {
+  return ["pop-quotes", popId, "detail", quoteId] as const
+}
+
 export type PopPurchaseOrdersQueryParams = {
   page: number
   pageSize: number
@@ -501,6 +550,14 @@ export function popPurchaseOrdersQueryKey(
 
 export function popPurchaseOrdersQueryRoot(popId: string) {
   return ["pop-purchase-orders", popId] as const
+}
+
+export function popPurchaseOrderDetailQueryKey(popId: string, orderId: string) {
+  return ["pop-purchase-orders", popId, "detail", orderId] as const
+}
+
+export function popSettingsQueryKey(popId: string) {
+  return ["pop-settings", popId] as const
 }
 
 /** @deprecated Usar popClientsQueryKey */

@@ -6,7 +6,7 @@ export const menuPlanetSlideClass = "min-w-0 flex-[0_0_100%] px-3 md:px-8"
 /** Surcos de planetas — wrap centrado en mobile · 6 columnas en desktop. */
 export const menuPlanetGridClass = cn(
   "mx-auto flex w-full max-w-4xl flex-wrap justify-center select-none",
-  "gap-x-2 gap-y-5 px-0 pb-2 pt-1",
+  "gap-x-2 gap-y-5 px-0 pb-2 pt-2.5",
   "sm:gap-x-3 sm:gap-y-7 sm:px-4",
   "md:grid md:min-h-[280px] md:grid-cols-6 md:gap-x-0 md:gap-y-8 md:px-6 md:pb-6 md:pt-2",
 )

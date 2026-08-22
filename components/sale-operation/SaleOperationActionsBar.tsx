@@ -48,7 +48,7 @@ export type SaleOperationActionsBarProps = {
   comandasDisabled?: boolean
   flush?: boolean
   /** Ticket operar — umbral circular Descartar · Cobrar / Pagar. */
-  variant?: "default" | "operar"
+  variant?: "default" | "operar" | "mobile"
   /** Mesa o pedido — caption arriba, número abajo, alineado con los círculos. */
   contextLabel?: {
     caption: string
@@ -79,6 +79,67 @@ export function SaleOperationActionsBar({
   const isPay = confirmTone === "pay"
   const resolvedConfirmLabel = confirmLabel ?? (isPay ? "Pagar" : "Vender")
   const ConfirmIcon = isPay ? Banknote : HandCoins
+  const mobileConfirmLabel =
+    isPay
+      ? (confirmLabel ?? "Pagar")
+      : confirmLabel && confirmLabel !== "Vender"
+        ? confirmLabel
+        : "Cobrar"
+
+  if (variant === "mobile") {
+    return (
+      <div
+        className={cn(
+          saleOpActionsBarShellClass,
+          "border-t border-[var(--layouts-operar-border-light)]",
+          className,
+        )}
+      >
+        <button
+          type="button"
+          disabled={discardDisabled}
+          onClick={onDiscard}
+          className={saleOpActionDiscardClass}
+        >
+          <span
+            className={cn(
+              saleOpActionIconWrapDiscardClass,
+              discardDisabled && "bg-slate-200/60 text-slate-500",
+            )}
+            aria-hidden
+          >
+            <X className="size-4 stroke-[2.5]" />
+          </span>
+          Descartar
+        </button>
+        <button
+          type="button"
+          disabled={confirmInactive}
+          onClick={onConfirm}
+          title={confirmTitle}
+          className={isPay ? saleOpActionPayClass : saleOpActionConfirmClass}
+        >
+          <span
+            className={cn(
+              confirmInactive
+                ? saleOpActionIconWrapConfirmDisabledClass
+                : saleOpActionIconWrapConfirmClass,
+            )}
+            aria-hidden
+          >
+            {confirmLoading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : isPay ? (
+              <Banknote className="size-4" />
+            ) : (
+              <CircleDollarSign className="size-4" />
+            )}
+          </span>
+          {confirmLoading ? "Procesando…" : mobileConfirmLabel}
+        </button>
+      </div>
+    )
+  }
 
   if (variant === "operar") {
     return (

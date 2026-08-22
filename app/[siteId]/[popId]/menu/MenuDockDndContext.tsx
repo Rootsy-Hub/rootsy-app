@@ -31,7 +31,10 @@ import {
 import {
   menuNatureShellClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import { MenuApiReadyBadge } from "@/app/[siteId]/[popId]/menu/MenuApiReadyBadge"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { isMenuApiReady } from "@/lib/menuApiReady"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
@@ -329,6 +332,7 @@ function MenuDockDragPreview({
         sectionKey={sectionKey}
         variant="overlay"
         size={fromMenu ? "md" : "lg"}
+        apiReady={isMenuApiReady(getDragItemId(item))}
       />
     </div>
   )
@@ -340,12 +344,18 @@ export function DockIconVisual({
   variant = "dock",
   className,
   size = "md",
+  apiReady = false,
+  busy = false,
+  busyLabel,
 }: {
   icon: LucideIcon
   sectionKey?: MenuSectionKey
   variant?: "default" | "dock" | "muted" | "overlay"
   className?: string
   size?: "md" | "sm" | "lg"
+  apiReady?: boolean
+  busy?: boolean
+  busyLabel?: string
 }) {
   const dim =
     size === "sm" ? "size-10" : size === "lg" ? "size-[72px]" : "size-12"
@@ -353,7 +363,7 @@ export function DockIconVisual({
     size === "sm" ? "size-5" : size === "lg" ? "size-8" : "size-6"
   const radius = size === "lg" ? "rounded-[20px]" : "rounded-[22%]"
   return (
-    <div className="relative flex items-center justify-center">
+    <div className="relative flex items-center justify-center overflow-visible p-1 -m-1">
       <div
         className={cn(
           "relative flex items-center justify-center",
@@ -368,8 +378,18 @@ export function DockIconVisual({
         {variant !== "muted" ? (
           <MenuIconChrome sectionKey={sectionKey} />
         ) : null}
-        <Icon className={cn(menuHoloGlyphClass, iconDim)} />
+        {busy ? (
+          <RootsSpinner
+            size="sm"
+            tone="dark"
+            className={iconDim}
+            label={busyLabel ?? "Cargando"}
+          />
+        ) : (
+          <Icon className={cn(menuHoloGlyphClass, iconDim)} />
+        )}
       </div>
+      {apiReady && !busy ? <MenuApiReadyBadge size="sm" /> : null}
     </div>
   )
 }

@@ -76,6 +76,59 @@ function MostradorOrderCardSkeleton() {
   )
 }
 
+const MESAS_LIST_SKELETON_GROUPS = [
+  { rows: 4 },
+  { rows: 3 },
+] as const
+
+function MesasTablePickerRowSkeleton() {
+  return (
+    <div className="flex items-center gap-2.5 px-4 py-3" aria-hidden>
+      <div className={cn("size-2 shrink-0 rounded-full", operarCanvasSkeletonBlockClass)} />
+      <div className={cn("h-3.5 w-24 rounded-sm", operarCanvasSkeletonBlockClass)} />
+      <div className={cn("ml-auto h-3 w-14 rounded-sm", operarCanvasSkeletonBlockClass)} />
+    </div>
+  )
+}
+
+/** Lista de mesas mobile — no usa el plano. */
+export function MesasTablePickerListSkeleton({ className }: { className?: string }) {
+  return (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-label="Cargando mesas"
+      className={cn("flex min-h-0 flex-1 flex-col", className)}
+    >
+      <div className="shrink-0 border-b border-[color-mix(in_srgb,var(--rootsy-sombra-500)_45%,transparent)] px-4 py-3">
+        <div className={cn("h-3 w-14 rounded-sm", operarCanvasSkeletonBlockClass)} aria-hidden />
+        <div
+          className={cn("mt-2 h-9 w-full rounded-lg", operarCanvasSkeletonBlockClass)}
+          aria-hidden
+        />
+      </div>
+      <div className="min-h-0 flex-1 overflow-hidden py-1">
+        {MESAS_LIST_SKELETON_GROUPS.map((group, groupIndex) => (
+          <div key={groupIndex}>
+            <div
+              className={cn(
+                "h-8 border-b border-[color-mix(in_srgb,var(--rootsy-sombra-500)_40%,transparent)] px-4",
+                "flex items-center",
+              )}
+            >
+              <div className={cn("h-3 w-20 rounded-sm", operarCanvasSkeletonBlockClass)} aria-hidden />
+            </div>
+            {Array.from({ length: group.rows }, (_, rowIndex) => (
+              <MesasTablePickerRowSkeleton key={rowIndex} />
+            ))}
+          </div>
+        ))}
+      </div>
+      <span className="sr-only">Cargando mesas…</span>
+    </div>
+  )
+}
+
 export function MesasFloorPlanSkeleton({ className }: { className?: string }) {
   return (
     <div

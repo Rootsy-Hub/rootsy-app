@@ -1,4 +1,8 @@
-import type { MenuCatalogArticle, MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import type {
+  MenuCatalogArticle,
+  MenuCatalogPromotion,
+  MenuCatalogRecipe,
+} from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import type { SaleCatalogPaymentOption } from "@/app/[siteId]/[popId]/sale/actions"
 import type { OperationCartLineOverrideState } from "@/components/sale-operation/OperationCartLineRow"
@@ -7,14 +11,20 @@ import {
   computeMenuQuantityDealApplications,
   menuPromotionToProduct,
 } from "@/lib/menuCheckoutPromotions"
-import { menuArticleToProduct } from "@/lib/menuCatalogProduct"
+import {
+  catalogProductFromCartSnapshot,
+  menuArticleToProduct,
+  menuRecipeToProduct,
+  resolveMenuCartCatalogProduct,
+  type MenuCatalogProduct,
+} from "@/lib/menuCatalogProduct"
 import {
   buildMostradorCartDisplayRows,
   cartDetailItemsFromCarrito,
+  type MostradorCartDisplayRow,
 } from "@/lib/mostradorCartDisplay"
 import { normalizeCartItemKind, resolveCartLineId, type MenuCartItem } from "@/lib/menuCart"
 import { buildSaleComprobantePreviewLineGroups } from "@/lib/saleComprobantePreview"
-import type { MostradorCartDisplayRow } from "@/lib/mostradorCartDisplay"
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import type {
   SaleQuoteLineGroup,
@@ -23,6 +33,13 @@ import type {
 import {
   buildQuoteLineSummariesFromLineGroups,
 } from "@/lib/saleQuoteDocumentLines"
+
+export type SaleQuoteRebuildCatalog = {
+  articles: MenuCatalogArticle[]
+  recipes?: MenuCatalogRecipe[]
+  promotions: MenuCatalogPromotion[]
+  quantityDeals: MenuCatalogPromotion[]
+}
 
 type SaleQuoteClientSelection = {
   id: string | null
@@ -170,11 +187,7 @@ function quoteLineNameFromDescription(description: string): string {
 
 export function buildQuoteLineGroupsFromCheckoutSnapshot(
   snapshot: TableSessionCheckoutSnapshot,
-  catalog: {
-    articles: MenuCatalogArticle[]
-    promotions: MenuCatalogPromotion[]
-    quantityDeals: MenuCatalogPromotion[]
-  },
+  catalog: SaleQuoteRebuildCatalog,
 ): SaleQuoteLineGroup[] {
   const rows = buildQuoteDisplayRowsFromCheckoutSnapshot(snapshot, catalog)
   const overrides = {
@@ -186,28 +199,38 @@ export function buildQuoteLineGroupsFromCheckoutSnapshot(
   return buildQuoteLineGroupsFromDisplayRows(rows, overrides)
 }
 
+function seedSnapshotProducts(
+  productosByKey: Map<string, MenuCatalogProduct>,
+  carrito: MenuCartItem[],
+) {
+  for (const item of carrito) {
+    const kind = normalizeCartItemKind(item.kind)
+    const key = `${kind}:${item.productoId}`
+    if (productosByKey.has(key)) continue
+    const fromSnapshot = catalogProductFromCartSnapshot({
+      productoId: item.productoId,
+      kind,
+      snapshot: item.snapshot,
+    })
+    if (fromSnapshot) productosByKey.set(key, fromSnapshot)
+  }
+}
+
 function buildQuoteDisplayRowsFromCheckoutSnapshot(
   snapshot: TableSessionCheckoutSnapshot,
-  catalog: {
-    articles: MenuCatalogArticle[]
-    promotions: MenuCatalogPromotion[]
-    quantityDeals: MenuCatalogPromotion[]
-  },
+  catalog: SaleQuoteRebuildCatalog,
 ): MostradorCartDisplayRow[] {
-  const productosCatalogo = [
+  const productosByKey = buildMenuProductMap([
     ...catalog.promotions.map(menuPromotionToProduct),
     ...catalog.articles.map(menuArticleToProduct),
-  ]
-  const productosByKey = buildMenuProductMap(productosCatalogo)
+    ...(catalog.recipes ?? []).map(menuRecipeToProduct),
+  ])
 
   const carrito: MenuCartItem[] = snapshot.carrito.flatMap((item) => {
     const kind = normalizeCartItemKind(item.kind)
-    const producto =
-      productosByKey.get(`${kind}:${item.productoId}`) ?? null
     if (kind === "promotion" && !item.promotionSelections?.length) {
       return []
     }
-    if (kind !== "promotion" && !producto) return []
     return [
       {
         lineId: item.lineId,
@@ -215,11 +238,13 @@ function buildQuoteDisplayRowsFromCheckoutSnapshot(
         cantidad: item.cantidad,
         kind,
         promotionSelections: item.promotionSelections,
+        snapshot: item.snapshot,
         paidLocked: item.paidLocked,
         comandaStatus: item.comandaStatus,
       },
     ]
   })
+  seedSnapshotProducts(productosByKey, carrito)
 
   const overrides = {
     itemDescuentoModo: snapshot.itemDescuentoModo ?? {},
@@ -235,18 +260,21 @@ function buildQuoteDisplayRowsFromCheckoutSnapshot(
     overrides,
   })
 
-  const rows = buildMostradorCartDisplayRows({
+  return buildMostradorCartDisplayRows({
     items: cartDetailItemsFromCarrito(
       carrito.map((item) => {
         const kind = normalizeCartItemKind(item.kind)
-        const producto =
-          productosByKey.get(`${kind}:${item.productoId}`) ?? null
         return {
           lineId: resolveCartLineId(item),
           productoId: item.productoId,
-          kind: item.kind,
+          kind,
           cantidad: item.cantidad,
-          producto,
+          producto: resolveMenuCartCatalogProduct(
+            productosByKey,
+            item.productoId,
+            kind,
+            item.snapshot,
+          ),
           promotionSelections: item.promotionSelections,
           paidLocked: item.paidLocked,
           comandaStatus: item.comandaStatus,
@@ -257,17 +285,11 @@ function buildQuoteDisplayRowsFromCheckoutSnapshot(
     overrides,
     productosByKey,
   })
-
-  return rows
 }
 
 export function buildQuoteLineSummariesFromCheckoutSnapshot(
   snapshot: TableSessionCheckoutSnapshot,
-  catalog: {
-    articles: MenuCatalogArticle[]
-    promotions: MenuCatalogPromotion[]
-    quantityDeals: MenuCatalogPromotion[]
-  },
+  catalog: SaleQuoteRebuildCatalog,
 ): SaleQuoteLineSummary[] {
   return buildQuoteLineSummariesFromLineGroups(
     buildQuoteLineGroupsFromCheckoutSnapshot(snapshot, catalog),

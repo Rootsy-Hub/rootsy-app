@@ -10,6 +10,8 @@ import {
 } from "@/components/purchase-operation/purchaseCatalogTypes"
 import { PurchaseCatalogProductCard } from "@/components/purchase-operation/PurchaseCatalogProductCard"
 import { PurchaseCatalogSidebarNav } from "@/components/purchase-operation/PurchaseCatalogSidebarNav"
+import { useRegisterOperarMobileCategoryPicker } from "@/components/layouts-module/OperarMobileStage"
+import { showRootsyToast } from "@/components/rootsy-toast"
 import { SaleCatalogMobileCategoryBar } from "@/components/sale-operation/SaleCatalogMobileCategoryBar"
 import { PurchaseCatalogToolbar } from "@/components/purchase-operation/PurchaseCatalogToolbar"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
@@ -121,6 +123,11 @@ export function PurchaseCatalogBrowser({
     }
     return "Categoría"
   }, [categorySections, vistaCatalogo.categoria])
+  const usesMobileStage = useRegisterOperarMobileCategoryPicker(
+    categoryLabel,
+    categoryPickerOpen,
+    setCategoryPickerOpen,
+  )
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)")
@@ -232,22 +239,27 @@ export function PurchaseCatalogBrowser({
       <section
         className={cn(
           layoutsOperarCatalogCanvasClass,
-          "relative max-md:[grid-template-rows:var(--layouts-operar-catalog-toolbar-h)_var(--layouts-operar-catalog-toolbar-h)_minmax(0,1fr)]",
+          "relative",
+          !usesMobileStage &&
+            "max-md:[grid-template-rows:var(--layouts-operar-catalog-toolbar-h)_var(--layouts-operar-catalog-toolbar-h)_minmax(0,1fr)]",
         )}
       >
-        <SaleCatalogMobileCategoryBar
-          label={categoryLabel}
-          open={categoryPickerOpen}
-          onToggle={() => setCategoryPickerOpen((current) => !current)}
-        />
+        {!usesMobileStage ? (
+          <SaleCatalogMobileCategoryBar
+            label={categoryLabel}
+            open={categoryPickerOpen}
+            onToggle={() => setCategoryPickerOpen((current) => !current)}
+          />
+        ) : null}
         {categoryPickerOpen ? (
           <div
             className={cn(
-              "absolute inset-x-0 bottom-0 z-30 overflow-hidden md:hidden",
-              "top-[var(--layouts-operar-catalog-toolbar-h)]",
-              "max-md:col-start-1 max-md:row-start-1",
+              "absolute z-30 overflow-hidden md:hidden",
               "bg-[var(--rootsy-sombra-800)]",
               "[&_button]:min-h-12 [&_button]:px-3 [&_button]:text-base",
+              usesMobileStage
+                ? "inset-0"
+                : "inset-x-0 bottom-0 top-[var(--layouts-operar-catalog-toolbar-h)] max-md:col-start-1 max-md:row-start-1",
             )}
           >
             <PurchaseCatalogSidebarNav
@@ -305,6 +317,12 @@ export function PurchaseCatalogBrowser({
                   variant={vistaEfectiva}
                   onClick={() => {
                     onAddProduct(product.id, cantidadIngreso)
+                    if (isMobileViewport && product.nombre) {
+                      showRootsyToast({
+                        title: `Se agregó ${product.nombre} ${cantidadIngreso}x`,
+                        intent: "success",
+                      })
+                    }
                     setCantidadIngreso(1)
                   }}
                 />
