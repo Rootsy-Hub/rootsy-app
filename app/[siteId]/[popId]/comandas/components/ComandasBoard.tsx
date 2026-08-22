@@ -3,6 +3,7 @@
 import {
   canDragComanda,
   canMoveComandaTo,
+  formatComandaElapsed,
   groupComandasForBoard,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import {
@@ -23,6 +24,7 @@ import {
   comandasBrisaTicketBodyClass,
   comandasBrisaTicketCardClass,
   comandasBrisaTicketCardIdleClass,
+  comandasBrisaTicketCardVoidClass,
   comandasBrisaTicketDetailClass,
   comandasBrisaTicketEyebrowClass,
   comandasBrisaTicketHeaderClass,
@@ -63,7 +65,7 @@ import {
   CookingPot,
 } from "lucide-react"
 
-type BoardColumnId = Exclude<ComandaStatus, "pending">
+type BoardColumnId = Exclude<ComandaStatus, "pending" | "voided">
 
 const BOARD_COLUMNS: {
   id: BoardColumnId
@@ -95,6 +97,12 @@ type Props = {
 }
 
 function ticketAgo(card: Pick<ComandaBoardCard, "statusChangedAt" | "createdAt">): string {
+  return formatComandaElapsed(card.statusChangedAt || card.createdAt)
+}
+
+function ticketAgoLabel(
+  card: Pick<ComandaBoardCard, "statusChangedAt" | "createdAt">,
+): string {
   return formatDistanceToNow(new Date(card.statusChangedAt || card.createdAt), {
     addSuffix: true,
     locale: es,
@@ -139,13 +147,21 @@ function TicketCardContent({ card }: { card: ComandaBoardCard }) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className={cn(comandasBrisaTicketEyebrowClass, "truncate")}>
-              {card.sourceKind === "table" ? "Mesa" : "Mostrador"}
+              {card.sendKind === "void"
+                ? "Anulación"
+                : card.sourceKind === "table"
+                  ? "Mesa"
+                  : "Mostrador"}
             </p>
             <p className={cn("mt-0.5 truncate", comandasBrisaTicketTitleClass)}>
               {card.originLabel}
             </p>
           </div>
-          <span className={cn(comandasBrisaTicketBadgeClass, "shrink-0")}>
+          <span
+            className={cn(comandasBrisaTicketBadgeClass, "shrink-0 tabular-nums")}
+            title={ticketAgoLabel(card)}
+            aria-label={ticketAgoLabel(card)}
+          >
             {ticketAgo(card)}
           </span>
         </div>
@@ -156,7 +172,14 @@ function TicketCardContent({ card }: { card: ComandaBoardCard }) {
             const qtyLabel = item.quantity > 1 ? `${item.quantity}× ` : ""
             return (
               <li key={item.id}>
-                <p className={cn("truncate", comandasBrisaTicketMetaClass)}>
+                <p
+                  className={cn(
+                    "truncate",
+                    comandasBrisaTicketMetaClass,
+                    card.sendKind === "void" && "text-[var(--rootsy-danger-dark)]",
+                  )}
+                >
+                  {card.sendKind === "void" ? "Anular " : ""}
                   {qtyLabel}
                   {item.recipeName}
                 </p>
@@ -215,6 +238,7 @@ function KanbanTicketCard({
         {...(draggable ? attributes : {})}
         className={cn(
           comandasBrisaTicketCardClass,
+          card.sendKind === "void" && comandasBrisaTicketCardVoidClass,
           !draggable && comandasBrisaTicketCardIdleClass,
         )}
       >
@@ -324,7 +348,7 @@ export function ComandasBoard({
       delivered: [],
     }
     for (const card of cards) {
-      if (card.status === "pending") continue
+      if (card.status === "pending" || card.status === "voided") continue
       grouped[card.status].push(card)
     }
     return grouped
@@ -398,7 +422,12 @@ export function ComandasBoard({
 
       <DragOverlay dropAnimation={null}>
         {draggingTicket ? (
-          <div className={comandasBrisaTicketOverlayClass}>
+          <div
+            className={cn(
+              comandasBrisaTicketOverlayClass,
+              draggingTicket.sendKind === "void" && comandasBrisaTicketCardVoidClass,
+            )}
+          >
             <TicketCardContent card={draggingTicket} />
           </div>
         ) : null}

@@ -1,6 +1,7 @@
 "use client"
 
 import type { OperationPurchaseRow } from "@/app/[siteId]/[popId]/operations/actions"
+import { fetchOperationPurchaseById } from "@/lib/rootsyApi/operationsClient"
 import { OperationPurchaseDetailMeta } from "@/app/[siteId]/[popId]/operations/OperationPurchaseDetailMeta"
 import { OperationPurchaseDetailPayments } from "@/app/[siteId]/[popId]/operations/OperationPurchaseDetailPayments"
 import { PurchaseDetailTicketView } from "@/app/[siteId]/[popId]/operations/PurchaseDetailTicketView"
@@ -20,11 +21,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useEffect, useState } from "react"
 
 type Props = {
   purchase: OperationPurchaseRow | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  popId?: string
   timeZone?: string
 }
 
@@ -32,8 +35,31 @@ export function OperationPurchaseDetailDialog({
   purchase,
   open,
   onOpenChange,
+  popId,
   timeZone,
 }: Props) {
+  const [detail, setDetail] = useState<OperationPurchaseRow | null>(null)
+  const resolved = detail ?? purchase
+
+  useEffect(() => {
+    if (!open || !purchase?.id || !popId) {
+      setDetail(null)
+      return
+    }
+    if ((purchase.lineItems?.length ?? 0) > 0) {
+      setDetail(purchase)
+      return
+    }
+    let cancelled = false
+    void fetchOperationPurchaseById(popId, purchase.id).then((res) => {
+      if (cancelled) return
+      if (res.success) setDetail(res.purchase)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [open, purchase, popId])
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={opsDialogSurfaceMd}>
@@ -46,13 +72,13 @@ export function OperationPurchaseDetailDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {purchase ? (
+        {resolved ? (
           <div className={`grid min-h-0 flex-1 items-start lg:grid-cols-[minmax(17rem,21rem)_minmax(${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px,1fr)]`}>
             <div className="min-h-0 overflow-y-auto overscroll-contain border-b border-border/50 bg-muted/20 px-5 py-4 lg:border-b-0 lg:border-r">
               <section>
                 <h3 className={opsDialogSectionTitle}>Detalles</h3>
                 <OperationPurchaseDetailMeta
-                  purchase={purchase}
+                  purchase={resolved}
                   timeZone={timeZone}
                 />
               </section>
@@ -60,12 +86,12 @@ export function OperationPurchaseDetailDialog({
               <section className="mt-6">
                 <h3 className={opsDialogSectionTitle}>
                   Pagos
-                  {purchase.payments.length > 1
-                    ? ` (${purchase.payments.length})`
+                  {resolved.payments.length > 1
+                    ? ` (${resolved.payments.length})`
                     : ""}
                 </h3>
                 <OperationPurchaseDetailPayments
-                  purchase={purchase}
+                  purchase={resolved}
                   timeZone={timeZone}
                 />
               </section>
@@ -73,7 +99,7 @@ export function OperationPurchaseDetailDialog({
 
             <div className="px-5 py-4 lg:pl-4">
               <div className={`mx-auto w-full ${layoutsOperarSummaryPanelMaxWidthClass}`}>
-                <PurchaseDetailTicketView purchase={purchase} showHeading={false} />
+                <PurchaseDetailTicketView purchase={resolved} showHeading={false} />
               </div>
             </div>
           </div>

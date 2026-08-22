@@ -178,6 +178,7 @@ export function MostradorWorkspace({
         mobileHomeLabel="Mostrador"
         mobileHome={boardCanvas}
         mobileCatalog={catalogPanel}
+        mobileCatalogDisabled={!selectedOrder && !creating}
         catalog={!showCatalog ? boardCanvas : catalogPanel}
         toolbox={<SaleOperationToolbox {...checkout.toolbox} />}
         desktopToolbox={showCatalog}
@@ -193,6 +194,7 @@ export function MostradorWorkspace({
               value={rightView}
               onChange={setRightView}
               cartDisabled={!selectedOrder}
+              orderLabel={orderLabel}
             />
 
             {rightView === "detail" ? (

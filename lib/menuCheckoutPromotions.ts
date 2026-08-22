@@ -32,7 +32,7 @@ function quantityDealEligibleUnitCount(
   lineKey: string,
   paidPartialUnits?: PartialPaymentSelection,
 ): number {
-  if (item.paidLocked) return 0
+  if (item.paidLocked || item.comandaStatus === "voided") return 0
   const paidQty = regularPaidUnitCount(lineKey, paidPartialUnits)
   return Math.max(0, item.cantidad - paidQty)
 }
@@ -409,6 +409,7 @@ type MenuCartTotalsItem = {
   cantidad: number
   producto: MenuCatalogProduct | null
   promotionSelections?: PromotionCartSelection[]
+  comandaStatus?: string
 }
 
 /** Separa unidades en promo por cantidad vs regulares para totales correctos. */
@@ -428,6 +429,7 @@ export function buildMenuCartTotalsLines(input: {
   const lines: MenuCartTotalsLine[] = []
 
   for (const item of input.items) {
+    if (item.comandaStatus === "voided") continue
     const lineKey = item.cartLineKey
     const suprimido = input.itemDescuentoSuprimido[lineKey] === true
     const draft = input.itemDescuentoDraft[lineKey] ?? ""

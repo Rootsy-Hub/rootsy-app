@@ -1,15 +1,15 @@
 "use client"
 
-import {
-  getOperationsList,
-  type GetOperationsListInput,
-  type OperationsListView,
+import type {
+  GetOperationsListInput,
+  OperationsListView,
 } from "@/app/[siteId]/[popId]/operations/actions"
 import {
   popOperationsQueryKey,
   type PopOperationsQueryParams,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { fetchPopOperationsList } from "@/lib/rootsyApi/operationsClient"
 import { useQuery } from "@tanstack/react-query"
 
 type UsePopOperationsListOptions = {
@@ -37,7 +37,7 @@ export function usePopOperationsList(
 
   return useQuery({
     queryKey: popOperationsQueryKey(popId ?? "", params),
-    queryFn: () => getOperationsList(popId!, queryParams),
+    queryFn: () => fetchPopOperationsList(popId!, queryParams),
     enabled,
     ...sessionListQueryOptions,
   })

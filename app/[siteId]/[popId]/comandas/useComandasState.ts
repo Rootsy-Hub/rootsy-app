@@ -45,7 +45,9 @@ export function useComandasState(popId: string, siteId: string) {
   }, [tickets])
 
   const applyServerTickets = useCallback((serverTickets: ComandaTicket[]) => {
-    const visible = serverTickets.filter((ticket) => ticket.status !== "pending")
+    const visible = serverTickets.filter(
+      (ticket) => ticket.status !== "pending" && ticket.status !== "voided",
+    )
     const inFlight = inFlightMovesRef.current
     if (inFlight.size === 0) {
       setTickets(visible)
@@ -68,7 +70,7 @@ export function useComandasState(popId: string, siteId: string) {
 
   const upsertTicket = useCallback((ticket: ComandaTicket) => {
     setTickets((prev) => {
-      if (ticket.status === "pending") {
+      if (ticket.status === "pending" || ticket.status === "voided") {
         return prev.filter((row) => row.id !== ticket.id)
       }
       if (stationIdRef.current && ticket.stationId !== stationIdRef.current) {

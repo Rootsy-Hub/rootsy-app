@@ -424,7 +424,7 @@ export function MenuDockDndProvider({
       activationConstraint: { distance: 6 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 420, tolerance: 8 },
+      activationConstraint: { delay: 180, tolerance: 10 },
     }),
   )
 

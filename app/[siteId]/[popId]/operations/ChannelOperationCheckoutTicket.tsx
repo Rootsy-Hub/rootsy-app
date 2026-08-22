@@ -1,7 +1,7 @@
 "use client"
 
 import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
-import { getChannelOperationTicketDisplay } from "@/app/[siteId]/[popId]/operations/actions"
+import { fetchChannelOperationTicketDisplay } from "@/lib/rootsyApi/operationsClient"
 import { MostradorCartLineDisplay } from "@/components/sale-operation/MostradorCartLineDisplay"
 import { SaleReadonlyTicketPanel } from "@/components/sale-operation/SaleReadonlyTicketPanel"
 import type { ChannelCheckoutTicketDisplay } from "@/lib/buildChannelCheckoutTicketDisplay"
@@ -42,7 +42,6 @@ function PaidBadge() {
 
 export function ChannelOperationCheckoutTicket({
   popId,
-  siteId,
   sale,
   showHeading = true,
   ticketTone = "modal",
@@ -59,8 +58,7 @@ export function ChannelOperationCheckoutTicket({
     let cancelled = false
     setLoading(true)
     setError(null)
-    void getChannelOperationTicketDisplay(popId, {
-      siteId,
+    void fetchChannelOperationTicketDisplay(popId, {
       tableSessionId: sale.tableSessionId,
       counterOrderId: sale.counterOrderId,
     }).then((res) => {
@@ -76,7 +74,7 @@ export function ChannelOperationCheckoutTicket({
     return () => {
       cancelled = true
     }
-  }, [popId, siteId, sale.tableSessionId, sale.counterOrderId])
+  }, [popId, sale.tableSessionId, sale.counterOrderId])
 
   const groups = useMemo(
     () => (ticket ? groupMostradorCartDisplayRows(ticket.rows) : []),

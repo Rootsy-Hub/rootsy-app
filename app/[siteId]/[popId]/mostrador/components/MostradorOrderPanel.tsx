@@ -19,6 +19,7 @@ export function MostradorOrderPanel({
     cartDisplayRows,
     cambiarCantidadPorLinea,
     aplicarEdicionLineaTicket,
+    anularLineaComanda,
     quitarQuantityDealApplication,
     actions,
     subtotal,
@@ -62,6 +63,7 @@ export function MostradorOrderPanel({
       cartLineOverrides={cartLineOverrides}
       paidPartialUnits={paidPartialUnits}
       aplicarEdicionLineaTicket={aplicarEdicionLineaTicket}
+      anularLineaComanda={anularLineaComanda}
       cambiarCantidadPorLinea={cambiarCantidadPorLinea}
       quitarQuantityDealApplication={quitarQuantityDealApplication}
       actions={{

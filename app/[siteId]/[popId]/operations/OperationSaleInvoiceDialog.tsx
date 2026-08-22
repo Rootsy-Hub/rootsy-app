@@ -1,6 +1,7 @@
 "use client"
 
 import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
+import { fetchOperationSaleById } from "@/lib/rootsyApi/operationsClient"
 import { SaleComprobanteSheetPreview } from "@/components/checkout/SaleComprobanteSheetPreview"
 import {
   SaleComprobanteTicketPreview,
@@ -89,23 +90,44 @@ export function OperationSaleInvoiceDialog({
   )
   const [format, setFormat] = useState<SaleComprobantePrintFormat>("rollo")
   const [printing, setPrinting] = useState(false)
+  const [detailSale, setDetailSale] = useState<OperationSaleRow | null>(null)
   const printRootRef = useRef<HTMLDivElement>(null)
+  const resolvedSale = detailSale ?? sale
+
+  useEffect(() => {
+    if (!open || !sale?.id || !popId) {
+      setDetailSale(null)
+      return
+    }
+    if ((sale.lineItems?.length ?? 0) > 0) {
+      setDetailSale(sale)
+      return
+    }
+    let cancelled = false
+    void fetchOperationSaleById(popId, sale.id).then((res) => {
+      if (cancelled) return
+      if (res.success) setDetailSale(res.sale)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [open, sale, popId])
 
   const previewInput = useMemo(() => {
-    if (!sale) return null
-    return saleToComprobantePreviewInput(sale, popId, siteId)
-  }, [sale, popId, siteId])
+    if (!resolvedSale) return null
+    return saleToComprobantePreviewInput(resolvedSale, popId, siteId)
+  }, [resolvedSale, popId, siteId])
 
   const issuedAt = useMemo(() => {
-    if (!sale?.soldAt) return undefined
-    const date = new Date(sale.soldAt)
+    if (!resolvedSale?.soldAt) return undefined
+    const date = new Date(resolvedSale.soldAt)
     return Number.isNaN(date.getTime()) ? undefined : date
-  }, [sale?.soldAt])
+  }, [resolvedSale?.soldAt])
 
   const { canPrint } = useSaleComprobantePreviewModel({
     previewInput,
     emitter,
-    previewComprobanteLabel: sale?.invoiceTypeLabel ?? null,
+    previewComprobanteLabel: resolvedSale?.invoiceTypeLabel ?? null,
     issuedAt,
   })
 
@@ -116,14 +138,14 @@ export function OperationSaleInvoiceDialog({
     }
   }, [open])
 
-  const tipo = sale ? saleComprobanteLabel(sale) : "—"
+  const tipo = resolvedSale ? saleComprobanteLabel(resolvedSale) : "—"
   const selectedFormatIndex = SALE_COMPROBANTE_PRINT_FORMATS.findIndex(
     (option) => option.value === format,
   )
   const previewProps = {
     previewInput,
     emitter,
-    previewComprobanteLabel: sale?.invoiceTypeLabel ?? null,
+    previewComprobanteLabel: resolvedSale?.invoiceTypeLabel ?? null,
     issuedAt,
     loading,
     error,

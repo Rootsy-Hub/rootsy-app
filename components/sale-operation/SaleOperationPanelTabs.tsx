@@ -12,6 +12,8 @@ export type SaleOperationPanelTab<T extends string> = {
   label: string
   icon: LucideIcon
   disabled?: boolean
+  /** Número de pedido / mesa al lado del label. */
+  suffix?: string
 }
 
 type Props<T extends string> = {
@@ -86,7 +88,7 @@ export function SaleOperationPanelTabs<T extends string>({
         }}
         aria-hidden
       />
-      {tabs.map(({ id, label, icon: Icon, disabled }) => {
+      {tabs.map(({ id, label, icon: Icon, disabled, suffix }) => {
         const active = value === id
         return (
           <button
@@ -97,6 +99,7 @@ export function SaleOperationPanelTabs<T extends string>({
             type="button"
             role="tab"
             aria-selected={active}
+            aria-label={suffix ? `${label} ${suffix}` : label}
             disabled={disabled}
             onMouseDown={(event) => {
               event.preventDefault()
@@ -123,7 +126,12 @@ export function SaleOperationPanelTabs<T extends string>({
             )}
           >
             <Icon className="size-3.5 shrink-0" aria-hidden />
-            {label}
+            <span className="min-w-0 truncate">
+              {label}
+              {suffix ? (
+                <span className="font-ledger font-bold tabular-nums"> {suffix}</span>
+              ) : null}
+            </span>
           </button>
         )
       })}

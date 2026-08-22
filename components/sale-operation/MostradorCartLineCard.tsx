@@ -54,7 +54,12 @@ import {
   type MostradorCartLineEditInput,
 } from "@/lib/menuCartLineMerge"
 import { CartLineComandaStatusBar } from "@/components/sale-operation/CartLineComandaStatusBar"
-import { isComandaLocked } from "@/lib/comandaCartLine"
+import { ComandaVoidDialog } from "@/components/sale-operation/ComandaVoidDialog"
+import {
+  isComandaLocked,
+  isComandaVoidable,
+  isComandaVoided,
+} from "@/lib/comandaCartLine"
 import { getRowPaymentStatus } from "@/lib/partialCheckoutSelection"
 import {
   labelUnitOfMeasure,
@@ -74,6 +79,7 @@ type Props = {
   paidPartialUnits?: Record<string, number>
   onApplyEdits: (input: MostradorCartLineEditInput) => void
   onRemove: () => void
+  onVoidLine?: (input: { quantity: number; comment: string }) => void | Promise<void>
   grouped?: boolean
   variant?: "legacy" | "operar"
 }
@@ -148,6 +154,7 @@ export function MostradorCartLineCard({
   paidPartialUnits = {},
   onApplyEdits,
   onRemove,
+  onVoidLine,
   variant = "operar",
 }: Props) {
   const paymentStatus = getRowPaymentStatus(row, paidPartialUnits)
@@ -159,6 +166,9 @@ export function MostradorCartLineCard({
   } = overrides
 
   const [open, setOpen] = useState(false)
+  const [voidOpen, setVoidOpen] = useState(false)
+  const [voidSubmitting, setVoidSubmitting] = useState(false)
+  const [voidError, setVoidError] = useState<string | null>(null)
   const [commentDraft, setCommentDraft] = useState("")
   const [quantityDraft, setQuantityDraft] = useState(() =>
     formatQuantityForInput(row.cantidad, unitOfMeasureForRow(row)),
@@ -214,13 +224,22 @@ export function MostradorCartLineCard({
   const unitOfMeasureSuffix = shortUnitOfMeasure(unitOfMeasure)
   const unitOfMeasureLabel = labelUnitOfMeasure(unitOfMeasure)
 
-  const isCartLineLocked =
+  const isPaidLocked =
     row.paidLocked === true ||
-    isComandaLocked(row.comandaStatus) ||
     paymentStatus.isFullyPaid ||
     paymentStatus.isPartiallyPaid
+  const isVoided = isComandaVoided(row.comandaStatus)
+  const canVoidLine =
+    Boolean(onVoidLine) && isComandaVoidable(row.comandaStatus) && !isPaidLocked
+  const isCartLineLocked =
+    isPaidLocked || isComandaLocked(row.comandaStatus)
 
   const openModal = () => {
+    if (canVoidLine) {
+      setVoidError(null)
+      setVoidOpen(true)
+      return
+    }
     if (isCartLineLocked) return
     baselineCantidadRef.current = row.cantidad
     setQuantityDraft(formatQuantityForInput(row.cantidad, unitOfMeasure))
@@ -425,6 +444,7 @@ export function MostradorCartLineCard({
             className={cn(
               layoutsOperarTicketProposalLineNameClass(TICKET_PROPOSAL),
               paymentStatus.isFullyPaid && "line-through decoration-emerald-600/50",
+              isVoided && "line-through decoration-[var(--rootsy-danger)]/50",
             )}
           >
             {row.nombre}
@@ -492,6 +512,7 @@ export function MostradorCartLineCard({
             className={cn(
               "block text-sm font-semibold leading-snug text-slate-900",
               paymentStatus.isFullyPaid && "line-through decoration-emerald-600/50",
+              isVoided && "line-through decoration-[var(--rootsy-danger)]/50",
             )}
           >
             {row.nombre}
@@ -538,18 +559,20 @@ export function MostradorCartLineCard({
         {row.comandaStatus ? (
           <CartLineComandaStatusBar status={row.comandaStatus} />
         ) : null}
-        {isCartLineLocked ? (
+        {isCartLineLocked && !canVoidLine ? (
           <div
             className={cn(
               rowGridLayoutClass,
-              paymentStatus.isFullyPaid && "opacity-70",
+              (paymentStatus.isFullyPaid || isVoided) && "opacity-70",
             )}
             aria-label={
               paymentStatus.isFullyPaid || row.paidLocked
                 ? `${row.nombre} (pagado)`
-                : isComandaLocked(row.comandaStatus)
-                  ? `${row.nombre} (comandada)`
-                  : row.nombre
+                : isVoided
+                  ? `${row.nombre} (anulado)`
+                  : isComandaLocked(row.comandaStatus)
+                    ? `${row.nombre} (comandada)`
+                    : row.nombre
             }
           >
             {rowContent}
@@ -565,7 +588,9 @@ export function MostradorCartLineCard({
               isOperar &&
                 "bg-transparent transition-colors hover:bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_35%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)]",
             )}
-            aria-label={`Editar ${row.nombre}`}
+            aria-label={
+              canVoidLine ? `Anular ${row.nombre}` : `Editar ${row.nombre}`
+            }
           >
             {rowContent}
           </button>
@@ -747,6 +772,37 @@ export function MostradorCartLineCard({
           />
         </RootsDialogContent>
       </Dialog>
+
+      {onVoidLine ? (
+        <ComandaVoidDialog
+          open={voidOpen}
+          onOpenChange={(next) => {
+            if (voidSubmitting) return
+            setVoidOpen(next)
+            if (!next) setVoidError(null)
+          }}
+          itemName={row.nombre}
+          maxQuantity={row.cantidad}
+          submitting={voidSubmitting}
+          submitError={voidError}
+          onConfirm={async ({ quantity, comment }) => {
+            setVoidSubmitting(true)
+            setVoidError(null)
+            try {
+              await onVoidLine({ quantity, comment })
+              setVoidOpen(false)
+            } catch (error) {
+              setVoidError(
+                error instanceof Error
+                  ? error.message
+                  : "No se pudo anular el ítem.",
+              )
+            } finally {
+              setVoidSubmitting(false)
+            }
+          }}
+        />
+      ) : null}
     </>
   )
 }

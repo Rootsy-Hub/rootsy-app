@@ -2,7 +2,7 @@ import type { ComandaStatus } from "@/app/[siteId]/[popId]/comandas/comandasType
 import { cn } from "@/lib/utils"
 
 /** Mundos de estado — comandas y, después, listado de pedidos. */
-export type ComandaStatusWorldId = Exclude<ComandaStatus, "pending">
+export type ComandaStatusWorldId = Exclude<ComandaStatus, "pending" | "voided">
 
 export const COMANDA_STATUS_WORLDS: Record<
   ComandaStatusWorldId,
@@ -80,6 +80,6 @@ export const COMANDA_STATUS_WORLDS: Record<
 export function comandaStatusWorld(
   status: ComandaStatus,
 ): (typeof COMANDA_STATUS_WORLDS)[ComandaStatusWorldId] {
-  if (status === "pending") return COMANDA_STATUS_WORLDS.sent
+  if (status === "pending" || status === "voided") return COMANDA_STATUS_WORLDS.sent
   return COMANDA_STATUS_WORLDS[status]
 }

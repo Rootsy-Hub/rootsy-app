@@ -31,7 +31,8 @@ export function DataWorkspaceListTableFrame({
   return (
     <div
       className={cn(
-        "relative flex min-h-full min-w-0 flex-1 flex-col",
+        "relative inline-flex min-h-full min-w-full flex-col",
+        "bg-[var(--rootsy-bruma-50)]",
         workspaceTableFrameSelectableScopeClass,
         className,
       )}

@@ -123,6 +123,27 @@ export const saleOpTicketActionComandasClass = cn(
 )
 export const saleOpActionIconWrapDiscardClass =
   "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600"
+export const saleOpActionIconWrapComandasClass =
+  "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#2563eb]/12 text-[#2563eb]"
+export const saleOpActionComandasClass = cn(
+  saleOpActionBtnBaseClass,
+  "bg-[#f4f6f9] text-[#2563eb] hover:bg-blue-50 hover:text-[#1d4ed8] active:bg-blue-100/80",
+  "disabled:bg-[#f4f6f9] disabled:text-slate-500 disabled:hover:bg-[#f4f6f9] disabled:active:bg-[#f4f6f9]",
+  "focus-visible:ring-[#3b82f6]/35",
+)
+/** Mobile Mesas/Mostrador — el bloque entero es el color y el hit. */
+export const saleOpActionDiscardFillClass = cn(
+  saleOpActionBtnBaseClass,
+  "h-full bg-rose-500/10 text-rose-600 hover:bg-rose-500/16 active:bg-rose-500/22",
+  "disabled:bg-slate-200/60 disabled:text-slate-500 disabled:hover:bg-slate-200/60 disabled:active:bg-slate-200/60",
+  "focus-visible:ring-rose-400/35",
+)
+export const saleOpActionComandasFillClass = cn(
+  saleOpActionBtnBaseClass,
+  "h-full bg-[#2563eb]/12 text-[#2563eb] hover:bg-[#2563eb]/18 active:bg-[#2563eb]/24",
+  "disabled:bg-slate-200/60 disabled:text-slate-500 disabled:hover:bg-slate-200/60 disabled:active:bg-slate-200/60",
+  "focus-visible:ring-[#3b82f6]/35",
+)
 export const saleOpActionIconWrapConfirmClass =
   "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
 export const saleOpActionIconWrapConfirmDisabledClass =

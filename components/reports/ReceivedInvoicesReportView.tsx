@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  getOperationsList,
-  type OperationPurchaseRow,
-} from "@/app/[siteId]/[popId]/operations/actions"
+import type { OperationPurchaseRow } from "@/app/[siteId]/[popId]/operations/actions"
+import { fetchPopOperationsList } from "@/lib/rootsyApi/operationsClient"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -69,7 +67,7 @@ async function fetchReceivedInvoicesPeriodTotals(
   let count = 0
 
   while (page <= 50) {
-    const res = await getOperationsList(popId, {
+    const res = await fetchPopOperationsList(popId, {
       view: "purchases",
       fiscalOnly: true,
       dateFrom: from,
@@ -104,7 +102,7 @@ async function fetchAllReceivedInvoicesReportRows(
   let page = 1
 
   while (page <= 100) {
-    const res = await getOperationsList(popId, {
+    const res = await fetchPopOperationsList(popId, {
       view: "purchases",
       fiscalOnly: true,
       dateFrom: from,
@@ -170,7 +168,7 @@ export function ReceivedInvoicesReportView({
         setListError(null)
       }
 
-      const res = await getOperationsList(popId, {
+      const res = await fetchPopOperationsList(popId, {
         view: "purchases",
         fiscalOnly: true,
         dateFrom: from,

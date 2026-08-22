@@ -26,6 +26,7 @@ export function MesasOrderPanel({
     cartDisplayRows,
     cambiarCantidadPorLinea,
     aplicarEdicionLineaTicket,
+    anularLineaComanda,
     quitarQuantityDealApplication,
     actions,
     subtotal,
@@ -73,6 +74,7 @@ export function MesasOrderPanel({
         cartLineOverrides={cartLineOverrides}
         paidPartialUnits={paidPartialUnits}
         aplicarEdicionLineaTicket={aplicarEdicionLineaTicket}
+        anularLineaComanda={anularLineaComanda}
         cambiarCantidadPorLinea={cambiarCantidadPorLinea}
         quitarQuantityDealApplication={quitarQuantityDealApplication}
         actions={{

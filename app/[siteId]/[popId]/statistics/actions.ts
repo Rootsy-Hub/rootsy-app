@@ -1,14 +1,14 @@
 "use server"
 
 import { getAccountingIncomeStatement } from "@/app/[siteId]/[popId]/reports/accountingActions"
-import {
-  getOperationsList,
-  type OperationExpenseLedgerRow,
-  type OperationPurchaseLineItem,
-  type OperationPurchaseRow,
-  type OperationSaleLineItem,
-  type OperationSaleRow,
+import type {
+  OperationExpenseLedgerRow,
+  OperationPurchaseLineItem,
+  OperationPurchaseRow,
+  OperationSaleLineItem,
+  OperationSaleRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
+import { fetchPopOperationsListServer } from "@/lib/rootsyApi/operationsServer"
 import { validatePopAccess } from "@/lib/popHelpers"
 import { displayOperationSaleCollected } from "@/lib/channelOperationSales"
 import {
@@ -550,7 +550,7 @@ async function fetchAllSales(
   const rows: OperationSaleRow[] = []
   let page = 1
   while (page <= 50) {
-    const res = await getOperationsList(popId, {
+    const res = await fetchPopOperationsListServer(popId, {
       view: "sales-report",
       dateFrom: from,
       dateTo: to,
@@ -559,6 +559,7 @@ async function fetchAllSales(
       pageSize: 100,
       sort: "sold_at",
       ord: "desc",
+      include: "full",
     })
     if (!res.success) break
     rows.push(...res.sales)
@@ -576,7 +577,7 @@ async function fetchAllPurchases(
   const rows: OperationPurchaseRow[] = []
   let page = 1
   while (page <= 50) {
-    const res = await getOperationsList(popId, {
+    const res = await fetchPopOperationsListServer(popId, {
       view: "purchases",
       dateFrom: from,
       dateTo: to,
@@ -585,6 +586,7 @@ async function fetchAllPurchases(
       pageSize: 100,
       sort: "received_at",
       ord: "desc",
+      include: "full",
     })
     if (!res.success) break
     rows.push(...res.purchases)
@@ -602,7 +604,7 @@ async function fetchAllExpenses(
   const rows: OperationExpenseLedgerRow[] = []
   let page = 1
   while (page <= 50) {
-    const res = await getOperationsList(popId, {
+    const res = await fetchPopOperationsListServer(popId, {
       view: "expenses",
       dateFrom: from,
       dateTo: to,

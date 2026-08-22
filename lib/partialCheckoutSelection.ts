@@ -408,7 +408,7 @@ export function buildUnpaidCarrito(input: {
   const result: MenuCartItem[] = []
 
   for (const item of input.carrito) {
-    if (item.paidLocked) continue
+    if (item.paidLocked || item.comandaStatus === "voided") continue
 
     const lineId = resolveCartLineId(item)
     const kind = normalizeCartItemKind(item.kind)

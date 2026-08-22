@@ -625,6 +625,7 @@ export const layoutsOperarSummaryPanelSurfaceClass = cn(
 export const layoutsOperarSummaryPanelInnerGridClass = cn(
   layoutsOperarSummaryPanelSurfaceClass,
   "h-full min-h-0 w-full",
+  "max-md:[grid-template-rows:minmax(0,1fr)]",
 )
 
 /** Cuerpo bajo tabs Mesa/Datos — flex, sin grid 1.2.x (sesión / formulario channel). */

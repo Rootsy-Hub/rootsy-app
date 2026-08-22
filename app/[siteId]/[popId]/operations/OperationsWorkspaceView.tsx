@@ -17,6 +17,12 @@ import {
   operationsModalFiltersActiveCount,
   type OperationsModalFilters,
 } from "@/app/[siteId]/[popId]/operations/operationsFilters"
+import {
+  mergeOperationsWorkspaceUrl,
+  operationsCustomDateRange,
+  parseOperationsWorkspaceUrl,
+  OPERATIONS_PAGE_SIZES,
+} from "@/app/[siteId]/[popId]/operations/workspaceUrl"
 import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
@@ -41,21 +47,23 @@ import {
   dataWorkspaceListFiltersPanelLastClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { usePopOperationsList } from "@/hooks/usePopOperationsList"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
 import {
   computeDataWorkspaceDateBounds,
-  type DataWorkspaceDatePreset,
+  toISODateLocal,
 } from "@/lib/dataWorkspaceDateFilter"
 import {
   readSavedOperationsView,
   writeSavedOperationsView,
-  type OperationsViewId,
 } from "@/lib/operationsViewPreference"
 import {
   nextWorkspaceTableSortState,
   workspaceTableSortDisplayDirection,
-  type WorkspaceTableSortDirection,
 } from "@/lib/workspaceTableSort"
 import {
   Briefcase,
@@ -65,8 +73,7 @@ import {
   UtensilsCrossed,
   Wallet,
 } from "lucide-react"
-import { useParams } from "next/navigation"
-import type { DateRange } from "react-day-picker"
+import { useParams, usePathname, useSearchParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -75,9 +82,6 @@ import {
   useRef,
   useState,
 } from "react"
-
-const OPERATIONS_PAGE_SIZES = [10, 25, 50, 100] as const
-const DEFAULT_PAGE_SIZE = 25
 
 const VIEW_ITEMS = [
   { id: "sales", label: "Ventas", icon: Receipt },
@@ -90,20 +94,63 @@ const VIEW_ITEMS = [
 
 export function OperationsWorkspaceView() {
   const params = useParams()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+    usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId ?? "")
   const timeZone = usePopTimeZone()
 
-  const [activeView, setActiveView] = useState<OperationsViewId>("sales")
-  const [searchInput, setSearchInput] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  const [datePreset, setDatePreset] =
-    useState<DataWorkspaceDatePreset>("this_month")
-  const [customDateRange, setCustomDateRange] = useState<
-    DateRange | undefined
-  >(undefined)
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
+  const ws = useMemo(
+    () => parseOperationsWorkspaceUrl(workspaceParams),
+    [workspaceParams],
+  )
+
+  const pushWs = useCallback(
+    (patch: Parameters<typeof mergeOperationsWorkspaceUrl>[1]) => {
+      const next = mergeOperationsWorkspaceUrl(workspaceParams, patch)
+      const qs = next.toString()
+      const href = qs ? `${pathname}?${qs}` : pathname
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== href) {
+          window.history.replaceState(window.history.state, "", href)
+        }
+      }
+      setWorkspaceSearch(qs)
+    },
+    [pathname, workspaceParams],
+  )
+
+  const activeView = ws.view
+  const page = ws.page
+  const pageSize = ws.pageSize
+  const sort = ws.sort
+  const ord = ws.ord
+  const datePreset = ws.datePreset
+  const appliedFilters = ws.filters
+  const customDateRange = useMemo(
+    () => operationsCustomDateRange(ws),
+    [ws],
+  )
+
+  const [searchInput, setSearchInput] = useState(ws.q)
   const searchInputId = useId()
   const viewFilterLabelId = useId()
   const viewFilterTriggerId = useId()
@@ -113,18 +160,26 @@ export function OperationsWorkspaceView() {
   const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hydratedViewPopRef = useRef<string | null>(null)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const [sort, setSort] = useState<string | null>(null)
-  const [ord, setOrd] = useState<WorkspaceTableSortDirection>("asc")
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
-  const [appliedFilters, setAppliedFilters] = useState<OperationsModalFilters>(
-    defaultOperationsModalFilters,
-  )
   const [draftFilters, setDraftFilters] = useState<OperationsModalFilters>(
     defaultOperationsModalFilters,
   )
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
+
+  const checkPerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canRead = checkPerm(POP_PERMS.OPERATIONS_READ)
 
   const dateBounds = useMemo(
     () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
@@ -147,7 +202,7 @@ export function OperationsWorkspaceView() {
       view: activeView,
       dateFrom: dateBounds.from,
       dateTo: dateBounds.to,
-      search: debouncedSearch,
+      search: ws.q,
       page,
       pageSize,
       sort,
@@ -160,7 +215,7 @@ export function OperationsWorkspaceView() {
       activeView,
       dateBounds.from,
       dateBounds.to,
-      debouncedSearch,
+      ws.q,
       page,
       pageSize,
       sort,
@@ -188,56 +243,45 @@ export function OperationsWorkspaceView() {
   const error =
     !popId || !siteId
       ? "Punto de venta no encontrado"
-      : operationsQuery.data?.success === false
-        ? operationsQuery.data.error || "Error"
-        : operationsQuery.error instanceof Error
-          ? operationsQuery.error.message
-          : operationsQuery.error
-            ? String(operationsQuery.error)
-            : null
+      : afterHydration && !menuCache.isLoading && !canRead
+        ? "No tenés permiso para ver operaciones en este punto."
+        : operationsQuery.data?.success === false
+          ? operationsQuery.data.error || "Error"
+          : operationsQuery.error instanceof Error
+            ? operationsQuery.error.message
+            : operationsQuery.error
+              ? String(operationsQuery.error)
+              : null
 
   useEffect(() => {
     const res = operationsQuery.data
     if (!res?.success) return
-    if (res.page !== page) setPage(res.page)
-  }, [operationsQuery.data, page])
+    if (res.page !== page) pushWs({ page: res.page })
+  }, [operationsQuery.data, page, pushWs])
+
+  useEffect(() => {
+    setSearchInput(ws.q)
+  }, [ws.q])
 
   useEffect(() => {
     const t = window.setTimeout(() => {
-      setDebouncedSearch(searchInput.trim())
+      if (searchInput.trim() === ws.q.trim()) return
+      pushWs({ q: searchInput })
     }, 300)
     return () => window.clearTimeout(t)
-  }, [searchInput])
+  }, [pushWs, searchInput, ws.q])
 
   useEffect(() => {
     if (!popId || hydratedViewPopRef.current === popId) return
     hydratedViewPopRef.current = popId
+    if (workspaceParams.get("view")) return
     const saved = readSavedOperationsView(popId)
-    if (saved) setActiveView(saved)
-  }, [popId])
-
-  useEffect(() => {
-    setPage(1)
-  }, [
-    debouncedSearch,
-    activeView,
-    datePreset,
-    customDateRange,
-    sort,
-    ord,
-    filtersKey,
-  ])
+    if (saved && saved !== "sales") pushWs({ view: saved })
+  }, [popId, pushWs, workspaceParams])
 
   useEffect(() => {
     setSelected(new Set())
-  }, [
-    activeView,
-    page,
-    debouncedSearch,
-    dateBounds.from,
-    dateBounds.to,
-    filtersKey,
-  ])
+  }, [activeView, page, ws.q, dateBounds.from, dateBounds.to, filtersKey])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -271,26 +315,30 @@ export function OperationsWorkspaceView() {
       ) {
         return
       }
-      setActiveView(id)
       if (popId) writeSavedOperationsView(popId, id)
+      const empty = defaultOperationsModalFilters()
       setSearchInput("")
-      setDebouncedSearch("")
-      setAppliedFilters(defaultOperationsModalFilters())
-      setDraftFilters(defaultOperationsModalFilters())
+      setDraftFilters(empty)
       setFiltersModalOpen(false)
-      setSort(null)
-      setOrd("asc")
-      setPage(1)
+      pushWs({
+        view: id,
+        q: "",
+        filters: empty,
+        sort: null,
+        ord: "asc",
+        page: 1,
+      })
     },
-    [popId],
+    [popId, pushWs],
   )
 
-  const handleSortColumn = useCallback((column: string) => {
-    const next = nextWorkspaceTableSortState({ sort, ord }, column)
-    setSort(next.sort)
-    setOrd(next.ord)
-    setPage(1)
-  }, [ord, sort])
+  const handleSortColumn = useCallback(
+    (column: string) => {
+      const next = nextWorkspaceTableSortState({ sort, ord }, column)
+      pushWs({ sort: next.sort, ord: next.ord, page: 1 })
+    },
+    [ord, pushWs, sort],
+  )
 
   const sortDirection = useCallback(
     (column: string) =>
@@ -371,8 +419,9 @@ export function OperationsWorkspaceView() {
 
   const clearSearch = useCallback(() => {
     setSearchInput("")
+    pushWs({ q: "" })
     searchInputRef.current?.focus()
-  }, [])
+  }, [pushWs])
 
   const handleExportCsv = useCallback(() => {
     if (selected.size === 0) return
@@ -424,18 +473,18 @@ export function OperationsWorkspaceView() {
 
   const clearAppliedFilters = useCallback(() => {
     const empty = defaultOperationsModalFilters()
-    setAppliedFilters(empty)
     setDraftFilters(empty)
-  }, [])
+    pushWs({ filters: empty })
+  }, [pushWs])
 
   const clearAllFilters = useCallback(() => {
     clearSearch()
     clearAppliedFilters()
   }, [clearSearch, clearAppliedFilters])
 
-  const removeFilterChip = useCallback((id: string) => {
-    setAppliedFilters((current) => {
-      const next = { ...current }
+  const removeFilterChip = useCallback(
+    (id: string) => {
+      const next = { ...appliedFilters }
       if (id === "saleStatus") next.saleStatus = ""
       if (id === "saleWithDiscount") next.saleWithDiscount = false
       if (id === "tableSession") next.tableSession = ""
@@ -446,9 +495,10 @@ export function OperationsWorkspaceView() {
       if (id === "expenseSource") next.expenseSource = ""
       if (id === "serviceStatus") next.serviceStatus = ""
       if (id === "serviceScope") next.serviceScope = ""
-      return next
-    })
-  }, [])
+      pushWs({ filters: next })
+    },
+    [appliedFilters, pushWs],
+  )
 
   if (!popId || !siteId) {
     return (
@@ -490,8 +540,30 @@ export function OperationsWorkspaceView() {
                     variant="layout"
                     preset={datePreset}
                     customRange={customDateRange}
-                    onPresetChange={setDatePreset}
-                    onCustomRangeChange={setCustomDateRange}
+                    onPresetChange={(preset) => {
+                      pushWs({
+                        datePreset: preset,
+                        customFrom: null,
+                        customTo: null,
+                      })
+                    }}
+                    onCustomRangeChange={(range) => {
+                      if (range?.from && range.to) {
+                        pushWs({
+                          datePreset: "custom",
+                          customFrom: toISODateLocal(range.from),
+                          customTo: toISODateLocal(range.to),
+                        })
+                        return
+                      }
+                      pushWs({
+                        datePreset: "custom",
+                        customFrom: range?.from
+                          ? toISODateLocal(range.from)
+                          : null,
+                        customTo: range?.to ? toISODateLocal(range.to) : null,
+                      })
+                    }}
                     bounds={dateBounds}
                     showActiveState={false}
                     labelId={dateFilterLabelId}
@@ -594,10 +666,9 @@ export function OperationsWorkspaceView() {
                 pageSize={pageSize}
                 pageSizeOptions={OPERATIONS_PAGE_SIZES}
                 paginationItems={paginationItems}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => pushWs({ page: nextPage })}
                 onPageSizeChange={(ps) => {
-                  setPageSize(ps)
-                  setPage(1)
+                  pushWs({ pageSize: ps as (typeof OPERATIONS_PAGE_SIZES)[number], page: 1 })
                 }}
                 pageSizeLabelId={pageSizeLabelId}
               />
@@ -666,9 +737,8 @@ export function OperationsWorkspaceView() {
         draft={draftFilters}
         onDraftChange={setDraftFilters}
         onApply={() => {
-          setAppliedFilters(draftFilters)
+          pushWs({ filters: draftFilters, page: 1 })
           setFiltersModalOpen(false)
-          setPage(1)
         }}
       />
     </DataWorkspaceTableListPage>

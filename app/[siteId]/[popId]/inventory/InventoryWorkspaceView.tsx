@@ -3,9 +3,12 @@
 import type {
   InventoryArticleRow,
   InventoryCostLayerRow,
-  InventoryLayerAllocationRow,
   InventoryMovementRow,
 } from "@/app/[siteId]/[popId]/inventory/actions"
+import {
+  InventoryListStatus,
+  useInventoryInfiniteSentinel,
+} from "@/app/[siteId]/[popId]/inventory/inventoryInfinite"
 import {
   mergeInventoryWorkspaceUrl,
   parseInventoryWorkspaceUrl,
@@ -61,10 +64,11 @@ import {
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import {
-  usePopInventory,
-  usePopInventoryLedger,
+  usePopInventoryLedgerAllocations,
+  usePopInventoryLedgerLayers,
   usePopInventoryLocations,
   usePopInventoryMovements,
+  usePopInventoryRows,
   usePopInventorySummary,
 } from "@/hooks/usePopInventory"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
@@ -86,8 +90,8 @@ import {
 import { formatLocaleDateTime } from "@/lib/popTimezone"
 import { popScopedHref } from "@/lib/popRoutes"
 import { formatInventoryExpiryDate } from "@/lib/inventory/inventoryExpiry"
-import { isInventoryRed } from "@/lib/inventory/inventoryStockLevels"
 import { cn } from "@/lib/utils"
+import type { InventoryRowsView } from "@/lib/rootsyApi/inventoryClient"
 import {
   ArrowLeft,
   ArrowRightLeft,
@@ -112,6 +116,7 @@ import {
   useMemo,
   useState,
   type FormEvent,
+  type ReactNode,
 } from "react"
 
 type ClearingId = InventoryClearingId
@@ -124,6 +129,13 @@ const RED_FILTER_OPTIONS = [
   { value: "empty", label: "Vacío" },
   { value: "below_min", label: "Bajo mínimo" },
 ] as const
+
+const LEDGER_TAB_OPTIONS = [
+  { value: "layers", label: "Capas de costo" },
+  { value: "allocations", label: "Imputaciones" },
+] as const
+
+type LedgerTab = (typeof LEDGER_TAB_OPTIONS)[number]["value"]
 
 const CLEARING_COPY: Record<
   Exclude<ClearingId, "home">,
@@ -167,9 +179,21 @@ const CLEARING_COPY: Record<
   },
 }
 
-function matchesQuery(name: string, query: string) {
-  if (!query.trim()) return true
-  return name.toLocaleLowerCase("es").includes(query.trim().toLocaleLowerCase("es"))
+const ROW_VIEWS = new Set<ClearingId>([
+  "red",
+  "overstock",
+  "purchase",
+  "pantry",
+  "recommend",
+])
+
+function queryFailMessage(
+  query: { data?: { success?: boolean; error?: string }; error: unknown } | undefined,
+) {
+  if (!query) return null
+  if (query.data?.success === false) return query.data.error ?? "Unexpected error"
+  if (query.error) return "Unexpected error"
+  return null
 }
 
 function InventoryHomeSkeleton() {
@@ -250,6 +274,7 @@ export default function InventoryWorkspaceView() {
   const clearing = ws.clearing
   const redFilter = ws.redFilter
   const query = ws.q
+  const [searchInput, setSearchInput] = useState(query)
 
   const checkPerm = useCallback(
     (perm: { resource: string; action: string }) =>
@@ -270,32 +295,46 @@ export default function InventoryWorkspaceView() {
   const canDelete = checkPerm(POP_PERMS.INVENTORY_DELETE)
   const canUpdateArticles = checkPerm(POP_PERMS.ARTICLE_UPDATE)
 
-  const needsArticleRows =
-    clearing === "red" ||
-    clearing === "overstock" ||
-    clearing === "purchase" ||
-    clearing === "pantry" ||
-    clearing === "recommend"
+  const needsArticleRows = ROW_VIEWS.has(clearing)
+  const rowsView = needsArticleRows ? (clearing as InventoryRowsView) : "pantry"
 
   const summaryQuery = usePopInventorySummary(popId, {
     enabled: Boolean(popId && siteId),
   })
-  const inventoryQuery = usePopInventory(popId, {
-    enabled: Boolean(popId && siteId && needsArticleRows),
-  })
+  const rowsQuery = usePopInventoryRows(
+    popId,
+    {
+      view: rowsView,
+      q: query,
+      attention: clearing === "red" && redFilter !== "todas" ? redFilter : "",
+    },
+    {
+      enabled: Boolean(popId && siteId && needsArticleRows),
+    },
+  )
+  const fetchMoreRows = rowsQuery.fetchNextPage
+  const canFetchMoreRows =
+    Boolean(rowsQuery.hasNextPage) && !rowsQuery.isFetchingNextPage
+  const loadMoreRows = useCallback(() => {
+    if (!canFetchMoreRows) return
+    void fetchMoreRows()
+  }, [canFetchMoreRows, fetchMoreRows])
   const movementsQuery = usePopInventoryMovements(popId, {
     enabled: Boolean(popId && siteId && clearing === "movements"),
   })
-  const ledgerQuery = usePopInventoryLedger(popId, {
-    enabled: Boolean(
-      popId && siteId && (clearing === "ledger" || clearing === "expiry"),
-    ),
-  })
+  const fetchMoreMovements = movementsQuery.fetchNextPage
+  const canFetchMoreMovements =
+    Boolean(movementsQuery.hasNextPage) && !movementsQuery.isFetchingNextPage
+  const loadMoreMovements = useCallback(() => {
+    if (!canFetchMoreMovements) return
+    void fetchMoreMovements()
+  }, [canFetchMoreMovements, fetchMoreMovements])
   const locationsQuery = usePopInventoryLocations(popId, {
     enabled: Boolean(popId && siteId && clearing === "locations"),
   })
 
-  const articleRows = inventoryQuery.data?.articleRows ?? []
+  const articleRows = rowsQuery.rows
+  const rowsTotal = rowsQuery.total
   const metrics = summaryQuery.data?.metrics ?? {
     articleCount: 0,
     articlesWithStock: 0,
@@ -319,31 +358,25 @@ export default function InventoryWorkspaceView() {
     locationsQuery.data?.locations && locationsQuery.data.locations.length > 0
       ? locationsQuery.data.locations
       : locationsForDialogs
-  const movements = movementsQuery.data?.movements ?? []
-  const costLayers = ledgerQuery.data?.costLayers ?? []
-  const layerAllocations = ledgerQuery.data?.layerAllocations ?? []
+  const movements = movementsQuery.movements
   const expiryAlert = summaryQuery.data?.expiry ?? {
     expiredCount: 0,
     soonCount: 0,
     total: 0,
   }
-  const loading =
+  const summaryLoading =
     summaryQuery.isPending ||
-    (summaryQuery.isFetching && !summaryQuery.isFetched) ||
-    (needsArticleRows &&
-      (inventoryQuery.isPending ||
-        (inventoryQuery.isFetching && !inventoryQuery.isFetched)))
+    (summaryQuery.isFetching && !summaryQuery.isFetched)
+  const rowsLoading = needsArticleRows && rowsQuery.isPending
   const error =
-    summaryQuery.data?.success === false
-      ? summaryQuery.data.error
-      : inventoryQuery.data?.success === false
-        ? inventoryQuery.data.error
-        : summaryQuery.error || inventoryQuery.error
-          ? "Unexpected error"
-          : null
+    queryFailMessage(summaryQuery) ??
+    (needsArticleRows ? rowsQuery.errorMessage : null) ??
+    (clearing === "movements" ? movementsQuery.errorMessage : null) ??
+    (clearing === "locations" ? queryFailMessage(locationsQuery) : null)
 
   const [applyBanner, setApplyBanner] = useState<string | null>(null)
   const [applyBusy, setApplyBusy] = useState(false)
+  const [ledgerTab, setLedgerTab] = useState<LedgerTab>("layers")
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createSaving, setCreateSaving] = useState(false)
@@ -401,6 +434,18 @@ export default function InventoryWorkspaceView() {
     [pathname, workspaceParams],
   )
 
+  useEffect(() => {
+    setSearchInput(query)
+  }, [query])
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (searchInput.trim() === query.trim()) return
+      pushWs({ q: searchInput })
+    }, 400)
+    return () => window.clearTimeout(t)
+  }, [searchInput, query, pushWs])
+
   const refreshInventory = useCallback(async () => {
     if (!popId) return
     await queryClient.invalidateQueries({
@@ -408,7 +453,7 @@ export default function InventoryWorkspaceView() {
     })
   }, [popId, queryClient])
 
-  const pageLoading = bootstrapLoading || loading
+  const pageLoading = bootstrapLoading || (clearing === "home" && summaryLoading)
   const popName = bootstrap?.popName ?? ""
   const stockHref = popScopedHref(siteId, popId ?? "", "articles")
   const defaultLocationId =
@@ -680,33 +725,8 @@ export default function InventoryWorkspaceView() {
     pushWs({ clearing: id, q: "", redFilter: "todas" })
     setApplyBanner(null)
     setLocationBanner(null)
+    setLedgerTab("layers")
   }
-
-  const filteredRows = useMemo(() => {
-    const byQuery = articleRows.filter((row) => matchesQuery(row.name, query))
-    if (clearing === "red") {
-      return byQuery.filter((row) => {
-        if (!isInventoryRed(row.attention)) return false
-        if (redFilter === "todas") return true
-        return row.attention === redFilter
-      })
-    }
-    if (clearing === "overstock") {
-      return byQuery.filter((row) => row.attention === "overstock")
-    }
-    if (clearing === "purchase") {
-      return byQuery
-        .filter((row) => row.qtyToBuy > 0)
-        .sort((a, b) => b.qtyToBuy - a.qtyToBuy)
-    }
-    if (clearing === "recommend") {
-      return byQuery.filter((row) => row.suggestedMin != null)
-    }
-    if (clearing === "pantry") {
-      return byQuery
-    }
-    return byQuery
-  }, [articleRows, clearing, query, redFilter])
 
   const applyRecommendations = async () => {
     if (!popId || !siteId) return
@@ -972,11 +992,11 @@ export default function InventoryWorkspaceView() {
                   <ArrowLeft className="size-3.5" aria-hidden />
                   Volver
                 </RootsSubtleButton>
-                {clearing === "purchase" &&
-                articleRows.some((row) => row.qtyToBuy > 0) ? (
+                {clearing === "purchase" && rowsTotal > 0 ? (
                   <RootsPrimaryButton
                     type="button"
                     size="compact"
+                    withIcon
                     onClick={printPurchaseList}
                   >
                     <Printer className="size-3.5" aria-hidden />
@@ -985,7 +1005,7 @@ export default function InventoryWorkspaceView() {
                 ) : null}
                 {clearing === "recommend" &&
                 canUpdateArticles &&
-                articleRows.some((row) => row.suggestedMin != null) ? (
+                rowsTotal > 0 ? (
                   <RootsPrimaryButton
                     type="button"
                     size="compact"
@@ -1000,6 +1020,21 @@ export default function InventoryWorkspaceView() {
               <DataWorkspaceBlocksSection
                 title={CLEARING_COPY[clearing].title}
                 description={CLEARING_COPY[clearing].description}
+                action={
+                  clearing === "ledger" ? (
+                    <RootsFormSegmentField
+                      label="Sección del libro"
+                      aria-label="Sección del libro"
+                      layout="inline"
+                      className="w-auto [&>span:first-child]:sr-only"
+                      value={ledgerTab}
+                      onValueChange={(value) =>
+                        setLedgerTab(value as LedgerTab)
+                      }
+                      options={LEDGER_TAB_OPTIONS}
+                    />
+                  ) : undefined
+                }
               >
                 {applyBanner ? (
                   <RootsBanner
@@ -1032,9 +1067,12 @@ export default function InventoryWorkspaceView() {
                     label="Buscar artículo"
                     hideLabel
                     placeholder="Buscar artículo"
-                    value={query}
-                    onChange={(e) => pushWs({ q: e.target.value })}
-                    onClear={() => pushWs({ q: "" })}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onClear={() => {
+                      setSearchInput("")
+                      pushWs({ q: "" })
+                    }}
                   />
                 ) : null}
 
@@ -1056,6 +1094,10 @@ export default function InventoryWorkspaceView() {
                 ) : clearing === "movements" ? (
                   <InventoryMovementsTable
                     movements={movements}
+                    loading={movementsQuery.isPending}
+                    hasMore={Boolean(movementsQuery.hasNextPage)}
+                    fetchingMore={movementsQuery.isFetchingNextPage}
+                    onLoadMore={loadMoreMovements}
                     canDelete={canDelete}
                     onDelete={(row) => {
                       setDeleteBanner(null)
@@ -1063,13 +1105,10 @@ export default function InventoryWorkspaceView() {
                     }}
                   />
                 ) : clearing === "ledger" ? (
-                  <InventoryLedgerSections
-                    costLayers={costLayers}
-                    layerAllocations={layerAllocations}
-                  />
+                  <InventoryLedgerSections popId={popId} tab={ledgerTab} />
                 ) : clearing === "expiry" ? (
                   <InventoryExpiryClearing
-                    layers={costLayers}
+                    popId={popId}
                     canWrite={canCreate || canUpdate}
                     canMerma={canCreate}
                     onEdit={(layer) => {
@@ -1097,8 +1136,12 @@ export default function InventoryWorkspaceView() {
                     }}
                   />
                 ) : (
-                  <InventoryArticleRowList
-                    rows={filteredRows}
+                  <InventoryInfiniteArticleList
+                    rows={articleRows}
+                    loading={rowsLoading}
+                    hasMore={Boolean(rowsQuery.hasNextPage)}
+                    fetchingMore={rowsQuery.isFetchingNextPage}
+                    onLoadMore={loadMoreRows}
                     empty={
                       clearing === "red"
                         ? "Nada en rojo. El stock está en orden."
@@ -1267,15 +1310,84 @@ export default function InventoryWorkspaceView() {
   )
 }
 
+function InventoryInfiniteArticleList({
+  rows,
+  loading,
+  hasMore,
+  fetchingMore,
+  onLoadMore,
+  empty,
+  trailing,
+  onRowClick,
+}: {
+  rows: InventoryArticleRow[]
+  loading: boolean
+  hasMore: boolean
+  fetchingMore: boolean
+  onLoadMore: () => void
+  empty: string
+  trailing?: (row: InventoryArticleRow) => ReactNode
+  onRowClick?: (row: InventoryArticleRow) => void
+}) {
+  const setSentinel = useInventoryInfiniteSentinel(
+    hasMore && !fetchingMore,
+    onLoadMore,
+  )
+
+  if (loading && rows.length === 0) {
+    return <p className={dataWorkspaceBlocksEmptyStateClass}>Cargando…</p>
+  }
+
+  return (
+    <div className="space-y-1">
+      <InventoryArticleRowList
+        rows={rows}
+        empty={empty}
+        trailing={trailing}
+        onRowClick={onRowClick}
+      />
+      {rows.length > 0 ? (
+        <>
+          <div ref={setSentinel} className="h-px w-full" aria-hidden />
+          <InventoryListStatus
+            hasItems
+            hasMore={hasMore}
+            fetchingMore={fetchingMore}
+          />
+        </>
+      ) : null}
+    </div>
+  )
+}
+
 function InventoryMovementsTable({
   movements,
+  loading,
+  hasMore,
+  fetchingMore,
+  onLoadMore,
   canDelete,
   onDelete,
 }: {
   movements: InventoryMovementRow[]
+  loading: boolean
+  hasMore: boolean
+  fetchingMore: boolean
+  onLoadMore: () => void
   canDelete: boolean
   onDelete: (row: InventoryMovementRow) => void
 }) {
+  const setSentinel = useInventoryInfiniteSentinel(
+    hasMore && !fetchingMore,
+    onLoadMore,
+  )
+
+  if (loading && movements.length === 0) {
+    return (
+      <p className={dataWorkspaceBlocksEmptyStateClass}>Cargando…</p>
+    )
+  }
+
   if (movements.length === 0) {
     return (
       <p className={dataWorkspaceBlocksEmptyStateClass}>
@@ -1358,22 +1470,65 @@ function InventoryMovementsTable({
           ))}
         </TableBody>
       </Table>
+      <div ref={setSentinel} className="h-px w-full" aria-hidden />
+      <InventoryListStatus
+        hasItems
+        hasMore={hasMore}
+        fetchingMore={fetchingMore}
+      />
     </div>
   )
 }
 
 function InventoryLedgerSections({
-  costLayers,
-  layerAllocations,
+  popId,
+  tab,
 }: {
-  costLayers: InventoryCostLayerRow[]
-  layerAllocations: InventoryLayerAllocationRow[]
+  popId: string
+  tab: LedgerTab
 }) {
+  const layersQuery = usePopInventoryLedgerLayers(popId, {
+    enabled: tab === "layers",
+  })
+  const allocationsQuery = usePopInventoryLedgerAllocations(popId, {
+    enabled: tab === "allocations",
+  })
+  const fetchMoreLayers = layersQuery.fetchNextPage
+  const canFetchMoreLayers =
+    Boolean(layersQuery.hasNextPage) && !layersQuery.isFetchingNextPage
+  const loadMoreLayers = useCallback(() => {
+    if (!canFetchMoreLayers) return
+    void fetchMoreLayers()
+  }, [canFetchMoreLayers, fetchMoreLayers])
+  const fetchMoreAllocations = allocationsQuery.fetchNextPage
+  const canFetchMoreAllocations =
+    Boolean(allocationsQuery.hasNextPage) &&
+    !allocationsQuery.isFetchingNextPage
+  const loadMoreAllocations = useCallback(() => {
+    if (!canFetchMoreAllocations) return
+    void fetchMoreAllocations()
+  }, [canFetchMoreAllocations, fetchMoreAllocations])
+  const setLayersSentinel = useInventoryInfiniteSentinel(
+    canFetchMoreLayers,
+    loadMoreLayers,
+  )
+  const setAllocationsSentinel = useInventoryInfiniteSentinel(
+    canFetchMoreAllocations,
+    loadMoreAllocations,
+  )
+  const costLayers = layersQuery.costLayers
+  const layerAllocations = allocationsQuery.layerAllocations
+  const error =
+    tab === "layers" ? layersQuery.errorMessage : allocationsQuery.errorMessage
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h3 className={dataWorkspaceEntityCardTitleClass}>Capas de costo</h3>
-        <p className="mb-3 mt-1 max-w-2xl font-canopy text-xs text-[var(--rootsy-bruma-500)]">
+    <div className="space-y-3">
+      {error ? (
+        <RootsBanner intent="danger" layout="message" message={error} />
+      ) : null}
+      {tab === "layers" ? (
+      <div className="space-y-3">
+        <p className="max-w-2xl font-canopy text-xs text-[var(--rootsy-bruma-500)]">
           Cada ingreso con costo deja una capa. Se consume primero lo que
           vence antes; si no hay fecha, el más antiguo.
         </p>
@@ -1402,8 +1557,9 @@ function InventoryLedgerSections({
                     colSpan={7}
                     className="py-10 text-center text-[var(--rootsy-bruma-500)]"
                   >
-                    Todavía no hay capas. Aparecen al ingresar compras con
-                    costo.
+                    {layersQuery.isPending
+                      ? "Cargando…"
+                      : "Todavía no hay capas. Aparecen al ingresar compras con costo."}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -1442,12 +1598,17 @@ function InventoryLedgerSections({
               )}
             </TableBody>
           </Table>
+          <div ref={setLayersSentinel} className="h-px w-full" aria-hidden />
+          <InventoryListStatus
+            hasItems={costLayers.length > 0}
+            hasMore={Boolean(layersQuery.hasNextPage)}
+            fetchingMore={layersQuery.isFetchingNextPage}
+          />
         </div>
       </div>
-
-      <div>
-        <h3 className={dataWorkspaceEntityCardTitleClass}>Imputaciones</h3>
-        <p className="mb-3 mt-1 max-w-2xl font-canopy text-xs text-[var(--rootsy-bruma-500)]">
+      ) : (
+      <div className="space-y-3">
+        <p className="max-w-2xl font-canopy text-xs text-[var(--rootsy-bruma-500)]">
           Porción tomada de una capa al registrar una salida.
         </p>
         <div
@@ -1475,7 +1636,9 @@ function InventoryLedgerSections({
                     colSpan={7}
                     className="py-10 text-center text-[var(--rootsy-bruma-500)]"
                   >
-                    Sin imputaciones todavía.
+                    {allocationsQuery.isPending
+                      ? "Cargando…"
+                      : "Sin imputaciones todavía."}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -1513,8 +1676,15 @@ function InventoryLedgerSections({
               )}
             </TableBody>
           </Table>
+          <div ref={setAllocationsSentinel} className="h-px w-full" aria-hidden />
+          <InventoryListStatus
+            hasItems={layerAllocations.length > 0}
+            hasMore={Boolean(allocationsQuery.hasNextPage)}
+            fetchingMore={allocationsQuery.isFetchingNextPage}
+          />
         </div>
       </div>
+      )}
     </div>
   )
 }

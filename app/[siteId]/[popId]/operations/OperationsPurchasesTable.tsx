@@ -367,6 +367,7 @@ export function OperationsPurchasesTable({
         onOpenChange={(open) => {
           if (!open) setDetailPurchase(null)
         }}
+        popId={popId}
         timeZone={timeZone}
       />
     </>

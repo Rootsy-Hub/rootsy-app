@@ -89,6 +89,11 @@ export const comandasBrisaTicketCardClass = cn(
   "cursor-grab active:cursor-grabbing",
 )
 
+export const comandasBrisaTicketCardVoidClass = cn(
+  "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-danger)_38%,transparent)]",
+  "bg-[color-mix(in_srgb,var(--rootsy-danger)_6%,white)]",
+)
+
 export const comandasBrisaTicketCardIdleClass = "cursor-default active:cursor-default"
 
 export const comandasBrisaTicketHeaderClass = cn(

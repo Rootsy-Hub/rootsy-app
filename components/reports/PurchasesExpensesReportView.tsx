@@ -1,10 +1,10 @@
 "use client"
 
-import {
-  getOperationsList,
-  type OperationExpenseLedgerRow,
-  type OperationPurchaseRow,
+import type {
+  OperationExpenseLedgerRow,
+  OperationPurchaseRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
+import { fetchPopOperationsList } from "@/lib/rootsyApi/operationsClient"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -77,7 +77,7 @@ async function fetchPurchasesPeriodTotal(
   let count = 0
 
   while (page <= 50) {
-    const res = await getOperationsList(popId, {
+    const res = await fetchPopOperationsList(popId, {
       view: "purchases",
       dateFrom: from,
       dateTo: to,
@@ -109,7 +109,7 @@ async function fetchExpensesPeriodTotal(
   let count = 0
 
   while (page <= 50) {
-    const res = await getOperationsList(popId, {
+    const res = await fetchPopOperationsList(popId, {
       view: "expenses",
       dateFrom: from,
       dateTo: to,
@@ -140,7 +140,7 @@ async function fetchAllPurchasesReportRows(
   let page = 1
 
   while (page <= 100) {
-    const res = await getOperationsList(popId, {
+    const res = await fetchPopOperationsList(popId, {
       view: "purchases",
       dateFrom: from,
       dateTo: to,
@@ -170,7 +170,7 @@ async function fetchAllExpensesReportRows(
   let page = 1
 
   while (page <= 100) {
-    const res = await getOperationsList(popId, {
+    const res = await fetchPopOperationsList(popId, {
       view: "expenses",
       dateFrom: from,
       dateTo: to,
@@ -249,7 +249,7 @@ export function PurchasesExpensesReportView({
         setPurchaseListError(null)
       }
 
-      const res = await getOperationsList(popId, {
+      const res = await fetchPopOperationsList(popId, {
         view: "purchases",
         dateFrom: from,
         dateTo: to,
@@ -293,7 +293,7 @@ export function PurchasesExpensesReportView({
         setExpenseListError(null)
       }
 
-      const res = await getOperationsList(popId, {
+      const res = await fetchPopOperationsList(popId, {
         view: "expenses",
         dateFrom: from,
         dateTo: to,

@@ -1,10 +1,7 @@
 "use client"
 
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
-import {
-  CheckoutSectionLabel,
-  CheckoutSectionPanel,
-} from "@/components/checkout/CheckoutFormFields"
+import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
 import {
   saleFinalizeDialogPartialAmountClass,
   saleFinalizeDialogPartialCheckClass,
@@ -22,6 +19,7 @@ import {
   RootsDialogHeader,
   RootsDialogLoadingState,
 } from "@/components/rootsy-dialog"
+import { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
 import { RootsFormControlTextarea } from "@/components/rootsy-form/RootsFormControlTextarea"
 import { Dialog } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
@@ -213,41 +211,64 @@ export function ComandaSendDialog({
       </ul>
     )
 
-  const stationsPanel = (
-    <CheckoutSectionPanel className="space-y-3">
-      <CheckoutSectionLabel>Estaciones</CheckoutSectionLabel>
-      {stations.length === 0 ? (
-        <p className="font-canopy text-sm text-[var(--rootsy-bruma-500)]">
-          Tildá ítems a la derecha para armar el envío.
-        </p>
-      ) : (
-        <ul className="space-y-3">
-          {stations.map((station) => (
-            <li key={station.stationId} className="space-y-1.5">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">
-                  {station.stationName}
-                </p>
-                <p className="font-canopy text-[11px] text-[var(--rootsy-bruma-500)]">
-                  {station.count} {station.count === 1 ? "ítem" : "ítems"}
-                </p>
-              </div>
-              <RootsFormControlTextarea
-                rows={2}
-                value={stationComments[station.stationId] ?? ""}
+  const stationNoteValue = (stationId: string) =>
+    stationComments[stationId] ?? ""
+
+  const setStationNote = (stationId: string, value: string) => {
+    setStationComments((prev) => ({ ...prev, [stationId]: value }))
+  }
+
+  const stationsList =
+    stations.length === 0 ? (
+      <p className="font-canopy text-sm text-[var(--rootsy-bruma-500)]">
+        Tildá ítems a la derecha para armar el envío.
+      </p>
+    ) : (
+      <ul className="space-y-3">
+        {stations.map((station) => (
+          <li key={station.stationId} className="space-y-1.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+                {station.stationName}
+              </p>
+              <p className="font-canopy text-[11px] text-[var(--rootsy-bruma-500)]">
+                {station.count} {station.count === 1 ? "ítem" : "ítems"}
+              </p>
+            </div>
+            <div className="lg:hidden">
+              <RootsFormControlInput
+                value={stationNoteValue(station.stationId)}
                 onChange={(event) =>
-                  setStationComments((prev) => ({
-                    ...prev,
-                    [station.stationId]: event.target.value,
-                  }))
+                  setStationNote(station.stationId, event.target.value)
                 }
                 placeholder="Nota para esta isla (opcional)"
               />
-            </li>
-          ))}
-        </ul>
+            </div>
+            <div className="hidden lg:block">
+              <RootsFormControlTextarea
+                rows={2}
+                value={stationNoteValue(station.stationId)}
+                onChange={(event) =>
+                  setStationNote(station.stationId, event.target.value)
+                }
+                placeholder="Nota para esta isla (opcional)"
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    )
+
+  const stationsPanel = (
+    <div
+      className={cn(
+        "space-y-3",
+        "lg:rounded-xl lg:border lg:border-[var(--rootsy-bruma-200)] lg:bg-white lg:p-3.5",
       )}
-    </CheckoutSectionPanel>
+    >
+      <CheckoutSectionLabel>Estaciones</CheckoutSectionLabel>
+      {stationsList}
+    </div>
   )
 
   return (
@@ -267,6 +288,10 @@ export function ComandaSendDialog({
               ) : null}
               {stationsPanel}
               <div className="lg:hidden">
+                <div
+                  className="border-t border-[var(--rootsy-bruma-200)] pt-4"
+                  aria-hidden
+                />
                 <CheckoutSectionLabel>Ítems a comandar</CheckoutSectionLabel>
                 <div className="mt-2.5">{itemsList}</div>
               </div>
