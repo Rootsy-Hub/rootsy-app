@@ -10,6 +10,7 @@ import {
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import { dataWorkspaceHeaderEdgeToggleClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
+import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
 import {
   ModuleWorkspaceBackdropFallback,
   moduleWorkspaceFallbackSurfaceClass,
@@ -52,6 +53,8 @@ export type DataWorkspaceLayoutProps = {
   titleAdornment?: ReactNode
   /** Acciones con ícono (Nuevo, categorías, etc.) — a la derecha, antes del selector de vista. */
   headerActions?: ReactNode
+  /** Acciones secundarias — íconos en desktop, menú “más” en mobile. */
+  headerMoreActions?: readonly DataWorkspaceHeaderMoreAction[]
   /** Fila opcional bajo el header (filtros, período, búsqueda). */
   toolbar?: ReactNode
   /** Barra lateral opcional (p. ej. `DataWorkspaceSidebar`) para varias vistas en la misma sección. */
@@ -103,6 +106,7 @@ export function DataWorkspaceLayout({
   showFullscreen = true,
   titleAdornment,
   headerActions,
+  headerMoreActions,
   toolbar,
   sidebar,
   sidebarCollapsible = true,
@@ -315,6 +319,7 @@ export function DataWorkspaceLayout({
           headerVariant={headerVariant}
           titleAdornment={titleAdornment}
           headerActions={headerActions}
+          headerMoreActions={headerMoreActions}
           sectionMenu={sectionMenu}
           toolbar={toolbar}
           mainMaxWidthClass={mainMaxWidthClass}

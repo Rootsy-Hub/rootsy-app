@@ -7,20 +7,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
 
 /** Botón de ícono del header con tooltip al hover — portal, no lo recorta el universo. */
 export function DataWorkspaceHeaderTooltipIconButton({
   label,
-  className,
   ...props
 }: DataWorkspaceHeaderIconButtonProps) {
   return (
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
-        <div className={cn("flex", className)}>
-          <DataWorkspaceHeaderIconButton label={label} {...props} />
-        </div>
+        <DataWorkspaceHeaderIconButton label={label} {...props} />
       </TooltipTrigger>
       <TooltipContent
         variant="dark"

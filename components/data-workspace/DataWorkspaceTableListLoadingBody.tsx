@@ -39,8 +39,11 @@ const filterSkeletonFieldClass =
 
 function FilterFieldSkeleton({ labelWidth = "w-10" }: { labelWidth?: string }) {
   return (
-    <div className="flex w-full min-w-0 flex-col gap-1.5">
-      <div className={cn(filterSkeletonLabelClass, labelWidth)} aria-hidden />
+    <div className="flex w-full min-w-0 flex-col gap-1.5 max-md:gap-0">
+      <div
+        className={cn(filterSkeletonLabelClass, "max-md:hidden", labelWidth)}
+        aria-hidden
+      />
       <div className={filterSkeletonFieldClass} aria-hidden />
     </div>
   )

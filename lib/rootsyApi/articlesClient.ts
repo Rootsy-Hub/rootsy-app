@@ -1,6 +1,8 @@
 import type {
   ArticleTableRow,
+  CreatePopArticleInput,
   GetPopArticlesTableInput,
+  UpdatePopArticleInput,
 } from "@/app/[siteId]/[popId]/articles/actions"
 import type { ArticleCostRow } from "@/lib/articleCosts"
 
@@ -138,4 +140,83 @@ export async function fetchPopArticle(
     throw new Error(error || "No se pudo cargar el artículo")
   }
   return json.data
+}
+
+type MutateResult = { success: true } | { success: false; error: string }
+
+async function parseMutate(res: Response): Promise<MutateResult> {
+  const json = (await res.json().catch(() => null)) as
+    | { success?: boolean; error?: string }
+    | null
+  if (res.ok && json && json.success) return { success: true }
+  return {
+    success: false,
+    error:
+      json && typeof json.error === "string" && json.error
+        ? json.error
+        : `HTTP ${res.status}`,
+  }
+}
+
+export async function createPopArticle(
+  popId: string,
+  input: CreatePopArticleInput,
+): Promise<MutateResult> {
+  const res = await fetch(`/api/pops/${popId}/articles`, {
+    method: "POST",
+    headers: { accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })
+  return parseMutate(res)
+}
+
+export async function updatePopArticle(
+  popId: string,
+  articleId: string,
+  input: UpdatePopArticleInput,
+): Promise<MutateResult> {
+  const res = await fetch(`/api/pops/${popId}/articles/${articleId}`, {
+    method: "PATCH",
+    headers: { accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })
+  return parseMutate(res)
+}
+
+export async function deletePopArticle(
+  popId: string,
+  articleId: string,
+  confirmationTyped: string,
+): Promise<MutateResult> {
+  const res = await fetch(`/api/pops/${popId}/articles/${articleId}`, {
+    method: "DELETE",
+    headers: { accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({ confirmationTyped }),
+  })
+  return parseMutate(res)
+}
+
+export async function uploadArticleImage(
+  popId: string,
+  formData: FormData,
+): Promise<
+  { success: true; imageUrl: string } | { success: false; error: string }
+> {
+  const res = await fetch(`/api/pops/${popId}/articles/image`, {
+    method: "POST",
+    headers: { accept: "application/json" },
+    body: formData,
+  })
+  const json = (await res.json().catch(() => null)) as
+    | ApiOk<{ imageUrl: string }>
+    | ApiErr
+    | null
+  if (res.ok && json && "success" in json && json.success) {
+    return { success: true, imageUrl: json.data.imageUrl }
+  }
+  return {
+    success: false,
+    error:
+      json && "error" in json && json.error ? json.error : `HTTP ${res.status}`,
+  }
 }

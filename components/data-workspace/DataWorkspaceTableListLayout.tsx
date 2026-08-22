@@ -57,6 +57,7 @@ export type DataWorkspaceTableListPageProps = {
     | "userRoleLabel"
     | "pillLabel"
     | "headerActions"
+    | "headerMoreActions"
     | "titleAdornment"
     | "sectionMenu"
     | "toolbar"

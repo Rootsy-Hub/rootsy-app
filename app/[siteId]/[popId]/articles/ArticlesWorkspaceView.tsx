@@ -9,13 +9,10 @@ import { ArticleCategoriesDialog } from "@/app/[siteId]/[popId]/articles/Article
 import { ArticleCategoryDeleteDialog } from "@/app/[siteId]/[popId]/articles/ArticleCategoryDeleteDialog"
 import { ArticlePriceListsDialog } from "@/app/[siteId]/[popId]/articles/ArticlePriceListsDialog"
 import { ArticleItemKindToolbarFilter, articleItemKindFilterToQuery, resolveArticleItemKindFilterId } from "@/app/[siteId]/[popId]/articles/ArticleItemKindToolbarFilter"
-import {
-  createPopArticle,
-  deletePopArticle,
-  updatePopArticle,
-  type ArticleCategoryOption,
-  type CategoryLayoutUpdate,
-  type ArticleTableRow,
+import type {
+  ArticleCategoryOption,
+  CategoryLayoutUpdate,
+  ArticleTableRow,
 } from "@/app/[siteId]/[popId]/articles/actions"
 import {
   articleCostLinesFromRows,
@@ -99,7 +96,7 @@ import {
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
+import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   TableBody,
   TableCell,
@@ -119,7 +116,12 @@ import {
 } from "@/lib/queryKeys"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
-import { fetchPopArticle } from "@/lib/rootsyApi/articlesClient"
+import {
+  createPopArticle,
+  deletePopArticle,
+  fetchPopArticle,
+  updatePopArticle,
+} from "@/lib/rootsyApi/articlesClient"
 import {
   createPopArticleCategory,
   deletePopArticleCategory,
@@ -1100,36 +1102,28 @@ export function ArticlesWorkspaceView() {
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "Catálogo",
-        headerActions: (
-          <>
-            {canCreate ? (
-              <DataWorkspaceHeaderTooltipIconButton
-                label="Nuevo artículo"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                primary
-                onClick={openCreate}
-              >
-                <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderTooltipIconButton>
-            ) : null}
-            <DataWorkspaceHeaderTooltipIconButton
-              label="Gestionar categorías"
-              headerVariant={dataWorkspaceTableListHeaderVariant}
-              onClick={() => {
-                setCategoriesOpen(true)
-              }}
-            >
-              <FolderTree className="size-5" aria-hidden />
-            </DataWorkspaceHeaderTooltipIconButton>
-            <DataWorkspaceHeaderTooltipIconButton
-              label="Listas de precios"
-              headerVariant={dataWorkspaceTableListHeaderVariant}
-              onClick={() => setPriceListsOpen(true)}
-            >
-              <DollarSign className="size-5" aria-hidden />
-            </DataWorkspaceHeaderTooltipIconButton>
-          </>
-        ),
+        headerActions: canCreate ? (
+          <DataWorkspaceHeaderIconButton
+            label="Nuevo artículo"
+            headerVariant={dataWorkspaceTableListHeaderVariant}
+            primary
+            onClick={openCreate}
+          >
+            <Plus className="size-5" aria-hidden />
+          </DataWorkspaceHeaderIconButton>
+        ) : null,
+        headerMoreActions: [
+          {
+            label: "Gestionar categorías",
+            icon: FolderTree,
+            onClick: () => setCategoriesOpen(true),
+          },
+          {
+            label: "Listas de precios",
+            icon: DollarSign,
+            onClick: () => setPriceListsOpen(true),
+          },
+        ],
       }}
       error={error}
     >

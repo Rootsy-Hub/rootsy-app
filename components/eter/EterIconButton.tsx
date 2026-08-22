@@ -15,6 +15,7 @@ import Link from "next/link"
 import {
   Children,
   cloneElement,
+  forwardRef,
   isValidElement,
   type ButtonHTMLAttributes,
   type CSSProperties,
@@ -35,26 +36,29 @@ type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "aria-la
   children: ReactNode
 }
 
-export function EterIconButton({
-  label,
-  size = "default",
-  intent = "subtle",
-  href,
-  disabled,
-  className,
-  style,
-  children,
-  onMouseEnter,
-  onMouseLeave,
-  onFocus,
-  onBlur,
-  onPointerDown,
-  onPointerUp,
-  onPointerCancel,
-  onKeyDown,
-  onKeyUp,
-  ...rest
-}: Props) {
+export const EterIconButton = forwardRef<HTMLButtonElement, Props>(function EterIconButton(
+  {
+    label,
+    size = "default",
+    intent = "subtle",
+    href,
+    disabled,
+    className,
+    style,
+    children,
+    onMouseEnter,
+    onMouseLeave,
+    onFocus,
+    onBlur,
+    onPointerDown,
+    onPointerUp,
+    onPointerCancel,
+    onKeyDown,
+    onKeyUp,
+    ...rest
+  },
+  ref,
+) {
   const { state, interactionHandlers } = useRootsButtonInteraction({ disabled })
   const layout = getIconButtonSpecStyle({
     theme: "workspace",
@@ -161,6 +165,7 @@ export function EterIconButton({
 
   return (
     <button
+      ref={ref}
       type="button"
       aria-label={label}
       title={label}
@@ -173,4 +178,4 @@ export function EterIconButton({
       {content}
     </button>
   )
-}
+})

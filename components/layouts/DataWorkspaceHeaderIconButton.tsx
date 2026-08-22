@@ -6,7 +6,7 @@ import {
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { EterIconButton } from "@/components/eter/EterIconButton"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
-import type { ButtonHTMLAttributes, ReactNode } from "react"
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react"
 
 export type DataWorkspaceHeaderIconButtonProps = {
   /** Etiqueta accesible y tooltip. */
@@ -17,15 +17,17 @@ export type DataWorkspaceHeaderIconButtonProps = {
   children: ReactNode
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "aria-label">
 
-export function DataWorkspaceHeaderIconButton({
-  label,
-  headerVariant = "default",
-  primary = false,
-  ...rest
-}: DataWorkspaceHeaderIconButtonProps) {
+export const DataWorkspaceHeaderIconButton = forwardRef<
+  HTMLButtonElement,
+  DataWorkspaceHeaderIconButtonProps
+>(function DataWorkspaceHeaderIconButton(
+  { label, headerVariant = "default", primary = false, ...rest },
+  ref,
+) {
   if (isDarkChromeHeader(headerVariant)) {
     return (
       <EterIconButton
+        ref={ref}
         label={label}
         intent={primary ? "primary" : "subtle"}
         size="default"
@@ -36,6 +38,7 @@ export function DataWorkspaceHeaderIconButton({
 
   return (
     <RootsIconButton
+      ref={ref}
       label={label}
       theme="workspace"
       emphasis={primary ? "filled" : "ghost"}
@@ -43,4 +46,4 @@ export function DataWorkspaceHeaderIconButton({
       {...rest}
     />
   )
-}
+})

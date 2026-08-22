@@ -2,6 +2,10 @@
 
 import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import { menuModuleHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import {
+  DataWorkspaceHeaderMoreMenu,
+  type DataWorkspaceHeaderMoreAction,
+} from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { WorkspaceMobileAccountCluster } from "@/components/layouts/WorkspaceMobileAccountCluster"
 import {
@@ -11,7 +15,11 @@ import {
 import { EterIconButton } from "@/components/eter/EterIconButton"
 import { PopIdentityHeaderCompact } from "@/components/pop-identity/PopIdentityHeaderCompact"
 import {
+  menuGhostBarClass,
+} from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
+import {
   eterHeaderDividerClass,
+  eterHeaderMutedClass,
   eterHeaderTitleClass,
 } from "@/lib/eter/eterChrome"
 import { cn } from "@/lib/utils"
@@ -37,6 +45,7 @@ export type ModuleWorkspaceHeaderProps = {
   headerVariant?: DataWorkspaceHeaderVariant
   titleAdornment?: ReactNode
   headerActions?: ReactNode
+  headerMoreActions?: readonly DataWorkspaceHeaderMoreAction[]
   sectionMenu?: ReactNode
   toolbar?: ReactNode
   mainMaxWidthClass?: string
@@ -65,6 +74,7 @@ export function ModuleWorkspaceHeader({
   headerVariant = "dark",
   titleAdornment,
   headerActions,
+  headerMoreActions,
   sectionMenu,
   toolbar,
   mainMaxWidthClass = "max-w-6xl",
@@ -88,7 +98,16 @@ export function ModuleWorkspaceHeader({
   const userPending = userPendingProp || (loading && !userName)
   const showBrand = brandPending || Boolean(popLogoSrc || popName)
   const showUser = userPending || Boolean(userName)
-  const showActions = Boolean(headerActions || sectionMenu)
+  const hasMoreActions = Boolean(headerMoreActions?.length)
+  const showActions = Boolean(headerActions || hasMoreActions || sectionMenu)
+  const renderMoreMenu = (presentation: "icons" | "menu") =>
+    hasMoreActions ? (
+      <DataWorkspaceHeaderMoreMenu
+        actions={headerMoreActions!}
+        headerVariant={headerVariant}
+        presentation={presentation}
+      />
+    ) : null
 
   return (
     <>
@@ -125,30 +144,15 @@ export function ModuleWorkspaceHeader({
             </EterIconButton>
           ) : null}
 
-          {resolvedTitle ? (
-            <h1
-              className={cn(
-                "min-w-0 flex-1 truncate text-base tracking-tight",
-                eterHeaderTitleClass,
-              )}
-            >
-              {resolvedTitle}
-            </h1>
-          ) : showBrand ? (
-            <PopIdentityHeaderCompact
-              name={popName || "—"}
-              imageUrl={popLogoSrc}
-              fallbackSeed={popName || "pop"}
-              tone="dark"
-              pending={brandPending}
-              className="min-w-0 flex-1"
-            />
-          ) : (
-            <span className="min-w-0 flex-1" />
-          )}
+          <ModuleWorkspaceMobileTitle
+            popName={popName}
+            title={resolvedTitle}
+            pending={brandPending}
+          />
 
-          <div className="ml-auto flex shrink-0 items-center gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-0.5">
             {headerActions}
+            {renderMoreMenu("menu")}
             {sectionMenu}
             {showUser ? (
               <WorkspaceMobileAccountCluster
@@ -244,6 +248,7 @@ export function ModuleWorkspaceHeader({
             {showActions ? (
               <div className="flex items-center gap-1">
                 {headerActions}
+                {renderMoreMenu("icons")}
                 {sectionMenu}
               </div>
             ) : null}
@@ -277,5 +282,52 @@ export function ModuleWorkspaceHeader({
         </div>
       ) : null}
     </>
+  )
+}
+
+function ModuleWorkspaceMobileTitle({
+  popName,
+  title,
+  pending,
+}: {
+  popName?: string
+  title: string | null
+  pending: boolean
+}) {
+  const resolvedPopName = popName?.trim() || null
+
+  if (pending && !title && !resolvedPopName) {
+    return (
+      <div className="min-w-0 flex-1" aria-hidden>
+        <span className={cn(menuGhostBarClass, "mb-1 block h-2.5 w-20")} />
+        <span className={cn(menuGhostBarClass, "block h-3.5 w-16")} />
+      </div>
+    )
+  }
+
+  if (!title && !resolvedPopName && !pending) {
+    return <span className="min-w-0 flex-1" />
+  }
+
+  return (
+    <div className="min-w-0 flex-1 leading-tight">
+      {pending && !resolvedPopName ? (
+        <span className={cn(menuGhostBarClass, "mb-0.5 block h-2.5 w-20")} aria-hidden />
+      ) : resolvedPopName ? (
+        <p className={cn("truncate text-[11px] font-medium", eterHeaderMutedClass)}>
+          {resolvedPopName}
+        </p>
+      ) : null}
+      {title ? (
+        <h1
+          className={cn(
+            "truncate text-base tracking-tight",
+            eterHeaderTitleClass,
+          )}
+        >
+          {title}
+        </h1>
+      ) : null}
+    </div>
   )
 }

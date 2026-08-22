@@ -1,6 +1,6 @@
 "use client"
 
-import { uploadArticleImage } from "@/app/[siteId]/[popId]/articles/actions"
+import { uploadArticleImage } from "@/lib/rootsyApi/articlesClient"
 import { RootsFormImageUploadField } from "@/components/rootsy-form/RootsFormImageUploadField"
 import {
   compressImageFileToWebp,

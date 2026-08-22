@@ -391,9 +391,9 @@ export const workspaceTableNatureMoneyNegativeClass = cn(
   "font-numeric text-sm tabular-nums tracking-tight text-[var(--wt-money-negative)]",
 )
 
-/** Barra de acciones bulk — altura fija h-11 alineada al header layout. */
+/** Barra de chrome (filtros activos · selección) — crece en mobile si hay wrap. */
 export const listBulkToolbarBarClass =
-  "flex h-11 shrink-0 flex-wrap items-center gap-2 px-3 sm:px-4"
+  "flex min-h-11 shrink-0 flex-wrap items-center gap-2 px-3 py-2 sm:px-4 md:h-11 md:py-0"
 
 /** Contenedor único — filtros activos + selección antes de la tabla. */
 export const listTableChromeStackClass =

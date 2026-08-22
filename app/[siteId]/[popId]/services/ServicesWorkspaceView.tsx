@@ -505,29 +505,26 @@ export function ServicesWorkspaceView() {
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "Catálogo",
-        headerActions: (
-          <>
-            {canCreate ? (
-              <DataWorkspaceHeaderIconButton
-                label="Nuevo servicio"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                primary
-                onClick={openCreate}
-              >
-                <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            ) : null}
-            {(canUpdate || canCreate) && (
-              <DataWorkspaceHeaderIconButton
-                label="Gestionar categorías"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                onClick={() => setCategoriesOpen(true)}
-              >
-                <FolderTree className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            )}
-          </>
-        ),
+        headerActions: canCreate ? (
+          <DataWorkspaceHeaderIconButton
+            label="Nuevo servicio"
+            headerVariant={dataWorkspaceTableListHeaderVariant}
+            primary
+            onClick={openCreate}
+          >
+            <Plus className="size-5" aria-hidden />
+          </DataWorkspaceHeaderIconButton>
+        ) : null,
+        headerMoreActions:
+          canUpdate || canCreate
+            ? [
+                {
+                  label: "Gestionar categorías",
+                  icon: FolderTree,
+                  onClick: () => setCategoriesOpen(true),
+                },
+              ]
+            : undefined,
       }}
       error={error}
     >

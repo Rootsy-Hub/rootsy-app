@@ -201,19 +201,19 @@ export const dataWorkspaceListFiltersBarRowClass = cn(
   "data-workspace-tables-filters-dawn",
 )
 
-export const dataWorkspaceListFiltersBarInnerClass = "min-h-14 md:h-23"
+export const dataWorkspaceListFiltersBarInnerClass = "min-h-12 md:h-23"
 
 export const dataWorkspaceListFiltersGridClass =
-  "grid min-h-14 grid-cols-1 md:h-full md:grid-cols-3"
+  "grid min-h-12 grid-cols-2 md:h-full md:grid-cols-3 max-md:[&:has(>:nth-child(3))>:last-child]:col-span-2"
 
 /** Tipo + período + filtros + búsqueda. */
 export const dataWorkspaceListFiltersGridFourClass =
-  "grid min-h-14 grid-cols-1 md:h-full md:grid-cols-4"
+  "grid min-h-12 grid-cols-2 md:h-full md:grid-cols-4"
 
 export const dataWorkspaceListFiltersPanelClass = cn(
-  "flex min-h-14 min-w-0 items-center px-3",
+  "flex min-h-12 min-w-0 items-center px-2.5 py-2",
   "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-300)_42%,transparent)] last:border-b-0",
-  "md:h-full md:border-b-0 md:border-r md:px-4 md:last:border-r-0",
+  "md:h-full md:border-b-0 md:border-r md:px-4 md:py-0 md:last:border-r-0",
 )
 
 export const dataWorkspaceListFiltersPanelLastClass = dataWorkspaceListFiltersPanelClass
@@ -221,7 +221,9 @@ export const dataWorkspaceListFiltersPanelLastClass = dataWorkspaceListFiltersPa
 export function dataWorkspaceListFiltersFieldClass(hideLabels = false) {
   return cn(
     "w-full min-w-0",
-    hideLabels ? "gap-0 [&>label]:sr-only" : "gap-1.5",
+    hideLabels
+      ? "gap-0 [&>label]:sr-only"
+      : "gap-1.5 max-md:gap-0 max-md:[&>label]:sr-only",
   )
 }
 

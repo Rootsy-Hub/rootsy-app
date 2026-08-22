@@ -721,42 +721,35 @@ export function RecipesWorkspaceView() {
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "Menú",
-        headerActions: (
-          <>
-            {canCreate ? (
-              <DataWorkspaceHeaderIconButton
-                label="Nueva receta"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                primary
-                onClick={openCreate}
-              >
-                <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            ) : null}
-            {(canUpdate || canCreate) && (
-              <DataWorkspaceHeaderIconButton
-                label="Gestionar categorías"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                onClick={() => setCategoriesOpen(true)}
-              >
-                <FolderTree className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            )}
-            {(canUpdate || canCreate) && (
-              <DataWorkspaceHeaderIconButton
-                label="Gestionar estaciones"
-                headerVariant={dataWorkspaceTableListHeaderVariant}
-                onClick={() => {
-                  setStationsOpen(true)
-                  setStationsLoading(true)
-                  void loadStations({ spinner: true })
-                }}
-              >
-                <ChefHat className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            )}
-          </>
-        ),
+        headerActions: canCreate ? (
+          <DataWorkspaceHeaderIconButton
+            label="Nueva receta"
+            headerVariant={dataWorkspaceTableListHeaderVariant}
+            primary
+            onClick={openCreate}
+          >
+            <Plus className="size-5" aria-hidden />
+          </DataWorkspaceHeaderIconButton>
+        ) : null,
+        headerMoreActions:
+          canUpdate || canCreate
+            ? [
+                {
+                  label: "Gestionar categorías",
+                  icon: FolderTree,
+                  onClick: () => setCategoriesOpen(true),
+                },
+                {
+                  label: "Gestionar estaciones",
+                  icon: ChefHat,
+                  onClick: () => {
+                    setStationsOpen(true)
+                    setStationsLoading(true)
+                    void loadStations({ spinner: true })
+                  },
+                },
+              ]
+            : undefined,
       }}
       error={error}
     >
