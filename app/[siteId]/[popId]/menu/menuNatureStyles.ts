@@ -151,6 +151,11 @@ export const menuBadgeHotClass =
 export const menuBadgeDefaultClass =
   "bg-gradient-to-r from-[#DC2626] to-[#EF4444] text-white"
 
+/** Conteo plano — un aviso, un color, se lee al toque. */
+export const menuNotificationCountClass = cn(
+  "bg-[color:var(--color-status-danger,#DC2626)] text-white",
+)
+
 export const menuDockEditBadgeClass =
   "bg-white text-[color:var(--rootsy-bruma-900)] ring-black/10"
 
