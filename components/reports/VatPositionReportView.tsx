@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  getAccountingVatPosition,
-  type VatPositionRow,
-} from "@/app/[siteId]/[popId]/reports/accountingActions"
+import type { VatPositionRow } from "@/app/[siteId]/[popId]/reports/accountingActions"
+import { fetchAccountingVatPosition as getAccountingVatPosition } from "@/lib/rootsyApi/reportsClient"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"

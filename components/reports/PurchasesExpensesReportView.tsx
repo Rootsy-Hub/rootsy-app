@@ -5,6 +5,7 @@ import type {
   OperationPurchaseRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
 import { fetchPopOperationsList } from "@/lib/rootsyApi/operationsClient"
+import { fetchReportOperationalTotals } from "@/lib/rootsyApi/reportsClient"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -24,10 +25,6 @@ import {
   printExpensesReportPdf,
   printPurchasesReportPdf,
 } from "@/lib/purchasesExpensesReportPdfExport"
-import {
-  sumExpensesReportAmount,
-  sumPurchasesReportPaid,
-} from "@/lib/purchasesExpensesReportExportData"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
@@ -65,70 +62,6 @@ type Props = {
   onPresetChange: (preset: DataWorkspaceDatePreset) => void
   onCustomRangeChange: (range: DateRange | undefined) => void
   onBack: () => void
-}
-
-async function fetchPurchasesPeriodTotal(
-  popId: string,
-  from: string | null,
-  to: string | null,
-): Promise<{ count: number; total: number } | { error: string }> {
-  let page = 1
-  let total = 0
-  let count = 0
-
-  while (page <= 50) {
-    const res = await fetchPopOperationsList(popId, {
-      view: "purchases",
-      dateFrom: from,
-      dateTo: to,
-      search: "",
-      page,
-      pageSize: 100,
-      sort: "created_at",
-      ord: "desc",
-    })
-    if (!res.success) {
-      return { error: res.error || "Error al cargar compras" }
-    }
-    count = res.totalCount
-    total += sumPurchasesReportPaid(res.purchases)
-    if (page * 100 >= res.totalCount) break
-    page += 1
-  }
-
-  return { count, total }
-}
-
-async function fetchExpensesPeriodTotal(
-  popId: string,
-  from: string | null,
-  to: string | null,
-): Promise<{ count: number; total: number } | { error: string }> {
-  let page = 1
-  let total = 0
-  let count = 0
-
-  while (page <= 50) {
-    const res = await fetchPopOperationsList(popId, {
-      view: "expenses",
-      dateFrom: from,
-      dateTo: to,
-      search: "",
-      page,
-      pageSize: 100,
-      sort: "entry_date",
-      ord: "desc",
-    })
-    if (!res.success) {
-      return { error: res.error || "Error al cargar gastos" }
-    }
-    count = res.totalCount
-    total += sumExpensesReportAmount(res.expenseLedger)
-    if (page * 100 >= res.totalCount) break
-    page += 1
-  }
-
-  return { count, total }
 }
 
 async function fetchAllPurchasesReportRows(
@@ -220,7 +153,7 @@ export function PurchasesExpensesReportView({
   const [expenseCount, setExpenseCount] = useState(0)
   const [expensePage, setExpensePage] = useState(1)
   const [expenseHasMore, setExpenseHasMore] = useState(true)
-  const [expenseLoading, setExpenseLoading] = useState(true)
+  const [expenseLoading, setExpenseLoading] = useState(false)
   const [expenseLoadingMore, setExpenseLoadingMore] = useState(false)
   const [expenseListError, setExpenseListError] = useState<string | null>(null)
 
@@ -448,35 +381,37 @@ export function PurchasesExpensesReportView({
   ])
 
   useEffect(() => {
+    if (activeTab !== "purchases") return
     setExportError(null)
     setPurchaseRows([])
     setPurchasePage(1)
     setPurchaseHasMore(true)
     void loadPurchasesPage(1, false)
-  }, [loadPurchasesPage])
+  }, [activeTab, loadPurchasesPage])
 
   useEffect(() => {
+    if (activeTab !== "expenses") return
     setExportError(null)
     setExpenseRows([])
     setExpensePage(1)
     setExpenseHasMore(true)
     void loadExpensesPage(1, false)
-  }, [loadExpensesPage])
+  }, [activeTab, loadExpensesPage])
 
   useEffect(() => {
     let cancelled = false
     setPurchasePeriodTotalBusy(true)
     setPurchasePeriodTotalError(null)
-    void fetchPurchasesPeriodTotal(popId, from, to).then((result) => {
+    void fetchReportOperationalTotals(popId, "purchases", from, to).then((result) => {
       if (cancelled) return
       setPurchasePeriodTotalBusy(false)
-      if ("error" in result) {
+      if (!result.success) {
         setPurchasePeriodTotal(null)
         setPurchasePeriodTotalError(result.error)
         return
       }
-      setPurchasePeriodTotal(result.total)
-      setPurchaseCount((prev) => (prev === 0 ? result.count : prev))
+      setPurchasePeriodTotal(result.data.total)
+      setPurchaseCount((prev) => (prev === 0 ? result.data.count : prev))
     })
     return () => {
       cancelled = true
@@ -487,16 +422,16 @@ export function PurchasesExpensesReportView({
     let cancelled = false
     setExpensePeriodTotalBusy(true)
     setExpensePeriodTotalError(null)
-    void fetchExpensesPeriodTotal(popId, from, to).then((result) => {
+    void fetchReportOperationalTotals(popId, "expenses", from, to).then((result) => {
       if (cancelled) return
       setExpensePeriodTotalBusy(false)
-      if ("error" in result) {
+      if (!result.success) {
         setExpensePeriodTotal(null)
         setExpensePeriodTotalError(result.error)
         return
       }
-      setExpensePeriodTotal(result.total)
-      setExpenseCount((prev) => (prev === 0 ? result.count : prev))
+      setExpensePeriodTotal(result.data.total)
+      setExpenseCount((prev) => (prev === 0 ? result.data.count : prev))
     })
     return () => {
       cancelled = true

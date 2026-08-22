@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  getAccountingCashFlow,
-  type CashFlowRow,
-} from "@/app/[siteId]/[popId]/reports/accountingActions"
+import type { CashFlowRow } from "@/app/[siteId]/[popId]/reports/accountingActions"
+import { fetchAccountingCashFlow as getAccountingCashFlow } from "@/lib/rootsyApi/reportsClient"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"

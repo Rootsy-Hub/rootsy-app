@@ -1,11 +1,11 @@
 "use client"
 
-import {
-  getChartOfAccountsReport,
-  type AccountNature,
-  type AccountType,
-  type ChartOfAccountsReportRow,
+import type {
+  AccountNature,
+  AccountType,
+  ChartOfAccountsReportRow,
 } from "@/app/[siteId]/[popId]/reports/accountingActions"
+import { fetchChartOfAccountsReport as getChartOfAccountsReport } from "@/lib/rootsyApi/reportsClient"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"

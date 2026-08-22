@@ -1,9 +1,10 @@
+import type { JournalEntrySummaryRow } from "@/app/[siteId]/[popId]/reports/accountingActions"
 import {
-  getAccountingJournalEntries,
-  type JournalEntrySummaryRow,
-} from "@/app/[siteId]/[popId]/reports/accountingActions"
+  fetchAccountingJournalEntries,
+  fetchAccountingJournalTotals,
+} from "@/lib/rootsyApi/reportsClient"
 
-const JOURNAL_EXPORT_PAGE_SIZE = 200
+const JOURNAL_EXPORT_PAGE_SIZE = 100
 
 export async function fetchAllJournalEntriesForExport(
   popId: string,
@@ -19,22 +20,22 @@ export async function fetchAllJournalEntriesForExport(
   | { success: false; error: string }
 > {
   const entries: JournalEntrySummaryRow[] = []
-  let offset = 0
+  let page = 1
   let totalDebit = 0
   let totalCredit = 0
 
+  const totals = await fetchAccountingJournalTotals(popId, from, to)
+  if (!totals.success) return totals
+  totalDebit = totals.periodTotalDebit
+  totalCredit = totals.periodTotalCredit
+
   while (true) {
-    const res = await getAccountingJournalEntries(popId, from, to, {
-      limit: JOURNAL_EXPORT_PAGE_SIZE,
-      offset,
+    const res = await fetchAccountingJournalEntries(popId, from, to, {
+      page,
+      pageSize: JOURNAL_EXPORT_PAGE_SIZE,
     })
     if (!res.success) {
       return res
-    }
-
-    if (offset === 0) {
-      totalDebit = res.periodTotalDebit ?? 0
-      totalCredit = res.periodTotalCredit ?? 0
     }
 
     entries.push(...res.entries)
@@ -43,7 +44,7 @@ export async function fetchAllJournalEntriesForExport(
       break
     }
 
-    offset += res.entries.length
+    page += 1
   }
 
   return { success: true, entries, totalDebit, totalCredit }

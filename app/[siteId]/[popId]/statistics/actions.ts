@@ -1,6 +1,6 @@
 "use server"
 
-import { getAccountingIncomeStatement } from "@/app/[siteId]/[popId]/reports/accountingActions"
+import { fetchAccountingIncomeStatementServer as getAccountingIncomeStatement } from "@/lib/rootsyApi/reportsServer"
 import type {
   OperationExpenseLedgerRow,
   OperationPurchaseLineItem,

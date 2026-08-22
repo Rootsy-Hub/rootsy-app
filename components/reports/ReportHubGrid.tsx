@@ -11,7 +11,7 @@ import {
   type ReportHubCategoryFilter,
   type ReportCatalogItem,
 } from "@/lib/reportsCatalog"
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 
 const REPORT_HUB_FILTER_OPTIONS = [
   { value: "all", label: "Todos" },
@@ -23,17 +23,19 @@ const REPORT_HUB_FILTER_OPTIONS = [
 
 type Props = {
   selectedReportId: string | null
+  activeCategoryId: ReportHubCategoryFilter
+  onCategoryChange: (filter: ReportHubCategoryFilter) => void
   onSelectReport: (reportId: string) => void
   buildItemHref: (item: ReportCatalogItem) => string
 }
 
 export function ReportHubGrid({
   selectedReportId,
+  activeCategoryId,
+  onCategoryChange,
   onSelectReport,
   buildItemHref,
 }: Props) {
-  const [activeCategoryId, setActiveCategoryId] =
-    useState<ReportHubCategoryFilter>("all")
   const entries = useMemo(() => {
     const all = flattenReportCatalog()
     if (activeCategoryId === "all") return all
@@ -50,7 +52,7 @@ export function ReportHubGrid({
         groupClassName="border-0"
         value={activeCategoryId}
         onValueChange={(value) =>
-          setActiveCategoryId(value as ReportHubCategoryFilter)
+          onCategoryChange(value as ReportHubCategoryFilter)
         }
         options={REPORT_HUB_FILTER_OPTIONS}
       />

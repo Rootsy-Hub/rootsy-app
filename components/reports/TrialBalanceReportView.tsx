@@ -1,10 +1,10 @@
 "use client"
 
-import {
-  getAccountingTrialBalance,
-  type AccountType,
-  type TrialBalanceRow,
+import type {
+  AccountType,
+  TrialBalanceRow,
 } from "@/app/[siteId]/[popId]/reports/accountingActions"
+import { fetchAccountingTrialBalance as getAccountingTrialBalance } from "@/lib/rootsyApi/reportsClient"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"

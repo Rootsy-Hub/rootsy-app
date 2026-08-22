@@ -2,6 +2,7 @@
 
 import type { InvoiceArcaTableRow } from "@/app/[siteId]/[popId]/invoices/actions"
 import { fetchPopInvoicesTable } from "@/lib/rootsyApi/invoicesClient"
+import { fetchReportOperationalTotals } from "@/lib/rootsyApi/reportsClient"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -51,42 +52,6 @@ type Props = {
   onPresetChange: (preset: DataWorkspaceDatePreset) => void
   onCustomRangeChange: (range: DateRange | undefined) => void
   onBack: () => void
-}
-
-async function fetchInvoicesPeriodTotals(
-  popId: string,
-  from: string | null,
-  to: string | null,
-): Promise<
-  { count: number; total: number; iva: number } | { error: string }
-> {
-  let page = 1
-  let total = 0
-  let iva = 0
-  let count = 0
-
-  while (page <= 50) {
-    const res = await fetchPopInvoicesTable(popId, {
-      page,
-      pageSize: 100,
-      dateFrom: from,
-      dateTo: to,
-      sort: "cbte_fch",
-      ord: "desc",
-    })
-    if (!res.success) {
-      return { error: res.error || "Error al cargar facturas" }
-    }
-    count = res.totalCount
-    for (const row of res.invoices) {
-      total += row.impTotal
-      iva += row.impIva
-    }
-    if (page * 100 >= res.totalCount) break
-    page += 1
-  }
-
-  return { count, total, iva }
 }
 
 async function fetchAllIssuedInvoicesReportRows(
@@ -267,19 +232,21 @@ export function IssuedInvoicesReportView({
     let cancelled = false
     setPeriodTotalBusy(true)
     setPeriodTotalError(null)
-    void fetchInvoicesPeriodTotals(popId, from, to).then((result) => {
-      if (cancelled) return
-      setPeriodTotalBusy(false)
-      if ("error" in result) {
-        setPeriodTotal(null)
-        setPeriodIva(null)
-        setPeriodTotalError(result.error)
-        return
-      }
-      setPeriodTotal(result.total)
-      setPeriodIva(result.iva)
-      setTotalCount((prev) => (prev === 0 ? result.count : prev))
-    })
+    void fetchReportOperationalTotals(popId, "issued-invoices", from, to).then(
+      (result) => {
+        if (cancelled) return
+        setPeriodTotalBusy(false)
+        if (!result.success) {
+          setPeriodTotal(null)
+          setPeriodIva(null)
+          setPeriodTotalError(result.error)
+          return
+        }
+        setPeriodTotal(result.data.total)
+        setPeriodIva(result.data.iva)
+        setTotalCount((prev) => (prev === 0 ? result.data.count : prev))
+      },
+    )
     return () => {
       cancelled = true
     }
