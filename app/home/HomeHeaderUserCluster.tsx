@@ -182,15 +182,17 @@ export function HomeHeaderAvatar({
           )}
         </button>
       )}
-      <span
-        role="status"
-        aria-label={isOnline ? HOME_COPY.online : HOME_COPY.offline}
-        title={isOnline ? HOME_COPY.online : HOME_COPY.offline}
-        className={cn(
-          "pointer-events-none absolute bottom-1 right-1 size-2.5 rounded-full ring-2 ring-[var(--rootsy-sombra-950)]",
-          isOnline ? "bg-emerald-500" : "bg-red-500",
-        )}
-      />
+      {pending ? null : (
+        <span
+          role="status"
+          aria-label={isOnline ? HOME_COPY.online : HOME_COPY.offline}
+          title={isOnline ? HOME_COPY.online : HOME_COPY.offline}
+          className={cn(
+            "pointer-events-none absolute bottom-1 right-1 size-2.5 rounded-full ring-2 ring-[var(--rootsy-sombra-950)]",
+            isOnline ? "bg-emerald-500" : "bg-red-500",
+          )}
+        />
+      )}
     </span>
   )
 }

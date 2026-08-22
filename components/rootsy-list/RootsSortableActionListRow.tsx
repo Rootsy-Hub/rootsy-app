@@ -9,6 +9,7 @@ import {
 } from "@/components/rootsy-list/rootsListStyles"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import { RootsFormControlInput } from "@/components/rootsy-form"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
 import type { DraggableAttributes } from "@dnd-kit/core"
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities"
@@ -47,6 +48,7 @@ type Props = {
   onToggleVisibility: () => void
   accessory?: ReactNode
   rowSize?: RootsSortableRowSize
+  isBusy?: boolean
 }
 
 export function RootsSortableActionListRow({
@@ -68,10 +70,11 @@ export function RootsSortableActionListRow({
   onToggleVisibility,
   accessory,
   rowSize = "default",
+  isBusy = false,
 }: Props) {
   const visible = item.visible !== false
   const label = item.label || "—"
-  const showActions = canEdit || canDelete || canToggleVisibility
+  const showActions = !isBusy && (canEdit || canDelete || canToggleVisibility)
   const hasChanges =
     editHasChanges ?? editingValue.trim() !== item.label.trim()
   const canSaveEdit =
@@ -82,7 +85,10 @@ export function RootsSortableActionListRow({
       className={cn(
         rootsSortableListRowClass,
         rowSize === "comfortable" && "h-14",
+        isBusy && "pointer-events-none opacity-50",
       )}
+      aria-busy={isBusy || undefined}
+      aria-disabled={isBusy || undefined}
     >
       {canReorder ? (
         <button
@@ -99,7 +105,7 @@ export function RootsSortableActionListRow({
       ) : null}
 
       <div className="min-w-0 flex-1 basis-0">
-        {isEditing ? (
+        {isEditing && !isBusy ? (
           <RootsFormControlInput
             value={editingValue}
             onChange={(event) => onEditingValueChange(event.target.value)}
@@ -139,6 +145,13 @@ export function RootsSortableActionListRow({
         </div>
       ) : null}
 
+      {isBusy ? (
+        <RootsSpinner
+          size="sm"
+          className="shrink-0"
+          label={`Eliminando ${label}`}
+        />
+      ) : null}
       {showActions ? (
         <div className="flex shrink-0 items-center justify-end gap-0.5">
           {canToggleVisibility ? (

@@ -34,6 +34,8 @@ type Props = {
   boardKey: number
   newCategoryName: string
   newCategorySaving: boolean
+  pendingCreateName: string | null
+  pendingDeleteId: string | null
   onNewCategoryNameChange: (value: string) => void
   onSubmitNewCategory: () => void
   editingCategoryId: string | null
@@ -59,6 +61,8 @@ export function ArticleCategoriesDialog({
   boardKey,
   newCategoryName,
   newCategorySaving,
+  pendingCreateName,
+  pendingDeleteId,
   onNewCategoryNameChange,
   onSubmitNewCategory,
   editingCategoryId,
@@ -89,6 +93,7 @@ export function ArticleCategoriesDialog({
                 onChange={(event) => onNewCategoryNameChange(event.target.value)}
                 placeholder="Nombre"
                 className="min-w-0 flex-1"
+                disabled={newCategorySaving}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault()
@@ -105,8 +110,6 @@ export function ArticleCategoriesDialog({
                   "h-11 shrink-0",
                 )}
                 disabled={newCategorySaving || !newCategoryName.trim()}
-                loading={newCategorySaving}
-                loadingLabel="Agregando…"
                 onClick={onSubmitNewCategory}
               >
                 Agregar
@@ -120,6 +123,8 @@ export function ArticleCategoriesDialog({
               key={boardKey}
               embedded
               categories={categories}
+              pendingCreateName={pendingCreateName}
+              pendingDeleteId={pendingDeleteId}
               canUpdate={canUpdate}
               canDelete={canDelete}
               editingCategoryId={editingCategoryId}

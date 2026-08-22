@@ -9,8 +9,8 @@ export const menuHeaderBorderClass = "border-[rgba(228,242,248,0.14)]"
 /** Altura del header de menú — 64px mobile · 80px desktop. */
 export const menuHeaderHeightClass = "h-16 shrink-0 md:h-20"
 
-/** Header de módulo — más bajo que home: deja aire para listados y losetas (68px). */
-export const menuModuleHeaderHeightClass = "h-17 shrink-0"
+/** Header de módulo — 64px mobile · 68px desktop. */
+export const menuModuleHeaderHeightClass = "h-16 shrink-0 md:h-17"
 
 export const menuHeaderRowClass = cn(
   "grid h-full min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6 sm:gap-6 sm:px-8",

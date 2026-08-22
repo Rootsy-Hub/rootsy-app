@@ -3,11 +3,10 @@ import { rootsyApiErrorResponse, rootsyApiFetch } from "@/lib/rootsyApi/server"
 
 type RouteCtx = { params: Promise<{ popId: string }> }
 
-export async function GET(request: Request, ctx: RouteCtx) {
+export async function GET(_request: Request, ctx: RouteCtx) {
   try {
     const { popId } = await ctx.params
-    const search = new URL(request.url).search
-    const data = await rootsyApiFetch(`/v1/pops/${popId}/categories${search}`)
+    const data = await rootsyApiFetch(`/v1/pops/${popId}/price-lists`)
     return NextResponse.json(data)
   } catch (error) {
     return rootsyApiErrorResponse(error)
@@ -17,7 +16,7 @@ export async function GET(request: Request, ctx: RouteCtx) {
 export async function POST(request: Request, ctx: RouteCtx) {
   try {
     const { popId } = await ctx.params
-    const data = await rootsyApiFetch(`/v1/pops/${popId}/categories`, {
+    const data = await rootsyApiFetch(`/v1/pops/${popId}/price-lists`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: await request.text(),

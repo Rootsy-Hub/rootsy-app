@@ -80,7 +80,7 @@ export const workspaceTableSurfaceClass =
 
 /** Marco del listado — la tabla ocupa el claro, de lado a lado hasta el suelo. */
 export const dataWorkspaceTablesSheetFrameClass =
-  "relative z-1 flex min-h-0 flex-1 flex-col"
+  "relative z-1 flex min-h-0 min-w-0 flex-1 flex-col"
 
 /** Hoja flush — tabla + pie universo, sin radio ni gutter. */
 export const dataWorkspaceTablesSheetClass = cn(

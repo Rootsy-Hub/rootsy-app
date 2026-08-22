@@ -187,6 +187,10 @@ export function popArticleCategoriesQueryKey(popId: string) {
   return ["pop-article-categories", popId] as const
 }
 
+export function popPriceListsQueryKey(popId: string) {
+  return ["pop-price-lists", popId] as const
+}
+
 export type PopOperationsQueryParams = {
   view: string
   dateFrom: string | null

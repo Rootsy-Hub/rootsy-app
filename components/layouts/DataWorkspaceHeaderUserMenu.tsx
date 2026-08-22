@@ -1,5 +1,9 @@
 "use client"
 
+import {
+  menuGhostBarClass,
+  menuGhostCircleClass,
+} from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   dataWorkspaceHeaderDropdownLogoutItemClass,
@@ -41,6 +45,7 @@ export type DataWorkspaceHeaderUserMenuProps = {
   hasResolvedRole?: boolean
   /** Si es false, solo el avatar — útil en headers compactos. */
   showIdentity?: boolean
+  pending?: boolean
 }
 
 const userAvatarFallbackClass =
@@ -54,6 +59,7 @@ export function DataWorkspaceHeaderUserMenu({
   size = "default",
   roleLabel,
   showIdentity = true,
+  pending = false,
 }: DataWorkspaceHeaderUserMenuProps) {
   const isTinted = isDataWorkspaceTintedHeader(headerVariant)
   const theme = isDarkChromeHeader(headerVariant) ? "dark" : "light"
@@ -71,6 +77,20 @@ export function DataWorkspaceHeaderUserMenu({
   const initials = initialsFromPopName(userName)
   const resolvedRoleLabel = roleLabel?.trim() || ""
   const avatarSizeClass = size === "compact" ? "size-8" : "size-10"
+
+  if (pending) {
+    return (
+      <div className="flex min-w-0 items-center gap-3" aria-hidden>
+        {showIdentity ? (
+          <div className="hidden flex-col items-end gap-1.5 sm:flex">
+            <span className={cn(menuGhostBarClass, "h-3.5 w-24")} />
+            <span className={cn(menuGhostBarClass, "h-2.5 w-16")} />
+          </div>
+        ) : null}
+        <span className={cn(avatarSizeClass, menuGhostCircleClass)} />
+      </div>
+    )
+  }
 
   const handleLogOut = async () => {
     await logOut()

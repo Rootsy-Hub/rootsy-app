@@ -55,6 +55,7 @@ type SharedRowProps = {
   onToggleVisibility: (id: string) => void
   renderAccessory?: (item: RootsSortableActionListItem) => ReactNode
   rowSize?: RootsSortableRowSize
+  busyId?: string | null
 }
 
 type Props = SharedRowProps & {
@@ -116,7 +117,7 @@ function SortableSlot({
   dragAnimating: boolean
 }) {
   const isEditing = rowProps.editingId === item.id
-  const dragLocked = rowProps.editingId != null
+  const dragLocked = rowProps.editingId != null || rowProps.busyId != null
   const metrics = rootsSortableRowMetrics(rowProps.rowSize)
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: rootsSortableDragId(listId, item.id),
@@ -159,6 +160,7 @@ function SortableSlot({
           onToggleVisibility={() => rowProps.onToggleVisibility(item.id)}
           accessory={rowProps.renderAccessory?.(item)}
           rowSize={rowProps.rowSize}
+          isBusy={rowProps.busyId === item.id}
         />
       </div>
     </div>
@@ -191,6 +193,7 @@ function StaticActionList({
           onToggleVisibility={() => rowProps.onToggleVisibility(item.id)}
           accessory={rowProps.renderAccessory?.(item)}
           rowSize={rowProps.rowSize}
+          isBusy={rowProps.busyId === item.id}
         />
       ))}
     </div>
@@ -219,6 +222,7 @@ export function RootsSortableActionList({
   onToggleVisibility,
   renderAccessory,
   rowSize = "default",
+  busyId = null,
 }: Props) {
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null)
   const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null)
@@ -251,11 +255,11 @@ export function RootsSortableActionList({
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
-      if (editingId) return
+      if (editingId || busyId) return
       const itemId = parseRootsSortableDragItemId(listId, event.active.id)
       if (itemId) setDraggingItemId(itemId)
     },
-    [editingId, listId],
+    [busyId, editingId, listId],
   )
 
   const handleDragOver = useCallback(
@@ -302,6 +306,7 @@ export function RootsSortableActionList({
     onToggleVisibility,
     renderAccessory,
     rowSize,
+    busyId,
   }
 
   if (items.length === 0) {

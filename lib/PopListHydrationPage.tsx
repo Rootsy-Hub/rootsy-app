@@ -49,9 +49,7 @@ function PopListHydrationFromState({
   state: DehydratedState | null | Promise<DehydratedState | null>
   children: ReactNode
 }) {
-  const resolved = use(
-    state instanceof Promise ? state : Promise.resolve(state),
-  )
+  const resolved = state instanceof Promise ? use(state) : state
 
   return (
     <HydrationBoundary state={resolved ?? undefined}>

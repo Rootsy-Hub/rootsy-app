@@ -1,12 +1,8 @@
 "use client"
 
-import { HOME_COPY } from "@/app/home/homeCopy"
-import { HomeHeaderAccountSheet } from "@/app/home/HomeHeaderAccountSheet"
-import { HomeHeaderAvatar } from "@/app/home/HomeHeaderUserCluster"
-import { HomeUserPhotoDialog } from "@/app/home/HomeUserPhotoDialog"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
+import { WorkspaceMobileAccountCluster } from "@/components/layouts/WorkspaceMobileAccountCluster"
 import { EterIconButton } from "@/components/eter/EterIconButton"
-import { useAuth } from "@/context/AuthContextSupabase"
 import { menuHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
   menuSearchClearButtonClass,
@@ -25,8 +21,7 @@ import {
 } from "@/lib/eter/eterChrome"
 import { cn } from "@/lib/utils"
 import { Bell, Home, Search, X } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useState, type RefObject } from "react"
+import type { RefObject } from "react"
 
 type MenuPageHeaderProps = {
   popLogoSrc: string
@@ -110,7 +105,7 @@ export function MenuPageHeader({
               >
                 <Search aria-hidden />
               </EterIconButton>
-              <MenuMobileAccountCluster
+              <WorkspaceMobileAccountCluster
                 userName={userName}
                 userAvatarSrc={userAvatarSrc}
                 isOnline={isOnline}
@@ -238,73 +233,6 @@ function MenuUserCluster({
       roleLabel={userRoleLabel}
       hasResolvedRole={Boolean(userRoleLabel)}
     />
-  )
-}
-
-function MenuMobileAccountCluster({
-  userName,
-  userAvatarSrc,
-  isOnline,
-  subscriptionsHref,
-}: {
-  userName: string
-  userAvatarSrc: string | null
-  isOnline: boolean
-  subscriptionsHref: string | null
-}) {
-  const { logOut } = useAuth()
-  const router = useRouter()
-  const [accountOpen, setAccountOpen] = useState(false)
-  const [photoOpen, setPhotoOpen] = useState(false)
-  const initials = userName.trim().slice(0, 2).toUpperCase() || "·"
-  const displayName = userName.trim()
-
-  const handleLogOut = async () => {
-    setAccountOpen(false)
-    await logOut()
-    router.push("/login")
-  }
-
-  return (
-    <>
-      <HomeHeaderAvatar
-        pending={false}
-        imageUrl={userAvatarSrc}
-        initials={initials}
-        isOnline={isOnline}
-        ariaLabel={HOME_COPY.accountMenu}
-        onClick={() => setAccountOpen(true)}
-      />
-      <HomeHeaderAccountSheet
-        open={accountOpen}
-        onOpenChange={setAccountOpen}
-        name={displayName}
-        imageUrl={userAvatarSrc}
-        initials={initials}
-        isOnline={isOnline}
-        subscriptionsHref={subscriptionsHref}
-        onOpenPhoto={() => {
-          setAccountOpen(false)
-          setPhotoOpen(true)
-        }}
-        onEditProfile={() => {
-          setAccountOpen(false)
-          router.push("/home")
-        }}
-        onSubscriptions={(href) => {
-          setAccountOpen(false)
-          router.push(href)
-        }}
-        onLogOut={() => void handleLogOut()}
-      />
-      <HomeUserPhotoDialog
-        open={photoOpen}
-        onOpenChange={setPhotoOpen}
-        name={displayName}
-        imageUrl={userAvatarSrc}
-        initials={initials}
-      />
-    </>
   )
 }
 

@@ -1,14 +1,16 @@
 "use client"
 
+import { ArticlePriceListDeleteDialog } from "@/app/[siteId]/[popId]/articles/ArticlePriceListDeleteDialog"
+import { usePopPriceLists } from "@/hooks/usePopPriceLists"
+import { popPriceListsQueryKey } from "@/lib/queryKeys"
 import {
   createPopPriceList,
   deletePopPriceList,
-  getPopPriceLists,
   updatePopPriceList,
-} from "@/app/[siteId]/[popId]/articles/priceListActions"
+} from "@/lib/rootsyApi/priceListsClient"
 import {
+  RootsIconButton,
   RootsProgressButton,
-  RootsSubtleButton,
   rootsButtonClassForVariant,
   rootsButtonVariant,
 } from "@/components/rootsy-button"
@@ -19,13 +21,19 @@ import {
   RootsDialogHeader,
   RootsDialogLoadingState,
 } from "@/components/rootsy-dialog"
-import { RootsFormTextField } from "@/components/rootsy-form"
+import { RootsFormControlInput, RootsFormTextField } from "@/components/rootsy-form"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import {
+  rootsSortableListRowClass,
+  rootsSortableListRowLabelClass,
+} from "@/components/rootsy-list/rootsListStyles"
 import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
 import { Dialog } from "@/components/ui/dialog"
 import type { SalePriceList } from "@/lib/salePriceLists"
 import { cn } from "@/lib/utils"
-import { Pencil, Trash2 } from "lucide-react"
-import { useCallback, useEffect, useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { Check, Pencil, Trash2, X } from "lucide-react"
+import { useEffect, useState } from "react"
 
 type Props = {
   open: boolean
@@ -46,52 +54,83 @@ export function ArticlePriceListsDialog({
   canDelete,
   onChanged,
 }: Props) {
-  const [lists, setLists] = useState<SalePriceList[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
+  const listsQuery = usePopPriceLists(popId, { enabled: open })
+  const lists = listsQuery.data ?? []
+  const loading = listsQuery.isPending && !listsQuery.data
   const [banner, setBanner] = useState<string | null>(null)
   const [newName, setNewName] = useState("")
   const [creating, setCreating] = useState(false)
+  const [pendingCreate, setPendingCreate] = useState<{ name: string } | null>(
+    null,
+  )
+  const pendingCreateVisible =
+    pendingCreate != null &&
+    !lists.some((list) => list.name === pendingCreate.name)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
   const [saving, setSaving] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string
+    name: string
+  } | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
-  const loadLists = useCallback(
-    async (silent = false) => {
-      if (!silent) setLoading(true)
-      const res = await getPopPriceLists(popId)
-      if (!silent) setLoading(false)
-      if (!res.success) {
-        setBanner(res.error)
-        setLists([])
-        return
-      }
-      setLists(res.lists)
-    },
-    [popId],
-  )
+  const refreshLists = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: popPriceListsQueryKey(popId),
+    })
+    onChanged?.()
+  }
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setDeleteTarget(null)
+      setDeleteBanner(null)
+      setPendingCreate(null)
+      setPendingDeleteId(null)
+      setCreating(false)
+      return
+    }
     setBanner(null)
     setNewName("")
     setEditingId(null)
-    void loadLists()
-  }, [loadLists, open])
+    setDeleteTarget(null)
+    setDeleteBanner(null)
+    setPendingCreate(null)
+    setPendingDeleteId(null)
+    setCreating(false)
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !listsQuery.error) return
+    setBanner(
+      listsQuery.error instanceof Error
+        ? listsQuery.error.message
+        : "No se pudieron cargar las listas de precios",
+    )
+  }, [listsQuery.error, open])
 
   const submitNew = async () => {
-    if (!newName.trim()) return
-    setCreating(true)
+    const name = newName.trim()
+    if (!name || creating) return
     setBanner(null)
-    const res = await createPopPriceList(popId, newName)
-    setCreating(false)
+    setCreating(true)
+    setPendingCreate({ name })
+    setNewName("")
+    const res = await createPopPriceList(popId, name)
     if (!res.success) {
+      setPendingCreate(null)
+      setCreating(false)
+      setNewName(name)
       setBanner(res.error)
       return
     }
-    setNewName("")
-    await loadLists(true)
-    onChanged?.()
+    await refreshLists()
+    setCreating(false)
+    setPendingCreate(null)
   }
 
   const saveEdit = async () => {
@@ -105,26 +144,43 @@ export function ArticlePriceListsDialog({
       return
     }
     setEditingId(null)
-    await loadLists(true)
-    onChanged?.()
+    await refreshLists()
   }
 
-  const removeList = async (list: SalePriceList) => {
+  const closeDelete = () => {
+    if (deleteBusy) return
+    setDeleteTarget(null)
+    setDeleteBanner(null)
+  }
+
+  const askRemoveList = (list: SalePriceList) => {
     if (list.isDefault) return
-    setDeletingId(list.id)
+    setDeleteBanner(null)
+    setDeleteTarget({ id: list.id, name: list.name })
+  }
+
+  const confirmRemoveList = async () => {
+    if (!deleteTarget) return
+    const target = deleteTarget
+    setDeleteBusy(true)
+    setDeleteBanner(null)
+    setPendingDeleteId(target.id)
+    if (editingId === target.id) setEditingId(null)
+    setDeleteTarget(null)
+    setDeleteBusy(false)
     setBanner(null)
-    const res = await deletePopPriceList(popId, list.id)
-    setDeletingId(null)
+    const res = await deletePopPriceList(popId, target.id)
     if (!res.success) {
+      setPendingDeleteId(null)
       setBanner(res.error)
       return
     }
-    if (editingId === list.id) setEditingId(null)
-    await loadLists(true)
-    onChanged?.()
+    await refreshLists()
+    setPendingDeleteId(null)
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <RootsDialogContent size="wide">
         <RootsDialogHeader
@@ -142,6 +198,7 @@ export function ArticlePriceListsDialog({
                 onChange={(event) => setNewName(event.target.value)}
                 placeholder="Mayorista, Delivery…"
                 className="min-w-0 flex-1"
+                disabled={creating}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault()
@@ -158,8 +215,6 @@ export function ArticlePriceListsDialog({
                   "h-11 shrink-0",
                 )}
                 disabled={creating || !newName.trim()}
-                loading={creating}
-                loadingLabel="Agregando…"
                 onClick={() => void submitNew()}
               >
                 Agregar
@@ -173,103 +228,162 @@ export function ArticlePriceListsDialog({
             <ul className="flex flex-col gap-2">
               {lists.map((list) => {
                 const isEditing = editingId === list.id
+                const isDeleting = pendingDeleteId === list.id
+                const hasChanges = editingName.trim() !== list.name.trim()
+                const canSaveEdit =
+                  !saving && Boolean(editingName.trim()) && hasChanges
+                const showActions =
+                  !isDeleting &&
+                  (canUpdate || (canDelete && !list.isDefault))
+
                 return (
                   <li
                     key={list.id}
-                    className="flex flex-col gap-2 rounded-xl border border-[var(--rootsy-bruma-200)] bg-white/70 px-3 py-2.5 sm:flex-row sm:items-center"
-                  >
-                    {isEditing ? (
-                      <RootsFormTextField
-                        label="Nombre"
-                        id={`price-list-edit-${list.id}`}
-                        value={editingName}
-                        onChange={(event) => setEditingName(event.target.value)}
-                        className="min-w-0 flex-1"
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault()
-                            void saveEdit()
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div className="min-w-0 flex-1">
-                        <p className="font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">
-                          {list.name}
-                        </p>
-                        {list.isDefault ? (
-                          <p className="text-xs text-[var(--rootsy-bruma-500)]">
-                            Lista principal · precio de venta del producto
-                          </p>
-                        ) : (
-                          <p className="text-xs text-[var(--rootsy-bruma-500)]">
-                            Precio opcional por producto
-                          </p>
-                        )}
-                      </div>
+                    className={cn(
+                      rootsSortableListRowClass,
+                      isEditing ? "h-14" : "h-auto min-h-14 py-2",
+                      isDeleting && "pointer-events-none opacity-50",
                     )}
-                    <div className="flex shrink-0 items-center justify-end gap-1.5">
-                      {isEditing ? (
-                        <>
-                          <RootsSubtleButton
-                            type="button"
-                            onClick={() => setEditingId(null)}
-                            disabled={saving}
-                          >
-                            Cancelar
-                          </RootsSubtleButton>
-                          <RootsProgressButton
-                            type="button"
-                            variant={rootsButtonVariant.primary}
-                            className={cn(
-                              saleOpDialogPrimaryBtn,
-                              rootsButtonClassForVariant("primary"),
-                              "h-10",
-                            )}
-                            disabled={saving || !editingName.trim()}
-                            loading={saving}
-                            loadingLabel="Guardando…"
-                            onClick={() => void saveEdit()}
-                          >
-                            Guardar
-                          </RootsProgressButton>
-                        </>
+                    aria-busy={isDeleting || undefined}
+                    aria-disabled={isDeleting || undefined}
+                  >
+                    <div className="min-w-0 flex-1 basis-0">
+                      {isEditing && !isDeleting ? (
+                        <RootsFormControlInput
+                          id={`price-list-edit-${list.id}`}
+                          value={editingName}
+                          onChange={(event) =>
+                            setEditingName(event.target.value)
+                          }
+                          className="w-full"
+                          autoFocus
+                          aria-label={`Nombre de ${list.name}`}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault()
+                              if (canSaveEdit) void saveEdit()
+                            }
+                            if (event.key === "Escape") {
+                              event.preventDefault()
+                              setEditingId(null)
+                            }
+                          }}
+                        />
                       ) : (
-                        <>
-                          {canUpdate ? (
-                            <button
-                              type="button"
-                              className="inline-flex size-9 items-center justify-center rounded-full text-[var(--rootsy-bruma-500)] hover:bg-[var(--rootsy-bruma-100)] hover:text-[var(--rootsy-bruma-800)]"
-                              aria-label={`Renombrar ${list.name}`}
+                        <div className="min-w-0">
+                          <p className={rootsSortableListRowLabelClass}>
+                            {list.name}
+                          </p>
+                          <p className="truncate text-xs text-rootsy-bruma-500">
+                            {list.isDefault
+                              ? "Lista principal · precio de venta del producto"
+                              : "Precio opcional por producto"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {isDeleting ? (
+                      <RootsSpinner
+                        size="sm"
+                        className="shrink-0"
+                        label={`Eliminando ${list.name}`}
+                      />
+                    ) : null}
+                    {!isDeleting && (showActions || isEditing) ? (
+                      <div className="flex shrink-0 items-center justify-end gap-0.5">
+                        {canUpdate ? (
+                          isEditing ? (
+                            <RootsIconButton
+                              label={`Guardar ${list.name}`}
+                              rowIntent="edit"
+                              size="compact"
+                              disabled={!canSaveEdit}
+                              loading={saving}
+                              onClick={() => void saveEdit()}
+                            >
+                              <Check aria-hidden />
+                            </RootsIconButton>
+                          ) : (
+                            <RootsIconButton
+                              label={`Editar ${list.name}`}
+                              rowIntent="edit"
+                              size="compact"
                               onClick={() => {
                                 setEditingId(list.id)
                                 setEditingName(list.name)
                               }}
                             >
-                              <Pencil className="size-4" aria-hidden />
-                            </button>
-                          ) : null}
-                          {canDelete && !list.isDefault ? (
-                            <button
-                              type="button"
-                              className="inline-flex size-9 items-center justify-center rounded-full text-[var(--rootsy-bruma-500)] hover:bg-[var(--rootsy-bruma-100)] hover:text-[var(--rootsy-status-danger)] disabled:opacity-50"
-                              aria-label={`Eliminar ${list.name}`}
-                              disabled={deletingId === list.id}
-                              onClick={() => void removeList(list)}
+                              <Pencil aria-hidden />
+                            </RootsIconButton>
+                          )
+                        ) : null}
+                        {(canDelete && !list.isDefault) || isEditing ? (
+                          isEditing ? (
+                            <RootsIconButton
+                              label="Cancelar edición"
+                              rowIntent="neutral"
+                              size="compact"
+                              disabled={saving}
+                              onClick={() => setEditingId(null)}
                             >
-                              <Trash2 className="size-4" aria-hidden />
-                            </button>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
+                              <X aria-hidden />
+                            </RootsIconButton>
+                          ) : (
+                            <RootsIconButton
+                              label={`Eliminar ${list.name}`}
+                              rowIntent="destructive"
+                              size="compact"
+                              onClick={() => askRemoveList(list)}
+                            >
+                              <Trash2 aria-hidden />
+                            </RootsIconButton>
+                          )
+                        ) : null}
+                      </div>
+                    ) : null}
                   </li>
                 )
               })}
+              {pendingCreateVisible && pendingCreate ? (
+                <li
+                  className={cn(
+                    rootsSortableListRowClass,
+                    "pointer-events-none h-auto min-h-14 py-2 opacity-50",
+                  )}
+                  aria-busy="true"
+                  aria-disabled="true"
+                >
+                  <div className="min-w-0 flex-1 basis-0">
+                    <p className={rootsSortableListRowLabelClass}>
+                      {pendingCreate.name}
+                    </p>
+                    <p className="truncate text-xs text-rootsy-bruma-500">
+                      Precio opcional por producto
+                    </p>
+                  </div>
+                  <RootsSpinner
+                    size="sm"
+                    className="shrink-0"
+                    label={`Creando ${pendingCreate.name}`}
+                  />
+                </li>
+              ) : null}
             </ul>
           )}
         </RootsDialogBody>
       </RootsDialogContent>
     </Dialog>
+    <ArticlePriceListDeleteDialog
+      open={deleteTarget !== null}
+      target={deleteTarget}
+      banner={deleteBanner}
+      busy={deleteBusy}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) closeDelete()
+      }}
+      onClose={closeDelete}
+      onConfirmDelete={() => void confirmRemoveList()}
+    />
+    </>
   )
 }

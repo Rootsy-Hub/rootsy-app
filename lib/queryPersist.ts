@@ -3,12 +3,9 @@ import { ONE_DAY_MS } from "@/lib/queryStaleTimes"
 
 const STORAGE_KEY = "rootsy-query-cache-v2"
 
-const SESSION_ONLY_ROOTS = new Set(["_user-profile", "_user-pops"])
-
 export function isPersistedHomeQueryKey(queryKey: readonly unknown[]): boolean {
   const root = queryKey[0]
-  if (typeof root !== "string" || !root.startsWith("_")) return false
-  return !SESSION_ONLY_ROOTS.has(root)
+  return typeof root === "string" && root.startsWith("_")
 }
 
 export function createRootsQueryPersister() {

@@ -9,6 +9,7 @@ import { DataWorkspaceTableListLoadingBody } from "@/components/data-workspace/D
 import { isPopTableListModule } from "@/components/data-workspace/popTableListSkeletonConfig"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { usePopAccessData } from "@/hooks/usePopAccessData"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { buildPopRoleLabel } from "@/lib/popWorkspaceFromAccess"
 import { hasPopTableListSessionCache } from "@/lib/popTableListSessionCache"
@@ -19,7 +20,7 @@ import { useParams, usePathname } from "next/navigation"
 const MODULE_TITLES: Record<string, string> = {
   clients: "Clientes",
   suppliers: "Proveedores",
-  articles: "Artículos",
+  articles: "Stock",
   operations: "Operaciones",
   invoices: "Facturas",
   checks: "Cheques",
@@ -64,19 +65,29 @@ export function PopModuleLoading({
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
   const workspace = usePopWorkspaceOptional()
+  const menuCache = usePopMenuCache(popId)
   const accessQuery = usePopAccessData(popId, { enabled: Boolean(popId) })
 
-  const popAccess = workspace?.popAccess ?? accessQuery.popAccess
-  const profile = accessQuery.profile
+  const popAccess =
+    workspace?.popAccess ?? menuCache.popAccess ?? accessQuery.popAccess
+  const profile = menuCache.profile ?? accessQuery.profile
   const popName =
-    workspace?.bootstrap?.popName ?? popAccess?.pop.name ?? ""
+    workspace?.bootstrap?.popName ??
+    menuCache.popAccess?.pop.name ??
+    popAccess?.pop.name ??
+    ""
   const userName =
     workspace?.bootstrap?.userFullName ||
+    menuCache.profileFullName ||
     (profile ? buildUserProfileFullName(profile) : "")
   const userAvatarSrc =
-    workspace?.bootstrap?.userImageUrl ?? profile?.imageUrl ?? undefined
+    workspace?.bootstrap?.userImageUrl ??
+    menuCache.profile?.imageUrl ??
+    profile?.imageUrl ??
+    undefined
   const userRoleLabel =
     workspace?.bootstrap?.roleLabel ||
+    menuCache.roleLabel ||
     (popAccess ? buildPopRoleLabel(popAccess) : "")
   const title =
     titleProp ?? MODULE_TITLES[moduleKeyProp ?? moduleKeyFromPathname(pathname)] ?? "…"
@@ -86,9 +97,11 @@ export function PopModuleLoading({
     return <MenuPageSkeleton />
   }
 
-  if (hasPopTableListSessionCache(queryClient, popId, moduleKey)) {
-    return null
-  }
+  const hasTableCache = hasPopTableListSessionCache(
+    queryClient,
+    popId,
+    moduleKey,
+  )
 
   return (
     <DataWorkspaceTableListPage
@@ -104,7 +117,7 @@ export function PopModuleLoading({
       }}
     >
       <DataWorkspaceTableListNatureShell>
-        {isPopTableListModule(moduleKey) ? (
+        {hasTableCache ? null : isPopTableListModule(moduleKey) ? (
           <DataWorkspaceTableListLoadingBody moduleKey={moduleKey} title={title} />
         ) : (
           <div

@@ -175,12 +175,19 @@ export function dataWorkspaceHeaderIconButtonClass(
   )
 }
 
+const dataWorkspaceSectionMenuTriggerLayoutClass = cn(
+  "group inline-flex h-10 w-10 shrink-0 items-center justify-center gap-0 rounded-xl border px-0 text-sm font-semibold transition-all",
+  "md:h-10 md:w-auto md:max-w-[min(100%,13rem)] md:justify-start md:gap-2 md:px-2.5",
+  "[&>span]:sr-only md:[&>span]:not-sr-only md:[&>span]:min-w-0 md:[&>span]:truncate",
+  "[&>svg:last-child]:hidden md:[&>svg:last-child]:block",
+)
+
 export function dataWorkspaceSectionMenuTriggerClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
   if (isLayoutsTablesHeader(headerVariant)) {
     return cn(
-      "group inline-flex h-10 w-auto max-w-[min(100%,13rem)] shrink-0 items-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition-all",
+      dataWorkspaceSectionMenuTriggerLayoutClass,
       dataWorkspaceHeaderButtonFocusClass,
       "border-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-savia-600))]",
       "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,transparent)] text-[var(--rootsy-savia-300)]",
@@ -195,7 +202,7 @@ export function dataWorkspaceSectionMenuTriggerClass(
   }
   if (isNightForestHeader(headerVariant)) {
     return cn(
-      "group inline-flex h-10 w-auto max-w-[min(100%,13rem)] shrink-0 items-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition-all",
+      dataWorkspaceSectionMenuTriggerLayoutClass,
       dataWorkspaceHeaderButtonFocusClass,
       "border-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-savia-600))]",
       "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,transparent)] text-[var(--rootsy-savia-300)]",
@@ -210,7 +217,8 @@ export function dataWorkspaceSectionMenuTriggerClass(
     )
   }
   return cn(
-    "group inline-flex h-10 w-auto max-w-[min(100%,11rem)] shrink-0 items-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition-all",
+    dataWorkspaceSectionMenuTriggerLayoutClass,
+    "md:max-w-[min(100%,11rem)]",
     dataWorkspaceHeaderButtonFocusClass,
     "border-primary/30 bg-primary/10 text-foreground",
     "hover:border-primary/40 hover:bg-primary/14",

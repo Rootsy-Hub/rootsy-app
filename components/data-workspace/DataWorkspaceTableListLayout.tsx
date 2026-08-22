@@ -39,7 +39,7 @@ export const dataWorkspaceTableListNatureShellClass = workspaceLayoutsTablesShel
 
 /** Clases del cuerpo de página listado tabla — error + nature shell. */
 export const dataWorkspaceTableListPageBodyClass =
-  "relative flex min-h-0 w-full flex-1 flex-col"
+  "relative flex min-h-0 min-w-0 w-full flex-1 flex-col"
 
 export const dataWorkspaceTableListErrorBannerClass = "relative shrink-0"
 
@@ -77,6 +77,9 @@ export function DataWorkspaceTableListPage({
   return (
     <DataWorkspaceModuleLayout
       {...layout}
+      useBackdrop={false}
+      usePopBackdrop={false}
+      useHomeBackdrop={false}
       contentFlush
       sidebarCollapsible={false}
       mainClassName="min-h-0"

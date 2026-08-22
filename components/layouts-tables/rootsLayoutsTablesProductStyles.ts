@@ -39,10 +39,10 @@ export const layoutsTablesChromeIconButtonClass = cn(
 )
 
 export const layoutsTablesFooterGridClass =
-  "grid h-full w-full grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 sm:px-5"
+  "grid h-full w-full grid-cols-1 items-center justify-items-center px-3 md:grid-cols-[1fr_auto_1fr] md:gap-4 md:px-5"
 
 export const layoutsTablesFooterCountTextClass = cn(
-  "font-canopy text-sm text-[color-mix(in_srgb,var(--rootsy-suelo-50)_72%,var(--rootsy-suelo-400))]",
+  "hidden min-w-0 truncate font-canopy text-sm text-[color-mix(in_srgb,var(--rootsy-suelo-50)_72%,var(--rootsy-suelo-400))] md:block md:justify-self-start",
 )
 
 export const layoutsTablesFooterCountStrongClass =
@@ -55,7 +55,7 @@ export const layoutsTablesFooterPageLabelClass =
   "px-1.5 font-canopy text-sm font-semibold tabular-nums text-[var(--rootsy-suelo-50)]"
 
 export const layoutsTablesFooterPageSizeClusterClass =
-  "flex items-center justify-end gap-2"
+  "hidden items-center justify-end gap-2 md:flex"
 
 export const layoutsTablesFooterSelectTriggerClass = cn(
   "!h-10 !min-h-10 !w-[4.5rem] min-w-[4.5rem] max-w-[4.5rem] justify-between gap-1 px-2 text-xs font-medium",
@@ -67,6 +67,6 @@ export const layoutsTablesFooterSelectItemClass = "py-1.5 text-xs"
 export const workspaceLayoutsTablesScopeClass = "workspace-layouts-tables"
 
 export const workspaceLayoutsTablesShellClass = cn(
-  "data-workspace-tables-atmosphere rootsy-app-light flex min-h-0 flex-1 flex-col overflow-x-hidden",
+  "data-workspace-tables-atmosphere rootsy-app-light flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden",
   workspaceLayoutsTablesScopeClass,
 )

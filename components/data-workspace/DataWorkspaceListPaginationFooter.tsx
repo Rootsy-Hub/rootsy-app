@@ -162,6 +162,7 @@ export function DataWorkspaceListPaginationFooter({
               theme="pos"
               emphasis="ghost"
               size="default"
+              className="hidden md:inline-flex"
               disabled={paginationDisabled || safeCurrentPage <= 1}
               onClick={() => onPageChange(1)}
             >
@@ -198,6 +199,7 @@ export function DataWorkspaceListPaginationFooter({
               theme="pos"
               emphasis="ghost"
               size="default"
+              className="hidden md:inline-flex"
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
               onClick={() => onPageChange(effectiveTotalPages)}
             >

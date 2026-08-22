@@ -47,6 +47,7 @@ export function MenuHeaderEntity({
         className={cn(
           isFooter ? menuFooterEntityBodyClass : menuHeaderEntityBodyClass,
           !isFooter && !isDialog && "pt-[env(safe-area-inset-top)]",
+          isFooter && !isDialog && "pb-[env(safe-area-inset-bottom)]",
         )}
       >
         <div aria-hidden className="menu-header-entity-core" />
