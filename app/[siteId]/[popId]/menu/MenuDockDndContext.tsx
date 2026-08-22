@@ -395,7 +395,9 @@ export function DockIconVisual({
         )}
       </div>
       {apiReady && !busy ? <MenuApiReadyBadge size="sm" /> : null}
-      {!busy ? <MenuNotificationBadge count={notificationCount} size="sm" /> : null}
+      {!busy ? (
+        <MenuNotificationBadge count={notificationCount} size="sm" />
+      ) : null}
     </div>
   )
 }

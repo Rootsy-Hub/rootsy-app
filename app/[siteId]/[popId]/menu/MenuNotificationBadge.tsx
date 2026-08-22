@@ -1,3 +1,4 @@
+import { menuNotificationCountClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -16,15 +17,12 @@ export function MenuNotificationBadge({ count, size = "md" }: Props) {
   return (
     <span
       className={cn(
-        "pointer-events-none absolute z-20 flex items-center justify-center rounded-full",
-        "bg-[color:var(--rootsy-danger)] font-semibold tabular-nums text-white",
-        "shadow-[0_1px_3px_rgba(0,0,0,0.28)] ring-1 ring-white/90 md:ring-2",
+        "pointer-events-none absolute z-20 flex items-center justify-center",
+        "rounded-full font-canopy font-semibold tabular-nums",
+        menuNotificationCountClass,
         size === "sm"
-          ? "-right-0.5 -top-0.5 min-w-[11px] px-0.5 text-[7px] leading-none md:min-w-[15px] md:text-[9px]"
-          : "-right-0.5 -top-0.5 min-w-3 px-0.5 text-[8px] leading-none md:-right-1 md:-top-1 md:min-w-5 md:text-[11px]",
-        size === "sm"
-          ? "h-[11px] md:h-[15px]"
-          : "h-3 md:h-5",
+          ? "-right-0.5 -top-0.5 h-4 min-w-4 px-1 text-[10px] leading-none"
+          : "-right-1 -top-1 h-5 min-w-5 px-1.5 text-[11px] leading-none",
       )}
       aria-label={`${count} notificaciones`}
     >
