@@ -69,6 +69,8 @@ export function mePopToHomeItem(pop: {
     status: string
     planDisplayName: string
     daysRemaining: number | null
+    businessTypeName?: string
+    allModules?: boolean
   }
 }): HomePopListItem {
   return {
@@ -88,7 +90,7 @@ export function mePopToHomeItem(pop: {
       status: pop.subscription.status,
       planName: "",
       planDisplayName: pop.subscription.planDisplayName,
-      businessTypeName: "",
+      businessTypeName: pop.subscription.businessTypeName ?? "",
       businessTypeDisplayName: "",
       daysRemaining: pop.subscription.daysRemaining,
       isActive: pop.subscription.isActive,
@@ -96,7 +98,10 @@ export function mePopToHomeItem(pop: {
       currentPeriodEnd: null,
     },
     enabledModules: [],
-    limits: { ...EMPTY_LIMITS },
+    limits: {
+      ...EMPTY_LIMITS,
+      allModules: pop.subscription.allModules === true,
+    },
     role: null,
   }
 }

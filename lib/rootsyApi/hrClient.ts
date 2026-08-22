@@ -301,15 +301,15 @@ export async function getRolePermissionsEditorData(
     selectedGrantKeys: string[]
   }>(res)
   if (!parsed.success) return parsed
-  const permissions = buildHrPermissionCatalogRows()
-  const catalogKeys = new Set(permissions.map((row) => row.key))
+  const permissions = buildHrPermissionCatalogRows({
+    businessTypeName: "platform_full",
+    allModules: true,
+  })
   return {
     success: true,
     role: parsed.data.role,
     permissions,
-    selectedGrantKeys: parsed.data.selectedGrantKeys.filter((key) =>
-      catalogKeys.has(key),
-    ),
+    selectedGrantKeys: parsed.data.selectedGrantKeys,
   }
 }
 

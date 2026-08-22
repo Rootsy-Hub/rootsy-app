@@ -29,6 +29,8 @@ type MePopDto = {
     status: string
     planDisplayName: string
     daysRemaining: number | null
+    businessTypeName?: string
+    allModules?: boolean
   }
 }
 

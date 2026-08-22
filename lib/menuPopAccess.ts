@@ -10,9 +10,9 @@ import type { MenuItemDef, MenuItemLink, MenuSectionKey } from "@/lib/menuCatalo
 import { isPopMenuPathname, popModuleKeyFromPath } from "@/lib/popRoutes"
 import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
 import {
-  ROOTS_BUSINESS_TYPE_MODULES,
+  modulesAvailableForPop,
   ROOTS_MODULE_SECTION_LABELS,
-  ROOTS_SHARED_MODULES,
+  type RootsModuleDefinition,
 } from "@/lib/rootsySubscriptionCatalog"
 import { Banknote, ChefHat } from "lucide-react"
 
@@ -292,52 +292,42 @@ function moduleCrud(
   }
 }
 
-function catalogModulesForMenu(): Array<{
+function catalogModulesForMenu(
+  available?: readonly RootsModuleDefinition[],
+): Array<{
   key: string
   label: string
   section: MenuModuleSection
   isExtra: boolean
 }> {
-  const catalog = ROOTS_BUSINESS_TYPE_MODULES.platform_full
-  const extraKeys = new Set(catalog.extras.map((mod) => mod.key))
-  const byKey = new Map<
-    string,
-    { key: string; label: string; section: MenuModuleSection; isExtra: boolean }
-  >()
-
-  for (const section of MENU_MODULE_SECTION_ORDER) {
-    for (const mod of [
-      ...ROOTS_SHARED_MODULES[section],
-      ...catalog.specific[section],
-    ]) {
-      if (!byKey.has(mod.key)) {
-        byKey.set(mod.key, {
-          key: mod.key,
-          label: mod.label,
-          section,
-          isExtra: extraKeys.has(mod.key),
-        })
-      }
-    }
-  }
-  for (const mod of catalog.extras) {
-    if (byKey.has(mod.key)) continue
-    byKey.set(mod.key, {
-      key: mod.key,
-      label: mod.label,
-      section: LEGACY_EXTRA_MODULE_SECTION[mod.key] ?? "configurar",
-      isExtra: true,
+  const extras = new Set(
+    (available ?? []).filter((mod) =>
+      ["manufacturing", "invoices", "printers", "chat"].includes(mod.key),
+    ).map((mod) => mod.key),
+  )
+  const source =
+    available ??
+    modulesAvailableForPop({
+      businessTypeName: "platform_full",
+      allModules: true,
     })
-  }
-  return [...byKey.values()]
+  return source.map((mod) => ({
+    key: mod.key,
+    label: mod.label,
+    section: MENU_MODULE_CANONICAL_SECTION[mod.key] ??
+      LEGACY_EXTRA_MODULE_SECTION[mod.key] ??
+      "configurar",
+    isExtra: extras.has(mod.key),
+  }))
 }
 
 export function enabledModulesFromPermissionKeys(
   permissions: readonly string[],
   isOwner: boolean,
+  availableModules?: readonly RootsModuleDefinition[],
 ): PopAccessModule[] {
   const out: PopAccessModule[] = []
-  for (const mod of catalogModulesForMenu()) {
+  for (const mod of catalogModulesForMenu(availableModules)) {
     const crud = moduleCrud(permissions, isOwner, mod.key)
     if (!crud.read) continue
     out.push({

@@ -1,8 +1,13 @@
+import { POP_ACCESS_MODULE_TO_PAGE_KEY } from "@/lib/popAccessModuleMap"
 import {
   POP_PAGES,
   type PopPageKey,
   permissionKeysForPage,
 } from "@/lib/popPageCrudConstants"
+import {
+  modulesAvailableForPop,
+  type RootsModuleDefinition,
+} from "@/lib/rootsySubscriptionCatalog"
 
 export type HrPermissionCatalogRow = {
   key: string
@@ -117,20 +122,28 @@ function rowFromKey(key: string): HrPermissionCatalogRow {
   }
 }
 
-/** Filas planas (compatibilidad con actions existentes). */
-export function buildHrPermissionCatalogRows(): HrPermissionCatalogRow[] {
-  return buildHrPermissionSections().flatMap((s) => s.permissions)
+export type HrPopModuleScope = {
+  businessTypeName?: string | null
+  allModules?: boolean
+  extraModuleKeys?: readonly string[]
 }
 
-/** Una sección por módulo, con sus keys propias (sin fusionar pantallas). */
-export function buildHrPermissionSections(): HrPermissionSection[] {
+function sectionsFromModules(
+  modules: readonly RootsModuleDefinition[],
+): HrPermissionSection[] {
   const actionOrder = ["read", "create", "update", "delete"]
-  const seen = new Set<PopPageKey>()
-  const sections: HrPermissionSection[] = []
+  const availablePages = new Set<PopPageKey>()
+  for (const mod of modules) {
+    const pageKey = POP_ACCESS_MODULE_TO_PAGE_KEY[mod.key]
+    if (pageKey && pageKey in POP_PAGES) availablePages.add(pageKey)
+  }
 
-  const push = (pageKey: PopPageKey) => {
-    if (seen.has(pageKey)) return
-    seen.add(pageKey)
+  const ordered: PopPageKey[] = [
+    ...SECTION_ORDER.filter((key) => availablePages.has(key)),
+    ...[...availablePages].filter((key) => !SECTION_ORDER.includes(key)),
+  ]
+
+  return ordered.map((pageKey) => {
     const permissions = permissionKeysForPage(pageKey)
       .map(rowFromKey)
       .sort(
@@ -138,21 +151,39 @@ export function buildHrPermissionSections(): HrPermissionSection[] {
           actionOrder.indexOf(a.action) - actionOrder.indexOf(b.action) ||
           a.key.localeCompare(b.key, "es"),
       )
-    if (!permissions.length) return
-    sections.push({
+    return {
       pageKey,
       label: SECTION_LABELS[pageKey] ?? pageKey,
       permissions,
-    })
-  }
+    }
+  })
+}
 
-  for (const pageKey of SECTION_ORDER) push(pageKey)
-  for (const pageKey of Object.keys(POP_PAGES) as PopPageKey[]) {
-    if (pageKey === "menu") continue
-    push(pageKey)
-  }
+/** Catálogo del tipo de POP (rubro + extras). */
+export function buildHrPermissionSectionsForPop(
+  scope?: HrPopModuleScope,
+): HrPermissionSection[] {
+  return sectionsFromModules(
+    modulesAvailableForPop({
+      businessTypeName: scope?.businessTypeName ?? "platform_full",
+      allModules: scope?.allModules ?? true,
+      extraModuleKeys: scope?.extraModuleKeys,
+    }),
+  )
+}
 
-  return sections
+/** Filas planas (compatibilidad con actions existentes). */
+export function buildHrPermissionCatalogRows(
+  scope?: HrPopModuleScope,
+): HrPermissionCatalogRow[] {
+  return buildHrPermissionSections(scope).flatMap((s) => s.permissions)
+}
+
+/** Una sección por módulo disponible en el POP. */
+export function buildHrPermissionSections(
+  scope?: HrPopModuleScope,
+): HrPermissionSection[] {
+  return buildHrPermissionSectionsForPop(scope)
 }
 
 export function sectionGrantKeys(section: HrPermissionSection): string[] {
