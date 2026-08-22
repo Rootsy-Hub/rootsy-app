@@ -24,7 +24,6 @@ import {
   dataWorkspaceEntityCardStatLabelClass,
   dataWorkspaceEntityCardStatValueClass,
   dataWorkspaceEntityCardStatValueLargeClass,
-  dataWorkspaceEntityCardStatusInactiveClass,
   dataWorkspaceEntityCardStatusOpenClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -139,7 +138,9 @@ function PersonStatus({
 }) {
   if (person.leftAt) {
     return (
-      <span className={dataWorkspaceEntityCardStatusInactiveClass}>Ya no trabaja</span>
+      <StatusIcon label="Ya no trabaja">
+        <DoorClosed className="size-3.5 text-[var(--rootsy-bruma-500)]" strokeWidth={1.85} />
+      </StatusIcon>
     )
   }
 

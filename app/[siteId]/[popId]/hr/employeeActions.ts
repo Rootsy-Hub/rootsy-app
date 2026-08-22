@@ -121,22 +121,30 @@ export async function ensureEmployeesFromMembers(
   const supabase = await createClient()
   const { data: existing } = await supabase
     .from("pop_employees")
-    .select("id, user_id, email")
+    .select("id, user_id, email, first_name, last_name")
     .eq("pop_id", popId)
 
   const known = new Set(
     (existing || []).map((row) => row.user_id).filter(Boolean) as string[],
   )
   const unlinkedByEmail = new Map<string, string>()
+  const stubIdsByUser = new Map<string, string>()
   for (const row of existing || []) {
-    if (row.user_id || !row.email) continue
-    unlinkedByEmail.set(String(row.email).trim().toLowerCase(), row.id)
+    if (!row.user_id && row.email) {
+      unlinkedByEmail.set(String(row.email).trim().toLowerCase(), row.id)
+    }
+    if (row.user_id && isEmployeeStubName(row.first_name, row.last_name)) {
+      stubIdsByUser.set(row.user_id, row.id)
+    }
   }
 
   const missing = members.filter(
     (member) => member.isActive && member.userId && !known.has(member.userId),
   )
-  if (missing.length === 0) return
+  const stubsToHeal = members.filter(
+    (member) => member.isActive && member.userId && stubIdsByUser.has(member.userId),
+  )
+  if (missing.length === 0 && stubsToHeal.length === 0) return
 
   let admin: ReturnType<typeof createServiceRoleClient> | null = null
   try {
@@ -145,13 +153,9 @@ export async function ensureEmployeesFromMembers(
     admin = null
   }
 
-  const stillMissing: MemberSeed[] = []
+  const stillMissing: Array<MemberSeed & { email: string }> = []
   for (const member of missing) {
-    let email = ""
-    if (admin) {
-      const { data } = await admin.auth.admin.getUserById(member.userId)
-      email = data.user?.email?.trim().toLowerCase() ?? ""
-    }
+    const email = await authEmailForUser(admin, member.userId)
     const employeeId = email ? unlinkedByEmail.get(email) : undefined
     if (employeeId) {
       await supabase
@@ -162,20 +166,58 @@ export async function ensureEmployeesFromMembers(
         .is("user_id", null)
       continue
     }
-    stillMissing.push(member)
+    stillMissing.push({ ...member, email })
   }
 
-  if (stillMissing.length === 0) return
+  for (const member of stubsToHeal) {
+    const email = await authEmailForUser(admin, member.userId)
+    const employeeId = stubIdsByUser.get(member.userId)
+    if (!employeeId) continue
+    await supabase
+      .from("pop_employees")
+      .update({
+        first_name: member.firstName.trim() || emailLocalPart(email) || "Persona",
+        last_name: member.lastName.trim(),
+        email: email || null,
+      })
+      .eq("pop_id", popId)
+      .eq("id", employeeId)
+  }
+
+  const ownerStubs = stillMissing.filter((member) => member.isOwner)
+  if (ownerStubs.length === 0) return
 
   await supabase.from("pop_employees").insert(
-    stillMissing.map((member) => ({
+    ownerStubs.map((member) => ({
       pop_id: popId,
       user_id: member.userId,
-      first_name: member.firstName.trim() || "Sin",
+      first_name:
+        member.firstName.trim() || emailLocalPart(member.email) || "Persona",
       last_name: member.lastName.trim(),
-      job_title: member.isOwner ? "Dueño" : member.roleDisplayName || null,
+      email: member.email || null,
+      job_title: "Dueño",
     })),
   )
+}
+
+function isEmployeeStubName(firstName: string | null, lastName: string | null) {
+  const first = (firstName || "").trim()
+  const last = (lastName || "").trim()
+  return !first || (first === "Sin" && !last)
+}
+
+function emailLocalPart(email: string) {
+  const local = email.split("@")[0]?.trim()
+  return local || ""
+}
+
+async function authEmailForUser(
+  admin: ReturnType<typeof createServiceRoleClient> | null,
+  userId: string,
+): Promise<string> {
+  if (!admin) return ""
+  const { data } = await admin.auth.admin.getUserById(userId)
+  return data.user?.email?.trim().toLowerCase() ?? ""
 }
 
 export async function upsertPopEmployee(

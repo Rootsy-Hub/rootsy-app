@@ -102,6 +102,27 @@ function personDisplayName(person: EmployeeRow): string {
   return `${person.firstName} ${person.lastName}`.trim() || "Sin nombre"
 }
 
+function isStubPersonName(person: EmployeeRow): boolean {
+  const first = person.firstName.trim()
+  const last = person.lastName.trim()
+  return !first || (first === "Sin" && !last)
+}
+
+function personForCard(
+  person: EmployeeRow,
+  member?: MemberRow,
+): EmployeeRow {
+  if (!member || !isStubPersonName(person)) return person
+  const first = member.firstName.trim()
+  const last = member.lastName.trim()
+  if (!first && !last) return person
+  return {
+    ...person,
+    firstName: first || person.firstName,
+    lastName: last || person.lastName,
+  }
+}
+
 function HrLoseta({
   children,
   className,
@@ -817,10 +838,11 @@ function HrPage() {
                         (item) => item.userId === person.userId,
                       )
                       const invite = pendingInviteForPerson(person, pending)
+                      const cardPerson = personForCard(person, member)
                       return (
                         <HrPersonCard
                           key={person.id}
-                          person={person}
+                          person={cardPerson}
                           imageUrl={member?.imageUrl}
                           isOwner={Boolean(member?.isOwner)}
                           rootsyRole={
@@ -837,7 +859,7 @@ function HrPage() {
                               : false
                           }
                           onOpen={() => {
-                            setPersonEditing(person)
+                            setPersonEditing(cardPerson)
                             setPersonError(null)
                             setPersonOpen(true)
                           }}
