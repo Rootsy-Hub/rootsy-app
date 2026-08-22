@@ -5,7 +5,11 @@ import { parseMoneyInput } from "@/lib/moneyInput"
 import { POP_PERMS, permissionKeysInclude } from "@/lib/popPermissionConstants"
 import { validatePopAccess } from "@/lib/popHelpers"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
-import type { EmployeeRow, UpsertEmployeeInput } from "@/app/[siteId]/[popId]/hr/hrTypes"
+import type {
+  AttendancePunchRow,
+  EmployeeRow,
+  UpsertEmployeeInput,
+} from "@/app/[siteId]/[popId]/hr/hrTypes"
 import { createClient } from "@/utils/supabase/server"
 import { createServiceRoleClient } from "@/utils/supabase/service-role"
 
@@ -100,6 +104,80 @@ export async function listPopEmployees(popId: string): Promise<
   return {
     success: true,
     employees: (rows || []).map((row) => mapEmployee(row, openByEmployee)),
+  }
+}
+
+export async function getPopEmployeeDetail(
+  popId: string,
+  employeeId: string,
+): Promise<
+  | {
+      success: true
+      employee: EmployeeRow
+      punches: AttendancePunchRow[]
+      imageUrl: string | null
+      canManagePeople: boolean
+    }
+  | { success: false; error: string }
+> {
+  const access = await validatePopAccess(popId)
+  if (!access.hasAccess || !access.isActive) {
+    return { success: false, error: access.error || "Sin acceso" }
+  }
+
+  const supabase = await createClient()
+  const { data: row, error } = await supabase
+    .from("pop_employees")
+    .select(
+      "id, user_id, first_name, last_name, job_title, document_number, email, phone, monthly_salary, hired_at, left_at, notes",
+    )
+    .eq("pop_id", popId)
+    .eq("id", employeeId)
+    .maybeSingle()
+
+  if (error) return { success: false, error: error.message }
+  if (!row) return { success: false, error: "No encontramos a esa persona." }
+
+  const { data: punchRows, error: punchError } = await supabase
+    .from("pop_employee_attendance")
+    .select("id, clocked_in_at, clocked_out_at")
+    .eq("pop_id", popId)
+    .eq("employee_id", employeeId)
+    .order("clocked_in_at", { ascending: false })
+    .limit(500)
+
+  if (punchError) return { success: false, error: punchError.message }
+
+  const punches: AttendancePunchRow[] = (punchRows || []).map((punch) => ({
+    id: punch.id,
+    clockedInAt: punch.clocked_in_at,
+    clockedOutAt: punch.clocked_out_at,
+  }))
+  const openPunch = punches.find((punch) => punch.clockedOutAt == null)
+  const openByEmployee = new Map<string, string>()
+  if (openPunch) openByEmployee.set(row.id, openPunch.clockedInAt)
+
+  let imageUrl: string | null = null
+  if (row.user_id) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("image_url")
+      .eq("id", row.user_id)
+      .maybeSingle()
+    imageUrl = profile?.image_url ?? null
+  }
+
+  const perms = await loadPopPermissionsSnapshot(popId)
+  const canManagePeople =
+    permissionKeysInclude(perms.keys, "hr", "create") ||
+    permissionKeysInclude(perms.keys, "hr", "update")
+
+  return {
+    success: true,
+    employee: mapEmployee(row, openByEmployee),
+    punches,
+    imageUrl,
+    canManagePeople,
   }
 }
 

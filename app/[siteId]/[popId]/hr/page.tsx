@@ -851,6 +851,7 @@ function HrPage() {
                           pendingInvite={invite}
                           canManagePeople={canManagePeople}
                           canManageInvites={canManageInvites}
+                          detailHref={`/${siteId}/${popId}/hr/${person.id}`}
                           clockBusy={actionKey === `clock-${person.id}`}
                           inviteBusy={
                             invite

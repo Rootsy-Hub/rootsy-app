@@ -15,6 +15,12 @@ export type EmployeeRow = {
   clockedInAt: string | null
 }
 
+export type AttendancePunchRow = {
+  id: string
+  clockedInAt: string
+  clockedOutAt: string | null
+}
+
 export type UpsertEmployeeInput = {
   id?: string
   firstName: string

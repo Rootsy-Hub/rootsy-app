@@ -34,6 +34,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 import {
   DoorClosed,
   DoorOpen,
@@ -201,6 +202,7 @@ type Props = {
   canManageInvites: boolean
   clockBusy: boolean
   inviteBusy?: boolean
+  detailHref: string
   onOpen: () => void
   onClock: () => void
   onInvite: () => void
@@ -223,6 +225,7 @@ export function HrPersonCard({
   canManageInvites,
   clockBusy,
   inviteBusy = false,
+  detailHref,
   onOpen,
   onClock,
   onInvite,
@@ -273,7 +276,10 @@ export function HrPersonCard({
 
   return (
     <article className={dataWorkspaceEntityCardLosetaClass}>
-      <div className="flex min-h-0 flex-1 flex-col">
+      <Link
+        href={detailHref}
+        className="flex min-h-0 flex-1 flex-col text-left outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)] focus-visible:ring-offset-2"
+      >
         <div className={cn(dataWorkspaceEntityCardHeaderClass, "pr-4")}>
           <div className="flex min-w-0 items-start gap-3">
             {imageUrl ? (
@@ -325,7 +331,10 @@ export function HrPersonCard({
               <div
                 className="-mr-1 shrink-0"
                 onPointerDown={(event) => event.stopPropagation()}
-                onClick={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                }}
               >
                 <RootsDropdownMenu modal={false}>
                   <RootsDropdownTrigger asChild>
@@ -434,20 +443,15 @@ export function HrPersonCard({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onOpen}
-          className="min-w-0 flex-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)] focus-visible:ring-offset-2"
-        >
-          <div className={dataWorkspaceEntityCardSaldoSectionClass}>
-            <p className={dataWorkspaceEntityCardStatLabelClass}>Sueldo</p>
-            <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-              {salary}
-            </p>
-          </div>
-        </button>
+        <div className={cn("min-w-0 flex-1", dataWorkspaceEntityCardSaldoSectionClass)}>
+          <p className={dataWorkspaceEntityCardStatLabelClass}>Sueldo</p>
+          <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
+            {salary}
+          </p>
+        </div>
+      </Link>
 
-        <div className="mt-auto">
+      <div className="mt-auto">
           <div className={dataWorkspaceEntityCardActionFooterClass}>
             <div className="min-w-0">
               <p className={dataWorkspaceEntityCardStatLabelClass}>
@@ -496,7 +500,6 @@ export function HrPersonCard({
             ) : null}
           </div>
         </div>
-      </div>
     </article>
   )
 }

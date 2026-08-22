@@ -1,11 +1,11 @@
 "use client"
 
 import type { TreasuryChildAccountRow } from "@/app/[siteId]/[popId]/accounts/actions"
-import {
-  getTreasuryReconciliationHistory,
-  type TreasuryPosSummaryMovementRow,
-  type TreasuryReconciliationEventRow,
+import type {
+  TreasuryPosSummaryMovementRow,
+  TreasuryReconciliationEventRow,
 } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
+import { fetchTreasuryReconciliationHistory } from "@/lib/rootsyApi/treasuryClient"
 import {
   TREASURY_CARD_OTHER_CHARGES_LABEL,
   TREASURY_RECONCILE_COMMISSIONS_LABEL,
@@ -147,7 +147,7 @@ export function TreasuryChildReconciliationPanel({
   const loadEvents = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const res = await getTreasuryReconciliationHistory(popId, motherAccountId, {
+    const res = await fetchTreasuryReconciliationHistory(popId, motherAccountId, {
       childTreasuryAccountId: child.id,
       childRole: child.childRole,
       dateFrom: dateBounds.from ?? "",

@@ -1,6 +1,6 @@
 import "server-only"
 
-import { getStatisticsSectionData } from "@/app/[siteId]/[popId]/statistics/actions"
+import { fetchStatisticsSectionMergedServer } from "@/lib/rootsyApi/statisticsServer"
 import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 import {
   type MenuRootsyBusinessInsights,
@@ -9,18 +9,11 @@ import {
 } from "@/lib/menu/menuRootsyInsightsShared"
 import { buildGuaranteedMetricOpportunity, formatMenuRootsyMoney, isMetaGenericVoice } from "@/lib/menu/menuRootsyVoice"
 import { MENU_ROOTSY_DAY_NAMES } from "@/lib/menu/menuRootsySignalsShared"
-import { computeSummaryDateBounds } from "@/lib/summaryDateFilter"
+import {
+  computePreviousSummaryDateBounds,
+  computeSummaryDateBounds,
+} from "@/lib/summaryDateFilter"
 import { unstable_cache } from "next/cache"
-
-const EMPTY_FILTERS = {
-  channel: null,
-  seller: null,
-  client: null,
-  supplier: null,
-  product: null,
-  category: null,
-  paymentMethod: null,
-} as const
 
 const INSIGHTS_CACHE_SECONDS = 3600
 
@@ -262,36 +255,25 @@ async function loadMenuRootsyBusinessInsightsUncached(
 ): Promise<MenuRootsyBusinessInsights> {
   const weekdayLabel = MENU_ROOTSY_DAY_NAMES[now.getDay()] ?? "hoy"
 
-  const { from, to } = computeSummaryDateBounds("this_month", undefined)
+  const bounds = computeSummaryDateBounds("this_month", undefined)
+  const prevBounds = computePreviousSummaryDateBounds("this_month", bounds)
+  const query = {
+    from: bounds.from,
+    to: bounds.to,
+    prevFrom: prevBounds.from,
+    prevTo: prevBounds.to,
+  }
   const weekdayKey = jsToIsoWeekdayKey(now.getDay())
 
   const [salesRes, productsRes, profitRes] = await Promise.all([
-    getStatisticsSectionData({
-      popId,
-      sectionId: "sales",
-      preset: "this_month",
-      from,
-      to,
-      compareEnabled: true,
-      filters: EMPTY_FILTERS,
+    fetchStatisticsSectionMergedServer(popId, "sales", query),
+    fetchStatisticsSectionMergedServer(popId, "products", query, {
+      summary: false,
+      details: true,
     }),
-    getStatisticsSectionData({
-      popId,
-      sectionId: "products",
-      preset: "this_month",
-      from,
-      to,
-      compareEnabled: false,
-      filters: EMPTY_FILTERS,
-    }),
-    getStatisticsSectionData({
-      popId,
-      sectionId: "profitability",
-      preset: "this_month",
-      from,
-      to,
-      compareEnabled: true,
-      filters: EMPTY_FILTERS,
+    fetchStatisticsSectionMergedServer(popId, "profitability", query, {
+      summary: true,
+      details: false,
     }),
   ])
 

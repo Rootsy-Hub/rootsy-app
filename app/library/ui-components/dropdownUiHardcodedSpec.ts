@@ -21,7 +21,7 @@ import {
   type DropdownThemeId,
   type DropdownTriggerId,
 } from "@/app/library/dropdown/rootsyDropdownSystem"
-import { rootsyColorHex, rootsySpacePx } from "@/lib/design-system"
+import { rootsyColorHex } from "@/lib/design-system"
 import { ROOTSY_FONT_WEIGHTS, ROOTSY_TEXT_STYLES } from "@/lib/design-system/tokens/typography"
 
 const hx = rootsyColorHex
@@ -155,7 +155,7 @@ export function getDropdownItemUiStyle(
     paddingLeft: ROOTSY_DROPDOWN_ANATOMY.itemPaddingXPx,
     paddingRight: ROOTSY_DROPDOWN_ANATOMY.itemPaddingXPx,
     opacity: state === "disabled" ? 0.55 : undefined,
-    borderRadiusPx: rootsySpacePx("050"),
+    borderRadiusPx: 0,
   }
 }
 
@@ -169,7 +169,6 @@ export function getDropdownItemInteractiveLayoutStyle(
     minHeight: style.minHeightPx,
     paddingLeft: style.paddingLeft,
     paddingRight: style.paddingRight,
-    borderRadius: `${style.borderRadiusPx}px`,
     display: "flex" as const,
     alignItems: "center" as const,
     boxSizing: "border-box" as const,
@@ -179,7 +178,7 @@ export function getDropdownItemInteractiveLayoutStyle(
   }
 }
 
-/** Ítem CSS — borderRadius space.050 (4px) · inset vía px-1 del panel. */
+/** Ítem CSS — hover rectangular a todo el ancho del panel. */
 export function getDropdownItemShellUiStyle(
   theme: DropdownThemeId = "light",
   state: DropdownItemStateId = "default",

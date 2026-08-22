@@ -16,7 +16,6 @@ import {
 import type { RootsIconButtonSize } from "@/components/rootsy-button/rootsButtonStyles"
 import {
   eterHeaderBodyClass,
-  eterHeaderFocusRingClass,
   eterHeaderMutedClass,
 } from "@/lib/eter/eterChrome"
 import { initialsFromPopName } from "@/lib/popIdentityDisplay"
@@ -114,9 +113,9 @@ export function DataWorkspaceHeaderUserMenu({
           aria-haspopup="menu"
           className={cn(
             "group flex min-w-0 items-center gap-3 text-left",
-            "outline-none",
-            "focus-visible:rounded-lg",
-            eterHeaderFocusRingClass,
+            "outline-none focus:outline-none focus:ring-0",
+            "data-[state=open]:ring-0",
+            "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-white/22",
           )}
         >
           <div

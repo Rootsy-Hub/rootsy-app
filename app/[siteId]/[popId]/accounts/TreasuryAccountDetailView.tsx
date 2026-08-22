@@ -10,18 +10,11 @@ import {
   TreasuryBrandIsotype,
   TreasuryBrandName,
 } from "@/app/[siteId]/[popId]/accounts/TreasuryBrandMark"
-import {
-  addManualBankStatementLine,
-  clearMovementReconciliation,
-  deleteBankStatementLine,
-  importBankStatementCsv,
-  recordPosAcreditationForAccount,
-  recordTreasurySettlementForAccount,
-  setMovementReconciliation,
-  type BankStatementLineRow,
-  type PaymentMethodMovementRow,
-  type TreasuryAccountDetailResult,
-  type TreasurySettlementRow,
+import type {
+  BankStatementLineRow,
+  PaymentMethodMovementRow,
+  TreasuryAccountDetailResult,
+  TreasurySettlementRow,
 } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
 import { TreasuryCashMovementsTable } from "@/app/[siteId]/[popId]/accounts/TreasuryCashMovementsTable"
 import { TreasuryGroupedMovementsList } from "@/app/[siteId]/[popId]/accounts/TreasuryGroupedMovementsList"
@@ -84,10 +77,17 @@ import {
   type PopMercadoPagoConnectionPublic,
 } from "@/lib/popMercadoPago"
 import {
+  addManualBankStatementLine,
+  clearMovementReconciliation,
+  deleteBankStatementLine,
   fetchTreasuryAccountMovements,
   fetchTreasuryAccountPage,
   fetchTreasuryAccountTotals,
+  importBankStatementCsv,
   mergeTreasuryAccountRow,
+  recordPosAcreditationForAccount,
+  recordTreasurySettlementForAccount,
+  setMovementReconciliation,
 } from "@/lib/rootsyApi/treasuryClient"
 import { resolveTreasuryAccountBrand } from "@/lib/treasuryAccountBrands"
 import { treasuryKindLabel } from "@/lib/treasuryAccountKinds"
@@ -546,7 +546,7 @@ export function TreasuryAccountDetailView({
 
   const handleDeleteStatementLine = async (lineId: string) => {
     if (!popId) return
-    const res = await deleteBankStatementLine(popId, lineId)
+    const res = await deleteBankStatementLine(popId, accountId, lineId)
     if (!res.success) {
       setCsvBanner(res.error)
       return
@@ -581,7 +581,12 @@ export function TreasuryAccountDetailView({
     if (!popId) return
     const key = `${m.kind}:${m.movementRefId}`
     setReconcileBusyKey(key)
-    const res = await clearMovementReconciliation(popId, m.kind, m.movementRefId)
+    const res = await clearMovementReconciliation(
+      popId,
+      accountId,
+      m.kind,
+      m.movementRefId,
+    )
     setReconcileBusyKey(null)
     if (!res.success) {
       setDetailError(res.error)
