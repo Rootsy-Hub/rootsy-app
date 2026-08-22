@@ -244,11 +244,12 @@ export function ModuleWorkspaceHeader({
             {titleAdornment}
           </div>
 
-          <div className="flex min-w-0 items-center justify-end gap-3">
+          <div className="flex min-w-0 items-center justify-end gap-2 lg:gap-3">
             {showActions ? (
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1">
                 {headerActions}
-                {renderMoreMenu("icons")}
+                <div className="lg:hidden">{renderMoreMenu("menu")}</div>
+                <div className="hidden lg:contents">{renderMoreMenu("icons")}</div>
                 {sectionMenu}
               </div>
             ) : null}

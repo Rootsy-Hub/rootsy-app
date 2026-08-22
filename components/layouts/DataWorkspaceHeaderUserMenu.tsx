@@ -77,12 +77,15 @@ export function DataWorkspaceHeaderUserMenu({
   const initials = initialsFromPopName(userName)
   const resolvedRoleLabel = roleLabel?.trim() || ""
   const avatarSizeClass = size === "compact" ? "size-8" : "size-10"
+  /** Compact (módulo): el nombre espera a `lg` para no pisar las acciones. */
+  const identityClass =
+    size === "compact" ? "hidden lg:flex" : "hidden sm:flex"
 
   if (pending) {
     return (
       <div className="flex min-w-0 items-center gap-3" aria-hidden>
         {showIdentity ? (
-          <div className="hidden flex-col items-end gap-1.5 sm:flex">
+          <div className={cn("flex-col items-end gap-1.5", identityClass)}>
             <span className={cn(menuGhostBarClass, "h-3.5 w-24")} />
             <span className={cn(menuGhostBarClass, "h-2.5 w-16")} />
           </div>
@@ -119,7 +122,8 @@ export function DataWorkspaceHeaderUserMenu({
           <div
             className={cn(
               "min-w-0 flex-col items-end text-right leading-tight",
-              showIdentity ? "hidden sm:flex" : "hidden",
+              size === "compact" && "max-w-28 xl:max-w-40",
+              showIdentity ? identityClass : "hidden",
             )}
           >
             <span className={cn("truncate text-sm", eterHeaderBodyClass)}>
