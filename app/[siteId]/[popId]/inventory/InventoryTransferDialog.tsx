@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  searchInventoryArticles,
-  type InventoryArticleSearchHit,
-} from "@/app/[siteId]/[popId]/inventory/actions"
+import type { InventoryArticleSearchHit } from "@/app/[siteId]/[popId]/inventory/actions"
+import { searchInventoryArticles } from "@/lib/rootsyApi/inventoryClient"
 import type { InventoryLocationRow } from "@/lib/inventory/inventoryLocations"
 import { formatInventoryQtyWithUnit } from "@/app/[siteId]/[popId]/inventory/inventoryFormat"
 import {

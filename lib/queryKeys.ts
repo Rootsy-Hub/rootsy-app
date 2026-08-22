@@ -560,6 +560,42 @@ export function popSettingsQueryKey(popId: string) {
   return ["pop-settings", popId] as const
 }
 
+export function popExpensesQueryKey(
+  popId: string,
+  year: number,
+  month1: number,
+) {
+  return ["pop-expenses", popId, year, month1] as const
+}
+
+export function popExpensesQueryRoot(popId: string) {
+  return ["pop-expenses", popId] as const
+}
+
+export function popInventoryQueryKey(popId: string) {
+  return ["pop-inventory", popId] as const
+}
+
+export function popInventorySummaryQueryKey(popId: string) {
+  return ["pop-inventory", popId, "summary"] as const
+}
+
+export function popInventoryQueryRoot(popId: string) {
+  return ["pop-inventory", popId] as const
+}
+
+export function popInventoryMovementsQueryKey(popId: string) {
+  return ["pop-inventory", popId, "movements"] as const
+}
+
+export function popInventoryLedgerQueryKey(popId: string) {
+  return ["pop-inventory", popId, "ledger"] as const
+}
+
+export function popInventoryLocationsQueryKey(popId: string) {
+  return ["pop-inventory", popId, "locations"] as const
+}
+
 /** @deprecated Usar popClientsQueryKey */
 export const popClientsTableQueryKey = popClientsQueryKey
 

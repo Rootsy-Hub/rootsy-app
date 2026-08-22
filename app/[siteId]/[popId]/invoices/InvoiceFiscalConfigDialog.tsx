@@ -1,7 +1,7 @@
 "use client"
 
 import { RootsBanner } from "@/components/rootsy-banner"
-import { RootsDefaultButton, RootsIconButton } from "@/components/rootsy-button"
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -18,7 +18,9 @@ import {
   rootsFormBrumaTextSecondaryClass,
   rootsFormFieldLabelClass,
   rootsFormImageUploadShellClass,
+  rootsFormImageUploadThumbClass,
 } from "@/components/rootsy-form"
+import { rootsFormImageUploadActionClass } from "@/components/rootsy-form/rootsFormStyles"
 import { Dialog } from "@/components/ui/dialog"
 import { useArcaFiscalConfig } from "@/hooks/useArcaFiscalConfig"
 import {
@@ -47,6 +49,7 @@ import {
   ChevronRight,
   ExternalLink,
   Download,
+  FileBadge,
   FileKey,
   FileText,
   Hash,
@@ -538,66 +541,73 @@ export function InvoiceFiscalConfigDialog({
                     />
                   </div>
 
-                  {csrPem || selected?.csrUploadedAt ? (
-                    <div className="pt-4">
-                      <p className={rootsFormFieldLabelClass}>
-                        Pedido de certificado (.csr)
-                      </p>
-                      <div
+                  <div className="pt-4">
+                    <p className={rootsFormFieldLabelClass}>
+                      Pedido de certificado (.csr)
+                    </p>
+                    <div
+                      className={cn(
+                        rootsFormImageUploadShellClass,
+                        "mt-2 flex items-center gap-3",
+                      )}
+                    >
+                      <span
                         className={cn(
-                          rootsFormImageUploadShellClass,
-                          "mt-2 flex items-center gap-3 px-3 py-2.5",
+                          rootsFormImageUploadThumbClass,
+                          "flex items-center justify-center",
                         )}
                       >
                         <FileText
-                          className="size-4 shrink-0 text-[color:var(--rootsy-bruma-500)]"
+                          className="size-5 text-[var(--rootsy-bruma-500)]"
                           aria-hidden
                         />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-[color:var(--rootsy-bruma-900)]">
-                            pedido-{editPtoVta || "punto-de-venta"}.csr
-                          </p>
-                          <p
-                            className={cn(
-                              "mt-0.5 text-xs",
-                              rootsFormBrumaTextSecondaryClass,
-                            )}
-                          >
-                            Subilo en ARCA para obtener el .crt. La clave queda
-                            en Rootsy.
-                          </p>
-                        </div>
-                        <RootsDefaultButton
-                          type="button"
-                          size="compact"
-                          theme="workspace"
-                          withIcon
-                          loading={csrBusy}
-                          loadingLabel="…"
-                          disabled={csrBusy}
-                          onClick={() => void handleDownloadCsr()}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-[color:var(--rootsy-bruma-900)]">
+                          pedido-{editPtoVta || "punto-de-venta"}.csr
+                        </p>
+                        <p
+                          className={cn(
+                            "mt-0.5 text-xs",
+                            rootsFormBrumaTextSecondaryClass,
+                          )}
                         >
-                          <Download className="size-3.5" aria-hidden />
-                          Descargar
-                        </RootsDefaultButton>
+                          Descargalo y subilo en ARCA para obtener el .crt.
+                        </p>
                       </div>
+                      <button
+                        type="button"
+                        aria-label="Descargar archivo CSR"
+                        className={rootsFormImageUploadActionClass}
+                        disabled={csrBusy}
+                        onClick={() => void handleDownloadCsr()}
+                      >
+                        {csrBusy ? (
+                          <Loader2 className="size-4 animate-spin" aria-hidden />
+                        ) : (
+                          <Download className="size-4" aria-hidden />
+                        )}
+                      </button>
                     </div>
-                  ) : null}
+                  </div>
 
                   <div className="pt-4">
                     <RootsFormImageUploadField
                       label="Certificado (.crt)"
                       id={`${editFieldId}-crt`}
                       filled={Boolean(crtFile || selected?.crtUploadedAt)}
-                      documentIcon={FileText}
-                      previewCaption={crtFile?.name ?? "Certificado"}
+                      documentIcon={FileBadge}
+                      previewCaption={
+                        crtFile?.name ??
+                        (selected?.crtUploadedAt ? "certificado.crt" : "Certificado")
+                      }
                       statusHint={fileHint(
                         crtFile,
                         selected?.crtUploadedAt ?? null,
                       )}
                       emptyTitle="Subir certificado"
-                      emptySubtitle="El .crt que te da ARCA"
-                      accept=".crt"
+                      emptySubtitle="Archivo .crt que te da ARCA"
+                      accept=".crt,application/x-x509-ca-cert,application/pkix-cert"
                       changeAriaLabel="Cambiar certificado"
                       removeAriaLabel="Quitar certificado"
                       disabled={!canWrite || saving}

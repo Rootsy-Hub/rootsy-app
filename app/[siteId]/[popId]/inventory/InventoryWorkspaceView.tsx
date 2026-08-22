@@ -1,25 +1,17 @@
 "use client"
 
-import {
-  applyInventoryMinStockRecommendations,
-  createInventoryAdjustment,
-  deleteInventoryMovement,
-  getArticleInventoryBalance,
-  getPopInventoryPageData,
-  type InventoryArticleRow,
-  type InventoryCostLayerRow,
-  type InventoryLayerAllocationRow,
-  type InventoryLocationRow,
-  type InventoryMetrics,
-  type InventoryMovementRow,
+import type {
+  InventoryArticleRow,
+  InventoryCostLayerRow,
+  InventoryLayerAllocationRow,
+  InventoryMovementRow,
 } from "@/app/[siteId]/[popId]/inventory/actions"
 import {
-  archiveInventoryLocation,
-  createInventoryLocation,
-  renameInventoryLocation,
-  transferInventoryStock,
-} from "@/app/[siteId]/[popId]/inventory/inventoryLocationActions"
-import { setInventoryLayerExpiry } from "@/app/[siteId]/[popId]/inventory/inventoryExpiryActions"
+  mergeInventoryWorkspaceUrl,
+  parseInventoryWorkspaceUrl,
+  type InventoryClearingId,
+  type InventoryRedFilter,
+} from "@/app/[siteId]/[popId]/inventory/workspaceUrl"
 import { InventoryAdjustmentDialog } from "@/app/[siteId]/[popId]/inventory/InventoryAdjustmentDialog"
 import { InventoryExpiryClearing } from "@/app/[siteId]/[popId]/inventory/InventoryExpiryClearing"
 import { InventoryLayerExpiryDialog } from "@/app/[siteId]/[popId]/inventory/InventoryLayerExpiryDialog"
@@ -67,13 +59,33 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
+import {
+  usePopInventory,
+  usePopInventoryLedger,
+  usePopInventoryLocations,
+  usePopInventoryMovements,
+  usePopInventorySummary,
+} from "@/hooks/usePopInventory"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
+import { POP_PERMS } from "@/lib/popPermissionConstants"
+import { popInventoryQueryRoot } from "@/lib/queryKeys"
+import {
+  applyInventoryMinStockRecommendations,
+  archiveInventoryLocation,
+  createInventoryAdjustment,
+  createInventoryLocation,
+  deleteInventoryMovement,
+  getArticleInventoryBalance,
+  renameInventoryLocation,
+  setInventoryLayerExpiry,
+  slimToLocationRow,
+  transferInventoryStock,
+} from "@/lib/rootsyApi/inventoryClient"
 import { formatLocaleDateTime } from "@/lib/popTimezone"
 import { popScopedHref } from "@/lib/popRoutes"
-import { toISODateLocal } from "@/lib/dataWorkspaceDateFilter"
-import {
-  formatInventoryExpiryDate,
-  inventoryExpiryAlert,
-} from "@/lib/inventory/inventoryExpiry"
+import { formatInventoryExpiryDate } from "@/lib/inventory/inventoryExpiry"
 import { isInventoryRed } from "@/lib/inventory/inventoryStockLevels"
 import { cn } from "@/lib/utils"
 import {
@@ -92,29 +104,19 @@ import {
   TriangleAlert,
   Warehouse,
 } from "lucide-react"
-import { useParams, useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type FormEvent,
 } from "react"
 
-type ClearingId =
-  | "home"
-  | "red"
-  | "overstock"
-  | "purchase"
-  | "pantry"
-  | "movements"
-  | "recommend"
-  | "ledger"
-  | "locations"
-  | "expiry"
+type ClearingId = InventoryClearingId
 
-type RedFilter = "todas" | "negative" | "empty" | "below_min"
+type RedFilter = InventoryRedFilter
 
 const RED_FILTER_OPTIONS = [
   { value: "todas", label: "Todas" },
@@ -219,22 +221,82 @@ function InventoryKpiCard({
 }
 
 export default function InventoryWorkspaceView() {
-  const router = useRouter()
-  const routerRef = useRef(router)
-  routerRef.current = router
   const params = useParams()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const queryClient = useQueryClient()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
-  const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
+  const { bootstrap, loading: bootstrapLoading, error: bootstrapError, hasPermission } =
     usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const menuCache = usePopMenuCache(popId ?? "")
 
-  const [movements, setMovements] = useState<InventoryMovementRow[]>([])
-  const [costLayers, setCostLayers] = useState<InventoryCostLayerRow[]>([])
-  const [layerAllocations, setLayerAllocations] = useState<
-    InventoryLayerAllocationRow[]
-  >([])
-  const [articleRows, setArticleRows] = useState<InventoryArticleRow[]>([])
-  const [metrics, setMetrics] = useState<InventoryMetrics>({
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
+  )
+  const ws = useMemo(
+    () => parseInventoryWorkspaceUrl(workspaceParams),
+    [workspaceParams],
+  )
+  const clearing = ws.clearing
+  const redFilter = ws.redFilter
+  const query = ws.q
+
+  const checkPerm = useCallback(
+    (perm: { resource: string; action: string }) =>
+      afterHydration &&
+      (hasPermission(perm.resource, perm.action) ||
+        (menuCache.popAccess
+          ? hasPopAccessPermission(
+              menuCache.popAccess,
+              perm.resource,
+              perm.action,
+            )
+          : false)),
+    [afterHydration, hasPermission, menuCache.popAccess],
+  )
+  const canCreate = checkPerm(POP_PERMS.INVENTORY_CREATE)
+  const canPostAdjustmentAccounting = canCreate
+  const canUpdate = checkPerm(POP_PERMS.INVENTORY_UPDATE)
+  const canDelete = checkPerm(POP_PERMS.INVENTORY_DELETE)
+  const canUpdateArticles = checkPerm(POP_PERMS.ARTICLE_UPDATE)
+
+  const needsArticleRows =
+    clearing === "red" ||
+    clearing === "overstock" ||
+    clearing === "purchase" ||
+    clearing === "pantry" ||
+    clearing === "recommend"
+
+  const summaryQuery = usePopInventorySummary(popId, {
+    enabled: Boolean(popId && siteId),
+  })
+  const inventoryQuery = usePopInventory(popId, {
+    enabled: Boolean(popId && siteId && needsArticleRows),
+  })
+  const movementsQuery = usePopInventoryMovements(popId, {
+    enabled: Boolean(popId && siteId && clearing === "movements"),
+  })
+  const ledgerQuery = usePopInventoryLedger(popId, {
+    enabled: Boolean(
+      popId && siteId && (clearing === "ledger" || clearing === "expiry"),
+    ),
+  })
+  const locationsQuery = usePopInventoryLocations(popId, {
+    enabled: Boolean(popId && siteId && clearing === "locations"),
+  })
+
+  const articleRows = inventoryQuery.data?.articleRows ?? []
+  const metrics = summaryQuery.data?.metrics ?? {
     articleCount: 0,
     articlesWithStock: 0,
     unitsInStock: 0,
@@ -247,18 +309,39 @@ export default function InventoryWorkspaceView() {
     overstockCount: 0,
     purchaseCount: 0,
     recommendationCount: 0,
-  })
-  const [canCreate, setCanCreate] = useState(false)
-  const [canPostAdjustmentAccounting, setCanPostAdjustmentAccounting] =
-    useState(false)
-  const [canUpdateArticles, setCanUpdateArticles] = useState(false)
-  const [canDelete, setCanDelete] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  }
+  const slimLocations = summaryQuery.data?.locations ?? []
+  const locationsForDialogs = useMemo(
+    () => slimLocations.map(slimToLocationRow),
+    [slimLocations],
+  )
+  const locations =
+    locationsQuery.data?.locations && locationsQuery.data.locations.length > 0
+      ? locationsQuery.data.locations
+      : locationsForDialogs
+  const movements = movementsQuery.data?.movements ?? []
+  const costLayers = ledgerQuery.data?.costLayers ?? []
+  const layerAllocations = ledgerQuery.data?.layerAllocations ?? []
+  const expiryAlert = summaryQuery.data?.expiry ?? {
+    expiredCount: 0,
+    soonCount: 0,
+    total: 0,
+  }
+  const loading =
+    summaryQuery.isPending ||
+    (summaryQuery.isFetching && !summaryQuery.isFetched) ||
+    (needsArticleRows &&
+      (inventoryQuery.isPending ||
+        (inventoryQuery.isFetching && !inventoryQuery.isFetched)))
+  const error =
+    summaryQuery.data?.success === false
+      ? summaryQuery.data.error
+      : inventoryQuery.data?.success === false
+        ? inventoryQuery.data.error
+        : summaryQuery.error || inventoryQuery.error
+          ? "Unexpected error"
+          : null
 
-  const [clearing, setClearing] = useState<ClearingId>("home")
-  const [redFilter, setRedFilter] = useState<RedFilter>("todas")
-  const [query, setQuery] = useState("")
   const [applyBanner, setApplyBanner] = useState<string | null>(null)
   const [applyBusy, setApplyBusy] = useState(false)
 
@@ -276,8 +359,6 @@ export default function InventoryWorkspaceView() {
   const [createStockError, setCreateStockError] = useState<string | null>(null)
   const [createOnHand, setCreateOnHand] = useState<number | null>(null)
   const [createLocationId, setCreateLocationId] = useState("")
-  const [locations, setLocations] = useState<InventoryLocationRow[]>([])
-  const [canUpdate, setCanUpdate] = useState(false)
   const [locationName, setLocationName] = useState("")
   const [locationBusy, setLocationBusy] = useState(false)
   const [locationBanner, setLocationBanner] = useState<string | null>(null)
@@ -304,62 +385,28 @@ export default function InventoryWorkspaceView() {
   const [expirySaving, setExpirySaving] = useState(false)
   const [expiryBanner, setExpiryBanner] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
-    if (!popId || !siteId) return
-    const res = await getPopInventoryPageData(popId)
-    if (!res.success) {
-      setError(res.error || "Error")
-      setMovements([])
-      setCostLayers([])
-      setLayerAllocations([])
-      setArticleRows([])
-      setLocations([])
-      setCanCreate(false)
-      setCanPostAdjustmentAccounting(false)
-      setCanUpdate(false)
-      setCanUpdateArticles(false)
-      setCanDelete(false)
-      if (res.redirect) {
-        setTimeout(() => routerRef.current.push(res.redirect!), 1200)
+  const pushWs = useCallback(
+    (patch: Parameters<typeof mergeInventoryWorkspaceUrl>[1]) => {
+      const next = mergeInventoryWorkspaceUrl(workspaceParams, patch)
+      const qs = next.toString()
+      const href = qs ? `${pathname}?${qs}` : pathname
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== href) {
+          window.history.replaceState(window.history.state, "", href)
+        }
       }
-      return
-    }
-    setMovements(res.movements)
-    setCostLayers(res.costLayers)
-    setLayerAllocations(res.layerAllocations)
-    setArticleRows(res.articleRows)
-    setMetrics(res.metrics)
-    setLocations(res.locations)
-    setCanCreate(res.canCreate)
-    setCanPostAdjustmentAccounting(res.canPostAdjustmentAccounting)
-    setCanUpdate(res.canUpdate)
-    setCanUpdateArticles(res.canUpdateArticles)
-    setCanDelete(res.canDelete)
-    setError(null)
-  }, [popId, siteId])
+      setWorkspaceSearch(qs)
+    },
+    [pathname, workspaceParams],
+  )
 
-  useEffect(() => {
-    if (!popId || !siteId) {
-      setLoading(false)
-      setError("Punto de venta no encontrado")
-      return
-    }
-    let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        await load()
-      } catch {
-        if (!cancelled) setError("Unexpected error")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [popId, siteId, load])
+  const refreshInventory = useCallback(async () => {
+    if (!popId) return
+    await queryClient.invalidateQueries({
+      queryKey: popInventoryQueryRoot(popId),
+    })
+  }, [popId, queryClient])
 
   const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
@@ -434,7 +481,6 @@ export default function InventoryWorkspaceView() {
     void (async () => {
       const res = await getArticleInventoryBalance(popId, {
         articleId: createArticleId,
-        siteId,
         locationId: createLocationId || undefined,
       })
       if (cancelled) return
@@ -466,7 +512,6 @@ export default function InventoryWorkspaceView() {
     void (async () => {
       const res = await getArticleInventoryBalance(popId, {
         articleId: transferArticleId,
-        siteId,
         locationId: transferFromId,
       })
       if (cancelled) return
@@ -522,7 +567,6 @@ export default function InventoryWorkspaceView() {
       articleId: createArticleId,
       quantityDelta: createAddStock ? q : -q,
       note: createNote,
-      siteId,
       locationId: createLocationId || undefined,
       expiresAt: createAddStock ? createExpiresAt || null : null,
     })
@@ -532,55 +576,48 @@ export default function InventoryWorkspaceView() {
       return
     }
     setCreateOpen(false)
-    await load()
+    await refreshInventory()
   }
 
   const submitCreateLocation = async () => {
     if (!popId || !siteId) return
     setLocationBusy(true)
     setLocationBanner(null)
-    const res = await createInventoryLocation(popId, {
-      name: locationName,
-      siteId,
-    })
+    const res = await createInventoryLocation(popId, locationName)
     setLocationBusy(false)
     if (!res.success) {
       setLocationBanner(res.error)
       return
     }
     setLocationName("")
-    await load()
+    await refreshInventory()
   }
 
   const submitRenameLocation = async (locationId: string, name: string) => {
     if (!popId || !siteId) return
     setLocationBusy(true)
     setLocationBanner(null)
-    const res = await renameInventoryLocation(popId, {
-      locationId,
-      name,
-      siteId,
-    })
+    const res = await renameInventoryLocation(popId, locationId, name)
     setLocationBusy(false)
     if (!res.success) {
       setLocationBanner(res.error)
       return
     }
-    await load()
+    await refreshInventory()
   }
 
   const submitArchiveLocation = async (locationId: string) => {
     if (!popId || !siteId) return
     setLocationBusy(true)
     setLocationBanner(null)
-    const res = await archiveInventoryLocation(popId, { locationId, siteId })
+    const res = await archiveInventoryLocation(popId, locationId)
     setLocationBusy(false)
     if (!res.success) {
       setLocationBanner(res.error)
       return
     }
     if (createLocationId === locationId) setCreateLocationId(defaultLocationId)
-    await load()
+    await refreshInventory()
   }
 
   const submitTransfer = async (e: FormEvent) => {
@@ -594,7 +631,6 @@ export default function InventoryWorkspaceView() {
       fromLocationId: transferFromId,
       toLocationId: transferToId,
       quantity: q,
-      siteId,
     })
     setTransferSaving(false)
     if (!res.success) {
@@ -602,7 +638,7 @@ export default function InventoryWorkspaceView() {
       return
     }
     setTransferOpen(false)
-    await load()
+    await refreshInventory()
   }
 
   const submitDelete = async () => {
@@ -616,7 +652,7 @@ export default function InventoryWorkspaceView() {
       return
     }
     setDeleteRow(null)
-    await load()
+    await refreshInventory()
   }
 
   const submitExpiry = async (input: {
@@ -628,7 +664,6 @@ export default function InventoryWorkspaceView() {
     setExpiryBanner(null)
     const res = await setInventoryLayerExpiry(popId, {
       layerId: expiryLayer.id,
-      siteId,
       expiresAt: input.expiresAt,
       quantity: input.quantity,
     })
@@ -638,13 +673,11 @@ export default function InventoryWorkspaceView() {
       return
     }
     setExpiryLayer(null)
-    await load()
+    await refreshInventory()
   }
 
   const goClearing = (id: ClearingId) => {
-    setClearing(id)
-    setQuery("")
-    setRedFilter("todas")
+    pushWs({ clearing: id, q: "", redFilter: "todas" })
     setApplyBanner(null)
     setLocationBanner(null)
   }
@@ -675,29 +708,11 @@ export default function InventoryWorkspaceView() {
     return byQuery
   }, [articleRows, clearing, query, redFilter])
 
-  const redPreview = useMemo(
-    () => articleRows.filter((row) => isInventoryRed(row.attention)).slice(0, 5),
-    [articleRows],
-  )
-
-  const expiryAlert = useMemo(() => {
-    const todayIso = toISODateLocal(new Date())
-    let expiredCount = 0
-    let soonCount = 0
-    for (const layer of costLayers) {
-      if (layer.quantityRemaining <= 1e-6) continue
-      const alert = inventoryExpiryAlert(layer.expiresAt, todayIso)
-      if (alert === "expired") expiredCount += 1
-      else if (alert) soonCount += 1
-    }
-    return { expiredCount, soonCount, total: expiredCount + soonCount }
-  }, [costLayers])
-
   const applyRecommendations = async () => {
     if (!popId || !siteId) return
     setApplyBusy(true)
     setApplyBanner(null)
-    const res = await applyInventoryMinStockRecommendations(popId, { siteId })
+    const res = await applyInventoryMinStockRecommendations(popId)
     setApplyBusy(false)
     if (!res.success) {
       setApplyBanner(res.error)
@@ -708,7 +723,7 @@ export default function InventoryWorkspaceView() {
         ? "Se aplicó 1 mínimo sugerido."
         : `Se aplicaron ${res.applied} mínimos sugeridos.`,
     )
-    await load()
+    await refreshInventory()
   }
 
   const printPurchaseList = () => {
@@ -825,11 +840,11 @@ export default function InventoryWorkspaceView() {
                   eyebrow="Lo que pide"
                   value={String(metrics.redCount)}
                   hint={
-                    metrics.overstockCount > 0
-                      ? `${metrics.purchaseCount} para comprar · ${metrics.overstockCount} sobre stock`
-                      : metrics.purchaseCount === 1
-                        ? "1 artículo para comprar"
-                        : `${metrics.purchaseCount} artículos para comprar`
+                    metrics.redCount === 0
+                      ? "Nada en falta"
+                      : metrics.redCount === 1
+                        ? "1 artículo pide reposición"
+                        : `${metrics.redCount} piden reposición`
                   }
                 />
               </section>
@@ -877,11 +892,7 @@ export default function InventoryWorkspaceView() {
                   />
                   <ReportHubCard
                     title="Recomendaciones"
-                    description={
-                      metrics.recommendationCount === 0
-                        ? "Los mínimos están al día"
-                        : `${metrics.recommendationCount} mínimos para revisar`
-                    }
+                    description="Mínimos sugeridos según las ventas"
                     icon={Sparkles}
                     onSelect={() => goClearing("recommend")}
                   />
@@ -930,38 +941,7 @@ export default function InventoryWorkspaceView() {
                 </div>
               </DataWorkspaceBlocksSection>
 
-              {redPreview.length > 0 ? (
-                <DataWorkspaceBlocksSection
-                  title="Lo que pide cuidado"
-                  description="Un vistazo. El resto está en el sendero."
-                  action={
-                    <RootsSubtleButton
-                      type="button"
-                      size="compact"
-                      onClick={() => goClearing("red")}
-                    >
-                      Ver todas
-                    </RootsSubtleButton>
-                  }
-                >
-                  <InventoryArticleRowList
-                    rows={redPreview}
-                    empty="Nada en rojo."
-                    onRowClick={(row) =>
-                      openCreate({
-                        id: row.articleId,
-                        name: row.name,
-                        unitOfMeasure: row.unitOfMeasure,
-                      })
-                    }
-                    trailing={(row) =>
-                      row.qtyToBuy > 0
-                        ? `Comprar ${formatInventoryQty(row.qtyToBuy)}`
-                        : null
-                    }
-                  />
-                </DataWorkspaceBlocksSection>
-              ) : (
+              {metrics.articleCount === 0 ? (
                 <DataWorkspaceBlocksSection
                   title="Catálogo"
                   description="Los artículos y sus mínimos se cuidan en Stock."
@@ -976,12 +956,10 @@ export default function InventoryWorkspaceView() {
                   }
                 >
                   <p className={dataWorkspaceBlocksEmptyStateClass}>
-                    {metrics.articleCount === 0
-                      ? "Todavía no hay artículos en este punto."
-                      : "Nada en rojo. El stock está en orden."}
+                    Todavía no hay artículos en este punto.
                   </p>
                 </DataWorkspaceBlocksSection>
-              )}
+              ) : null}
             </div>
           ) : (
             <div className="space-y-6">
@@ -994,7 +972,8 @@ export default function InventoryWorkspaceView() {
                   <ArrowLeft className="size-3.5" aria-hidden />
                   Volver
                 </RootsSubtleButton>
-                {clearing === "purchase" && metrics.purchaseCount > 0 ? (
+                {clearing === "purchase" &&
+                articleRows.some((row) => row.qtyToBuy > 0) ? (
                   <RootsPrimaryButton
                     type="button"
                     size="compact"
@@ -1006,7 +985,7 @@ export default function InventoryWorkspaceView() {
                 ) : null}
                 {clearing === "recommend" &&
                 canUpdateArticles &&
-                metrics.recommendationCount > 0 ? (
+                articleRows.some((row) => row.suggestedMin != null) ? (
                   <RootsPrimaryButton
                     type="button"
                     size="compact"
@@ -1037,7 +1016,9 @@ export default function InventoryWorkspaceView() {
                     layout="inline"
                     className="[&>span:first-child]:sr-only"
                     value={redFilter}
-                    onValueChange={(value) => setRedFilter(value as RedFilter)}
+                    onValueChange={(value) =>
+                      pushWs({ redFilter: value as RedFilter })
+                    }
                     options={RED_FILTER_OPTIONS}
                   />
                 ) : null}
@@ -1052,8 +1033,8 @@ export default function InventoryWorkspaceView() {
                     hideLabel
                     placeholder="Buscar artículo"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onClear={() => setQuery("")}
+                    onChange={(e) => pushWs({ q: e.target.value })}
+                    onClear={() => pushWs({ q: "" })}
                   />
                 ) : null}
 

@@ -55,7 +55,7 @@ export function MenuSectionNavigator({
           return (
             <div
               key={section.key}
-              className="flex min-w-0 flex-1 items-stretch sm:flex-none"
+              className="flex min-w-0 flex-none items-stretch"
             >
               <button
                 type="button"
