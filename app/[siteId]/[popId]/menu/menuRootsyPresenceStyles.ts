@@ -1,14 +1,14 @@
 import { cn } from "@/lib/utils"
 
-/** Anclado al suelo del planeta — esquina inferior izquierda. */
+/** Anclado al suelo del planeta — derecha en mobile, izquierda en desktop. */
 export const menuRootsyPresenceHostClass = cn(
   "pointer-events-none absolute z-[28]",
-  "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-3",
-  "md:bottom-0 md:left-5",
+  "bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 left-auto",
+  "md:bottom-0 md:left-5 md:right-auto",
 )
 
 export const menuRootsyPresenceStageClass = cn(
-  "relative flex flex-col items-start justify-end",
+  "relative flex flex-col items-end justify-end md:items-start",
 )
 
 export const menuRootsyPresenceGroundClass = cn(

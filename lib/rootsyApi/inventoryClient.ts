@@ -21,23 +21,6 @@ export type InventoryLocationSlim = {
   isSellable: boolean
 }
 
-export type PopInventoryResult =
-  | {
-      success: true
-      articleRows: InventoryArticleRow[]
-      metrics: InventoryMetrics
-      locations: InventoryLocationSlim[]
-      expiry: InventoryExpirySummary
-    }
-  | {
-      success: false
-      error: string
-      articleRows: InventoryArticleRow[]
-      metrics: InventoryMetrics
-      locations: InventoryLocationSlim[]
-      expiry: InventoryExpirySummary
-    }
-
 const EMPTY_METRICS: InventoryMetrics = {
   articleCount: 0,
   articlesWithStock: 0,
@@ -57,16 +40,6 @@ const EMPTY_EXPIRY: InventoryExpirySummary = {
   expiredCount: 0,
   soonCount: 0,
   total: 0,
-}
-
-const EMPTY_LIST: Omit<
-  Extract<PopInventoryResult, { success: false }>,
-  "success" | "error"
-> = {
-  articleRows: [],
-  metrics: EMPTY_METRICS,
-  locations: [],
-  expiry: EMPTY_EXPIRY,
 }
 
 async function parseMutate(res: Response): Promise<MutateResult> {
@@ -151,84 +124,121 @@ export async function fetchPopInventorySummary(
   }
 }
 
-export async function fetchPopInventory(
+export type InventoryRowsView =
+  | "pantry"
+  | "red"
+  | "overstock"
+  | "purchase"
+  | "recommend"
+
+export type PopInventoryRowsResult =
+  | {
+      success: true
+      rows: InventoryArticleRow[]
+      total: number
+      page: number
+      pageSize: number
+    }
+  | {
+      success: false
+      error: string
+      rows: InventoryArticleRow[]
+      total: number
+      page: number
+      pageSize: number
+    }
+
+export async function fetchPopInventoryRows(
   popId: string,
-): Promise<PopInventoryResult> {
-  const res = await fetch(`/api/pops/${popId}/inventory`, {
+  input: {
+    view: InventoryRowsView
+    q?: string
+    page: number
+    pageSize: number
+    attention?: "negative" | "empty" | "below_min"
+  },
+): Promise<PopInventoryRowsResult> {
+  const params = new URLSearchParams({
+    view: input.view,
+    page: String(input.page),
+    pageSize: String(input.pageSize),
+  })
+  if (input.q?.trim()) params.set("q", input.q.trim())
+  if (input.attention) params.set("attention", input.attention)
+  const res = await fetch(`/api/pops/${popId}/inventory/rows?${params}`, {
     headers: { accept: "application/json" },
   })
   const json = (await res.json().catch(() => null)) as
     | ApiOk<{
-        articleRows: InventoryArticleRow[]
-        metrics: InventoryMetrics
-        locations: InventoryLocationSlim[]
-        expiry: InventoryExpirySummary
+        rows: InventoryArticleRow[]
+        total: number
+        page: number
+        pageSize: number
       }>
     | ApiErr
     | null
   if (res.ok && json && "success" in json && json.success) {
     return {
       success: true,
-      articleRows: json.data.articleRows,
-      metrics: json.data.metrics,
-      locations: json.data.locations,
-      expiry: json.data.expiry,
+      rows: json.data.rows,
+      total: json.data.total,
+      page: json.data.page,
+      pageSize: json.data.pageSize,
     }
   }
   return {
     success: false,
     error:
       json && "error" in json && json.error ? json.error : `HTTP ${res.status}`,
-    ...EMPTY_LIST,
+    rows: [],
+    total: 0,
+    page: input.page,
+    pageSize: input.pageSize,
   }
 }
 
-export async function fetchPopInventoryMovements(
-  popId: string,
-): Promise<
-  | { success: true; movements: InventoryMovementRow[] }
-  | { success: false; error: string; movements: InventoryMovementRow[] }
-> {
-  const res = await fetch(`/api/pops/${popId}/inventory/movements`, {
-    headers: { accept: "application/json" },
-  })
-  const json = (await res.json().catch(() => null)) as
-    | ApiOk<{ movements: InventoryMovementRow[] }>
-    | ApiErr
-    | null
-  if (res.ok && json && "success" in json && json.success) {
-    return { success: true, movements: json.data.movements }
-  }
-  return {
-    success: false,
-    error:
-      json && "error" in json && json.error ? json.error : `HTTP ${res.status}`,
-    movements: [],
-  }
-}
+export type InventoryExpiryFilter = "alert" | "dated" | "none"
 
-export async function fetchPopInventoryLedger(
+export async function fetchPopInventoryExpiry(
   popId: string,
+  input: {
+    page: number
+    pageSize: number
+    q?: string
+    filter: InventoryExpiryFilter
+  },
 ): Promise<
   | {
       success: true
       costLayers: InventoryCostLayerRow[]
-      layerAllocations: InventoryLayerAllocationRow[]
+      page: number
+      pageSize: number
+      hasMore: boolean
     }
   | {
       success: false
       error: string
       costLayers: InventoryCostLayerRow[]
-      layerAllocations: InventoryLayerAllocationRow[]
+      page: number
+      pageSize: number
+      hasMore: boolean
     }
 > {
-  const res = await fetch(`/api/pops/${popId}/inventory/ledger`, {
+  const params = new URLSearchParams({
+    page: String(input.page),
+    pageSize: String(input.pageSize),
+    filter: input.filter,
+  })
+  if (input.q?.trim()) params.set("q", input.q.trim())
+  const res = await fetch(`/api/pops/${popId}/inventory/expiry?${params}`, {
     headers: { accept: "application/json" },
   })
   const json = (await res.json().catch(() => null)) as
     | ApiOk<{
         costLayers: InventoryCostLayerRow[]
-        layerAllocations: InventoryLayerAllocationRow[]
+        page: number
+        pageSize: number
+        hasMore: boolean
       }>
     | ApiErr
     | null
@@ -236,7 +246,9 @@ export async function fetchPopInventoryLedger(
     return {
       success: true,
       costLayers: json.data.costLayers,
-      layerAllocations: json.data.layerAllocations,
+      page: json.data.page,
+      pageSize: json.data.pageSize,
+      hasMore: json.data.hasMore,
     }
   }
   return {
@@ -244,7 +256,179 @@ export async function fetchPopInventoryLedger(
     error:
       json && "error" in json && json.error ? json.error : `HTTP ${res.status}`,
     costLayers: [],
+    page: input.page,
+    pageSize: input.pageSize,
+    hasMore: false,
+  }
+}
+
+export async function fetchPopInventoryMovements(
+  popId: string,
+  input: { page: number; pageSize: number },
+): Promise<
+  | {
+      success: true
+      movements: InventoryMovementRow[]
+      page: number
+      pageSize: number
+      hasMore: boolean
+    }
+  | {
+      success: false
+      error: string
+      movements: InventoryMovementRow[]
+      page: number
+      pageSize: number
+      hasMore: boolean
+    }
+> {
+  const params = new URLSearchParams({
+    page: String(input.page),
+    pageSize: String(input.pageSize),
+  })
+  const res = await fetch(`/api/pops/${popId}/inventory/movements?${params}`, {
+    headers: { accept: "application/json" },
+  })
+  const json = (await res.json().catch(() => null)) as
+    | ApiOk<{
+        movements: InventoryMovementRow[]
+        page: number
+        pageSize: number
+        hasMore: boolean
+      }>
+    | ApiErr
+    | null
+  if (res.ok && json && "success" in json && json.success) {
+    return {
+      success: true,
+      movements: json.data.movements,
+      page: json.data.page,
+      pageSize: json.data.pageSize,
+      hasMore: json.data.hasMore,
+    }
+  }
+  return {
+    success: false,
+    error:
+      json && "error" in json && json.error ? json.error : `HTTP ${res.status}`,
+    movements: [],
+    page: input.page,
+    pageSize: input.pageSize,
+    hasMore: false,
+  }
+}
+
+export async function fetchPopInventoryLedgerLayers(
+  popId: string,
+  input: { page: number; pageSize: number },
+): Promise<
+  | {
+      success: true
+      costLayers: InventoryCostLayerRow[]
+      page: number
+      pageSize: number
+      hasMore: boolean
+    }
+  | {
+      success: false
+      error: string
+      costLayers: InventoryCostLayerRow[]
+      page: number
+      pageSize: number
+      hasMore: boolean
+    }
+> {
+  const params = new URLSearchParams({
+    kind: "layers",
+    page: String(input.page),
+    pageSize: String(input.pageSize),
+  })
+  const res = await fetch(`/api/pops/${popId}/inventory/ledger?${params}`, {
+    headers: { accept: "application/json" },
+  })
+  const json = (await res.json().catch(() => null)) as
+    | ApiOk<{
+        costLayers: InventoryCostLayerRow[]
+        page: number
+        pageSize: number
+        hasMore: boolean
+      }>
+    | ApiErr
+    | null
+  if (res.ok && json && "success" in json && json.success) {
+    return {
+      success: true,
+      costLayers: json.data.costLayers,
+      page: json.data.page,
+      pageSize: json.data.pageSize,
+      hasMore: json.data.hasMore,
+    }
+  }
+  return {
+    success: false,
+    error:
+      json && "error" in json && json.error ? json.error : `HTTP ${res.status}`,
+    costLayers: [],
+    page: input.page,
+    pageSize: input.pageSize,
+    hasMore: false,
+  }
+}
+
+export async function fetchPopInventoryLedgerAllocations(
+  popId: string,
+  input: { page: number; pageSize: number },
+): Promise<
+  | {
+      success: true
+      layerAllocations: InventoryLayerAllocationRow[]
+      page: number
+      pageSize: number
+      hasMore: boolean
+    }
+  | {
+      success: false
+      error: string
+      layerAllocations: InventoryLayerAllocationRow[]
+      page: number
+      pageSize: number
+      hasMore: boolean
+    }
+> {
+  const params = new URLSearchParams({
+    kind: "allocations",
+    page: String(input.page),
+    pageSize: String(input.pageSize),
+  })
+  const res = await fetch(`/api/pops/${popId}/inventory/ledger?${params}`, {
+    headers: { accept: "application/json" },
+  })
+  const json = (await res.json().catch(() => null)) as
+    | ApiOk<{
+        layerAllocations: InventoryLayerAllocationRow[]
+        page: number
+        pageSize: number
+        hasMore: boolean
+      }>
+    | ApiErr
+    | null
+  if (res.ok && json && "success" in json && json.success) {
+    return {
+      success: true,
+      layerAllocations: json.data.layerAllocations,
+      page: json.data.page,
+      pageSize: json.data.pageSize,
+      hasMore: json.data.hasMore,
+    }
+  }
+  return {
+    success: false,
+    error:
+      json && "error" in json && json.error ? json.error : `HTTP ${res.status}`,
     layerAllocations: [],
+    page: input.page,
+    pageSize: input.pageSize,
+    hasMore: false,
   }
 }
 

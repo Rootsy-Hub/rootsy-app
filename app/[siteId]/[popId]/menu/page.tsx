@@ -46,7 +46,6 @@ import {
   readMenuSectionPreference,
   writeMenuSectionPreference,
 } from "@/lib/menuSectionPreference"
-import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import {
   useState,
@@ -63,24 +62,6 @@ import useEmblaCarousel from "embla-carousel-react"
 type MenuSectionDef = {
   title: string
   items: MenuItemDef[]
-}
-
-const MOBILE_MENU_SLIDE_MAX = 9
-
-function splitItemsEvenly<T>(items: T[], maxPerSlide: number): T[][] {
-  if (items.length === 0) return [[]]
-  if (items.length <= maxPerSlide) return [items]
-  const slideCount = Math.ceil(items.length / maxPerSlide)
-  const baseSize = Math.floor(items.length / slideCount)
-  const extra = items.length % slideCount
-  const pages: T[][] = []
-  let offset = 0
-  for (let page = 0; page < slideCount; page += 1) {
-    const size = baseSize + (page < extra ? 1 : 0)
-    pages.push(items.slice(offset, offset + size))
-    offset += size
-  }
-  return pages
 }
 
 function detectSearchShortcutLabel(): string {
@@ -139,8 +120,7 @@ function MenuPage() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
 
-  const isMobile = useIsMobile()
-  const [selectedSectionIndex, setSelectedSectionIndex] = useState(0)
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
   const [showSearch, setShowSearch] = useState(false)
   const [searchShortcutLabel, setSearchShortcutLabel] = useState("Ctrl+K")
@@ -185,10 +165,10 @@ function MenuPage() {
   )
 
   useEffect(() => {
-    if (selectedSectionIndex >= sections.length) {
-      setSelectedSectionIndex(0)
+    if (selectedIndex >= sections.length) {
+      setSelectedIndex(0)
     }
-  }, [sections.length, selectedSectionIndex])
+  }, [sections.length, selectedIndex])
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
@@ -197,62 +177,24 @@ function MenuPage() {
     dragFree: false,
   })
 
-  const menuSlides = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    return sections.flatMap((sectionKey) => {
-      const section = filteredMenuSections[sectionKey]
-      const items = !section
-        ? []
-        : query
-          ? section.items.filter((item) =>
-              item.name.toLowerCase().includes(query),
-            )
-          : section.items
-      const pages = isMobile
-        ? splitItemsEvenly(items, MOBILE_MENU_SLIDE_MAX)
-        : [items]
-      return pages.map((pageItems, pageIndex) => ({
-        sectionKey,
-        pageIndex,
-        items: pageItems,
-      }))
-    })
-  }, [sections, filteredMenuSections, searchQuery, isMobile])
-  const menuSlidesRef = useRef(menuSlides)
-  menuSlidesRef.current = menuSlides
-
   useEffect(() => {
-    if (!emblaApi || menuSlides.length === 0) return
+    if (!emblaApi || sections.length === 0) return
+
     emblaApi.reInit({ loop: true })
-  }, [emblaApi, menuSlides.length, isMobile])
-
-  useEffect(() => {
-    if (!emblaApi || menuSlidesRef.current.length === 0) return
 
     const saved = popId ? readMenuSectionPreference(popId) : null
     const savedIndex = saved ? sections.indexOf(saved) : -1
-    const startSectionIndex = savedIndex >= 0 ? savedIndex : 0
-    const startSectionKey = sections[startSectionIndex]
-    const startSlideIndex = Math.max(
-      0,
-      menuSlidesRef.current.findIndex(
-        (slide) => slide.sectionKey === startSectionKey,
-      ),
-    )
+    const startIndex = savedIndex >= 0 ? savedIndex : 0
 
-    emblaApi.scrollTo(startSlideIndex, true)
-    setSelectedSectionIndex(startSectionIndex)
+    emblaApi.scrollTo(startIndex, true)
+    setSelectedIndex(startIndex)
 
     const onSelect = () => {
       const next = emblaApi.selectedScrollSnap()
-      const slide = menuSlidesRef.current[next]
-      if (!slide) return
-      const sectionIndex = sections.indexOf(slide.sectionKey)
-      if (sectionIndex >= 0) {
-        setSelectedSectionIndex(sectionIndex)
-      }
-      if (popId) {
-        writeMenuSectionPreference(popId, slide.sectionKey as MenuSectionKey)
+      setSelectedIndex(next)
+      const section = sections[next]
+      if (popId && section) {
+        writeMenuSectionPreference(popId, section as MenuSectionKey)
       }
     }
 
@@ -260,20 +202,13 @@ function MenuPage() {
     return () => {
       emblaApi.off("select", onSelect)
     }
-  }, [emblaApi, popId, sections, isMobile])
+  }, [emblaApi, popId, sections, filteredMenuSections])
 
-  const scrollToSection = useCallback(
-    (sectionIndex: number) => {
-      if (!emblaApi) return
-      const sectionKey = sections[sectionIndex]
-      const slideIndex = menuSlides.findIndex(
-        (slide) => slide.sectionKey === sectionKey,
-      )
-      if (slideIndex >= 0) {
-        emblaApi.scrollTo(slideIndex)
-      }
+  const scrollTo = useCallback(
+    (index: number) => {
+      if (emblaApi) emblaApi.scrollTo(index)
     },
-    [emblaApi, sections, menuSlides],
+    [emblaApi],
   )
 
   const sectionNavItems = useMemo((): MenuSectionNavItem[] => {
@@ -283,8 +218,7 @@ function MenuPage() {
     }))
   }, [sections, filteredMenuSections])
 
-  const activeSectionKey = (sections[selectedSectionIndex] ??
-    "operar") as MenuSectionKey
+  const activeSectionKey = (sections[selectedIndex] ?? "operar") as MenuSectionKey
 
   useEffect(() => {
     setIsMounted(true)
@@ -371,6 +305,16 @@ function MenuPage() {
       window.removeEventListener("offline", sync)
     }
   }, [])
+
+  const getFilteredItems = (sectionKey: string) => {
+    const section = filteredMenuSections[sectionKey]
+    if (!section) return []
+    return searchQuery
+      ? section.items.filter((item) =>
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
+      : section.items
+  }
 
   const popName = popAccess?.pop.name ?? ""
   const popStreetAddress = popAccess?.pop.streetAddress ?? null
@@ -572,8 +516,8 @@ function MenuPage() {
             <MenuSectionNavigator
               className="menu-content-emerge"
               sections={sectionNavItems}
-              selectedIndex={selectedSectionIndex}
-              onSelect={scrollToSection}
+              selectedIndex={selectedIndex}
+              onSelect={scrollTo}
             />
           ) : (
             <MenuDormantNavigator />
@@ -583,14 +527,11 @@ function MenuPage() {
             <div className="menu-content-emerge w-full shrink-0 overflow-hidden" ref={emblaRef}>
               <EmblaDockEditSync emblaApi={emblaApi} />
               <div className="flex">
-                {menuSlides.map((slide) => {
-                  const { sectionKey, items, pageIndex } = slide
+                {sections.map((sectionKey) => {
+                  const items = getFilteredItems(sectionKey)
 
                   return (
-                    <div
-                      key={`${sectionKey}-${pageIndex}`}
-                      className={menuPlanetSlideClass}
-                    >
+                    <div key={sectionKey} className={menuPlanetSlideClass}>
                       {items.length === 0 ? (
                         <p className="px-4 py-10 text-center text-sm text-white/45">
                           {searchQuery.trim()
@@ -654,7 +595,7 @@ function MenuPage() {
 
       <MenuRootsyPresence
         sectionKey={activeSectionKey}
-        sectionTitle={sectionNavItems[selectedSectionIndex]?.title ?? "Operar"}
+        sectionTitle={sectionNavItems[selectedIndex]?.title ?? "Operar"}
         siteId={siteId}
         popId={popId}
         popAccess={popAccess}

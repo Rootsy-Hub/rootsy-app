@@ -572,8 +572,17 @@ export function popExpensesQueryRoot(popId: string) {
   return ["pop-expenses", popId] as const
 }
 
-export function popInventoryQueryKey(popId: string) {
-  return ["pop-inventory", popId] as const
+export type PopInventoryRowsQueryParams = {
+  view: string
+  q: string
+  attention: string
+}
+
+export function popInventoryRowsQueryKey(
+  popId: string,
+  params: PopInventoryRowsQueryParams,
+) {
+  return ["pop-inventory", popId, "rows", params] as const
 }
 
 export function popInventorySummaryQueryKey(popId: string) {
@@ -588,8 +597,24 @@ export function popInventoryMovementsQueryKey(popId: string) {
   return ["pop-inventory", popId, "movements"] as const
 }
 
-export function popInventoryLedgerQueryKey(popId: string) {
-  return ["pop-inventory", popId, "ledger"] as const
+export function popInventoryLedgerLayersQueryKey(popId: string) {
+  return ["pop-inventory", popId, "ledger", "layers"] as const
+}
+
+export function popInventoryLedgerAllocationsQueryKey(popId: string) {
+  return ["pop-inventory", popId, "ledger", "allocations"] as const
+}
+
+export type PopInventoryExpiryQueryParams = {
+  q: string
+  filter: string
+}
+
+export function popInventoryExpiryQueryKey(
+  popId: string,
+  params: PopInventoryExpiryQueryParams,
+) {
+  return ["pop-inventory", popId, "expiry", params] as const
 }
 
 export function popInventoryLocationsQueryKey(popId: string) {

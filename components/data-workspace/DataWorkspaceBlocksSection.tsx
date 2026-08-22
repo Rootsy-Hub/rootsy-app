@@ -25,8 +25,8 @@ export function DataWorkspaceBlocksSection({
   return (
     <section className="space-y-4">
       {showHeader ? (
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div className="min-w-0 space-y-1">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1 space-y-1">
             {title ? (
               <h2 className={dataWorkspaceBlocksSectionTitleClass}>{title}</h2>
             ) : null}
@@ -36,7 +36,7 @@ export function DataWorkspaceBlocksSection({
               </p>
             ) : null}
           </div>
-          {action}
+          {action ? <div className="shrink-0">{action}</div> : null}
         </div>
       ) : null}
       {children}

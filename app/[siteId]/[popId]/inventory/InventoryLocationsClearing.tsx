@@ -131,8 +131,8 @@ export function InventoryLocationsClearing({
                     {location.articleCount === 0
                       ? "Sin stock"
                       : location.articleCount === 1
-                        ? "1 artículo"
-                        : `${location.articleCount} artículos`}
+                        ? "1 artículo con stock"
+                        : `${location.articleCount} artículos con stock`}
                     {" · "}
                     {formatInventoryMoney(location.inventoryValue)}
                   </p>

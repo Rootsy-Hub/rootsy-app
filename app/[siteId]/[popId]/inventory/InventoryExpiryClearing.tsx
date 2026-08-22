@@ -3,14 +3,20 @@
 import type { InventoryCostLayerRow } from "@/app/[siteId]/[popId]/inventory/actions"
 import { formatInventoryQtyWithUnit } from "@/app/[siteId]/[popId]/inventory/inventoryFormat"
 import {
+  InventoryListStatus,
+  useInventoryInfiniteSentinel,
+} from "@/app/[siteId]/[popId]/inventory/inventoryInfinite"
+import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksSectionTitleClass,
   dataWorkspaceEntityCardLosetaSurfaceClass,
   dataWorkspaceEntityCardStatusClosedClass,
   dataWorkspaceEntityCardStatusOpenClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { RootsFormSearchField, RootsFormSegmentField } from "@/components/rootsy-form"
+import { RootsBanner } from "@/components/rootsy-banner"
 import { RootsSubtleButton } from "@/components/rootsy-button"
+import { RootsFormSearchField, RootsFormSegmentField } from "@/components/rootsy-form"
+import { usePopInventoryExpiry } from "@/hooks/usePopInventory"
 import { toISODateLocal } from "@/lib/dataWorkspaceDateFilter"
 import {
   formatInventoryExpiryDate,
@@ -19,7 +25,7 @@ import {
   type InventoryExpiryGroup,
 } from "@/lib/inventory/inventoryExpiry"
 import { cn } from "@/lib/utils"
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 type ExpiryFilter = "alert" | "dated" | "none"
 
@@ -50,50 +56,52 @@ function chipClass(group: InventoryExpiryGroup) {
 }
 
 export function InventoryExpiryClearing({
-  layers,
+  popId,
   canWrite,
   canMerma,
   onEdit,
   onMerma,
 }: {
-  layers: InventoryCostLayerRow[]
+  popId: string
   canWrite: boolean
   canMerma: boolean
   onEdit: (layer: InventoryCostLayerRow) => void
   onMerma: (layer: InventoryCostLayerRow) => void
 }) {
-  const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<ExpiryFilter>("alert")
+  const [searchInput, setSearchInput] = useState("")
+  const [query, setQuery] = useState("")
   const todayIso = toISODateLocal(new Date())
 
-  const rows = useMemo(() => {
-    const q = query.trim().toLocaleLowerCase("es")
-    return layers
-      .filter((layer) => layer.quantityRemaining > 1e-6)
-      .filter((layer) => {
-        if (!q) return true
-        return (
-          layer.articleName.toLocaleLowerCase("es").includes(q) ||
-          layer.locationName.toLocaleLowerCase("es").includes(q)
-        )
-      })
-      .map((layer) => ({
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (searchInput.trim() === query.trim()) return
+      setQuery(searchInput)
+    }, 400)
+    return () => window.clearTimeout(t)
+  }, [query, searchInput])
+
+  const expiryQuery = usePopInventoryExpiry(popId, {
+    q: query,
+    filter,
+  })
+  const fetchMore = expiryQuery.fetchNextPage
+  const canFetchMore =
+    Boolean(expiryQuery.hasNextPage) && !expiryQuery.isFetchingNextPage
+  const loadMore = useCallback(() => {
+    if (!canFetchMore) return
+    void fetchMore()
+  }, [canFetchMore, fetchMore])
+  const setSentinel = useInventoryInfiniteSentinel(canFetchMore, loadMore)
+
+  const rows = useMemo(
+    () =>
+      expiryQuery.costLayers.map((layer) => ({
         layer,
         group: inventoryExpiryGroup(layer.expiresAt, todayIso),
-      }))
-      .filter(({ group }) => {
-        if (filter === "none") return group === "none"
-        if (filter === "dated") return group !== "none"
-        return group === "expired" || group === "d7" || group === "d15" || group === "d30"
-      })
-      .sort((a, b) => {
-        const byGroup = GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group)
-        if (byGroup !== 0) return byGroup
-        return (a.layer.expiresAt ?? "9999").localeCompare(
-          b.layer.expiresAt ?? "9999",
-        )
-      })
-  }, [layers, query, filter, todayIso])
+      })),
+    [expiryQuery.costLayers, todayIso],
+  )
 
   const sections = useMemo(() => {
     const map = new Map<InventoryExpiryGroup, typeof rows>()
@@ -123,12 +131,25 @@ export function InventoryExpiryClearing({
         label="Buscar artículo"
         hideLabel
         placeholder="Buscar artículo o depósito"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onClear={() => setQuery("")}
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        onClear={() => {
+          setSearchInput("")
+          setQuery("")
+        }}
       />
 
-      {sections.length === 0 ? (
+      {expiryQuery.errorMessage ? (
+        <RootsBanner
+          intent="danger"
+          layout="message"
+          message={expiryQuery.errorMessage}
+        />
+      ) : null}
+
+      {expiryQuery.isPending && rows.length === 0 ? (
+        <p className={dataWorkspaceBlocksEmptyStateClass}>Cargando…</p>
+      ) : sections.length === 0 ? (
         <p className={dataWorkspaceBlocksEmptyStateClass}>
           {filter === "none"
             ? "Todo el stock con cantidad ya tiene fecha, o no hay capas abiertas."
@@ -137,63 +158,71 @@ export function InventoryExpiryClearing({
               : "Nada vencido ni por vencer en los próximos 30 días."}
         </p>
       ) : (
-        sections.map(({ group, items }) => (
-          <div key={group} className="space-y-2">
-            <h3 className={dataWorkspaceBlocksSectionTitleClass}>
-              {inventoryExpiryGroupLabel(group)}
-            </h3>
-            <div
-              className={cn(
-                dataWorkspaceEntityCardLosetaSurfaceClass,
-                "overflow-hidden",
-              )}
-            >
-              <ul className="divide-y divide-[var(--rootsy-bruma-200)]">
-                {items.map(({ layer, group: rowGroup }) => (
-                  <li key={layer.id}>
-                    <div className="flex items-start gap-3 px-4 py-3">
-                      <button
-                        type="button"
-                        className="min-w-0 flex-1 text-left"
-                        disabled={!canWrite}
-                        onClick={() => onEdit(layer)}
-                      >
-                        <p className="truncate font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">
-                          {layer.articleName}
-                        </p>
-                        <p className="mt-0.5 font-canopy text-xs text-[var(--rootsy-bruma-500)]">
-                          {layer.locationName}
-                          {" · "}
-                          {formatInventoryQtyWithUnit(
-                            layer.quantityRemaining,
-                            layer.unitOfMeasure,
-                          )}
-                          {layer.expiresAt
-                            ? ` · ${formatInventoryExpiryDate(layer.expiresAt)}`
-                            : ""}
-                        </p>
-                      </button>
-                      <div className="flex shrink-0 flex-col items-end gap-2">
-                        <span className={chipClass(rowGroup)}>
-                          {inventoryExpiryGroupLabel(rowGroup)}
-                        </span>
-                        {canMerma ? (
-                          <RootsSubtleButton
-                            type="button"
-                            size="compact"
-                            onClick={() => onMerma(layer)}
-                          >
-                            Restar merma
-                          </RootsSubtleButton>
-                        ) : null}
+        <>
+          {sections.map(({ group, items }) => (
+            <div key={group} className="space-y-2">
+              <h3 className={dataWorkspaceBlocksSectionTitleClass}>
+                {inventoryExpiryGroupLabel(group)}
+              </h3>
+              <div
+                className={cn(
+                  dataWorkspaceEntityCardLosetaSurfaceClass,
+                  "overflow-hidden",
+                )}
+              >
+                <ul className="divide-y divide-[var(--rootsy-bruma-200)]">
+                  {items.map(({ layer, group: rowGroup }) => (
+                    <li key={layer.id}>
+                      <div className="flex items-start gap-3 px-4 py-3">
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left"
+                          disabled={!canWrite}
+                          onClick={() => onEdit(layer)}
+                        >
+                          <p className="truncate font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+                            {layer.articleName}
+                          </p>
+                          <p className="mt-0.5 font-canopy text-xs text-[var(--rootsy-bruma-500)]">
+                            {layer.locationName}
+                            {" · "}
+                            {formatInventoryQtyWithUnit(
+                              layer.quantityRemaining,
+                              layer.unitOfMeasure,
+                            )}
+                            {layer.expiresAt
+                              ? ` · ${formatInventoryExpiryDate(layer.expiresAt)}`
+                              : ""}
+                          </p>
+                        </button>
+                        <div className="flex shrink-0 flex-col items-end gap-2">
+                          <span className={chipClass(rowGroup)}>
+                            {inventoryExpiryGroupLabel(rowGroup)}
+                          </span>
+                          {canMerma ? (
+                            <RootsSubtleButton
+                              type="button"
+                              size="compact"
+                              onClick={() => onMerma(layer)}
+                            >
+                              Restar merma
+                            </RootsSubtleButton>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
-        ))
+          ))}
+          <div ref={setSentinel} className="h-px w-full" aria-hidden />
+          <InventoryListStatus
+            hasItems
+            hasMore={Boolean(expiryQuery.hasNextPage)}
+            fetchingMore={expiryQuery.isFetchingNextPage}
+          />
+        </>
       )}
     </div>
   )

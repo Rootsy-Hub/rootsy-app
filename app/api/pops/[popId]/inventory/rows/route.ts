@@ -7,7 +7,9 @@ export async function GET(request: Request, ctx: RouteCtx) {
   try {
     const { popId } = await ctx.params
     const search = new URL(request.url).search
-    const data = await rootsyApiFetch(`/v1/pops/${popId}/inventory/ledger${search}`)
+    const data = await rootsyApiFetch(
+      `/v1/pops/${popId}/inventory/rows${search}`,
+    )
     return NextResponse.json(data)
   } catch (error) {
     return rootsyApiErrorResponse(error)

@@ -37,7 +37,52 @@ import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
 import Link from "next/link"
-import { useEffect, useRef } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
+
+function MenuPlanetTileLabel({
+  children,
+  className,
+}: {
+  children: string
+  className: string
+}) {
+  const textRef = useRef<HTMLSpanElement>(null)
+  const [singleLine, setSingleLine] = useState(false)
+
+  useLayoutEffect(() => {
+    const el = textRef.current
+    if (!el) return
+
+    const measure = () => {
+      const styles = getComputedStyle(el)
+      const fontSize = parseFloat(styles.fontSize)
+      const parsedLineHeight = parseFloat(styles.lineHeight)
+      const row = Number.isFinite(parsedLineHeight)
+        ? parsedLineHeight
+        : fontSize * 1.25
+      setSingleLine(el.getBoundingClientRect().height <= row * 1.35)
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [children])
+
+  return (
+    <span className={className}>
+      <span
+        ref={textRef}
+        className={cn(
+          "block w-full text-center",
+          singleLine && "max-md:mt-2",
+        )}
+      >
+        {children}
+      </span>
+    </span>
+  )
+}
 
 type Props = {
   item: MenuItemDef
@@ -138,17 +183,18 @@ export function MenuGridItemButton({
         ) : null}
       </div>
 
-      <span
+      <MenuPlanetTileLabel
         className={cn(
-          "flex h-8 w-full items-center justify-center text-center line-clamp-2",
+          "flex h-7 w-full items-start justify-center text-center line-clamp-2 md:h-8 md:items-center",
           menuPlanetTileLabelClass,
           showDockPlacedStyle || isDragGhost
             ? menuHoloLabelDockPlacedClass
             : menuHoloLabelClass,
+          "max-md:!text-[11px] max-md:leading-tight",
         )}
       >
         {item.name}
-      </span>
+      </MenuPlanetTileLabel>
     </>
   )
 
