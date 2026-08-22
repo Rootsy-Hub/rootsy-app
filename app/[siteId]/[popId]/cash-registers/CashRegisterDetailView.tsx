@@ -1,10 +1,14 @@
 "use client"
 
-import {
-  getCashRegisterSummary,
-  type CashRegisterRow,
-  type CashRegisterSummaryData,
+import type {
+  CashRegisterRow,
+  CashRegisterSummaryData,
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
+import {
+  fetchCashRegisterPage,
+  fetchCashRegisterTotals,
+  mergeCashRegisterSummary,
+} from "@/lib/rootsyApi/cashRegistersClient"
 import { CashRegisterDetailHeaderCard } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDetailHeaderCard"
 import { CashRegisterClosedSessionsPanel } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterClosedSessionsPanel"
 import {
@@ -49,6 +53,9 @@ export function CashRegisterDetailView({
         : null
   const cashRegistersBasePath = `/${siteId}/${popId}/cash-registers`
   const [data, setData] = useState<CashRegisterSummaryData | null>(null)
+  const [registerActive, setRegisterActive] = useState(
+    register?.isActive !== false,
+  )
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [contentView, setContentView] = useState<ContentView>("history")
@@ -63,14 +70,19 @@ export function CashRegisterDetailView({
   const loadSummary = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const res = await getCashRegisterSummary(popId, registerId)
-    setLoading(false)
-    if (!res.success) {
+    const pageRes = await fetchCashRegisterPage(popId, registerId)
+    if (!pageRes.success) {
+      setLoading(false)
       setData(null)
-      setError(res.error)
+      setError(pageRes.error)
       return
     }
-    setData(res.data)
+    setRegisterActive(pageRes.data.isActive)
+    setData(mergeCashRegisterSummary(pageRes.data, null))
+    const totalsRes = await fetchCashRegisterTotals(popId, registerId)
+    setLoading(false)
+    if (!totalsRes.success) return
+    setData(mergeCashRegisterSummary(pageRes.data, totalsRes.data))
   }, [popId, registerId])
 
   useEffect(() => {
@@ -169,7 +181,7 @@ export function CashRegisterDetailView({
           <CashRegisterDetailHeaderCard
             registerName={displayName}
             isRegisterOpen={isOpen}
-            isRegisterActive={register?.isActive !== false}
+            isRegisterActive={registerActive}
             cashRegistersBasePath={cashRegistersBasePath}
             activeSession={activeSession}
             showHistorialAction={isLiveOpenArqueo}
