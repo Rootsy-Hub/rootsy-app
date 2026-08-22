@@ -10,7 +10,7 @@ import {
   purchaseCatalogKnownArticlesQueryKey,
   purchaseCatalogQueryKey,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { operateCatalogQueryOptions } from "@/lib/queryStaleTimes"
 import { useQuery } from "@tanstack/react-query"
 import { useCallback } from "react"
 
@@ -34,7 +34,7 @@ export function usePurchaseCatalogLoader(
       return res
     },
     enabled,
-    ...sessionListQueryOptions,
+    ...operateCatalogQueryOptions,
   })
 
   const data = catalogQuery.data

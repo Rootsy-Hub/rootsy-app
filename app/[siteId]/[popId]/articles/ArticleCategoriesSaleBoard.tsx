@@ -231,7 +231,7 @@ export function ArticleCategoriesSaleBoard({
   return (
     <RootsSortableActionListPanel
       title="Categorías"
-      description="Arrastrá para ordenar. Usá el ojo para mostrar u ocultar en ventas."
+      description="Arrastrá para ordenar. Usá el ojo para mostrar u ocultar en Vender, Mostrador y Mesas."
       footerHint={
         canUpdate
           ? "Los cambios de orden y visibilidad se guardan al soltar o al tocar el ojo."

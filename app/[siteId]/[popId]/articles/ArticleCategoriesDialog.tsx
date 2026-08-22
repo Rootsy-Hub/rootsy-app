@@ -80,7 +80,7 @@ export function ArticleCategoriesDialog({
       <RootsDialogContent size="wide">
         <RootsDialogHeader
           title="Categorías"
-          description="Ordená las categorías y elegí cuáles se muestran en ventas."
+          description="Ordená las categorías y elegí cuáles se muestran en Vender, Mostrador y Mesas."
         />
         <RootsDialogBody>
           {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}

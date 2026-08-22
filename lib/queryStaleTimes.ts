@@ -21,3 +21,13 @@ export const sessionListQueryOptions = {
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
 } as const
+
+/**
+ * Catálogos de operar (Vender / Mostrador / Mesas / Compras).
+ * Misma cache de sesión, pero al volver a la pantalla refetch si se invalidaron
+ * (p. ej. al ocultar o reordenar categorías en Artículos).
+ */
+export const operateCatalogQueryOptions = {
+  ...sessionListQueryOptions,
+  refetchOnMount: true,
+} as const

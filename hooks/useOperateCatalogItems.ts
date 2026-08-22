@@ -12,7 +12,7 @@ import {
   purchaseCatalogItemsQueryKey,
   saleCatalogItemsQueryKey,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { operateCatalogQueryOptions } from "@/lib/queryStaleTimes"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
 
@@ -32,7 +32,7 @@ export function useSaleCatalogItems(
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     enabled: enabled && Boolean(popId),
-    ...sessionListQueryOptions,
+    ...operateCatalogQueryOptions,
   })
 
   const articles = useMemo(
@@ -71,7 +71,7 @@ export function useMenuCatalogItems(
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     enabled: enabled && Boolean(popId),
-    ...sessionListQueryOptions,
+    ...operateCatalogQueryOptions,
   })
 
   const articles = useMemo(
@@ -115,7 +115,7 @@ export function usePurchaseCatalogItems(
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     enabled: enabled && Boolean(popId),
-    ...sessionListQueryOptions,
+    ...operateCatalogQueryOptions,
   })
 
   const articles = useMemo(

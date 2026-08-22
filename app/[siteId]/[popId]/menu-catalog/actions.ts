@@ -486,7 +486,7 @@ export async function getMenuCatalog(
         .from("categories")
         .select("id, name, sort_order")
         .eq("pop_id", popId)
-        .eq("show_in_menu", true)
+        .eq("show_in_sale", true)
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true }),
       loadItems
@@ -749,7 +749,7 @@ export async function getMenuCatalogItemsPage(
             .from("categories")
             .select("id")
             .eq("pop_id", popId)
-            .eq("show_in_menu", true)
+            .eq("show_in_sale", true)
         : Promise.resolve({ data: [] as { id: string }[], error: null }),
       wantRecipes
         ? supabase

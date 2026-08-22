@@ -9,9 +9,17 @@ export function invalidatePopOperateCatalogs(
   queryClient: QueryClient,
   popId: string,
 ) {
-  void queryClient.invalidateQueries({ queryKey: saleCatalogQueryKey(popId) })
+  const opts = { refetchType: "all" as const }
+  void queryClient.invalidateQueries({
+    queryKey: saleCatalogQueryKey(popId),
+    ...opts,
+  })
   void queryClient.invalidateQueries({
     queryKey: purchaseCatalogQueryKey(popId),
+    ...opts,
   })
-  void queryClient.invalidateQueries({ queryKey: menuCatalogQueryKey(popId) })
+  void queryClient.invalidateQueries({
+    queryKey: menuCatalogQueryKey(popId),
+    ...opts,
+  })
 }

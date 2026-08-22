@@ -10,7 +10,7 @@ import {
   saleCatalogKnownArticlesQueryKey,
   saleCatalogQueryKey,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { operateCatalogQueryOptions } from "@/lib/queryStaleTimes"
 import { useSalePriceListId } from "@/lib/salePriceListSession"
 import { DEFAULT_SALE_SITE_ID } from "@/lib/saleInvoiceTypes"
 import { useQuery } from "@tanstack/react-query"
@@ -36,7 +36,7 @@ export function useSaleCatalogLoader(
       return res
     },
     enabled,
-    ...sessionListQueryOptions,
+    ...operateCatalogQueryOptions,
   })
 
   const data = catalogQuery.data
