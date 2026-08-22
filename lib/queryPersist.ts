@@ -1,19 +1,16 @@
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister"
-import { ONE_DAY_MS } from "@/lib/queryStaleTimes"
+const LEGACY_STORAGE_KEYS = [
+  "rootsy-query-cache-v1",
+  "rootsy-query-cache-v2",
+] as const
 
-const STORAGE_KEY = "rootsy-query-cache-v2"
-
-export function isPersistedHomeQueryKey(queryKey: readonly unknown[]): boolean {
-  const root = queryKey[0]
-  return typeof root === "string" && root.startsWith("_")
+/** Limpia el persist de 24 h. Home, menú y access viven solo en memoria de sesión. */
+export function clearLegacyQueryPersist() {
+  if (typeof window === "undefined") return
+  for (const key of LEGACY_STORAGE_KEYS) {
+    try {
+      window.localStorage.removeItem(key)
+    } catch {
+      /* quota / private mode */
+    }
+  }
 }
-
-export function createRootsQueryPersister() {
-  if (typeof window === "undefined") return null
-  return createSyncStoragePersister({
-    storage: window.localStorage,
-    key: STORAGE_KEY,
-  })
-}
-
-export const rootsQueryPersistMaxAge = ONE_DAY_MS

@@ -4,7 +4,7 @@ import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import type { HomePopListItem, UserProfileCache } from "@/app/home/homeUserDataTypes"
 import { fetchMePops, fetchMeProfile } from "@/lib/rootsyApi/meClient"
 import { userPopsQueryKey, userProfileQueryKey } from "@/lib/queryKeys"
-import { oneDayQueryOptions } from "@/lib/queryStaleTimes"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { useQueryPersistReady } from "@/components/providers/QueryProvider"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 
@@ -24,14 +24,14 @@ export function useHomePageData(userId: string) {
     queryKey: userProfileQueryKey(userId),
     queryFn: fetchMeProfile,
     enabled: queriesEnabled,
-    ...oneDayQueryOptions,
+    ...sessionListQueryOptions,
   })
 
   const popsQuery = useQuery({
     queryKey: userPopsQueryKey(userId),
     queryFn: fetchMePops,
     enabled: queriesEnabled,
-    ...oneDayQueryOptions,
+    ...sessionListQueryOptions,
   })
 
   const profile = profileQuery.data ?? cachedProfile ?? null

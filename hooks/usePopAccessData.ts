@@ -14,10 +14,7 @@ import {
 import { useQueryPersistReady } from "@/components/providers/QueryProvider"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { popAccessQueryKey, userProfileQueryKey } from "@/lib/queryKeys"
-import {
-  oneDayQueryOptions,
-  sessionListQueryOptions,
-} from "@/lib/queryStaleTimes"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { fetchMeProfile } from "@/lib/rootsyApi/meClient"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo } from "react"
@@ -54,7 +51,7 @@ export function usePopAccessData(
     queryKey: popAccessQueryKey(popId),
     queryFn: () => getPopAccessCache(popId),
     enabled: queriesEnabled,
-    ...oneDayQueryOptions,
+    ...sessionListQueryOptions,
   })
 
   const profileData = profileQuery.data ?? cachedProfile
