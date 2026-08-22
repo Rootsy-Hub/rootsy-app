@@ -8,6 +8,7 @@ import type {
   PopRoleRow,
   UpsertEmployeeInput,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
+import { buildHrPermissionSectionsForPop } from "@/lib/hrPermissionCatalog"
 import {
   clockEmployeeIn,
   clockEmployeeOut,
@@ -31,10 +32,7 @@ import { HrInviteDialog, type HrInviteResult } from "@/app/[siteId]/[popId]/hr/H
 import { HrPageSkeleton } from "@/app/[siteId]/[popId]/hr/HrPageSkeleton"
 import { HrPersonCard } from "@/app/[siteId]/[popId]/hr/HrPersonCard"
 import { HrPersonDialog } from "@/app/[siteId]/[popId]/hr/HrPersonDialog"
-import {
-  HrRolePermissionsDialog,
-  hrCreateRolePermissionCatalog,
-} from "@/app/[siteId]/[popId]/hr/HrRolePermissionsDialog"
+import { HrRolePermissionsDialog } from "@/app/[siteId]/[popId]/hr/HrRolePermissionsDialog"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
@@ -189,8 +187,30 @@ export function HrWorkspaceView() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const { bootstrap, loading: bootstrapLoading, error: bootstrapError, refresh } =
-    usePopWorkspace()
+  const {
+    bootstrap,
+    popAccess,
+    loading: bootstrapLoading,
+    error: bootstrapError,
+    refresh,
+  } = usePopWorkspace()
+
+  const hrSections = useMemo(
+    () =>
+      buildHrPermissionSectionsForPop({
+        businessTypeName:
+          popAccess?.subscription.businessTypeName || "platform_full",
+        allModules: popAccess?.limits.allModules ?? true,
+        extraModuleKeys: popAccess?.enabledModules
+          .filter((mod) => mod.isExtra)
+          .map((mod) => mod.key),
+      }),
+    [popAccess],
+  )
+  const hrCatalogRows = useMemo(
+    () => hrSections.flatMap((section) => section.permissions),
+    [hrSections],
+  )
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -407,7 +427,7 @@ export function HrWorkspaceView() {
     setPermModalMode("create")
     setPermModalRole(null)
     setPermModalDisplayName("")
-    setPermModalList(hrCreateRolePermissionCatalog())
+    setPermModalList(hrCatalogRows)
     setPermModalSelected([])
     setPermModalLoading(false)
     setPermModalError(null)
@@ -421,7 +441,7 @@ export function HrWorkspaceView() {
     setPermModalError(null)
     setPermModalRole({ id: role.id, displayName: role.displayName, name: role.name })
     setPermModalDisplayName(role.displayName)
-    setPermModalList([])
+    setPermModalList(hrCatalogRows)
     setPermModalSelected([])
     setPermModalOpen(true)
     const res = await getRolePermissionsEditorData(popId, role.id)
@@ -433,7 +453,7 @@ export function HrWorkspaceView() {
     }
     setPermModalRole(res.role)
     setPermModalDisplayName(res.role.displayName)
-    setPermModalList(res.permissions)
+    setPermModalList(hrCatalogRows)
     setPermModalSelected([...res.selectedGrantKeys])
   }
 
@@ -1048,6 +1068,7 @@ export function HrWorkspaceView() {
         mode={permModalMode}
         displayName={permModalDisplayName}
         permissions={permModalList}
+        sections={hrSections}
         selectedKeys={permModalSelected}
         loading={permModalLoading}
         saving={permModalSaving}

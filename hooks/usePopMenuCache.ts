@@ -8,6 +8,7 @@ import {
   enabledModulesFromPermissionKeys,
   homePopToMenuAccess,
 } from "@/lib/menuPopAccess"
+import { modulesAvailableForPop } from "@/lib/rootsySubscriptionCatalog"
 import { userPopsQueryKey, userProfileQueryKey } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { fetchMePops, fetchMeProfile } from "@/lib/rootsyApi/meClient"
@@ -50,7 +51,14 @@ export function usePopMenuCache(popId: string) {
   const enabledModules = useMemo(
     () =>
       pop
-        ? enabledModulesFromPermissionKeys(pop.permissions, pop.isOwner)
+        ? enabledModulesFromPermissionKeys(
+            pop.permissions,
+            pop.isOwner,
+            modulesAvailableForPop({
+              businessTypeName: pop.subscription.businessTypeName,
+              allModules: pop.limits.allModules,
+            }),
+          )
         : [],
     [pop],
   )

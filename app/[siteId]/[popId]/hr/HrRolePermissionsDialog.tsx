@@ -31,6 +31,7 @@ type Props = {
   mode: "create" | "edit"
   displayName: string
   permissions: PermissionCatalogRow[]
+  sections?: HrPermissionSection[]
   selectedKeys: string[]
   loading: boolean
   saving: boolean
@@ -42,25 +43,10 @@ type Props = {
   onSave: () => void
 }
 
-function mergeSections(
-  catalog: PermissionCatalogRow[],
-  mode: "create" | "edit",
+function resolveSections(
+  sections: HrPermissionSection[] | undefined,
 ): HrPermissionSection[] {
-  const canonical = buildHrPermissionSections()
-
-  if (catalog.length === 0 && mode === "create") {
-    return canonical
-  }
-
-  if (catalog.length === 0) return canonical
-
-  const catalogKeys = new Set(catalog.map((c) => c.key))
-  return canonical
-    .map((section) => ({
-      ...section,
-      permissions: section.permissions.filter((p) => catalogKeys.has(p.key)),
-    }))
-    .filter((s) => s.permissions.length > 0)
+  return sections?.length ? sections : buildHrPermissionSections()
 }
 
 export function HrRolePermissionsDialog({
@@ -68,6 +54,7 @@ export function HrRolePermissionsDialog({
   mode,
   displayName,
   permissions,
+  sections: sectionsProp,
   selectedKeys,
   loading,
   saving,
@@ -79,8 +66,8 @@ export function HrRolePermissionsDialog({
   onSave,
 }: Props) {
   const sections = useMemo(
-    () => mergeSections(permissions, mode),
-    [permissions, mode],
+    () => resolveSections(sectionsProp),
+    [sectionsProp],
   )
 
   const selectedCount = selectedKeys.length

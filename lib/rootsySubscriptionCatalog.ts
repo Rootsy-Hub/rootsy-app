@@ -416,6 +416,39 @@ export function listAllModulesForBusinessType(
   ]
 }
 
+export function resolveBusinessTypeKey(
+  name: string | null | undefined,
+): RootsBusinessTypeKey {
+  if (name && name in ROOTS_BUSINESS_TYPE_MODULES) {
+    return name as RootsBusinessTypeKey
+  }
+  return "platform_full"
+}
+
+/** Módulos que el POP puede ofrecer (rubro + extras contratados / all_modules). */
+export function modulesAvailableForPop(input: {
+  businessTypeName?: string | null
+  allModules?: boolean
+  extraModuleKeys?: readonly string[]
+}): RootsModuleDefinition[] {
+  const businessType = resolveBusinessTypeKey(input.businessTypeName)
+  const config = ROOTS_BUSINESS_TYPE_MODULES[businessType]
+  const includeAllExtras =
+    input.allModules === true ||
+    businessType === "platform_full" ||
+    !input.businessTypeName
+  const extraKeys = new Set(
+    includeAllExtras
+      ? config.extras.map((mod) => mod.key)
+      : (input.extraModuleKeys ?? []),
+  )
+  return dedupeModulesByKey([
+    ...listSharedModulesFlat(),
+    ...listSpecificModulesFlat(businessType),
+    ...config.extras.filter((mod) => extraKeys.has(mod.key)),
+  ])
+}
+
 export const ROOTS_MODULE_SECTION_LABELS: Record<RootsModuleSectionKey, string> =
   {
     operar: "Operar",
