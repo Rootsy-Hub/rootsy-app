@@ -36,7 +36,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react"
 const periodSelectContentClass =
   "!min-w-[14.5rem] !w-max !max-w-[min(22rem,calc(100vw-1.5rem))] [&>div:nth-child(2)]:!min-w-[14.5rem]"
 
-const periodSelectTriggerShellClass = "w-[14.5rem] max-w-[14.5rem] shrink-0"
+const periodSelectTriggerShellClass =
+  "w-full min-w-0 sm:w-[14.5rem] sm:max-w-[14.5rem] sm:shrink-0"
 const periodSelectItemClass = "whitespace-nowrap"
 
 export function StatisticsPeriodToolbar({
@@ -215,7 +216,7 @@ export function StatisticsPeriodToolbar({
         </div>
       </PopoverAnchor>
       <PopoverContent
-        align={embedded ? "center" : "end"}
+        align="start"
         side="bottom"
         sideOffset={4}
         collisionPadding={16}

@@ -5,6 +5,8 @@ export const INVENTORY_MOVEMENT_LABELS: Record<string, string> = {
   sale: "Venta",
   purchase_receipt: "Compra / ingreso",
   adjustment: "Ajuste",
+  manufacturing_consume: "Fabricar · insumos",
+  manufacturing_output: "Fabricar · producto",
   return_customer: "Devolución cliente",
   return_supplier: "Devolución proveedor",
   transfer_in: "Transferencia entrada",

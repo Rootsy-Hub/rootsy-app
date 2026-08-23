@@ -282,6 +282,7 @@ export function ArticleUpsertSummaryPanel({
             src={form.imageUrl.trim() || null}
             alt={displayName}
             size="md"
+            preview={false}
             className={cn("shrink-0", !filledText(form.imageUrl) && "opacity-75")}
           />
 

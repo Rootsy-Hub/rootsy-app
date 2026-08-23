@@ -3,6 +3,7 @@
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeWorkspaceBackdrop } from "@/components/layouts/HomeWorkspaceBackdrop"
 import { RootsIconButton } from "@/components/rootsy-button"
+import { RootsImageLightbox } from "@/components/rootsy-lightbox/RootsImageLightbox"
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,20 @@ export function HomeUserPhotoDialog({
   imageUrl,
   initials,
 }: HomeUserPhotoDialogProps) {
+  const photo = imageUrl?.trim() || null
+
+  if (photo) {
+    return (
+      <RootsImageLightbox
+        open={open}
+        onOpenChange={onOpenChange}
+        src={photo}
+        title={name || HOME_COPY.photoModalTitle}
+        frameClassName="rounded-[34%]"
+      />
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -53,19 +68,14 @@ export function HomeUserPhotoDialog({
             "shadow-[0_0_0_1px_color-mix(in_srgb,var(--rootsy-eter-100)_12%,transparent),0_24px_64px_-18px_rgb(1_3_6/0.62),0_0_48px_color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent)]",
           )}
         >
-          {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="" className="size-full object-cover" />
-          ) : (
-            <span
-              className={cn(
-                "flex size-full items-center justify-center text-5xl font-semibold sm:text-6xl",
-                menuRealmTitleClass,
-              )}
-            >
-              {initials}
-            </span>
-          )}
+          <span
+            className={cn(
+              "flex size-full items-center justify-center text-5xl font-semibold sm:text-6xl",
+              menuRealmTitleClass,
+            )}
+          >
+            {initials}
+          </span>
         </div>
 
         {name ? (

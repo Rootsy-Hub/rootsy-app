@@ -42,6 +42,8 @@ type Props = {
   actionIcon?: LucideIcon
   changeAriaLabel?: string
   removeAriaLabel?: string
+  /** Preview circular — avatares de chat. */
+  roundThumb?: boolean
   onFileSelect: (file: File) => void
   onRemove?: () => void
   className?: string
@@ -63,6 +65,7 @@ export function RootsFormImageUploadField({
   actionIcon: ActionIcon,
   changeAriaLabel = "Cambiar imagen",
   removeAriaLabel = "Quitar imagen",
+  roundThumb = false,
   onFileSelect,
   onRemove,
   hint,
@@ -91,7 +94,10 @@ export function RootsFormImageUploadField({
   const ChangeIcon = ActionIcon ?? (DocumentIcon ? FileUp : ImagePlus)
   const displayState: FormImageUploadDisplayStateId = dragOver ? "drag" : interactionState
   const shellStyle = getFormImageUploadShellStyle(uploadMode, displayState)
-  const thumbStyle = getFormImageUploadThumbStyle(uploadMode, displayState)
+  const thumbStyle = {
+    ...getFormImageUploadThumbStyle(uploadMode, displayState),
+    ...(roundThumb ? { borderRadius: 9999 } : null),
+  }
 
   const openPicker = () => {
     if (isDisabled) return

@@ -189,6 +189,7 @@ export function servicesSkeletonColumns(options?: {
 }): WorkspaceTableSkeletonColumn[] {
   const columns: WorkspaceTableSkeletonColumn[] = [
     { kind: "select" },
+    { kind: "thumbnail", className: "w-14" },
     { kind: "text", className: "w-56 min-w-56 max-w-64", lines: 2 },
     { kind: "text", className: "w-40" },
     { kind: "money", className: "w-32" },

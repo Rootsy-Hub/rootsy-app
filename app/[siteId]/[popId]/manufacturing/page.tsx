@@ -1,10 +1,5 @@
-import { ComingSoonModuleView } from "@/components/pop-workspace/ComingSoonModuleView"
+import { ManufacturingWorkspaceView } from "@/app/[siteId]/[popId]/manufacturing/ManufacturingWorkspaceView"
 
 export default function ManufacturingPage() {
-  return (
-    <ComingSoonModuleView
-      title="Fabricar"
-      description="Esta pantalla todavía no está lista. El módulo ya existe: se puede dar permiso en RRHH y va a aparecer en el menú."
-    />
-  )
+  return <ManufacturingWorkspaceView />
 }

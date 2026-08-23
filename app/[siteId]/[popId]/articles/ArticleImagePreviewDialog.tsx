@@ -1,11 +1,6 @@
 "use client"
 
-import {
-  RootsDialogBody,
-  RootsDialogContent,
-  RootsDialogHeader,
-} from "@/components/rootsy-dialog"
-import { Dialog } from "@/components/ui/dialog"
+import { RootsImageLightbox } from "@/components/rootsy-lightbox/RootsImageLightbox"
 
 type Props = {
   open: boolean
@@ -20,27 +15,14 @@ export function ArticleImagePreviewDialog({
   imageUrl,
   title = "Imagen del artículo",
 }: Props) {
-  const src = imageUrl?.trim() ?? ""
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <RootsDialogContent>
-        <RootsDialogHeader
-          open={open}
-          title={title}
-          description="Vista ampliada de la imagen del artículo"
-          descriptionHidden
-        />
-        <RootsDialogBody className="flex items-center justify-center">
-          {src ? (
-            <img
-              src={src}
-              alt=""
-              className="max-h-[min(60vh,520px)] w-auto max-w-full rounded-xl border border-[var(--rootsy-bruma-200)] bg-white object-contain"
-            />
-          ) : null}
-        </RootsDialogBody>
-      </RootsDialogContent>
-    </Dialog>
+    <RootsImageLightbox
+      open={open}
+      onOpenChange={onOpenChange}
+      src={imageUrl}
+      title={title}
+      frameClassName="rounded-lg bg-white"
+      imageClassName="object-contain"
+    />
   )
 }

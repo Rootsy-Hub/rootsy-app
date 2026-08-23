@@ -12,6 +12,23 @@ export const SALE_CATALOG_TODOS = "Todos"
 type CategoryRef = { name: string; id?: string }
 type CategorySectionRef = { id: string; label: string; categories: { id: string; name: string }[] }
 
+export function saleCatalogVisibleCategoryIds(
+  categories: CategoryRef[],
+  categorySections?: CategorySectionRef[],
+): string[] {
+  const ids = new Set<string>()
+  for (const category of categories) {
+    if (category.id && category.id !== "all") ids.add(category.id)
+  }
+  for (const section of categorySections ?? []) {
+    if (section.id === "promotions") continue
+    for (const category of section.categories) {
+      if (category.id && category.id !== "all") ids.add(category.id)
+    }
+  }
+  return [...ids]
+}
+
 export function defaultSaleCatalogView(
   categories: CategoryRef[],
   categorySections?: CategorySectionRef[],
@@ -44,6 +61,18 @@ function isValidSaleCatalogCategoryView(
   return categories.some((cat) => cat.name === categoria)
 }
 
+/** Id de categoría desde `products:<uuid>` (sirve aunque el catálogo aún no llegó). */
+export function saleCatalogCategoryIdFromView(
+  vista: SaleCatalogViewPersisted | undefined,
+): string | null {
+  if (!vista || vista.modo !== "categoria") return null
+  const key = vista.categoria.trim()
+  const sep = key.indexOf(":")
+  if (sep <= 0) return null
+  const id = key.slice(sep + 1)
+  return !id || id === "all" ? null : id
+}
+
 /** Restaura vista guardada o cae a la primera categoría del catálogo. */
 export function saleCatalogViewToItemsFilter(
   vista: SaleCatalogViewPersisted,
@@ -62,11 +91,8 @@ export function saleCatalogViewToItemsFilter(
     return { search: "", section: "discounts", categoryId: null }
   }
   const key = vista.categoria
-  if (categorySections?.length) {
-    const sep = key.indexOf(":")
-    if (sep <= 0) {
-      return { search: "", section: "products", categoryId: null }
-    }
+  const sep = key.indexOf(":")
+  if (sep > 0) {
     const section = key.slice(0, sep)
     const id = key.slice(sep + 1)
     return {
@@ -74,6 +100,9 @@ export function saleCatalogViewToItemsFilter(
       section,
       categoryId: !id || id === "all" ? null : id,
     }
+  }
+  if (categorySections?.length) {
+    return { search: "", section: "products", categoryId: null }
   }
   const cat = categories.find((item) => item.name === key)
   return {
@@ -83,13 +112,23 @@ export function saleCatalogViewToItemsFilter(
   }
 }
 
+function saleCatalogViewsReady(
+  categories: CategoryRef[],
+  categorySections?: CategorySectionRef[],
+): boolean {
+  return categories.length > 0 || (categorySections?.length ?? 0) > 0
+}
+
 export function resolveSaleCatalogView(
   saved: SaleCatalogViewPersisted | undefined,
   categories: CategoryRef[],
   categorySections?: CategorySectionRef[],
 ): SaleCatalogViewPersisted {
   const fallback = defaultSaleCatalogView(categories, categorySections)
-  if (!saved || saved.modo !== "categoria") return fallback
+  if (!saved) return fallback
+  if (saved.modo === "promociones" || saved.modo === "con_descuento") return saved
+  if (saved.modo !== "categoria") return fallback
+  if (!saleCatalogViewsReady(categories, categorySections)) return saved
   if (!isValidSaleCatalogCategoryView(saved.categoria, categories, categorySections)) {
     return fallback
   }

@@ -10,7 +10,6 @@ import {
   workspaceTableLayoutCellSecondaryTextClass,
   workspaceTableLayoutCellStackClass,
   workspaceTableLayoutImageColumnClass,
-  workspaceTableLayoutThumbnailInteractiveClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   workspaceTableNatureLinkClass,
@@ -57,10 +56,8 @@ export function articleStockRowSignal(
 
 export function ArticleTableImageCell({
   row,
-  onPreview,
 }: {
   row: ArticleTableRow
-  onPreview: (imageUrl: string) => void
 }) {
   const src = row.imageUrl?.trim()
 
@@ -72,18 +69,11 @@ export function ArticleTableImageCell({
       )}
     >
       {src ? (
-        <button
-          type="button"
-          className={workspaceTableLayoutThumbnailInteractiveClass}
-          onClick={() => onPreview(src)}
-          aria-label={`Ver imagen de ${row.name || "artículo"}`}
-        >
-          <DataWorkspaceTableThumbnail
-            src={src}
-            alt={row.name || "Artículo"}
-            size="sm"
-          />
-        </button>
+        <DataWorkspaceTableThumbnail
+          src={src}
+          alt={row.name || "Artículo"}
+          size="sm"
+        />
       ) : (
         <ArticleCatalogImagePlaceholder size="sm" />
       )}

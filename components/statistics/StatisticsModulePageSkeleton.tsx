@@ -1,5 +1,6 @@
 "use client"
 
+import "@/components/statistics/statisticsNavRail.css"
 import type { StatisticsFilters } from "@/app/[siteId]/[popId]/statistics/actions"
 import {
   BlocksModulePageSkeleton,
@@ -37,14 +38,8 @@ const SECTION_IDS = STATISTICS_SECTIONS.map((section) => section.id)
 
 export function StatisticsModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   const searchParams = useSearchParams()
-  const sectionFromWindow =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get(
-          STATISTICS_SECTION_QUERY_PARAM,
-        )
-      : null
   const sectionId = resolveStatisticsSectionId(
-    searchParams.get(STATISTICS_SECTION_QUERY_PARAM) ?? sectionFromWindow,
+    searchParams.get(STATISTICS_SECTION_QUERY_PARAM),
     SECTION_IDS,
   )
   const section = statisticsSectionById(sectionId)

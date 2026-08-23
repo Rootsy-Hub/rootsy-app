@@ -1,19 +1,31 @@
 "use client"
 
+import { ChatChannelAvatar } from "@/app/[siteId]/[popId]/chat/ChatChannelAvatar"
 import { ChatChannelDialog } from "@/app/[siteId]/[popId]/chat/ChatChannelDialog"
+import { ChatEmojiPicker } from "@/app/[siteId]/[popId]/chat/ChatEmojiPicker"
+import { ChatRootsyAvatar } from "@/app/[siteId]/[popId]/chat/ChatRootsyAvatar"
+import { ChatRootsyThread } from "@/app/[siteId]/[popId]/chat/ChatRootsyThread"
+import {
+  ROOTSY_CHAT_ID,
+  loadRootsyChatMessages,
+} from "@/app/[siteId]/[popId]/chat/chatRootsy"
+import "@/app/[siteId]/[popId]/chat/chatThreadSurface.css"
 import { ChatWorkspaceSkeleton } from "@/app/[siteId]/[popId]/chat/ChatWorkspaceSkeleton"
 import {
-  applyChatMessageToList,
+  applyChatMessageToCache,
+  applyOptimisticChatMessage,
   chatChannelIdFromEvent,
   chatMessageFromEvent,
+  confirmOptimisticChatMessage,
+  invalidatePopChat,
+  markChatChannelReadInCache,
+  removeChatMessageFromCache,
 } from "@/app/[siteId]/[popId]/chat/chatRealtime"
 import {
+  chatAuthorNameTone,
+  chatStandaloneEmojiCount,
   formatChatTime,
-  type ChatChannelDetailData,
-  type ChatChannelListItem,
-  type ChatEligibleUser,
   type ChatMessageRow,
-  type ChatRoleOption,
   type UpsertChatChannelInput,
 } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import {
@@ -27,7 +39,6 @@ import {
   dataWorkspaceDetailEmptyStateTitleClass,
   dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceEntityCardEyebrowClass,
-  dataWorkspaceEntityCardIsotypeClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
@@ -39,19 +50,25 @@ import { RootsBanner } from "@/components/rootsy-banner"
 import { RootsIconButton, RootsPrimaryButton } from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
+import { usePopChatChannel } from "@/hooks/usePopChatChannel"
+import { usePopChatMessages } from "@/hooks/usePopChatMessages"
+import { usePopChatWorkspace } from "@/hooks/usePopChatWorkspace"
 import { usePopRealtime } from "@/hooks/usePopRealtime"
+import { popChatChannelQueryKey, popChatQueryRoot } from "@/lib/queryKeys"
 import type { DomainEvent } from "@/lib/realtime/protocol"
 import {
+  ChatQueryError,
   createChatChannel,
   deleteChatChannel,
-  fetchChatChannel,
-  fetchChatWorkspace,
   markChatChannelRead,
   sendChatMessage,
   updateChatChannel,
 } from "@/lib/rootsyApi/chatClient"
 import { cn } from "@/lib/utils"
+import { useQueryClient } from "@tanstack/react-query"
 import { ArrowLeft, MessageSquare, Plus, Send, Trash2, Users } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -65,26 +82,47 @@ export function ChatWorkspaceView() {
   const popId = typeof params?.popId === "string" ? params.popId : ""
   const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
     usePopWorkspace()
+  const queryClient = useQueryClient()
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [channels, setChannels] = useState<ChatChannelListItem[]>([])
-  const [members, setMembers] = useState<ChatEligibleUser[]>([])
-  const [roles, setRoles] = useState<ChatRoleOption[]>([])
-  const [currentUserId, setCurrentUserId] = useState("")
-  const [canCreate, setCanCreate] = useState(false)
-  const [canUpdate, setCanUpdate] = useState(false)
-  const [canDelete, setCanDelete] = useState(false)
-  const [channelCount, setChannelCount] = useState(0)
-  const [channelLimit, setChannelLimit] = useState(8)
+  const workspaceQuery = usePopChatWorkspace(popId || undefined, {
+    enabled: Boolean(popId && siteId),
+  })
+  const workspace = workspaceQuery.data
+  const workspaceError =
+    workspaceQuery.error instanceof ChatQueryError
+      ? workspaceQuery.error
+      : workspaceQuery.error instanceof Error
+        ? workspaceQuery.error
+        : null
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [thread, setThread] = useState<ChatChannelDetailData | null>(null)
-  const [threadLoading, setThreadLoading] = useState(false)
   const [draft, setDraft] = useState("")
-  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false)
-  const threadEndRef = useRef<HTMLDivElement>(null)
+  const [rootsyPreview, setRootsyPreview] = useState<string | null>(null)
+  const isRootsyChat = selectedId === ROOTSY_CHAT_ID
+  const threadListRef = useRef<HTMLDivElement | null>(null)
+  const [threadListEl, setThreadListEl] = useState<HTMLDivElement | null>(null)
+  const [olderSentinelEl, setOlderSentinelEl] = useState<HTMLDivElement | null>(
+    null,
+  )
+  const markedReadRef = useRef<string | null>(null)
+  const stickToBottomRef = useRef(true)
+  const skipStickRef = useRef(false)
+  const composerRef = useRef<HTMLInputElement>(null)
+  const composerRangeRef = useRef({ start: 0, end: 0 })
+  const sendButtonRef = useRef<HTMLButtonElement>(null)
+
+  const threadQuery = usePopChatChannel(
+    popId || undefined,
+    isRootsyChat ? null : selectedId,
+  )
+  const thread = threadQuery.data
+  const messagesQuery = usePopChatMessages(
+    popId || undefined,
+    isRootsyChat ? null : selectedId,
+  )
+  const messages = messagesQuery.messages
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createSaving, setCreateSaving] = useState(false)
@@ -96,161 +134,212 @@ export function ChatWorkspaceView() {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
 
+  const channels = workspace?.channels ?? []
+  const members = workspace?.members ?? []
+  const roles = workspace?.roles ?? []
+  const currentUserId = workspace?.currentUserId ?? ""
+  const canCreate = Boolean(workspace?.canCreate)
+  const canUpdate = Boolean(workspace?.canUpdate)
+  const canDelete = Boolean(workspace?.canDelete)
+  const channelCount = workspace?.channelCount ?? channels.length
+  const channelLimit = workspace?.channelLimit ?? 8
+  const loading = Boolean(popId && siteId) && !workspace && workspaceQuery.isPending
+  const threadLoading =
+    Boolean(selectedId) &&
+    !isRootsyChat &&
+    messages.length === 0 &&
+    messagesQuery.isPending
+  const error =
+    !popId || !siteId
+      ? "No se encontró el punto de venta."
+      : sendError ??
+        (workspaceError instanceof ChatQueryError
+          ? workspaceError.message
+          : workspaceError?.message ?? null)
+
   const selected = useMemo(
     () => channels.find((item) => item.id === selectedId) ?? null,
     [channels, selectedId],
   )
 
-  const loadWorkspace = useCallback(async () => {
-    if (!popId) return
-    const res = await fetchChatWorkspace(popId)
-    if (!res.success) {
-      setError(res.error || "Error")
-      setChannels([])
-      if (res.redirect) {
-        setTimeout(() => routerRef.current.push(res.redirect!), 1600)
-      }
+  const focusSendButton = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      sendButtonRef.current?.focus()
+    })
+  }, [])
+
+  const focusComposer = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      composerRef.current?.focus()
+    })
+  }, [])
+
+  useEffect(() => {
+    if (
+      !selectedId ||
+      isRootsyChat ||
+      threadLoading ||
+      createOpen ||
+      editOpen ||
+      deleteOpen
+    ) {
       return
     }
-    setError(null)
-    setChannels(res.channels)
-    setMembers(res.members)
-    setRoles(res.roles)
-    setCurrentUserId(res.currentUserId)
-    setCanCreate(res.canCreate)
-    setCanUpdate(res.canUpdate)
-    setCanDelete(res.canDelete)
-    setChannelCount(res.channelCount)
-    setChannelLimit(res.channelLimit)
-    setSelectedId((prev) => {
-      if (prev && res.channels.some((item) => item.id === prev)) return prev
-      return res.channels[0]?.id ?? null
-    })
+    focusSendButton()
+  }, [
+    createOpen,
+    deleteOpen,
+    editOpen,
+    focusSendButton,
+    isRootsyChat,
+    selectedId,
+    threadLoading,
+  ])
+
+  useEffect(() => {
+    if (!popId) return
+    const stored = loadRootsyChatMessages(popId)
+    const last = [...stored].reverse().find((row) => !row.pending)
+    setRootsyPreview(last?.body ?? null)
   }, [popId])
 
   useEffect(() => {
-    if (!popId || !siteId) {
-      setLoading(false)
-      setError("No se encontró el punto de venta.")
-      return
-    }
-    let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      try {
-        await loadWorkspace()
-      } catch {
-        if (!cancelled) setError("Error inesperado")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [popId, siteId, loadWorkspace])
-
-  const loadThread = useCallback(
-    async (channelId: string) => {
-      if (!popId) return
-      setThreadLoading(true)
-      const res = await fetchChatChannel(popId, channelId)
-      setThreadLoading(false)
-      if (!res.success) {
-        setThread(null)
-        return
-      }
-      setThread(res.data)
-      setChannels((prev) =>
-        prev.map((item) =>
-          item.id === channelId
-            ? { ...item, unread: 0, lastMessageBody: item.lastMessageBody }
-            : item,
-        ),
-      )
-      void markChatChannelRead(popId, channelId)
-    },
-    [popId],
-  )
+    if (!workspace) return
+    setSelectedId((prev) => {
+      if (prev === ROOTSY_CHAT_ID) return prev
+      if (prev && workspace.channels.some((item) => item.id === prev)) return prev
+      return workspace.channels[0]?.id ?? ROOTSY_CHAT_ID
+    })
+  }, [workspace])
 
   useEffect(() => {
-    if (!selectedId) {
-      setThread(null)
+    if (!(workspaceError instanceof ChatQueryError) || !workspaceError.redirect) {
       return
     }
-    void loadThread(selectedId)
-  }, [selectedId, loadThread])
+    const redirect = workspaceError.redirect
+    const timer = window.setTimeout(() => {
+      routerRef.current.push(redirect)
+    }, 1600)
+    return () => window.clearTimeout(timer)
+  }, [workspaceError])
+
+  useEffect(() => {
+    if (!popId || !selectedId || thread?.channel.id !== selectedId) return
+    if (markedReadRef.current === selectedId) return
+    markedReadRef.current = selectedId
+    markChatChannelReadInCache(queryClient, popId, selectedId)
+    void markChatChannelRead(popId, selectedId)
+  }, [popId, selectedId, thread?.channel.id, queryClient])
 
   const selectedIdRef = useRef(selectedId)
   selectedIdRef.current = selectedId
   const currentUserIdRef = useRef(currentUserId)
   currentUserIdRef.current = currentUserId
-  const loadWorkspaceRef = useRef(loadWorkspace)
-  loadWorkspaceRef.current = loadWorkspace
-  const loadThreadRef = useRef(loadThread)
-  loadThreadRef.current = loadThread
 
-  const onRealtimeEvent = useCallback((event: DomainEvent) => {
-    const channelId = chatChannelIdFromEvent(event)
-    if (!channelId) return
+  const onRealtimeEvent = useCallback(
+    (event: DomainEvent) => {
+      if (!popId) return
+      const channelId = chatChannelIdFromEvent(event)
+      if (!channelId) return
 
-    if (event.type === "chat.message") {
-      const message = chatMessageFromEvent(event, currentUserIdRef.current)
-      if (!message) return
-      setThread((prev) => {
-        if (!prev || prev.channel.id !== channelId) return prev
-        if (prev.messages.some((row) => row.id === message.id)) return prev
-        return { ...prev, messages: [...prev.messages, message] }
-      })
-      setChannels((prev) => {
-        const next = applyChatMessageToList(
-          prev,
+      if (event.type === "chat.message") {
+        const message = chatMessageFromEvent(event, currentUserIdRef.current)
+        if (!message) return
+        const patched = applyChatMessageToCache(
+          queryClient,
+          popId,
           channelId,
           message,
           selectedIdRef.current,
         )
-        if (next === prev && !prev.some((item) => item.id === channelId)) {
-          void loadWorkspaceRef.current()
+        if (!patched) {
+          invalidatePopChat(queryClient, popId)
+          return
         }
-        return next
-      })
-      return
-    }
-
-    if (event.type === "chat.deleted") {
-      setChannels((prev) => prev.filter((item) => item.id !== channelId))
-      if (selectedIdRef.current === channelId) {
-        setSelectedId(null)
-        setThread(null)
+        if (selectedIdRef.current === channelId && !message.mine) {
+          void markChatChannelRead(popId, channelId)
+        }
+        return
       }
-      void loadWorkspaceRef.current()
-      return
-    }
 
-    if (event.type === "chat.created" || event.type === "chat.updated") {
-      void loadWorkspaceRef.current()
-      if (selectedIdRef.current === channelId) {
-        void loadThreadRef.current(channelId)
+      if (event.type === "chat.deleted") {
+        if (selectedIdRef.current === channelId) {
+          setSelectedId(null)
+          queryClient.removeQueries({
+            queryKey: popChatChannelQueryKey(popId, channelId),
+          })
+        }
+        invalidatePopChat(queryClient, popId)
+        return
       }
-    }
-  }, [])
+
+      if (event.type === "chat.created" || event.type === "chat.updated") {
+        invalidatePopChat(
+          queryClient,
+          popId,
+          event.type === "chat.updated" ? channelId : undefined,
+        )
+      }
+    },
+    [popId, queryClient],
+  )
 
   const onRealtimeResync = useCallback(() => {
-    void loadWorkspaceRef.current()
-    const openId = selectedIdRef.current
-    if (openId) void loadThreadRef.current(openId)
-  }, [])
+    if (!popId) return
+    invalidatePopChat(queryClient, popId)
+  }, [popId, queryClient])
 
   usePopRealtime({
     channels: ["domain:chat"],
-    enabled: Boolean(popId && !loading),
+    enabled: Boolean(popId && siteId && (workspace || workspaceQuery.isFetched)),
     onEvent: onRealtimeEvent,
     onResync: onRealtimeResync,
   })
 
+  const loadOlderMessages = useCallback(() => {
+    if (!messagesQuery.hasNextPage || messagesQuery.isFetchingNextPage) return
+    const el = threadListRef.current
+    const prevHeight = el?.scrollHeight ?? 0
+    skipStickRef.current = true
+    void messagesQuery.fetchNextPage().then(() => {
+      requestAnimationFrame(() => {
+        const list = threadListRef.current
+        if (!list) return
+        list.scrollTop = list.scrollHeight - prevHeight
+      })
+    })
+  }, [
+    messagesQuery.fetchNextPage,
+    messagesQuery.hasNextPage,
+    messagesQuery.isFetchingNextPage,
+  ])
+
+  useInfiniteScrollSentinel(
+    threadListEl,
+    olderSentinelEl,
+    Boolean(messagesQuery.hasNextPage) && !messagesQuery.isFetchingNextPage,
+    loadOlderMessages,
+  )
+
+  const scrollThreadToEnd = useCallback(() => {
+    const list = threadListRef.current
+    if (!list) return
+    list.scrollTop = list.scrollHeight
+  }, [])
+
   useEffect(() => {
-    threadEndRef.current?.scrollIntoView({ block: "end" })
-  }, [thread?.messages.length])
+    stickToBottomRef.current = true
+  }, [selectedId])
+
+  useEffect(() => {
+    if (skipStickRef.current) {
+      skipStickRef.current = false
+      return
+    }
+    if (!stickToBottomRef.current) return
+    const frame = window.requestAnimationFrame(scrollThreadToEnd)
+    return () => window.cancelAnimationFrame(frame)
+  }, [messages.length, scrollThreadToEnd, selectedId, threadLoading])
 
   const openChannel = (id: string) => {
     setSelectedId(id)
@@ -260,33 +349,62 @@ export function ChatWorkspaceView() {
 
   const sendDraft = async () => {
     const body = draft.trim()
-    if (!body || !selected || !popId || sending) return
-    setSending(true)
-    const res = await sendChatMessage(popId, selected.id, body)
-    setSending(false)
+    if (!body || !selected || !popId) return
+    const channelId = selected.id
+    const optimisticId = `optimistic:${crypto.randomUUID()}`
+    const optimistic: ChatMessageRow = {
+      id: optimisticId,
+      authorUserId: currentUserId,
+      authorName: bootstrap?.userFullName || "Vos",
+      body,
+      createdAt: new Date().toISOString(),
+      mine: true,
+      pending: true,
+    }
+    setDraft("")
+    setSendError(null)
+    applyOptimisticChatMessage(queryClient, popId, channelId, optimistic)
+
+    const res = await sendChatMessage(popId, channelId, body)
     if (!res.success) {
-      setError(res.error)
+      removeChatMessageFromCache(queryClient, popId, channelId, optimisticId)
+      setDraft((current) => (current.trim() ? current : body))
+      setSendError(res.error)
+      focusComposer()
       return
     }
-    const message: ChatMessageRow = res.message
-    setDraft("")
-    setThread((prev) => {
-      if (!prev || prev.channel.id !== selected.id) return prev
-      if (prev.messages.some((row) => row.id === message.id)) return prev
-      return { ...prev, messages: [...prev.messages, message] }
-    })
-    setChannels((prev) =>
-      prev.map((item) =>
-        item.id === selected.id
-          ? {
-              ...item,
-              unread: 0,
-              lastMessageAt: message.createdAt,
-              lastMessageBody: message.body,
-            }
-          : item,
-      ),
+    confirmOptimisticChatMessage(
+      queryClient,
+      popId,
+      channelId,
+      optimisticId,
+      res.message,
     )
+    focusComposer()
+  }
+
+  const rememberComposerRange = () => {
+    const el = composerRef.current
+    if (!el) return
+    composerRangeRef.current = {
+      start: el.selectionStart ?? draft.length,
+      end: el.selectionEnd ?? draft.length,
+    }
+  }
+
+  const insertEmoji = (emoji: string) => {
+    const el = composerRef.current
+    const start = el?.selectionStart ?? composerRangeRef.current.start
+    const end = el?.selectionEnd ?? composerRangeRef.current.end
+    const next = `${draft.slice(0, start)}${emoji}${draft.slice(end)}`
+    const pos = start + emoji.length
+    composerRangeRef.current = { start: pos, end: pos }
+    setDraft(next)
+    window.requestAnimationFrame(() => {
+      if (!el) return
+      el.focus()
+      el.setSelectionRange(pos, pos)
+    })
   }
 
   const atLimit = channelCount >= channelLimit
@@ -302,7 +420,9 @@ export function ChatWorkspaceView() {
       return
     }
     setCreateOpen(false)
-    await loadWorkspace()
+    await queryClient.invalidateQueries({
+      queryKey: popChatQueryRoot(popId),
+    })
     setSelectedId(res.id)
     setMobileThreadOpen(true)
   }
@@ -318,8 +438,9 @@ export function ChatWorkspaceView() {
       return
     }
     setEditOpen(false)
-    await loadWorkspace()
-    await loadThread(selected.id)
+    await queryClient.invalidateQueries({
+      queryKey: popChatQueryRoot(popId),
+    })
   }
 
   const submitDelete = async () => {
@@ -333,12 +454,15 @@ export function ChatWorkspaceView() {
       return
     }
     setDeleteOpen(false)
+    queryClient.removeQueries({
+      queryKey: popChatChannelQueryKey(popId, selected.id),
+    })
     setSelectedId(null)
-    setThread(null)
-    await loadWorkspace()
+    await queryClient.invalidateQueries({
+      queryKey: popChatQueryRoot(popId),
+    })
   }
 
-  const messages = thread?.messages ?? []
   const atLimitHint = atLimit
     ? `Este local ya tiene ${channelLimit} canales.`
     : undefined
@@ -416,57 +540,82 @@ export function ChatWorkspaceView() {
                     Canales · {channelCount}/{channelLimit}
                   </p>
                   <h2 className={cn(dataWorkspaceEntityCardTitleClass, "mt-1")}>
-                    Equipo del local
+                    Conversaciones
                   </h2>
                 </header>
-                <ul className="min-h-0 flex-1 overflow-y-auto">
+                <div
+                  className={cn(
+                    "flex w-full shrink-0 items-start gap-3 border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6",
+                    "transition-colors hover:bg-[var(--rootsy-bruma-50)]",
+                    isRootsyChat &&
+                      "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_8%,white)]",
+                  )}
+                >
+                  <ChatRootsyAvatar />
+                  <button
+                    type="button"
+                    onClick={() => openChannel(ROOTSY_CHAT_ID)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <span className="flex items-baseline justify-between gap-3">
+                      <span className="truncate font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+                        Rootsy
+                      </span>
+                    </span>
+                    <span className="mt-0.5 block truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
+                      {rootsyPreview ?? "Preguntame lo que quieras"}
+                    </span>
+                  </button>
+                </div>
+                <p className="px-4 pt-3 pb-1 font-canopy text-[11px] font-semibold uppercase tracking-wide text-[var(--rootsy-bruma-500)] sm:px-6">
+                  Equipos
+                </p>
+                <ul className="game-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain">
                   {channels.map((channel) => {
                     const active = channel.id === selectedId
                     return (
                       <li key={channel.id}>
-                        <button
-                          type="button"
-                          onClick={() => openChannel(channel.id)}
+                        <div
                           className={cn(
-                            "flex w-full items-start gap-3 border-b border-[var(--rootsy-bruma-200)] px-4 py-3 text-left sm:px-6",
+                            "flex w-full items-start gap-3 border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6",
                             "transition-colors hover:bg-[var(--rootsy-bruma-50)]",
                             active &&
                               "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_8%,white)]",
                           )}
                         >
-                          <span
-                            className={cn(
-                              dataWorkspaceEntityCardIsotypeClass,
-                              "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] text-[var(--rootsy-savia-800)]",
-                            )}
-                            aria-hidden
+                          <ChatChannelAvatar
+                            title={channel.title}
+                            initials={channel.initials}
+                            imageUrl={channel.imageUrl}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => openChannel(channel.id)}
+                            className="flex min-w-0 flex-1 items-start gap-3 text-left"
                           >
-                            <span className="font-canopy text-xs font-semibold">
-                              {channel.initials}
-                            </span>
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="flex items-baseline justify-between gap-3">
-                              <span className="truncate font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">
-                                {channel.title}
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-baseline justify-between gap-3">
+                                <span className="truncate font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+                                  {channel.title}
+                                </span>
+                                <span className="shrink-0 font-canopy text-[11px] text-[var(--rootsy-bruma-500)]">
+                                  {formatChatTime(channel.lastMessageAt)}
+                                </span>
                               </span>
-                              <span className="shrink-0 font-canopy text-[11px] text-[var(--rootsy-bruma-500)]">
-                                {formatChatTime(channel.lastMessageAt)}
+                              <span className="mt-0.5 block truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
+                                {channel.lastMessageBody ?? "Sin mensajes"}
                               </span>
                             </span>
-                            <span className="mt-0.5 block truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
-                              {channel.lastMessageBody ?? "Sin mensajes"}
-                            </span>
-                          </span>
-                          {channel.unread > 0 ? (
-                            <span
-                              className="mt-0.5 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[var(--rootsy-savia-600)] px-1.5 font-canopy text-[11px] font-semibold text-white"
-                              aria-label={`${channel.unread} sin leer`}
-                            >
-                              {channel.unread}
-                            </span>
-                          ) : null}
-                        </button>
+                            {channel.unread > 0 ? (
+                              <span
+                                className="mt-0.5 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[var(--rootsy-savia-600)] px-1.5 font-canopy text-[11px] font-semibold text-white"
+                                aria-label={`${channel.unread} sin leer`}
+                              >
+                                {channel.unread}
+                              </span>
+                            ) : null}
+                          </button>
+                        </div>
                       </li>
                     )
                   })}
@@ -479,7 +628,15 @@ export function ChatWorkspaceView() {
                   mobileThreadOpen ? "flex" : "hidden lg:flex",
                 )}
               >
-                {selected ? (
+                {isRootsyChat ? (
+                  <ChatRootsyThread
+                    siteId={siteId}
+                    popId={popId}
+                    userName={bootstrap?.userFullName ?? ""}
+                    onBack={() => setMobileThreadOpen(false)}
+                    onPreviewChange={setRootsyPreview}
+                  />
+                ) : selected ? (
                   <>
                     <header
                       className={cn(
@@ -497,17 +654,11 @@ export function ChatWorkspaceView() {
                       >
                         <ArrowLeft />
                       </RootsIconButton>
-                      <span
-                        className={cn(
-                          dataWorkspaceEntityCardIsotypeClass,
-                          "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] text-[var(--rootsy-savia-800)]",
-                        )}
-                        aria-hidden
-                      >
-                        <span className="font-canopy text-xs font-semibold">
-                          {selected.initials}
-                        </span>
-                      </span>
+                      <ChatChannelAvatar
+                        title={selected.title}
+                        initials={selected.initials}
+                        imageUrl={selected.imageUrl}
+                      />
                       <div className="min-w-0 flex-1">
                         <h2 className={dataWorkspaceEntityCardTitleClass}>
                           {selected.title}
@@ -548,17 +699,39 @@ export function ChatWorkspaceView() {
                       ) : null}
                     </header>
 
-                    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4 sm:px-6">
-                      {threadLoading && messages.length === 0 ? (
-                        <p className="font-canopy text-sm text-[var(--rootsy-bruma-500)]">
-                          Cargando mensajes…
-                        </p>
-                      ) : messages.length === 0 ? (
+                    <div
+                      ref={(node) => {
+                        threadListRef.current = node
+                        setThreadListEl(node)
+                      }}
+                      className="chat-thread-surface game-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 [overflow-anchor:none]"
+                      onScroll={(event) => {
+                        const el = event.currentTarget
+                        stickToBottomRef.current =
+                          el.scrollHeight - el.scrollTop - el.clientHeight < 80
+                      }}
+                    >
+                      <div ref={setOlderSentinelEl} aria-hidden className="h-px" />
+                      {threadLoading || messagesQuery.isFetchingNextPage ? (
+                        <div className="flex w-full justify-center py-2">
+                          <RootsSpinner
+                            size="sm"
+                            label={
+                              threadLoading
+                                ? "Cargando mensajes"
+                                : "Cargando anteriores"
+                            }
+                          />
+                        </div>
+                      ) : null}
+                      {threadLoading && messages.length === 0 ? null : messages.length === 0 ? (
                         <p className="font-canopy text-sm text-[var(--rootsy-bruma-500)]">
                           Todavía no hay mensajes en este canal.
                         </p>
                       ) : (
-                        messages.map((message) => (
+                        messages.map((message) => {
+                          const emojiCount = chatStandaloneEmojiCount(message.body)
+                          return (
                           <article
                             key={message.id}
                             className={cn(
@@ -569,31 +742,46 @@ export function ChatWorkspaceView() {
                             )}
                           >
                             {!message.mine ? (
-                              <p className="px-1 font-canopy text-[11px] font-medium text-[var(--rootsy-bruma-500)]">
+                              <p
+                                className={cn(
+                                  "px-1 font-canopy text-[11px] font-bold",
+                                  chatAuthorNameTone(message.authorUserId),
+                                )}
+                              >
                                 {message.authorName}
                               </p>
                             ) : null}
                             <p
                               className={cn(
-                                "rounded-[1.125rem] px-3.5 py-2.5 font-canopy text-sm leading-5",
-                                message.mine
-                                  ? "rounded-br-md bg-[var(--rootsy-savia-600)] text-white"
-                                  : "rounded-bl-md bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
+                                "font-canopy",
+                                emojiCount === 1 && "px-1 text-[4.5rem] leading-none",
+                                emojiCount === 2 &&
+                                  "rounded-[1.125rem] px-3 py-2 text-[3rem] leading-none",
+                                emojiCount === 3 &&
+                                  "rounded-[1.125rem] px-3 py-2 text-[2.25rem] leading-none",
+                                !emojiCount &&
+                                  "rounded-[1.125rem] px-3.5 py-2.5 text-sm leading-5",
+                                emojiCount === 1
+                                  ? null
+                                  : message.mine
+                                    ? "rounded-br-md bg-[var(--rootsy-savia-600)] text-white"
+                                    : "rounded-bl-md border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-900)]",
+                                message.pending ? "opacity-70" : null,
                               )}
                             >
-                              {message.body}
+                              {message.body.trim()}
                             </p>
                             <time className="px-1 font-canopy text-[11px] text-[var(--rootsy-bruma-500)]">
                               {formatChatTime(message.createdAt)}
                             </time>
                           </article>
-                        ))
+                          )
+                        })
                       )}
-                      <div ref={threadEndRef} />
                     </div>
 
                     <form
-                      className="flex shrink-0 items-end gap-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6"
+                      className="flex shrink-0 items-center gap-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6"
                       onSubmit={(event) => {
                         event.preventDefault()
                         void sendDraft()
@@ -603,19 +791,24 @@ export function ChatWorkspaceView() {
                         Escribir mensaje
                       </label>
                       <RootsFormControlInput
+                        ref={composerRef}
                         id="chat-composer"
                         value={draft}
                         onChange={(event) => setDraft(event.target.value)}
+                        onSelect={rememberComposerRange}
+                        onBlur={rememberComposerRange}
                         placeholder="Escribí un mensaje…"
                         autoComplete="off"
                         className="min-w-0 flex-1"
                       />
+                      <ChatEmojiPicker onPick={insertEmoji} />
                       <RootsPrimaryButton
+                        ref={sendButtonRef}
                         type="submit"
-                        size="compact"
+                        size="default"
                         withIcon
-                        disabled={!draft.trim() || sending}
-                        className="shrink-0"
+                        disabled={messagesQuery.isPending}
+                        className="h-full shrink-0 self-stretch"
                       >
                         <Send className="size-4" aria-hidden />
                         Enviar
@@ -649,6 +842,7 @@ export function ChatWorkspaceView() {
         isEquipo={false}
         saving={createSaving}
         banner={createBanner}
+        popId={popId}
         currentUserId={currentUserId}
         members={members}
         roles={roles}
@@ -662,11 +856,13 @@ export function ChatWorkspaceView() {
         isEquipo={Boolean(selected?.isEquipo)}
         saving={editSaving}
         banner={editBanner}
+        popId={popId}
         currentUserId={currentUserId}
         members={members}
         roles={roles}
         initialTitle={selected?.title}
         initialSubtitle={selected?.subtitle ?? ""}
+        initialImageUrl={selected?.imageUrl}
         initialUserIds={thread?.memberUserIds}
         onOpenChange={setEditOpen}
         onSubmit={submitEdit}

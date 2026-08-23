@@ -95,12 +95,12 @@ function StatisticsSectionTitleRow({
   filters?: ReactNode
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+    <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
       <StatisticsSectionHeading
         title={title}
         description={description}
         meta={meta}
-        className="mb-0 min-w-0 flex-1"
+        className="mb-0 min-w-0 lg:flex-1"
         prominent
       />
       {filters}
@@ -255,7 +255,7 @@ export function StatisticsSectionPanel({
 
   if (comingSoon && section) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4 sm:gap-6">
         <StatisticsSectionTitleRow
           title={section.label}
           description={section.description}
@@ -270,7 +270,7 @@ export function StatisticsSectionPanel({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 sm:gap-6">
       <StatisticsSectionTitleRow
         title={
           sectionDataReady && data?.title

@@ -28,7 +28,6 @@ import { ArticleUpsertDialog } from "@/app/[siteId]/[popId]/articles/ArticleUpse
 import type { ArticleUpsertFormState } from "@/app/[siteId]/[popId]/articles/ArticleUpsertFormFields"
 import { ArticlesFiltersDialog } from "@/app/[siteId]/[popId]/articles/ArticlesFiltersDialog"
 import { ArticlesTableDetailDialog } from "@/app/[siteId]/[popId]/articles/ArticlesTableDetailDialog"
-import { ArticleImagePreviewDialog } from "@/app/[siteId]/[popId]/articles/ArticleImagePreviewDialog"
 import {
   ArticleTableArticleCell,
   ArticleTableCategoryCell,
@@ -433,10 +432,6 @@ export function ArticlesWorkspaceView() {
   )
   const [createOpen, setCreateOpen] = useState(false)
   const editRequestIdRef = useRef(0)
-  const [imagePreview, setImagePreview] = useState<{
-    url: string
-    title: string
-  } | null>(null)
   const [detailRow, setDetailRow] = useState<ArticleTableRow | null>(null)
 
   const pendingLegacyCreateRef = useRef(
@@ -1522,15 +1517,7 @@ export function ArticlesWorkspaceView() {
                           }}
                           ariaLabel={`Seleccionar ${a.name || "ítem"}`}
                         />
-                        <ArticleTableImageCell
-                          row={a}
-                          onPreview={(url) =>
-                            setImagePreview({
-                              url,
-                              title: a.name || "Imagen del artículo",
-                            })
-                          }
-                        />
+                        <ArticleTableImageCell row={a} />
                         <ArticleTableArticleCell row={a} />
                         <ArticleTableDetailCell
                           row={a}
@@ -1792,15 +1779,6 @@ export function ArticlesWorkspaceView() {
         onOpenChange={(open) => !open && closeDeleteCategory()}
         onClose={closeDeleteCategory}
         onConfirmDelete={() => void submitDeleteCategory()}
-      />
-
-      <ArticleImagePreviewDialog
-        open={imagePreview !== null}
-        onOpenChange={(open) => {
-          if (!open) setImagePreview(null)
-        }}
-        imageUrl={imagePreview?.url ?? null}
-        title={imagePreview?.title}
       />
 
       <ArticlesTableDetailDialog

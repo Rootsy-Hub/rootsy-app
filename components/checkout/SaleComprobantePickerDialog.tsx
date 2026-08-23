@@ -8,7 +8,6 @@ import {
 import {
   RootsDialogBody,
   RootsDialogContent,
-  RootsDialogDualActionFooter,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
 import { RootsSpinner } from "@/components/rootsy-spinner"
@@ -20,7 +19,7 @@ import {
 } from "@/lib/saleComprobantePicker"
 import { isSaleComprobanteAllowed } from "@/lib/saleComprobanteRules"
 import { FileText, Receipt, ShieldCheck } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 
 type Props = {
   open: boolean
@@ -64,8 +63,6 @@ export function SaleComprobantePickerDialog({
   previewInput = null,
   cashRegisterId = null,
 }: Props) {
-  const [draft, setDraft] = useState<string | null>(value)
-
   const { emitter, loading, error } = useSaleComprobanteEmitterContext(
     previewInput?.popId ?? "",
     open && previewInput != null,
@@ -107,28 +104,18 @@ export function SaleComprobantePickerDialog({
   }, [options, emitter, loading, previewInput?.siteId])
 
   useEffect(() => {
-    if (!open) return
-    setDraft(value)
-  }, [open, value])
-
-  useEffect(() => {
     if (!open || loading || !emitter) return
     if (
-      draft != null &&
+      value != null &&
       !isSaleComprobanteAllowed(
-        draft,
+        value,
         emitter.ivaCondition,
         emitter.hasValidFiscalCuit,
       )
     ) {
-      setDraft(null)
+      onSelect(null)
     }
-  }, [open, draft, emitter, loading])
-
-  const handleConfirm = () => {
-    onSelect(draft)
-    onOpenChange(false)
-  }
+  }, [open, value, emitter, loading, onSelect])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -155,13 +142,13 @@ export function SaleComprobantePickerDialog({
                 aria-label="Tipos de comprobante"
               >
                 {visibleOptions.map((opt) => {
-                  const selected = isOptionSelected(opt, draft)
+                  const selected = isOptionSelected(opt, value)
                   return (
                     <li key={opt.label}>
                       <CheckoutOptionCard
                         title={opt.label}
                         selected={selected}
-                        onClick={() => setDraft(optionValue(opt))}
+                        onClick={() => onSelect(optionValue(opt))}
                         icon={comprobanteIcon(opt.kind)}
                         trailing={selected ? "check" : "none"}
                       />
@@ -175,19 +162,12 @@ export function SaleComprobantePickerDialog({
           <SaleComprobanteTicketPreview
             previewInput={previewInput}
             emitter={emitter}
-            previewComprobanteLabel={draft}
+            previewComprobanteLabel={value}
             loading={loading}
             error={error}
             className="hidden min-h-0 min-w-0 lg:flex lg:flex-col"
           />
         </RootsDialogBody>
-
-        <RootsDialogDualActionFooter
-          onCancel={() => onOpenChange(false)}
-          cancelLabel="Cancelar"
-          onConfirm={handleConfirm}
-          confirmLabel="Confirmar"
-        />
       </RootsDialogContent>
     </Dialog>
   )

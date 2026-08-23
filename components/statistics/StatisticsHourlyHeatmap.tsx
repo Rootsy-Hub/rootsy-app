@@ -14,6 +14,12 @@ import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
 import { useMemo, useRef, useState } from "react"
 
+function shortWeekdayLabel(label: string): string {
+  const trimmed = label.trim()
+  if (trimmed.length <= 3) return trimmed
+  return trimmed.slice(0, 3)
+}
+
 const CELL_HEIGHT_PX = 10
 const CELL_GAP_PX = 2
 const GRID_HEIGHT_PX = 24 * CELL_HEIGHT_PX + 23 * CELL_GAP_PX
@@ -123,9 +129,9 @@ export function StatisticsHourlyHeatmap({
         />
       ) : hasData ? (
         <div className="relative mt-4" ref={chartRef}>
-          <div className="flex gap-3">
+          <div className="flex gap-2 sm:gap-3">
             <div
-              className="grid w-9 shrink-0 gap-0.5 font-numeric tabular-nums"
+              className="grid w-7 shrink-0 gap-0.5 font-numeric tabular-nums sm:w-9"
               style={{
                 gridTemplateRows: `repeat(24, ${CELL_HEIGHT_PX}px)`,
                 height: GRID_HEIGHT_PX,
@@ -211,9 +217,13 @@ export function StatisticsHourlyHeatmap({
                 {heatmap.days.map((day) => (
                   <span
                     key={day.key}
-                    className="text-center text-xs text-rootsy-bruma-600"
+                    className="truncate text-center text-[10px] text-rootsy-bruma-600 sm:text-xs"
+                    title={day.label}
                   >
-                    {day.label}
+                    <span className="sm:hidden">
+                      {shortWeekdayLabel(day.label)}
+                    </span>
+                    <span className="hidden sm:inline">{day.label}</span>
                   </span>
                 ))}
               </div>

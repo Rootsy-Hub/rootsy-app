@@ -1,5 +1,6 @@
 "use client"
 
+import "@/components/statistics/statisticsNavRail.css"
 import type {
   StatisticsFilters,
   StatisticsSectionData,

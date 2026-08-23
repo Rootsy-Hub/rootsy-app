@@ -22,6 +22,7 @@ import type {
   StatisticsEvolutionDualSeries,
   StatisticsEvolutionPoint,
 } from "@/app/[siteId]/[popId]/statistics/actions"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
 import { useId, useMemo } from "react"
@@ -118,6 +119,7 @@ export function StatisticsEvolutionChart({
   hideHeader?: boolean
   embedded?: boolean
 }) {
+  const isMobile = useIsMobile()
   const valueGradientId = useId().replace(/:/g, "")
   const countGradientId = useId().replace(/:/g, "")
   const profitGradientId = useId().replace(/:/g, "")
@@ -176,9 +178,9 @@ export function StatisticsEvolutionChart({
             data={points}
             margin={{
               top: 8,
-              right: showDualSeries ? 44 : 12,
+              right: showDualSeries ? (isMobile ? 28 : 44) : isMobile ? 4 : 12,
               bottom: showDualSeries ? 0 : 4,
-              left: 4,
+              left: isMobile ? 0 : 4,
             }}
           >
             <defs>
@@ -212,7 +214,7 @@ export function StatisticsEvolutionChart({
               yAxisId="value"
               tickLine={false}
               axisLine={false}
-              width={56}
+              width={isMobile ? 40 : 56}
               tickFormatter={(value) => formatChartTick(value, valueFormat)}
               tick={{ fontSize: 11 }}
             />
@@ -222,7 +224,7 @@ export function StatisticsEvolutionChart({
                 orientation="right"
                 tickLine={false}
                 axisLine={false}
-                width={40}
+                width={isMobile ? 28 : 40}
                 allowDecimals={dualSeries.secondaryFormat === "percent"}
                 tickFormatter={(value) =>
                   formatSecondaryTick(Number(value), dualSeries.secondaryFormat)
@@ -263,7 +265,7 @@ export function StatisticsEvolutionChart({
                           className="size-2.5 shrink-0 rounded-[2px]"
                           style={{ backgroundColor: indicatorColor }}
                         />
-                        <div className="flex min-w-[10rem] flex-1 items-center justify-between gap-4 leading-none">
+                        <div className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none sm:min-w-40 sm:gap-4">
                           <span className="text-muted-foreground">{label}</span>
                           <span className="font-numeric font-medium tabular-nums">
                             {formatted}

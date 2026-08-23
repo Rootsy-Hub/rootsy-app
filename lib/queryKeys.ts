@@ -20,12 +20,37 @@ export function saleCatalogQueryKey(popId: string) {
   return ["sale-catalog", popId] as const
 }
 
+export function salePaymentContextQueryKey(popId: string) {
+  return ["sale-catalog", popId, "payment-context"] as const
+}
+
+export function saleComprobantesQueryKey(popId: string) {
+  return ["sale-catalog", popId, "comprobantes"] as const
+}
+
 export function purchaseCatalogQueryKey(popId: string) {
   return ["purchase-catalog", popId] as const
 }
 
 export function saleCatalogItemsQueryKey(popId: string, filterKey: string) {
   return ["sale-catalog", popId, "items", filterKey] as const
+}
+
+/** Artículos de una categoría (sin búsqueda). Cache de sesión. */
+export function saleCatalogCategoryItemsQueryKey(
+  popId: string,
+  section: string,
+  categoryId: string | null,
+  priceListId?: string,
+) {
+  return [
+    "sale-catalog",
+    popId,
+    "category-items",
+    section,
+    categoryId ?? "",
+    priceListId ?? "",
+  ] as const
 }
 
 export function menuCatalogItemsQueryKey(popId: string, filterKey: string) {
@@ -177,6 +202,22 @@ export function popArticlesQueryKey(
 
 export function popArticlesQueryRoot(popId: string) {
   return ["pop-articles", popId] as const
+}
+
+export function popChatQueryRoot(popId: string) {
+  return ["pop-chat", popId] as const
+}
+
+export function popChatWorkspaceQueryKey(popId: string) {
+  return ["pop-chat", popId, "workspace"] as const
+}
+
+export function popChatChannelQueryKey(popId: string, channelId: string) {
+  return ["pop-chat", popId, "channel", channelId] as const
+}
+
+export function popChatMessagesQueryKey(popId: string, channelId: string) {
+  return ["pop-chat", popId, "messages", channelId] as const
 }
 
 export function popArticleQueryKey(popId: string, articleId: string) {
@@ -370,6 +411,18 @@ export function popRecipeQueryKey(popId: string, recipeId: string) {
 
 export function popRecipeCategoriesQueryKey(popId: string) {
   return ["pop-recipe-categories", popId] as const
+}
+
+export function popManufacturingQueryKey(
+  popId: string,
+  from: string | null,
+  to: string | null,
+) {
+  return ["pop-manufacturing", popId, from, to] as const
+}
+
+export function popManufacturingQueryRoot(popId: string) {
+  return ["pop-manufacturing", popId] as const
 }
 
 export function popComandaStationsQueryKey(popId: string) {

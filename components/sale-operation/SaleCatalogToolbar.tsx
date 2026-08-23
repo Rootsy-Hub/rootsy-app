@@ -79,6 +79,8 @@ type Props = {
   onPriceListChange?: (priceListId: string) => void
   /** Tras cerrar el select de lista (p. ej. devolver foco al escaneo). */
   onPriceListSelectClosed?: () => void
+  /** Al abrir el select: fetch de listas. */
+  onPriceListOpenChange?: (open: boolean) => void
   priceLists?: SaleCatalogPriceListOption[]
   searchPlaceholder?: string
   trailing?: ReactNode
@@ -221,6 +223,7 @@ export function SaleCatalogToolbar({
   priceListId = SALE_CATALOG_DEFAULT_PRICE_LISTS[0]?.id ?? "default",
   onPriceListChange,
   onPriceListSelectClosed,
+  onPriceListOpenChange,
   priceLists = SALE_CATALOG_DEFAULT_PRICE_LISTS,
   searchPlaceholder = DEFAULT_SCAN_SEARCH_PLACEHOLDER,
   trailing,
@@ -423,6 +426,7 @@ export function SaleCatalogToolbar({
               value={priceListId}
               onValueChange={(value) => onPriceListChange?.(value)}
               onOpenChange={(open) => {
+                onPriceListOpenChange?.(open)
                 if (!open) onPriceListSelectClosed?.()
               }}
             >

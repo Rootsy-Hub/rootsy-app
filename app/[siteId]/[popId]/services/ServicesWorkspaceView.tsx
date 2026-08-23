@@ -1,5 +1,6 @@
 "use client"
 
+import { ArticleCatalogImagePlaceholder } from "@/app/[siteId]/[popId]/articles/ArticleCatalogImagePlaceholder"
 import type { ServiceTableRow } from "@/app/[siteId]/[popId]/services/actions"
 import { ServiceCategoriesDialog } from "@/app/[siteId]/[popId]/services/ServiceCategoriesDialog"
 import { ServiceCategoryDeleteDialog } from "@/app/[siteId]/[popId]/services/ServiceCategoryDeleteDialog"
@@ -41,6 +42,7 @@ import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
   DataWorkspaceTableIconAction,
+  DataWorkspaceTableThumbnail,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { servicesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
@@ -56,6 +58,7 @@ import {
   workspaceTableLayoutActionsBodyCellClass,
   workspaceTableLayoutBodyCellClass,
   workspaceTableLayoutHeaderHeadClass,
+  workspaceTableLayoutImageColumnClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableBodyRow,
@@ -793,6 +796,13 @@ export function ServicesWorkspaceView() {
                     disabled={loading || totalCount === 0 || services.length === 0}
                     ariaLabel="Seleccionar filas visibles"
                   />
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={workspaceTableLayoutImageColumnClass}
+                    srOnly
+                  >
+                    Foto
+                  </WorkspaceTableHead>
                   <WorkspaceTableSortHead
                     tone="nature"
                     label="Servicio"
@@ -866,6 +876,22 @@ export function ServicesWorkspaceView() {
                         }}
                         ariaLabel={`Seleccionar ${row.name || "servicio"}`}
                       />
+                      <TableCell
+                        className={cn(
+                          workspaceTableLayoutImageColumnClass,
+                          workspaceTableLayoutBodyCellClass,
+                        )}
+                      >
+                        {row.imageUrl?.trim() ? (
+                          <DataWorkspaceTableThumbnail
+                            src={row.imageUrl}
+                            alt={row.name || "Servicio"}
+                            size="sm"
+                          />
+                        ) : (
+                          <ArticleCatalogImagePlaceholder size="sm" />
+                        )}
+                      </TableCell>
                       <TableCell className={workspaceTableLayoutBodyCellClass}>
                         <div className="min-w-0">
                           <p

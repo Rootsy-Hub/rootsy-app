@@ -1,5 +1,6 @@
 "use client"
 
+import { ChatChannelImageUploadField } from "@/app/[siteId]/[popId]/chat/ChatChannelImageUploadField"
 import {
   chatPersonName,
   type ChatEligibleUser,
@@ -30,11 +31,13 @@ type Props = {
   isEquipo: boolean
   saving: boolean
   banner: string | null
+  popId: string
   currentUserId: string
   members: ChatEligibleUser[]
   roles: ChatRoleOption[]
   initialTitle?: string
   initialSubtitle?: string
+  initialImageUrl?: string | null
   initialUserIds?: string[]
   onOpenChange: (open: boolean) => void
   onSubmit: (input: UpsertChatChannelInput) => void | Promise<void>
@@ -46,27 +49,39 @@ export function ChatChannelDialog({
   isEquipo,
   saving,
   banner,
+  popId,
   currentUserId,
   members,
   roles,
   initialTitle,
   initialSubtitle,
+  initialImageUrl,
   initialUserIds,
   onOpenChange,
   onSubmit,
 }: Props) {
   const [title, setTitle] = useState("")
   const [subtitle, setSubtitle] = useState("")
+  const [imageUrl, setImageUrl] = useState("")
   const [selected, setSelected] = useState<string[]>([])
 
   useEffect(() => {
     if (!open) return
     setTitle(mode === "edit" ? (initialTitle ?? "") : "")
     setSubtitle(mode === "edit" ? (initialSubtitle ?? "") : "")
+    setImageUrl(mode === "edit" ? (initialImageUrl ?? "").trim() : "")
     const start = new Set(initialUserIds ?? [])
     start.add(currentUserId)
     setSelected([...start])
-  }, [open, mode, initialTitle, initialSubtitle, initialUserIds, currentUserId])
+  }, [
+    open,
+    mode,
+    initialTitle,
+    initialSubtitle,
+    initialImageUrl,
+    initialUserIds,
+    currentUserId,
+  ])
 
   const selectedSet = useMemo(() => new Set(selected), [selected])
 
@@ -135,6 +150,7 @@ export function ChatChannelDialog({
     void onSubmit({
       title: isEquipo ? "Equipo" : title.trim(),
       subtitle: subtitle.trim(),
+      imageUrl: imageUrl.trim(),
       userIds: selected,
     })
   }
@@ -163,6 +179,13 @@ export function ChatChannelDialog({
                 autoComplete="off"
               />
             )}
+            <ChatChannelImageUploadField
+              id="chat-channel-image"
+              popId={popId}
+              value={imageUrl}
+              onChange={setImageUrl}
+              disabled={saving}
+            />
             <RootsFormTextField
               label="Descripción"
               id="chat-channel-subtitle"

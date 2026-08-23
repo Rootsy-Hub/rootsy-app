@@ -1,7 +1,10 @@
+"use client"
+
 import {
   menuGhostBarClass,
   menuGhostTileClass,
 } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
+import { PopLogoLightboxButton } from "@/components/pop-identity/PopLogoLightboxButton"
 import {
   eterHeaderHairlineClass,
   eterHeaderTitleClass,
@@ -44,15 +47,14 @@ export function PopIdentityHeaderCompact({
 
   return (
     <div className={cn("flex min-w-0 items-center gap-2.5", className)}>
-      <div
+      <PopLogoLightboxButton
+        src={logoSrc}
+        name={trimmedName}
         className={cn(
-          "size-8 shrink-0 overflow-hidden rounded-lg",
+          "size-8",
           isDark ? eterHeaderHairlineClass : "ring-1 ring-border",
         )}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logoSrc} alt="" className="size-full object-cover" />
-      </div>
+      />
       <span
         className={cn(
           "truncate text-sm font-semibold",

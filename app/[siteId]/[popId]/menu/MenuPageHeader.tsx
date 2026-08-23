@@ -2,6 +2,7 @@
 
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { WorkspaceMobileAccountCluster } from "@/components/layouts/WorkspaceMobileAccountCluster"
+import { PopLogoLightboxButton } from "@/components/pop-identity/PopLogoLightboxButton"
 import { EterIconButton } from "@/components/eter/EterIconButton"
 import { menuHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
@@ -189,16 +190,14 @@ function MenuPopIdentity({
 }) {
   return (
     <div className={cn("flex min-w-0 items-center gap-2.5 md:gap-3", compact && "flex-1")}>
-      <div
+      <PopLogoLightboxButton
+        src={logoSrc}
+        name={name}
         className={cn(
-          "shrink-0 overflow-hidden rounded-lg",
           eterHeaderHairlineClass,
           compact ? "size-9" : "size-12",
         )}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logoSrc} alt="" className="size-full object-cover" />
-      </div>
+      />
       <div className="min-w-0">
         <p className={cn("truncate text-sm font-semibold", eterHeaderTitleClass)}>
           {name}

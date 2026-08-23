@@ -1,6 +1,8 @@
 import type {
   ChatChannelDetailData,
+  ChatMessageCursor,
   ChatMessageRow,
+  ChatMessagesPage,
   ChatWorkspaceData,
   UpsertChatChannelInput,
 } from "@/app/[siteId]/[popId]/chat/chatTypes"
@@ -31,6 +33,49 @@ async function parseJson<T>(
   }
 }
 
+export class ChatQueryError extends Error {
+  redirect?: string
+
+  constructor(message: string, redirect?: string) {
+    super(message)
+    this.name = "ChatQueryError"
+    this.redirect = redirect
+  }
+}
+
+export async function queryChatWorkspace(popId: string): Promise<ChatWorkspaceData> {
+  const res = await fetchChatWorkspace(popId)
+  if (!res.success) {
+    throw new ChatQueryError(res.error, res.redirect)
+  }
+  const { success: _success, ...data } = res
+  return data
+}
+
+export async function queryChatChannel(
+  popId: string,
+  channelId: string,
+): Promise<ChatChannelDetailData> {
+  const res = await fetchChatChannel(popId, channelId)
+  if (!res.success) {
+    throw new ChatQueryError(res.error)
+  }
+  return res.data
+}
+
+export async function queryChatMessages(
+  popId: string,
+  channelId: string,
+  cursor?: ChatMessageCursor | null,
+  limit = 40,
+): Promise<ChatMessagesPage> {
+  const res = await fetchChatMessages(popId, channelId, cursor, limit)
+  if (!res.success) {
+    throw new ChatQueryError(res.error)
+  }
+  return res.data
+}
+
 export async function fetchChatWorkspace(
   popId: string,
 ): Promise<
@@ -58,6 +103,25 @@ export async function fetchChatChannel(
   return parseJson<ChatChannelDetailData>(res)
 }
 
+export async function fetchChatMessages(
+  popId: string,
+  channelId: string,
+  cursor?: ChatMessageCursor | null,
+  limit = 40,
+): Promise<
+  | { success: true; data: ChatMessagesPage }
+  | { success: false; error: string }
+> {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (cursor?.createdAt) params.set("before", cursor.createdAt)
+  if (cursor?.id) params.set("beforeId", cursor.id)
+  const res = await fetch(
+    `/api/pops/${popId}/chat/${channelId}/messages?${params}`,
+    { headers: { accept: "application/json" } },
+  )
+  return parseJson<ChatMessagesPage>(res)
+}
+
 export async function createChatChannel(
   popId: string,
   input: UpsertChatChannelInput,
@@ -68,6 +132,7 @@ export async function createChatChannel(
     body: JSON.stringify({
       title: input.title,
       subtitle: input.subtitle || null,
+      imageUrl: input.imageUrl.trim() || null,
       userIds: input.userIds,
     }),
   })
@@ -87,11 +152,37 @@ export async function updateChatChannel(
     body: JSON.stringify({
       title: input.title,
       subtitle: input.subtitle || null,
+      imageUrl: input.imageUrl.trim() || null,
       userIds: input.userIds,
     }),
   })
   const parsed = await parseJson<unknown>(res)
   return parsed.success ? { success: true } : parsed
+}
+
+export async function uploadChatChannelImage(
+  popId: string,
+  formData: FormData,
+): Promise<
+  { success: true; imageUrl: string } | { success: false; error: string }
+> {
+  const res = await fetch(`/api/pops/${popId}/chat/image`, {
+    method: "POST",
+    headers: { accept: "application/json" },
+    body: formData,
+  })
+  const json = (await res.json().catch(() => null)) as
+    | ApiOk<{ imageUrl: string }>
+    | ApiErr
+    | null
+  if (res.ok && json && "success" in json && json.success) {
+    return { success: true, imageUrl: json.data.imageUrl }
+  }
+  return {
+    success: false,
+    error:
+      json && "error" in json && json.error ? json.error : `HTTP ${res.status}`,
+  }
 }
 
 export async function deleteChatChannel(

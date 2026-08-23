@@ -4,6 +4,7 @@ import { ArticleIvaSelect } from "@/app/[siteId]/[popId]/articles/ArticleIvaSele
 import { RecipeImageUploadField } from "@/app/[siteId]/[popId]/recipes/RecipeImageUploadField"
 import type { RecipeCategoryOption } from "@/app/[siteId]/[popId]/recipes/actions"
 import { RecipeIngredientEditor } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientEditor"
+import { RecipeOutputArticleField } from "@/app/[siteId]/[popId]/recipes/components/RecipeOutputArticleField"
 import type { RecipeFormState } from "@/app/[siteId]/[popId]/recipes/recipeFormState"
 import {
   RootsFormGrid,
@@ -185,6 +186,38 @@ export function RecipeUpsertFormFields({
               checked={form.allowNegativeStock}
               onCheckedChange={(checked) =>
                 setForm((f) => ({ ...f, allowNegativeStock: checked }))
+              }
+              disabled={disabled}
+            />
+          </FormSection>
+
+          <div className={sectionDividerClass} />
+
+          <FormSection
+            title="Fabricar"
+            description="Si esta receta fabrica un lote (medialunas, salsa), elegí el artículo que entra al depósito. Si se descuenta al vender, dejalo vacío."
+          >
+            <RecipeOutputArticleField
+              id={`${idPrefix}-output-article`}
+              popId={popId}
+              selectedId={form.outputArticleId}
+              selectedName={form.outputArticleName}
+              excludeIds={form.ingredients
+                .map((line) => line.articleId)
+                .filter(Boolean)}
+              onSelect={(option) =>
+                setForm((f) => ({
+                  ...f,
+                  outputArticleId: option.id,
+                  outputArticleName: option.name,
+                }))
+              }
+              onClear={() =>
+                setForm((f) => ({
+                  ...f,
+                  outputArticleId: "",
+                  outputArticleName: "",
+                }))
               }
               disabled={disabled}
             />

@@ -1,6 +1,7 @@
 "use client"
 
 import "@/app/library/libraryColorTheme.css"
+import "@/components/statistics/statisticsNavRail.css"
 import {
   statisticsNavItemMobileClass,
   statisticsNavListClass,

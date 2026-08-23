@@ -65,6 +65,8 @@ export type RecipeTableRow = {
   ingredientCount: number
   isActive: boolean
   allowNegativeStock: boolean
+  outputArticleId: string | null
+  outputArticleName: string | null
 }
 
 export type RecipeDetail = RecipeTableRow & {
@@ -81,6 +83,7 @@ export type CreateRecipeInput = {
   iva: number
   isActive: boolean
   allowNegativeStock: boolean
+  outputArticleId: string | null
   ingredients: RecipeIngredientInput[]
   listPrices?: SalePriceListAmountInput[]
 }

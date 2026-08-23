@@ -3,7 +3,7 @@
 import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
 import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import { findMenuCatalogItemByScan } from "@/app/[siteId]/[popId]/menu-catalog/actions"
-import { findSaleCatalogArticleByScan } from "@/app/[siteId]/[popId]/sale/actions"
+import { findSaleCatalogArticleByScan } from "@/lib/rootsyApi/saleClient"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
 import type { MenuCartItemKind } from "@/lib/menuCart"
 import {
@@ -31,12 +31,16 @@ import {
 } from "@/components/sale-operation/saleCatalogPriceLists"
 import { usePopPriceLists } from "@/hooks/usePopPriceLists"
 import { defaultPriceList } from "@/lib/salePriceLists"
-import { setSalePriceListSession } from "@/lib/salePriceListSession"
+import {
+  getSalePriceListSession,
+  setSalePriceListSession,
+} from "@/lib/salePriceListSession"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import {
   useMenuCatalogItems,
   useSaleCatalogItems,
+  useSaleCatalogSearch,
 } from "@/hooks/useOperateCatalogItems"
 import { findCatalogProductByScanQuery } from "@/lib/saleCatalogScan"
 import {
@@ -47,6 +51,7 @@ import {
   resolveSaleCatalogView,
   saleCatalogViewLabel,
   saleCatalogViewToItemsFilter,
+  saleCatalogVisibleCategoryIds,
   writeSavedSaleCatalogView,
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
@@ -131,19 +136,22 @@ export function SaleCatalogBrowser({
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false)
   const [isMobileViewport, setIsMobileViewport] = useState(false)
 
-  const [vistaCatalogo, setVistaCatalogo] = useState<SaleCatalogViewPersisted>(() =>
-    resolveSaleCatalogView(
-      readSavedSaleCatalogView(popId),
-      categories,
-      categorySections,
-    ),
+  const [vistaCatalogo, setVistaCatalogo] = useState<SaleCatalogViewPersisted>(
+    () =>
+      readSavedSaleCatalogView(popId) ?? {
+        modo: "categoria",
+        categoria: "",
+      },
   )
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
   const [cantidadIngreso, setCantidadIngreso] = useState(1)
-  const priceListsQuery = usePopPriceLists(popId, { enabled: Boolean(popId) })
+  const [priceListsNeeded, setPriceListsNeeded] = useState(false)
+  const priceListsQuery = usePopPriceLists(popId, { enabled: priceListsNeeded })
   const priceLists = priceListsQuery.data ?? []
-  const [priceListId, setPriceListId] = useState(SALE_CATALOG_DEFAULT_PRICE_LIST_ID)
+  const [priceListId, setPriceListId] = useState(
+    () => getSalePriceListSession(popId) ?? SALE_CATALOG_DEFAULT_PRICE_LIST_ID,
+  )
   const busquedaInputRef = useRef<HTMLInputElement>(null)
   const vistaAntesBusquedaRef = useRef<SaleCatalogViewPersisted | null>(null)
   const busquedaTrimPrevRef = useRef("")
@@ -212,15 +220,45 @@ export function SaleCatalogBrowser({
     busqueda,
     OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
   )
+  const vistaResuelta = useMemo(
+    () => resolveSaleCatalogView(vistaCatalogo, categories, categorySections),
+    [categories, categorySections, vistaCatalogo],
+  )
   const itemsFilter = useMemo(() => {
     const base = saleCatalogViewToItemsFilter(
-      vistaCatalogo,
+      vistaResuelta,
       debouncedSearch,
       categories,
       categorySections,
     )
-    return { ...base, priceListId }
-  }, [categories, categorySections, debouncedSearch, priceListId, vistaCatalogo])
+    return {
+      ...base,
+      priceListId,
+      catalogCategoryIds: saleCatalogVisibleCategoryIds(
+        categories,
+        categorySections,
+      ),
+    }
+  }, [categories, categorySections, debouncedSearch, priceListId, vistaResuelta])
+  const isSearch = Boolean(itemsFilter.search.trim())
+  const itemsQueryReady = isSearch
+    ? !loading
+    : itemsFilter.section === "promotions"
+      ? !loading
+      : itemsFilter.section === "discounts" || Boolean(itemsFilter.categoryId)
+
+  useEffect(() => {
+    if (loading) return
+    if (
+      vistaCatalogo.modo === vistaResuelta.modo &&
+      (vistaCatalogo.modo !== "categoria" ||
+        vistaCatalogo.categoria === vistaResuelta.categoria)
+    ) {
+      return
+    }
+    setVistaCatalogo(vistaResuelta)
+    writeSavedSaleCatalogView(popId, vistaResuelta)
+  }, [loading, popId, vistaCatalogo, vistaResuelta])
 
   useEffect(() => {
     if (priceLists.length === 0) return
@@ -254,7 +292,7 @@ export function SaleCatalogBrowser({
     [priceLists],
   )
   const categoryLabel = saleCatalogViewLabel(
-    vistaCatalogo,
+    vistaResuelta,
     categories,
     categorySections,
   )
@@ -271,19 +309,26 @@ export function SaleCatalogBrowser({
       priceListId,
       priceLists: priceListOptions,
       onChange: setPriceListId,
+      onOpen: () => setPriceListsNeeded(true),
     })
     return () => registerPriceList(null)
   }, [registerPriceList, priceListId, priceListOptions])
 
-  const saleItems = useSaleCatalogItems(
+  const saleCategoryItems = useSaleCatalogItems(
     popId,
     itemsFilter,
-    Boolean(popId) && !error && source === "sale",
+    Boolean(popId) && !error && source === "sale" && itemsQueryReady && !isSearch,
   )
+  const saleSearchItems = useSaleCatalogSearch(
+    popId,
+    itemsFilter,
+    Boolean(popId) && !error && source === "sale" && itemsQueryReady && isSearch,
+  )
+  const saleItems = isSearch ? saleSearchItems : saleCategoryItems
   const menuItems = useMenuCatalogItems(
     popId,
     itemsFilter,
-    Boolean(popId) && !error && source === "menu",
+    Boolean(popId) && !error && source === "menu" && itemsQueryReady,
   )
   const paged = source === "sale" ? saleItems : menuItems
   const pagedRecipes = source === "menu" ? menuItems.recipes : []
@@ -446,7 +491,7 @@ export function SaleCatalogBrowser({
   const itemsError = paged.error
   const showGridSkeleton =
     !error &&
-    paged.isLoading &&
+    (paged.isLoading || (loading && !itemsQueryReady)) &&
     productosFiltrados.length === 0 &&
     itemsFilter.section !== "promotions"
   const displayError = error ?? itemsError
@@ -477,7 +522,7 @@ export function SaleCatalogBrowser({
             <SaleCatalogSidebarNav
               categories={categories}
               categorySections={categorySections}
-              vistaCatalogo={vistaCatalogo}
+              vistaCatalogo={vistaResuelta}
               onVistaChange={persistVistaCatalogo}
             />
           )}
@@ -516,7 +561,7 @@ export function SaleCatalogBrowser({
             <SaleCatalogSidebarNav
               categories={categories}
               categorySections={categorySections}
-              vistaCatalogo={vistaCatalogo}
+              vistaCatalogo={vistaResuelta}
               onVistaChange={persistVistaCatalogo}
               density="comfortable"
             />
@@ -541,6 +586,9 @@ export function SaleCatalogBrowser({
           priceListId={priceListId}
           onPriceListChange={setPriceListId}
           onPriceListSelectClosed={refocusScan}
+          onPriceListOpenChange={(open) => {
+            if (open) setPriceListsNeeded(true)
+          }}
           priceLists={
             priceLists.length > 0
               ? priceLists.map((list) => ({ id: list.id, label: list.name }))

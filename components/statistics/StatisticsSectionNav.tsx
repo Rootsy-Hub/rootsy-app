@@ -1,6 +1,7 @@
 "use client"
 
 import "@/app/library/libraryColorTheme.css"
+import "@/components/statistics/statisticsNavRail.css"
 import type {
   StatisticsSectionDef,
   StatisticsSectionId,
@@ -20,6 +21,7 @@ import {
 } from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { useEffect, useRef } from "react"
 
 export function StatisticsSectionNav({
   sections,
@@ -32,8 +34,27 @@ export function StatisticsSectionNav({
   getSectionHref: (sectionId: StatisticsSectionId) => string
   onSectionClick?: (sectionId: StatisticsSectionId) => void
 }) {
+  const navRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const item = navRef.current?.querySelector<HTMLElement>(
+      "[aria-current=page]",
+    )
+    const scroller = navRef.current?.parentElement
+    if (!item || !scroller) return
+    const itemRect = item.getBoundingClientRect()
+    const scrollerRect = scroller.getBoundingClientRect()
+    const left =
+      scroller.scrollLeft +
+      (itemRect.left - scrollerRect.left) -
+      scroller.clientWidth / 2 +
+      itemRect.width / 2
+    scroller.scrollTo({ left: Math.max(0, left), behavior: "instant" })
+  }, [activeSectionId])
+
   return (
     <nav
+      ref={navRef}
       className={statisticsNavShellClass}
       aria-label="Secciones de estadísticas"
     >

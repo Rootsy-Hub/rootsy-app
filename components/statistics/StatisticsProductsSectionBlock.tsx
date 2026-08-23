@@ -76,7 +76,7 @@ export function StatisticsProductsSectionBlock({ data, loading }: Props) {
             rows={sectionData?.rankings ?? []}
             loading={loading}
             valueFormat="money"
-            className="flex h-full min-h-[420px] flex-col"
+            className="flex h-full min-h-0 flex-col lg:min-h-[420px]"
             scrollableList
             selectedRowId={selectedProductKey}
             onRowSelect={handleRankSelect}
@@ -89,7 +89,7 @@ export function StatisticsProductsSectionBlock({ data, loading }: Props) {
             rows={sectionData?.productSalesRankings ?? []}
             loading={loading}
             valueFormat="percent"
-            className="flex h-full min-h-[420px] flex-col"
+            className="flex h-full min-h-0 flex-col lg:min-h-[420px]"
             scrollableList
             selectedRowId={selectedProductKey}
             onRowSelect={handleRankSelect}

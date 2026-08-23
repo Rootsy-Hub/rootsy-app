@@ -16,6 +16,7 @@ export type ChatChannelListItem = {
   slug: string
   title: string
   subtitle: string | null
+  imageUrl?: string | null
   initials: string
   isEquipo: boolean
   lastMessageAt: string | null
@@ -31,6 +32,7 @@ export type ChatMessageRow = {
   body: string
   createdAt: string
   mine: boolean
+  pending?: boolean
 }
 
 export type ChatWorkspaceData = {
@@ -47,18 +49,63 @@ export type ChatWorkspaceData = {
 
 export type ChatChannelDetailData = {
   channel: ChatChannelListItem
-  messages: ChatMessageRow[]
   memberUserIds: string[]
+}
+
+export type ChatMessageCursor = {
+  createdAt: string
+  id: string
+}
+
+export type ChatMessagesPage = {
+  messages: ChatMessageRow[]
+  hasMore: boolean
+  nextCursor: ChatMessageCursor | null
 }
 
 export type UpsertChatChannelInput = {
   title: string
   subtitle: string
+  imageUrl: string
   userIds: string[]
 }
 
 export function chatPersonName(first: string, last: string): string {
   return `${first} ${last}`.replace(/\s+/g, " ").trim() || "Sin nombre"
+}
+
+const CHAT_AUTHOR_NAME_TONES = [
+  "text-[var(--rootsy-cielo-700)]",
+  "text-[var(--rootsy-suelo-700)]",
+  "text-[var(--rootsy-sol-800)]",
+  "text-[var(--rootsy-savia-800)]",
+  "text-[var(--rootsy-cielo-800)]",
+  "text-[var(--rootsy-savia-teal)]",
+] as const
+
+export function chatStandaloneEmojiCount(body: string): 1 | 2 | 3 | null {
+  const trimmed = body.trim()
+  if (!trimmed) return null
+  const graphemes = [
+    ...new Intl.Segmenter("es", { granularity: "grapheme" }).segment(trimmed),
+  ]
+    .map((part) => part.segment)
+    .filter((part) => part.trim() !== "")
+  if (graphemes.length < 1 || graphemes.length > 3) return null
+  const emojiOnly = graphemes.every((part) =>
+    /\p{Extended_Pictographic}/u.test(part),
+  )
+  if (!emojiOnly) return null
+  return graphemes.length as 1 | 2 | 3
+}
+
+export function chatAuthorNameTone(userId: string) {
+  const key = userId.replace(/-/g, "").toLowerCase()
+  let hash = 0
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) >>> 0
+  }
+  return CHAT_AUTHOR_NAME_TONES[hash % CHAT_AUTHOR_NAME_TONES.length] ?? CHAT_AUTHOR_NAME_TONES[0]
 }
 
 export function formatChatTime(iso: string | null | undefined): string {

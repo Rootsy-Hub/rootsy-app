@@ -1,5 +1,6 @@
 "use client"
 
+import "@/components/statistics/statisticsNavRail.css"
 import { InventoryHomeSkeleton } from "@/app/[siteId]/[popId]/inventory/InventoryHomeSkeleton"
 import { ExpensePageSkeleton } from "@/app/[siteId]/[popId]/expenses/ExpensePageSkeleton"
 import { HrPageSkeleton } from "@/app/[siteId]/[popId]/hr/HrPageSkeleton"
@@ -31,6 +32,8 @@ import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorksp
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
 import { SaleCatalogSidebarNavSkeleton } from "@/components/sale-operation/SaleCatalogSidebarNavSkeleton"
+import { SaleCatalogToolbarSkeleton } from "@/components/sale-operation/SaleCatalogToolbarSkeleton"
+import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import {
   MesasFloorPlanSkeleton,
   MesasTablePickerListSkeleton,
@@ -44,7 +47,6 @@ import {
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarInnerClass,
   layoutsOperarCatalogSidebarOpenClass,
-  layoutsOperarCatalogToolbarClass,
   layoutsOperarSummaryPanelClass,
   layoutsOperarSummaryPanelMobileStackClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
@@ -101,12 +103,14 @@ function OperarCatalogColumnSkeleton() {
         </div>
       </aside>
       <section className={cn(layoutsOperarCatalogCanvasClass, "relative")}>
-        <div className={layoutsOperarCatalogToolbarClass} aria-hidden>
-          <div className={cn(sk.box, "h-10 w-28")} />
-          <div className={cn(sk.box, "h-10 min-w-0 flex-1")} />
-        </div>
+        <SaleCatalogToolbarSkeleton />
         <div className={layoutsOperarCatalogCanvasBodyClass}>
-          <div className={layoutsOperarCatalogCanvasScrollClass}>
+          <div
+            className={cn(
+              "min-h-0 h-full",
+              layoutsOperarCatalogCanvasScrollClass,
+            )}
+          >
             <SaleCatalogBrowserSkeleton />
           </div>
         </div>
@@ -300,6 +304,7 @@ function OperarCatalogModulePageSkeleton({
         <OperationsModuleBackdrop />
         <LayoutsOperarMainGrid
           catalog={<OperarCatalogColumnSkeleton />}
+          toolbox={<SaleOperationToolboxSkeleton />}
           ticket={<TicketPanelSkeleton listTitle={ticketTitle} />}
         />
       </div>

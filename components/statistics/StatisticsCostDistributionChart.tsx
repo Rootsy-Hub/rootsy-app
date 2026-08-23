@@ -15,6 +15,7 @@ import {
   statisticsSectionHeadingClassNames,
 } from "@/components/statistics/statisticsWorkspaceStyles"
 import type { StatisticsSegment } from "@/app/[siteId]/[popId]/statistics/actions"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
 import { useMemo } from "react"
@@ -179,6 +180,7 @@ export function StatisticsCostDistributionChart({
   selectedSegmentId?: string | null
   onSegmentSelect?: (segmentId: string, label: string) => void
 }) {
+  const isMobile = useIsMobile()
   const chartData = useMemo(
     () => {
       const mapped = segments.map((segment) => ({
@@ -230,7 +232,13 @@ export function StatisticsCostDistributionChart({
             config={chartConfig}
             className={externalLabelShowsAmount ? chartShellCompactClass : chartShellClass}
           >
-            <PieChart margin={{ top: 12, right: 28, bottom: 12, left: 28 }}>
+            <PieChart
+              margin={
+                isMobile
+                  ? { top: 4, right: 4, bottom: 4, left: 4 }
+                  : { top: 12, right: 28, bottom: 12, left: 28 }
+              }
+            >
               <ChartTooltip
                 content={
                   <ChartTooltipContent
@@ -246,7 +254,7 @@ export function StatisticsCostDistributionChart({
                             className="size-2.5 shrink-0 rounded-[2px]"
                             style={{ backgroundColor: item.payload.fill }}
                           />
-                          <div className="flex min-w-40 flex-1 items-center justify-between gap-4 leading-none">
+                          <div className="flex min-w-0 flex-1 items-center justify-between gap-3 leading-none sm:min-w-40 sm:gap-4">
                             <span className="text-muted-foreground">{row.label}</span>
                             <span className="font-numeric font-medium tabular-nums">
                               {formatSegmentValue(Number(value))} (
@@ -272,11 +280,15 @@ export function StatisticsCostDistributionChart({
                 outerRadius="62%"
                 paddingAngle={2}
                 strokeWidth={0}
-                label={renderExternalPieLabel(chartData, pieColors, {
-                  showAmount: externalLabelShowsAmount,
-                  labelIndices: topLabelIndices ?? undefined,
-                  formatValue: formatSegmentValue,
-                })}
+                label={
+                  isMobile
+                    ? false
+                    : renderExternalPieLabel(chartData, pieColors, {
+                        showAmount: externalLabelShowsAmount,
+                        labelIndices: topLabelIndices ?? undefined,
+                        formatValue: formatSegmentValue,
+                      })
+                }
                 labelLine={false}
               >
                 {chartData.map((segment, index) => (

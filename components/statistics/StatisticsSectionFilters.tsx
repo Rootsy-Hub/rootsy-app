@@ -37,12 +37,12 @@ export function StatisticsSectionFilters({
   return (
     <div
       className={cn(
-        "flex shrink-0 flex-wrap items-end justify-end gap-3",
+        "flex w-full shrink-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-end lg:w-auto",
         className,
       )}
     >
       {showChannel ? (
-        <div className="w-42 shrink-0">
+        <div className="w-full min-w-0 sm:w-40 sm:shrink-0">
           <RootsFormSelectField
             label="Canal"
             value={filters.channel ?? "all"}

@@ -8,6 +8,8 @@ export type OperateCatalogItemsFilter = {
   categoryId: string | null
   /** Lista de precios de venta. Vacío / principal = sale_price. */
   priceListId?: string
+  /** Categorías visibles en el catálogo. La búsqueda no sale de este set. */
+  catalogCategoryIds?: string[]
 }
 
 export type OperateCatalogItemsPage<T> = {

@@ -26,9 +26,10 @@ import {
   RootsDropdownSeparator,
   RootsDropdownTrigger,
 } from "@/components/rootsy-dropdown"
+import { RootsImageLightbox } from "@/components/rootsy-lightbox/RootsImageLightbox"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { cn } from "@/lib/utils"
-import { LogOut, UserCog } from "lucide-react"
+import { ImageIcon, LogOut, UserCog } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -67,10 +68,22 @@ export function DataWorkspaceHeaderUserMenu({
 
   const profileAvatarSrc = userAvatarSrc?.trim() || null
   const [profileImageFailed, setProfileImageFailed] = useState(false)
+  const [photoOpen, setPhotoOpen] = useState(false)
+  const identityQuery =
+    size === "compact" ? "(min-width: 1024px)" : "(min-width: 640px)"
+  const [identityVisible, setIdentityVisible] = useState(false)
 
   useEffect(() => {
     setProfileImageFailed(false)
   }, [profileAvatarSrc])
+
+  useEffect(() => {
+    const media = window.matchMedia(identityQuery)
+    const sync = () => setIdentityVisible(media.matches)
+    sync()
+    media.addEventListener("change", sync)
+    return () => media.removeEventListener("change", sync)
+  }, [identityQuery])
 
   const showPhoto = Boolean(profileAvatarSrc) && !profileImageFailed
   const initials = initialsFromPopName(userName)
@@ -142,7 +155,30 @@ export function DataWorkspaceHeaderUserMenu({
               </span>
             ) : null}
           </div>
-          <span className={cn("relative shrink-0", avatarSizeClass)}>
+          <span
+            className={cn(
+              "relative shrink-0",
+              avatarSizeClass,
+              showPhoto && showIdentity && identityVisible && "cursor-pointer",
+            )}
+            onClick={
+              showPhoto && showIdentity && identityVisible
+                ? (event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                    setPhotoOpen(true)
+                  }
+                : undefined
+            }
+            onPointerDown={
+              showPhoto && showIdentity && identityVisible
+                ? (event) => {
+                    event.preventDefault()
+                    event.stopPropagation()
+                  }
+                : undefined
+            }
+          >
             <span className="block size-full overflow-hidden rounded-full">
               <Avatar className="size-full rounded-full">
                 {showPhoto ? (
@@ -194,6 +230,16 @@ export function DataWorkspaceHeaderUserMenu({
         collisionPadding={{ right: 16 }}
         className={dropdownContentClass}
       >
+        {showPhoto ? (
+          <RootsDropdownItem
+            theme={theme}
+            className="gap-2"
+            onSelect={() => setPhotoOpen(true)}
+          >
+            <ImageIcon className="size-4 shrink-0 opacity-70" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">Ver foto</span>
+          </RootsDropdownItem>
+        ) : null}
         <RootsDropdownItem theme={theme} asChild className="gap-2">
           <Link href="/home">
             <UserCog className="size-4 shrink-0 opacity-70" aria-hidden />
@@ -214,6 +260,13 @@ export function DataWorkspaceHeaderUserMenu({
           <span className="min-w-0 flex-1 truncate">Cerrar sesión</span>
         </RootsDropdownItem>
       </RootsDropdownContent>
+      <RootsImageLightbox
+        open={photoOpen}
+        onOpenChange={setPhotoOpen}
+        src={profileAvatarSrc}
+        title={userName}
+        frameClassName="rounded-full"
+      />
     </RootsDropdownMenu>
   )
 }

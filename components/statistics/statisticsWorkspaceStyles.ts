@@ -17,39 +17,38 @@ export const statisticsLosetaCardClass = cn(
   "h-auto w-full min-h-0",
 )
 
-/** Rail lateral — pegado a la izquierda como library-sidebar. */
-export const statisticsNavAsideClass = cn(
-  "flex shrink-0 flex-col overflow-hidden",
-  "border-b lg:min-h-0 lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r",
+/** Rail lateral — menú horizontal en mobile; sidecar en desktop. */
+export const statisticsNavAsideClass = [
+  "statistics-nav-aside flex shrink-0 flex-col overflow-hidden",
+  "border-b lg:min-h-0 lg:h-auto lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r",
   librarySidebarClass,
-)
+].join(" ")
 
-export const statisticsNavScrollClass = cn(
-  "min-h-0 flex-1 overflow-x-auto overflow-y-hidden p-2",
-  "lg:overflow-x-hidden lg:overflow-y-auto lg:p-4",
+export const statisticsNavScrollClass = [
+  "statistics-nav-scroll min-h-0 overflow-x-auto overflow-y-hidden overscroll-x-contain p-2",
+  "snap-x snap-mandatory [scrollbar-width:thin]",
+  "lg:min-h-0 lg:flex-1 lg:snap-none lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-x-auto lg:p-4",
   libraryScrollDarkClass,
-)
+].join(" ")
 
 /** Nav — paridad LibraryNav / BackofficeSidebar. */
-export const statisticsNavShellClass = cn(
-  "library-nav flex w-full min-w-0 flex-row lg:flex-col",
-)
+export const statisticsNavShellClass =
+  "library-nav statistics-nav-rail w-full min-w-0"
 
-export const statisticsNavListClass = cn(
-  "library-nav-list flex-row lg:flex-col",
-)
+export const statisticsNavListClass =
+  "library-nav-list statistics-nav-rail-list"
 
-/** Ancho mínimo en scroll horizontal mobile. */
+/** Chip en scroll horizontal mobile; en desktop ocupa el rail. */
 export const statisticsNavItemMobileClass =
-  "min-w-[8.5rem] shrink-0 cursor-pointer border-0 lg:min-w-0 lg:w-full"
+  "min-w-max shrink-0 snap-start cursor-pointer border-0 lg:min-w-0 lg:w-full"
 
 /** Contenido principal — padding solo en el área de datos (sidebar flush izquierda). */
 export const statisticsMainContentClass =
-  "min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8"
+  "min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-y-contain px-3 py-4 sm:px-6 sm:py-6 lg:px-8"
 
 export const statisticsLosetaCardBodyClass = "p-4 sm:p-5"
 
-export const statisticsLosetaCardBodyCompactClass = "px-5 py-4"
+export const statisticsLosetaCardBodyCompactClass = "px-4 py-3 sm:px-5 sm:py-4"
 
 /** Título principal de sección (Ventas, Compras…). */
 export const statisticsSectionPageTitleClass =

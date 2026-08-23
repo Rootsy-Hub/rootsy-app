@@ -1,0 +1,41 @@
+/* Menú de secciones (Estadísticas / Ajustes).
+   En mobile es una fila con scroll; en desktop el sidecar.
+   !important: .library-nav / .library-nav-list fuerzan column y ganan a Tailwind. */
+
+@media (max-width: 1023px) {
+  .statistics-nav-aside {
+    height: auto !important;
+    max-height: 3.75rem;
+    flex: 0 0 auto !important;
+  }
+
+  .statistics-nav-scroll {
+    flex: none !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+
+  .statistics-nav-rail,
+  .statistics-nav-rail-list {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    min-width: max-content;
+  }
+
+  .statistics-nav-rail-list {
+    gap: 0.75rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .statistics-nav-rail,
+  .statistics-nav-rail-list {
+    flex-direction: column !important;
+    min-width: 0;
+  }
+
+  .statistics-nav-rail-list {
+    gap: 0.0625rem !important;
+  }
+}

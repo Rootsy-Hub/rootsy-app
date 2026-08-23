@@ -2,10 +2,12 @@
 
 import {
   workspaceTableLayoutThumbnailClass,
+  workspaceTableLayoutThumbnailInteractiveClass,
   workspaceTableLayoutThumbnailLgClass,
   workspaceTableLayoutThumbnailPlaceholderClass,
   workspaceTableLayoutThumbnailSmClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import { RootsImageLightbox } from "@/components/rootsy-lightbox/RootsImageLightbox"
 import {
   tdMoneyClass,
   tdMoneyMutedClass,
@@ -18,6 +20,7 @@ import { cn } from "@/lib/utils"
 import { ImagePlus } from "lucide-react"
 import Image from "next/image"
 import type { LucideIcon } from "lucide-react"
+import { useState } from "react"
 import type { ReactNode } from "react"
 
 /** Contenedor relativo para tabla + mascota en estado vacío. */
@@ -109,19 +112,22 @@ export function DataWorkspaceTableThumbnail({
   alt,
   size = "md",
   className,
+  preview = true,
 }: {
   src: string | null | undefined
   alt: string
   size?: "sm" | "md" | "lg"
   className?: string
+  preview?: boolean
 }) {
+  const [open, setOpen] = useState(false)
   const box =
     size === "lg"
       ? workspaceTableLayoutThumbnailLgClass
       : workspaceTableLayoutThumbnailSmClass
   const trimmed = typeof src === "string" ? src.trim() : ""
   if (trimmed) {
-    return (
+    const tile = (
       <div className={cn(workspaceTableLayoutThumbnailClass, box, className)}>
         <img
           src={trimmed}
@@ -130,6 +136,27 @@ export function DataWorkspaceTableThumbnail({
           loading="lazy"
         />
       </div>
+    )
+    if (!preview) return tile
+    return (
+      <>
+        <button
+          type="button"
+          className={workspaceTableLayoutThumbnailInteractiveClass}
+          onClick={() => setOpen(true)}
+          aria-label={`Ver imagen de ${alt}`}
+        >
+          {tile}
+        </button>
+        <RootsImageLightbox
+          open={open}
+          onOpenChange={setOpen}
+          src={trimmed}
+          title={alt}
+          frameClassName="rounded-lg bg-white"
+          imageClassName="object-contain"
+        />
+      </>
     )
   }
   return (

@@ -17,6 +17,7 @@ type PriceListRegistration = {
   priceListId: string
   priceLists: SaleCatalogPriceListOption[]
   onChange: (priceListId: string) => void
+  onOpen?: () => void
 }
 
 type OperarCatalogMobileChromeValue = {
@@ -48,7 +49,10 @@ export function OperarCatalogMobileChromeProvider({
             {
               label: "Listas de precios",
               icon: DollarSign,
-              onClick: () => setOpen(true),
+              onClick: () => {
+                registration.onOpen?.()
+                setOpen(true)
+              },
             },
           ]
         : [],

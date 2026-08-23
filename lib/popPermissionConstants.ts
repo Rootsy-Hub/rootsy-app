@@ -112,6 +112,7 @@ export const POP_PERMS = {
   CHAT_UPDATE: { resource: "chat", action: "update" },
   CHAT_DELETE: { resource: "chat", action: "delete" },
   MANUFACTURING_READ: { resource: "manufacturing", action: "read" },
+  MANUFACTURING_CREATE: { resource: "manufacturing", action: "create" },
   QUOTES_READ: { resource: "quotes", action: "read" },
   QUOTES_CREATE: { resource: "quotes", action: "create" },
   QUOTES_DELETE: { resource: "quotes", action: "delete" },

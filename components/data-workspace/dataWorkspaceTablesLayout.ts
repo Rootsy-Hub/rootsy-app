@@ -131,7 +131,7 @@ export const workspaceTableLayoutThumbnailPlaceholderClass = cn(
 )
 
 export const workspaceTableLayoutThumbnailInteractiveClass =
-  "rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]"
+  "cursor-pointer rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]"
 
 export const workspaceTableLayoutCellStackClass =
   "flex h-full min-h-0 min-w-0 flex-col justify-center gap-0 overflow-hidden"

@@ -206,7 +206,7 @@ function getDeltaDirection(metric: StatisticsCompareMetric): DeltaDirection {
 function kpiGridClass(count: number) {
   if (count <= 1) return "grid-cols-1"
   if (count === 2) return "grid-cols-1 sm:grid-cols-2"
-  if (count === 3) return "grid-cols-1 sm:grid-cols-3"
+  if (count === 3) return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
   return "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
 }
 
@@ -246,9 +246,9 @@ export function StatisticsKpiDeltaIndicator({
         : "Sin cambio"
 
   return (
-    <p className="flex flex-nowrap items-center gap-x-1 text-xs text-rootsy-bruma-500">
+    <p className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-rootsy-bruma-500">
       {hasDelta ? (
-        <span className="inline-flex min-w-0 shrink items-center gap-1">
+        <span className="inline-flex min-w-0 items-center gap-1">
           <Icon className={iconClass} aria-hidden />
           <span className="sr-only">{trendLabel} </span>
           <span className={cn(deltaValueClass, "truncate")}>{deltaText}</span>
@@ -256,7 +256,10 @@ export function StatisticsKpiDeltaIndicator({
       ) : (
         <span className="shrink-0">—</span>
       )}
-      <span className="shrink-0">vs. período anterior</span>
+      <span className="min-w-0">
+        <span className="sm:hidden">vs. ant.</span>
+        <span className="hidden sm:inline">vs. período anterior</span>
+      </span>
     </p>
   )
 }
@@ -301,7 +304,7 @@ export function StatisticsCompareKpiRow({
           )}
         >
           <StatisticsKpiLabel metric={metric} />
-          <ReportStatValue loading={loading}>
+          <ReportStatValue loading={loading} className="truncate">
             {formatValue(metric.value, metric.format)}
           </ReportStatValue>
           <div className={statisticsKpiDeltaSlotClass}>

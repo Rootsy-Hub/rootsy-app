@@ -1,0 +1,38 @@
+.chat-emoji-picker {
+  background: #fff;
+  font-family: var(--rootsy-font-ui), ui-sans-serif, sans-serif;
+}
+
+.chat-emoji-picker,
+.chat-emoji-picker .EmojiPickerReact,
+.chat-emoji-picker aside {
+  --epr-bg-color: #fff !important;
+  --epr-category-label-bg-color: #fff !important;
+  --epr-category-label-text-color: var(--rootsy-bruma-600) !important;
+  --epr-category-icon-active-color: var(--rootsy-savia-600) !important;
+  --epr-highlight-color: var(--rootsy-savia-600) !important;
+  --epr-hover-bg-color: var(--rootsy-savia-50) !important;
+  --epr-hover-bg-color-reduced-opacity: color-mix(
+    in srgb,
+    var(--rootsy-savia-50) 80%,
+    transparent
+  ) !important;
+  --epr-focus-bg-color: var(--rootsy-savia-50) !important;
+  --epr-text-color: var(--rootsy-bruma-600) !important;
+  --epr-search-input-bg-color: var(--rootsy-bruma-50) !important;
+  --epr-search-input-bg-color-active: var(--rootsy-bruma-50) !important;
+  --epr-search-input-text-color: var(--rootsy-bruma-900) !important;
+  --epr-search-input-placeholder-color: var(--rootsy-bruma-500) !important;
+  --epr-search-border-color: var(--rootsy-bruma-200) !important;
+  --epr-search-border-color-active: var(--rootsy-savia-600) !important;
+  --epr-picker-border-color: transparent !important;
+  --epr-emoji-variation-indicator-color: var(--rootsy-bruma-300) !important;
+  --epr-emoji-variation-indicator-color-hover: var(--rootsy-savia-700) !important;
+  --epr-header-padding: 12px 12px 0;
+}
+
+.chat-emoji-picker .epr-main {
+  border: none !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}

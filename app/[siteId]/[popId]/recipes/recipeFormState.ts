@@ -15,6 +15,8 @@ export type RecipeFormState = {
   iva: string
   isActive: boolean
   allowNegativeStock: boolean
+  outputArticleId: string
+  outputArticleName: string
   ingredients: RecipeIngredientFormLine[]
   listPrices: Record<string, string>
 }
@@ -29,6 +31,8 @@ export function defaultRecipeFormState(): RecipeFormState {
     iva: "21",
     isActive: true,
     allowNegativeStock: false,
+    outputArticleId: "",
+    outputArticleName: "",
     ingredients: [createEmptyIngredientLine()],
     listPrices: {},
   }
@@ -48,6 +52,8 @@ export function recipeFormFromDetail(
     iva: String(row.iva),
     isActive: row.isActive,
     allowNegativeStock: row.allowNegativeStock,
+    outputArticleId: row.outputArticleId ?? "",
+    outputArticleName: row.outputArticleName ?? "",
     ingredients:
       ingredients.length > 0 ? ingredients : [createEmptyIngredientLine()],
     listPrices,
@@ -64,6 +70,7 @@ export function recipeFormToPayload(form: RecipeFormState) {
     iva: Number(form.iva.replace(",", ".")),
     isActive: form.isActive,
     allowNegativeStock: form.allowNegativeStock,
+    outputArticleId: form.outputArticleId.trim() || null,
     ingredients: ingredientLinesToInput(form.ingredients),
   }
 }
