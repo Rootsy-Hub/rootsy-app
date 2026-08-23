@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import {
   Barcode,
@@ -45,6 +46,9 @@ import {
   Search,
 } from "lucide-react"
 import { useId, type ReactNode, type RefObject } from "react"
+
+const DEFAULT_SCAN_SEARCH_PLACEHOLDER = "Escanear producto o buscar…"
+const MOBILE_SEARCH_PLACEHOLDER = "Buscar productos…"
 
 function IconoLimpiarBusqueda({ className }: { className?: string }) {
   return (
@@ -218,7 +222,7 @@ export function SaleCatalogToolbar({
   onPriceListChange,
   onPriceListSelectClosed,
   priceLists = SALE_CATALOG_DEFAULT_PRICE_LISTS,
-  searchPlaceholder = "Escanear producto o buscar…",
+  searchPlaceholder = DEFAULT_SCAN_SEARCH_PLACEHOLDER,
   trailing,
   variant = "pos-dark",
   demo = false,
@@ -226,6 +230,14 @@ export function SaleCatalogToolbar({
 }: Props) {
   const qtyLabelId = useId()
   const priceListLabelId = useId()
+  const isMobile = useIsMobile()
+  const resolvedPlaceholder =
+    isMobile && searchPlaceholder === DEFAULT_SCAN_SEARCH_PLACEHOLDER
+      ? MOBILE_SEARCH_PLACEHOLDER
+      : searchPlaceholder
+  const resolvedAriaLabel = isMobile
+    ? "Buscar productos. También acepta escaneo."
+    : resolvedPlaceholder
 
   const setQty = (next: number) => {
     onCantidadIngresoChange(clampEntryQty(next))
@@ -270,10 +282,19 @@ export function SaleCatalogToolbar({
       <div className="relative min-w-0 flex-1">
         <Barcode
           className={cn(
-            "pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2",
+            "pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 max-md:hidden",
             variant === "operar"
               ? layoutsOperarCatalogToolbarIconMutedClass
               : "text-emerald-300/85",
+          )}
+          aria-hidden
+        />
+        <Search
+          className={cn(
+            "pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 md:hidden",
+            variant === "operar"
+              ? layoutsOperarCatalogToolbarIconMutedClass
+              : "text-white/35",
           )}
           aria-hidden
         />
@@ -285,7 +306,7 @@ export function SaleCatalogToolbar({
             )}
           >
             <span className="truncate text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]">
-              {searchPlaceholder}
+              {resolvedPlaceholder}
             </span>
           </div>
         ) : variant === "operar" ? (
@@ -295,8 +316,10 @@ export function SaleCatalogToolbar({
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}
             onKeyDown={onBusquedaKeyDown}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
+            inputMode={isMobile ? "search" : undefined}
+            enterKeyHint={isMobile ? "search" : undefined}
+            placeholder={resolvedPlaceholder}
+            aria-label={resolvedAriaLabel}
             className={scanInputClass(variant, busqueda.length > 0)}
           />
         ) : (
@@ -305,14 +328,16 @@ export function SaleCatalogToolbar({
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}
             onKeyDown={onBusquedaKeyDown}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
+            inputMode={isMobile ? "search" : undefined}
+            enterKeyHint={isMobile ? "search" : undefined}
+            placeholder={resolvedPlaceholder}
+            aria-label={resolvedAriaLabel}
             className={scanInputClass(variant, busqueda.length > 0)}
           />
         )}
         <Search
           className={cn(
-            "pointer-events-none absolute top-1/2 size-4 -translate-y-1/2",
+            "pointer-events-none absolute top-1/2 size-4 -translate-y-1/2 max-md:hidden",
             busqueda.length > 0 ? "right-9" : "right-3",
             variant === "operar"
               ? layoutsOperarCatalogToolbarIconMutedClass

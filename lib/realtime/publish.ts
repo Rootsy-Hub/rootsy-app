@@ -9,6 +9,7 @@ export async function publishPopDomainEvent(input: {
   resource?: { type: string; id: string }
   require?: { permissions?: string[] }
   channels?: string[]
+  visibleTo?: string[]
 }) {
   return rootsyApiFetch<{ success: true; seq: number }>(
     `/v1/pops/${input.popId}/realtime/events`,
@@ -21,6 +22,7 @@ export async function publishPopDomainEvent(input: {
         resource: input.resource,
         require: input.require,
         channels: input.channels,
+        visibleTo: input.visibleTo,
       }),
     },
   )

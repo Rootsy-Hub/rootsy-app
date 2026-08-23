@@ -32,7 +32,7 @@ export const RootsFormCheckbox = forwardRef<ElementRef<typeof Checkbox>, Props>(
       invalid,
     })
     const tone = useRootsFormControlTone()
-    const isChecked = checked === true
+    const isChecked = checked === true || checked === "indeterminate"
     const controlStyle = getFormCheckboxStyle(state, isChecked, { tone })
 
     return (

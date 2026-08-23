@@ -68,7 +68,7 @@ import {
   type ReactNode,
 } from "react"
 
-type PeopleFilter = "negocio" | "local" | "acceso" | "baja"
+type PeopleFilter = "negocio" | "local" | "acceso" | "invitadas" | "baja"
 
 function pendingInviteForPerson(
   person: EmployeeRow,
@@ -326,12 +326,27 @@ export function HrWorkspaceView() {
     () => employees.filter((person) => Boolean(person.leftAt)),
     [employees],
   )
+  const peopleInvited = useMemo(
+    () =>
+      activePeople.filter((person) =>
+        Boolean(pendingInviteForPerson(person, pending)),
+      ),
+    [activePeople, pending],
+  )
   const visiblePeople = useMemo(() => {
     if (peopleFilter === "local") return peopleInLocal
     if (peopleFilter === "acceso") return peopleWithAccess
+    if (peopleFilter === "invitadas") return peopleInvited
     if (peopleFilter === "baja") return peopleLeft
     return activePeople
-  }, [peopleFilter, activePeople, peopleInLocal, peopleWithAccess, peopleLeft])
+  }, [
+    peopleFilter,
+    activePeople,
+    peopleInLocal,
+    peopleWithAccess,
+    peopleInvited,
+    peopleLeft,
+  ])
 
   const activeMembers = useMemo(
     () => members.filter((member) => member.isActive),
@@ -798,6 +813,7 @@ export function HrWorkspaceView() {
     { value: "negocio", label: "Todas" },
     { value: "local", label: "En el local" },
     { value: "acceso", label: "Con Rootsy" },
+    { value: "invitadas", label: "Invitadas" },
     { value: "baja", label: "Ya no" },
   ]
 
@@ -888,9 +904,11 @@ export function HrWorkspaceView() {
                       ? "Nadie está en el local ahora."
                       : peopleFilter === "acceso"
                         ? "Nadie de estas personas usa Rootsy todavía."
-                        : peopleFilter === "baja"
-                          ? "Nadie figura como que ya no trabaja acá."
-                          : "Todavía no hay personas cargadas."}
+                        : peopleFilter === "invitadas"
+                          ? "Nadie tiene una invitación pendiente."
+                          : peopleFilter === "baja"
+                            ? "Nadie figura como que ya no trabaja acá."
+                            : "Todavía no hay personas cargadas."}
                   </p>
                 ) : (
                   <div className={dataWorkspaceEntityCardsGridClass}>

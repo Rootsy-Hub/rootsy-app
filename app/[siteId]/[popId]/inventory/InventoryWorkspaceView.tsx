@@ -15,6 +15,7 @@ import {
   type InventoryClearingId,
   type InventoryRedFilter,
 } from "@/app/[siteId]/[popId]/inventory/workspaceUrl"
+import { InventoryHomeSkeleton } from "@/app/[siteId]/[popId]/inventory/InventoryHomeSkeleton"
 import { InventoryAdjustmentDialog } from "@/app/[siteId]/[popId]/inventory/InventoryAdjustmentDialog"
 import { InventoryExpiryClearing } from "@/app/[siteId]/[popId]/inventory/InventoryExpiryClearing"
 import { InventoryLayerExpiryDialog } from "@/app/[siteId]/[popId]/inventory/InventoryLayerExpiryDialog"
@@ -37,7 +38,6 @@ import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
   dataWorkspaceBlocksPageMainClass,
-  dataWorkspaceBlocksSkeletonBreathTone,
   dataWorkspaceEntityCardEyebrowClass,
   dataWorkspaceEntityCardLosetaSurfaceClass,
   dataWorkspaceEntityCardStatValueLargeClass,
@@ -194,32 +194,6 @@ function queryFailMessage(
   if (query.data?.success === false) return query.data.error ?? "Unexpected error"
   if (query.error) return "Unexpected error"
   return null
-}
-
-function InventoryHomeSkeleton() {
-  const bar = dataWorkspaceBlocksSkeletonBreathTone.bar
-  const box = dataWorkspaceBlocksSkeletonBreathTone.box
-  return (
-    <div className="space-y-10">
-      <div className="grid gap-4 md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div
-            key={i}
-            className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "h-36 p-5")}
-          >
-            <div className={cn(bar, "h-3 w-24")} />
-            <div className={cn(bar, "mt-6 h-8 w-36")} />
-            <div className={cn(bar, "mt-3 h-3 w-28")} />
-          </div>
-        ))}
-      </div>
-      <div className={reportHubGridClass}>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className={cn(box, "h-32 rounded-[1.375rem]")} />
-        ))}
-      </div>
-    </div>
-  )
 }
 
 function InventoryKpiCard({

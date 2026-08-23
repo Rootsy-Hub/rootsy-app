@@ -49,7 +49,19 @@ export function StatisticsSectionNav({
                 scroll={false}
                 aria-current={active ? "page" : undefined}
                 aria-label={section.label}
-                onClick={() => onSectionClick?.(section.id)}
+                onClick={(event) => {
+                  if (
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey ||
+                    event.button !== 0
+                  ) {
+                    return
+                  }
+                  event.preventDefault()
+                  onSectionClick?.(section.id)
+                }}
                 className={cn(
                   libraryNavItemClass,
                   statisticsNavItemMobileClass,

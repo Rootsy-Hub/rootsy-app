@@ -3,6 +3,11 @@
 import { ChatChannelDialog } from "@/app/[siteId]/[popId]/chat/ChatChannelDialog"
 import { ChatWorkspaceSkeleton } from "@/app/[siteId]/[popId]/chat/ChatWorkspaceSkeleton"
 import {
+  applyChatMessageToList,
+  chatChannelIdFromEvent,
+  chatMessageFromEvent,
+} from "@/app/[siteId]/[popId]/chat/chatRealtime"
+import {
   formatChatTime,
   type ChatChannelDetailData,
   type ChatChannelListItem,
@@ -35,6 +40,8 @@ import { RootsIconButton, RootsPrimaryButton } from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { usePopRealtime } from "@/hooks/usePopRealtime"
+import type { DomainEvent } from "@/lib/realtime/protocol"
 import {
   createChatChannel,
   deleteChatChannel,
@@ -174,6 +181,73 @@ export function ChatWorkspaceView() {
     void loadThread(selectedId)
   }, [selectedId, loadThread])
 
+  const selectedIdRef = useRef(selectedId)
+  selectedIdRef.current = selectedId
+  const currentUserIdRef = useRef(currentUserId)
+  currentUserIdRef.current = currentUserId
+  const loadWorkspaceRef = useRef(loadWorkspace)
+  loadWorkspaceRef.current = loadWorkspace
+  const loadThreadRef = useRef(loadThread)
+  loadThreadRef.current = loadThread
+
+  const onRealtimeEvent = useCallback((event: DomainEvent) => {
+    const channelId = chatChannelIdFromEvent(event)
+    if (!channelId) return
+
+    if (event.type === "chat.message") {
+      const message = chatMessageFromEvent(event, currentUserIdRef.current)
+      if (!message) return
+      setThread((prev) => {
+        if (!prev || prev.channel.id !== channelId) return prev
+        if (prev.messages.some((row) => row.id === message.id)) return prev
+        return { ...prev, messages: [...prev.messages, message] }
+      })
+      setChannels((prev) => {
+        const next = applyChatMessageToList(
+          prev,
+          channelId,
+          message,
+          selectedIdRef.current,
+        )
+        if (next === prev && !prev.some((item) => item.id === channelId)) {
+          void loadWorkspaceRef.current()
+        }
+        return next
+      })
+      return
+    }
+
+    if (event.type === "chat.deleted") {
+      setChannels((prev) => prev.filter((item) => item.id !== channelId))
+      if (selectedIdRef.current === channelId) {
+        setSelectedId(null)
+        setThread(null)
+      }
+      void loadWorkspaceRef.current()
+      return
+    }
+
+    if (event.type === "chat.created" || event.type === "chat.updated") {
+      void loadWorkspaceRef.current()
+      if (selectedIdRef.current === channelId) {
+        void loadThreadRef.current(channelId)
+      }
+    }
+  }, [])
+
+  const onRealtimeResync = useCallback(() => {
+    void loadWorkspaceRef.current()
+    const openId = selectedIdRef.current
+    if (openId) void loadThreadRef.current(openId)
+  }, [])
+
+  usePopRealtime({
+    channels: ["domain:chat"],
+    enabled: Boolean(popId && !loading),
+    onEvent: onRealtimeEvent,
+    onResync: onRealtimeResync,
+  })
+
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ block: "end" })
   }, [thread?.messages.length])
@@ -196,11 +270,11 @@ export function ChatWorkspaceView() {
     }
     const message: ChatMessageRow = res.message
     setDraft("")
-    setThread((prev) =>
-      prev && prev.channel.id === selected.id
-        ? { ...prev, messages: [...prev.messages, message] }
-        : prev,
-    )
+    setThread((prev) => {
+      if (!prev || prev.channel.id !== selected.id) return prev
+      if (prev.messages.some((row) => row.id === message.id)) return prev
+      return { ...prev, messages: [...prev.messages, message] }
+    })
     setChannels((prev) =>
       prev.map((item) =>
         item.id === selected.id

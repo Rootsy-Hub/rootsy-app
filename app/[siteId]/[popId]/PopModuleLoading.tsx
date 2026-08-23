@@ -45,7 +45,7 @@ const MODULE_TITLES: Record<string, string> = {
   mesas: "Mesas",
   comandas: "Comandas",
   mostrador: "Mostrador",
-  "cobrar-servicios": "Cobrar servicios",
+  "cobrar-servicios": "Vender servicio",
   alerts: "Alertas",
   chat: "Chat",
   manufacturing: "Fabricar",

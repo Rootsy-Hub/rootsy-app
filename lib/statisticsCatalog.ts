@@ -16,8 +16,6 @@ export type StatisticsSectionDef = {
   description: string
   /** Clave para `getRootsModuleIcon`. */
   iconModuleKey: string
-  /** Si está definido, al menos uno de estos módulos debe estar habilitado. */
-  requiresAnyModule?: string[]
   /** Filtros contextuales que aplican a esta sección. */
   filterKeys?: Array<"channel" | "supplier">
   /** Sección aún sin datos reales en Rootsy. */
@@ -50,7 +48,6 @@ export const STATISTICS_SECTIONS: StatisticsSectionDef[] = [
     label: "Compras",
     description: "Importes, operaciones y principales compradores",
     iconModuleKey: "purchases",
-    requiresAnyModule: ["purchases"],
     filterKeys: ["supplier"],
   },
   {
@@ -58,21 +55,18 @@ export const STATISTICS_SECTIONS: StatisticsSectionDef[] = [
     label: "Inventario",
     description: "Stock actual, alertas y rotación de artículos",
     iconModuleKey: "inventory",
-    requiresAnyModule: ["stock", "inventory"],
   },
   {
     id: "clients",
     label: "Clientes",
     description: "Activos, nuevos, recurrentes y ticket por cliente",
     iconModuleKey: "clients",
-    requiresAnyModule: ["clients"],
   },
   {
     id: "suppliers",
     label: "Proveedores",
     description: "Compras, artículos y categorías por proveedor",
     iconModuleKey: "suppliers",
-    requiresAnyModule: ["suppliers"],
   },
   {
     id: "finance",
@@ -86,7 +80,6 @@ export const STATISTICS_SECTIONS: StatisticsSectionDef[] = [
     label: "Servicios",
     description: "Facturación y evolución de servicios vendidos",
     iconModuleKey: "services",
-    requiresAnyModule: ["services", "active_services"],
     comingSoon: true,
   },
   {
@@ -94,20 +87,9 @@ export const STATISTICS_SECTIONS: StatisticsSectionDef[] = [
     label: "Fabricación",
     description: "Producción, costos e insumos consumidos",
     iconModuleKey: "manufacturing",
-    requiresAnyModule: ["manufacturing"],
     comingSoon: true,
   },
 ]
-
-export function visibleStatisticsSections(
-  enabledModuleKeys: readonly string[],
-): StatisticsSectionDef[] {
-  const keys = new Set(enabledModuleKeys)
-  return STATISTICS_SECTIONS.filter((section) => {
-    if (!section.requiresAnyModule?.length) return true
-    return section.requiresAnyModule.some((key) => keys.has(key))
-  })
-}
 
 export function statisticsSectionById(
   id: StatisticsSectionId,

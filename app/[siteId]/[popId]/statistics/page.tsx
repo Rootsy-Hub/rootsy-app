@@ -2,9 +2,7 @@
 
 import { StatisticsWorkspaceView } from "@/components/statistics/StatisticsWorkspaceView"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { useParams } from "next/navigation"
-import { useMemo } from "react"
 
 function StatisticsPage() {
   const params = useParams()
@@ -12,12 +10,6 @@ function StatisticsPage() {
   const popId = typeof params?.popId === "string" ? params.popId : ""
   const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
     usePopWorkspace()
-  const { enabledModules } = usePopMenuCache(popId)
-
-  const enabledModuleKeys = useMemo(
-    () => enabledModules.map((mod) => mod.key),
-    [enabledModules],
-  )
 
   if (!popId || !siteId) {
     return (
@@ -32,7 +24,6 @@ function StatisticsPage() {
       siteId={siteId}
       popId={popId}
       popName={bootstrap?.popName ?? ""}
-      enabledModuleKeys={enabledModuleKeys}
       loading={bootstrapLoading}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}

@@ -302,7 +302,7 @@ function KanbanColumnBody({
   )
 }
 
-function ComandasBoardSkeleton() {
+export function ComandasBoardSkeleton() {
   return (
     <div className={comandasBrisaBoardShellClass} aria-hidden>
       <div className={comandasBrisaHeaderRowClass}>

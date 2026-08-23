@@ -1,19 +1,36 @@
 import { ChatModulePageSkeleton } from "@/app/[siteId]/[popId]/chat/ChatWorkspaceSkeleton"
+import {
+  AccountsModulePageSkeleton,
+  AlertsModulePageSkeleton,
+  CashRegistersModulePageSkeleton,
+  CobrarServiciosModulePageSkeleton,
+  ComandasModulePageSkeleton,
+  ExpenseModulePageSkeleton,
+  HrModulePageSkeleton,
+  InventoryModulePageSkeleton,
+  ManufacturingModulePageSkeleton,
+  MesasModulePageSkeleton,
+  MostradorModulePageSkeleton,
+  PrintersModulePageSkeleton,
+  PurchasesModulePageSkeleton,
+  ReportsModulePageSkeleton,
+  SaleModulePageSkeleton,
+  SettingsModulePageSkeleton,
+  StatisticsModulePageSkeleton,
+} from "@/components/pop-workspace/popModulePageSkeletons"
+import type { PopModuleSkeletonLayout } from "@/components/pop-workspace/popModuleSkeletonShell"
 import type { ReactNode } from "react"
 
-export type PopModuleSkeletonLayout = {
-  siteId: string
-  popId: string
-  popName: string
-  title: string
-  userName: string
-  userAvatarSrc?: string
-  userRoleLabel: string
-  headerLoading: boolean
-}
+export type { PopModuleSkeletonLayout }
 
 type PopModulePageSkeleton = {
   renderPage: (layout: PopModuleSkeletonLayout) => ReactNode
+}
+
+function page(
+  render: (layout: PopModuleSkeletonLayout) => ReactNode,
+): PopModulePageSkeleton {
+  return { renderPage: render }
 }
 
 /**
@@ -21,19 +38,34 @@ type PopModulePageSkeleton = {
  * El portero lo pinta antes de montar la vista.
  */
 const POP_MODULE_PAGE_SKELETONS: Record<string, PopModulePageSkeleton> = {
-  chat: {
-    renderPage: (layout) => (
-      <ChatModulePageSkeleton
-        siteId={layout.siteId}
-        popId={layout.popId}
-        popName={layout.popName}
-        userName={layout.userName}
-        userAvatarSrc={layout.userAvatarSrc}
-        userRoleLabel={layout.userRoleLabel}
-        headerLoading={layout.headerLoading}
-      />
-    ),
-  },
+  chat: page((layout) => (
+    <ChatModulePageSkeleton
+      siteId={layout.siteId}
+      popId={layout.popId}
+      popName={layout.popName}
+      userName={layout.userName}
+      userAvatarSrc={layout.userAvatarSrc}
+      userRoleLabel={layout.userRoleLabel}
+      headerLoading={layout.headerLoading}
+    />
+  )),
+  hr: page(HrModulePageSkeleton),
+  expenses: page(ExpenseModulePageSkeleton),
+  inventory: page(InventoryModulePageSkeleton),
+  "cash-registers": page(CashRegistersModulePageSkeleton),
+  accounts: page(AccountsModulePageSkeleton),
+  printers: page(PrintersModulePageSkeleton),
+  settings: page(SettingsModulePageSkeleton),
+  statistics: page(StatisticsModulePageSkeleton),
+  reports: page(ReportsModulePageSkeleton),
+  sale: page(SaleModulePageSkeleton),
+  purchases: page(PurchasesModulePageSkeleton),
+  "cobrar-servicios": page(CobrarServiciosModulePageSkeleton),
+  mesas: page(MesasModulePageSkeleton),
+  comandas: page(ComandasModulePageSkeleton),
+  mostrador: page(MostradorModulePageSkeleton),
+  alerts: page(AlertsModulePageSkeleton),
+  manufacturing: page(ManufacturingModulePageSkeleton),
 }
 
 export function getPopModulePageSkeleton(

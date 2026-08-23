@@ -23,6 +23,37 @@ export function operateCatalogFilterKey(filter: OperateCatalogItemsFilter): stri
   return `${filter.section}:${filter.categoryId ?? ""}:${filter.search}:${filter.priceListId ?? ""}`
 }
 
+export function uniqueById<T extends { id: string }>(rows: T[]): T[] {
+  if (rows.length < 2) return rows
+  const seen = new Set<string>()
+  const out: T[] = []
+  for (const row of rows) {
+    if (seen.has(row.id)) continue
+    seen.add(row.id)
+    out.push(row)
+  }
+  return out
+}
+
+/** Evita páginas repetidas si el infinite query refetch appende el mismo offset. */
+export function uniqueInfinitePages<T>(data: {
+  pages: T[]
+  pageParams: number[]
+}): { pages: T[]; pageParams: number[] } {
+  const seen = new Set<number>()
+  const pages: T[] = []
+  const pageParams: number[] = []
+  for (let i = 0; i < data.pages.length; i++) {
+    const param = data.pageParams[i]
+    if (param == null || seen.has(param)) continue
+    seen.add(param)
+    pages.push(data.pages[i]!)
+    pageParams.push(param)
+  }
+  if (pages.length === data.pages.length) return data
+  return { pages, pageParams }
+}
+
 export function purchaseCatalogViewToItemsFilter(
   categoria: string,
   search: string,

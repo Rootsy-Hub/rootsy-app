@@ -5,6 +5,8 @@ import { getPurchaseCatalogItemsPage } from "@/app/[siteId]/[popId]/purchases/ac
 import { getSaleCatalogItemsPage } from "@/app/[siteId]/[popId]/sale/actions"
 import {
   operateCatalogFilterKey,
+  uniqueById,
+  uniqueInfinitePages,
   type OperateCatalogItemsFilter,
 } from "@/lib/operateCatalogPage"
 import {
@@ -32,11 +34,12 @@ export function useSaleCatalogItems(
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     enabled: enabled && Boolean(popId),
+    select: uniqueInfinitePages,
     ...operateCatalogQueryOptions,
   })
 
   const articles = useMemo(
-    () => query.data?.pages.flatMap((page) => page.items) ?? [],
+    () => uniqueById(query.data?.pages.flatMap((page) => page.items) ?? []),
     [query.data],
   )
 
@@ -71,15 +74,16 @@ export function useMenuCatalogItems(
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     enabled: enabled && Boolean(popId),
+    select: uniqueInfinitePages,
     ...operateCatalogQueryOptions,
   })
 
   const articles = useMemo(
-    () => query.data?.pages.flatMap((page) => page.articles) ?? [],
+    () => uniqueById(query.data?.pages.flatMap((page) => page.articles) ?? []),
     [query.data],
   )
   const recipes = useMemo(
-    () => query.data?.pages.flatMap((page) => page.recipes) ?? [],
+    () => uniqueById(query.data?.pages.flatMap((page) => page.recipes) ?? []),
     [query.data],
   )
 
@@ -115,11 +119,12 @@ export function usePurchaseCatalogItems(
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
     enabled: enabled && Boolean(popId),
+    select: uniqueInfinitePages,
     ...operateCatalogQueryOptions,
   })
 
   const articles = useMemo(
-    () => query.data?.pages.flatMap((page) => page.items) ?? [],
+    () => uniqueById(query.data?.pages.flatMap((page) => page.items) ?? []),
     [query.data],
   )
 

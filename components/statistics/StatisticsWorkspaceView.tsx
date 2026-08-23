@@ -19,8 +19,8 @@ import {
 import { StatisticsSectionNav } from "@/components/statistics/StatisticsSectionNav"
 import { StatisticsSectionPanel } from "@/components/statistics/StatisticsSectionPanel"
 import {
+  STATISTICS_SECTIONS,
   statisticsSectionById,
-  visibleStatisticsSections,
   type StatisticsSectionId,
 } from "@/lib/statisticsCatalog"
 import {
@@ -41,9 +41,8 @@ import {
   isComingSoonStatisticsSection,
   mergeStatisticsSectionData,
 } from "@/lib/rootsyApi/statisticsClient"
-import { useIsHydrated } from "@/hooks/useIsHydrated"
 import { cn } from "@/lib/utils"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { DateRange } from "react-day-picker"
 
@@ -61,7 +60,6 @@ type Props = {
   siteId: string
   popId: string
   popName: string
-  enabledModuleKeys: string[]
   loading?: boolean
   userName?: string
   userAvatarSrc?: string
@@ -73,22 +71,26 @@ export function StatisticsWorkspaceView({
   siteId,
   popId,
   popName,
-  enabledModuleKeys,
   loading: bootstrapLoading,
   userName,
   userAvatarSrc,
   userRoleLabel,
   bootstrapError,
 }: Props) {
-  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const hydrated = useIsHydrated()
+  const sections = STATISTICS_SECTIONS
+  const [workspaceSearch, setWorkspaceSearch] = useState(() =>
+    searchParams.toString(),
+  )
 
-  const sections = useMemo(
-    () =>
-      visibleStatisticsSections(hydrated ? enabledModuleKeys : []),
-    [enabledModuleKeys, hydrated],
+  useEffect(() => {
+    setWorkspaceSearch(searchParams.toString())
+  }, [searchParams])
+
+  const workspaceParams = useMemo(
+    () => new URLSearchParams(workspaceSearch),
+    [workspaceSearch],
   )
 
   const visibleSectionIds = useMemo(
@@ -96,7 +98,7 @@ export function StatisticsWorkspaceView({
     [sections],
   )
 
-  const requestedSectionId = searchParams.get(STATISTICS_SECTION_QUERY_PARAM)
+  const requestedSectionId = workspaceParams.get(STATISTICS_SECTION_QUERY_PARAM)
 
   const activeSectionId = useMemo(
     () => resolveStatisticsSectionId(requestedSectionId, visibleSectionIds),
@@ -133,22 +135,29 @@ export function StatisticsWorkspaceView({
     [siteId, popId],
   )
 
-  useEffect(() => {
-    if (!visibleSectionIds.length) return
-    if (requestedSectionId !== activeSectionId) {
-      router.replace(
-        mergeStatisticsSectionQuery(pathname, searchParams, activeSectionId),
-        { scroll: false },
+  const pushSection = useCallback(
+    (sectionId: StatisticsSectionId) => {
+      const href = mergeStatisticsSectionQuery(
+        pathname,
+        workspaceParams,
+        sectionId,
       )
-    }
-  }, [
-    activeSectionId,
-    pathname,
-    requestedSectionId,
-    router,
-    searchParams,
-    visibleSectionIds.length,
-  ])
+      if (typeof window !== "undefined") {
+        const current = `${window.location.pathname}${window.location.search}`
+        if (current !== href) {
+          window.history.replaceState(window.history.state, "", href)
+        }
+      }
+      const qIndex = href.indexOf("?")
+      setWorkspaceSearch(qIndex >= 0 ? href.slice(qIndex + 1) : "")
+    },
+    [pathname, workspaceParams],
+  )
+
+  useEffect(() => {
+    if (requestedSectionId === activeSectionId) return
+    pushSection(activeSectionId)
+  }, [activeSectionId, pushSection, requestedSectionId])
 
   useEffect(() => {
     setFilters(EMPTY_FILTERS)
@@ -247,8 +256,9 @@ export function StatisticsWorkspaceView({
       setDetailsLoading(true)
       setData(null)
       setError(null)
+      pushSection(sectionId)
     },
-    [activeSectionId],
+    [activeSectionId, pushSection],
   )
 
   return (

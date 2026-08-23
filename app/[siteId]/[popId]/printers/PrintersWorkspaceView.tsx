@@ -4,13 +4,13 @@ import type {
   PopPrinterTableRow,
   UpsertPopPrinterInput,
 } from "@/app/[siteId]/[popId]/printers/actions"
+import { PrintersPageSkeleton } from "@/app/[siteId]/[popId]/printers/PrintersPageSkeleton"
 import { PrinterUpsertDialog } from "@/app/[siteId]/[popId]/printers/PrinterUpsertDialog"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
   dataWorkspaceBlocksPageMainClass,
-  dataWorkspaceBlocksSkeletonTone,
   workspaceTableBodyCellClass,
   workspaceTableHeaderCellClass,
   workspaceTableHeaderRowClass,
@@ -232,11 +232,7 @@ export function PrintersWorkspaceView() {
           ) : null}
 
           {loading ? (
-            <div className="space-y-3" aria-busy="true" aria-live="polite">
-              <span className="sr-only">Cargando impresoras</span>
-              <div className={cn(dataWorkspaceBlocksSkeletonTone.bar, "h-4 w-40")} />
-              <div className={cn(dataWorkspaceBlocksSkeletonTone.box, "h-64")} />
-            </div>
+            <PrintersPageSkeleton />
           ) : error ? (
             <RootsBanner intent="danger" layout="message" message={error} />
           ) : (

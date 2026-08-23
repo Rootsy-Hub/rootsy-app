@@ -39,7 +39,7 @@ export function PurchaseCatalogToolbar({
       onCantidadIngresoChange={onCantidadIngresoChange}
       searchPlaceholder="Buscar artículo..."
       trailing={
-        <span className="text-sm font-medium text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]">
+        <span className="hidden text-sm font-medium text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)] md:inline">
           {resultCount} artículos
         </span>
       }

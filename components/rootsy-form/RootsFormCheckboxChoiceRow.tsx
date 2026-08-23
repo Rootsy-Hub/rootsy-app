@@ -13,17 +13,21 @@ import {
   rootsFormUiChoiceLabelClass,
 } from "@/components/rootsy-form/rootsFormUiStyles"
 import { cn } from "@/lib/utils"
+import type { CheckedState } from "@radix-ui/react-checkbox"
 import { useId, useRef } from "react"
 
 type Props = {
   label: string
   description?: string
   id?: string
-  checked: boolean
+  checked: CheckedState
   onCheckedChange: (checked: boolean) => void
   disabled?: boolean
   invalid?: boolean
   className?: string
+  labelClassName?: string
+  /** Encabezado de grupo — gana al peso inline del form spec. */
+  emphasized?: boolean
 }
 
 /** Fila de checkbox — target táctil 48px, fila entera clickeable. */
@@ -36,6 +40,8 @@ export function RootsFormCheckboxChoiceRow({
   disabled,
   invalid,
   className,
+  labelClassName,
+  emphasized,
 }: Props) {
   const autoId = useId()
   const checkboxId = id ?? autoId
@@ -76,7 +82,14 @@ export function RootsFormCheckboxChoiceRow({
           hasDescription ? "gap-0.5" : "justify-center",
         )}
       >
-        <span className={rootsFormUiChoiceLabelClass} style={labelStyle}>
+        <span
+          className={cn(rootsFormUiChoiceLabelClass, labelClassName)}
+          style={
+            emphasized
+              ? { ...labelStyle, fontWeight: 700 }
+              : labelStyle
+          }
+        >
           {label}
         </span>
         {hasDescription ? (

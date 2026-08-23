@@ -14,13 +14,15 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
-import { RootsSubtleButton } from "@/components/rootsy-button"
 import {
   RootsFormCheckboxChoiceRow,
   RootsFormTextField,
 } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
+import type { CheckedState } from "@radix-ui/react-checkbox"
 import { useEffect, useMemo, useState, type FormEvent } from "react"
+
+const OWNER_ROLE_ID = "__owner__"
 
 type Props = {
   open: boolean
@@ -68,15 +70,28 @@ export function ChatChannelDialog({
 
   const selectedSet = useMemo(() => new Set(selected), [selected])
 
-  const allSelected =
-    members.length > 0 && members.every((member) => selectedSet.has(member.userId))
+  const roleOptions = useMemo(() => {
+    const rows = [...roles]
+    if (members.some((member) => !member.roleId)) {
+      rows.unshift({ id: OWNER_ROLE_ID, displayName: "Propietario" })
+    }
+    return rows
+  }, [members, roles])
 
-  const roleFullySelected = (roleId: string) => {
-    const inRole = members.filter((member) => member.roleId === roleId)
-    return (
-      inRole.length > 0 &&
-      inRole.every((member) => selectedSet.has(member.userId))
+  const membersOfRole = (roleId: string) =>
+    members.filter((member) =>
+      roleId === OWNER_ROLE_ID ? !member.roleId : member.roleId === roleId,
     )
+
+  const roleCheckState = (roleId: string): CheckedState => {
+    const inRole = membersOfRole(roleId)
+    if (inRole.length === 0) return false
+    const selectedCount = inRole.filter((member) =>
+      selectedSet.has(member.userId),
+    ).length
+    if (selectedCount === 0) return false
+    if (selectedCount === inRole.length) return true
+    return "indeterminate"
   }
 
   const keepSelf = (ids: Iterable<string>) => {
@@ -95,19 +110,12 @@ export function ChatChannelDialog({
     })
   }
 
-  const toggleAll = () => {
-    if (allSelected) {
-      setSelected([currentUserId])
-      return
-    }
-    setSelected(keepSelf(members.map((member) => member.userId)))
-  }
-
   const toggleRole = (roleId: string) => {
-    const inRole = members.filter((member) => member.roleId === roleId)
+    const inRole = membersOfRole(roleId)
+    const fullySelected = roleCheckState(roleId) === true
     setSelected((prev) => {
       const next = new Set(prev)
-      if (roleFullySelected(roleId)) {
+      if (fullySelected) {
         for (const member of inRole) {
           if (member.userId !== currentUserId) next.delete(member.userId)
         }
@@ -167,58 +175,41 @@ export function ChatChannelDialog({
               <p className="font-canopy text-sm font-medium text-[var(--rootsy-bruma-800)]">
                 Participantes
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                <RootsSubtleButton
-                  type="button"
-                  size="compact"
-                  aria-pressed={allSelected}
-                  className={
-                    allSelected
-                      ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,white)] text-[var(--rootsy-savia-800)]"
-                      : undefined
-                  }
-                  onClick={toggleAll}
-                >
-                  Todos
-                </RootsSubtleButton>
-                {roles.map((role) => {
-                  const pressed = roleFullySelected(role.id)
+              <div className="max-h-72 space-y-3 overflow-y-auto">
+                {roleOptions.map((role) => {
+                  const inRole = membersOfRole(role.id)
+                  if (inRole.length === 0) return null
                   return (
-                    <RootsSubtleButton
-                      key={role.id}
-                      type="button"
-                      size="compact"
-                      aria-pressed={pressed}
-                      className={
-                        pressed
-                          ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,white)] text-[var(--rootsy-savia-800)]"
-                          : undefined
-                      }
-                      onClick={() => toggleRole(role.id)}
-                    >
-                      {role.displayName}
-                    </RootsSubtleButton>
-                  )
-                })}
-              </div>
-              <div className="max-h-64 overflow-y-auto rounded-xl border border-[var(--rootsy-bruma-200)] px-2 py-1">
-                {members.map((member) => {
-                  const isSelf = member.userId === currentUserId
-                  return (
-                    <RootsFormCheckboxChoiceRow
-                      key={member.userId}
-                      label={
-                        isSelf
-                          ? `${chatPersonName(member.firstName, member.lastName)} (vos)`
-                          : chatPersonName(member.firstName, member.lastName)
-                      }
-                      description={member.roleDisplayName}
-                      checked={selectedSet.has(member.userId)}
-                      disabled={isSelf}
-                      onCheckedChange={(checked) =>
-                        toggleUser(member.userId, checked)
-                      }
-                    />
+                    <div key={role.id}>
+                      <RootsFormCheckboxChoiceRow
+                        label={role.displayName}
+                        checked={roleCheckState(role.id)}
+                        emphasized
+                        className="min-h-10"
+                        onCheckedChange={() => toggleRole(role.id)}
+                      />
+                      <div className="pl-6">
+                        {inRole.map((member) => {
+                          const isSelf = member.userId === currentUserId
+                          return (
+                            <RootsFormCheckboxChoiceRow
+                              key={member.userId}
+                              label={
+                                isSelf
+                                  ? `${chatPersonName(member.firstName, member.lastName)} (vos)`
+                                  : chatPersonName(member.firstName, member.lastName)
+                              }
+                              checked={selectedSet.has(member.userId)}
+                              disabled={isSelf}
+                              className="min-h-9"
+                              onCheckedChange={(checked) =>
+                                toggleUser(member.userId, checked)
+                              }
+                            />
+                          )
+                        })}
+                      </div>
+                    </div>
                   )
                 })}
               </div>
