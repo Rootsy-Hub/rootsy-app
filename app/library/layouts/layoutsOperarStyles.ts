@@ -558,7 +558,7 @@ export const layoutsOperarToolboxBandClass = cn(
   "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
 )
 
-/** Piso del toolbox — barro oscuro (suelo), sin velo de savia. */
+/** Piso del toolbox — mundo Sombra, paridad canvas del catálogo. */
 export const layoutsOperarToolboxFloorClass = cn(
   "relative w-full overflow-visible",
   rootsyLayoutsEarthFloorBandClass,
@@ -605,7 +605,7 @@ export const layoutsOperarToolboxSlotFocusRingClass =
 export function layoutsOperarToolboxSlotClass(configured: boolean, active = false) {
   return cn(
     rootsyLayoutsEarthFloorSlotClass,
-    "group flex h-full min-h-[var(--layouts-operar-toolbox-slot-min-h)] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left sm:min-h-[var(--layouts-operar-toolbox-slot-min-h-sm)] sm:gap-3 sm:px-3",
+    "group flex h-full min-h-[var(--layouts-operar-toolbox-slot-min-h)] w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left sm:min-h-[var(--layouts-operar-toolbox-slot-min-h-sm)] sm:gap-3 sm:px-3",
     "focus-visible:outline-none",
     configured && rootsyLayoutsEarthFloorSlotConfiguredClass,
     active

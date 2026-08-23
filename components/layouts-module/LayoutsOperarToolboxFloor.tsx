@@ -10,8 +10,7 @@ type Props = {
 }
 
 /**
- * Bloque de fondo del toolbox — barro más oscuro que el slot idle.
- * Sin savia: el verde queda solo en el brote del botón configurado.
+ * Bloque de fondo del toolbox — mundo Sombra (canvas del catálogo).
  */
 export function LayoutsOperarToolboxFloor({ children, className }: Props) {
   return <div className={cn(layoutsOperarToolboxFloorClass, className)}>{children}</div>

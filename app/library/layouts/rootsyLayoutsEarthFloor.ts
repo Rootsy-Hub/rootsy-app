@@ -27,7 +27,7 @@ export const rootsyLayoutsEarthFloorBorderClass =
 export const rootsyLayoutsEarthFloorShadowClass =
   "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-suelo-400)_14%,transparent),inset_0_18px_36px_color-mix(in_srgb,var(--rootsy-savia-950)_26%,transparent)]"
 
-/** Barro del toolbox — más oscuro que el slot idle, sin savia. */
+/** Piso del toolbox — mundo Sombra (canvas sombra-800). */
 export const rootsyLayoutsEarthFloorBandClass = "layouts-operar-earth-floor"
 
 /** Piedra sobre el barro — ver rootsyLayoutsEarthFloor.css */
