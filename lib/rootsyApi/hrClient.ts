@@ -1,5 +1,6 @@
 import type {
   AttendancePunchRow,
+  ClockByPinResult,
   DayMarkKind,
   EmployeePaymentRow,
   EmployeeRow,
@@ -133,6 +134,50 @@ export async function clockEmployeeOut(popId: string, employeeId: string) {
     { method: "POST", headers: { accept: "application/json" } },
   )
   return parseMutate(res)
+}
+
+export async function fetchClockStation(popId: string) {
+  const res = await fetch(`/api/pops/${popId}/hr/clock-station`, {
+    headers: { accept: "application/json" },
+  })
+  return parseJson<{
+    canManageStation: boolean
+    clockStationPin: string | null
+  }>(res)
+}
+
+export async function unlockClockStation(popId: string, pin: string) {
+  const res = await fetch(`/api/pops/${popId}/hr/clock-station/unlock`, {
+    method: "POST",
+    headers: { accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({ pin }),
+  })
+  return parseMutate(res)
+}
+
+export async function rotateClockStationPin(popId: string) {
+  const res = await fetch(`/api/pops/${popId}/hr/clock-station/pin`, {
+    method: "POST",
+    headers: { accept: "application/json" },
+  })
+  return parseJson<{ clockStationPin: string }>(res)
+}
+
+export async function clockEmployeeByPin(popId: string, pin: string) {
+  const res = await fetch(`/api/pops/${popId}/hr/clock`, {
+    method: "POST",
+    headers: { accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({ pin }),
+  })
+  return parseJson<ClockByPinResult>(res)
+}
+
+export async function rotateEmployeeClockPin(popId: string, employeeId: string) {
+  const res = await fetch(
+    `/api/pops/${popId}/hr/employees/${employeeId}/clock-pin`,
+    { method: "POST", headers: { accept: "application/json" } },
+  )
+  return parseJson<{ clockPin: string }>(res)
 }
 
 export async function markEmployeeFranco(

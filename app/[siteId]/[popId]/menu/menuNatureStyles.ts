@@ -156,6 +156,11 @@ export const menuNotificationCountClass = cn(
   "bg-[color:var(--color-status-danger,#DC2626)] text-white",
 )
 
+/** Check de API lista — misma pieza que el conteo, tono savia. */
+export const menuApiReadyCountClass = cn(
+  "bg-[color:var(--rootsy-savia-600)] text-white",
+)
+
 export const menuDockEditBadgeClass =
   "bg-white text-[color:var(--rootsy-bruma-900)] ring-black/10"
 

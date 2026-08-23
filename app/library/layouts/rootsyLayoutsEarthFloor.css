@@ -1,4 +1,18 @@
 /**
+ * Piso del toolbox — barro más hondo que la piedra idle.
+ * Solo suelo + sombra: sin savia. El brote verde vive en el slot configurado.
+ */
+.layouts-operar-earth-floor {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--rootsy-suelo-900) 42%, var(--rootsy-sombra-950)) 0%,
+    color-mix(in srgb, var(--rootsy-suelo-950) 70%, var(--rootsy-sombra-950)) 100%
+  );
+  border-top: 1px solid color-mix(in srgb, var(--rootsy-suelo-800) 28%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rootsy-suelo-700) 10%, transparent);
+}
+
+/**
  * Slots del suelo — piedras en relieve sobre tierra mojada.
  * Configurado: savia brota como raíz y hoja. Tokens: suelo + savia + sombra.
  */

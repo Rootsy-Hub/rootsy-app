@@ -230,7 +230,6 @@ export function HrPersonAttendancePanel({
         <DataWorkspaceDetailEmptyState
           icon={History}
           title="Sin marcas en este período"
-          description="Cuando marquen llegada, un franco o una falta, van a aparecer acá."
         />
       ) : (
         <div

@@ -21,8 +21,9 @@ import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { popMenuHref } from "@/lib/popRoutes"
-import { PanelLeftOpen } from "lucide-react"
+import { Minimize2, PanelLeftOpen } from "lucide-react"
 import {
   useCallback,
   useEffect,
@@ -49,6 +50,12 @@ export type DataWorkspaceLayoutProps = {
   headerVariant?: DataWorkspaceHeaderVariant
   /** Cabecera cristal — siempre `ModuleWorkspaceHeader`. */
   showFullscreen?: boolean
+  /** En pantalla completa oculta el chrome (estación de fichaje). */
+  hideHeaderInFullscreen?: boolean
+  /** Estación trabada: el header no vuelve hasta destrabar. */
+  stationLocked?: boolean
+  onEnterStation?: () => void
+  onRequestUnlockStation?: () => void
   /** Contenido a la derecha del título central (ej. badge online). */
   titleAdornment?: ReactNode
   /** Acciones con ícono (Nuevo, categorías, etc.) — a la derecha, antes del selector de vista. */
@@ -106,6 +113,10 @@ export function DataWorkspaceLayout({
   loading = false,
   headerVariant = "default",
   showFullscreen = true,
+  hideHeaderInFullscreen = false,
+  stationLocked = false,
+  onEnterStation,
+  onRequestUnlockStation,
   titleAdornment,
   headerActions,
   headerMoreActions,
@@ -310,37 +321,59 @@ export function DataWorkspaceLayout({
           fillViewport ? "min-h-0 flex-1" : "h-svh",
         )}
       >
-        <ModuleWorkspaceHeader
-          backHref={backHref}
-          showFullscreen={showFullscreen}
-          popLogoSrc={popLogoSrc}
-          popName={resolvedPopName}
-          popStreetAddress={popStreetAddress}
-          title={title}
-          loading={loading}
-          brandPending={brandPending}
-          userPending={userPending}
-          headerVariant={headerVariant}
-          titleAdornment={titleAdornment}
-          headerActions={headerActions}
-          headerMoreActions={headerMoreActions}
-          headerMobileMoreActions={headerMobileMoreActions}
-          hideSidebarToggleOnMobile={hideSidebarToggleOnMobile}
-          sectionMenu={sectionMenu}
-          toolbar={toolbar}
-          mainMaxWidthClass={mainMaxWidthClass}
-          userName={resolvedUserName}
-          userAvatarSrc={resolvedUserAvatarSrc}
-          isOnline={isOnline}
-          subscriptionsHref={subscriptionsHref}
-          subline={subline}
-          hasResolvedRole={Boolean(resolvedUserRoleLabel)}
-          isFullscreen={isFullscreen}
-          onToggleFullscreen={() => void toggleFullscreen()}
-          canCollapseSidebar={canCollapseSidebar}
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={toggleSidebar}
-        />
+        {hideHeaderInFullscreen && stationLocked ? (
+          <div className="absolute right-3 top-3 z-30">
+            <RootsIconButton
+              theme="workspace"
+              emphasis="ghost"
+              size="default"
+              label="Salir de la estación"
+              onClick={() =>
+                onRequestUnlockStation
+                  ? onRequestUnlockStation()
+                  : void toggleFullscreen()
+              }
+            >
+              <Minimize2 aria-hidden />
+            </RootsIconButton>
+          </div>
+        ) : (
+          <ModuleWorkspaceHeader
+            backHref={backHref}
+            showFullscreen={showFullscreen}
+            popLogoSrc={popLogoSrc}
+            popName={resolvedPopName}
+            popStreetAddress={popStreetAddress}
+            title={title}
+            loading={loading}
+            brandPending={brandPending}
+            userPending={userPending}
+            headerVariant={headerVariant}
+            titleAdornment={titleAdornment}
+            headerActions={headerActions}
+            headerMoreActions={headerMoreActions}
+            headerMobileMoreActions={headerMobileMoreActions}
+            hideSidebarToggleOnMobile={hideSidebarToggleOnMobile}
+            sectionMenu={sectionMenu}
+            toolbar={toolbar}
+            mainMaxWidthClass={mainMaxWidthClass}
+            userName={resolvedUserName}
+            userAvatarSrc={resolvedUserAvatarSrc}
+            isOnline={isOnline}
+            subscriptionsHref={subscriptionsHref}
+            subline={subline}
+            hasResolvedRole={Boolean(resolvedUserRoleLabel)}
+            isFullscreen={stationLocked || isFullscreen}
+            onToggleFullscreen={
+              hideHeaderInFullscreen && onEnterStation
+                ? onEnterStation
+                : () => void toggleFullscreen()
+            }
+            canCollapseSidebar={canCollapseSidebar}
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={toggleSidebar}
+          />
+        )}
 
         {renderLayoutSidebar ? (
           <div className="relative z-10 flex min-h-0 flex-1 flex-row items-stretch">

@@ -15,6 +15,15 @@ export type EmployeeRow = {
   notes: string | null
   isClockedIn: boolean
   clockedInAt: string | null
+  clockPin?: string | null
+}
+
+export type ClockByPinAction = "in" | "out"
+
+export type ClockByPinResult = {
+  action: ClockByPinAction
+  firstName: string
+  lastName: string
 }
 
 export type AttendancePunchRow = {

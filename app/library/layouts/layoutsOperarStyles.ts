@@ -9,6 +9,7 @@ import {
 import { rootsySpacePx } from "@/lib/design-system"
 import "@/app/library/layouts/rootsyLayoutsEarthFloor.css"
 import {
+  rootsyLayoutsEarthFloorBandClass,
   rootsyLayoutsEarthFloorBorderClass,
   rootsyLayoutsEarthFloorShadowClass,
   rootsyLayoutsEarthFloorSlotClass,
@@ -557,12 +558,11 @@ export const layoutsOperarToolboxBandClass = cn(
   "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
 )
 
-/**
- * Chrome de piso — MenuHeaderEntity footer (tierra mojada).
- * overflow visible para que los slots en relieve no se recorten.
- */
-export const layoutsOperarToolboxFloorClass =
-  "[&_.menu-header-entity-body]:overflow-visible"
+/** Piso del toolbox — barro oscuro (suelo), sin velo de savia. */
+export const layoutsOperarToolboxFloorClass = cn(
+  "relative w-full overflow-visible",
+  rootsyLayoutsEarthFloorBandClass,
+)
 
 /** Grid interno toolbox — superficie en banda padre (zone style o bar surface). */
 export const layoutsOperarToolboxBarGridClass = cn(

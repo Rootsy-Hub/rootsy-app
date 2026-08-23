@@ -8,6 +8,7 @@ import {
   markEmployeeFranco,
   recordEmployeePayment,
   removeEmployeeFranco,
+  rotateEmployeeClockPin,
   upsertPopEmployee,
 } from "@/lib/rootsyApi/hrClient"
 import { HrFrancoDialog } from "@/app/[siteId]/[popId]/hr/HrFrancoDialog"
@@ -57,7 +58,14 @@ import {
 } from "@/lib/treasuryPaymentOptions"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
-import { ArrowLeft, DoorClosed, DoorOpen, Pencil, UserRound } from "lucide-react"
+import {
+  ArrowLeft,
+  DoorClosed,
+  DoorOpen,
+  Pencil,
+  RefreshCw,
+  UserRound,
+} from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { DateRange } from "react-day-picker"
 
@@ -107,6 +115,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [clockBusy, setClockBusy] = useState(false)
+  const [pinBusy, setPinBusy] = useState(false)
   const [dayMarkKind, setDayMarkKind] = useState<DayMarkKind>("franco")
   const [francoOpen, setFrancoOpen] = useState(false)
   const [francoSaving, setFrancoSaving] = useState(false)
@@ -215,6 +224,21 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
       return
     }
     await loadDetail({ silent: true })
+  }
+
+  async function handleRotatePin() {
+    if (!employee || pinBusy || employee.leftAt) return
+    setPinBusy(true)
+    const res = await rotateEmployeeClockPin(popId, employee.id)
+    setPinBusy(false)
+    if (!res.success) {
+      setError(res.error || "No se pudo generar un PIN.")
+      return
+    }
+    setEmployee((current) =>
+      current ? { ...current, clockPin: res.data.clockPin } : current,
+    )
+    setError(null)
   }
 
   async function handleMarkDay(day: string) {
@@ -423,6 +447,33 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
               </div>
             </div>
             <div className={cn(dataWorkspaceDetailCardStatsClass, "sm:grid-cols-2 lg:grid-cols-4")}>
+              {canManagePeople && employee && !employee.leftAt ? (
+                <div className="min-w-[8.5rem]">
+                  <p className={dataWorkspaceEntityCardStatLabelClass}>
+                    PIN de fichaje
+                  </p>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <p
+                      className={cn(
+                        dataWorkspaceEntityCardStatValueLargeClass,
+                        "font-numeric tracking-[0.18em]",
+                      )}
+                    >
+                      {employee.clockPin || "—"}
+                    </p>
+                    <RootsIconButton
+                      theme="workspace"
+                      emphasis="ghost"
+                      size="compact"
+                      label="Nuevo PIN"
+                      disabled={pinBusy}
+                      onClick={() => void handleRotatePin()}
+                    >
+                      <RefreshCw aria-hidden />
+                    </RootsIconButton>
+                  </div>
+                </div>
+              ) : null}
               <HeaderKpi label="Sueldo" value={salary} />
               <HeaderKpi label="Pagado en el período" value={periodPaidLabel} />
               <HeaderKpi label="Horas del período" value={periodHoursLabel} />

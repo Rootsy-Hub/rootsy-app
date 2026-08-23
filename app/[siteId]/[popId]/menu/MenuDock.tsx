@@ -20,7 +20,6 @@ import {
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
 import { shouldShowMenuApiReadyBadge } from "@/lib/menuApiReady"
-import { getMenuNotificationDemoCount } from "@/lib/menuNotificationDemo"
 import {
   isOptimisticNavTarget,
   usePopOptimisticNav,
@@ -171,7 +170,6 @@ function DockSlotItem({
               icon={item.icon}
               sectionKey={item.sectionKey}
               apiReady={shouldShowMenuApiReadyBadge(item.id)}
-              notificationCount={getMenuNotificationDemoCount(item.id)}
             />
           </button>
         ) : (
@@ -214,7 +212,6 @@ function DockSlotItem({
                   icon={item.icon}
                   sectionKey={item.sectionKey}
                   apiReady={shouldShowMenuApiReadyBadge(item.id)}
-                  notificationCount={getMenuNotificationDemoCount(item.id)}
                   busy={isLeaving}
                   busyLabel={`Abriendo ${item.name}`}
                 />
@@ -230,7 +227,6 @@ function DockSlotItem({
                   icon={item.icon}
                   sectionKey={item.sectionKey}
                   apiReady={shouldShowMenuApiReadyBadge(item.id)}
-                  notificationCount={getMenuNotificationDemoCount(item.id)}
                 />
               </button>
             )}

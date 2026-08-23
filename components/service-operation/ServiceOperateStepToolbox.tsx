@@ -55,7 +55,7 @@ export function ServiceOperateStepToolbox({
     <LayoutsOperarToolboxFloor
       className={cn(
         edge === "top" &&
-          "[&_.menu-header-entity-body]:border-t-0 [&_.menu-header-entity-body]:border-b [&_.menu-header-entity-body]:border-(--layouts-operar-border-dark-default)",
+          "border-t-0 border-b border-(--layouts-operar-border-dark-default)",
         className,
       )}
     >

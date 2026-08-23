@@ -23,6 +23,7 @@ export const MENU_API_READY_IDS = [
   "statistics",
   "printers",
   "hr",
+  "chat",
 ] as const satisfies readonly MenuDockItemId[]
 
 const READY = new Set<string>(MENU_API_READY_IDS)
@@ -31,8 +32,8 @@ export function isMenuApiReady(id: string | null | undefined): boolean {
   return Boolean(id && READY.has(id))
 }
 
-/** Poner en `true` para volver a mostrar el check verde de API lista. */
-export const SHOW_MENU_API_READY_BADGE = false
+/** Poner en `false` para ocultar el check de API lista. */
+export const SHOW_MENU_API_READY_BADGE = true
 
 export function shouldShowMenuApiReadyBadge(
   id: string | null | undefined,

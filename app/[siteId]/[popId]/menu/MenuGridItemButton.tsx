@@ -26,7 +26,6 @@ import {
   menuPlanetTileLabelClass,
 } from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
 import { MenuApiReadyBadge } from "@/app/[siteId]/[popId]/menu/MenuApiReadyBadge"
-import { MenuNotificationBadge } from "@/app/[siteId]/[popId]/menu/MenuNotificationBadge"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import {
   isOptimisticNavTarget,
@@ -34,7 +33,6 @@ import {
 } from "@/context/PopOptimisticNavContext"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { shouldShowMenuApiReadyBadge } from "@/lib/menuApiReady"
-import { getMenuNotificationDemoCount } from "@/lib/menuNotificationDemo"
 import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
@@ -182,9 +180,6 @@ export function MenuGridItemButton({
         </div>
         {!isDragGhost && !isLeaving && shouldShowMenuApiReadyBadge(item.link) ? (
           <MenuApiReadyBadge />
-        ) : null}
-        {!isDragGhost && !isLeaving ? (
-          <MenuNotificationBadge count={getMenuNotificationDemoCount(item.link)} />
         ) : null}
       </div>
 

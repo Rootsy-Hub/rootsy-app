@@ -57,7 +57,7 @@ import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
-import { Plus } from "lucide-react"
+import { KeyRound, Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -816,6 +816,15 @@ export function HrWorkspaceView() {
         userRoleLabel={bootstrap?.roleLabel || undefined}
         headerActions={
           <>
+            {siteId && popId ? (
+              <DataWorkspaceHeaderTooltipIconButton
+                label="Fichar"
+                headerVariant={dataWorkspaceModuleHeaderVariant}
+                onClick={() => router.push(`/${siteId}/${popId}/hr/fichar`)}
+              >
+                <KeyRound className="size-5" aria-hidden />
+              </DataWorkspaceHeaderTooltipIconButton>
+            ) : null}
             {canManagePeople ? (
               <DataWorkspaceHeaderTooltipIconButton
                 label="Cargar persona"

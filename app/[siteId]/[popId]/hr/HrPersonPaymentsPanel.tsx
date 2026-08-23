@@ -98,7 +98,6 @@ export function HrPersonPaymentsPanel({
         <DataWorkspaceDetailEmptyState
           icon={Banknote}
           title="Sin pagos en este período"
-          description="Cuando le pagues, el movimiento sale de tesorería y queda acá."
         />
       ) : (
         <div

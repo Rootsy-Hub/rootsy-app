@@ -1,6 +1,5 @@
 "use client"
 
-import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import { layoutsOperarToolboxFloorClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
@@ -11,17 +10,9 @@ type Props = {
 }
 
 /**
- * Bloque de fondo del toolbox — tierra mojada del design system
- * (mismo chrome que el footer de listados: MenuHeaderEntity as=footer).
+ * Bloque de fondo del toolbox — barro más oscuro que el slot idle.
+ * Sin savia: el verde queda solo en el brote del botón configurado.
  */
 export function LayoutsOperarToolboxFloor({ children, className }: Props) {
-  return (
-    <MenuHeaderEntity
-      as="footer"
-      size="dialog"
-      className={cn(layoutsOperarToolboxFloorClass, className)}
-    >
-      {children}
-    </MenuHeaderEntity>
-  )
+  return <div className={cn(layoutsOperarToolboxFloorClass, className)}>{children}</div>
 }
