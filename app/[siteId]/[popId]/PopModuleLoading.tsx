@@ -7,6 +7,7 @@ import {
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import { DataWorkspaceTableListLoadingBody } from "@/components/data-workspace/DataWorkspaceTableListLoadingBody"
 import { isPopTableListModule } from "@/components/data-workspace/popTableListSkeletonConfig"
+import { getPopModulePageSkeleton } from "@/components/pop-workspace/popModuleSkeletons"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { usePopAccessData } from "@/hooks/usePopAccessData"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
@@ -92,12 +93,30 @@ export function PopModuleLoading({
     workspace?.bootstrap?.roleLabel ||
     menuCache.roleLabel ||
     (popAccess ? buildPopRoleLabel(popAccess) : "")
-  const title =
-    titleProp ?? MODULE_TITLES[moduleKeyProp ?? moduleKeyFromPathname(pathname)] ?? "…"
   const moduleKey = moduleKeyProp ?? moduleKeyFromPathname(pathname)
+  const moduleTitle = MODULE_TITLES[moduleKey] ?? "…"
+  const title = titleProp ?? moduleTitle
 
   if (moduleKey === "menu") {
     return <MenuPageSkeleton />
+  }
+
+  const customPage = getPopModulePageSkeleton(moduleKey)
+  if (customPage) {
+    return (
+      <>
+        {customPage.renderPage({
+          siteId,
+          popId,
+          popName,
+          title: moduleTitle,
+          userName,
+          userAvatarSrc,
+          userRoleLabel,
+          headerLoading: !popName,
+        })}
+      </>
+    )
   }
 
   const hasTableCache = hasPopTableListSessionCache(

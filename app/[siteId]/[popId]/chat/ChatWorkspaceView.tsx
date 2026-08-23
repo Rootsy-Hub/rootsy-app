@@ -1,6 +1,7 @@
 "use client"
 
 import { ChatChannelDialog } from "@/app/[siteId]/[popId]/chat/ChatChannelDialog"
+import { ChatWorkspaceSkeleton } from "@/app/[siteId]/[popId]/chat/ChatWorkspaceSkeleton"
 import {
   formatChatTime,
   type ChatChannelDetailData,
@@ -13,7 +14,6 @@ import {
 import {
   dataWorkspaceBlocksPageMainClass,
   dataWorkspaceBlocksPageScopeClass,
-  dataWorkspaceBlocksSkeletonTone,
   dataWorkspaceDetailCardHeaderClass,
   dataWorkspaceDetailEmptyStateClass,
   dataWorkspaceDetailEmptyStateContentClass,
@@ -328,10 +328,7 @@ export function ChatWorkspaceView() {
           ) : null}
 
           {loading ? (
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)]">
-              <div className={cn(dataWorkspaceBlocksSkeletonTone.box, "h-full")} />
-              <div className={cn(dataWorkspaceBlocksSkeletonTone.box, "h-full")} />
-            </div>
+            <ChatWorkspaceSkeleton />
           ) : (
             <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)]">
               <aside

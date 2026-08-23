@@ -40,20 +40,12 @@ export function PopModuleAccessGate({ children }: { children: ReactNode }) {
 
   if (menuLink && isLoading && !popAccess) {
     return (
-      <PopModuleLoading
-        title="Cargando…"
-        moduleKey={popModuleKeyFromPath(pathname)}
-      />
+      <PopModuleLoading moduleKey={popModuleKeyFromPath(pathname)} />
     )
   }
 
   if (menuLink && popAccess && !allowed) {
-    return (
-      <PopModuleLoading
-        title="Sin permiso"
-        moduleKey={popModuleKeyFromPath(pathname)}
-      />
-    )
+    return <PopModuleLoading moduleKey={popModuleKeyFromPath(pathname)} />
   }
 
   return children
