@@ -99,6 +99,40 @@ describe("cierre de Rootsy", () => {
     assert.equal(brief.hechos[1]?.sujeto, "Agua 2 L")
   })
 
+  it("usa el informe del planificador y no arma listado de filas", () => {
+    const brief = buildChatRootsyCloseBrief({
+      pedido: "qué puede hacer Mozos",
+      proposals: [],
+      toolResults: [
+        {
+          tool: "get_roles",
+          periodLabel: "Ahora",
+          title: "Listar roles",
+          items: [
+            { rank: 1, name: "Mozos", id: "role-1" },
+            { rank: 2, name: "Caja", id: "role-2" },
+          ],
+        },
+      ],
+      informe: {
+        respuesta:
+          "El rol Mozos no tiene permiso para eliminar artículos. Puede consultar el catálogo y vender.",
+        acciones: [
+          "Listé los roles y tomé Mozos",
+          "Leí la matriz de permisos de inventario",
+        ],
+      },
+    })
+
+    assert.equal(brief.estado, "consultado")
+    assert.equal(brief.hechos.length, 0)
+    assert.match(brief.informe?.respuesta ?? "", /Mozos/)
+    assert.equal(
+      fallbackChatRootsyCloseReply(brief),
+      brief.informe?.respuesta,
+    )
+  })
+
   it("saca el reply si la IA cierra en JSON de primer turno", () => {
     assert.equal(
       readChatRootsyCloseReply(

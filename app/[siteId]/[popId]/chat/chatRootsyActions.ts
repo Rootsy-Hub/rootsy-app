@@ -14,8 +14,10 @@ import {
   canContinueChatRootsyPlanner,
   chatRootsyOfferKey,
   compactChatRootsyPlannerResponse,
+  completeChatRootsyPlannerInforme,
   pickChatRootsyPlannerSelectedResponse,
   type ChatRootsyPlannerChoice,
+  type ChatRootsyPlannerInforme,
   type ChatRootsyPlannerResultado,
   type ChatRootsyPlannerRun,
 } from "@/lib/chat/chatRootsyPlannerStep"
@@ -42,6 +44,7 @@ import { resolveChatRootsyPlannerRequest } from "@/lib/chat/chatRootsyApiQuery"
 import { runChatRootsyTool } from "@/lib/chat/chatRootsyToolRunner"
 import {
   buildChatRootsyCloseBrief,
+  buildChatRootsyCloseModelPayload,
   CHAT_ROOTSY_CLOSE_PROMPT,
   fallbackChatRootsyCloseReply,
   hechoFromWriteProposal,
@@ -247,6 +250,8 @@ export async function sendRootsyChatMessage(input: {
   let plannerAiError: string | undefined
   let plannerNote =
     "No se llamó: data_request quedó null, así que el planificador no corre."
+  let planDone = false
+  let planInforme: ChatRootsyPlannerInforme | undefined
   if (shouldCallChatRootsyPlanner(firstTurn)) {
     const snapshot = await loadPopPermissionsSnapshot(popId)
     const plan = await planChatRootsyTools({
@@ -266,6 +271,8 @@ export async function sendRootsyChatMessage(input: {
     plannerNote = plan.clarifyingQuestion
       ? `Aclaración: ${plan.clarifyingQuestion}. Descartadas: ${plan.discarded}. Ofertas: ${toolOffers.length}.`
       : `Descartadas: ${plan.discarded}. Ofertas armadas: ${toolOffers.length}.`
+    planDone = Boolean(plan.done)
+    planInforme = plan.informe
     if (plan.storedError && !plan.raw) {
       plannerAiError = `Planificador: ${plan.storedError}`
     }
@@ -294,8 +301,18 @@ export async function sendRootsyChatMessage(input: {
         paso: 1,
         resultados: [],
         accionesSesion: appliedActions,
+        informe: planInforme,
       }
     : undefined
+
+  const closeBrief =
+    planDone && !toolOffers.length && planInforme
+      ? buildChatRootsyCloseBrief({
+          pedido: lastUser.body,
+          proposals: [],
+          informe: planInforme,
+        })
+      : undefined
 
   return {
     success: true,
@@ -303,6 +320,7 @@ export async function sendRootsyChatMessage(input: {
     toolOffer: toolOffers[0],
     toolOffers: toolOffers.length ? toolOffers : undefined,
     plannerRun,
+    closeBrief,
     devTrace: buildChatRootsyDevTrace(
       [
         chatRootsyDevStep({
@@ -600,6 +618,10 @@ export async function runRootsyChatTools(input: {
       resultados: input.plannerRun?.resultados,
       toolResults,
       previos: input.plannerRun?.aplicados,
+      informe: completeChatRootsyPlannerInforme(
+        next.plannerRun?.informe ?? input.plannerRun?.informe,
+        next.plannerRun?.resultados ?? input.plannerRun?.resultados ?? [],
+      ),
     })
     closeBrief = brief
     const fallback = fallbackChatRootsyCloseReply(brief)
@@ -635,7 +657,7 @@ export async function runRootsyChatTools(input: {
       { role: "user" as const, body: pedido || "Cerrá esta corrida." },
       {
         role: "user" as const,
-        body: `Hechos ya confirmados (JSON):\n${chatRootsyDevJson(brief)}`,
+        body: `Hechos ya confirmados (JSON):\n${chatRootsyDevJson(buildChatRootsyCloseModelPayload(brief))}`,
       },
     ]
     const narration = await requestChatRootsyReplyDetailed(system, closeHistory, {
@@ -702,9 +724,11 @@ export async function runRootsyChatTools(input: {
           ? [
               chatRootsyDevStep({
                 lane: "close",
-                title: "Hechos para Rootsy",
+                title: "Informe para Rootsy",
                 note: narrationText
-                  ? "Cierre con hechos. Rootsy solo narra esto."
+                  ? closeBrief?.informe?.respuesta
+                    ? "Cierre con informe del Planificador. Rootsy narra eso."
+                    : "Cierre con hechos. Rootsy solo narra esto."
                   : `Fallback. ${narrationError ?? ""}`.trim(),
                 body: closeBrief,
               }),
@@ -849,11 +873,15 @@ async function planNextPlannerStep(input: {
     ? `${plan.source} · ${plan.storedError}`
     : plan.source
   if (plan.done || !toolOffers.length) {
+    const informe = plan.done
+      ? completeChatRootsyPlannerInforme(plan.informe, input.resultados)
+      : undefined
     return {
       plannerRun: {
         ...input.run,
         paso: nextPaso,
         resultados: input.resultados,
+        informe,
       },
       plannerSent: plan.sent,
       plannerRaw: plan.raw,

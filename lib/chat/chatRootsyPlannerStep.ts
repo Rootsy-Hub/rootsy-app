@@ -15,6 +15,11 @@ export type ChatRootsyPlannerResultado = {
   response: unknown
 }
 
+export type ChatRootsyPlannerInforme = {
+  respuesta: string
+  acciones: string[]
+}
+
 export type ChatRootsyPlannerRun = {
   message: string
   dataRequest: ChatRootsyDataRequest
@@ -22,6 +27,7 @@ export type ChatRootsyPlannerRun = {
   resultados: ChatRootsyPlannerResultado[]
   aplicados?: ChatRootsyCloseHecho[]
   accionesSesion?: ChatRootsyCloseHecho[]
+  informe?: ChatRootsyPlannerInforme
 }
 
 export type ChatRootsyPlannerChoice = {
@@ -56,16 +62,76 @@ function looksLikeEndpoint(value: string): boolean {
   )
 }
 
+export function sanitizeChatRootsyPlannerActionLine(raw: unknown): string {
+  const text =
+    typeof raw === "string" ? raw.replace(/\s+/g, " ").trim().slice(0, 140) : ""
+  if (text && !looksLikeEndpoint(text)) return text
+  return ""
+}
+
 export function sanitizeChatRootsyPlannerAction(
   raw: unknown,
   fallback: string,
 ): string {
-  const text =
-    typeof raw === "string" ? raw.replace(/\s+/g, " ").trim().slice(0, 140) : ""
-  if (text && !looksLikeEndpoint(text)) return text
-  const safeFallback = fallback.replace(/\s+/g, " ").trim().slice(0, 140)
-  if (safeFallback && !looksLikeEndpoint(safeFallback)) return safeFallback
-  return "Continuar con esta acción"
+  return (
+    sanitizeChatRootsyPlannerActionLine(raw) ||
+    sanitizeChatRootsyPlannerActionLine(fallback) ||
+    "Continuar con esta acción"
+  )
+}
+
+function sanitizePlannerRespuesta(raw: unknown): string {
+  if (typeof raw !== "string") return ""
+  return raw
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/\bsk-[a-zA-Z0-9_-]+\b/g, "")
+    .replace(/\b(GET|POST|PATCH|PUT|DELETE)\s+\/v1\/\S+/gi, "")
+    .replace(/\/v1\/pops\/\S+/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 1200)
+}
+
+function readPlannerAcciones(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const acciones: string[] = []
+  for (const row of raw.slice(0, 8)) {
+    const text = sanitizeChatRootsyPlannerActionLine(row)
+    if (text) acciones.push(text)
+  }
+  return acciones
+}
+
+export function readChatRootsyPlannerInforme(
+  raw: unknown,
+): ChatRootsyPlannerInforme | undefined {
+  const record = asRecord(raw)
+  if (!record) return undefined
+  const nested = asRecord(record.informe)
+  const respuesta = sanitizePlannerRespuesta(
+    record.respuesta ?? record.reply ?? nested?.respuesta,
+  )
+  const acciones = readPlannerAcciones(
+    Array.isArray(record.acciones) ? record.acciones : nested?.acciones,
+  )
+  if (!respuesta && !acciones.length) return undefined
+  return { respuesta, acciones }
+}
+
+export function completeChatRootsyPlannerInforme(
+  informe: ChatRootsyPlannerInforme | undefined,
+  resultados: ChatRootsyPlannerResultado[],
+): ChatRootsyPlannerInforme | undefined {
+  if (informe?.acciones.length) return informe
+  const acciones = resultados
+    .map((row) => sanitizeChatRootsyPlannerActionLine(row.action))
+    .filter((text): text is string => Boolean(text))
+    .slice(0, 8)
+  if (!informe?.respuesta && !acciones.length) return undefined
+  return {
+    respuesta: informe?.respuesta ?? "",
+    acciones,
+  }
 }
 
 export function canContinueChatRootsyPlanner(paso: number): boolean {

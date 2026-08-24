@@ -380,6 +380,45 @@ describe("operación en vivo del chat Rootsy", () => {
     assert.equal(/\/v1\/|\bGET\b|\bPATCH\b|salePrice/.test(dumped), false)
   })
 
+  it("pone el informe del planificador en los detalles de la tarea", () => {
+    const ops = deriveChatRootsyOperations([
+      row({ id: "u1", mine: true, body: "qué puede hacer Mozos" }),
+      row({
+        id: "a1",
+        mine: false,
+        body: "Lo miro.",
+        plannerRun: {
+          message: "qué puede hacer Mozos",
+          dataRequest: { objective: "permisos del rol Mozos" },
+          paso: 2,
+          resultados: [],
+        },
+      }),
+      row({
+        id: "close",
+        mine: false,
+        closeBrief: {
+          pedido: "qué puede hacer Mozos",
+          estado: "consultado",
+          hechos: [],
+          informe: {
+            respuesta: "El rol Mozos no tiene permiso para eliminar artículos.",
+            acciones: ["Listé los roles", "Leí la matriz de inventario"],
+          },
+        },
+      }),
+    ])
+    assert.equal(
+      ops[0]?.informe?.respuesta,
+      "El rol Mozos no tiene permiso para eliminar artículos.",
+    )
+    assert.deepEqual(ops[0]?.informe?.acciones, [
+      "Listé los roles",
+      "Leí la matriz de inventario",
+    ])
+    assert.equal(chatRootsyOperationHasUserDetails(ops[0]!), true)
+  })
+
   it("marca detenida si el usuario mandó otro pedido sin cerrar", () => {
     const ops = deriveChatRootsyOperations([
       row({ id: "u1", mine: true, body: "Aumentá las aguas" }),

@@ -97,6 +97,20 @@ describe("consultora de consultas Rootsy", () => {
     const done = parseChatRootsyPlannerPlan('{"status":"done"}')
     assert.equal(done?.done, true)
     assert.equal(done?.queries.length, 0)
+    assert.equal(done?.informe, undefined)
+
+    const informe = parseChatRootsyPlannerPlan(
+      '{"status":"done","respuesta":"El rol Mozos no tiene permiso para eliminar artículos.","acciones":["Listé los roles y tomé Mozos","Leí la matriz de permisos de inventario"]}',
+    )
+    assert.equal(informe?.done, true)
+    assert.equal(
+      informe?.informe?.respuesta,
+      "El rol Mozos no tiene permiso para eliminar artículos.",
+    )
+    assert.deepEqual(informe?.informe?.acciones, [
+      "Listé los roles y tomé Mozos",
+      "Leí la matriz de permisos de inventario",
+    ])
   })
 
   it("conserva los tres flujos actuales con filtros seguros", () => {

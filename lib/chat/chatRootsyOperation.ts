@@ -16,6 +16,7 @@ import type {
 import {
   chatRootsyOfferKey,
   type ChatRootsyPlannerChoice,
+  type ChatRootsyPlannerInforme,
 } from "@/lib/chat/chatRootsyPlannerStep"
 import { chatRootsyQueryTitle } from "@/lib/chat/chatRootsyTools"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
@@ -76,6 +77,7 @@ export type ChatRootsyOperationView = {
   choiceHostId: string | null
   error?: string
   memberIds: string[]
+  informe?: ChatRootsyPlannerInforme
 }
 
 type OperationAtom = {
@@ -528,6 +530,7 @@ function buildOperationFromCluster(
   let hasClose = false
   let pedidoPlanificador = ""
   let plannerPaso = 1
+  let informe: ChatRootsyPlannerInforme | undefined
 
   for (const row of rest) {
     if (!pedidoPlanificador) {
@@ -535,6 +538,7 @@ function buildOperationFromCluster(
       if (objective) pedidoPlanificador = objective
     }
     if (row.plannerRun?.paso) plannerPaso = row.plannerRun.paso
+    if (row.plannerRun?.informe) informe = row.plannerRun.informe
     const rowOffers = offersOf(row)
     if (rowOffers.some((offer) => offer.status === "offered")) {
       pendingOffers = rowOffers.filter((offer) => offer.status === "offered")
@@ -545,6 +549,7 @@ function buildOperationFromCluster(
       choiceHostId = row.id
     }
     if (row.closeBrief) hasClose = true
+    if (row.closeBrief?.informe) informe = row.closeBrief.informe
   }
 
   const atoms = collectAtoms(rest)
@@ -621,6 +626,7 @@ function buildOperationFromCluster(
     choiceHostId,
     error: live?.error && liveOnHost ? live.error : undefined,
     memberIds,
+    informe,
   }
 }
 
@@ -688,5 +694,7 @@ export function chatRootsyStepUserDetails(
 export function chatRootsyOperationHasUserDetails(
   operation: ChatRootsyOperationView,
 ): boolean {
+  if (operation.informe?.respuesta?.trim()) return true
+  if (operation.informe?.acciones.length) return true
   return operation.steps.some((step) => step.items.length > 0)
 }

@@ -359,6 +359,7 @@ export function ChatRootsyOperationCard({
   const collapsed = canToggle && !expanded
   const hasProgress = operation.steps.some((step) => step.status === "done")
   const hasUserDetails = chatRootsyOperationHasUserDetails(operation)
+  const informe = operation.informe
   const waitingOffers = operation.phase === "waiting" && pending.length > 0
   const waitingChoices =
     operation.phase === "waiting" && operation.pendingChoices.length > 0
@@ -606,6 +607,32 @@ export function ChatRootsyOperationCard({
             </button>
             {detailsOpen ? (
               <div className="space-y-3 px-3.5 pb-3">
+                {informe ? (
+                  <div className="space-y-2">
+                    {informe.respuesta.trim() ? (
+                      <p className="font-canopy text-sm leading-relaxed">
+                        {informe.respuesta.trim()}
+                      </p>
+                    ) : null}
+                    {informe.acciones.length ? (
+                      <div>
+                        <p className="font-canopy text-xs font-semibold">
+                          Qué se hizo
+                        </p>
+                        <ul className="mt-1 space-y-1">
+                          {informe.acciones.map((accion, index) => (
+                            <li
+                              key={`${operation.id}-accion-${index}`}
+                              className="font-canopy text-sm"
+                            >
+                              {accion}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
                 {operation.steps.map((step) => {
                   const details = chatRootsyStepUserDetails(step)
                   if (!details.length) return null

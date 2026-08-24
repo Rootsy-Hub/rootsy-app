@@ -3,7 +3,10 @@ import {
   buildChatRootsyOfferPreview,
   readPlannerTargetId,
 } from "@/lib/chat/chatRootsyOfferPreview"
-import type { ChatRootsyPlannerResultado } from "@/lib/chat/chatRootsyPlannerStep"
+import type {
+  ChatRootsyPlannerInforme,
+  ChatRootsyPlannerResultado,
+} from "@/lib/chat/chatRootsyPlannerStep"
 import type { ChatRootsyToolProposal } from "@/lib/chat/tools/chatRootsyToolTypes"
 import type { ChatRootsyToolResult } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
@@ -30,6 +33,7 @@ export type ChatRootsyCloseBrief = {
   pedido: string
   estado: "aplicado" | "consultado"
   hechos: ChatRootsyCloseHecho[]
+  informe?: ChatRootsyPlannerInforme
 }
 
 const WRITE_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"])
@@ -100,6 +104,7 @@ export function buildChatRootsyCloseBrief(input: {
   resultados?: ChatRootsyPlannerResultado[]
   toolResults?: ChatRootsyToolResult[]
   previos?: ChatRootsyCloseHecho[]
+  informe?: ChatRootsyPlannerInforme
 }): ChatRootsyCloseBrief {
   const pedido = input.pedido.trim() || "este pedido"
   const writes = input.proposals
@@ -114,6 +119,16 @@ export function buildChatRootsyCloseBrief(input: {
       pedido,
       estado: "aplicado",
       hechos,
+      informe: input.informe,
+    }
+  }
+
+  if (input.informe?.respuesta) {
+    return {
+      pedido,
+      estado: "consultado",
+      hechos: [],
+      informe: input.informe,
     }
   }
 
@@ -141,12 +156,40 @@ export function buildChatRootsyCloseBrief(input: {
     pedido,
     estado: "consultado",
     hechos: consultados,
+    informe: input.informe,
+  }
+}
+
+export function buildChatRootsyCloseModelPayload(
+  brief: ChatRootsyCloseBrief,
+): Record<string, unknown> {
+  const hasInforme = Boolean(brief.informe?.respuesta)
+  return {
+    pedido: brief.pedido,
+    estado: brief.estado,
+    ...(brief.informe
+      ? {
+          informe: {
+            respuesta: brief.informe.respuesta,
+            acciones: brief.informe.acciones,
+          },
+        }
+      : {}),
+    hechos:
+      brief.estado === "aplicado"
+        ? brief.hechos
+        : hasInforme
+          ? []
+          : brief.hechos,
   }
 }
 
 export function fallbackChatRootsyCloseReply(
   brief: ChatRootsyCloseBrief,
 ): string {
+  const informe = brief.informe?.respuesta?.trim()
+  if (informe) return informe.slice(0, 800)
+
   if (brief.estado === "aplicado") {
     const parts = brief.hechos.map((hecho) => {
       if (hecho.sujeto && hecho.cambios?.length) {
@@ -193,10 +236,11 @@ export function readChatRootsyCloseReply(raw: string | null): string | null {
 }
 
 export const CHAT_ROOTSY_CLOSE_PROMPT = [
-  "Estos hechos YA están hechos en el negocio. Narrá el cierre con tu voz.",
-  "Si estado es aplicado: confirmá que quedó hecho y contá qué cambió usando solo hechos (antes → después).",
-  "Si hay varios hechos, nombrá todos. No reduzcas a uno.",
-  "Si estado es consultado: contá lo que se vio. No pidas permiso de nuevo.",
+  "El planificador ya resolvió el data_request.",
+  "Si hay informe.respuesta, narrá ESO con tu voz: es la respuesta al pedido. No la reemplaces con un listado de filas.",
+  "informe.acciones es el rastro de la tarea; no hace falta recitarlo entero.",
+  "Si estado es aplicado, usá hechos (antes → después) para no inventar cifras de cambios. Si hay varios, nombrá todos.",
+  "Si no hay informe, narrá solo con hechos.",
   "No inventes cifras ni ítems que no estén en el JSON.",
   "No pidas data_request, no replanifiques y no nombres APIs.",
   "Respondé solo el texto visible, no JSON.",

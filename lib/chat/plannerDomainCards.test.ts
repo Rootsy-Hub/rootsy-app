@@ -60,6 +60,8 @@ describe("fichas de dominio del planificador", () => {
     assert.match(prompt, /FICHAS DE DOMINIO/)
     assert.match(prompt, /## RRHH/)
     assert.match(prompt, /## Artículos/)
+    assert.match(prompt, /"status":"done"/)
+    assert.match(prompt, /respuesta/)
     assert.equal(
       prompt.includes(buildChatRootsyPlannerDomainCardsText()),
       true,

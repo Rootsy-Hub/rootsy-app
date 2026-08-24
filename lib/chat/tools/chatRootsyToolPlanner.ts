@@ -6,8 +6,10 @@ import {
   chatRootsyOfferKey,
   fallbackChatRootsyPlannerAction,
   readChatRootsyPlannerConfirm,
+  readChatRootsyPlannerInforme,
   sanitizeChatRootsyPlannerAction,
   type ChatRootsyPlannerConfirm,
+  type ChatRootsyPlannerInforme,
   type ChatRootsyPlannerResultado,
 } from "@/lib/chat/chatRootsyPlannerStep"
 import {
@@ -78,6 +80,7 @@ export type ChatRootsyPlannerPlan = {
   queries: ChatRootsyPlannerQuery[]
   clarifyingQuestion?: string
   done?: boolean
+  informe?: ChatRootsyPlannerInforme
 }
 
 export type ChatRootsyValidatedPlan = {
@@ -85,6 +88,7 @@ export type ChatRootsyValidatedPlan = {
   clarifyingQuestion?: string
   discarded: number
   done?: boolean
+  informe?: ChatRootsyPlannerInforme
 }
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/
@@ -197,7 +201,11 @@ export function parseChatRootsyPlannerPlan(
       }
     }
     if (parsed.status === "done") {
-      return { queries: [], done: true }
+      return {
+        queries: [],
+        done: true,
+        informe: readChatRootsyPlannerInforme(parsed),
+      }
     }
     const rows = Array.isArray(parsed.queries)
       ? parsed.queries
@@ -454,7 +462,13 @@ export function validateChatRootsyPlannerPlan(
           : undefined)
       : undefined
 
-  return { proposals, clarifyingQuestion, discarded, done: plan.done }
+  return {
+    proposals,
+    clarifyingQuestion,
+    discarded,
+    done: plan.done,
+    informe: plan.informe,
+  }
 }
 
 export function plannerIndexSupportsDateRange(

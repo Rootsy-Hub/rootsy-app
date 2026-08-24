@@ -277,6 +277,21 @@ export function verbIsGranted(
   return Boolean(verb.approvalKey && selectedKeys.includes(verb.approvalKey))
 }
 
+export function countHrGrantedVerbs(
+  sections: readonly HrPermissionSection[],
+  selectedKeys: readonly string[],
+): { granted: number; total: number } {
+  let granted = 0
+  let total = 0
+  for (const section of sections) {
+    total += section.verbs.length
+    for (const verb of section.verbs) {
+      if (verbIsGranted(verb, selectedKeys)) granted += 1
+    }
+  }
+  return { granted, total }
+}
+
 export function verbIsApprovalOnly(
   verb: HrPermissionVerb,
   selectedKeys: readonly string[],

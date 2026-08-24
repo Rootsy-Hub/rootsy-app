@@ -3,8 +3,10 @@ import { describe, it } from "node:test"
 import {
   buildChatRootsyPlannerStoredPayload,
   canContinueChatRootsyPlanner,
+  completeChatRootsyPlannerInforme,
   pickChatRootsyPlannerSelectedResponse,
   readChatRootsyPlannerConfirm,
+  readChatRootsyPlannerInforme,
   sanitizeChatRootsyPlannerAction,
 } from "@/lib/chat/chatRootsyPlannerStep"
 
@@ -127,5 +129,34 @@ describe("pasos del planificador Rootsy", () => {
     assert.equal(canContinueChatRootsyPlanner(1), true)
     assert.equal(canContinueChatRootsyPlanner(3), true)
     assert.equal(canContinueChatRootsyPlanner(4), false)
+  })
+
+  it("lee el informe de cierre y completa acciones desde resultados", () => {
+    const parsed = readChatRootsyPlannerInforme({
+      status: "done",
+      respuesta:
+        "El rol Mozos no tiene permiso para eliminar artículos.",
+      acciones: ["Listé los roles"],
+    })
+    assert.equal(
+      parsed?.respuesta,
+      "El rol Mozos no tiene permiso para eliminar artículos.",
+    )
+    assert.deepEqual(parsed?.acciones, ["Listé los roles"])
+
+    const completed = completeChatRootsyPlannerInforme(
+      { respuesta: "El rol Mozos puede vender.", acciones: [] },
+      [
+        {
+          method: "GET",
+          path: "/v1/pops/:popId/roles",
+          action: "Listar los roles del negocio",
+          confirm: "confirm",
+          response: {},
+        },
+      ],
+    )
+    assert.equal(completed?.respuesta, "El rol Mozos puede vender.")
+    assert.deepEqual(completed?.acciones, ["Listar los roles del negocio"])
   })
 })

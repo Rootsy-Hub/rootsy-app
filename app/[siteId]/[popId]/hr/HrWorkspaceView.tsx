@@ -8,7 +8,10 @@ import type {
   PopRoleRow,
   UpsertEmployeeInput,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
-import { buildHrPermissionSectionsForPop } from "@/lib/hrPermissionCatalog"
+import {
+  buildHrPermissionSectionsForPop,
+  countHrGrantedVerbs,
+} from "@/lib/hrPermissionCatalog"
 import {
   clockEmployeeIn,
   clockEmployeeOut,
@@ -34,12 +37,11 @@ import { HrPageSkeleton } from "@/app/[siteId]/[popId]/hr/HrPageSkeleton"
 import { HrPersonCard } from "@/app/[siteId]/[popId]/hr/HrPersonCard"
 import { HrPersonDialog } from "@/app/[siteId]/[popId]/hr/HrPersonDialog"
 import { HrRolePermissionsDialog } from "@/app/[siteId]/[popId]/hr/HrRolePermissionsDialog"
+import { HrRoleSnapshotCard } from "@/app/[siteId]/[popId]/hr/HrRoleSnapshotCard"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
   dataWorkspaceBlocksPageMainClass,
-  dataWorkspaceEntityCardEyebrowClass,
-  dataWorkspaceEntityCardLosetaSurfaceClass,
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
@@ -49,25 +51,14 @@ import {
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { RootsBanner } from "@/components/rootsy-banner"
-import {
-  RootsDangerSubtleButton,
-  RootsDefaultButton,
-} from "@/components/rootsy-button"
+import { RootsDefaultButton } from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
-import { cn } from "@/lib/utils"
 import { KeyRound, Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 type PeopleFilter = "negocio" | "local" | "acceso" | "invitadas" | "baja"
 
@@ -121,66 +112,6 @@ function personForCard(
     firstName: first || person.firstName,
     lastName: last || person.lastName,
   }
-}
-
-function HrLoseta({
-  children,
-  className,
-}: {
-  children: ReactNode
-  className?: string
-}) {
-  return (
-    <article
-      className={cn(
-        dataWorkspaceEntityCardLosetaSurfaceClass,
-        "h-auto",
-        className,
-      )}
-    >
-      {children}
-    </article>
-  )
-}
-
-function HrRow({
-  children,
-  className,
-}: {
-  children: ReactNode
-  className?: string
-}) {
-  return (
-    <div
-      className={cn(
-        "flex items-center justify-between gap-3 px-4 py-3",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  )
-}
-
-function HrPersonName({
-  title,
-  meta,
-}: {
-  title: string
-  meta?: string
-}) {
-  return (
-    <div className="min-w-0">
-      <p className="truncate font-canopy text-sm font-semibold text-rootsy-bruma-900">
-        {title}
-      </p>
-      {meta ? (
-        <p className={cn(dataWorkspaceEntityCardEyebrowClass, "mt-0.5 truncate")}>
-          {meta}
-        </p>
-      ) : null}
-    </div>
-  )
 }
 
 export function HrWorkspaceView() {
@@ -265,6 +196,9 @@ export function HrWorkspaceView() {
   const [permModalSaving, setPermModalSaving] = useState(false)
   const [permModalError, setPermModalError] = useState<string | null>(null)
   const [permModalCanApprove, setPermModalCanApprove] = useState(false)
+  const [roleGrantKeys, setRoleGrantKeys] = useState<Record<string, string[]>>(
+    {},
+  )
 
   const loadDashboard = useCallback(async () => {
     if (!popId || !siteId) return
@@ -305,6 +239,33 @@ export function HrWorkspaceView() {
       cancelled = true
     }
   }, [popId, siteId, loadDashboard])
+
+  useEffect(() => {
+    if (!popId) return
+    const editable = roles.filter((role) => role.popId)
+    if (editable.length === 0) {
+      setRoleGrantKeys({})
+      return
+    }
+    let cancelled = false
+    const catalogKeySet = new Set(hrCatalogRows.map((row) => row.key))
+    void (async () => {
+      const entries = await Promise.all(
+        editable.map(async (role) => {
+          const res = await getRolePermissionsEditorData(popId, role.id)
+          if (!res.success) return [role.id, [] as string[]] as const
+          return [
+            role.id,
+            res.selectedGrantKeys.filter((key) => catalogKeySet.has(key)),
+          ] as const
+        }),
+      )
+      if (!cancelled) setRoleGrantKeys(Object.fromEntries(entries))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [popId, roles, hrCatalogRows])
 
   const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
@@ -362,12 +323,24 @@ export function HrWorkspaceView() {
   )
 
   const membersByRoleId = useMemo(() => {
-    const counts = new Map<string, number>()
+    const map = new Map<string, MemberRow[]>()
     for (const member of activeMembers) {
-      counts.set(member.roleId, (counts.get(member.roleId) ?? 0) + 1)
+      const list = map.get(member.roleId) ?? []
+      list.push(member)
+      map.set(member.roleId, list)
     }
-    return counts
+    for (const list of map.values()) {
+      list.sort((a, b) =>
+        memberDisplayName(a).localeCompare(memberDisplayName(b), "es"),
+      )
+    }
+    return map
   }, [activeMembers])
+
+  const hrPermissionTotal = useMemo(
+    () => countHrGrantedVerbs(hrSections, []).total,
+    [hrSections],
+  )
 
   const confirmCopy = useMemo(() => {
     if (!confirmAction) {
@@ -542,7 +515,17 @@ export function HrWorkspaceView() {
         return
       }
       setBanner({ type: "ok", text: "Rol creado correctamente." })
-      closePermModal()
+      setRoleGrantKeys((prev) => ({
+        ...prev,
+        [res.roleId]: permModalSelected,
+      }))
+      setPermModalMode("edit")
+      setPermModalRole({
+        id: res.roleId,
+        displayName: permModalDisplayName.trim(),
+        name: "",
+      })
+      setPermModalDisplayName(permModalDisplayName.trim())
       await loadDashboard()
       return
     }
@@ -564,7 +547,10 @@ export function HrWorkspaceView() {
       return
     }
     setBanner({ type: "ok", text: "Permisos del rol actualizados." })
-    closePermModal()
+    setRoleGrantKeys((prev) => ({
+      ...prev,
+      [permModalRole.id]: permModalSelected,
+    }))
     await Promise.all([loadDashboard(), refresh()])
   }
 
@@ -781,6 +767,7 @@ export function HrWorkspaceView() {
       }
       setConfirmAction(null)
       setBanner({ type: "ok", text: "Rol eliminado." })
+      if (permModalRole?.id === confirmAction.role.id) closePermModal()
       await loadDashboard()
       return
     }
@@ -1055,53 +1042,100 @@ export function HrWorkspaceView() {
                     No hay roles cargados.
                   </p>
                 ) : (
-                  <HrLoseta>
-                    <ul className="divide-y divide-rootsy-bruma-200">
-                      {roles.map((role) => (
-                        <li key={role.id}>
-                          <HrRow>
-                            <HrPersonName
-                              title={role.displayName}
-                              meta={
-                                role.popId
-                                  ? `${membersByRoleId.get(role.id) ?? 0} con acceso`
-                                  : "Plantilla de Rootsy"
-                              }
-                            />
-                            {canManageInvites && role.popId ? (
-                              <div className="flex shrink-0 items-center gap-2">
-                                <RootsDefaultButton
-                                  type="button"
-                                  size="compact"
-                                  disabled={permModalLoading || permModalSaving}
-                                  onClick={() => void handleOpenEditRole(role)}
-                                >
-                                  Permisos
-                                </RootsDefaultButton>
-                                <RootsDangerSubtleButton
-                                  type="button"
-                                  size="compact"
-                                  disabled={
-                                    Boolean(actionKey?.startsWith("del-role-")) ||
-                                    permModalLoading ||
-                                    permModalSaving
-                                  }
-                                  onClick={() =>
+                  <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]">
+                    <div className="min-w-0 lg:sticky lg:top-4 lg:self-start">
+                      {permModalOpen ? (
+                        <HrRolePermissionsDialog
+                          key={
+                            permModalMode === "create"
+                              ? "create"
+                              : (permModalRole?.id ?? "edit")
+                          }
+                          surface="panel"
+                          open={permModalOpen}
+                          mode={permModalMode}
+                          displayName={permModalDisplayName}
+                          permissions={permModalList}
+                          sections={hrSections}
+                          selectedKeys={permModalSelected}
+                          loading={permModalLoading}
+                          saving={permModalSaving}
+                          error={permModalError}
+                          onOpenChange={(open) => {
+                            if (!open && !permModalSaving) closePermModal()
+                          }}
+                          onDisplayNameChange={setPermModalDisplayName}
+                          onApplyGrantKeys={applyPermGrantKeys}
+                          onSave={() => void handleSaveRolePermissions()}
+                          canApprove={permModalCanApprove}
+                          onCanApproveChange={setPermModalCanApprove}
+                        />
+                      ) : (
+                        <div
+                          className={`${dataWorkspaceBlocksEmptyStateClass} space-y-3`}
+                        >
+                          <p>
+                            {canManageInvites
+                              ? "Elegí un rol para editar sus permisos, o creá uno nuevo."
+                              : "Los permisos de cada rol los edita quien administra el equipo."}
+                          </p>
+                          {canManageInvites ? (
+                            <RootsDefaultButton
+                              type="button"
+                              size="compact"
+                              disabled={permModalLoading || permModalSaving}
+                              onClick={handleOpenCreateRole}
+                            >
+                              Nuevo rol
+                            </RootsDefaultButton>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 space-y-3">
+                      {roles.map((role) => {
+                        const grantKeys = roleGrantKeys[role.id]
+                        const granted =
+                          role.popId && grantKeys
+                            ? countHrGrantedVerbs(hrSections, grantKeys).granted
+                            : null
+                        return (
+                          <HrRoleSnapshotCard
+                            key={role.id}
+                            role={role}
+                            members={membersByRoleId.get(role.id) ?? []}
+                            permissionGranted={granted}
+                            permissionTotal={hrPermissionTotal}
+                            selected={
+                              permModalOpen &&
+                              permModalMode === "edit" &&
+                              permModalRole?.id === role.id
+                            }
+                            currentUserId={user?.id}
+                            canManage={canManageInvites}
+                            editBusy={permModalLoading || permModalSaving}
+                            deleteBusy={Boolean(
+                              actionKey?.startsWith("del-role-"),
+                            )}
+                            onEdit={
+                              canManageInvites && role.popId
+                                ? () => void handleOpenEditRole(role)
+                                : undefined
+                            }
+                            onDelete={
+                              canManageInvites && role.popId
+                                ? () =>
                                     setConfirmAction({
                                       kind: "delete-role",
                                       role,
                                     })
-                                  }
-                                >
-                                  Eliminar
-                                </RootsDangerSubtleButton>
-                              </div>
-                            ) : null}
-                          </HrRow>
-                        </li>
-                      ))}
-                    </ul>
-                  </HrLoseta>
+                                : undefined
+                            }
+                          />
+                        )
+                      })}
+                    </div>
+                  </div>
                 )}
               </DataWorkspaceBlocksSection>
             </>
@@ -1165,26 +1199,6 @@ export function HrWorkspaceView() {
           setInviteResult(null)
           handleOpenCreateRole()
         }}
-      />
-
-      <HrRolePermissionsDialog
-        open={permModalOpen}
-        mode={permModalMode}
-        displayName={permModalDisplayName}
-        permissions={permModalList}
-        sections={hrSections}
-        selectedKeys={permModalSelected}
-        loading={permModalLoading}
-        saving={permModalSaving}
-        error={permModalError}
-        onOpenChange={(open) => {
-          if (!open && !permModalSaving) closePermModal()
-        }}
-        onDisplayNameChange={setPermModalDisplayName}
-        onApplyGrantKeys={applyPermGrantKeys}
-        onSave={() => void handleSaveRolePermissions()}
-        canApprove={permModalCanApprove}
-        onCanApproveChange={setPermModalCanApprove}
       />
 
       <RootsConfirmDialog
