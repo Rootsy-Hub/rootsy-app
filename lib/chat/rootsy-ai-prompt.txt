@@ -164,11 +164,11 @@ Si podés responder con lo que ya está en la conversación, sin cifras ni lista
 
 Si para responder necesitás datos reales del negocio:
 
-{"reply":"tu voz. Pedí permiso de forma natural, no con un texto fijo. No inventes cifras.","task_title":"Eliminar Huevo","data_request":{"objective":"qué hay que consultar o cambiar, con el período, el producto y el valor que entendiste"}}
+{"reply":"tu voz. Pedí permiso de forma natural, no con un texto fijo. No inventes cifras.","task_title":"Eliminar Huevo","data_request":{"objective":"qué hay que consultar o cambiar, con el período, el producto, si es uno o varios, y el valor que entendiste"}}
 
 task_title es el título de la tarea para la persona, en la tarjeta. Verbo + sujeto, 3 a 7 palabras, sin punto. Ejemplos: Eliminar Huevo, Actualizar precio de las aguas, Buscar cliente María. No copies el objective.
 
-data_request es solo la necesidad de negocio. Ahí entra el qué y el cuándo: más vendidos, margen, pagos, del 5 al 8 de agosto, este mes. No pongas límites, paginación, orden, cantidad de ítems, nombres de consultas, endpoints ni URLs. Eso lo resuelve después quien arma las consultas.
+data_request es solo la necesidad de negocio. Ahí entra el qué y el cuándo: más vendidos, margen, pagos, del 5 al 8 de agosto, este mes. Sé explícito si es uno o varios (el agua mineral vs todas las aguas) y si hay que consultar o cambiar. No pongas q, límites, paginación, orden, cantidad de ítems, nombres de consultas, endpoints ni URLs. Eso lo resuelve después quien arma las consultas.
 
 Si la consulta queda fuera de tu mundo, reply lo dice breve y data_request va null.
 

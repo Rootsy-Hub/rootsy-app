@@ -11,19 +11,24 @@ import type {
   ChatRootsyToolResult,
 } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import {
-  canContinueChatRootsyPlanner,
   chatRootsyOfferKey,
   compactChatRootsyPlannerChoiceResponse,
   compactChatRootsyPlannerResponse,
   completeChatRootsyPlannerInforme,
-  isChatRootsyPlannerPickConfirm,
-  resolveChatRootsyPlannerPickConfirm,
   CHAT_ROOTSY_PLANNER_MAX_STEPS,
+  preferChatRootsyPlannerAction,
   type ChatRootsyPlannerChoice,
-  type ChatRootsyPlannerInforme,
   type ChatRootsyPlannerResultado,
   type ChatRootsyPlannerRun,
 } from "@/lib/chat/chatRootsyPlannerStep"
+import {
+  advanceChatRootsyPlannerRun,
+  extractChatRootsyPlannerSlot,
+  queriesToPlannerProposalsShape,
+  selectChatRootsyPlannerSlotRows,
+  type ChatRootsyPlanOferta,
+  type ChatRootsyPlannerSlot,
+} from "@/lib/chat/chatRootsyPlannerPlan"
 import {
   buildChatRootsyDevTrace,
   chatRootsyDevJson,
@@ -67,6 +72,7 @@ import {
 import {
   CHAT_ROOTSY_PLANNER_MAX_CALLS,
   orderChatRootsyProposals,
+  validateChatRootsyPlannerCall,
 } from "@/lib/chat/tools/chatRootsyToolPlanner"
 import { planChatRootsyTools } from "@/lib/chat/tools/chatRootsyToolPlannerRequest"
 import {
@@ -217,6 +223,7 @@ export type SendRootsyChatResult =
       success: true
       reply: string
       followUpReply?: string
+      needsPlanner?: boolean
       toolOffer?: ChatRootsyToolOffer
       toolOffers?: ChatRootsyToolOffer[]
       toolResults?: ChatRootsyToolResult[]
@@ -343,80 +350,25 @@ export async function sendRootsyChatMessage(input: {
       ? (peeked as { data_request?: unknown }).data_request
       : undefined
 
-  let toolOffers: ChatRootsyToolOffer[] = []
-  let plannerRaw: string | null = null
-  let plannerSent: string | null = null
-  let plannerSource = "no-llamado"
-  let plannerAiError: string | undefined
-  let plannerNote =
-    "No se llamó: data_request quedó null, así que el planificador no corre."
-  let planDone = false
-  let planInforme: ChatRootsyPlannerInforme | undefined
-  if (shouldCallChatRootsyPlanner(firstTurn)) {
-    const snapshot = await loadPopPermissionsSnapshot(popId)
-    const plan = await planChatRootsyTools({
-      body: lastUser.body,
-      dataRequest: firstTurn.data_request,
-      context: input.toolContext,
-      permissionKeys: snapshot.keys,
-      paso: 1,
-      accionesSesion: appliedActions,
-    })
-    toolOffers = buildChatRootsyToolOffers(plan.proposals)
-    plannerRaw = plan.raw
-    plannerSent = plan.sent
-    plannerSource = plan.storedError
-      ? `${plan.source} · ${plan.storedError}`
-      : plan.source
-    plannerNote = plan.clarifyingQuestion
-      ? `Aclaración: ${plan.clarifyingQuestion}. Descartadas: ${plan.discarded}. Ofertas: ${toolOffers.length}.`
-      : `Descartadas: ${plan.discarded}. Ofertas armadas: ${toolOffers.length}.`
-    planDone = Boolean(plan.done)
-    planInforme = plan.informe
-    if (plan.storedError && !plan.raw) {
-      plannerAiError = `Planificador: ${plan.storedError}`
-    }
-    if (plan.clarifyingQuestion) {
-      console.info("[rootsy-planner]", {
-        clarifying: true,
-        discarded: plan.discarded,
-      })
-    }
-  } else if (rawDataRequest != null) {
-    plannerNote =
-      "Rootsy mandó data_request, pero no pasó la validación. El planificador no corre."
-  }
-
-  if (toolOffers.length) {
-    console.info("[rootsy-tool]", {
-      tools: toolOffers.map((row) => row.tool),
-      outcome: "offered",
-    })
-  }
-
+  const needsPlanner = shouldCallChatRootsyPlanner(firstTurn)
   const plannerRun: ChatRootsyPlannerRun | undefined = firstTurn.data_request
     ? {
         message: lastUser.body,
         dataRequest: firstTurn.data_request,
         ...(firstTurn.task_title ? { taskTitle: firstTurn.task_title } : {}),
         paso: 1,
+        slots: [],
         resultados: [],
         accionesSesion: appliedActions,
-        informe: planInforme,
       }
     : undefined
 
-  const closeBrief =
-    planDone && !toolOffers.length && planInforme
-      ? buildChatRootsyCloseBrief({
-          pedido: lastUser.body,
-          proposals: [],
-          informe: planInforme,
-        })
-      : undefined
-
-  const openingTrace = buildChatRootsyDevTrace(
-    [
+  return {
+    success: true,
+    reply: firstTurn.reply,
+    needsPlanner,
+    plannerRun,
+    devTrace: buildChatRootsyDevTrace([
       chatRootsyDevStep({
         lane: "rootsy",
         title: "Apertura · contexto",
@@ -438,8 +390,8 @@ export async function sendRootsyChatMessage(input: {
       chatRootsyDevStep({
         lane: "rootsy",
         title: "Apertura · parseado",
-        note: firstTurn.data_request
-          ? "Hay data_request válido → sigue el Planificador."
+        note: needsPlanner
+          ? "Hay data_request válido → el globo se muestra y sigue el Planificador."
           : rawDataRequest != null
             ? "data_request vino y se descartó en la validación."
             : "data_request es null. El Planificador no corre.",
@@ -449,28 +401,110 @@ export async function sendRootsyChatMessage(input: {
           data_request_crudo: rawDataRequest ?? null,
         },
       }),
-      ...plannerRoundSteps({
-        paso: 1,
-        sent: plannerSent,
-        raw: plannerRaw,
-        source: plannerSource,
-        note: plannerNote,
-        offers: toolOffers,
-        skipped: !shouldCallChatRootsyPlanner(firstTurn),
-      }),
-    ],
+      ...(!needsPlanner
+        ? plannerRoundSteps({
+            paso: 1,
+            skipped: true,
+            note:
+              rawDataRequest != null
+                ? "Rootsy mandó data_request, pero no pasó la validación. El planificador no corre."
+                : "No se llamó: data_request quedó null, así que el planificador no corre.",
+          })
+        : []),
+    ]),
+  }
+}
+
+export async function startRootsyPlannerRun(input: {
+  popId: string
+  siteId: string
+  history: ChatRootsyHistoryTurn[]
+  toolContext?: ChatRootsyToolMatchContext
+  plannerRun: ChatRootsyPlannerRun
+}): Promise<SendRootsyChatResult> {
+  const popId = input.popId.trim()
+  const siteId = input.siteId.trim()
+  if (!popId || !siteId) {
+    return { success: false, error: "Parámetros inválidos" }
+  }
+  if (!input.plannerRun.dataRequest) {
+    return { success: false, error: "No hay pedido para el Planificador." }
+  }
+
+  const access = await validatePopAccess(popId)
+  if (!access.hasAccess || !access.isActive) {
+    return { success: false, error: access.error || "Sin acceso" }
+  }
+
+  const popAccess = await getPopAccessCache(popId)
+  if (!popAccess?.canEnter) {
+    return { success: false, error: "No se pudo cargar el acceso al negocio" }
+  }
+  if (!siteIdsMatchClientRoute(siteId, popAccess.pop.siteId)) {
+    return { success: false, error: "Sitio inválido para este negocio" }
+  }
+
+  const snapshot = await loadPopPermissionsSnapshot(popId)
+  const plan = await planChatRootsyTools({
+    dataRequest: input.plannerRun.dataRequest,
+    context: input.toolContext,
+    permissionKeys: snapshot.keys,
+  })
+  const toolOffers = buildChatRootsyToolOffers(plan.proposals)
+  const plannerSource = plan.storedError
+    ? `${plan.source} · ${plan.storedError}`
+    : plan.source
+  const plannerNote = plan.clarifyingQuestion
+    ? `Aclaración: ${plan.clarifyingQuestion}. Descartadas: ${plan.discarded}. Ofertas: ${toolOffers.length}.`
+    : `Descartadas: ${plan.discarded}. Ofertas armadas: ${toolOffers.length}.`
+  const plannerAiError =
+    plan.storedError && !plan.raw
+      ? `Planificador: ${plan.storedError}`
+      : undefined
+  if (plan.clarifyingQuestion) {
+    console.info("[rootsy-planner]", {
+      clarifying: true,
+      discarded: plan.discarded,
+    })
+  }
+  if (toolOffers.length) {
+    console.info("[rootsy-tool]", {
+      tools: toolOffers.map((row) => row.tool),
+      outcome: "offered",
+    })
+  }
+
+  const plannerRun: ChatRootsyPlannerRun = {
+    ...input.plannerRun,
+    paso: 1,
+    plan: plan.steps,
+    informe: plan.informe,
+  }
+  const closeBrief =
+    Boolean(plan.done) && !toolOffers.length && plan.informe
+      ? buildChatRootsyCloseBrief({
+          pedido: input.plannerRun.message,
+          proposals: [],
+          informe: plan.informe,
+        })
+      : undefined
+  const plannerTrace = buildChatRootsyDevTrace(
+    plannerRoundSteps({
+      paso: 1,
+      sent: plan.sent,
+      raw: plan.raw,
+      source: plannerSource,
+      note: plannerNote,
+      offers: toolOffers,
+    }),
     { error: plannerAiError },
   )
 
-  if (
-    plannerRun &&
-    toolOffers.length &&
-    chatRootsyOffersAutoExecute(toolOffers)
-  ) {
+  if (toolOffers.length && chatRootsyOffersAutoExecute(toolOffers)) {
     const executed = await runRootsyChatTools({
       popId,
       siteId,
-      history,
+      history: input.history,
       plannerRun,
       queries: queriesFromOffers(toolOffers),
       recent: input.toolContext?.recent,
@@ -478,7 +512,7 @@ export async function sendRootsyChatMessage(input: {
     if (executed.success) {
       return {
         success: true,
-        reply: firstTurn.reply,
+        reply: "",
         followUpReply: executed.reply.trim() || undefined,
         toolResults: executed.toolResults,
         toolOffers: executed.toolOffers,
@@ -487,7 +521,7 @@ export async function sendRootsyChatMessage(input: {
         closeBrief: executed.closeBrief ?? closeBrief,
         executionError: executed.executionError,
         devTrace:
-          mergeChatRootsyDevTraces([openingTrace, executed.devTrace]) ??
+          mergeChatRootsyDevTraces([plannerTrace, executed.devTrace]) ??
           undefined,
       }
     }
@@ -495,12 +529,12 @@ export async function sendRootsyChatMessage(input: {
 
   return {
     success: true,
-    reply: firstTurn.reply,
+    reply: "",
     toolOffer: toolOffers[0],
     toolOffers: toolOffers.length ? toolOffers : undefined,
     plannerRun,
     closeBrief,
-    devTrace: openingTrace,
+    devTrace: plannerTrace,
   }
 }
 
@@ -551,6 +585,82 @@ type RootsyToolQuery = {
   subject?: string
   confirm?: ChatRootsyToolOffer["confirm"]
   offerKey?: string
+}
+
+function offersFromPlanOfertas(
+  queries: ChatRootsyPlanOferta[],
+  resultados?: ChatRootsyPlannerResultado[],
+  confirm?: ChatRootsyToolOffer["confirm"],
+  stepAction?: string,
+): ChatRootsyToolOffer[] {
+  const proposals: ChatRootsyToolProposal[] = []
+  for (const query of queriesToPlannerProposalsShape(queries, confirm)) {
+    const proposal = validateChatRootsyPlannerCall({
+      path: query.path,
+      method: query.method,
+      filters: query.filters,
+      body: query.body,
+    })
+    if (!proposal) continue
+    const next = {
+      ...proposal,
+      action: preferChatRootsyPlannerAction(
+        query.action,
+        stepAction,
+        query.method,
+      ),
+      confirm: query.confirm,
+    }
+    proposals.push({
+      ...next,
+      offerKey: chatRootsyOfferKey(next),
+    })
+  }
+  return buildChatRootsyToolOffers(proposals, resultados)
+}
+
+function applyPlanAdvance(input: {
+  popId?: string
+  run: ChatRootsyPlannerRun
+  afterPick?: boolean
+}): {
+  toolOffers?: ChatRootsyToolOffer[]
+  plannerRun: ChatRootsyPlannerRun
+  plannerChoices?: ChatRootsyPlannerChoice[]
+  note: string
+} {
+  const advanced = advanceChatRootsyPlannerRun({
+    run: input.run,
+    afterPick: input.afterPick,
+  })
+  if (advanced.kind === "pick") {
+    return {
+      plannerRun: advanced.run,
+      plannerChoices: [advanced.choice],
+      note:
+        advanced.choice.confirm === "confirm_many"
+          ? "Esperando que elijan uno, varios o todos (confirm_many)."
+          : "Esperando que elijan un resultado (confirm_one).",
+    }
+  }
+  if (advanced.kind === "offers") {
+    const step = advanced.run.plan?.find((row) => row.paso === advanced.run.paso)
+    const toolOffers = offersFromPlanOfertas(
+      advanced.queries,
+      advanced.run.resultados,
+      step?.confirm,
+      step?.action,
+    )
+    return {
+      toolOffers,
+      plannerRun: advanced.run,
+      note: `Paso ${advanced.run.paso}. Ofertas: ${toolOffers.length}.`,
+    }
+  }
+  return {
+    plannerRun: advanced.run,
+    note: "Plan completo.",
+  }
 }
 
 function queriesFromOffers(offers: ChatRootsyToolOffer[]): RootsyToolQuery[] {
@@ -961,9 +1071,12 @@ async function continuePlannerAfterResults(input: {
     input.toolResults.map((row) => [row.offerKey ?? row.tool, row]),
   )
   const resultados: ChatRootsyPlannerResultado[] = [...run.resultados]
-  const plannerChoices: ChatRootsyPlannerChoice[] = []
+  const slots: ChatRootsyPlannerSlot[] = [...(run.slots ?? [])]
+  const currentStep =
+    run.plan?.find((row) => row.paso === run.paso) ??
+    run.plan?.[Math.max(0, run.paso - 1)]
 
-  for (const proposal of input.proposals) {
+  for (const [index, proposal] of input.proposals.entries()) {
     const result =
       byKey.get(proposal.offerKey ?? chatRootsyOfferKey(proposal)) ??
       input.toolResults.find((row) => row.tool === proposal.tool)
@@ -972,46 +1085,6 @@ async function continuePlannerAfterResults(input: {
     const path = proposal.path ?? ""
     const action = proposal.action ?? result.title ?? "Continuar con esta acción"
     const confirm = proposal.confirm ?? "confirm"
-    if (isChatRootsyPlannerPickConfirm(confirm)) {
-      const pick = resolveChatRootsyPlannerPickConfirm({
-        confirm,
-        message: run.message,
-        objective: run.dataRequest.objective,
-        itemCount: result.items.length,
-      })
-      if (!isChatRootsyPlannerPickConfirm(pick)) {
-        resultados.push({
-          method,
-          path,
-          action,
-          confirm: pick,
-          response: compactChatRootsyPlannerResponse(
-            result.payload ?? result.items,
-          ),
-        })
-        continue
-      }
-      if (!result.items.length) {
-        resultados.push({
-          method,
-          path,
-          action,
-          confirm: pick,
-          response: compactChatRootsyPlannerResponse(result.payload ?? []),
-        })
-        continue
-      }
-      plannerChoices.push({
-        tool: proposal.tool,
-        method,
-        path,
-        action,
-        items: result.items,
-        payload: result.payload,
-        confirm: pick,
-      })
-      continue
-    }
     resultados.push({
       method,
       path,
@@ -1019,96 +1092,32 @@ async function continuePlannerAfterResults(input: {
       confirm,
       response: compactChatRootsyPlannerResponse(result.payload ?? result.items),
     })
-  }
-
-  if (plannerChoices.length) {
-    return {
-      plannerRun: { ...run, resultados },
-      plannerChoices,
-      note: plannerChoices.some((row) => row.confirm === "confirm_many")
-        ? "Esperando que elijan uno, varios o todos (confirm_many)."
-        : "Esperando que elijan un resultado (confirm_one).",
+    if (currentStep) {
+      slots.push(
+        extractChatRootsyPlannerSlot({
+          paso: currentStep.paso,
+          oferta: index,
+          tool: proposal.tool,
+          method,
+          path,
+          action,
+          demandas: currentStep.demandas,
+          items: result.items,
+          payload: result.payload,
+        }),
+      )
     }
   }
 
-  return planNextPlannerStep({
-    popId: input.popId,
-    run,
-    resultados,
-    toolContext: input.toolContext,
-  })
-}
-
-async function planNextPlannerStep(input: {
-  popId: string
-  run: ChatRootsyPlannerRun
-  resultados: ChatRootsyPlannerResultado[]
-  toolContext?: ChatRootsyToolMatchContext
-}): Promise<{
-  toolOffers?: ChatRootsyToolOffer[]
-  plannerRun?: ChatRootsyPlannerRun
-  plannerSent?: string | null
-  plannerRaw?: string | null
-  plannerSource?: string
-  note: string
-}> {
-  const nextPaso = input.run.paso + 1
-  if (!canContinueChatRootsyPlanner(input.run.paso)) {
-    return {
-      plannerRun: { ...input.run, resultados: input.resultados },
-      note: "Se llegó al máximo de 4 pasos.",
-    }
+  if (run.plan?.length) {
+    return applyPlanAdvance({
+      run: { ...run, resultados, slots },
+    })
   }
 
-  const snapshot = await loadPopPermissionsSnapshot(input.popId)
-  const plan = await planChatRootsyTools({
-    body: input.run.message,
-    dataRequest: input.run.dataRequest,
-    context: input.toolContext,
-    permissionKeys: snapshot.keys,
-    paso: nextPaso,
-    resultados: input.resultados,
-    accionesSesion: input.run.accionesSesion,
-  })
-  const toolOffers = buildChatRootsyToolOffers(
-    plan.proposals,
-    input.resultados,
-  )
-  const source = plan.storedError
-    ? `${plan.source} · ${plan.storedError}`
-    : plan.source
-  if (plan.done || !toolOffers.length) {
-    const informe = plan.done
-      ? completeChatRootsyPlannerInforme(plan.informe, input.resultados)
-      : undefined
-    return {
-      plannerRun: {
-        ...input.run,
-        paso: nextPaso,
-        resultados: input.resultados,
-        informe,
-      },
-      plannerSent: plan.sent,
-      plannerRaw: plan.raw,
-      plannerSource: source,
-      note: plan.done
-        ? "Planificador: done."
-        : plan.clarifyingQuestion
-          ? `Aclaración: ${plan.clarifyingQuestion}`
-          : "Sin más queries.",
-    }
-  }
   return {
-    toolOffers,
-    plannerRun: {
-      ...input.run,
-      paso: nextPaso,
-      resultados: input.resultados,
-    },
-    plannerSent: plan.sent,
-    plannerRaw: plan.raw,
-    plannerSource: source,
-    note: `Paso ${nextPaso}. Ofertas: ${toolOffers.length}.`,
+    plannerRun: { ...run, resultados, slots },
+    note: "Plan completo.",
   }
 }
 
@@ -1153,12 +1162,18 @@ export async function continueRootsyPlannerRun(input: {
       response: compactChatRootsyPlannerChoiceResponse(input.choice, items),
     },
   ]
-
-  const next = await planNextPlannerStep({
-    popId,
-    run: input.plannerRun,
+  const slots = (input.plannerRun.slots ?? []).map((slot) =>
+    slot.tool === input.choice.tool ||
+    (slot.method === input.choice.method && slot.path === input.choice.path)
+      ? selectChatRootsyPlannerSlotRows(slot, items)
+      : slot,
+  )
+  const run: ChatRootsyPlannerRun = {
+    ...input.plannerRun,
     resultados,
-  })
+    slots,
+  }
+  const next = applyPlanAdvance({ run, afterPick: true })
 
   if (
     next.toolOffers?.length &&
@@ -1231,9 +1246,9 @@ export async function continueRootsyPlannerRun(input: {
       }),
       ...plannerRoundSteps({
         paso: next.plannerRun?.paso ?? input.plannerRun.paso + 1,
-        sent: next.plannerSent,
-        raw: next.plannerRaw,
-        source: next.plannerSource,
+        sent: null,
+        raw: null,
+        source: "plan-local",
         note: next.note,
         offers: next.toolOffers ?? [],
       }),

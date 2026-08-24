@@ -108,20 +108,18 @@ describe("data_request de Rootsy", () => {
     assert.ok(request)
     const payload = JSON.parse(
       buildChatRootsyPlannerUserPayload({
-        body: CHAT_ROOTSY_PLANNER_AUGUST_MARGIN_QUERY,
         today: "2026-08-23",
         dataRequest: request!,
         index: buildChatRootsyPlannerIndex(eligibleChatRootsyPlannerTools()),
       }),
     ) as {
-      message: string
       catalog: Array<{ id: string; purpose: string }>
-      data_request: { objective: string; time?: { from?: string } }
+      data_request: { objective: string }
+      message?: string
     }
 
-    assert.equal(payload.message, CHAT_ROOTSY_PLANNER_AUGUST_MARGIN_QUERY)
+    assert.equal("message" in payload, false)
     assert.equal(payload.data_request.objective, "artículos con menos margen más vendidos")
-    assert.equal(payload.data_request.time?.from, "2026-08-05")
     assert.ok(payload.catalog.every((row) => row.id && row.purpose))
     assert.equal(JSON.stringify(payload).includes("parque"), false)
     assert.equal(JSON.stringify(payload).includes("/v1/"), false)

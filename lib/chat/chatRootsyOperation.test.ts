@@ -52,6 +52,28 @@ describe("operación en vivo del chat Rootsy", () => {
     )
   })
 
+  it("el globo de Rootsy no abre la tarjeta hasta que hay un plan", () => {
+    const user = row({
+      id: "u1",
+      mine: true,
+      body: "Aumentá 50% el precio de las aguas",
+    })
+    const opening = row({
+      id: "a1",
+      mine: false,
+      body: "Dale, lo dejo listo.",
+    })
+    assert.equal(
+      deriveChatRootsyOperations([user, opening], {
+        sending: true,
+        mode: "prepare",
+        hostId: "u1",
+      }).length,
+      0,
+    )
+    assert.equal(taskPhaseTitle("preparing"), "Tarea en proceso")
+  })
+
   it("espera aprobación y absorbe el resultado de la consulta", () => {
     const messages = [
       row({
@@ -560,6 +582,15 @@ describe("operación en vivo del chat Rootsy", () => {
           message: "Aumentá las aguas",
           dataRequest: { objective: "aumentar aguas" },
           paso: 1,
+          plan: [
+            {
+              paso: 1,
+              action: "Buscar las aguas",
+              confirm: "confirm",
+              ofertas: [],
+              demandas: [],
+            },
+          ],
           resultados: [],
         },
       }),

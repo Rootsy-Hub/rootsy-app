@@ -110,7 +110,7 @@ function isUserRow(row: ChatMessageRow): boolean {
 
 function hasOperationSignal(row: ChatMessageRow): boolean {
   return Boolean(
-    row.plannerRun ||
+    row.plannerRun?.plan?.length ||
       row.plannerChoices?.length ||
       row.closeBrief ||
       row.toolResult ||

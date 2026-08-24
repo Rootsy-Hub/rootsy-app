@@ -227,10 +227,9 @@ describe("consultora de consultas Rootsy", () => {
     assert.equal(documented?.status, "documented")
   })
 
-  it("el payload de la consultora incluye data_request, mensaje y catálogo", () => {
+  it("el payload de la consultora incluye today, data_request y catálogo", () => {
     const payload = JSON.parse(
       buildChatRootsyPlannerUserPayload({
-        body: "¿Qué se vendió más este mes?",
         today: "2026-08-23",
         dataRequest: {
           objective: "más vendidos del mes",
@@ -240,15 +239,17 @@ describe("consultora de consultas Rootsy", () => {
         index: buildChatRootsyPlannerIndex(eligibleChatRootsyPlannerTools()),
       }),
     ) as {
-      message: string
+      today: string
       catalog: unknown
       data_request: { objective: string }
+      message?: string
     }
 
-    assert.equal(payload.message, "¿Qué se vendió más este mes?")
+    assert.equal(payload.today, "2026-08-23")
     assert.equal(payload.data_request.objective, "más vendidos del mes")
+    assert.equal("message" in payload, false)
     assert.ok(payload.catalog)
-    assert.equal((payload as { paso?: number }).paso, 1)
+    assert.equal("paso" in payload, false)
   })
 
   it("acepta margen en el mismo lote si también pide más vendidos", () => {

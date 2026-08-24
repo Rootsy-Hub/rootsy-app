@@ -1,6 +1,4 @@
-import type { ChatRootsyCloseHecho } from "@/lib/chat/chatRootsyCloseBrief"
 import type { ChatRootsyDataRequest } from "@/lib/chat/chatRootsyDataRequest"
-import { compactChatRootsySessionActions } from "@/lib/chat/chatRootsySessionActions"
 import { normalizeChatRootsyApiMethod } from "@/lib/chat/apiDocumentacion"
 import {
   chatRootsyOfferKey,
@@ -10,8 +8,12 @@ import {
   sanitizeChatRootsyPlannerAction,
   type ChatRootsyPlannerConfirm,
   type ChatRootsyPlannerInforme,
-  type ChatRootsyPlannerResultado,
 } from "@/lib/chat/chatRootsyPlannerStep"
+import {
+  chatRootsyPlanHasBinding,
+  readChatRootsyExecutionPlan,
+  type ChatRootsyPlanStep,
+} from "@/lib/chat/chatRootsyPlannerPlan"
 import {
   formatChatRootsyPlannerRequest,
   readChatRootsyPathQuery,
@@ -78,6 +80,7 @@ export type ChatRootsyPlannerQuery = {
 
 export type ChatRootsyPlannerPlan = {
   queries: ChatRootsyPlannerQuery[]
+  steps?: ChatRootsyPlanStep[]
   clarifyingQuestion?: string
   done?: boolean
   informe?: ChatRootsyPlannerInforme
@@ -85,6 +88,7 @@ export type ChatRootsyPlannerPlan = {
 
 export type ChatRootsyValidatedPlan = {
   proposals: ChatRootsyToolProposal[]
+  steps?: ChatRootsyPlanStep[]
   clarifyingQuestion?: string
   discarded: number
   done?: boolean
@@ -172,6 +176,36 @@ function readPlannerFilters(raw: unknown): ChatRootsyToolFilters {
   return readChatRootsyPlannerFilters(raw)
 }
 
+function ofertaToQuery(
+  oferta: {
+    method: string
+    path: string
+    params: Record<string, unknown>
+    body?: Record<string, unknown>
+    action: string
+  },
+  confirm: ChatRootsyPlannerConfirm,
+): ChatRootsyPlannerQuery | null {
+  if (chatRootsyPlanHasBinding(oferta.params) || chatRootsyPlanHasBinding(oferta.body)) {
+    return null
+  }
+  const path = oferta.path.trim()
+  if (!path) return null
+  const fromPath = readChatRootsyPathQuery(path)
+  return {
+    id: "",
+    path,
+    method: oferta.method,
+    body: oferta.body,
+    filters: {
+      ...fromPath,
+      ...readPlannerFilters(oferta.params),
+    },
+    action: oferta.action,
+    confirm,
+  }
+}
+
 export function parseChatRootsyPlannerPlan(
   raw: string,
 ): ChatRootsyPlannerPlan | null {
@@ -182,6 +216,7 @@ export function parseChatRootsyPlannerPlan(
       status?: unknown
       queries?: unknown
       toolCalls?: unknown
+      plan?: unknown
       clarifyingQuestion?: unknown
       question?: unknown
       reason?: unknown
@@ -205,6 +240,22 @@ export function parseChatRootsyPlannerPlan(
         queries: [],
         done: true,
         informe: readChatRootsyPlannerInforme(parsed),
+      }
+    }
+    const steps = readChatRootsyExecutionPlan(parsed)
+    if (steps.length) {
+      const first = steps[0]!
+      const queries: ChatRootsyPlannerQuery[] = []
+      for (const oferta of first.ofertas.slice(0, CHAT_ROOTSY_PLANNER_MAX_CALLS)) {
+        const query = ofertaToQuery(oferta, first.confirm)
+        if (query) queries.push(query)
+      }
+      return {
+        queries,
+        steps,
+        clarifyingQuestion: sanitizeClarifyingQuestion(
+          parsed.clarifyingQuestion ?? parsed.question,
+        ),
       }
     }
     const rows = Array.isArray(parsed.queries)
@@ -269,6 +320,7 @@ export function parseChatRootsyPlannerPlan(
     }
     return {
       queries,
+      steps: readChatRootsyExecutionPlan({ queries: rows }),
       clarifyingQuestion: sanitizeClarifyingQuestion(
         parsed.clarifyingQuestion ?? parsed.question,
       ),
@@ -464,6 +516,7 @@ export function validateChatRootsyPlannerPlan(
 
   return {
     proposals,
+    steps: plan.steps,
     clarifyingQuestion,
     discarded,
     done: plan.done,
@@ -480,35 +533,13 @@ export function plannerIndexSupportsDateRange(
 }
 
 export function buildChatRootsyPlannerUserPayload(input: {
-  body: string
   today: string
   dataRequest: ChatRootsyDataRequest
   index: readonly ChatRootsyPlannerIndexEntry[]
-  context?: ChatRootsyToolMatchContext
-  paso?: number
-  resultados?: ChatRootsyPlannerResultado[]
-  accionesSesion?: ChatRootsyCloseHecho[]
 }): string {
-  const acciones = input.accionesSesion?.length
-    ? compactChatRootsySessionActions(input.accionesSesion)
-    : undefined
   return JSON.stringify({
     today: input.today,
-    message: input.body,
-    data_request: input.dataRequest,
-    paso: input.paso && input.paso > 0 ? input.paso : 1,
-    resultados: input.resultados ?? [],
-    ...(acciones
-      ? {
-          acciones_sesion: acciones,
-          nota_acciones_sesion:
-            "Si el pedido deshace o sigue estos cambios, usá todos los ítems. No te quedes con uno. Pedido en plural/conjunto: GET confirm_many. Ítems ya identificados: GET confirm y PATCH de cada uno.",
-        }
-      : {}),
-    recent: (input.context?.recent ?? []).map((row) => ({
-      id: row.tool,
-      names: row.items.map((item) => item.name).slice(0, 5),
-    })),
+    data_request: { objective: input.dataRequest.objective },
     catalog: input.index,
   })
 }

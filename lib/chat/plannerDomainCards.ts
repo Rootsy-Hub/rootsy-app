@@ -31,7 +31,7 @@ export const CHAT_ROOTSY_PLANNER_COLLECTION_KEYS = [
 ] as const
 
 export const CHAT_ROOTSY_PLANNER_DOMAIN_RULE =
-  "Después de un listado, aplicá la invariante de la ficha. Un destinatario claro → write con confirm. Pedido singular de cambio y varios parecidos → confirm_one (eligen uno). Pedido en plural o conjunto de cambio → confirm_many (eligen uno, varios o todos). Consulta (ver precios, listar) → GET confirm y cerrá con todos; no pidas elegir. No escribas contra la invariante."
+  "Armá el plan completo. Cada paso tiene su confirm: no hereda el del siguiente. GET de consulta → confirm (corre, sin elegir). GET de un cambio singular con varios parecidos → confirm_one (eligen uno). GET de un conjunto de cambio → confirm_many (eligen uno, varios o todos). El write siguiente va con confirm (modal). Mismo endpoint × N filas → una oferta con $paso[oferta].items[].campo. Endpoints distintos = ofertas distintas. No escribas contra la invariante."
 
 export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainCard[] =
   [
@@ -40,7 +40,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       title: "Artículos",
       what: "Ficha del catálogo. No es venta, margen ni stock valorizado del período.",
       invariant:
-        "Se identifica por id. Pedido singular de cambio y q trae varios → confirm_one. Pedido en plural/conjunto de cambio → confirm_many. Consulta de precios o listado → GET confirm y listá todos. isActive=false no se vende; igual se puede PATCH.",
+        "Se identifica por id. GET de cambio singular con q ambiguo → confirm_one. GET de conjunto → confirm_many. Consulta o write ya atado → confirm. El id se ata con $1[0].items[].id. isActive=false no se vende; igual se puede PATCH.",
       list: "GET /articles?q=nombre&pageSize=20",
       row: "id, name, salePrice, iva, isActive, stockOnHand, categoryId",
       write:
@@ -50,7 +50,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       id: "categorias",
       title: "Categorías de artículos",
       what: "Árbol de categorías del catálogo. No es ventas por rubro.",
-      invariant: "Una categoría = id. Singular y varias parecidas → confirm_one. Plural/conjunto → confirm_many.",
+      invariant: "Una categoría = id. GET singular ambiguo → confirm_one. GET conjunto → confirm_many. Write ya atado → confirm.",
       list: "GET /categories",
       row: "id, name, flags de visibilidad",
       write:
@@ -69,7 +69,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       id: "clientes",
       title: "Clientes",
       what: "Ficha de cliente. Quién debe es current-accounts. Ranking es statistics/clients.",
-      invariant: "Uno = id. Singular y varios con el mismo nombre → confirm_one. Plural/conjunto → confirm_many. isActive=false no opera; se puede PATCH.",
+      invariant: "Uno = id. GET singular ambiguo → confirm_one. GET conjunto → confirm_many. Write ya atado → confirm. isActive=false no opera; se puede PATCH.",
       list: "GET /clients?q=nombre&pageSize=20",
       row: "id, name, isActive, taxId, email, lastSaleAt",
       write:
@@ -79,7 +79,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       id: "proveedores",
       title: "Proveedores",
       what: "Ficha de proveedor. Deudas: current-accounts direction=payable.",
-      invariant: "Uno = id. Singular y varios con el mismo nombre → confirm_one. Plural/conjunto → confirm_many.",
+      invariant: "Uno = id. GET singular ambiguo → confirm_one. GET conjunto → confirm_many. Write ya atado → confirm.",
       list: "GET /suppliers/table?q=nombre o GET /suppliers?q= (autocomplete, tope 8)",
       row: "id, name, isActive, taxId",
       write:
@@ -89,7 +89,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       id: "recetas",
       title: "Recetas",
       what: "Catálogo de recetas / platos. No es producción del período.",
-      invariant: "Una receta = recipeId. Singular y varias con el mismo nombre → confirm_one. Plural/conjunto → confirm_many.",
+      invariant: "Una receta = recipeId. GET singular ambiguo → confirm_one. GET conjunto → confirm_many. Write ya atado → confirm.",
       list: "GET /recipes?q=nombre",
       row: "id, name, salePrice, isActive, categoryId",
       write:
@@ -99,7 +99,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       id: "promociones",
       title: "Promociones",
       what: "Promos del catálogo. No calcula impacto en ventas.",
-      invariant: "Una promo = promotionId. Singular y varias parecidas → confirm_one. Plural/conjunto → confirm_many.",
+      invariant: "Una promo = promotionId. GET singular ambiguo → confirm_one. GET conjunto → confirm_many. Write ya atado → confirm.",
       list: "GET /promotions?q=nombre",
       row: "id, name, isActive, promotionType",
       write:
@@ -109,7 +109,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       id: "servicios",
       title: "Servicios",
       what: "Catálogo de servicios. statistics/services está vacío. Cargos: operations view=services.",
-      invariant: "Uno = serviceId. Singular y varios con el mismo nombre → confirm_one. Plural/conjunto → confirm_many.",
+      invariant: "Uno = serviceId. GET singular ambiguo → confirm_one. GET conjunto → confirm_many. Write ya atado → confirm.",
       list: "GET /services?q=nombre",
       row: "id, name, isActive, categoryId",
       write:
@@ -120,7 +120,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       title: "RRHH",
       what: "Empleado = persona laboral (fichaje, sueldo). Miembro = acceso a Rootsy + rol. Rol = permiso del sistema.",
       invariant:
-        "El rol de Rootsy solo existe si el miembro está activo (isActive=true). El inactivo no recibe PATCH de rol: se ignora o se reactiva. Si hay un solo miembro activo que matchea el nombre, ese es. Si el pedido nombra uno y hay dos activos parecidos, confirm_one. Si nombra varios, confirm_many. employeeId no es memberUserId.",
+        "El rol de Rootsy solo existe si el miembro está activo (isActive=true). El inactivo no recibe PATCH de rol: se ignora o se reactiva. Si hay un solo miembro activo que matchea el nombre, ese es. GET singular ambiguo → confirm_one. GET conjunto → confirm_many. Write ya atado → confirm. employeeId no es memberUserId.",
       list: "GET /hr → members[], roles[], employees[]",
       row: "members: userId, firstName, lastName, roleId, roleDisplayName, isActive. roles: id, name, displayName. employees: id, firstName, lastName, userId, leftAt",
       write:
@@ -189,7 +189,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       id: "cheques",
       title: "Cheques",
       what: "Cheques recibidos o emitidos. No reemplaza current-accounts.",
-      invariant: "Un cheque = checkId. Singular y varios del mismo banco/número → confirm_one. Plural/conjunto → confirm_many.",
+      invariant: "Un cheque = checkId. GET singular ambiguo → confirm_one. GET conjunto → confirm_many. Write ya atado → confirm.",
       list: "GET /checks?direction=received|issued&q=",
       row: "id, amount, dueDate, status, party",
       write:

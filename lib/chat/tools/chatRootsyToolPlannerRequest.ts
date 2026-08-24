@@ -1,11 +1,7 @@
 import "server-only"
 
-import type { ChatRootsyCloseHecho } from "@/lib/chat/chatRootsyCloseBrief"
 import type { ChatRootsyDataRequest } from "@/lib/chat/chatRootsyDataRequest"
-import {
-  buildChatRootsyPlannerStoredPayload,
-  type ChatRootsyPlannerResultado,
-} from "@/lib/chat/chatRootsyPlannerStep"
+import { buildChatRootsyPlannerStoredPayload } from "@/lib/chat/chatRootsyPlannerStep"
 import {
   buildChatRootsyPlannerIndex,
   buildChatRootsyPlannerUserPayload,
@@ -22,7 +18,8 @@ import {
 } from "@/lib/chat/openaiStoredPrompt"
 
 const PLANNER_TIMEOUT_MS = 6_000
-const PLANNER_MAX_OUTPUT_TOKENS = 1024
+const PLANNER_STORED_TIMEOUT_MS = 60_000
+const PLANNER_MAX_OUTPUT_TOKENS = 2500
 const GEMINI_PLANNER_MODELS = [
   "gemini-3.5-flash-lite",
   "gemini-3.5-flash",
@@ -36,14 +33,12 @@ export type ChatRootsyPlannerProvider = "gemini" | "openai"
 
 export const CHAT_ROOTSY_PLANNER_SYSTEM = [
   "Elegí consultas del catálogo. No tenés personalidad ni voz de Rootsy.",
-  "Recibís el mensaje original, un data_request y, si hay, resultados de pasos anteriores.",
-  "Si viene acciones_sesion y el pedido las deshace o las continúa, usá todos esos ítems. No te quedes con uno.",
-  "Un paso por respuesta. Máximo 4 pasos.",
-  'Devolvé solo JSON: {"status":"ok","queries":[{"id":"<id>","filters":{},"action":"...","confirm":"confirm"}]}.',
-  'confirm_one si el pedido nombra UNO y hay varios. confirm_many si nombra un conjunto. done si ya alcanzó.',
+  "Recibís today y un data_request. Armá el plan completo de esa tarea. Sin historial ni mensaje de la persona.",
+  "Hasta 4 pasos. Un paso puede tener varias ofertas. Si el mismo endpoint se aplica a N filas, mandalo una vez con variables $paso[oferta].items[].campo.",
+  'Devolvé solo JSON: {"status":"ok","plan":[{"paso":1,"action":"...","confirm":"confirm","ofertas":[],"demandas":["id"]}]}',
+  "action es una línea para el tablero (verbo + qué), sin endpoints. Cada paso trae su confirm. GET consulta: confirm. GET cambio singular: confirm_one. GET conjunto: confirm_many. Write: confirm (modal).",
   "Sin prosa, sin markdown, sin razonamiento.",
-  "Solo ids del catálogo. Fechas ISO YYYY-MM-DD.",
-  "No inventes ids, URLs, endpoints ni cálculos.",
+  "Fechas ISO YYYY-MM-DD. No inventes ids reales: usá variables de pasos anteriores.",
 ].join(" ")
 
 type GeminiResponse = {
@@ -185,18 +180,13 @@ export type ChatRootsyPlannerFetch = ChatRootsyValidatedPlan & {
 }
 
 export async function planChatRootsyTools(input: {
-  body: string
   dataRequest: ChatRootsyDataRequest
   context?: ChatRootsyToolMatchContext
   permissionKeys?: readonly string[]
   today?: string
-  paso?: number
-  resultados?: ChatRootsyPlannerResultado[]
-  accionesSesion?: ChatRootsyCloseHecho[]
 }): Promise<ChatRootsyPlannerFetch> {
   const empty: ChatRootsyValidatedPlan = { proposals: [], discarded: 0 }
-  const text = input.body.trim()
-  if (!text || !input.dataRequest) {
+  if (!input.dataRequest?.objective?.trim()) {
     return { ...empty, raw: null, sent: null, source: "sin-respuesta" }
   }
 
@@ -211,25 +201,14 @@ export async function planChatRootsyTools(input: {
   }
 
   const today = input.today ?? new Date().toISOString().slice(0, 10)
-  const paso = input.paso && input.paso > 0 ? input.paso : 1
-  const resultados = input.resultados ?? []
   const storedPayload = buildChatRootsyPlannerStoredPayload({
     today,
-    message: text,
     dataRequest: input.dataRequest,
-    paso,
-    resultados,
-    accionesSesion: input.accionesSesion,
   })
   const payload = buildChatRootsyPlannerUserPayload({
-    body: text,
     today,
     dataRequest: input.dataRequest,
     index,
-    context: input.context,
-    paso,
-    resultados,
-    accionesSesion: input.accionesSesion,
   })
   const provider = storedPromptId
     ? "openai"
@@ -241,7 +220,7 @@ export async function planChatRootsyTools(input: {
     ? await requestOpenAiStoredPrompt({
         promptId: storedPromptId,
         messages: [{ role: "user", content: storedPayload }],
-        timeoutMs: 15_000,
+        timeoutMs: PLANNER_STORED_TIMEOUT_MS,
       })
     : null
   const storedRaw = stored?.text ?? null
@@ -262,7 +241,7 @@ export async function planChatRootsyTools(input: {
   logChatRootsyPlanner({
     provider,
     model: models[0],
-    preview: text,
+    preview: input.dataRequest.objective,
     plan,
   })
   return {

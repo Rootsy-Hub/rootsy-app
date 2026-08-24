@@ -8,6 +8,7 @@ import {
   compactChatRootsyPlannerChoiceResponse,
   looksLikeChatRootsyPluralPedido,
   looksLikeChatRootsyWritePedido,
+  preferChatRootsyPlannerAction,
   readChatRootsyPlannerConfirm,
   resolveChatRootsyPlannerPickConfirm,
   readChatRootsyPlannerInforme,
@@ -22,6 +23,29 @@ describe("pasos del planificador Rootsy", () => {
     assert.equal(readChatRootsyPlannerConfirm("choose_many"), "confirm_many")
     assert.equal(readChatRootsyPlannerConfirm("confirm"), "confirm")
     assert.equal(readChatRootsyPlannerConfirm(undefined), "confirm")
+  })
+
+  it("usa el action del paso si la oferta vino genérica", () => {
+    assert.equal(
+      preferChatRootsyPlannerAction(
+        "Consultar esos datos",
+        "Buscar las aguas del catálogo",
+        "GET",
+      ),
+      "Buscar las aguas del catálogo",
+    )
+    assert.equal(
+      preferChatRootsyPlannerAction(
+        "Buscar artículos que coincidan con Agua",
+        "Buscar las aguas del catálogo",
+        "GET",
+      ),
+      "Buscar artículos que coincidan con Agua",
+    )
+    assert.equal(
+      preferChatRootsyPlannerAction(undefined, undefined, "GET"),
+      "Consultar esos datos",
+    )
   })
 
   it("sube confirm_one a confirm_many si el pedido es plural", () => {
@@ -109,79 +133,30 @@ describe("pasos del planificador Rootsy", () => {
     )
   })
 
-  it("arma el payload de ChatGPT con paso y resultados", () => {
+  it("arma el payload de ChatGPT solo con today y data_request", () => {
     const payload = JSON.parse(
       buildChatRootsyPlannerStoredPayload({
         today: "2026-08-23",
-        message: "subí el agua 50%",
         dataRequest: { objective: "aumentar 50% el precio del agua mineral" },
-        paso: 2,
-        resultados: [
-          {
-            method: "GET",
-            path: "/v1/pops/:popId/articles",
-            action: "Buscar artículos que coincidan con Agua mineral",
-            confirm: "confirm_one",
-            response: { id: "art-1", name: "Agua mineral 500", salePrice: 2500 },
-          },
-        ],
       }),
     ) as {
-      paso: number
-      pasos_max: number
-      resultados: Array<{ confirm: string; response: { id: string } }>
+      today: string
       data_request: { objective: string }
+      message?: string
+      paso?: number
+      resultados?: unknown
+      acciones_sesion?: unknown
     }
 
-    assert.equal(payload.paso, 2)
-    assert.equal(payload.pasos_max, 4)
-    assert.equal(payload.resultados[0]?.confirm, "confirm_one")
-    assert.equal(payload.resultados[0]?.response.id, "art-1")
+    assert.equal(payload.today, "2026-08-23")
     assert.equal(
       payload.data_request.objective,
       "aumentar 50% el precio del agua mineral",
     )
-    assert.equal("hint" in payload, false)
+    assert.equal("message" in payload, false)
+    assert.equal("paso" in payload, false)
+    assert.equal("resultados" in payload, false)
     assert.equal("acciones_sesion" in payload, false)
-  })
-
-  it("incluye acciones_sesion cuando hay escrituras previas", () => {
-    const payload = JSON.parse(
-      buildChatRootsyPlannerStoredPayload({
-        today: "2026-08-23",
-        message: "revertí las aguas",
-        dataRequest: { objective: "volver las aguas al precio anterior" },
-        accionesSesion: [
-          {
-            accion: "Actualizar Agua mineral",
-            sujeto: "Agua mineral",
-            id: "art-1",
-            cambios: [
-              {
-                campo: "Precio",
-                antes: "$2.500",
-                despues: "$3.750",
-                clave: "salePrice",
-                valorAntes: 2500,
-                valorDespues: 3750,
-              },
-            ],
-          },
-          {
-            accion: "Actualizar Agua 2 L",
-            sujeto: "Agua mineral 2 L x6",
-            id: "art-2",
-          },
-        ],
-      }),
-    ) as {
-      acciones_sesion: Array<{ sujeto?: string; id?: string }>
-      nota_acciones_sesion?: string
-    }
-
-    assert.equal(payload.acciones_sesion.length, 2)
-    assert.equal(payload.acciones_sesion[1]?.sujeto, "Agua mineral 2 L x6")
-    assert.match(payload.nota_acciones_sesion ?? "", /todos/i)
   })
 
   it("elige la fila del payload cuando confirm_one", () => {

@@ -1,6 +1,7 @@
 import type { WorkspaceTableSkeletonColumn } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import {
   articlesSkeletonColumns,
+  auditSkeletonColumns,
   checksSkeletonColumns,
   clientsSkeletonColumns,
   currentAccountsSkeletonColumns,
@@ -379,6 +380,18 @@ const MODULE_SKELETON_CONFIG: Record<string, PopTableListSkeletonConfig> = {
       { type: "label", label: "Vence", className: "w-28 px-3" },
       { type: "label", label: "Costo", align: "right", className: "w-28 px-3" },
       { type: "label", label: "Quién", className: "min-w-[8rem] px-3" },
+    ],
+  },
+  audit: {
+    filterLayout: "triple",
+    tableMinWidth: "min-w-[56rem]",
+    columns: auditSkeletonColumns(),
+    headers: [
+      { type: "label", label: "Cuándo", className: "w-32 px-3" },
+      { type: "label", label: "Quién", className: "min-w-[9rem] px-3" },
+      { type: "label", label: "Actividad", className: "min-w-[11rem] px-3" },
+      { type: "label", label: "Registro", className: "min-w-[10rem] px-3" },
+      { type: "label", label: "Cambio", className: "min-w-[14rem] px-3" },
     ],
   },
   quotes: quotesLikeConfig(),

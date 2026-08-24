@@ -1,3 +1,4 @@
+import type { ChatRootsyPlanStep, ChatRootsyPlannerSlot } from "@/lib/chat/chatRootsyPlannerPlan"
 import type { ChatRootsyToolItem } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import type { ChatRootsyCloseHecho } from "@/lib/chat/chatRootsyCloseBrief"
 import type { ChatRootsyDataRequest } from "@/lib/chat/chatRootsyDataRequest"
@@ -25,6 +26,8 @@ export type ChatRootsyPlannerRun = {
   dataRequest: ChatRootsyDataRequest
   taskTitle?: string
   paso: number
+  plan?: ChatRootsyPlanStep[]
+  slots?: ChatRootsyPlannerSlot[]
   resultados: ChatRootsyPlannerResultado[]
   aplicados?: ChatRootsyCloseHecho[]
   accionesSesion?: ChatRootsyCloseHecho[]
@@ -194,49 +197,27 @@ export function fallbackChatRootsyPlannerAction(
   return "Consultar esos datos"
 }
 
-export function buildChatRootsyPlannerStoredPayload(input: {
-  today: string
-  message: string
-  dataRequest: ChatRootsyDataRequest
-  paso?: number
-  resultados?: ChatRootsyPlannerResultado[]
-  accionesSesion?: ChatRootsyCloseHecho[]
-}): string {
-  const paso = input.paso && input.paso > 0 ? input.paso : 1
-  const acciones = compactPlannerSessionActions(input.accionesSesion)
-  return JSON.stringify({
-    today: input.today,
-    message: input.message,
-    data_request: { objective: input.dataRequest.objective },
-    paso,
-    pasos_max: CHAT_ROOTSY_PLANNER_MAX_STEPS,
-    resultados: input.resultados ?? [],
-    ...(acciones
-      ? {
-          acciones_sesion: acciones,
-          nota_acciones_sesion:
-            "Si el pedido deshace o sigue estos cambios, usá todos los ítems. No te quedes con uno. Pedido en plural/conjunto: GET confirm_many. Ítems ya identificados: GET confirm y PATCH de cada uno.",
-        }
-      : {}),
-  })
+export function preferChatRootsyPlannerAction(
+  ofertaAction: unknown,
+  stepAction: unknown,
+  method?: string,
+): string {
+  const generic = fallbackChatRootsyPlannerAction(method)
+  const fromOferta = sanitizeChatRootsyPlannerActionLine(ofertaAction)
+  if (fromOferta && fromOferta !== generic) return fromOferta
+  const fromStep = sanitizeChatRootsyPlannerActionLine(stepAction)
+  if (fromStep) return fromStep
+  return fromOferta || generic
 }
 
-function compactPlannerSessionActions(
-  acciones?: ChatRootsyCloseHecho[],
-): Array<Record<string, unknown>> | undefined {
-  if (!acciones?.length) return undefined
-  return acciones.slice(-12).map((hecho) => ({
-    sujeto: hecho.sujeto,
-    id: hecho.id,
-    cambios: hecho.cambios?.map((change) => ({
-      campo: change.campo,
-      antes: change.antes,
-      despues: change.despues,
-      clave: change.clave,
-      valorAntes: change.valorAntes,
-      valorDespues: change.valorDespues,
-    })),
-  }))
+export function buildChatRootsyPlannerStoredPayload(input: {
+  today: string
+  dataRequest: ChatRootsyDataRequest
+}): string {
+  return JSON.stringify({
+    today: input.today,
+    data_request: { objective: input.dataRequest.objective },
+  })
 }
 
 function rowId(row: Record<string, unknown>): string | null {

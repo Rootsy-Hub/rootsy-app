@@ -1,6 +1,7 @@
 import { isPopTableListModule } from "@/components/data-workspace/popTableListSkeletonConfig"
 import {
   popArticlesQueryRoot,
+  popAuditQueryRoot,
   popChecksQueryRoot,
   popClientsQueryRoot,
   popCurrentAccountLedgerQueryRoot,
@@ -27,6 +28,8 @@ function queryRootsForModule(
       return [popSuppliersQueryRoot(popId)]
     case "articles":
       return [popArticlesQueryRoot(popId)]
+    case "audit":
+      return [popAuditQueryRoot(popId)]
     case "operations":
       return [popOperationsQueryRoot(popId)]
     case "invoices":

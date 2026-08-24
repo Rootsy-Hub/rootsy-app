@@ -96,6 +96,16 @@ export function clientsSkeletonColumns(options?: {
   return columns
 }
 
+export function auditSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
+  return [
+    { kind: "date", className: "w-32" },
+    { kind: "text", className: "min-w-[9rem]", lines: 2 },
+    { kind: "text", className: "min-w-[11rem]", lines: 2 },
+    { kind: "text", className: "min-w-[10rem]" },
+    { kind: "text", className: "min-w-[14rem]", lines: 2 },
+  ]
+}
+
 export function manufacturingSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
   return [
     { kind: "text", className: "w-28" },

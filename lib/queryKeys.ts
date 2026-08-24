@@ -1,5 +1,24 @@
 import type { OperationsListFiltersInput } from "@/app/[siteId]/[popId]/operations/operationsFilters"
 
+export function popAuditQueryKey(
+  popId: string,
+  params: {
+    page: number
+    pageSize: number
+    q: string
+    from: string | null
+    to: string | null
+    action: string
+    source: string
+  },
+) {
+  return ["pop-audit", popId, params] as const
+}
+
+export function popAuditQueryRoot(popId: string) {
+  return ["pop-audit", popId] as const
+}
+
 export function popWorkspaceBootstrapQueryKey(
   siteId: string,
   popId: string,

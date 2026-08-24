@@ -11,6 +11,7 @@ import {
   continueRootsyPlannerRun,
   runRootsyChatTools,
   sendRootsyChatMessage,
+  startRootsyPlannerRun,
   type SendRootsyChatResult,
 } from "@/app/[siteId]/[popId]/chat/chatRootsyActions"
 import { chatRootsyOfferKey } from "@/lib/chat/chatRootsyPlannerStep"
@@ -174,9 +175,11 @@ export function ChatRootsyThread({
 
   useEffect(() => {
     if (!hydrated) return
-    const frame = window.requestAnimationFrame(() => scrollToEnd(sending))
+    const frame = window.requestAnimationFrame(() =>
+      scrollToEnd(sending || live.sending),
+    )
     return () => window.cancelAnimationFrame(frame)
-  }, [hydrated, messages.length, sending, scrollToEnd])
+  }, [hydrated, messages.length, sending, live.sending, scrollToEnd])
 
   useEffect(() => {
     if (skipThreadMotionRef.current) {
@@ -228,11 +231,12 @@ export function ChatRootsyThread({
     () =>
       deriveChatRootsyOperations(displayMessages, {
         ...live,
-        sending,
+        sending: sending || live.sending,
         error: sendError,
       }),
     [displayMessages, live, sendError, sending],
   )
+  const busy = sending || live.sending
 
   useEffect(() => {
     if (sending) return
@@ -326,7 +330,7 @@ export function ChatRootsyThread({
 
   const sendDraft = async () => {
     const body = draft.trim()
-    if (!body || sending) return
+    if (!body || busy) return
     const userMessage: ChatMessageRow = {
       id: `rootsy-user:${crypto.randomUUID()}`,
       authorUserId: "me",
@@ -379,43 +383,100 @@ export function ChatRootsyThread({
       return
     }
 
-    const now = new Date().toISOString()
-    const ranReads = Boolean(res.toolResults?.length)
-    const closedFailed = Boolean(res.executionError)
+    const openingId = `rootsy-ai:${crypto.randomUUID()}`
     const opening: ChatMessageRow = {
-      id: `rootsy-ai:${crypto.randomUUID()}`,
+      id: openingId,
       authorUserId: ROOTSY_CHAT_AUTHOR_ID,
       authorName: "Rootsy",
       body: res.reply,
-      createdAt: now,
+      createdAt: new Date().toISOString(),
       mine: false,
-      toolOffer: ranReads || closedFailed ? undefined : res.toolOffer,
-      toolOffers: ranReads || closedFailed ? undefined : res.toolOffers,
-      plannerRun: res.plannerRun,
-      plannerChoices: ranReads || closedFailed ? undefined : res.plannerChoices,
-      closeBrief: ranReads || closedFailed ? undefined : res.closeBrief,
-      toolError: res.executionError,
-      devTrace: ranReads || closedFailed ? undefined : res.devTrace,
+      devTrace: res.devTrace,
     }
-    const followUp =
-      ranReads || closedFailed
-        ? rootsyFollowUpRow(res, now, res.followUpReply ?? "")
-        : null
-    setMessages(
-      [
-        ...nextMessages,
-        opening,
-        ...rootsyToolResultRows(res.toolResults ?? [], now),
-        ...(followUp ? [followUp] : []),
-      ].slice(-ROOTSY_SESSION_HISTORY_MAX),
+    const pendingRun = res.needsPlanner ? res.plannerRun : undefined
+    setMessages([...nextMessages, opening].slice(-ROOTSY_SESSION_HISTORY_MAX))
+    setLive(
+      pendingRun
+        ? { sending: true, mode: "prepare", hostId: userMessage.id }
+        : { sending: false, mode: "idle" },
     )
     setSending(false)
-    setLive({ sending: false, mode: "idle" })
     window.requestAnimationFrame(() => composerRef.current?.focus())
+
+    if (!pendingRun) return
+
+    const planRes = await startRootsyPlannerRun({
+      siteId,
+      popId,
+      history: rootsyHistoryFromMessages(nextMessages),
+      toolContext: rootsyToolContextFromMessages(nextMessages),
+      plannerRun: pendingRun,
+    })
+
+    if (!planRes.success) {
+      setSendError(
+        isChatRootsyDevTraceEnabled() && planRes.devTrace?.error
+          ? planRes.devTrace.error
+          : planRes.error,
+      )
+      setMessages((current) =>
+        current.map((row) =>
+          row.id === openingId
+            ? {
+                ...row,
+                toolError: planRes.error,
+                devTrace:
+                  mergeChatRootsyDevTraces([row.devTrace, planRes.devTrace]) ??
+                  row.devTrace,
+              }
+            : row,
+        ),
+      )
+      setLive({ sending: false, mode: "idle" })
+      return
+    }
+
+    const now = new Date().toISOString()
+    const ranReads = Boolean(planRes.toolResults?.length)
+    const closedFailed = Boolean(planRes.executionError)
+    const followUp =
+      ranReads || closedFailed
+        ? rootsyFollowUpRow(planRes, now, planRes.followUpReply ?? "")
+        : null
+    setMessages((current) => {
+      const next = current.map((row) =>
+        row.id === openingId
+          ? {
+              ...row,
+              toolOffer: ranReads || closedFailed ? undefined : planRes.toolOffer,
+              toolOffers:
+                ranReads || closedFailed ? undefined : planRes.toolOffers,
+              plannerRun: planRes.plannerRun ?? row.plannerRun,
+              plannerChoices:
+                ranReads || closedFailed ? undefined : planRes.plannerChoices,
+              closeBrief:
+                ranReads || closedFailed ? undefined : planRes.closeBrief,
+              toolError: planRes.executionError,
+              devTrace:
+                ranReads || closedFailed
+                  ? row.devTrace
+                  : (mergeChatRootsyDevTraces([row.devTrace, planRes.devTrace]) ??
+                    planRes.devTrace ??
+                    row.devTrace),
+            }
+          : row,
+      )
+      return [
+        ...next,
+        ...rootsyToolResultRows(planRes.toolResults ?? [], now),
+        ...(followUp ? [followUp] : []),
+      ].slice(-ROOTSY_SESSION_HISTORY_MAX)
+    })
+    setLive({ sending: false, mode: "idle" })
   }
 
   const confirmTools = async (messageId: string, tools: string[]) => {
-    if (sending || tools.length === 0) return
+    if (busy || tools.length === 0) return
     const host = messages.find((row) => row.id === messageId)
     const offers = host?.toolOffers?.length
       ? host.toolOffers
@@ -541,7 +602,7 @@ export function ChatRootsyThread({
     choiceTool: string,
     items: Array<{ id?: string; name: string; sales?: number; balance?: number }>,
   ) => {
-    if (sending) return
+    if (busy) return
     const host = messages.find((row) => row.id === messageId)
     const choice = host?.plannerChoices?.find((row) => row.tool === choiceTool)
     if (!host?.plannerRun || !choice || !items.length) return
@@ -697,7 +758,7 @@ export function ChatRootsyThread({
                 <div className="mt-4 mb-4 w-full">
                   <ChatRootsyOperationCard
                     operation={operation}
-                    disabled={sending}
+                    disabled={busy}
                     onApprove={(hostId, keys) => {
                       void confirmTools(hostId, keys)
                     }}
@@ -764,7 +825,7 @@ export function ChatRootsyThread({
           type="submit"
           size="default"
           withIcon
-          disabled={sending}
+          disabled={busy}
           className="h-full shrink-0 self-stretch"
         >
           <Send className="size-4" aria-hidden />
