@@ -93,10 +93,8 @@ function LoginPage() {
       })
       if (signError) throw signError
       if (data.session) {
-        await new Promise((r) => setTimeout(r, 100))
         persistSignupIntent(signupIntent)
-        router.push(afterAuthHref)
-        router.refresh()
+        router.replace(afterAuthHref)
       }
     } catch (err: unknown) {
       const cleanEmail = formatEmailInput(email)

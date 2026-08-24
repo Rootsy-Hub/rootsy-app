@@ -29,16 +29,32 @@ export function AuthProvider({
 }) {
   const supabase = useMemo(() => createClient(), [])
   const [user, setUser] = useState<User | null>(initialUser)
-  const [loading] = useState(false)
+  const [loading, setLoading] = useState(initialUser == null)
 
   useEffect(() => {
+    if (!initialUser) return
+    setUser(initialUser)
+    setLoading(false)
+  }, [initialUser])
+
+  useEffect(() => {
+    let cancelled = false
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return
+      if (data.session?.user) setUser(data.session.user)
+      setLoading(false)
+    })
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      setLoading(false)
     })
 
     return () => {
+      cancelled = true
       subscription.unsubscribe()
     }
   }, [supabase])

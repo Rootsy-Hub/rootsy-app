@@ -2,5 +2,5 @@ import { AuthGate } from "@/components/auth/AuthGate"
 import type { ReactNode } from "react"
 
 export default function HomeLayout({ children }: { children: ReactNode }) {
-  return <AuthGate>{children}</AuthGate>
+  return <AuthGate tone="dark">{children}</AuthGate>
 }

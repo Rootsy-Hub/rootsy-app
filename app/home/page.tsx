@@ -6,16 +6,18 @@ import { getInitialAuthUser } from "@/lib/getInitialAuthUser"
 
 export default async function HomePage() {
   const user = await getInitialAuthUser()
-  if (!user) return null
-
-  const displayName = resolveHomeDisplayName(null, user)
+  const displayName = resolveHomeDisplayName(null, user ?? {})
 
   return (
     <HomePageChrome
       displayName={displayName}
-      userId={user.id}
+      userId={user?.id}
     >
-      <HomePopPicker userId={user.id} fallback={<HomePopPickerSkeleton />} />
+      {user ? (
+        <HomePopPicker userId={user.id} fallback={<HomePopPickerSkeleton />} />
+      ) : (
+        <HomePopPickerSkeleton />
+      )}
     </HomePageChrome>
   )
 }

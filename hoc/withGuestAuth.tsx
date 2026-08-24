@@ -20,7 +20,7 @@ export function withGuestAuth<P extends object>(Component: ComponentType<P>) {
       )
     }, [user, loading, router, searchParams])
 
-    if (loading) {
+    if (loading || user) {
       return (
         <div
           className="flex min-h-[50vh] flex-col items-center justify-center gap-3 bg-background text-foreground"
@@ -32,10 +32,6 @@ export function withGuestAuth<P extends object>(Component: ComponentType<P>) {
           <span className="text-sm text-muted-foreground">Cargando sesión…</span>
         </div>
       )
-    }
-
-    if (user) {
-      return null
     }
 
     return <Component {...props} />

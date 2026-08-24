@@ -72,8 +72,10 @@ export function hasSignupSelection(intent: SignupIntent): boolean {
 
 export function signupIntentSearchParams(intent: SignupIntent): URLSearchParams {
   const params = new URLSearchParams()
-  if (intent.plan) params.set("plan", intent.plan)
-  if (intent.cycle) params.set("cycle", intent.cycle)
+  if (intent.plan) {
+    params.set("plan", intent.plan)
+    params.set("cycle", intent.cycle)
+  }
   if (intent.type) params.set("type", intent.type)
   return params
 }

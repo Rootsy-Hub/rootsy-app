@@ -29,7 +29,7 @@ export function AuthGate({ children, tone = "light" }: AuthGateProps) {
     router.replace(LOGIN_PATH)
   }, [user, loading, router])
 
-  if (loading) {
+  if (loading || !user) {
     const isDark = tone === "dark"
     return (
       <div
@@ -61,8 +61,6 @@ export function AuthGate({ children, tone = "light" }: AuthGateProps) {
       </div>
     )
   }
-
-  if (!user) return null
 
   return <>{children}</>
 }
