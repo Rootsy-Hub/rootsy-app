@@ -627,7 +627,7 @@ export function ChatRootsyThread({
         </div>
       </header>
 
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-visible">
+      <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-visible">
         <div
           ref={listRef}
           className={cn(
