@@ -190,25 +190,28 @@ export function ServiceCategoriesDialog({
                           <RootsIconButton
                             type="button"
                             label={`Editar ${category.name}`}
-                            tone="ghost"
+                            tone="action"
+                            intent="edit"
+                            size="compact"
                             disabled={categoryBusy}
                             onClick={() => onStartEdit(category)}
                           >
-                            <Pencil className="size-4" aria-hidden />
+                            <Pencil aria-hidden />
                           </RootsIconButton>
                         ) : null}
                         {canDelete ? (
                           <RootsIconButton
                             type="button"
                             label={`Eliminar ${category.name}`}
-                            tone="ghost"
+                            tone="action"
                             intent="destructive"
+                            size="compact"
                             disabled={categoryBusy}
                             onClick={() =>
                               onDeleteCategory(category.id, category.name)
                             }
                           >
-                            <Trash2 className="size-4 text-destructive" aria-hidden />
+                            <Trash2 aria-hidden />
                           </RootsIconButton>
                         ) : null}
                       </>

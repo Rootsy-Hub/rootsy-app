@@ -33,6 +33,7 @@ export type ChatRootsyToolProposal = {
   path?: string
   body?: Record<string, unknown>
   action?: string
+  subject?: string
   confirm?: "confirm" | "confirm_one"
   offerKey?: string
   next?: ChatRootsyFollowUp

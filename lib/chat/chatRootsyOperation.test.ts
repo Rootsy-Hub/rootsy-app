@@ -536,4 +536,55 @@ describe("operación en vivo del chat Rootsy", () => {
       "error",
     )
   })
+
+  it("un DELETE fallido no se vuelve OK al recargar", () => {
+    const messages = [
+      row({ id: "u1", mine: true, body: "Borrá el artículo ejemplo" }),
+      row({
+        id: "a1",
+        mine: false,
+        body: "Lo busco.",
+        plannerRun: {
+          message: "Borrá el artículo ejemplo",
+          dataRequest: { objective: "borrar artículo ejemplo" },
+          paso: 1,
+          resultados: [],
+        },
+      }),
+      row({
+        id: "t1",
+        mine: false,
+        body: "Buscar artículos",
+        toolResult: {
+          tool: "get_articles",
+          periodLabel: "Consulta",
+          items: [
+            { rank: 1, name: "[Ejemplo] Artículo de muestra", id: "art-1" },
+          ],
+        },
+      }),
+      row({
+        id: "d1",
+        mine: false,
+        body: "",
+        toolError:
+          "Escribí (Eliminar [Ejemplo] Artículo de muestra) para confirmar el borrado.",
+        toolOffers: [
+          {
+            tool: "delete_articles_articleId",
+            label: "Eliminar",
+            status: "offered",
+            method: "DELETE",
+            path: "/v1/pops/:popId/articles/:articleId",
+            filters: { articleId: "art-1" },
+          },
+        ],
+      }),
+    ]
+    const ops = deriveChatRootsyOperations(messages)
+    assert.equal(ops[0]?.phase, "error")
+    assert.match(ops[0]?.error ?? "", /Eliminar/)
+    assert.equal(ops[0]?.pendingOffers.length, 1)
+    assert.equal(chatRootsyOperationHasUserDetails(ops[0]!), true)
+  })
 })

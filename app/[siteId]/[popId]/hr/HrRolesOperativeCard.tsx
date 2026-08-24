@@ -1,12 +1,10 @@
 "use client"
 
 import type { PopRoleRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
+import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { dataWorkspaceEntityCardLosetaSurfaceClass } from "@/components/data-workspace/dataWorkspaceListStyles"
-import {
-  RootsDangerSubtleButton,
-  RootsDefaultButton,
-} from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
+import { Pencil, Trash2, UserRound } from "lucide-react"
 
 export type HrOperativeRoleRow = {
   role: PopRoleRow
@@ -24,14 +22,38 @@ type Props = {
   onDelete?: (role: PopRoleRow) => void
 }
 
-function roleMetaLine(item: HrOperativeRoleRow): string {
-  const people =
+function RoleMeta({ item }: { item: HrOperativeRoleRow }) {
+  const peopleLabel =
     item.peopleCount === 1
       ? "1 persona"
       : `${item.peopleCount} personas`
-  if (!item.role.popId) return `${people} · Plantilla de Rootsy`
-  if (item.permissionGranted == null) return people
-  return `${people} · ${item.permissionGranted} de ${item.permissionTotal} permisos`
+  const permissionsLabel =
+    item.permissionGranted == null
+      ? null
+      : `${item.permissionGranted}/${item.permissionTotal} permisos`
+  const templateLabel = item.role.popId ? null : "Plantilla de Rootsy"
+
+  return (
+    <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 font-canopy text-xs leading-snug text-rootsy-bruma-500">
+      <span className="inline-flex items-center gap-1" title={peopleLabel}>
+        <UserRound className="size-3.5" strokeWidth={1.75} aria-hidden />
+        <span className="tabular-nums">{item.peopleCount}</span>
+        <span className="sr-only">{peopleLabel}</span>
+      </span>
+      {permissionsLabel ? (
+        <>
+          <span aria-hidden>·</span>
+          <span className="tabular-nums">{permissionsLabel}</span>
+        </>
+      ) : null}
+      {templateLabel ? (
+        <>
+          <span aria-hidden>·</span>
+          <span>{templateLabel}</span>
+        </>
+      ) : null}
+    </p>
+  )
 }
 
 export function HrRolesOperativeCard({
@@ -61,28 +83,23 @@ export function HrRolesOperativeCard({
                   <p className="truncate font-canopy text-sm font-semibold text-rootsy-bruma-900">
                     {item.role.displayName}
                   </p>
-                  <p className="mt-0.5 font-canopy text-xs leading-snug text-rootsy-bruma-500">
-                    {roleMetaLine(item)}
-                  </p>
+                  <RoleMeta item={item} />
                 </div>
                 {canEditRole ? (
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <RootsDefaultButton
-                      type="button"
-                      size="compact"
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <DataWorkspaceTableIconAction
+                      label={`Editar ${item.role.displayName}`}
+                      icon={Pencil}
                       disabled={editBusy}
                       onClick={() => onEdit?.(item.role)}
-                    >
-                      Editar
-                    </RootsDefaultButton>
-                    <RootsDangerSubtleButton
-                      type="button"
-                      size="compact"
+                    />
+                    <DataWorkspaceTableIconAction
+                      label={`Eliminar ${item.role.displayName}`}
+                      icon={Trash2}
+                      variant="destructive"
                       disabled={deleteBusy || editBusy}
                       onClick={() => onDelete?.(item.role)}
-                    >
-                      Eliminar
-                    </RootsDangerSubtleButton>
+                    />
                   </div>
                 ) : null}
               </li>

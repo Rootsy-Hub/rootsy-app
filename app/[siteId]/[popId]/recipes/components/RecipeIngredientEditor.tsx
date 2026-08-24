@@ -219,13 +219,14 @@ export function RecipeIngredientEditor({
                     <RootsIconButton
                       type="button"
                       className="mb-1"
-                      tone="ghost"
+                      tone="action"
                       intent="destructive"
+                      size="compact"
                       disabled={disabled || lines.length <= 1}
                       label="Quitar ingrediente"
                       onClick={() => removeLine(line.key)}
                     >
-                      <Trash2 className="size-4" aria-hidden />
+                      <Trash2 aria-hidden />
                     </RootsIconButton>
                   </div>
                   {opt &&

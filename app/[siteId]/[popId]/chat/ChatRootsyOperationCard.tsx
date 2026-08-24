@@ -370,11 +370,12 @@ export function ChatRootsyOperationCard({
   const hasUserDetails = chatRootsyOperationHasUserDetails(operation)
   const informe = operation.informe
   const waitingOffers =
-    operation.phase === "waiting" &&
+    (operation.phase === "waiting" || operation.phase === "error") &&
     pending.length > 0 &&
     !chatRootsyOffersAutoExecute(pending)
   const waitingChoices =
-    operation.phase === "waiting" && operation.pendingChoices.length > 0
+    (operation.phase === "waiting" || operation.phase === "error") &&
+    operation.pendingChoices.length > 0
   const showDash =
     !collapsed &&
     Boolean(
@@ -627,6 +628,11 @@ export function ChatRootsyOperationCard({
             </button>
             {detailsOpen ? (
               <div className="space-y-3 px-3.5 pb-3">
+                {operation.error ? (
+                  <p className="chat-rootsy-op-alert font-canopy text-sm" role="alert">
+                    {operation.error}
+                  </p>
+                ) : null}
                 {informe ? (
                   <div className="space-y-2">
                     {informe.respuesta.trim() ? (

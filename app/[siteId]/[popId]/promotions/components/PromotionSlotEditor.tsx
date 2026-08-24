@@ -14,7 +14,7 @@ import {
   rootsFormBrumaTextSecondaryClass,
   rootsFormFieldLabelClass,
 } from "@/components/rootsy-form"
-import { RootsSubtleButton } from "@/components/rootsy-button"
+import { RootsIconButton, RootsSubtleButton } from "@/components/rootsy-button"
 import { SelectGroup, SelectLabel } from "@/components/ui/select"
 import {
   PROMOTION_OPTION_KIND_LABEL,
@@ -288,15 +288,18 @@ export function PromotionSlotEditor({
                   />
                 </div>
                 {lines.length > 1 ? (
-                  <button
+                  <RootsIconButton
                     type="button"
                     disabled={disabled}
-                    className="mb-1 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-                    aria-label="Quitar ítem"
+                    className="mb-1"
+                    tone="action"
+                    intent="destructive"
+                    size="compact"
+                    label="Quitar ítem"
                     onClick={() => removeLine(slotIndex)}
                   >
-                    <Trash2 className="size-4" aria-hidden />
-                  </button>
+                    <Trash2 aria-hidden />
+                  </RootsIconButton>
                 ) : null}
               </div>
             ) : null}
@@ -363,15 +366,18 @@ export function PromotionSlotEditor({
                           {PROMOTION_OPTION_KIND_LABEL[meta.kind]}
                         </span>
                       ) : null}
-                      <button
+                      <RootsIconButton
                         type="button"
                         disabled={disabled}
-                        className="mb-1 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-                        aria-label="Quitar opción"
+                        className="mb-1"
+                        tone="action"
+                        intent="destructive"
+                        size="compact"
+                        label="Quitar opción"
                         onClick={() => removeOption(slotIndex, optIndex)}
                       >
-                        <Trash2 className="size-4" aria-hidden />
-                      </button>
+                        <Trash2 aria-hidden />
+                      </RootsIconButton>
                     </div>
                   )
                 })

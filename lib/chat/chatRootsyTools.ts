@@ -3,6 +3,7 @@ import type {
   ChatRootsyToolOffer,
   ChatRootsyToolResult,
 } from "@/app/[siteId]/[popId]/chat/chatTypes"
+import { buildChatRootsyDeletePreview } from "@/lib/chat/chatRootsyDeleteConfirm"
 import { buildChatRootsyOfferPreview } from "@/lib/chat/chatRootsyOfferPreview"
 import type { ChatRootsyPlannerResultado } from "@/lib/chat/chatRootsyPlannerStep"
 import { chatRootsyApiQueryTitle } from "@/lib/chat/chatRootsyApiQuery"
@@ -120,7 +121,9 @@ export function buildChatRootsyToolOffers(
     .map((proposal) => {
       const offer = buildChatRootsyToolOfferFromProposal(proposal)
       if (!offer) return null
-      const preview = buildChatRootsyOfferPreview(proposal, resultados)
+      const preview =
+        buildChatRootsyOfferPreview(proposal, resultados) ??
+        buildChatRootsyDeletePreview(proposal, resultados)
       return preview ? { ...offer, preview } : offer
     })
     .filter((row): row is ChatRootsyToolOffer => row != null)

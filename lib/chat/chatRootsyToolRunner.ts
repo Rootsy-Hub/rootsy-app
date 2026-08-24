@@ -25,6 +25,12 @@ import {
 } from "@/lib/chat/chatRootsyToolMap"
 import { getChatRootsyRegistryEntry } from "@/lib/chat/tools/chatRootsyToolRegistry"
 import {
+  chatRootsyDeleteNeedsTypedConfirm,
+  resolveChatRootsyDeleteName,
+  withChatRootsyDeleteConfirmBody,
+} from "@/lib/chat/chatRootsyDeleteConfirm"
+import type { ChatRootsyPlannerResultado } from "@/lib/chat/chatRootsyPlannerStep"
+import {
   validateChatRootsyProposal,
   type ChatRootsyToolProposal,
 } from "@/lib/chat/tools/chatRootsyToolSelect"
@@ -116,9 +122,15 @@ async function runSupplierPayments(
   }
 }
 
+type ChatRootsyToolRunContext = {
+  resultados?: ChatRootsyPlannerResultado[]
+  recent?: ChatRootsyRecentToolUse[]
+}
+
 async function runApiEndpoint(
   popId: string,
   proposal: ChatRootsyToolProposal,
+  ctx?: ChatRootsyToolRunContext,
 ): Promise<{ ok: true; result: ChatRootsyToolResult } | { ok: false; error: string }> {
   const resolved = resolveChatRootsyPlannerRequest({
     id: proposal.tool,
@@ -130,10 +142,32 @@ async function runApiEndpoint(
   }
 
   const capped = readChatRootsyPlannerFilters(proposal.filters ?? {})
-  const body =
+  let body =
     resolved.endpoint.method === "GET"
       ? undefined
       : readChatRootsyPlannerBody(proposal.body)
+  if (
+    chatRootsyDeleteNeedsTypedConfirm(
+      resolved.endpoint.method,
+      resolved.endpoint.path,
+    )
+  ) {
+    const name = resolveChatRootsyDeleteName(
+      { ...proposal, path: proposal.path ?? resolved.endpoint.path },
+      {
+        resultados: ctx?.resultados,
+        subject: proposal.subject,
+        recent: ctx?.recent,
+      },
+    )
+    if (!name) {
+      return {
+        ok: false,
+        error: "No pude confirmar el nombre del registro para borrarlo.",
+      }
+    }
+    body = withChatRootsyDeleteConfirmBody(body, name)
+  }
   const built = buildChatRootsyApiCall(popId, resolved.endpoint, capped, body)
   if (!built.ok) return built
 
@@ -266,6 +300,7 @@ export async function runChatRootsyTool(
   popId: string,
   proposal: ChatRootsyToolProposal,
   sourceItems: ChatRootsyRecentToolUse["items"] = [],
+  ctx?: ChatRootsyToolRunContext,
 ): Promise<
   { ok: true; result: ChatRootsyToolResult } | { ok: false; error: string }
 > {
@@ -275,12 +310,20 @@ export async function runChatRootsyTool(
     method: proposal.method,
   })
   if (resolved.ok) {
-    return runApiEndpoint(popId, {
-      ...proposal,
-      tool: resolved.endpoint.id,
-      method: resolved.endpoint.method,
-      path: resolved.endpoint.path,
-    })
+    return runApiEndpoint(
+      popId,
+      {
+        ...proposal,
+        tool: resolved.endpoint.id,
+        method: resolved.endpoint.method,
+        path: proposal.path || resolved.endpoint.path,
+        filters: {
+          ...resolved.pathParams,
+          ...proposal.filters,
+        },
+      },
+      ctx,
+    )
   }
   return runLegacyTool(popId, proposal.tool, sourceItems, proposal.filters)
 }

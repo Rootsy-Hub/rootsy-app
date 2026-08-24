@@ -108,12 +108,14 @@ function KeyValueEditor({
                 <RootsIconButton
                   type="button"
                   label="Quitar"
-                  tone="ghost"
+                  tone="action"
+                  intent="destructive"
+                  size="compact"
                   className="mt-7 shrink-0"
                   disabled={disabled}
                   onClick={() => removeRow(index)}
                 >
-                  <Trash2 className="size-4" aria-hidden />
+                  <Trash2 aria-hidden />
                 </RootsIconButton>
               </div>
             ))}

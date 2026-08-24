@@ -36,7 +36,7 @@ Qué: Ficha del catálogo. No es venta, margen ni stock valorizado del período.
 Invariante: Se identifica por id. Si q trae varios, confirm_one. isActive=false no se vende; igual se puede PATCH.
 Listar: GET /articles?q=nombre&pageSize=20
 Fila: id, name, salePrice, iva, isActive, stockOnHand, categoryId
-Escribir: PATCH /articles/:articleId body parcial {salePrice}|{name}|{iva}|{isActive}. POST crea ficha completa. DELETE pide confirmación.
+Escribir: PATCH /articles/:articleId body parcial {salePrice}|{name}|{iva}|{isActive}. POST crea ficha completa. DELETE pide confirmación en el chat; la app manda confirmationTyped. No lo pongas en el body.
 
 ## Categorías de artículos
 Qué: Árbol de categorías del catálogo. No es ventas por rubro.
@@ -57,35 +57,35 @@ Qué: Ficha de cliente. Quién debe es current-accounts. Ranking es statistics/c
 Invariante: Uno = id. Varios con el mismo nombre → confirm_one. isActive=false no opera; se puede PATCH.
 Listar: GET /clients?q=nombre&pageSize=20
 Fila: id, name, isActive, taxId, email, lastSaleAt
-Escribir: PATCH /clients/:clientId body parcial {name}|{isActive}|{email}|{taxId}. POST crea. DELETE pide confirmación.
+Escribir: PATCH /clients/:clientId body parcial {name}|{isActive}|{email}|{taxId}. POST crea. DELETE pide confirmación en el chat; la app manda confirmationTyped.
 
 ## Proveedores
 Qué: Ficha de proveedor. Deudas: current-accounts direction=payable.
 Invariante: Uno = id. Varios con el mismo nombre → confirm_one.
 Listar: GET /suppliers/table?q=nombre o GET /suppliers?q= (autocomplete, tope 8)
 Fila: id, name, isActive, taxId
-Escribir: PATCH /suppliers/:supplierId body parcial {name}|{isActive}. POST crea. DELETE pide confirmación.
+Escribir: PATCH /suppliers/:supplierId body parcial {name}|{isActive}. POST crea. DELETE pide confirmación en el chat; la app manda confirmationTyped.
 
 ## Recetas
 Qué: Catálogo de recetas / platos. No es producción del período.
 Invariante: Una receta = recipeId. Varias con el mismo nombre → confirm_one.
 Listar: GET /recipes?q=nombre
 Fila: id, name, salePrice, isActive, categoryId
-Escribir: PATCH /recipes/:recipeId body parcial {salePrice}|{name}|{isActive}. POST crea. DELETE pide confirmación. Categorías: /recipe-categories.
+Escribir: PATCH /recipes/:recipeId body parcial {salePrice}|{name}|{isActive}. POST crea. DELETE pide confirmación en el chat; la app manda confirmationTyped. Categorías: /recipe-categories.
 
 ## Promociones
 Qué: Promos del catálogo. No calcula impacto en ventas.
 Invariante: Una promo = promotionId. Varias parecidas → confirm_one.
 Listar: GET /promotions?q=nombre
 Fila: id, name, isActive, promotionType
-Escribir: PATCH /promotions/:promotionId body parcial {isActive}|{name}. POST crea. DELETE pide confirmación.
+Escribir: PATCH /promotions/:promotionId body parcial {isActive}|{name}. POST crea. DELETE pide confirmación en el chat; la app manda confirmationTyped.
 
 ## Servicios
 Qué: Catálogo de servicios. statistics/services está vacío. Cargos: operations view=services.
 Invariante: Uno = serviceId. Varios con el mismo nombre → confirm_one.
 Listar: GET /services?q=nombre
 Fila: id, name, isActive, categoryId
-Escribir: PATCH /services/:serviceId body parcial {name}|{isActive}|{defaultPrice}. POST crea. DELETE pide confirmación. Categorías: /service-categories.
+Escribir: PATCH /services/:serviceId body parcial {name}|{isActive}|{defaultPrice}. POST crea. DELETE pide confirmación en el chat; la app manda confirmationTyped. Categorías: /service-categories.
 
 ## RRHH
 Qué: Empleado = persona laboral (fichaje, sueldo). Miembro = acceso a Rootsy + rol. Rol = permiso del sistema.

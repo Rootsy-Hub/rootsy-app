@@ -1058,8 +1058,8 @@ export function HrWorkspaceView() {
 
                 <aside className="min-w-0 space-y-4 lg:col-span-3">
                   <DataWorkspaceBlocksSection
-                    title="Si entra a Rootsy"
-                    description="Qué puede hacer en el sistema. Distinto del puesto en el local."
+                    title="Roles en Rootsy"
+                    description="Qué puede hacer en el sistema."
                     action={
                       canManageInvites ? (
                         <RootsDefaultButton

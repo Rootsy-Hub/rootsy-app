@@ -96,6 +96,7 @@ export type ChatMessageRow = {
   plannerRun?: ChatRootsyPlannerRun
   plannerChoices?: ChatRootsyPlannerChoice[]
   closeBrief?: ChatRootsyCloseBrief
+  toolError?: string
   devTrace?: ChatRootsyDevTrace
 }
 

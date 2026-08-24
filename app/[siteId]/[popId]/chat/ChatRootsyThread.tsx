@@ -391,6 +391,7 @@ export function ChatRootsyThread({
               ? { ...item, status: "used" as const }
               : item,
           ),
+          toolError: undefined,
         }
       }),
     )
@@ -410,6 +411,7 @@ export function ChatRootsyThread({
           path: offer?.path,
           body: offer?.body,
           action: offer?.action ?? offer?.label,
+          subject: offer?.preview?.subject,
           confirm: offer?.confirm,
           offerKey: offer?.offerKey ?? key,
         }
@@ -427,8 +429,9 @@ export function ChatRootsyThread({
           if (row.id !== messageId) return row
           return {
             ...row,
-            toolOffer: undefined,
-            toolOffers: undefined,
+            toolOffer: host?.toolOffer,
+            toolOffers: host?.toolOffers,
+            toolError: res.error,
           }
         })
         if (!res.devTrace) return restored
@@ -502,6 +505,7 @@ export function ChatRootsyThread({
           toolOffer: undefined,
           toolOffers: undefined,
           plannerChoices: undefined,
+          toolError: undefined,
         }
       }),
     )

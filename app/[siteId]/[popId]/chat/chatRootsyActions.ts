@@ -448,6 +448,7 @@ type RootsyToolQuery = {
   path?: string
   body?: Record<string, unknown>
   action?: string
+  subject?: string
   confirm?: ChatRootsyToolOffer["confirm"]
   offerKey?: string
 }
@@ -460,6 +461,7 @@ function queriesFromOffers(offers: ChatRootsyToolOffer[]): RootsyToolQuery[] {
     path: offer.path,
     body: offer.body,
     action: offer.action ?? offer.label,
+    subject: offer.preview?.subject,
     confirm: offer.confirm,
     offerKey: offer.offerKey ?? chatRootsyOfferKey(offer),
   }))
@@ -533,6 +535,7 @@ export async function runRootsyChatTools(input: {
         ...proposal,
         action: query.action,
         confirm: query.confirm,
+        subject: query.subject,
       }
       proposals.push({
         ...next,
@@ -588,6 +591,10 @@ export async function runRootsyChatTools(input: {
       popId,
       proposal,
       sourceItemsForTool(proposal.tool, { recent }),
+      {
+        resultados: input.plannerRun?.resultados,
+        recent,
+      },
     )
     if (!executed.ok) {
       console.info("[rootsy-tool]", {

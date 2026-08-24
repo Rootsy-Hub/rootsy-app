@@ -508,7 +508,7 @@ export const ROOTSY_ICON_BUTTON_ROW_INTENTS: {
   {
     id: "destructive",
     token: "icon-button.row.destructive",
-    usage: "Eliminar fila — danger funcional.",
+    usage: "Eliminar fila — hover danger, default bruma secundario.",
   },
 ]
 

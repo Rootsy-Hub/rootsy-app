@@ -172,6 +172,7 @@ export function DataWorkspaceTableThumbnail({
   )
 }
 
+/** Acciones de fila (ver / editar / eliminar). Reposo bruma; hover según intent. */
 export function DataWorkspaceTableIconAction({
   label,
   onClick,

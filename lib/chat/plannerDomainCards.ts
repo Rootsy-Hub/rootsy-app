@@ -44,7 +44,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       list: "GET /articles?q=nombre&pageSize=20",
       row: "id, name, salePrice, iva, isActive, stockOnHand, categoryId",
       write:
-        "PATCH /articles/:articleId body parcial {salePrice}|{name}|{iva}|{isActive}. POST crea ficha completa. DELETE pide confirmación.",
+        "PATCH /articles/:articleId body parcial {salePrice}|{name}|{iva}|{isActive}. POST crea ficha completa. DELETE pide confirmación en el chat; la app manda confirmationTyped. No lo pongas en el body.",
     },
     {
       id: "categorias",
@@ -73,7 +73,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       list: "GET /clients?q=nombre&pageSize=20",
       row: "id, name, isActive, taxId, email, lastSaleAt",
       write:
-        "PATCH /clients/:clientId body parcial {name}|{isActive}|{email}|{taxId}. POST crea. DELETE pide confirmación.",
+        "PATCH /clients/:clientId body parcial {name}|{isActive}|{email}|{taxId}. POST crea. DELETE pide confirmación en el chat; la app manda confirmationTyped.",
     },
     {
       id: "proveedores",
@@ -83,7 +83,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       list: "GET /suppliers/table?q=nombre o GET /suppliers?q= (autocomplete, tope 8)",
       row: "id, name, isActive, taxId",
       write:
-        "PATCH /suppliers/:supplierId body parcial {name}|{isActive}. POST crea. DELETE pide confirmación.",
+        "PATCH /suppliers/:supplierId body parcial {name}|{isActive}. POST crea. DELETE pide confirmación en el chat; la app manda confirmationTyped.",
     },
     {
       id: "recetas",
@@ -93,7 +93,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       list: "GET /recipes?q=nombre",
       row: "id, name, salePrice, isActive, categoryId",
       write:
-        "PATCH /recipes/:recipeId body parcial {salePrice}|{name}|{isActive}. POST crea. DELETE pide confirmación. Categorías: /recipe-categories.",
+        "PATCH /recipes/:recipeId body parcial {salePrice}|{name}|{isActive}. POST crea. DELETE pide confirmación en el chat; la app manda confirmationTyped. Categorías: /recipe-categories.",
     },
     {
       id: "promociones",
@@ -103,7 +103,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       list: "GET /promotions?q=nombre",
       row: "id, name, isActive, promotionType",
       write:
-        "PATCH /promotions/:promotionId body parcial {isActive}|{name}. POST crea. DELETE pide confirmación.",
+        "PATCH /promotions/:promotionId body parcial {isActive}|{name}. POST crea. DELETE pide confirmación en el chat; la app manda confirmationTyped.",
     },
     {
       id: "servicios",
@@ -113,7 +113,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       list: "GET /services?q=nombre",
       row: "id, name, isActive, categoryId",
       write:
-        "PATCH /services/:serviceId body parcial {name}|{isActive}|{defaultPrice}. POST crea. DELETE pide confirmación. Categorías: /service-categories.",
+        "PATCH /services/:serviceId body parcial {name}|{isActive}|{defaultPrice}. POST crea. DELETE pide confirmación en el chat; la app manda confirmationTyped. Categorías: /service-categories.",
     },
     {
       id: "rrhh",

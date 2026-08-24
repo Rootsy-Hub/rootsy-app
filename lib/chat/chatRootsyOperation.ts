@@ -113,6 +113,7 @@ function hasOperationSignal(row: ChatMessageRow): boolean {
       row.plannerChoices?.length ||
       row.closeBrief ||
       row.toolResult ||
+      row.toolError ||
       offersOf(row).length,
   )
 }
@@ -552,6 +553,7 @@ function buildOperationFromCluster(
   let pedidoPlanificador = ""
   let plannerPaso = 1
   let informe: ChatRootsyPlannerInforme | undefined
+  let persistedError: string | undefined
 
   for (const row of rest) {
     if (!pedidoPlanificador) {
@@ -560,6 +562,7 @@ function buildOperationFromCluster(
     }
     if (row.plannerRun?.paso) plannerPaso = row.plannerRun.paso
     if (row.plannerRun?.informe) informe = row.plannerRun.informe
+    if (row.toolError?.trim()) persistedError = row.toolError.trim()
     const rowOffers = offersOf(row)
     if (rowOffers.some((offer) => offer.status === "offered")) {
       pendingOffers = rowOffers.filter((offer) => offer.status === "offered")
@@ -620,7 +623,11 @@ function buildOperationFromCluster(
     phase = nextClusterStarts ? "stopped" : hasSignal ? "stopped" : "understanding"
   }
 
-  if (live?.error && liveOnHost && !pendingOffers.length && !pendingChoices.length) {
+  if (
+    ((live?.error && liveOnHost) || persistedError) &&
+    !pendingChoices.length &&
+    !liveBusy
+  ) {
     phase = "error"
   }
   if (liveBusy && live?.mode === "execute") {
@@ -650,7 +657,8 @@ function buildOperationFromCluster(
     pendingHostId,
     pendingChoices,
     choiceHostId,
-    error: live?.error && liveOnHost ? live.error : undefined,
+    error:
+      (live?.error && liveOnHost ? live.error : undefined) ?? persistedError,
     memberIds,
     informe,
   }
@@ -763,6 +771,7 @@ export function chatRootsyStepUserDetails(
 export function chatRootsyOperationHasUserDetails(
   operation: ChatRootsyOperationView,
 ): boolean {
+  if (operation.error?.trim()) return true
   if (operation.informe?.respuesta?.trim()) return true
   if (operation.informe?.acciones.length) return true
   return operation.steps.some((step) => step.items.length > 0)

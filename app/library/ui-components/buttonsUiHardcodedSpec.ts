@@ -623,21 +623,12 @@ export function getIconButtonUiSurface(
   }
 }
 
-function getIconButtonRowDefaultSurface(intent: IconButtonRowIntentId): IconButtonUiSurface {
-  const iconColor = (() => {
-    switch (intent) {
-      case "neutral":
-        return workspace.textSecondary
-      case "edit":
-        return hx("savia", "600")
-      case "destructive":
-        return colorTokenHex("danger", "Fondo")
-    }
-  })()
-
+function getIconButtonRowDefaultSurface(
+  _intent: IconButtonRowIntentId,
+): IconButtonUiSurface {
   return {
     backgroundColor: "transparent",
-    iconColor,
+    iconColor: workspace.textSecondary,
     border: "1px solid transparent",
     borderRadiusPx: ICON_BUTTON_UI_RADIUS_PX,
   }
