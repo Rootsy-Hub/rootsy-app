@@ -84,7 +84,7 @@ describe("operación en vivo del chat Rootsy", () => {
     const waiting = deriveChatRootsyOperations(messages)
     assert.equal(waiting[0]?.phase, "executing")
     assert.equal(waiting[0]?.anchorMessageId, "a1")
-    assert.equal(waiting[0]?.title, "aumentar aguas 50%")
+    assert.equal(waiting[0]?.title, "Aumentá 50% el precio de las aguas")
     assert.equal(waiting[0]?.pendingOffers.length, 1)
     assert.equal(chatRootsyOffersAutoExecute(waiting[0]!.pendingOffers), true)
 
@@ -165,6 +165,76 @@ describe("operación en vivo del chat Rootsy", () => {
     )
   })
 
+  it("usa taskTitle de Rootsy y no el objective ni el mensaje", () => {
+    const origin = row({
+      id: "u1",
+      mine: true,
+      body: "borrá el huevo del catálogo, el que se parece a huevo",
+    })
+    const opening = row({
+      id: "a1",
+      mine: false,
+      body: "Puedo eliminar Huevo si me das permiso.",
+      plannerRun: {
+        message: "borrá el huevo del catálogo",
+        dataRequest: {
+          objective:
+            "artículos del catálogo cuyo nombre coincida o se parezca a 'huevo'",
+        },
+        taskTitle: "Eliminar Huevo",
+        paso: 1,
+        resultados: [],
+      },
+      toolOffers: [
+        {
+          tool: "get_articles",
+          label: "Buscar huevo",
+          status: "offered",
+          method: "GET",
+          path: "/v1/pops/:popId/articles",
+          action: "Buscar artículos que coincidan con huevo",
+        },
+      ],
+    })
+    assert.equal(deriveChatRootsyOperations([origin, opening])[0]?.title, "Eliminar Huevo")
+
+    const next = deriveChatRootsyOperations([
+      origin,
+      {
+        ...opening,
+        toolOffers: opening.toolOffers?.map((offer) => ({
+          ...offer,
+          status: "used" as const,
+        })),
+      },
+      row({
+        id: "a2",
+        mine: false,
+        body: "",
+        plannerRun: {
+          message: "borrá el huevo del catálogo",
+          dataRequest: {
+            objective:
+              "artículos del catálogo cuyo nombre coincida o se parezca a 'huevo'",
+          },
+          paso: 2,
+          resultados: [],
+        },
+        toolOffers: [
+          {
+            tool: "delete_articles_articleId",
+            label: "Eliminar Huevo",
+            status: "offered",
+            method: "DELETE",
+            path: "/v1/pops/:popId/articles/:articleId",
+            action: "Eliminar Huevo",
+          },
+        ],
+      }),
+    ])
+    assert.equal(next[0]?.title, "Eliminar Huevo")
+  })
+
   it("cierra la operación cuando hay hechos aplicados", () => {
     const ops = deriveChatRootsyOperations([
       row({ id: "u1", mine: true, body: "Aumentá las aguas" }),
@@ -195,7 +265,7 @@ describe("operación en vivo del chat Rootsy", () => {
     ])
     assert.equal(ops[0]?.phase, "completed")
     assert.equal(ops[0]?.anchorMessageId, "a1")
-    assert.equal(ops[0]?.title, "aumentar 50% el precio de las aguas")
+    assert.equal(ops[0]?.title, "Aumentá las aguas")
     assert.match(ops[0]?.pasoLabel ?? "", /Tarea completada/)
   })
 

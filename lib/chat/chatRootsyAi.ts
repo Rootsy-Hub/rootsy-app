@@ -53,10 +53,11 @@ export const CHAT_ROOTSY_FIRST_TURN_PROTOCOL = [
   "Respondé solo este JSON, nada más:",
   '{"reply":"texto visible","data_request":null}',
   "o",
-  '{"reply":"texto visible","data_request":{"objective":"...","time":{},"filters":{}}}',
+  '{"reply":"texto visible","task_title":"Eliminar Huevo","data_request":{"objective":"...","time":{},"filters":{}}}',
   "data_request si necesitás cifras o listados, o si hay que crear, cambiar o borrar algo del negocio.",
+  "Si hay data_request, mandá también task_title: título corto de la tarea para la persona (verbo + sujeto, 3 a 7 palabras). No es el objective.",
   "No digas que no podés aplicar un cambio. Pedí permiso y mandá data_request.",
-  "objective: qué hay que consultar o cambiar, en lenguaje de negocio. Sin tools, URLs ni endpoints.",
+  "objective: qué hay que consultar o cambiar, en lenguaje de negocio. Sin tools, URLs ni endpoints. Es para quien arma las llamadas, no se muestra como título.",
   "time opcional: from, to (ISO YYYY-MM-DD), period (this_month|last_month|this_week|today|yesterday|this_year), note (recorte entendido).",
   "filters opcionales: limit, q, direction, sort.",
   "El reply es tu voz. Prohibido URLs, tokens, herramientas, endpoints o la palabra JSON en el reply.",
@@ -618,7 +619,13 @@ export async function requestChatRootsyFirstTurn(
   if (parsed) {
     const reply = sanitizeChatRootsyReply(parsed.reply) ?? parsed.reply
     return {
-      turn: reply ? { reply, data_request: parsed.data_request } : null,
+      turn: reply
+        ? {
+            reply,
+            data_request: parsed.data_request,
+            ...(parsed.task_title ? { task_title: parsed.task_title } : {}),
+          }
+        : null,
       raw,
       source,
       error: reply

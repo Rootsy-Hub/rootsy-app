@@ -1,6 +1,6 @@
 /**
  * Pie del hilo mientras Rootsy piensa.
- * Dos elipses de glow que derivan; el hilo de arriba cede el lugar.
+ * Tres elipses: barrido de señal, lavado cónico y núcleo screen.
  */
 export function ChatRootsyThinkingHalo({ exiting = false }: { exiting?: boolean }) {
   return (
@@ -13,8 +13,9 @@ export function ChatRootsyThinkingHalo({ exiting = false }: { exiting?: boolean 
       aria-live="polite"
     >
       <span className="sr-only">Rootsy está pensando</span>
-      <span className="chat-rootsy-thinking__glow chat-rootsy-thinking__glow--near" aria-hidden />
-      <span className="chat-rootsy-thinking__glow chat-rootsy-thinking__glow--far" aria-hidden />
+      <span className="chat-rootsy-thinking__glow chat-rootsy-thinking__glow--signal" aria-hidden />
+      <span className="chat-rootsy-thinking__glow chat-rootsy-thinking__glow--wash" aria-hidden />
+      <span className="chat-rootsy-thinking__glow chat-rootsy-thinking__glow--core" aria-hidden />
     </div>
   )
 }

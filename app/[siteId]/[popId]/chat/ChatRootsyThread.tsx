@@ -174,11 +174,9 @@ export function ChatRootsyThread({
 
   useEffect(() => {
     if (!hydrated) return
-    const frame = window.requestAnimationFrame(() =>
-      scrollToEnd(sending || threadMotion === "settle"),
-    )
+    const frame = window.requestAnimationFrame(() => scrollToEnd(sending))
     return () => window.cancelAnimationFrame(frame)
-  }, [hydrated, messages.length, sending, threadMotion, scrollToEnd])
+  }, [hydrated, messages.length, sending, scrollToEnd])
 
   useEffect(() => {
     if (skipThreadMotionRef.current) {
@@ -207,7 +205,7 @@ export function ChatRootsyThread({
       setThreadMotion("idle")
       setHaloExiting(false)
       setArriveId(null)
-    }, 800)
+    }, 720)
     return () => window.clearTimeout(settleTimer)
   }, [sending])
 
@@ -634,7 +632,7 @@ export function ChatRootsyThread({
           ref={listRef}
           className={cn(
             "chat-rootsy-thread-list game-scroll flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain bg-transparent px-4 pt-4 sm:px-6 [overflow-anchor:none]",
-            (sending || threadMotion !== "idle") &&
+            (sending || threadMotion === "rise") &&
               "chat-rootsy-thread-list--thinking",
             threadMotion === "rise" && "chat-rootsy-thread-list--rise",
             threadMotion === "settle" && "chat-rootsy-thread-list--settle",
@@ -738,7 +736,7 @@ export function ChatRootsyThread({
       <form
         className={cn(
           "chat-rootsy-thread-chrome flex shrink-0 items-center gap-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6",
-          (sending || threadMotion !== "idle") &&
+          (sending || threadMotion === "rise") &&
             "chat-rootsy-thread-chrome--thinking",
         )}
         onSubmit={(event) => {

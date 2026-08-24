@@ -20,7 +20,7 @@
 
 .chat-rootsy-thread-list {
   padding-bottom: 1rem;
-  transition: padding-bottom 640ms cubic-bezier(0.22, 1.18, 0.36, 1);
+  transition: padding-bottom 680ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .chat-rootsy-thread-list--thinking {
@@ -37,12 +37,12 @@
 
 .chat-rootsy-thread-list--settle
   .chat-rootsy-thread-item:not(.chat-rootsy-thread-item--arrive) {
-  animation: chat-rootsy-thread-settle 720ms cubic-bezier(0.22, 1.18, 0.36, 1)
+  animation: chat-rootsy-thread-settle 680ms cubic-bezier(0.22, 1, 0.36, 1)
     both;
 }
 
 .chat-rootsy-thread-item--arrive {
-  animation: chat-rootsy-thread-arrive 780ms cubic-bezier(0.22, 1.18, 0.36, 1)
+  animation: chat-rootsy-thread-arrive 680ms cubic-bezier(0.22, 1, 0.36, 1)
     both;
 }
 
@@ -53,7 +53,7 @@
 }
 
 /**
- * Presencia de pensamiento — dos elipses que derivan sobre el pie del hilo.
+ * Presencia de pensamiento — tres elipses en el pie del hilo.
  */
 .chat-rootsy-thinking {
   pointer-events: none;
@@ -75,29 +75,54 @@
   position: absolute;
   left: 50%;
   border-radius: 50%;
+}
+
+.chat-rootsy-thinking__glow--signal {
+  bottom: -72px;
+  height: 138px;
+  width: min(78vw, 590px);
   background: radial-gradient(
     ellipse at center,
-    rgb(224 255 255 / 0.36) 0%,
-    rgb(142 238 250 / 0.28) 20%,
-    rgb(76 184 221 / 0.13) 47%,
-    transparent 72%
+    rgb(238 253 255 / 0.48) 0%,
+    rgb(161 238 255 / 0.35) 18%,
+    rgb(95 135 255 / 0.2) 42%,
+    rgb(76 184 221 / 0.1) 58%,
+    transparent 74%
   );
-  filter: blur(11px);
+  filter: blur(9px);
+  animation: chat-rootsy-signal-sweep 4.2s ease-in-out infinite;
 }
 
-.chat-rootsy-thinking__glow--near {
-  bottom: -68px;
-  height: 126px;
-  width: min(76vw, 560px);
-  animation: chat-rootsy-drift-glow 5.4s ease-in-out infinite;
-}
-
-.chat-rootsy-thinking__glow--far {
-  bottom: -92px;
-  height: 150px;
-  width: min(82vw, 650px);
+.chat-rootsy-thinking__glow--wash {
+  bottom: -100px;
+  height: 168px;
+  width: min(84vw, 680px);
   opacity: 0.8;
+  background: conic-gradient(
+    from 210deg at 50% 100%,
+    transparent 0deg,
+    rgb(83 222 255 / 0.18) 58deg,
+    rgb(172 112 255 / 0.17) 120deg,
+    rgb(121 242 226 / 0.14) 184deg,
+    transparent 250deg
+  );
+  filter: blur(16px);
   animation: chat-rootsy-drift-glow-soft 7.2s ease-in-out -2.1s infinite;
+}
+
+.chat-rootsy-thinking__glow--core {
+  bottom: -83px;
+  height: 118px;
+  width: min(64vw, 460px);
+  background: radial-gradient(
+    ellipse at center,
+    rgb(221 255 255 / 0.45) 0%,
+    rgb(148 238 255 / 0.18) 38%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  filter: blur(4px);
+  animation: chat-rootsy-drift-glow 5.4s ease-in-out -1s infinite;
 }
 
 @keyframes chat-rootsy-thinking-enter {
@@ -117,6 +142,18 @@
   }
   to {
     opacity: 0;
+  }
+}
+
+@keyframes chat-rootsy-signal-sweep {
+  0%,
+  100% {
+    opacity: 0.78;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-12px) scale(1.08);
   }
 }
 
@@ -161,9 +198,6 @@
   0% {
     transform: translateY(-14px);
   }
-  48% {
-    transform: translateY(5px);
-  }
   100% {
     transform: translateY(0);
   }
@@ -172,15 +206,11 @@
 @keyframes chat-rootsy-thread-arrive {
   0% {
     opacity: 0;
-    transform: translateY(22px) scale(0.98);
-  }
-  58% {
-    opacity: 1;
-    transform: translateY(-6px) scale(1.01);
+    transform: translateY(16px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -203,8 +233,9 @@
     animation: none !important;
   }
 
-  .chat-rootsy-thinking__glow--near,
-  .chat-rootsy-thinking__glow--far {
+  .chat-rootsy-thinking__glow--signal,
+  .chat-rootsy-thinking__glow--wash,
+  .chat-rootsy-thinking__glow--core {
     transform: translateX(-50%);
   }
 }

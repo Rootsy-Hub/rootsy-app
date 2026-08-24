@@ -567,15 +567,15 @@ function buildOperationFromCluster(
   let pendingChoices: ChatRootsyPlannerChoice[] = []
   let choiceHostId: string | null = null
   let hasClose = false
-  let pedidoPlanificador = ""
+  let taskTitle = ""
   let plannerPaso = 1
   let informe: ChatRootsyPlannerInforme | undefined
   let persistedError: string | undefined
 
   for (const row of rest) {
-    if (!pedidoPlanificador) {
-      const objective = row.plannerRun?.dataRequest?.objective?.trim()
-      if (objective) pedidoPlanificador = objective
+    if (!taskTitle) {
+      const named = row.plannerRun?.taskTitle?.trim()
+      if (named) taskTitle = named
     }
     if (row.plannerRun?.paso) plannerPaso = row.plannerRun.paso
     if (row.plannerRun?.informe) informe = row.plannerRun.informe
@@ -667,7 +667,7 @@ function buildOperationFromCluster(
     id: origin.id,
     originMessageId: origin.id,
     anchorMessageId: anchor.id,
-    title: titleFromPedido(pedidoPlanificador || origin.body),
+    title: titleFromPedido(taskTitle || origin.body),
     phase,
     paso: plannerPaso,
     pasoLabel: pasoLabel(phase, plannerPaso, steps.length),

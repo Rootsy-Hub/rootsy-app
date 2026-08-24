@@ -80,6 +80,26 @@ describe("data_request de Rootsy", () => {
     assert.equal(shouldCallChatRootsyPlanner(fallback), false)
   })
 
+  it("parsea task_title solo si hay data_request, y lo descarta si es URL", () => {
+    const named = parseChatRootsyFirstTurn(
+      '{"reply":"Puedo eliminar Huevo, ¿me das permiso?","task_title":"Eliminar Huevo.","data_request":{"objective":"borrar el artículo Huevo"}}',
+    )
+    assert.equal(named?.task_title, "Eliminar Huevo")
+    assert.equal(named?.data_request?.objective, "borrar el artículo Huevo")
+
+    const ignored = parseChatRootsyFirstTurn(
+      '{"reply":"Estoy por acá, mirando el parque.","task_title":"Eliminar Huevo","data_request":null}',
+    )
+    assert.equal(ignored?.task_title, undefined)
+    assert.equal(ignored?.data_request, null)
+
+    const url = parseChatRootsyFirstTurn(
+      '{"reply":"Puedo mirar eso.","task_title":"https://api.example.com/v1/articles","data_request":{"objective":"listar artículos"}}',
+    )
+    assert.equal(url?.task_title, undefined)
+    assert.equal(url?.data_request?.objective, "listar artículos")
+  })
+
   it("arma el payload de la consultora con data_request y sin personalidad", () => {
     const request = validateChatRootsyDataRequest({
       objective: "artículos con menos margen más vendidos",
@@ -105,6 +125,7 @@ describe("data_request de Rootsy", () => {
     assert.ok(payload.catalog.every((row) => row.id && row.purpose))
     assert.equal(JSON.stringify(payload).includes("parque"), false)
     assert.equal(JSON.stringify(payload).includes("/v1/"), false)
+    assert.equal(JSON.stringify(payload).includes("task_title"), false)
   })
 
   it("con el data_request del 5 al 8 de agosto el catálogo habilitado no cubre el pedido", () => {

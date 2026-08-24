@@ -396,6 +396,7 @@ export async function sendRootsyChatMessage(input: {
     ? {
         message: lastUser.body,
         dataRequest: firstTurn.data_request,
+        ...(firstTurn.task_title ? { taskTitle: firstTurn.task_title } : {}),
         paso: 1,
         resultados: [],
         accionesSesion: appliedActions,

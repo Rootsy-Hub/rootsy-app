@@ -36,6 +36,7 @@ export type ChatRootsyDataRequest = {
 export type ChatRootsyFirstTurn = {
   reply: string
   data_request: ChatRootsyDataRequest | null
+  task_title?: string
 }
 
 const FORBIDDEN = /https?:\/\/|sk-[a-zA-Z0-9_-]+|\/v1\/|endpoint|token/i
@@ -120,6 +121,13 @@ export function validateChatRootsyDataRequest(
   }
 }
 
+export function validateChatRootsyTaskTitle(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined
+  if (FORBIDDEN.test(raw)) return undefined
+  const text = cleanText(raw, 56).replace(/[.。]+$/g, "")
+  return text || undefined
+}
+
 export function peekChatRootsyFirstTurnJson(raw: string): unknown {
   const jsonMatch = raw.match(/\{[\s\S]*\}/)
   if (!jsonMatch) return null
@@ -137,6 +145,7 @@ export function parseChatRootsyFirstTurn(raw: string): ChatRootsyFirstTurn | nul
     const parsed = JSON.parse(jsonMatch[0]) as {
       reply?: unknown
       data_request?: unknown
+      task_title?: unknown
     }
     if (typeof parsed.reply !== "string") return null
     const reply = parsed.reply.replace(FORBIDDEN, "").trim()
@@ -148,7 +157,15 @@ export function parseChatRootsyFirstTurn(raw: string): ChatRootsyFirstTurn | nul
     if (parsed.data_request != null && data_request == null) {
       return { reply, data_request: null }
     }
-    return { reply, data_request }
+    const task_title =
+      data_request != null
+        ? validateChatRootsyTaskTitle(parsed.task_title)
+        : undefined
+    return {
+      reply,
+      data_request,
+      ...(task_title ? { task_title } : {}),
+    }
   } catch {
     return null
   }

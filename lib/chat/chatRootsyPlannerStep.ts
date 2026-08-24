@@ -23,6 +23,7 @@ export type ChatRootsyPlannerInforme = {
 export type ChatRootsyPlannerRun = {
   message: string
   dataRequest: ChatRootsyDataRequest
+  taskTitle?: string
   paso: number
   resultados: ChatRootsyPlannerResultado[]
   aplicados?: ChatRootsyCloseHecho[]
