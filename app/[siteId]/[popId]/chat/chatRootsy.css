@@ -29,7 +29,9 @@
   padding-bottom: 5.125rem;
 }
 
-.chat-rootsy-thread-item {
+.chat-rootsy-thread-list--rise .chat-rootsy-thread-item,
+.chat-rootsy-thread-list--settle .chat-rootsy-thread-item,
+.chat-rootsy-thread-item--arrive {
   will-change: transform;
 }
 

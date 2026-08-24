@@ -30,7 +30,11 @@ import {
   readOpenAiPromptId,
   requestOpenAiStoredPrompt,
 } from "@/lib/chat/openaiStoredPrompt"
-import { formatChatRootsyDevModelInput } from "@/lib/chat/chatRootsyDevTrace"
+import {
+  formatChatRootsyDevHttpWire,
+  formatChatRootsyDevModelInput,
+  formatChatRootsyDevWireJson,
+} from "@/lib/chat/chatRootsyDevTrace"
 
 const CHAT_AI_PROVIDER_ENV = "ROOTSY_CHAT_AI_PROVIDER"
 const OPENAI_MODEL_ENV = "OPENAI_MODEL"
@@ -119,9 +123,13 @@ type OpenAiResponse = {
   error?: { message?: string }
 }
 
+const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
+
 export type ChatRootsyReplyFetch = {
   text: string | null
   error?: string
+  sent?: string
+  received?: string
 }
 
 function joinChatRootsyErrors(parts: Array<string | null | undefined>): string | undefined {
@@ -245,6 +253,11 @@ async function requestGeminiTextWithFallbackDetailed(input: {
   const primaryTimeoutMs = input.primaryTimeoutMs ?? GEMINI_PRIMARY_TIMEOUT_MS
   const fallbackTimeoutMs = input.fallbackTimeoutMs ?? GEMINI_FALLBACK_TIMEOUT_MS
   const errors: string[] = []
+  let lastSent = formatChatRootsyDevHttpWire({
+    url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(input.models[0] ?? "unknown")}:generateContent`,
+    body: input.body,
+  })
+  let lastReceived = ""
 
   for (const [index, model] of input.models.entries()) {
     const remainingMs = totalBudgetMs - (now() - started)
@@ -260,6 +273,7 @@ async function requestGeminiTextWithFallbackDetailed(input: {
     }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(input.apiKey)}`
+    lastSent = formatChatRootsyDevHttpWire({ url, body: input.body })
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
     try {
@@ -270,6 +284,7 @@ async function requestGeminiTextWithFallbackDetailed(input: {
         signal: controller.signal,
       })
       const bodyText = await response.text()
+      lastReceived = formatChatRootsyDevWireJson(bodyText)
       if (!response.ok) {
         const message = readHttpErrorMessage(bodyText) || `gemini ${response.status}`
         errors.push(`${model}: ${message}`)
@@ -277,7 +292,9 @@ async function requestGeminiTextWithFallbackDetailed(input: {
       }
       const data = JSON.parse(bodyText) as GeminiResponse
       const reply = readGeminiReplyText(data, input.sanitizeReply !== false)
-      if (reply) return { text: reply }
+      if (reply) {
+        return { text: reply, sent: lastSent, received: lastReceived }
+      }
       errors.push(
         `${model}: ${data.error?.message?.trim() || "respuesta vacía"}`,
       )
@@ -297,6 +314,8 @@ async function requestGeminiTextWithFallbackDetailed(input: {
   return {
     text: null,
     error: joinChatRootsyErrors(errors) ?? "Gemini no devolvió texto",
+    sent: lastSent,
+    received: lastReceived,
   }
 }
 
@@ -311,9 +330,6 @@ async function requestChatRootsyGeminiReply(
     sanitizeReply?: boolean
   },
 ): Promise<ChatRootsyReplyFetch> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim()
-  if (!apiKey) return { text: null, error: "Falta GEMINI_API_KEY" }
-
   const contents = history.map((turn) => ({
     role: turn.role === "assistant" ? "model" : "user",
     parts: [{ text: turn.body }],
@@ -326,7 +342,7 @@ async function requestChatRootsyGeminiReply(
     })
   }
 
-  const body = JSON.stringify({
+  const requestBody = {
     systemInstruction: { parts: [{ text: system }] },
     contents,
     generationConfig: {
@@ -335,12 +351,20 @@ async function requestChatRootsyGeminiReply(
       thinkingConfig: { thinkingLevel: "minimal" },
       ...(options?.jsonMode ? { responseMimeType: "application/json" } : {}),
     },
+  }
+  const body = JSON.stringify(requestBody)
+  const models = geminiModelCandidates()
+  const sent = formatChatRootsyDevHttpWire({
+    url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(models[0] ?? "unknown")}:generateContent`,
+    body: requestBody,
   })
+  const apiKey = process.env.GEMINI_API_KEY?.trim()
+  if (!apiKey) return { text: null, error: "Falta GEMINI_API_KEY", sent, received: "" }
 
   return requestGeminiTextWithFallbackDetailed({
     apiKey,
     body,
-    models: geminiModelCandidates(),
+    models,
     fetchImpl: options?.fetchImpl,
     now: options?.now,
     totalBudgetMs: options?.totalBudgetMs,
@@ -358,45 +382,53 @@ async function requestChatRootsyOpenAiReply(
     sanitizeReply?: boolean
   },
 ): Promise<ChatRootsyOpenAiAttempt> {
+  const model = process.env[OPENAI_MODEL_ENV]?.trim() || DEFAULT_OPENAI_MODEL
+  const requestBody = {
+    model,
+    temperature: 0.55,
+    max_completion_tokens: MAX_OUTPUT_TOKENS,
+    reasoning_effort: "none",
+    ...(options?.jsonMode ? { response_format: { type: "json_object" as const } } : {}),
+    messages: [
+      { role: "system", content: system },
+      ...history.map((turn) => ({
+        role: turn.role === "assistant" ? "assistant" : "user",
+        content: turn.body,
+      })),
+    ],
+  }
+  const sent = formatChatRootsyDevHttpWire({
+    url: OPENAI_CHAT_COMPLETIONS_URL,
+    body: requestBody,
+  })
   const apiKey = process.env.OPENAI_API_KEY?.trim()
   if (!apiKey) {
-    return { ok: false, reason: "missing_key", fallback: false }
+    return { ok: false, reason: "missing_key", fallback: false, sent, received: "" }
   }
 
-  const model = process.env[OPENAI_MODEL_ENV]?.trim() || DEFAULT_OPENAI_MODEL
   const fetchImpl = options?.fetchImpl ?? fetch
   const timeoutMs = options?.timeoutMs ?? OPENAI_PRIMARY_TIMEOUT_MS
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    const response = await fetchImpl("https://api.openai.com/v1/chat/completions", {
+    const response = await fetchImpl(OPENAI_CHAT_COMPLETIONS_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model,
-        temperature: 0.55,
-        max_completion_tokens: MAX_OUTPUT_TOKENS,
-        reasoning_effort: "none",
-        ...(options?.jsonMode ? { response_format: { type: "json_object" } } : {}),
-        messages: [
-          { role: "system", content: system },
-          ...history.map((turn) => ({
-            role: turn.role === "assistant" ? "assistant" : "user",
-            content: turn.body,
-          })),
-        ],
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal,
     })
 
     const bodyText = await response.text()
+    const received = formatChatRootsyDevWireJson(bodyText)
     if (!response.ok) {
       return {
         ...classifyOpenAiHttpFailure(response.status, bodyText),
         detail: readHttpErrorMessage(bodyText) ?? undefined,
+        sent,
+        received,
       }
     }
 
@@ -414,14 +446,22 @@ async function requestChatRootsyOpenAiReply(
         reason: "empty_reply",
         fallback: false,
         detail: data.error?.message?.trim() || undefined,
+        sent,
+        received,
       }
     }
-    return { ok: true, reply }
+    return { ok: true, reply, sent, received }
   } catch (error) {
     if (error instanceof SyntaxError) {
-      return { ok: false, reason: "empty_reply", fallback: false }
+      return {
+        ok: false,
+        reason: "empty_reply",
+        fallback: false,
+        sent,
+        received: "",
+      }
     }
-    return classifyOpenAiThrownError(error)
+    return { ...classifyOpenAiThrownError(error), sent, received: "" }
   } finally {
     clearTimeout(timer)
   }
@@ -460,6 +500,8 @@ export async function requestChatRootsyReplyDetailed(
   const geminiConfigured = isGeminiConfigured()
   const now = options?.now ?? Date.now
   let lastError: string | undefined
+  let lastSent = ""
+  let lastReceived = ""
 
   if (primary === "gemini" && !geminiConfigured) {
     return { text: null, error: "Falta GEMINI_API_KEY" }
@@ -485,6 +527,8 @@ export async function requestChatRootsyReplyDetailed(
           jsonMode: options?.jsonMode,
           sanitizeReply: options?.sanitizeReply,
         })
+        if (attempt.sent) lastSent = attempt.sent
+        if (attempt.received) lastReceived = attempt.received
         if (!attempt.ok) {
           lastError = describeOpenAiFail(attempt.reason, attempt.detail)
         }
@@ -503,11 +547,18 @@ export async function requestChatRootsyReplyDetailed(
           jsonMode: options?.jsonMode,
           sanitizeReply: options?.sanitizeReply,
         })
+        if (gemini.sent) lastSent = gemini.sent
+        if (gemini.received) lastReceived = gemini.received
         if (!gemini.text) lastError = gemini.error ?? lastError
         return gemini.text
       },
     })
-    return { text, error: text ? undefined : lastError }
+    return {
+      text,
+      error: text ? undefined : lastError,
+      sent: lastSent,
+      received: lastReceived,
+    }
   } catch (error) {
     return {
       text: null,
@@ -515,6 +566,8 @@ export async function requestChatRootsyReplyDetailed(
         error instanceof Error
           ? error.message.slice(0, 180)
           : "Error inesperado de la IA",
+      sent: lastSent,
+      received: lastReceived,
     }
   }
 }
@@ -523,8 +576,39 @@ export type ChatRootsyFirstTurnFetch = {
   turn: ChatRootsyFirstTurn | null
   raw: string | null
   sent: string
+  received: string
   source: "prompt-guardado" | "fallback-local" | "sin-respuesta"
   error?: string
+}
+
+function chatRootsyFirstTurnWire(input: {
+  stored: { sent: string; received: string } | null
+  storedRaw: string | null
+  fallback: ChatRootsyReplyFetch | null
+  source: ChatRootsyFirstTurnFetch["source"]
+  system: string
+  modelHistory: ChatRootsyHistoryTurn[]
+}): { sent: string; received: string } {
+  if (input.storedRaw && input.stored) {
+    return { sent: input.stored.sent, received: input.stored.received }
+  }
+  if (input.fallback?.sent || input.fallback?.received) {
+    return {
+      sent: input.fallback.sent ?? "",
+      received: input.fallback.received ?? input.fallback.text ?? "",
+    }
+  }
+  if (input.stored) {
+    return { sent: input.stored.sent, received: input.stored.received }
+  }
+  return {
+    sent: formatChatRootsyDevModelInput({
+      fuente: input.source,
+      system: input.system,
+      messages: input.modelHistory,
+    }),
+    received: "",
+  }
 }
 
 export async function requestChatRootsyFirstTurn(
@@ -578,16 +662,19 @@ export async function requestChatRootsyFirstTurn(
     : raw
       ? ("fallback-local" as const)
       : ("sin-respuesta" as const)
-  const sent = formatChatRootsyDevModelInput({
-    fuente: source,
-    ...(source === "prompt-guardado" ? {} : { system }),
-    messages: modelHistory,
+  const wire = chatRootsyFirstTurnWire({
+    stored,
+    storedRaw,
+    fallback,
+    source,
+    system,
+    modelHistory,
   })
   if (!raw) {
     return {
       turn: null,
       raw: null,
-      sent,
+      ...wire,
       source,
       error:
         joinChatRootsyErrors([
@@ -609,7 +696,7 @@ export async function requestChatRootsyFirstTurn(
           }
         : null,
       raw,
-      sent,
+      ...wire,
       source,
       error: reply
         ? undefined
@@ -622,14 +709,14 @@ export async function requestChatRootsyFirstTurn(
     return {
       turn: fallbackChatRootsyFirstTurn(fallbackText),
       raw,
-      sent,
+      ...wire,
       source,
     }
   }
   return {
     turn: null,
     raw,
-    sent,
+    ...wire,
     source,
     error: "La IA respondió, pero el JSON no se pudo parsear",
   }

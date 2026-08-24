@@ -823,7 +823,7 @@ export function ChatRootsyThread({
                 operation ? "gap-0" : "gap-1",
                 clusterClass,
                 operation
-                  ? "w-full max-w-[min(36rem,96%)] self-start items-start"
+                  ? "w-full max-w-[545px] self-start items-start"
                   : message.mine
                     ? "self-end items-end"
                     : "self-start items-start",

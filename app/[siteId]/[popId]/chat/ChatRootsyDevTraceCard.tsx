@@ -23,7 +23,8 @@ export function ChatRootsyDevTraceCard({ trace }: Props) {
     <div className="flex min-h-0 flex-1 flex-col">
       <p className="font-canopy text-[11px] leading-4 text-rootsy-bruma-600">
         Siempre los 3 pasos: Rootsy apertura, Planificador, Rootsy cierre o
-        aclaración. Si no corrió, el enviado y el recibido quedan vacíos.
+        aclaración. Enviado y recibido son el JSON HTTP exacto hacia el modelo
+        (sin API keys). Si un paso no corrió, quedan vacíos.
       </p>
       {filled.error ? (
         <div className="mt-3 rounded-lg border border-[var(--rootsy-danger)]/40 bg-white px-2.5 py-2">

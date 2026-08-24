@@ -413,7 +413,7 @@ export function ChatRootsyOperationCard({
 
   return (
     <section
-      className="chat-rootsy-op-card w-full max-w-[min(36rem,96%)]"
+      className="chat-rootsy-op-card w-full max-w-[545px]"
       data-phase={operation.phase}
       aria-labelledby={`${operation.id}-title`}
       aria-describedby={`${operation.id}-status`}
@@ -429,8 +429,8 @@ export function ChatRootsyOperationCard({
             <button
               type="button"
               className={cn(
-                "chat-rootsy-op-toggle flex w-full gap-2.5 px-3.5 text-left",
-                collapsed ? "items-center py-3" : "items-start pb-2 pt-3",
+                "chat-rootsy-op-toggle flex w-full gap-2.5 text-left",
+                collapsed ? "items-center" : "items-start pb-3",
               )}
               aria-expanded={expanded}
               aria-controls={`${operation.id}-content`}
@@ -451,8 +451,8 @@ export function ChatRootsyOperationCard({
             <button
               type="button"
               className={cn(
-                "flex w-full gap-2.5 px-3.5 text-left",
-                collapsed ? "items-center py-3" : "items-start pb-2 pt-3",
+                "flex w-full gap-2.5 text-left",
+                collapsed ? "items-center" : "items-start pb-3",
               )}
               onClick={onInspect}
             >
@@ -467,8 +467,8 @@ export function ChatRootsyOperationCard({
           ) : (
             <div
               className={cn(
-                "flex gap-2.5 px-3.5",
-                collapsed ? "items-center py-3" : "items-start pb-2 pt-3",
+                "flex gap-2.5",
+                collapsed ? "items-center" : "items-start pb-3",
               )}
             >
               <HeaderRow

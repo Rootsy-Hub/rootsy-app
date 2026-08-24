@@ -33,7 +33,6 @@ import {
   buildChatRootsyDevTrace,
   chatRootsyDevCall,
   chatRootsyDevJson,
-  formatChatRootsyDevModelInput,
   mergeChatRootsyDevTraces,
   type ChatRootsyDevCall,
   type ChatRootsyDevTrace,
@@ -97,7 +96,7 @@ import type { PopAccessCache } from "@/app/home/homeUserDataTypes"
 
 function plannerDevCall(input: {
   sent?: string | null
-  raw?: string | null
+  received?: string | null
   source?: string
   note?: string
 }): ChatRootsyDevCall {
@@ -109,7 +108,7 @@ function plannerDevCall(input: {
       .filter(Boolean)
       .join(" · ") || undefined,
     sent: input.sent,
-    received: input.raw,
+    received: input.received,
   })
 }
 
@@ -193,6 +192,7 @@ async function narrateChatRootsyClose(input: {
   narrationText: string | null
   narrationError?: string
   sent: string
+  received: string
 }> {
   const fallback = fallbackChatRootsyCloseReply(input.brief)
   const closeHistory = [
@@ -207,11 +207,6 @@ async function narrateChatRootsyClose(input: {
     input.siteId,
     CHAT_ROOTSY_CLOSE_PROMPT,
   )
-  const sent = formatChatRootsyDevModelInput({
-    fuente: "cierre",
-    system,
-    messages: closeHistory,
-  })
   const narration = await requestChatRootsyReplyDetailed(system, closeHistory, {
     sanitizeReply: false,
   })
@@ -220,7 +215,8 @@ async function narrateChatRootsyClose(input: {
     reply: narrationText ?? fallback,
     narrationText,
     narrationError: narration.error,
-    sent,
+    sent: narration.sent ?? "",
+    received: narration.received ?? "",
   }
 }
 
@@ -234,6 +230,7 @@ async function narrateChatRootsyClarify(input: {
   narrationText: string | null
   narrationError?: string
   sent: string
+  received: string
 }> {
   const fallback = fallbackChatRootsyClarifyReply(input.question)
   const history = [
@@ -248,11 +245,6 @@ async function narrateChatRootsyClarify(input: {
     input.siteId,
     CHAT_ROOTSY_CLARIFY_PROMPT,
   )
-  const sent = formatChatRootsyDevModelInput({
-    fuente: "aclaracion",
-    system,
-    messages: history,
-  })
   const narration = await requestChatRootsyReplyDetailed(system, history, {
     sanitizeReply: false,
   })
@@ -261,13 +253,15 @@ async function narrateChatRootsyClarify(input: {
     reply: narrationText ?? fallback,
     narrationText,
     narrationError: narration.error,
-    sent,
+    sent: narration.sent ?? "",
+    received: narration.received ?? "",
   }
 }
 
 function rootsyCloseDevCall(input: {
   phase: "Cierre" | "Aclaración"
   sent: string
+  received?: string | null
   narrationText: string | null
   narrationError?: string
   reply: string
@@ -280,7 +274,7 @@ function rootsyCloseDevCall(input: {
     id,
     phase: input.phase,
     sent: input.sent,
-    received: input.narrationText ?? input.reply,
+    received: input.received || input.narrationText || input.reply,
     note: input.narrationText
       ? undefined
       : `Fallback. ${input.narrationError ?? ""}`.trim(),
@@ -382,7 +376,7 @@ export async function sendRootsyChatMessage(input: {
             phase: "Apertura",
             userMessage: lastUser.body,
             sent: firstFetch.sent,
-            received: firstFetch.raw,
+            received: firstFetch.received,
             note: `Fuente: ${firstFetch.source}. No hubo reply usable.`,
           }),
         ],
@@ -424,7 +418,7 @@ export async function sendRootsyChatMessage(input: {
         phase: "Apertura",
         userMessage: lastUser.body,
         sent: firstFetch.sent,
-        received: firstFetch.raw,
+        received: firstFetch.received,
         note: needsPlanner
           ? "Hay data_request válido → sigue el Planificador."
           : rawDataRequest != null
@@ -512,7 +506,7 @@ export async function startRootsyPlannerRun(input: {
     [
       plannerDevCall({
         sent: plan.sent,
-        raw: plan.raw,
+        received: plan.received,
         source: plannerSource,
         note: plannerNote,
       }),
@@ -593,6 +587,7 @@ export async function startRootsyPlannerRun(input: {
             rootsyCloseDevCall({
               phase: "Cierre",
               sent: narration.sent,
+              received: narration.received,
               narrationText: narration.narrationText,
               narrationError: narration.narrationError,
               reply: narration.reply,
@@ -620,6 +615,7 @@ export async function startRootsyPlannerRun(input: {
             rootsyCloseDevCall({
               phase: "Aclaración",
               sent: narration.sent,
+              received: narration.received,
               narrationText: narration.narrationText,
               narrationError: narration.narrationError,
               reply: narration.reply,
@@ -649,6 +645,7 @@ export async function startRootsyPlannerRun(input: {
             rootsyCloseDevCall({
               phase: "Cierre",
               sent: narration.sent,
+              received: narration.received,
               narrationText: narration.narrationText,
               narrationError: narration.narrationError,
               reply: narration.reply,
@@ -1006,6 +1003,7 @@ export async function runRootsyChatTools(input: {
           rootsyCloseDevCall({
             phase: "Cierre",
             sent: narration.sent,
+            received: narration.received,
             narrationText: narration.narrationText,
             narrationError: narration.narrationError,
             reply: narration.reply,
@@ -1031,6 +1029,7 @@ export async function runRootsyChatTools(input: {
   let narrationText: string | null = null
   let narrationError: string | undefined
   let narrationSent = ""
+  let narrationReceived = ""
   let closeBrief: ReturnType<typeof buildChatRootsyCloseBrief> | undefined
   if (!plannerContinues) {
     const pedido =
@@ -1058,6 +1057,7 @@ export async function runRootsyChatTools(input: {
     narrationText = narration.narrationText
     narrationError = narration.narrationError
     narrationSent = narration.sent
+    narrationReceived = narration.received
     reply = narration.reply
   }
 
@@ -1090,7 +1090,7 @@ export async function runRootsyChatTools(input: {
           ? [
               plannerDevCall({
                 sent: next.plannerSent,
-                raw: next.plannerRaw,
+                received: next.plannerReceived,
                 source: next.plannerSource,
                 note: next.note,
               }),
@@ -1101,6 +1101,7 @@ export async function runRootsyChatTools(input: {
               rootsyCloseDevCall({
                 phase: "Cierre",
                 sent: narrationSent,
+                received: narrationReceived,
                 narrationText,
                 narrationError,
                 reply,
@@ -1157,7 +1158,7 @@ async function continuePlannerAfterResults(input: {
   plannerRun?: ChatRootsyPlannerRun
   plannerChoices?: ChatRootsyPlannerChoice[]
   plannerSent?: string | null
-  plannerRaw?: string | null
+  plannerReceived?: string | null
   plannerSource?: string
   note: string
 }> {

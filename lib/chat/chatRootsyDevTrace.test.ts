@@ -4,7 +4,10 @@ import {
   chatRootsyDevActorLabel,
   chatRootsyDevCall,
   fillChatRootsyDevStations,
+  formatChatRootsyDevHttpWire,
+  formatChatRootsyDevWireJson,
   mergeChatRootsyDevTraces,
+  redactChatRootsyDevUrl,
 } from "@/lib/chat/chatRootsyDevTrace"
 
 describe("historial DEV del chat Rootsy", () => {
@@ -119,6 +122,30 @@ describe("historial DEV del chat Rootsy", () => {
     assert.equal(
       merged?.error,
       "Esa persona no tiene acceso activo a Rootsy.",
+    )
+  })
+
+  it("pretty-printa el JSON de red y deja el texto crudo si no parsea", () => {
+    assert.equal(
+      formatChatRootsyDevWireJson('{"prompt":{"id":"pmpt_x"}}'),
+      JSON.stringify({ prompt: { id: "pmpt_x" } }, null, 2),
+    )
+    assert.equal(formatChatRootsyDevWireJson("no es json"), "no es json")
+  })
+
+  it("arma el enviado HTTP con URL y body, sin API keys", () => {
+    const wire = formatChatRootsyDevHttpWire({
+      url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-x:generateContent?key=secret-token",
+      body: { prompt: { id: "pmpt_rootsy" }, input: [{ role: "user", content: "hola" }] },
+    })
+    assert.match(wire, /pmpt_rootsy/)
+    assert.match(wire, /v1beta\/models\/gemini-x:generateContent/)
+    assert.equal(wire.includes("secret-token"), false)
+    assert.equal(
+      redactChatRootsyDevUrl(
+        "https://api.example/v1?key=abc&other=1",
+      ).includes("abc"),
+      false,
     )
   })
 })

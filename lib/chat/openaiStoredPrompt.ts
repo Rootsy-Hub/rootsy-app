@@ -1,7 +1,17 @@
 import "server-only"
 
+import {
+  formatChatRootsyDevHttpWire,
+  formatChatRootsyDevWireJson,
+} from "@/lib/chat/chatRootsyDevTrace"
+import {
+  OPENAI_RESPONSES_URL,
+  buildOpenAiStoredPromptRequestBody,
+} from "@/lib/chat/openaiStoredPromptBody"
+
 export const OPENAI_PROMPT_ROOTSY_ENV = "OPENAI_PROMPT_ROOTSY"
 export const OPENAI_PROMPT_PLANIFICADOR_ENV = "OPENAI_PROMPT_PLANIFICADOR"
+export { OPENAI_RESPONSES_URL, buildOpenAiStoredPromptRequestBody }
 
 type ResponsesOutput = {
   output_text?: string
@@ -15,6 +25,8 @@ type ResponsesOutput = {
 export type OpenAiStoredPromptResult = {
   text: string | null
   error?: string
+  sent: string
+  received: string
 }
 
 export function readOpenAiPromptId(
@@ -37,19 +49,12 @@ function readResponsesText(data: ResponsesOutput): string | null {
   return parts.join("\n").trim() || null
 }
 
-function withJsonKeyword(
-  messages: Array<{ role: "user" | "assistant"; content: string }>,
-): Array<{ role: "user" | "assistant"; content: string }> {
-  const joined = messages.map((row) => row.content).join("\n")
-  if (/\bjson\b/i.test(joined)) return messages
-  const next = messages.map((row) => ({ ...row }))
-  for (let index = next.length - 1; index >= 0; index -= 1) {
-    const row = next[index]
-    if (row?.role !== "user") continue
-    row.content = `${row.content}\n\nRespondé solo JSON.`
-    return next
-  }
-  return next
+function emptyStoredResult(
+  error: string,
+  sent = "",
+  received = "",
+): OpenAiStoredPromptResult {
+  return { text: null, error, sent, received }
 }
 
 export async function requestOpenAiStoredPrompt(input: {
@@ -57,28 +62,41 @@ export async function requestOpenAiStoredPrompt(input: {
   messages: Array<{ role: "user" | "assistant"; content: string }>
   timeoutMs: number
 }): Promise<OpenAiStoredPromptResult> {
+  const requestBody = buildOpenAiStoredPromptRequestBody({
+    promptId: input.promptId,
+    messages: input.messages,
+  })
+  const sent = formatChatRootsyDevHttpWire({
+    url: OPENAI_RESPONSES_URL,
+    body: requestBody,
+  })
   const apiKey = process.env.OPENAI_API_KEY?.trim()
-  if (!apiKey) return { text: null, error: "Falta OPENAI_API_KEY" }
+  if (!apiKey) return emptyStoredResult("Falta OPENAI_API_KEY", sent)
   if (input.messages.length === 0) {
-    return { text: null, error: "Sin mensajes para el prompt guardado" }
+    return emptyStoredResult("Sin mensajes para el prompt guardado", sent)
   }
 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), input.timeoutMs)
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch(OPENAI_RESPONSES_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        prompt: { id: input.promptId },
-        input: withJsonKeyword(input.messages),
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal,
     })
-    const data = (await response.json().catch(() => null)) as ResponsesOutput | null
+    const receivedText = await response.text()
+    const received = formatChatRootsyDevWireJson(receivedText)
+    const data = (() => {
+      try {
+        return JSON.parse(receivedText) as ResponsesOutput
+      } catch {
+        return null
+      }
+    })()
     if (!response.ok) {
       const message =
         data?.error?.message?.trim() || `openai-prompt ${response.status}`
@@ -87,11 +105,23 @@ export async function requestOpenAiStoredPrompt(input: {
         status: response.status,
         error: message.slice(0, 180),
       })
-      return { text: null, error: `${response.status}: ${message}` }
+      return {
+        text: null,
+        error: `${response.status}: ${message}`,
+        sent,
+        received,
+      }
     }
     const text = data ? readResponsesText(data) : null
-    if (!text) return { text: null, error: "El prompt guardado no devolvió texto" }
-    return { text }
+    if (!text) {
+      return {
+        text: null,
+        error: "El prompt guardado no devolvió texto",
+        sent,
+        received,
+      }
+    }
+    return { text, sent, received }
   } catch (error) {
     const message =
       error instanceof Error && error.name === "AbortError"
@@ -103,7 +133,7 @@ export async function requestOpenAiStoredPrompt(input: {
       promptId: input.promptId.slice(0, 12),
       error: message,
     })
-    return { text: null, error: message }
+    return emptyStoredResult(message, sent)
   } finally {
     clearTimeout(timer)
   }

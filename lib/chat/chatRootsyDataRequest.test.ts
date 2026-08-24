@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
+  CHAT_ROOTSY_OBJECTIVE_MAX_CHARS,
   fallbackChatRootsyFirstTurn,
   parseChatRootsyFirstTurn,
   shouldCallChatRootsyPlanner,
@@ -53,6 +54,16 @@ describe("data_request de Rootsy", () => {
       }),
       null,
     )
+  })
+
+  it("no corta un objective de varios frentes a los 200 caracteres", () => {
+    const objective =
+      "Consultar productos del catálogo con sus precios actuales, stock disponible, productos más vendidos de los últimos 30 días y promociones activas, para recomendar qué productos usar y qué promociones conviene activar"
+    assert.ok(objective.length > 200)
+    assert.ok(objective.length < CHAT_ROOTSY_OBJECTIVE_MAX_CHARS)
+    const ok = validateChatRootsyDataRequest({ objective })
+    assert.equal(ok?.objective, objective)
+    assert.equal(ok?.objective.endsWith("conviene activar"), true)
   })
 
   it("parsea el primer turno y no llama a la consultora sin data_request", () => {

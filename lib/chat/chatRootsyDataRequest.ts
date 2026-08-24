@@ -41,6 +41,9 @@ export type ChatRootsyFirstTurn = {
 
 const FORBIDDEN = /https?:\/\/|sk-[a-zA-Z0-9_-]+|\/v1\/|endpoint|token/i
 
+/** Briefing del Planificador. 200 cortaba pedidos con varios frentes a mitad de frase. */
+export const CHAT_ROOTSY_OBJECTIVE_MAX_CHARS = 800
+
 function cleanText(value: string, max: number): string {
   return value.replace(FORBIDDEN, "").replace(/\s+/g, " ").trim().slice(0, max)
 }
@@ -73,7 +76,7 @@ export function validateChatRootsyDataRequest(
     filters?: unknown
   }
   if (typeof row.objective !== "string") return null
-  const objective = cleanText(row.objective, 200)
+  const objective = cleanText(row.objective, CHAT_ROOTSY_OBJECTIVE_MAX_CHARS)
   if (!objective || FORBIDDEN.test(row.objective)) return null
 
   const timeRaw = readObject(row.time)

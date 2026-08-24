@@ -12,10 +12,27 @@ import {
 } from "@/lib/chat/tools/chatRootsyToolPlanner"
 import type { ChatRootsyToolMatchContext } from "@/lib/chat/tools/chatRootsyToolTypes"
 import {
+  formatChatRootsyDevHttpWire,
+  formatChatRootsyDevWireJson,
+} from "@/lib/chat/chatRootsyDevTrace"
+import {
   OPENAI_PROMPT_PLANIFICADOR_ENV,
   readOpenAiPromptId,
   requestOpenAiStoredPrompt,
 } from "@/lib/chat/openaiStoredPrompt"
+
+const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
+
+type PlannerHttpFetch = {
+  text: string | null
+  sent: string
+  received: string
+}
+
+function geminiGenerateUrl(model: string, apiKey?: string): string {
+  const base = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`
+  return apiKey ? `${base}?key=${encodeURIComponent(apiKey)}` : base
+}
 
 const PLANNER_TIMEOUT_MS = 6_000
 const PLANNER_STORED_TIMEOUT_MS = 60_000
@@ -81,10 +98,9 @@ function readGeminiText(data: GeminiResponse): string {
 async function planWithGemini(
   payload: string,
   models: string[],
-): Promise<string | null> {
+): Promise<PlannerHttpFetch> {
   const apiKey = process.env.GEMINI_API_KEY?.trim()
-  if (!apiKey) return null
-  const body = JSON.stringify({
+  const requestBody = {
     systemInstruction: { parts: [{ text: CHAT_ROOTSY_PLANNER_SYSTEM }] },
     contents: [{ role: "user", parts: [{ text: payload }] }],
     generationConfig: {
@@ -92,10 +108,20 @@ async function planWithGemini(
       maxOutputTokens: PLANNER_MAX_OUTPUT_TOKENS,
       responseMimeType: "application/json",
     },
+  }
+  const body = JSON.stringify(requestBody)
+  let lastSent = formatChatRootsyDevHttpWire({
+    url: geminiGenerateUrl(models[0] ?? "unknown"),
+    body: requestBody,
   })
+  let lastReceived = ""
+  if (!apiKey) {
+    return { text: null, sent: lastSent, received: lastReceived }
+  }
 
   for (const model of models) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`
+    const url = geminiGenerateUrl(model, apiKey)
+    lastSent = formatChatRootsyDevHttpWire({ url, body: requestBody })
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), PLANNER_TIMEOUT_MS)
     try {
@@ -105,51 +131,64 @@ async function planWithGemini(
         body,
         signal: controller.signal,
       })
+      const receivedText = await response.text()
+      lastReceived = formatChatRootsyDevWireJson(receivedText)
       if (!response.ok) continue
-      const text = readGeminiText((await response.json()) as GeminiResponse)
-      if (text) return text
+      const text = readGeminiText(JSON.parse(receivedText) as GeminiResponse)
+      if (text) return { text, sent: lastSent, received: lastReceived }
     } catch {
       continue
     } finally {
       clearTimeout(timer)
     }
   }
-  return null
+  return { text: null, sent: lastSent, received: lastReceived }
 }
 
 async function planWithOpenAi(
   payload: string,
   model: string,
-): Promise<string | null> {
+): Promise<PlannerHttpFetch> {
+  const requestBody = {
+    model,
+    temperature: 0,
+    max_completion_tokens: PLANNER_MAX_OUTPUT_TOKENS,
+    reasoning_effort: "none",
+    response_format: { type: "json_object" as const },
+    messages: [
+      { role: "system", content: CHAT_ROOTSY_PLANNER_SYSTEM },
+      { role: "user", content: payload },
+    ],
+  }
+  const sent = formatChatRootsyDevHttpWire({
+    url: OPENAI_CHAT_COMPLETIONS_URL,
+    body: requestBody,
+  })
   const apiKey = process.env.OPENAI_API_KEY?.trim()
-  if (!apiKey) return null
+  if (!apiKey) return { text: null, sent, received: "" }
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), PLANNER_TIMEOUT_MS)
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model,
-        temperature: 0,
-        max_completion_tokens: PLANNER_MAX_OUTPUT_TOKENS,
-        reasoning_effort: "none",
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: CHAT_ROOTSY_PLANNER_SYSTEM },
-          { role: "user", content: payload },
-        ],
-      }),
+      body: JSON.stringify(requestBody),
       signal: controller.signal,
     })
-    if (!response.ok) return null
-    const data = (await response.json()) as OpenAiResponse
-    return data.choices?.[0]?.message?.content?.trim() || null
+    const receivedText = await response.text()
+    const received = formatChatRootsyDevWireJson(receivedText)
+    if (!response.ok) return { text: null, sent, received }
+    const data = JSON.parse(receivedText) as OpenAiResponse
+    return {
+      text: data.choices?.[0]?.message?.content?.trim() || null,
+      sent,
+      received,
+    }
   } catch {
-    return null
+    return { text: null, sent, received: "" }
   } finally {
     clearTimeout(timer)
   }
@@ -175,6 +214,7 @@ export function logChatRootsyPlanner(entry: {
 export type ChatRootsyPlannerFetch = ChatRootsyValidatedPlan & {
   raw: string | null
   sent: string | null
+  received: string | null
   source: "prompt-guardado" | "fallback-local" | "sin-respuesta"
   storedError?: string
 }
@@ -187,7 +227,13 @@ export async function planChatRootsyTools(input: {
 }): Promise<ChatRootsyPlannerFetch> {
   const empty: ChatRootsyValidatedPlan = { proposals: [], discarded: 0 }
   if (!input.dataRequest?.objective?.trim()) {
-    return { ...empty, raw: null, sent: null, source: "sin-respuesta" }
+    return {
+      ...empty,
+      raw: null,
+      sent: null,
+      received: null,
+      source: "sin-respuesta",
+    }
   }
 
   const storedPromptId = readOpenAiPromptId(OPENAI_PROMPT_PLANIFICADOR_ENV)
@@ -197,7 +243,13 @@ export async function planChatRootsyTools(input: {
   )
   const index = buildChatRootsyPlannerIndex(entries)
   if (!storedPromptId && index.length === 0) {
-    return { ...empty, raw: null, sent: null, source: "sin-respuesta" }
+    return {
+      ...empty,
+      raw: null,
+      sent: null,
+      received: null,
+      source: "sin-respuesta",
+    }
   }
 
   const today = input.today ?? new Date().toISOString().slice(0, 10)
@@ -223,15 +275,32 @@ export async function planChatRootsyTools(input: {
         timeoutMs: PLANNER_STORED_TIMEOUT_MS,
       })
     : null
-  const storedRaw = stored?.text ?? null
-  const raw = storedPromptId
-    ? storedRaw
-    : storedRaw ??
-      (provider === "gemini"
-        ? (await planWithGemini(payload, models)) ??
-          (await planWithOpenAi(payload, resolveChatRootsyPlannerModels("openai")[0]!))
-        : (await planWithOpenAi(payload, models[0]!)) ??
-          (await planWithGemini(payload, resolveChatRootsyPlannerModels("gemini"))))
+
+  let raw: string | null = stored?.text ?? null
+  let sent: string | null = stored?.sent ?? null
+  let received: string | null = stored?.received ?? null
+
+  if (!storedPromptId) {
+    const primary =
+      provider === "gemini"
+        ? await planWithGemini(payload, models)
+        : await planWithOpenAi(payload, models[0]!)
+    const secondary = primary.text
+      ? null
+      : provider === "gemini"
+        ? await planWithOpenAi(
+            payload,
+            resolveChatRootsyPlannerModels("openai")[0]!,
+          )
+        : await planWithGemini(
+            payload,
+            resolveChatRootsyPlannerModels("gemini"),
+          )
+    const used = primary.text || !secondary ? primary : secondary
+    raw = used.text
+    sent = used.sent
+    received = used.received
+  }
 
   const parsed = raw ? parseChatRootsyPlannerPlan(raw) : null
   const plan = parsed
@@ -247,8 +316,9 @@ export async function planChatRootsyTools(input: {
   return {
     ...plan,
     raw,
-    sent: storedPromptId ? storedPayload : payload,
-    source: storedRaw
+    sent,
+    received,
+    source: stored?.text
       ? "prompt-guardado"
       : raw
         ? "fallback-local"

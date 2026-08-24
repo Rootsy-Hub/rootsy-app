@@ -12,14 +12,19 @@ export type ChatRootsyProviderFailReason =
   | "network"
   | "empty_reply"
 
+export type ChatRootsyHttpWire = {
+  sent?: string
+  received?: string
+}
+
 export type ChatRootsyOpenAiAttempt =
-  | { ok: true; reply: string }
-  | {
+  | ({ ok: true; reply: string } & ChatRootsyHttpWire)
+  | ({
       ok: false
       reason: ChatRootsyProviderFailReason
       fallback: boolean
       detail?: string
-    }
+    } & ChatRootsyHttpWire)
 
 export function classifyOpenAiHttpFailure(
   status: number,

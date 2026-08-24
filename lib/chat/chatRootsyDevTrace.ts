@@ -32,6 +32,52 @@ export function chatRootsyDevJson(value: unknown): string {
   }
 }
 
+export function redactChatRootsyDevUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+    parsed.searchParams.delete("key")
+    parsed.searchParams.delete("api_key")
+    parsed.searchParams.delete("access_token")
+    return parsed.toString()
+  } catch {
+    return url.replace(/([?&](?:key|api_key|access_token)=)[^&]*/gi, "$1")
+  }
+}
+
+/** Pretty-print del JSON de red. Si no es JSON, deja el texto tal cual. */
+export function formatChatRootsyDevWireJson(value: unknown): string {
+  if (value == null) return ""
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    if (!trimmed) return ""
+    try {
+      return JSON.stringify(JSON.parse(trimmed), null, 2)
+    } catch {
+      return value
+    }
+  }
+  return chatRootsyDevJson(value)
+}
+
+/** Pedido HTTP exacto (URL + body), sin API keys. */
+export function formatChatRootsyDevHttpWire(input: {
+  url: string
+  body: unknown
+}): string {
+  let body = input.body
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body) as unknown
+    } catch {
+      // el body no era JSON: se muestra el string
+    }
+  }
+  return chatRootsyDevJson({
+    url: redactChatRootsyDevUrl(input.url),
+    body,
+  })
+}
+
 export function chatRootsyDevActorLabel(actor: ChatRootsyDevActor): string {
   return actor === "planner" ? "Planificador" : "Rootsy"
 }
