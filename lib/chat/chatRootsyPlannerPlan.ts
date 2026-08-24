@@ -8,6 +8,7 @@ import {
   readChatRootsyPlannerConfirm,
   resolveChatRootsyPlannerPickConfirm,
   sanitizeChatRootsyPlannerActionLine,
+  CHAT_ROOTSY_PLANNER_MAX_STEPS,
   type ChatRootsyPlannerChoice,
   type ChatRootsyPlannerConfirm,
   type ChatRootsyPlannerRun,
@@ -19,7 +20,6 @@ export const CHAT_ROOTSY_PLAN_BINDING =
   /^\$(\d+)\[(\d+)\](?:\.items\[\])?\.([A-Za-z_][A-Za-z0-9_]*)$/
 
 const FIELD_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/
-const MAX_STEPS = 4
 const MAX_OFERTAS = 8
 const MAX_DEMANDAS = 12
 const MAX_EXPAND = 50
@@ -171,7 +171,7 @@ export function readChatRootsyExecutionPlan(raw: unknown): ChatRootsyPlanStep[] 
   const planRaw = Array.isArray(root.plan) ? root.plan : null
   if (planRaw) {
     const steps: ChatRootsyPlanStep[] = []
-    for (const [index, row] of planRaw.slice(0, MAX_STEPS).entries()) {
+    for (const [index, row] of planRaw.slice(0, CHAT_ROOTSY_PLANNER_MAX_STEPS).entries()) {
       const step = readStep(row, index)
       if (step) steps.push(step)
     }

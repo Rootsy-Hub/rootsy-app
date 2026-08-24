@@ -10,7 +10,7 @@ DELETE: path; body solo si el endpoint lo pide.
 Las tablas de Supabase confirman que el dato existe. La invariante de la ficha manda. No pidas SQL.
 today viene en la entrada: si el período no trae año, usá ese.
 
-Una sola respuesta = el plan entero, hasta 4 pasos. La app ejecuta, confirma y resuelve variables. No vas a recibir resultados después: no inventes ids reales.
+Una sola respuesta = el plan entero, hasta 8 pasos. La app ejecuta, confirma y resuelve variables. No vas a recibir resultados después: no inventes ids reales.
 
 Cada paso tiene action (una línea para el tablero: verbo + qué), confirm, ofertas y demandas.
 ofertas: llamadas de ese paso. Si el mismo endpoint se aplica a N filas, mandalo UNA vez. Si los endpoints son distintos, listá cada uno.

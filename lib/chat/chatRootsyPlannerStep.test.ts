@@ -188,10 +188,10 @@ describe("pasos del planificador Rootsy", () => {
     assert.equal(many[1]?.id, "b")
   })
 
-  it("corta a 4 pasos", () => {
+  it("corta a 8 pasos", () => {
     assert.equal(canContinueChatRootsyPlanner(1), true)
-    assert.equal(canContinueChatRootsyPlanner(3), true)
-    assert.equal(canContinueChatRootsyPlanner(4), false)
+    assert.equal(canContinueChatRootsyPlanner(7), true)
+    assert.equal(canContinueChatRootsyPlanner(8), false)
   })
 
   it("lee el informe de cierre y completa acciones desde resultados", () => {

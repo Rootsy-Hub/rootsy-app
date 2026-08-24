@@ -82,6 +82,7 @@ export type ChatRootsyPlannerPlan = {
   queries: ChatRootsyPlannerQuery[]
   steps?: ChatRootsyPlanStep[]
   clarifyingQuestion?: string
+  impossible?: boolean
   done?: boolean
   informe?: ChatRootsyPlannerInforme
 }
@@ -90,6 +91,7 @@ export type ChatRootsyValidatedPlan = {
   proposals: ChatRootsyToolProposal[]
   steps?: ChatRootsyPlanStep[]
   clarifyingQuestion?: string
+  impossible?: boolean
   discarded: number
   done?: boolean
   informe?: ChatRootsyPlannerInforme
@@ -119,7 +121,7 @@ function sanitizeClarifyingQuestion(raw: unknown): string | undefined {
     .replace(/\bsk-[a-zA-Z0-9_-]+\b/g, "")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, 200)
+    .slice(0, 400)
   return cleaned || undefined
 }
 
@@ -232,6 +234,7 @@ export function parseChatRootsyPlannerPlan(
     if (parsed.status === "impossible") {
       return {
         queries: [],
+        impossible: true,
         clarifyingQuestion: sanitizeClarifyingQuestion(parsed.reason),
       }
     }
@@ -518,6 +521,7 @@ export function validateChatRootsyPlannerPlan(
     proposals,
     steps: plan.steps,
     clarifyingQuestion,
+    impossible: plan.impossible,
     discarded,
     done: plan.done,
     informe: plan.informe,

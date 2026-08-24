@@ -287,3 +287,16 @@ export const CHAT_ROOTSY_CLOSE_PROMPT = [
   "No pidas data_request, no replanifiques y no nombres APIs.",
   "Respondé solo el texto visible, no JSON.",
 ].join(" ")
+
+export const CHAT_ROOTSY_CLARIFY_PROMPT = [
+  "El Planificador no puede armar el plan: falta un dato de la persona.",
+  "Preguntá vos, en tu voz, lo que hace falta. Un globo, 2 a 4 oraciones.",
+  "Usá la pregunta que te pasan. No inventes la promo, ni nombres, ni cifras que no estén ahí.",
+  "No nombres Planificador, APIs, JSON ni tarea.",
+  "No pidas data_request. Respondé solo el texto visible, no JSON.",
+].join(" ")
+
+export function fallbackChatRootsyClarifyReply(question: string): string {
+  const text = question.replace(/\s+/g, " ").trim()
+  return text.slice(0, 800) || "Necesito un dato más para seguir."
+}

@@ -82,6 +82,7 @@ describe("acciones aplicadas de la sesión", () => {
     const note = formatChatRootsySessionActionsMessage(acciones)
     assert.match(note ?? "", /Agua mineral 2 L x6/)
     assert.match(note ?? "", /TODAS/)
+    assert.match(note ?? "", /Peso 20%/)
   })
 
   it("no toma lecturas ni ofertas sin usar", () => {

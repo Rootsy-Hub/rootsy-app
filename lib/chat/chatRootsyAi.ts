@@ -2,6 +2,11 @@ import type { ChatRootsyHistoryTurn } from "@/app/[siteId]/[popId]/chat/chatRoot
 import type { ChatRootsyCloseHecho } from "@/lib/chat/chatRootsyCloseBrief"
 import { formatChatRootsySessionActionsMessage } from "@/lib/chat/chatRootsySessionActions"
 import {
+  formatChatRootsyPersonPopMessage,
+  insertChatRootsyContextNotes,
+  type ChatRootsyBusinessCard,
+} from "@/lib/chat/chatRootsyPersonPop"
+import {
   fallbackChatRootsyFirstTurn,
   parseChatRootsyFirstTurn,
   type ChatRootsyFirstTurn,
@@ -25,6 +30,7 @@ import {
   readOpenAiPromptId,
   requestOpenAiStoredPrompt,
 } from "@/lib/chat/openaiStoredPrompt"
+import { formatChatRootsyDevModelInput } from "@/lib/chat/chatRootsyDevTrace"
 
 const CHAT_AI_PROVIDER_ENV = "ROOTSY_CHAT_AI_PROVIDER"
 const OPENAI_MODEL_ENV = "OPENAI_MODEL"
@@ -46,7 +52,7 @@ export const CHAT_ROOTSY_SYSTEM_PROMPT = [
   ROOTSY_PERSONA_PROMPT,
   "Por defecto, 2 a 4 oraciones y máximo 700 caracteres. Una sola voz continua.",
   "Si piden más detalle, extendete un poco sin enrollarte.",
-  "En temas de negocio, soná criatura viva y observadora, no persona mayor escribiendo recomendaciones. La tarjeta es referencia: usala si aporta; no la recites.",
+  "En temas de negocio, soná criatura viva y observadora, no persona mayor escribiendo recomendaciones. La tarjeta (nombre, rol, pop, tipo de negocio) es referencia: usala si aporta; no la recites.",
 ].join(" ")
 
 export const CHAT_ROOTSY_FIRST_TURN_PROTOCOL = [
@@ -56,12 +62,15 @@ export const CHAT_ROOTSY_FIRST_TURN_PROTOCOL = [
   '{"reply":"texto visible","task_title":"Eliminar Huevo","data_request":{"objective":"..."}}',
   "data_request si necesitás cifras o listados, o si hay que crear, cambiar o borrar algo del negocio.",
   "Si hay data_request, mandá también task_title: título corto de la tarea para la persona (verbo + sujeto, 3 a 7 palabras). No es el objective.",
-  "No digas que no podés aplicar un cambio. Pedí permiso y mandá data_request.",
+  "No digas que no podés aplicar un cambio. Mandá data_request y en el reply anunciá que lo vas a hacer ahora.",
   "objective: qué hay que consultar o cambiar, en lenguaje de negocio. Sin tools, URLs, endpoints, q, filtros ni paginación. Es para quien arma las llamadas, no se muestra como título.",
   "En el objective sé explícito: uno o varios (el agua mineral vs todas las aguas), consultar o cambiar, y el valor si lo dijeron (10%, $3750).",
-  "El reply es tu voz. Prohibido URLs, tokens, herramientas, endpoints o la palabra JSON en el reply.",
-  "No inventes cifras. Si pedís datos, pedí permiso de forma natural, no con un texto fijo. No nombres botones técnicos.",
-  "Si te pasan acciones ya aplicadas en esta sesión y el pedido las continúa o las deshace, nombrá todas en reply y data_request. No reduzcas a un solo ítem.",
+  "El reply es tu voz. Prohibido URLs, tokens, herramientas, endpoints, Planificador, la palabra tarea o la palabra JSON en el reply.",
+  "Si hay data_request, no pidas permiso. Anunciá lo que vas a consultar o preparar, en presente o futuro inmediato (voy a mirar, ahora busco). Nada de condicional (miraría). No inventes cifras ni digas que ya escribiste. El cambio se confirma después.",
+  "Si data_request va null, el globo es solo conversación: no anuncies una búsqueda.",
+  "El mensaje nuevo pesa 80%. El hilo y las acciones de sesión pesan 20%: usalos solo si la intención no está clara (eso, lo mismo, deshacé, seguí) o si el pedido las continúa o las deshace. Si el pedido nuevo está claro, no retomes lo anterior.",
+  "Si el pedido continúa o deshace acciones ya aplicadas, nombrá todas las que toca en reply y data_request. No reduzcas a un solo ítem.",
+  "Si te llega contexto de quien habla (nombre, apellido, rol, pop, tipo de negocio), usalo para saber quién es y en qué local están. No lo recites. No es el pedido.",
 ].join(" ")
 
 export const CHAT_ROOTSY_SOCIAL_PROMPT = [
@@ -94,26 +103,6 @@ export function isChatRootsySocialTurn(body: string): boolean {
   return /^(hola|holis|buenas?|buen dia|buenos dias|buenas tardes|buenas noches|que tal|todo bien|como estas|como andas|como te va|hey|hi|hello)(?: (hola|que tal|todo bien|como estas|como andas|como te va))*$/.test(
     foldChatText(text),
   )
-}
-
-export type ChatRootsyBusinessCard = {
-  popName: string
-  businessType: string
-  roleName: string
-  isOwner: boolean
-  modules: Array<{ key: string; label: string }>
-}
-
-export function buildChatRootsyBusinessCard(
-  card: ChatRootsyBusinessCard,
-): ChatRootsyBusinessCard {
-  return {
-    popName: card.popName,
-    businessType: card.businessType,
-    roleName: card.roleName,
-    isOwner: card.isOwner,
-    modules: card.modules,
-  }
 }
 
 type GeminiResponse = {
@@ -533,26 +522,9 @@ export async function requestChatRootsyReplyDetailed(
 export type ChatRootsyFirstTurnFetch = {
   turn: ChatRootsyFirstTurn | null
   raw: string | null
+  sent: string
   source: "prompt-guardado" | "fallback-local" | "sin-respuesta"
   error?: string
-}
-
-function insertSessionActionsHistory(
-  history: ChatRootsyHistoryTurn[],
-  sessionNote: string,
-): ChatRootsyHistoryTurn[] {
-  if (history.length === 0) {
-    return [{ role: "user", body: sessionNote }]
-  }
-  const last = history[history.length - 1]
-  if (last?.role === "user") {
-    return [
-      ...history.slice(0, -1),
-      { role: "user", body: sessionNote },
-      last,
-    ]
-  }
-  return [...history, { role: "user", body: sessionNote }]
 }
 
 export async function requestChatRootsyFirstTurn(
@@ -562,14 +534,19 @@ export async function requestChatRootsyFirstTurn(
     fetchImpl?: typeof fetch
     now?: () => number
     sessionActions?: ChatRootsyCloseHecho[]
+    personPop?: ChatRootsyBusinessCard
   },
 ): Promise<ChatRootsyFirstTurnFetch> {
   const sessionNote = formatChatRootsySessionActionsMessage(
     options?.sessionActions ?? [],
   )
-  const modelHistory = sessionNote
-    ? insertSessionActionsHistory(history, sessionNote)
-    : history
+  const personNote = options?.personPop
+    ? formatChatRootsyPersonPopMessage(options.personPop)
+    : null
+  const modelHistory = insertChatRootsyContextNotes(history, [
+    personNote,
+    sessionNote,
+  ])
   const storedPromptId = readOpenAiPromptId(OPENAI_PROMPT_ROOTSY_ENV)
   const stored = storedPromptId
     ? await requestOpenAiStoredPrompt({
@@ -601,10 +578,16 @@ export async function requestChatRootsyFirstTurn(
     : raw
       ? ("fallback-local" as const)
       : ("sin-respuesta" as const)
+  const sent = formatChatRootsyDevModelInput({
+    fuente: source,
+    ...(source === "prompt-guardado" ? {} : { system }),
+    messages: modelHistory,
+  })
   if (!raw) {
     return {
       turn: null,
       raw: null,
+      sent,
       source,
       error:
         joinChatRootsyErrors([
@@ -626,6 +609,7 @@ export async function requestChatRootsyFirstTurn(
           }
         : null,
       raw,
+      sent,
       source,
       error: reply
         ? undefined
@@ -638,12 +622,14 @@ export async function requestChatRootsyFirstTurn(
     return {
       turn: fallbackChatRootsyFirstTurn(fallbackText),
       raw,
+      sent,
       source,
     }
   }
   return {
     turn: null,
     raw,
+    sent,
     source,
     error: "La IA respondió, pero el JSON no se pudo parsear",
   }

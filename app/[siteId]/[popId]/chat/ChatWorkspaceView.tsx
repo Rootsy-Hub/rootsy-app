@@ -71,7 +71,7 @@ import {
 } from "@/lib/rootsyApi/chatClient"
 import { cn } from "@/lib/utils"
 import { useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, MessageSquare, Plus, Send, Trash2, Users } from "lucide-react"
+import { MessageSquare, Plus, Send, Trash2, Users } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
@@ -648,16 +648,6 @@ export function ChatWorkspaceView() {
                         "flex items-center gap-3",
                       )}
                     >
-                      <RootsIconButton
-                        theme="workspace"
-                        emphasis="ghost"
-                        size="compact"
-                        label="Volver a canales"
-                        className="lg:hidden"
-                        onClick={() => setMobileThreadOpen(false)}
-                      >
-                        <ArrowLeft />
-                      </RootsIconButton>
                       <ChatChannelAvatar
                         title={selected.title}
                         initials={selected.initials}

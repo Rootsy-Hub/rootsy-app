@@ -13,6 +13,7 @@ export type AuditEventRow = {
   approver_user_id: string | null
   requester_name: string | null
   approver_name: string | null
+  record_label: string | null
   execution_source: string
   kind: string | null
 }
@@ -89,6 +90,7 @@ export async function fetchPopAuditEvents(
       ...event,
       requester_name: event.requester_name ?? null,
       approver_name: event.approver_name ?? null,
+      record_label: event.record_label ?? null,
     })),
     page: parsed.data.page,
     pageSize: parsed.data.pageSize,

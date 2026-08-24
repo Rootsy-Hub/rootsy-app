@@ -74,6 +74,29 @@ describe("operación en vivo del chat Rootsy", () => {
     assert.equal(taskPhaseTitle("preparing"), "Tarea en proceso")
   })
 
+  it("una aclaración de Rootsy no abre tarjeta de tarea", () => {
+    assert.equal(
+      deriveChatRootsyOperations([
+        row({
+          id: "u1",
+          mine: true,
+          body: "Creame una promo",
+        }),
+        row({
+          id: "a1",
+          mine: false,
+          body: "Voy a armar la promo.",
+        }),
+        row({
+          id: "a2",
+          mine: false,
+          body: "¿En qué artículos y con qué descuento la armamos?",
+        }),
+      ]).length,
+      0,
+    )
+  })
+
   it("espera aprobación y absorbe el resultado de la consulta", () => {
     const messages = [
       row({

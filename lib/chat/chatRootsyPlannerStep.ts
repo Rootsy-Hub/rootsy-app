@@ -4,7 +4,7 @@ import type { ChatRootsyCloseHecho } from "@/lib/chat/chatRootsyCloseBrief"
 import type { ChatRootsyDataRequest } from "@/lib/chat/chatRootsyDataRequest"
 import { compactChatRootsyApiPayload } from "@/lib/chat/chatRootsyApiQuery"
 
-export const CHAT_ROOTSY_PLANNER_MAX_STEPS = 4
+export const CHAT_ROOTSY_PLANNER_MAX_STEPS = 8
 
 export type ChatRootsyPlannerConfirm = "confirm" | "confirm_one" | "confirm_many"
 

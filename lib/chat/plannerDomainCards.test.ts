@@ -66,6 +66,7 @@ describe("fichas de dominio del planificador", () => {
     assert.match(prompt, /una línea para el tablero/)
     assert.match(prompt, /"status":"ok"/)
     assert.match(prompt, /\$1\[0\]\.items\[\]\.id/)
+    assert.match(prompt, /hasta 8 pasos/)
     assert.equal(
       prompt.includes(buildChatRootsyPlannerDomainCardsText()),
       true,

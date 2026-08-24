@@ -343,4 +343,20 @@ describe("plan de ejecución del planificador", () => {
       2750,
     )
   })
+
+  it("acepta hasta 8 pasos y corta el noveno", () => {
+    const plan = Array.from({ length: 9 }, (_, index) => ({
+      paso: index + 1,
+      action: `Paso ${index + 1}`,
+      confirm: "confirm",
+      ofertas: [
+        { method: "GET", path: "/v1/pops/:popId/articles", params: {} },
+      ],
+      demandas: ["id"],
+    }))
+    const steps = readChatRootsyExecutionPlan({ plan })
+    assert.equal(steps.length, 8)
+    assert.equal(steps[0]?.paso, 1)
+    assert.equal(steps[7]?.paso, 8)
+  })
 })

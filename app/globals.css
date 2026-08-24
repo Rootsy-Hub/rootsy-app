@@ -289,6 +289,64 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --animate-drift-glow: driftGlow 5.2s ease-in-out infinite;
+  --animate-drift-glow-soft: driftGlowSoft 6.4s ease-in-out infinite;
+  --animate-signal-sweep: signalSweep 4.8s cubic-bezier(0.33, 0.02, 0.28, 1)
+    infinite;
+  --animate-loading-pulse: loadingPulse 1.65s cubic-bezier(0.25, 0.1, 0.25, 1)
+    infinite;
+
+  @keyframes driftGlow {
+    0%,
+    100% {
+      transform: translate(-50%, 9px) scale(0.84, 0.58);
+      opacity: 0.32;
+    }
+    50% {
+      transform: translate(-50%, -4px) scale(1.12, 0.94);
+      opacity: 0.82;
+    }
+  }
+
+  @keyframes driftGlowSoft {
+    0%,
+    100% {
+      transform: translate(-50%, 14px) scale(0.74, 0.5);
+      opacity: 0.18;
+    }
+    50% {
+      transform: translate(-50%, -14px) scale(1.18, 1);
+      opacity: 0.58;
+    }
+  }
+
+  @keyframes signalSweep {
+    0%,
+    100% {
+      transform: translate(-50%, 18px) scale(0.7, 0.42) rotate(-4deg);
+      opacity: 0.1;
+    }
+    48% {
+      transform: translate(-50%, -10px) scale(1.16, 1.02) rotate(4deg);
+      opacity: 0.72;
+    }
+  }
+
+  @keyframes loadingPulse {
+    0% {
+      transform: translateY(8px) scale(0.55);
+      opacity: 0.18;
+    }
+    40% {
+      transform: translateY(-12px) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-28px) scale(0.35);
+      opacity: 0;
+    }
+  }
 }
 
 @layer base {

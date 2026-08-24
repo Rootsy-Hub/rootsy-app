@@ -7,24 +7,21 @@ export function isChatRootsyDevTraceEnabled(): boolean {
 
 export const ROOTSY_CHAT_SHOW_DEV_TRACE = isChatRootsyDevTraceEnabled()
 
-export type ChatRootsyDevLane =
-  | "rootsy"
-  | "planner"
-  | "api"
-  | "close"
-  | "choice"
+export type ChatRootsyDevActor = "rootsy" | "planner"
 
-export type ChatRootsyDevStep = {
+export type ChatRootsyDevCall = {
   id?: string
-  title: string
-  lane?: ChatRootsyDevLane
+  actor: ChatRootsyDevActor
+  phase?: string
+  userMessage?: string
+  sent: string
+  received: string
   note?: string
-  body?: string
 }
 
 export type ChatRootsyDevTrace = {
   error?: string
-  steps: ChatRootsyDevStep[]
+  calls: ChatRootsyDevCall[]
 }
 
 export function chatRootsyDevJson(value: unknown): string {
@@ -35,65 +32,76 @@ export function chatRootsyDevJson(value: unknown): string {
   }
 }
 
-export function chatRootsyDevLaneLabel(lane?: ChatRootsyDevLane): string {
-  if (lane === "rootsy") return "Rootsy"
-  if (lane === "planner") return "Planificador"
-  if (lane === "api") return "API"
-  if (lane === "close") return "Cierre"
-  if (lane === "choice") return "Elección"
-  return "Paso"
+export function chatRootsyDevActorLabel(actor: ChatRootsyDevActor): string {
+  return actor === "planner" ? "Planificador" : "Rootsy"
 }
 
-export function chatRootsyDevStep(input: {
-  lane: ChatRootsyDevLane
-  title: string
+export function formatChatRootsyDevModelInput(input: {
+  fuente?: string
+  system?: string
+  messages: Array<{ role: string; body?: string; content?: string }>
+}): string {
+  return chatRootsyDevJson({
+    ...(input.fuente ? { fuente: input.fuente } : {}),
+    ...(input.system ? { system: input.system } : {}),
+    messages: input.messages.map((row) => ({
+      role: row.role,
+      content: (row.body ?? row.content ?? "").trim(),
+    })),
+  })
+}
+
+export function chatRootsyDevCall(input: {
+  id?: string
+  actor: ChatRootsyDevActor
+  phase?: string
+  userMessage?: string
+  sent?: string | null
+  received?: string | null
   note?: string
-  body?: unknown
-}): ChatRootsyDevStep {
-  const body =
-    input.body == null
-      ? undefined
-      : typeof input.body === "string"
-        ? input.body
-        : chatRootsyDevJson(input.body)
+}): ChatRootsyDevCall {
   return {
-    lane: input.lane,
-    title: input.title,
-    ...(input.note ? { note: input.note } : {}),
-    ...(body ? { body } : {}),
+    actor: input.actor,
+    sent: input.sent?.trim() || "(no se envió)",
+    received: input.received?.trim() || "(no hubo respuesta)",
+    ...(input.id ? { id: input.id } : {}),
+    ...(input.phase?.trim() ? { phase: input.phase.trim() } : {}),
+    ...(input.userMessage?.trim()
+      ? { userMessage: input.userMessage.trim() }
+      : {}),
+    ...(input.note?.trim() ? { note: input.note.trim() } : {}),
   }
 }
 
 export function buildChatRootsyDevTrace(
-  steps: ChatRootsyDevStep[],
+  calls: ChatRootsyDevCall[],
   extras?: { error?: string | null },
 ): ChatRootsyDevTrace | undefined {
   if (!isChatRootsyDevTraceEnabled()) return undefined
-  const error = extras?.error?.trim()
-  const stamped = steps.map((step, index) => ({
-    ...step,
-    id: step.id ?? `${step.lane ?? "step"}-${index}-${step.title}`,
-    lane: step.lane ?? "api",
+  const stamped = calls.map((call, index) => ({
+    ...call,
+    id: call.id ?? `${call.actor}-${index}-${call.phase ?? "io"}`,
   }))
-  return error ? { error, steps: stamped } : { steps: stamped }
+  const error = extras?.error?.trim()
+  return error ? { error, calls: stamped } : { calls: stamped }
 }
 
 export function mergeChatRootsyDevTraces(
   traces: Array<ChatRootsyDevTrace | undefined | null>,
 ): ChatRootsyDevTrace | null {
-  const steps: ChatRootsyDevStep[] = []
+  const calls: ChatRootsyDevCall[] = []
   const seen = new Set<string>()
   let error: string | undefined
   traces.forEach((trace, traceIndex) => {
     if (!trace) return
     if (trace.error?.trim()) error = trace.error.trim()
-    for (const [stepIndex, step] of trace.steps.entries()) {
-      const id = step.id ?? `${traceIndex}-${stepIndex}-${step.title}`
+    for (const [callIndex, call] of (trace.calls ?? []).entries()) {
+      const id = call.id ?? `${traceIndex}-${callIndex}-${call.actor}`
       if (seen.has(id)) continue
       seen.add(id)
-      steps.push({ ...step, id, lane: step.lane ?? "api" })
+      calls.push({ ...call, id })
     }
   })
-  if (!steps.length && !error) return null
-  return error ? { error, steps } : { steps }
+  if (!calls.length && !error) return null
+  return error ? { error, calls } : { calls }
 }

@@ -13,6 +13,7 @@ export type AuditEventView = {
   approver_user_id: string | null
   requester_name: string | null
   approver_name: string | null
+  record_label?: string | null
   execution_source: string
   kind: string | null
 }
@@ -353,23 +354,30 @@ function fieldChangesFor(
     .filter((row): row is AuditFieldChange => row != null)
 }
 
-function recordTitleFromState(state: unknown): string {
+function recordTitleFromState(state: unknown, keys: string[]): string {
   const rec = asRecord(state)
   if (!rec) return ""
   const person = `${str(rec.first_name)} ${str(rec.last_name)}`.trim()
   if (person) return person
-  for (const key of ["name", "description", "email", "sku", "job_title", "title"]) {
+  for (const key of keys) {
     const value = str(rec[key])
     if (value) return value
   }
-  if (typeof rec.amount === "number") return moneyFmt.format(rec.amount)
   return ""
 }
 
 function recordTitle(event: AuditEventView): string {
+  const strongKeys = ["name", "description", "email", "title"]
+  const weakKeys = ["sku", "job_title"]
   return (
-    recordTitleFromState(event.new_state) ||
-    recordTitleFromState(event.previous_state) ||
+    recordTitleFromState(event.new_state, strongKeys) ||
+    recordTitleFromState(event.previous_state, strongKeys) ||
+    event.record_label?.trim() ||
+    recordTitleFromState(event.new_state, weakKeys) ||
+    recordTitleFromState(event.previous_state, weakKeys) ||
+    (typeof asRecord(event.new_state)?.amount === "number"
+      ? moneyFmt.format(asRecord(event.new_state)!.amount as number)
+      : "") ||
     "Sin nombre"
   )
 }

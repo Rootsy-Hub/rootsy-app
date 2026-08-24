@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   buildChatRootsyCloseBrief,
+  fallbackChatRootsyClarifyReply,
   fallbackChatRootsyCloseReply,
   readChatRootsyCloseReply,
 } from "@/lib/chat/chatRootsyCloseBrief"
@@ -179,5 +180,15 @@ describe("cierre de Rootsy", () => {
       ),
       "Listo, las aguas ya quedaron al nuevo precio.",
     )
+  })
+
+  it("usa la pregunta del Planificador como fallback de aclaración", () => {
+    assert.equal(
+      fallbackChatRootsyClarifyReply(
+        "Para crear las promociones, ¿en qué artículos y con qué descuento?",
+      ),
+      "Para crear las promociones, ¿en qué artículos y con qué descuento?",
+    )
+    assert.equal(fallbackChatRootsyClarifyReply("   "), "Necesito un dato más para seguir.")
   })
 })

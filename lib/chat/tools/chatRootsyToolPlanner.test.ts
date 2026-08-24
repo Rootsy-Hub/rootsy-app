@@ -84,6 +84,16 @@ describe("consultora de consultas Rootsy", () => {
     )
     assert.equal(ask?.queries.length, 0)
     assert.equal(ask?.clarifyingQuestion, "¿De qué mes?")
+    assert.equal(ask?.impossible, undefined)
+
+    const blocked = parseChatRootsyPlannerPlan(
+      '{"status":"impossible","reason":"Ningún endpoint documentado cubre ese pedido."}',
+    )
+    assert.equal(blocked?.impossible, true)
+    assert.equal(
+      blocked?.clarifyingQuestion,
+      "Ningún endpoint documentado cubre ese pedido.",
+    )
 
     const withAction = parseChatRootsyPlannerPlan(
       '{"status":"ok","queries":[{"method":"GET","path":"/v1/pops/:popId/articles","params":{"q":"Agua"},"action":"Buscar artículos que coincidan con Agua","confirm":"confirm_one"}]}',

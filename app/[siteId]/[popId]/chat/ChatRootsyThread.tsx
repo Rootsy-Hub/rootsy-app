@@ -113,6 +113,25 @@ function rootsyFollowUpRow(
   }
 }
 
+function chatRootsyTurnCluster(
+  messages: ChatMessageRow[],
+  messageId: string,
+): ChatMessageRow[] {
+  const idx = messages.findIndex((row) => row.id === messageId)
+  if (idx < 0) return []
+  const clicked = messages[idx]
+  const start = clicked?.mine
+    ? idx
+    : (() => {
+        let cursor = idx
+        while (cursor > 0 && !messages[cursor]?.mine) cursor -= 1
+        return cursor
+      })()
+  let end = start + 1
+  while (end < messages.length && !messages[end]?.mine) end += 1
+  return messages.slice(start, end)
+}
+
 export function ChatRootsyThread({
   siteId,
   popId,
@@ -143,11 +162,19 @@ export function ChatRootsyThread({
     "idle",
   )
   const [haloExiting, setHaloExiting] = useState(false)
+  const [visibleHalo, setVisibleHalo] = useState<"rootsy" | "planner" | null>(
+    null,
+  )
+  const visibleHaloRef = useRef(visibleHalo)
+  visibleHaloRef.current = visibleHalo
   const [arriveId, setArriveId] = useState<string | null>(null)
   const [devOpen, setDevOpen] = useState(false)
   const [inspectedOperationId, setInspectedOperationId] = useState<
     string | null
   >(null)
+  const [inspectedMessageId, setInspectedMessageId] = useState<string | null>(
+    null,
+  )
 
   useEffect(() => {
     const stored = loadRootsyChatMessages(popId)
@@ -196,7 +223,6 @@ export function ChatRootsyThread({
       return
     }
     if (sending) {
-      setHaloExiting(false)
       setThreadMotion("rise")
       setArriveId(null)
       return
@@ -212,10 +238,8 @@ export function ChatRootsyThread({
       )
     setThreadMotion((current) => (current === "rise" ? "settle" : current))
     setArriveId(last?.id ?? null)
-    setHaloExiting(true)
     const settleTimer = window.setTimeout(() => {
       setThreadMotion("idle")
-      setHaloExiting(false)
       setArriveId(null)
     }, 720)
     return () => window.clearTimeout(settleTimer)
@@ -246,6 +270,27 @@ export function ChatRootsyThread({
     [displayMessages, live, sendError, sending],
   )
   const busy = sending || live.sending
+  const plannerThinking = live.mode === "prepare" && live.sending
+  const floorHalo: "rootsy" | "planner" | null = sending
+    ? "rootsy"
+    : plannerThinking
+      ? "planner"
+      : null
+
+  useEffect(() => {
+    if (floorHalo) {
+      setVisibleHalo(floorHalo)
+      setHaloExiting(false)
+      return
+    }
+    if (!visibleHaloRef.current) return
+    setHaloExiting(true)
+    const timer = window.setTimeout(() => {
+      setHaloExiting(false)
+      setVisibleHalo(null)
+    }, 420)
+    return () => window.clearTimeout(timer)
+  }, [floorHalo])
 
   useEffect(() => {
     if (sending) return
@@ -290,13 +335,32 @@ export function ChatRootsyThread({
     }
     return map
   }, [displayMessages, operations])
-  const inspectedOperation =
-    operations.find((item) => item.id === inspectedOperationId) ??
-    operations.at(-1) ??
-    null
+  const inspectedOperation = inspectedOperationId
+    ? (operations.find((item) => item.id === inspectedOperationId) ?? null)
+    : inspectedMessageId
+      ? (operations.find(
+          (item) =>
+            item.memberIds.includes(inspectedMessageId) ||
+            item.anchorMessageId === inspectedMessageId ||
+            item.originMessageId === inspectedMessageId,
+        ) ?? null)
+      : (operations.at(-1) ?? null)
   const inspectedTrace = inspectedOperation
     ? (tracesByOperation.get(inspectedOperation.id) ?? null)
-    : mergeChatRootsyDevTraces(displayMessages.map((row) => row.devTrace))
+    : inspectedMessageId
+      ? mergeChatRootsyDevTraces(
+          chatRootsyTurnCluster(displayMessages, inspectedMessageId).map(
+            (row) => row.devTrace,
+          ),
+        )
+      : mergeChatRootsyDevTraces(displayMessages.map((row) => row.devTrace))
+
+  const inspectTurn = (messageId: string, operationId?: string) => {
+    if (!isChatRootsyDevTraceEnabled()) return
+    setInspectedOperationId(operationId ?? null)
+    setInspectedMessageId(messageId)
+    setDevOpen(true)
+  }
 
   const bubbleMessages = useMemo(
     () =>
@@ -447,30 +511,37 @@ export function ChatRootsyThread({
     const now = new Date().toISOString()
     const ranReads = Boolean(planRes.toolResults?.length)
     const closedFailed = Boolean(planRes.executionError)
-    const followUp =
-      ranReads || closedFailed
-        ? rootsyFollowUpRow(planRes, now, planRes.followUpReply ?? "")
-        : null
+    const followUpText = planRes.followUpReply?.trim() ?? ""
+    const attachWorkToFollowUp = ranReads || closedFailed
+    const followUp = followUpText
+      ? rootsyFollowUpRow(
+          attachWorkToFollowUp
+            ? planRes
+            : { success: true, reply: followUpText },
+          now,
+          followUpText,
+        )
+      : null
     setMessages((current) => {
       const next = current.map((row) =>
         row.id === openingId
           ? {
               ...row,
-              toolOffer: ranReads || closedFailed ? undefined : planRes.toolOffer,
-              toolOffers:
-                ranReads || closedFailed ? undefined : planRes.toolOffers,
+              toolOffer: attachWorkToFollowUp ? undefined : planRes.toolOffer,
+              toolOffers: attachWorkToFollowUp
+                ? undefined
+                : planRes.toolOffers,
               plannerRun: planRes.plannerRun ?? row.plannerRun,
-              plannerChoices:
-                ranReads || closedFailed ? undefined : planRes.plannerChoices,
-              closeBrief:
-                ranReads || closedFailed ? undefined : planRes.closeBrief,
+              plannerChoices: attachWorkToFollowUp
+                ? undefined
+                : planRes.plannerChoices,
+              closeBrief: attachWorkToFollowUp ? undefined : planRes.closeBrief,
               toolError: planRes.executionError,
-              devTrace:
-                ranReads || closedFailed
-                  ? row.devTrace
-                  : (mergeChatRootsyDevTraces([row.devTrace, planRes.devTrace]) ??
-                    planRes.devTrace ??
-                    row.devTrace),
+              devTrace: attachWorkToFollowUp
+                ? row.devTrace
+                : (mergeChatRootsyDevTraces([row.devTrace, planRes.devTrace]) ??
+                  planRes.devTrace ??
+                  row.devTrace),
             }
           : row,
       )
@@ -701,7 +772,7 @@ export function ChatRootsyThread({
           ref={listRef}
           className={cn(
             "chat-rootsy-thread-list game-scroll flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain bg-transparent px-4 pt-4 sm:px-6 [overflow-anchor:none]",
-            (sending || threadMotion === "rise") &&
+            (sending || plannerThinking || threadMotion === "rise") &&
               "chat-rootsy-thread-list--thinking",
             threadMotion === "rise" && "chat-rootsy-thread-list--rise",
             threadMotion === "settle" && "chat-rootsy-thread-list--settle",
@@ -756,6 +827,11 @@ export function ChatRootsyThread({
                   lastInCluster={cluster.lastInCluster}
                   tail={cluster.lastInCluster && !operation}
                   hideTime={message.id === ROOTSY_CHAT_WELCOME.id}
+                  onInspect={
+                    isChatRootsyDevTraceEnabled()
+                      ? () => inspectTurn(message.id, operation?.id)
+                      : undefined
+                  }
                 />
               ) : null}
               {operation ? (
@@ -765,10 +841,7 @@ export function ChatRootsyThread({
                     disabled={busy}
                     onInspect={
                       isChatRootsyDevTraceEnabled()
-                        ? () => {
-                            setInspectedOperationId(operation.id)
-                            setDevOpen(true)
-                          }
+                        ? () => inspectTurn(operation.anchorMessageId, operation.id)
                         : undefined
                     }
                     onApprove={(hostId, keys) => {
@@ -790,15 +863,19 @@ export function ChatRootsyThread({
             </p>
           ) : null}
         </div>
-        {sending || haloExiting ? (
-          <ChatRootsyThinkingHalo exiting={haloExiting && !sending} />
+        {visibleHalo ? (
+          <ChatRootsyThinkingHalo
+            key={visibleHalo}
+            variant={visibleHalo}
+            exiting={haloExiting}
+          />
         ) : null}
       </div>
 
       <form
         className={cn(
           "chat-rootsy-thread-chrome flex shrink-0 items-center gap-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6",
-          (sending || threadMotion === "rise") &&
+          (sending || plannerThinking || threadMotion === "rise") &&
             "chat-rootsy-thread-chrome--thinking",
         )}
         onSubmit={(event) => {
@@ -844,8 +921,8 @@ export function ChatRootsyThread({
                 {inspectedOperation?.title ?? "Traza de la corrida"}
               </SheetTitle>
               <SheetDescription className="font-canopy text-xs text-rootsy-bruma-600">
-                Click en una tarea del hilo para ver esa corrida. El chat no
-                cambia.
+                Click en un globo o en una tarea del hilo para ver esa
+                corrida. El chat no cambia.
               </SheetDescription>
             </SheetHeader>
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-3">

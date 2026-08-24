@@ -81,8 +81,8 @@ export function formatChatRootsySessionActionsMessage(
 ): string | null {
   if (!acciones.length) return null
   return [
-    "Acciones ya aplicadas en esta sesión (hechos reales, no un plan):",
+    "Acciones ya aplicadas en esta sesión (hechos reales, no un plan). Peso 20%: usalas solo si el mensaje nuevo no tiene intención clara, o si las continúa o las deshace. Si el pedido nuevo está claro, no las menciones.",
     JSON.stringify(compactChatRootsySessionActions(acciones)),
-    "Si el pedido las continúa o las deshace, nombrá TODAS en reply y data_request. No reduzcas a un solo ítem. No inventes otras.",
+    "Si el pedido las continúa o las deshace, nombrá TODAS las que toca en reply y data_request. No reduzcas a un solo ítem. No inventes otras.",
   ].join("\n")
 }

@@ -26,6 +26,7 @@ type Props = {
   hideTime?: boolean
   timeClassName?: string
   className?: string
+  onInspect?: () => void
 }
 
 function ChatBubbleTail({ side }: { side: "left" | "right" }) {
@@ -63,6 +64,7 @@ export function ChatBubble({
   hideTime,
   timeClassName,
   className,
+  onInspect,
 }: Props) {
   const text = body.trim()
   const emojiCount = chatStandaloneEmojiCount(text)
@@ -81,8 +83,10 @@ export function ChatBubble({
       className={cn(
         "chat-bubble-stack",
         mine ? "chat-bubble-stack--mine" : "chat-bubble-stack--theirs",
+        onInspect && "cursor-pointer",
         className,
       )}
+      onClick={onInspect}
     >
       <div className={cn("chat-bubble-row", mine && "chat-bubble-row--mine")}>
         {showAvatarSlot ? (
