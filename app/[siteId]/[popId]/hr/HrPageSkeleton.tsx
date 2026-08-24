@@ -60,16 +60,33 @@ function PersonCard({ delay }: { delay: number }) {
 export function HrPageSkeleton() {
   return (
     <div
-      className="space-y-8"
+      className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12"
       role="status"
       aria-busy="true"
       aria-live="polite"
     >
-      <div className="space-y-4">
+      <div className="order-2 space-y-4 lg:order-1 lg:col-span-3">
         <div className="space-y-2">
-          <Bone className={cn("h-3.5 w-24", sk.bar)} />
-          <Bone className={cn("h-2.5 w-64 max-w-full", sk.pill)} />
+          <Bone className={cn("h-3.5 w-28", sk.bar)} />
+          <Bone className={cn("h-2.5 w-40 max-w-full", sk.pill)} />
         </div>
+        <article className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "h-auto")}>
+          <div className="space-y-3 px-4 py-4">
+            <Bone className={cn("h-8 w-24 rounded-lg", sk.box)} />
+            <Bone className={cn("h-4 w-32", sk.bar)} delay={1} />
+            <Bone className={cn("h-4 w-24", sk.bar)} delay={2} />
+          </div>
+        </article>
+        <article className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "h-auto")}>
+          <div className="space-y-3 px-4 py-4">
+            <Bone className={cn("h-3.5 w-20", sk.bar)} />
+            <Bone className={cn("h-8 w-full", sk.box)} delay={1} />
+            <Bone className={cn("h-8 w-full", sk.box)} delay={2} />
+          </div>
+        </article>
+      </div>
+      <div className="order-1 space-y-4 lg:order-2 lg:col-span-9">
+        <Bone className={cn("h-9 w-full max-w-md rounded-lg", sk.box)} />
         <div className={dataWorkspaceEntityCardsGridClass}>
           <PersonCard delay={1} />
           <PersonCard delay={2} />

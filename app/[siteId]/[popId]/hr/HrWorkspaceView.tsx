@@ -8,10 +8,7 @@ import type {
   PopRoleRow,
   UpsertEmployeeInput,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
-import {
-  buildHrPermissionSectionsForPop,
-  countHrGrantedVerbs,
-} from "@/lib/hrPermissionCatalog"
+import { buildHrPermissionSectionsForPop } from "@/lib/hrPermissionCatalog"
 import {
   clockEmployeeIn,
   clockEmployeeOut,
@@ -37,6 +34,7 @@ import { HrPageSkeleton } from "@/app/[siteId]/[popId]/hr/HrPageSkeleton"
 import { HrPersonCard } from "@/app/[siteId]/[popId]/hr/HrPersonCard"
 import { HrPersonDialog } from "@/app/[siteId]/[popId]/hr/HrPersonDialog"
 import { HrRolePermissionsDialog } from "@/app/[siteId]/[popId]/hr/HrRolePermissionsDialog"
+import { HrRolesOperativeCard } from "@/app/[siteId]/[popId]/hr/HrRolesOperativeCard"
 import { HrRoleSnapshotCard } from "@/app/[siteId]/[popId]/hr/HrRoleSnapshotCard"
 import {
   dataWorkspaceBlocksEmptyStateClass,
@@ -51,7 +49,6 @@ import {
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { RootsBanner } from "@/components/rootsy-banner"
-import { RootsDefaultButton } from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -196,9 +193,6 @@ export function HrWorkspaceView() {
   const [permModalSaving, setPermModalSaving] = useState(false)
   const [permModalError, setPermModalError] = useState<string | null>(null)
   const [permModalCanApprove, setPermModalCanApprove] = useState(false)
-  const [roleGrantKeys, setRoleGrantKeys] = useState<Record<string, string[]>>(
-    {},
-  )
 
   const loadDashboard = useCallback(async () => {
     if (!popId || !siteId) return
@@ -239,33 +233,6 @@ export function HrWorkspaceView() {
       cancelled = true
     }
   }, [popId, siteId, loadDashboard])
-
-  useEffect(() => {
-    if (!popId) return
-    const editable = roles.filter((role) => role.popId)
-    if (editable.length === 0) {
-      setRoleGrantKeys({})
-      return
-    }
-    let cancelled = false
-    const catalogKeySet = new Set(hrCatalogRows.map((row) => row.key))
-    void (async () => {
-      const entries = await Promise.all(
-        editable.map(async (role) => {
-          const res = await getRolePermissionsEditorData(popId, role.id)
-          if (!res.success) return [role.id, [] as string[]] as const
-          return [
-            role.id,
-            res.selectedGrantKeys.filter((key) => catalogKeySet.has(key)),
-          ] as const
-        }),
-      )
-      if (!cancelled) setRoleGrantKeys(Object.fromEntries(entries))
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [popId, roles, hrCatalogRows])
 
   const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
@@ -337,10 +304,13 @@ export function HrWorkspaceView() {
     return map
   }, [activeMembers])
 
-  const hrPermissionTotal = useMemo(
-    () => countHrGrantedVerbs(hrSections, []).total,
-    [hrSections],
-  )
+  const jobTitleByUserId = useMemo(() => {
+    const map = new Map<string, string | null>()
+    for (const person of employees) {
+      if (person.userId) map.set(person.userId, person.jobTitle)
+    }
+    return map
+  }, [employees])
 
   const confirmCopy = useMemo(() => {
     if (!confirmAction) {
@@ -515,17 +485,7 @@ export function HrWorkspaceView() {
         return
       }
       setBanner({ type: "ok", text: "Rol creado correctamente." })
-      setRoleGrantKeys((prev) => ({
-        ...prev,
-        [res.roleId]: permModalSelected,
-      }))
-      setPermModalMode("edit")
-      setPermModalRole({
-        id: res.roleId,
-        displayName: permModalDisplayName.trim(),
-        name: "",
-      })
-      setPermModalDisplayName(permModalDisplayName.trim())
+      closePermModal()
       await loadDashboard()
       return
     }
@@ -547,10 +507,7 @@ export function HrWorkspaceView() {
       return
     }
     setBanner({ type: "ok", text: "Permisos del rol actualizados." })
-    setRoleGrantKeys((prev) => ({
-      ...prev,
-      [permModalRole.id]: permModalSelected,
-    }))
+    closePermModal()
     await Promise.all([loadDashboard(), refresh()])
   }
 
@@ -900,244 +857,191 @@ export function HrWorkspaceView() {
                 />
               ) : null}
 
-              <DataWorkspaceBlocksSection>
-                <RootsFormSegmentField
-                  label="Ver personas"
-                  aria-label="Filtrar personas"
-                  layout="inline"
-                  className="[&>span:first-child]:sr-only"
-                  groupClassName="border-0"
-                  value={peopleFilter}
-                  onValueChange={(value) => setPeopleFilter(value as PeopleFilter)}
-                  options={peopleFilterOptions}
-                />
-
-                {visiblePeople.length === 0 ? (
-                  <p className={dataWorkspaceBlocksEmptyStateClass}>
-                    {peopleFilter === "local"
-                      ? "Nadie está en el local ahora."
-                      : peopleFilter === "acceso"
-                        ? "Nadie de estas personas usa Rootsy todavía."
-                        : peopleFilter === "invitadas"
-                          ? "Nadie tiene una invitación pendiente."
-                          : peopleFilter === "baja"
-                            ? "Nadie figura como que ya no trabaja acá."
-                            : "Todavía no hay personas cargadas."}
-                  </p>
-                ) : (
-                  <div className={dataWorkspaceEntityCardsGridClass}>
-                    {visiblePeople.map((person) => {
-                      const member = members.find(
-                        (item) => item.userId === person.userId,
-                      )
-                      const invite = pendingInviteForPerson(person, pending)
-                      const cardPerson = personForCard(person, member)
-                      const isSelf = Boolean(
-                        user?.id &&
-                          (person.userId === user.id || member?.userId === user.id),
-                      )
-                      return (
-                        <HrPersonCard
-                          key={person.id}
-                          person={cardPerson}
-                          imageUrl={member?.imageUrl}
-                          isOwner={Boolean(member?.isOwner)}
-                          isSelf={isSelf}
-                          rootsyRole={
-                            member?.isActive ? member.roleDisplayName : null
-                          }
-                          pendingInvite={invite}
-                          canManagePeople={canManagePeople}
-                          canManageInvites={canManageInvites}
-                          detailHref={`/${siteId}/${popId}/hr/${person.id}`}
-                          clockBusy={actionKey === `clock-${person.id}`}
-                          inviteBusy={
-                            invite
-                              ? actionKey === `revoke-${invite.id}` ||
-                                actionKey === `renew-${invite.id}`
-                              : false
-                          }
-                          onOpen={() => {
-                            setPersonEditing(cardPerson)
-                            setPersonError(null)
-                            setPersonOpen(true)
-                          }}
-                          onClock={() =>
-                            setConfirmAction({ kind: "clock", person: cardPerson })
-                          }
-                          onInvite={() => openInvite(person)}
-                          onCopyInvite={
-                            invite
-                              ? () => void copyInviteUrl(invite.inviteUrl)
-                              : undefined
-                          }
-                          onRenewInvite={
-                            invite
-                              ? () => void handleRenewInvite(invite)
-                              : undefined
-                          }
-                          onRevokeInvite={
-                            invite
-                              ? () =>
-                                  setConfirmAction({ kind: "revoke", invite })
-                              : undefined
-                          }
-                          onChangeRole={
-                            member &&
-                            member.isActive &&
-                            !member.isOwner &&
-                            assignableRoles.length > 0
-                              ? () => openChangeRole(member)
-                              : undefined
-                          }
-                          onRevokeAccess={
-                            member && member.isActive && !member.isOwner
-                              ? () =>
-                                  setConfirmAction({
-                                    kind: "deactivate",
-                                    member,
-                                  })
-                              : undefined
-                          }
-                          onRestoreAccess={
-                            member && !member.isActive && !member.isOwner && !person.leftAt
-                              ? () =>
-                                  setConfirmAction({
-                                    kind: "reactivate",
-                                    member,
-                                  })
-                              : undefined
-                          }
-                          onLeave={() =>
-                            setConfirmAction({ kind: "leave", person })
-                          }
-                          onReturn={() =>
-                            setConfirmAction({ kind: "return", person })
-                          }
-                        />
-                      )
-                    })}
-                  </div>
-                )}
-              </DataWorkspaceBlocksSection>
-
-              <DataWorkspaceBlocksSection
-                title="Si entra a Rootsy"
-                description="Qué puede hacer en el sistema. Distinto del puesto en el local."
-                action={
-                  canManageInvites ? (
-                    <RootsDefaultButton
-                      type="button"
-                      size="compact"
-                      disabled={permModalLoading || permModalSaving}
-                      onClick={handleOpenCreateRole}
-                    >
-                      Nuevo rol
-                    </RootsDefaultButton>
-                  ) : null
-                }
-              >
-                {roles.length === 0 ? (
-                  <p className={dataWorkspaceBlocksEmptyStateClass}>
-                    No hay roles cargados.
-                  </p>
-                ) : (
-                  <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(16rem,0.8fr)]">
-                    <div className="min-w-0 lg:sticky lg:top-4 lg:self-start">
-                      {permModalOpen ? (
-                        <HrRolePermissionsDialog
-                          key={
-                            permModalMode === "create"
-                              ? "create"
-                              : (permModalRole?.id ?? "edit")
-                          }
-                          surface="panel"
-                          open={permModalOpen}
-                          mode={permModalMode}
-                          displayName={permModalDisplayName}
-                          permissions={permModalList}
-                          sections={hrSections}
-                          selectedKeys={permModalSelected}
-                          loading={permModalLoading}
-                          saving={permModalSaving}
-                          error={permModalError}
-                          onOpenChange={(open) => {
-                            if (!open && !permModalSaving) closePermModal()
-                          }}
-                          onDisplayNameChange={setPermModalDisplayName}
-                          onApplyGrantKeys={applyPermGrantKeys}
-                          onSave={() => void handleSaveRolePermissions()}
-                          canApprove={permModalCanApprove}
-                          onCanApproveChange={setPermModalCanApprove}
-                        />
-                      ) : (
-                        <div
-                          className={`${dataWorkspaceBlocksEmptyStateClass} space-y-3`}
-                        >
-                          <p>
-                            {canManageInvites
-                              ? "Elegí un rol para editar sus permisos, o creá uno nuevo."
-                              : "Los permisos de cada rol los edita quien administra el equipo."}
-                          </p>
-                          {canManageInvites ? (
-                            <RootsDefaultButton
-                              type="button"
-                              size="compact"
-                              disabled={permModalLoading || permModalSaving}
-                              onClick={handleOpenCreateRole}
-                            >
-                              Nuevo rol
-                            </RootsDefaultButton>
-                          ) : null}
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0 space-y-3">
-                      {roles.map((role) => {
-                        const grantKeys = roleGrantKeys[role.id]
-                        const granted =
-                          role.popId && grantKeys
-                            ? countHrGrantedVerbs(hrSections, grantKeys).granted
-                            : null
-                        return (
+              <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+                <aside className="order-2 min-w-0 space-y-4 lg:order-1 lg:col-span-3">
+                  <DataWorkspaceBlocksSection
+                    title="Si entra a Rootsy"
+                    description="Qué puede hacer en el sistema. Distinto del puesto en el local."
+                  >
+                    <HrRolesOperativeCard
+                      roles={roles}
+                      canManage={canManageInvites}
+                      editBusy={permModalLoading || permModalSaving}
+                      deleteBusy={Boolean(actionKey?.startsWith("del-role-"))}
+                      onCreate={
+                        canManageInvites ? handleOpenCreateRole : undefined
+                      }
+                      onEdit={(role) => void handleOpenEditRole(role)}
+                      onDelete={(role) =>
+                        setConfirmAction({ kind: "delete-role", role })
+                      }
+                    />
+                    {roles.length === 0 ? (
+                      <p className={dataWorkspaceBlocksEmptyStateClass}>
+                        Cuando haya roles, acá se ve quién entra y qué puesto
+                        tiene en el local.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {roles.map((role) => (
                           <HrRoleSnapshotCard
                             key={role.id}
                             role={role}
-                            members={membersByRoleId.get(role.id) ?? []}
-                            permissionGranted={granted}
-                            permissionTotal={hrPermissionTotal}
-                            selected={
-                              permModalOpen &&
-                              permModalMode === "edit" &&
-                              permModalRole?.id === role.id
-                            }
                             currentUserId={user?.id}
-                            canManage={canManageInvites}
-                            editBusy={permModalLoading || permModalSaving}
-                            deleteBusy={Boolean(
-                              actionKey?.startsWith("del-role-"),
+                            people={(membersByRoleId.get(role.id) ?? []).map(
+                              (member) => ({
+                                userId: member.userId,
+                                firstName: member.firstName,
+                                lastName: member.lastName,
+                                imageUrl: member.imageUrl,
+                                jobTitle:
+                                  jobTitleByUserId.get(member.userId) ?? null,
+                              }),
                             )}
-                            onEdit={
-                              canManageInvites && role.popId
-                                ? () => void handleOpenEditRole(role)
-                                : undefined
-                            }
-                            onDelete={
-                              canManageInvites && role.popId
-                                ? () =>
-                                    setConfirmAction({
-                                      kind: "delete-role",
-                                      role,
-                                    })
-                                : undefined
-                            }
                           />
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </DataWorkspaceBlocksSection>
+                        ))}
+                      </div>
+                    )}
+                  </DataWorkspaceBlocksSection>
+                </aside>
+
+                <div className="order-1 min-w-0 lg:order-2 lg:col-span-9">
+                  <DataWorkspaceBlocksSection>
+                    <RootsFormSegmentField
+                      label="Ver personas"
+                      aria-label="Filtrar personas"
+                      layout="inline"
+                      className="[&>span:first-child]:sr-only"
+                      groupClassName="border-0"
+                      value={peopleFilter}
+                      onValueChange={(value) =>
+                        setPeopleFilter(value as PeopleFilter)
+                      }
+                      options={peopleFilterOptions}
+                    />
+
+                    {visiblePeople.length === 0 ? (
+                      <p className={dataWorkspaceBlocksEmptyStateClass}>
+                        {peopleFilter === "local"
+                          ? "Nadie está en el local ahora."
+                          : peopleFilter === "acceso"
+                            ? "Nadie de estas personas usa Rootsy todavía."
+                            : peopleFilter === "invitadas"
+                              ? "Nadie tiene una invitación pendiente."
+                              : peopleFilter === "baja"
+                                ? "Nadie figura como que ya no trabaja acá."
+                                : "Todavía no hay personas cargadas."}
+                      </p>
+                    ) : (
+                      <div className={dataWorkspaceEntityCardsGridClass}>
+                        {visiblePeople.map((person) => {
+                          const member = members.find(
+                            (item) => item.userId === person.userId,
+                          )
+                          const invite = pendingInviteForPerson(person, pending)
+                          const cardPerson = personForCard(person, member)
+                          const isSelf = Boolean(
+                            user?.id &&
+                              (person.userId === user.id ||
+                                member?.userId === user.id),
+                          )
+                          return (
+                            <HrPersonCard
+                              key={person.id}
+                              person={cardPerson}
+                              imageUrl={member?.imageUrl}
+                              isOwner={Boolean(member?.isOwner)}
+                              isSelf={isSelf}
+                              rootsyRole={
+                                member?.isActive
+                                  ? member.roleDisplayName
+                                  : null
+                              }
+                              pendingInvite={invite}
+                              canManagePeople={canManagePeople}
+                              canManageInvites={canManageInvites}
+                              detailHref={`/${siteId}/${popId}/hr/${person.id}`}
+                              clockBusy={actionKey === `clock-${person.id}`}
+                              inviteBusy={
+                                invite
+                                  ? actionKey === `revoke-${invite.id}` ||
+                                    actionKey === `renew-${invite.id}`
+                                  : false
+                              }
+                              onOpen={() => {
+                                setPersonEditing(cardPerson)
+                                setPersonError(null)
+                                setPersonOpen(true)
+                              }}
+                              onClock={() =>
+                                setConfirmAction({
+                                  kind: "clock",
+                                  person: cardPerson,
+                                })
+                              }
+                              onInvite={() => openInvite(person)}
+                              onCopyInvite={
+                                invite
+                                  ? () => void copyInviteUrl(invite.inviteUrl)
+                                  : undefined
+                              }
+                              onRenewInvite={
+                                invite
+                                  ? () => void handleRenewInvite(invite)
+                                  : undefined
+                              }
+                              onRevokeInvite={
+                                invite
+                                  ? () =>
+                                      setConfirmAction({
+                                        kind: "revoke",
+                                        invite,
+                                      })
+                                  : undefined
+                              }
+                              onChangeRole={
+                                member &&
+                                member.isActive &&
+                                !member.isOwner &&
+                                assignableRoles.length > 0
+                                  ? () => openChangeRole(member)
+                                  : undefined
+                              }
+                              onRevokeAccess={
+                                member && member.isActive && !member.isOwner
+                                  ? () =>
+                                      setConfirmAction({
+                                        kind: "deactivate",
+                                        member,
+                                      })
+                                  : undefined
+                              }
+                              onRestoreAccess={
+                                member &&
+                                !member.isActive &&
+                                !member.isOwner &&
+                                !person.leftAt
+                                  ? () =>
+                                      setConfirmAction({
+                                        kind: "reactivate",
+                                        member,
+                                      })
+                                  : undefined
+                              }
+                              onLeave={() =>
+                                setConfirmAction({ kind: "leave", person })
+                              }
+                              onReturn={() =>
+                                setConfirmAction({ kind: "return", person })
+                              }
+                            />
+                          )
+                        })}
+                      </div>
+                    )}
+                  </DataWorkspaceBlocksSection>
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -1199,6 +1103,26 @@ export function HrWorkspaceView() {
           setInviteResult(null)
           handleOpenCreateRole()
         }}
+      />
+
+      <HrRolePermissionsDialog
+        open={permModalOpen}
+        mode={permModalMode}
+        displayName={permModalDisplayName}
+        permissions={permModalList}
+        sections={hrSections}
+        selectedKeys={permModalSelected}
+        loading={permModalLoading}
+        saving={permModalSaving}
+        error={permModalError}
+        onOpenChange={(open) => {
+          if (!open && !permModalSaving) closePermModal()
+        }}
+        onDisplayNameChange={setPermModalDisplayName}
+        onApplyGrantKeys={applyPermGrantKeys}
+        onSave={() => void handleSaveRolePermissions()}
+        canApprove={permModalCanApprove}
+        onCanApproveChange={setPermModalCanApprove}
       />
 
       <RootsConfirmDialog

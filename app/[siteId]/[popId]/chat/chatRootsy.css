@@ -18,6 +18,200 @@
   backdrop-filter: blur(8px);
 }
 
+.chat-rootsy-thread-list {
+  transition: padding-bottom 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat-rootsy-thread-list--thinking {
+  padding-bottom: 5rem;
+}
+
+.chat-rootsy-thread-chrome--thinking {
+  box-shadow: 0 -36px 72px rgb(201 251 255 / 0.14);
+}
+
+/**
+ * Presencia de pensamiento — no es un loader.
+ * Cuerpo: respiración lenta del planeta. Mente: pulso irregular, en vivo.
+ * Paleta Herramientas (#e0feff / #c9fbff). Solo transform y opacity.
+ */
+.chat-rootsy-thinking {
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+  inset-inline: 0;
+  bottom: 0;
+  height: 9.5rem;
+  overflow: hidden;
+  animation: chat-rootsy-thinking-enter 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.chat-rootsy-thinking__depth,
+.chat-rootsy-thinking__body,
+.chat-rootsy-thinking__mind {
+  position: absolute;
+  left: 50%;
+  border-radius: 50%;
+}
+
+.chat-rootsy-thinking__depth {
+  bottom: -58%;
+  width: 150%;
+  height: 150%;
+  background: radial-gradient(
+    ellipse 72% 54% at 50% 32%,
+    rgb(76 184 221 / 0.28) 0%,
+    rgb(201 251 255 / 0.12) 38%,
+    transparent 70%
+  );
+  filter: blur(48px);
+  animation: chat-rootsy-thinking-depth 12.5s cubic-bezier(0.45, 0.05, 0.55, 0.95)
+    infinite;
+}
+
+.chat-rootsy-thinking__body {
+  bottom: -42%;
+  width: 92%;
+  height: 118%;
+  background: radial-gradient(
+    ellipse 64% 48% at 50% 36%,
+    rgb(224 254 255 / 0.55) 0%,
+    rgb(201 251 255 / 0.28) 34%,
+    rgb(76 184 221 / 0.1) 58%,
+    transparent 74%
+  );
+  filter: blur(34px);
+  animation: chat-rootsy-thinking-body 8.8s cubic-bezier(0.45, 0.05, 0.55, 0.95)
+    infinite;
+}
+
+.chat-rootsy-thinking__mind {
+  bottom: -6%;
+  width: 28%;
+  height: 52%;
+  background: radial-gradient(
+    circle at 50% 58%,
+    rgb(255 255 255 / 0.7) 0%,
+    rgb(224 254 255 / 0.42) 26%,
+    rgb(201 251 255 / 0.12) 52%,
+    transparent 72%
+  );
+  filter: blur(16px);
+  animation: chat-rootsy-thinking-mind 3.2s cubic-bezier(0.37, 0, 0.63, 1)
+    infinite;
+}
+
+.chat-rootsy-thinking__veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgb(201 251 255 / 0.16) 0%,
+    rgb(224 254 255 / 0.05) 36%,
+    transparent 68%
+  );
+  animation: chat-rootsy-thinking-veil 8.8s cubic-bezier(0.45, 0.05, 0.55, 0.95)
+    infinite;
+  animation-delay: -2.4s;
+}
+
+@keyframes chat-rootsy-thinking-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes chat-rootsy-thinking-depth {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(-50%) scale(1.04);
+  }
+}
+
+@keyframes chat-rootsy-thinking-body {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translateX(-50%) translateY(8%) scale(0.96);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translateX(-50%) translateY(-10%) scale(1.05);
+  }
+}
+
+@keyframes chat-rootsy-thinking-mind {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: translateX(-50%) scale(0.86);
+  }
+  12% {
+    opacity: 0.55;
+    transform: translateX(-50%) scale(0.98);
+  }
+  20% {
+    opacity: 0.3;
+    transform: translateX(-50%) scale(0.9);
+  }
+  38% {
+    opacity: 0.92;
+    transform: translateX(-50%) translateY(-12%) scale(1.14);
+  }
+  52% {
+    opacity: 0.36;
+    transform: translateX(-50%) scale(0.94);
+  }
+  68% {
+    opacity: 0.64;
+    transform: translateX(-50%) translateY(-4%) scale(1.04);
+  }
+  84% {
+    opacity: 0.28;
+    transform: translateX(-50%) scale(0.88);
+  }
+}
+
+@keyframes chat-rootsy-thinking-veil {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-rootsy-thread-list {
+    transition: none;
+  }
+
+  .chat-rootsy-thinking,
+  .chat-rootsy-thinking__depth,
+  .chat-rootsy-thinking__body,
+  .chat-rootsy-thinking__mind,
+  .chat-rootsy-thinking__veil {
+    animation: none !important;
+  }
+
+  .chat-rootsy-thinking__body {
+    opacity: 0.7;
+  }
+
+  .chat-rootsy-thinking__mind {
+    opacity: 0.45;
+  }
+}
+
 .chat-rootsy-thread-caption {
   text-shadow:
     0 1px 1px rgb(255 255 255 / 78%),

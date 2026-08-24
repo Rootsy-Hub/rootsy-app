@@ -6,6 +6,7 @@ import "@/app/[siteId]/[popId]/chat/chatRootsy.css"
 import { ChatRootsyAvatar } from "@/app/[siteId]/[popId]/chat/ChatRootsyAvatar"
 import { ChatRootsyDevTraceCard } from "@/app/[siteId]/[popId]/chat/ChatRootsyDevTraceCard"
 import { ChatRootsyOperationCard } from "@/app/[siteId]/[popId]/chat/ChatRootsyOperationCard"
+import { ChatRootsyThinkingHalo } from "@/app/[siteId]/[popId]/chat/ChatRootsyThinkingHalo"
 import {
   continueRootsyPlannerRun,
   runRootsyChatTools,
@@ -216,9 +217,6 @@ export function ChatRootsyThread({
     }
     return ids
   }, [displayMessages])
-  const liveOperation = operations.some((item) =>
-    ["understanding", "preparing", "waiting", "executing"].includes(item.phase),
-  )
   const tracesByOperation = useMemo(() => {
     const map = new Map<string, ReturnType<typeof mergeChatRootsyDevTraces>>()
     for (const operation of operations) {
@@ -600,10 +598,14 @@ export function ChatRootsyThread({
         </div>
       </header>
 
-      <div
-        ref={listRef}
-        className="game-scroll flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain bg-transparent px-4 py-4 sm:px-6 [overflow-anchor:none]"
-      >
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          ref={listRef}
+          className={cn(
+            "chat-rootsy-thread-list game-scroll flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain bg-transparent px-4 pt-4 sm:px-6 [overflow-anchor:none]",
+            sending ? "chat-rootsy-thread-list--thinking" : "pb-4",
+          )}
+        >
         {!hydrated ? (
           <div className="flex w-full justify-center py-2">
             <RootsSpinner size="sm" label="Cargando chat de Rootsy" />
@@ -687,23 +689,20 @@ export function ChatRootsyThread({
             </div>
           )
         })}
-        {sending && !liveOperation ? (
-          <div className="mt-3 flex items-center gap-2 px-1 py-1">
-            <RootsSpinner size="sm" label="Rootsy está pensando" />
-            <span className="chat-rootsy-thread-caption font-canopy text-xs text-rootsy-bruma-700">
-              Rootsy está pensando…
-            </span>
-          </div>
-        ) : null}
-        {sendError && !operations.some((item) => item.error) ? (
-          <p className="font-canopy text-xs text-rootsy-danger">
-            {sendError}
-          </p>
-        ) : null}
+          {sendError && !operations.some((item) => item.error) ? (
+            <p className="font-canopy text-xs text-rootsy-danger">
+              {sendError}
+            </p>
+          ) : null}
+        </div>
+        {sending ? <ChatRootsyThinkingHalo /> : null}
       </div>
 
       <form
-        className="chat-rootsy-thread-chrome flex shrink-0 items-center gap-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6"
+        className={cn(
+          "chat-rootsy-thread-chrome flex shrink-0 items-center gap-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6",
+          sending && "chat-rootsy-thread-chrome--thinking",
+        )}
         onSubmit={(event) => {
           event.preventDefault()
           void sendDraft()
