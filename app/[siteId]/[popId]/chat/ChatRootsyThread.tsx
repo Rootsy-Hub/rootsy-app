@@ -47,6 +47,7 @@ import { humanizeChatRootsyApiError } from "@/lib/chat/chatRootsyApiError"
 import {
   isChatRootsyDevTraceEnabled,
   mergeChatRootsyDevTraces,
+  type ChatRootsyDevTrace,
 } from "@/lib/chat/chatRootsyDevTrace"
 import {
   deriveChatRootsyOperations,
@@ -80,6 +81,17 @@ function rootsyToolResultRows(
     mine: false,
     toolResult,
   }))
+}
+
+function mergeMessageDevTrace(
+  row: ChatMessageRow,
+  extra?: ChatRootsyDevTrace,
+): ChatMessageRow {
+  if (!extra) return row
+  return {
+    ...row,
+    devTrace: mergeChatRootsyDevTraces([row.devTrace, extra]) ?? extra,
+  }
 }
 
 function rootsyFollowUpRow(
@@ -537,11 +549,10 @@ export function ChatRootsyThread({
                 : planRes.plannerChoices,
               closeBrief: attachWorkToFollowUp ? undefined : planRes.closeBrief,
               toolError: planRes.executionError,
-              devTrace: attachWorkToFollowUp
-                ? row.devTrace
-                : (mergeChatRootsyDevTraces([row.devTrace, planRes.devTrace]) ??
-                  planRes.devTrace ??
-                  row.devTrace),
+              devTrace:
+                mergeChatRootsyDevTraces([row.devTrace, planRes.devTrace]) ??
+                planRes.devTrace ??
+                row.devTrace,
             }
           : row,
       )
@@ -613,7 +624,7 @@ export function ChatRootsyThread({
         const closed = current.map((row) => {
           if (row.id !== messageId) return row
           return {
-            ...row,
+            ...mergeMessageDevTrace(row, res.devTrace),
             toolError: human,
           }
         })
@@ -645,11 +656,13 @@ export function ChatRootsyThread({
     const followUp = rootsyFollowUpRow(res, now, res.reply)
     setMessages((current) =>
       [
-        ...current.map((row) =>
-          row.id === messageId && res.executionError
-            ? { ...row, toolError: res.executionError }
-            : row,
-        ),
+        ...current.map((row) => {
+          if (row.id !== messageId) return row
+          const next = mergeMessageDevTrace(row, res.devTrace)
+          return res.executionError
+            ? { ...next, toolError: res.executionError }
+            : next
+        }),
         ...rootsyToolResultRows(res.toolResults, now),
         ...(followUp ? [followUp] : []),
       ].slice(-ROOTSY_SESSION_HISTORY_MAX),
@@ -728,7 +741,9 @@ export function ChatRootsyThread({
     )
     setMessages((current) =>
       [
-        ...current,
+        ...current.map((row) =>
+          row.id === messageId ? mergeMessageDevTrace(row, res.devTrace) : row,
+        ),
         ...rootsyToolResultRows(res.toolResults ?? [], now),
         ...(followUp ? [followUp] : []),
       ].slice(-ROOTSY_SESSION_HISTORY_MAX),
@@ -926,18 +941,10 @@ export function ChatRootsyThread({
               </SheetDescription>
             </SheetHeader>
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-3">
-              {inspectedTrace ? (
-                <ChatRootsyDevTraceCard
-                  key={inspectedOperation?.id ?? "session"}
-                  trace={inspectedTrace}
-                />
-              ) : (
-                <p className="font-canopy text-xs text-rootsy-bruma-500">
-                  {inspectedOperation
-                    ? "Esta tarea todavía no tiene traza para inspeccionar."
-                    : "Todavía no hay una corrida para inspeccionar."}
-                </p>
-              )}
+              <ChatRootsyDevTraceCard
+                key={inspectedOperation?.id ?? inspectedMessageId ?? "session"}
+                trace={inspectedTrace}
+              />
             </div>
           </SheetContent>
         </Sheet>

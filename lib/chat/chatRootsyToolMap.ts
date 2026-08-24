@@ -1,6 +1,10 @@
 import type { CurrentAccountPartyRow } from "@/app/[siteId]/[popId]/current-accounts/actions"
 import type { ChatRootsyToolItem } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import type { StatisticsSectionData } from "@/app/[siteId]/[popId]/statistics/actions"
+import {
+  chatRootsyCatalogIdFromRankingKey,
+  chatRootsyIsCatalogUuid,
+} from "@/lib/chat/chatRootsyApiQuery"
 import type { ChatRootsyRecentToolUse } from "@/lib/chat/tools/chatRootsyToolTypes"
 
 function foldLabel(value: string): string {
@@ -16,11 +20,15 @@ export function matchProductKey(
   data: StatisticsSectionData,
 ): string | null {
   if (source.id) {
-    if (data.productTrendByKey?.[source.id]) return source.id
-    if (data.productSalesRankings?.some((row) => row.id === source.id)) {
-      return source.id
+    const candidates = [source.id]
+    if (chatRootsyIsCatalogUuid(source.id)) {
+      candidates.push(`a:${source.id}`, `r:${source.id}`, `p:${source.id}`)
     }
-    if (data.rankings.some((row) => row.id === source.id)) return source.id
+    for (const id of candidates) {
+      if (data.productTrendByKey?.[id]) return id
+      if (data.productSalesRankings?.some((row) => row.id === id)) return id
+      if (data.rankings.some((row) => row.id === id)) return id
+    }
   }
 
   const wanted = foldLabel(source.name)
@@ -61,7 +69,7 @@ export function buildTopSoldItems(
 ): ChatRootsyToolItem[] {
   return (data.productSalesRankings ?? []).slice(0, limit).map((row, index) => ({
     rank: row.rank || index + 1,
-    id: row.id,
+    id: chatRootsyCatalogIdFromRankingKey(row.id),
     name: row.label,
     sharePercent: row.value,
     sales: row.secondaryValue ?? 0,
@@ -94,7 +102,7 @@ export function buildMarginItems(
 
     return {
       rank: index + 1,
-      id: key ?? source.id,
+      id: chatRootsyCatalogIdFromRankingKey(key ?? source.id),
       name: source.name,
       sales,
       cost,

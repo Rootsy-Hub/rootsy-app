@@ -26,6 +26,47 @@ const PLANNER_BODY_MAX_DEPTH = 6
 const PLANNER_BODY_MAX_KEYS = 40
 const PLANNER_BODY_MAX_ITEMS = 50
 const PLANNER_BODY_MAX_STRING = 2_000
+const CATALOG_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const STATISTICS_RANKING_KEY_RE = /^(a|r|p|n):/i
+const RANKING_NOT_CATALOG_ERROR =
+  "Ese resultado es un ranking, no una ficha del catálogo."
+
+export function chatRootsyIsCatalogUuid(value: string): boolean {
+  return CATALOG_UUID_RE.test(value.trim())
+}
+
+/** Clave de ranking `a:uuid` → uuid de ficha. `r:` / `p:` / `n:` se dejan. */
+export function chatRootsyCatalogIdFromRankingKey(
+  raw: unknown,
+): string | undefined {
+  const value = String(raw ?? "").trim()
+  if (!value) return undefined
+  if (value.startsWith("a:") && chatRootsyIsCatalogUuid(value.slice(2))) {
+    return value.slice(2)
+  }
+  return value
+}
+
+export function chatRootsyPathParamsRejectRankingKeys(
+  path: string,
+  filters: ChatRootsyToolFilters,
+): { ok: true } | { ok: false; error: string } {
+  for (const match of path.matchAll(/:([A-Za-z][A-Za-z0-9]*)/g)) {
+    const name = match[1]
+    if (!name || name === "popId") continue
+    const value = filters[name] ?? filters[`:${name}`]
+    if (value === undefined || value === "") continue
+    const text = String(value).trim()
+    if (STATISTICS_RANKING_KEY_RE.test(text)) {
+      return { ok: false, error: RANKING_NOT_CATALOG_ERROR }
+    }
+    if (name === "articleId" && !chatRootsyIsCatalogUuid(text)) {
+      return { ok: false, error: RANKING_NOT_CATALOG_ERROR }
+    }
+  }
+  return { ok: true }
+}
 
 export function isChatRootsyPaginationSizeKey(name: string): boolean {
   return PAGINATION_SIZE_KEYS.has(name)
@@ -157,6 +198,8 @@ export function buildChatRootsyApiCall(
   | { ok: false; error: string } {
   const used = new Set<string>()
   let missing = ""
+  const blocked = chatRootsyPathParamsRejectRankingKeys(endpoint.path, filters)
+  if (!blocked.ok) return blocked
   const path = endpoint.path.replace(/:([A-Za-z][A-Za-z0-9]*)/g, (_, key: string) => {
     if (key === "popId") return encodeURIComponent(popId)
     const value = filters[key] ?? filters[`:${key}`]
@@ -331,7 +374,7 @@ function rowRecordId(row: Record<string, unknown>): string | null {
   ]) {
     const value = row[key]
     if (value == null) continue
-    const id = String(value).trim()
+    const id = chatRootsyCatalogIdFromRankingKey(value)
     if (id) return id
   }
   return null
@@ -455,7 +498,7 @@ export function periodProductsFromStatistics(
         const sales = numberish(row.sales) ?? 0
         const profit = numberish(row.profit) ?? 0
         return {
-          id: String(row.id ?? ""),
+          id: chatRootsyCatalogIdFromRankingKey(row.id) ?? "",
           name: typeof row.name === "string" ? row.name : String(row.id ?? ""),
           sales,
           cost: numberish(row.cost) ?? sales - profit,
@@ -495,7 +538,7 @@ export function periodProductsFromStatistics(
     const totals = totalsFromTrendEntry(byKey?.[key])
     const cost = totals.sales - totals.profit
     products.push({
-      id: key,
+      id: chatRootsyCatalogIdFromRankingKey(key) ?? key,
       name: labels.get(key) || key,
       sales: totals.sales,
       cost,

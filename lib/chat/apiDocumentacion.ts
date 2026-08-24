@@ -209,7 +209,7 @@ export const CHAT_ROOTSY_API_GROUPS: readonly ChatRootsyApiGroup[] = [
         path: "/v1/pops/:popId/statistics/:section/details",
         solves: "Evolución, rankings y gráficos de la sección.",
         returns:
-          "El shape cambia por sección. En products no hay q ni articleId. rankings = top 10 por ganancia {rank, id, label, value=profit, secondaryValue=cantidad}. productSalesRankings = top 10 por participación {rank, id, label, value=%, secondaryValue=ventas}. productTrendOptions = TODOS los productos vendidos del período {key, label}. productTrendByKey[key] = serie diaria {label, value=ventas, count=unidades, profit}; costo = value-profit; margen = profit/value. Otras secciones: evolution, rankings, segments, heatmaps.",
+          "El shape cambia por sección. En products la API no trae articleId: rankings usan clave a:/r:/p:. El chat deja items[].id = uuid de ficha si la clave era a:. rankings = top 10 por ganancia {rank, id, label, value=profit, secondaryValue=cantidad}. productSalesRankings = top 10 por participación {rank, id, label, value=%, secondaryValue=ventas}. productTrendOptions = TODOS los productos vendidos del período {key, label}. productTrendByKey[key] = serie diaria {label, value=ventas, count=unidades, profit}; costo = value-profit; margen = profit/value. Otras secciones: evolution, rankings, segments, heatmaps.",
         filters: [
           {
             name: "section",

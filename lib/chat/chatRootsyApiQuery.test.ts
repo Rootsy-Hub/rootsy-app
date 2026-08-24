@@ -205,6 +205,63 @@ describe("consultas de API del planificador", () => {
     assert.equal(items[0]?.id, "a1")
   })
 
+  it("deja el uuid de ficha cuando el ranking viene con a:", () => {
+    const articleId = "315f442c-690e-4c7d-95b9-26fcb0d4351b"
+    const recipeId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    const payload = {
+      success: true,
+      data: {
+        productTrendOptions: [
+          { key: `a:${articleId}`, label: "Coca 500" },
+          { key: `r:${recipeId}`, label: "Pizza muzzarella" },
+        ],
+        productTrendByKey: {
+          [`a:${articleId}`]: [{ value: 1200, profit: 300, count: 8 }],
+          [`r:${recipeId}`]: [{ value: 800, profit: 400, count: 2 }],
+        },
+      },
+    }
+    const items = itemsFromChatRootsyApiPayload(payload)
+    const coca = items.find((row) => row.name === "Coca 500")
+    const pizza = items.find((row) => row.name === "Pizza muzzarella")
+    assert.equal(coca?.id, articleId)
+    assert.equal(pizza?.id, `r:${recipeId}`)
+
+    const compact = compactChatRootsyApiPayload(payload) as {
+      products?: Array<{ id: string; name: string }>
+    }
+    assert.equal(
+      compact.products?.find((row) => row.name === "Coca 500")?.id,
+      articleId,
+    )
+  })
+
+  it("no pega :articleId si sigue siendo clave de ranking", () => {
+    const endpoint = matchChatRootsyApiPath(
+      "/v1/pops/:popId/articles/:articleId",
+      "PATCH",
+    )?.endpoint
+    assert.ok(endpoint)
+    const prefixed = buildChatRootsyApiCall("pop-1", endpoint!, {
+      articleId: "a:315f442c-690e-4c7d-95b9-26fcb0d4351b",
+    })
+    assert.equal(prefixed.ok, false)
+    if (!prefixed.ok) {
+      assert.match(prefixed.error, /ranking/)
+    }
+    const recipe = buildChatRootsyApiCall("pop-1", endpoint!, {
+      articleId: "r:aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    })
+    assert.equal(recipe.ok, false)
+    const ok = buildChatRootsyApiCall("pop-1", endpoint!, {
+      articleId: "315f442c-690e-4c7d-95b9-26fcb0d4351b",
+    })
+    assert.equal(ok.ok, true)
+    if (ok.ok) {
+      assert.match(ok.path, /315f442c-690e-4c7d-95b9-26fcb0d4351b/)
+    }
+  })
+
   it("incluye un producto que no está en el top 10", () => {
     const payload = {
       success: true,

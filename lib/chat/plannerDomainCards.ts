@@ -254,7 +254,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       title: "Estadísticas",
       what: "KPIs y rankings. No es el mayor ni reports/totals. services y manufacturing están vacíos.",
       invariant:
-        "summary = KPI vs período anterior. details = series y rankings. products/details trae todos los SKUs vendidos; no hay q ni articleId.",
+        "summary = KPI vs período anterior. details = series y rankings. products/details trae todos los SKUs vendidos. La API usa clave a:/r:/p:; el chat deja items[].id = uuid de ficha solo si era a:. r: y p: no se atan a /articles.",
       list: "GET /statistics/:section/summary|details?from&to. section=sales|profitability|products|purchases|inventory|clients|suppliers|finance",
       row: "comparison, rankings, productTrendByKey (value=ventas, profit, count)",
       write: "Solo lectura.",

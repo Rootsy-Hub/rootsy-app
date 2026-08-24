@@ -226,7 +226,7 @@ Escribir: Solo lectura. Buscar cuenta: GET /reports/chart-of-accounts/search?q=
 
 ## Estadísticas
 Qué: KPIs y rankings. No es el mayor ni reports/totals. services y manufacturing están vacíos.
-Invariante: summary = KPI vs período anterior. details = series y rankings. products/details trae todos los SKUs vendidos; no hay q ni articleId.
+Invariante: summary = KPI vs período anterior. details = series y rankings. products/details trae todos los SKUs vendidos. La API usa clave a:/r:/p:; el chat deja items[].id = uuid de ficha solo si era a:. r: y p: no se atan a /articles.
 Listar: GET /statistics/:section/summary|details?from&to. section=sales|profitability|products|purchases|inventory|clients|suppliers|finance
 Fila: comparison, rankings, productTrendByKey (value=ventas, profit, count)
 Escribir: Solo lectura.
@@ -285,7 +285,7 @@ NOTAS DE LECTURA
 - reports/totals kind=sales|purchases|expenses|issued-invoices|received-invoices. Es el total oficial del período.
 - ledger/totals con accountCode es el saldo de una cuenta del plan. Mercaderías=1.1.3.01. No recalcular stock × costo.
 - statistics/:section/summary = KPIs vs período anterior. details = series y rankings.
-- statistics/products/details: rankings y productSalesRankings son top 10. productTrendOptions y productTrendByKey traen TODOS los SKUs vendidos en el período. Por punto: value=ventas, profit=ganancia, count=unidades. costo=value-profit. No hay q ni articleId.
+- statistics/products/details: rankings y productSalesRankings son top 10. productTrendOptions y productTrendByKey traen TODOS los SKUs vendidos en el período. Por punto: value=ventas, profit=ganancia, count=unidades. costo=value-profit. La API no trae articleId; el chat deja items[].id = uuid de ficha si la clave es a:. r: y p: no son artículos.
 - statistics/services y statistics/manufacturing están vacíos. Servicios: /services o operations?view=services. Producción: /manufacturing.
 - operations es listado de comprobantes, no un total. include=full trae líneas y es caro.
 - current-accounts pagina filas: no hay gran total en esa respuesta.

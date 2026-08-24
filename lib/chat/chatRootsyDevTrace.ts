@@ -51,6 +51,98 @@ export function formatChatRootsyDevModelInput(input: {
   })
 }
 
+export const CHAT_ROOTSY_DEV_STATION_IDS = {
+  apertura: "call:rootsy:apertura",
+  planner: "call:planner",
+  cierre: "call:rootsy:cierre",
+  aclaracion: "call:rootsy:aclaracion",
+} as const
+
+const EMPTY_IO = new Set(["(no se envió)", "(no hubo respuesta)"])
+
+function stationIo(value?: string | null): string {
+  const text = value?.trim() ?? ""
+  if (!text || EMPTY_IO.has(text)) return ""
+  return value?.trim() ?? ""
+}
+
+function callById(
+  calls: ChatRootsyDevCall[],
+  id: string,
+): ChatRootsyDevCall | undefined {
+  return calls.find((call) => call.id === id)
+}
+
+function stationCall(input: {
+  id: string
+  actor: ChatRootsyDevActor
+  phase: string
+  found?: ChatRootsyDevCall
+}): ChatRootsyDevCall {
+  return {
+    id: input.id,
+    actor: input.actor,
+    phase: input.found?.phase?.trim() || input.phase,
+    sent: stationIo(input.found?.sent),
+    received: stationIo(input.found?.received),
+    ...(input.found?.userMessage?.trim()
+      ? { userMessage: input.found.userMessage.trim() }
+      : {}),
+    ...(input.found?.note?.trim() ? { note: input.found.note.trim() } : {}),
+  }
+}
+
+/** Siempre 3 pasos: Rootsy apertura, Planificador, Rootsy cierre/aclaración. Sin dato, vacío. */
+export function fillChatRootsyDevStations(
+  trace: ChatRootsyDevTrace | null | undefined,
+): ChatRootsyDevTrace {
+  const calls = trace?.calls ?? []
+  const apertura =
+    callById(calls, CHAT_ROOTSY_DEV_STATION_IDS.apertura) ??
+    calls.find((call) => call.actor === "rootsy" && call.phase === "Apertura")
+  const planner =
+    callById(calls, CHAT_ROOTSY_DEV_STATION_IDS.planner) ??
+    calls.find((call) => call.actor === "planner")
+  const cierre = callById(calls, CHAT_ROOTSY_DEV_STATION_IDS.cierre)
+  const aclaracion = callById(calls, CHAT_ROOTSY_DEV_STATION_IDS.aclaracion)
+  const final =
+    stationIo(cierre?.sent) || stationIo(cierre?.received)
+      ? cierre
+      : stationIo(aclaracion?.sent) || stationIo(aclaracion?.received)
+        ? aclaracion
+        : (cierre ??
+          aclaracion ??
+          calls.find(
+            (call) =>
+              call.actor === "rootsy" &&
+              (call.phase === "Cierre" || call.phase === "Aclaración"),
+          ))
+
+  return {
+    ...(trace?.error?.trim() ? { error: trace.error.trim() } : {}),
+    calls: [
+      stationCall({
+        id: CHAT_ROOTSY_DEV_STATION_IDS.apertura,
+        actor: "rootsy",
+        phase: "Apertura",
+        found: apertura,
+      }),
+      stationCall({
+        id: CHAT_ROOTSY_DEV_STATION_IDS.planner,
+        actor: "planner",
+        phase: "Plan",
+        found: planner,
+      }),
+      stationCall({
+        id: CHAT_ROOTSY_DEV_STATION_IDS.cierre,
+        actor: "rootsy",
+        phase: final?.phase === "Aclaración" ? "Aclaración" : "Cierre",
+        found: final,
+      }),
+    ],
+  }
+}
+
 export function chatRootsyDevCall(input: {
   id?: string
   actor: ChatRootsyDevActor
@@ -62,8 +154,8 @@ export function chatRootsyDevCall(input: {
 }): ChatRootsyDevCall {
   return {
     actor: input.actor,
-    sent: input.sent?.trim() || "(no se envió)",
-    received: input.received?.trim() || "(no hubo respuesta)",
+    sent: stationIo(input.sent),
+    received: stationIo(input.received),
     ...(input.id ? { id: input.id } : {}),
     ...(input.phase?.trim() ? { phase: input.phase.trim() } : {}),
     ...(input.userMessage?.trim()
@@ -97,9 +189,16 @@ export function mergeChatRootsyDevTraces(
     if (trace.error?.trim()) error = trace.error.trim()
     for (const [callIndex, call] of (trace.calls ?? []).entries()) {
       const id = call.id ?? `${traceIndex}-${callIndex}-${call.actor}`
-      if (seen.has(id)) continue
+      const next = { ...call, id }
+      const existing = seen.has(id)
+        ? calls.findIndex((row) => row.id === id)
+        : -1
+      if (existing >= 0) {
+        calls[existing] = next
+        continue
+      }
       seen.add(id)
-      calls.push({ ...call, id })
+      calls.push(next)
     }
   })
   if (!calls.length && !error) return null

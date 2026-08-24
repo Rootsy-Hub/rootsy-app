@@ -2,32 +2,36 @@
 
 import {
   chatRootsyDevActorLabel,
+  fillChatRootsyDevStations,
   type ChatRootsyDevCall,
   type ChatRootsyDevTrace,
 } from "@/lib/chat/chatRootsyDevTrace"
 import { useState } from "react"
 
 type Props = {
-  trace: ChatRootsyDevTrace
+  trace?: ChatRootsyDevTrace | null
 }
 
 export function ChatRootsyDevTraceCard({ trace }: Props) {
-  const calls = trace.calls ?? []
-  if (!calls.length && !trace.error) return null
+  const filled = fillChatRootsyDevStations(trace)
+  const calls = filled.calls
+  const lastWithData = [...calls]
+    .reverse()
+    .find((call) => call.sent.trim() || call.received.trim())
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <p className="font-canopy text-[11px] leading-4 text-rootsy-bruma-600">
-        Ida y vuelta con el modelo: Rootsy, Planificador si corre, Rootsy otra
-        vez al cerrar o aclarar.
+        Siempre los 3 pasos: Rootsy apertura, Planificador, Rootsy cierre o
+        aclaración. Si no corrió, el enviado y el recibido quedan vacíos.
       </p>
-      {trace.error ? (
+      {filled.error ? (
         <div className="mt-3 rounded-lg border border-[var(--rootsy-danger)]/40 bg-white px-2.5 py-2">
           <p className="font-canopy text-[10px] font-bold uppercase tracking-wide text-rootsy-danger">
             Error
           </p>
           <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-4 text-rootsy-bruma-900">
-            {trace.error}
+            {filled.error}
           </pre>
         </div>
       ) : null}
@@ -37,7 +41,7 @@ export function ChatRootsyDevTraceCard({ trace }: Props) {
             key={call.id ?? `${call.actor}-${index}`}
             call={call}
             index={index}
-            defaultOpen={index === calls.length - 1}
+            defaultOpen={call.id === lastWithData?.id}
           />
         ))}
       </ol>

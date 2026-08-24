@@ -3,6 +3,7 @@ import { describe, it } from "node:test"
 import {
   chatRootsyDevActorLabel,
   chatRootsyDevCall,
+  fillChatRootsyDevStations,
   mergeChatRootsyDevTraces,
 } from "@/lib/chat/chatRootsyDevTrace"
 
@@ -56,6 +57,52 @@ describe("historial DEV del chat Rootsy", () => {
     assert.equal(merged!.calls[0]?.actor, "rootsy")
     assert.equal(merged!.calls[1]?.actor, "planner")
     assert.equal(merged!.calls[2]?.phase, "Cierre")
+  })
+
+  it("siempre deja los 3 pasos, vacíos si no hay dato", () => {
+    const filled = fillChatRootsyDevStations({
+      calls: [
+        chatRootsyDevCall({
+          id: "call:rootsy:apertura",
+          actor: "rootsy",
+          phase: "Apertura",
+          userMessage: "si el aceite de cocina ponelo a 3500",
+          sent: '{"messages":[]}',
+          received: '{"reply":"voy a actualizar"}',
+        }),
+      ],
+    })
+    assert.equal(filled.calls.length, 3)
+    assert.equal(filled.calls[0]?.phase, "Apertura")
+    assert.equal(filled.calls[1]?.actor, "planner")
+    assert.equal(filled.calls[1]?.sent, "")
+    assert.equal(filled.calls[1]?.received, "")
+    assert.equal(filled.calls[2]?.phase, "Cierre")
+    assert.equal(filled.calls[2]?.sent, "")
+    assert.equal(filled.calls[2]?.received, "")
+  })
+
+  it("pone aclaración en el tercer paso si no hubo cierre", () => {
+    const filled = fillChatRootsyDevStations({
+      calls: [
+        chatRootsyDevCall({
+          id: "call:rootsy:apertura",
+          actor: "rootsy",
+          phase: "Apertura",
+          sent: "a",
+          received: "b",
+        }),
+        chatRootsyDevCall({
+          id: "call:rootsy:aclaracion",
+          actor: "rootsy",
+          phase: "Aclaración",
+          sent: "pregunta",
+          received: "¿cuál aceite?",
+        }),
+      ],
+    })
+    assert.equal(filled.calls[2]?.phase, "Aclaración")
+    assert.equal(filled.calls[2]?.received, "¿cuál aceite?")
   })
 
   it("se queda con el último error", () => {
