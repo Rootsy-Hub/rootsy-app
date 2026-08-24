@@ -1,12 +1,6 @@
 "use client"
 
 import { ChatRootsyDestructiveConfirmDialog } from "@/app/[siteId]/[popId]/chat/ChatRootsyDestructiveConfirmDialog"
-import {
-  RootsySuccessAsset,
-  RootsyThinkingAsset,
-  RootsyWaitingAsset,
-  RootsyWorkingAsset,
-} from "@/app/[siteId]/[popId]/chat/ChatRootsyMascotAssets"
 import { MundosHerramientasCrystal } from "@/app/library/mundos/MundosHerramientasCard"
 import "@/app/[siteId]/[popId]/chat/chatRootsyOperation.css"
 import type { ChatRootsyToolItem } from "@/app/[siteId]/[popId]/chat/chatTypes"
@@ -18,9 +12,9 @@ import {
   chatRootsyRejectLabel,
   chatRootsyStepDetail,
   chatRootsyStepUserDetails,
-  phaseLabel,
+  taskPhaseTitle,
+  taskStepProgress,
   type ChatRootsyOperationPhase,
-  type ChatRootsyOperationStepView,
   type ChatRootsyOperationView,
 } from "@/lib/chat/chatRootsyOperation"
 import {
@@ -30,7 +24,7 @@ import {
 import type { ChatRootsyOfferChange } from "@/lib/chat/chatRootsyOfferPreview"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
-import { ArrowRight, Check, ChevronDown, Circle, X } from "lucide-react"
+import { ArrowRight, ChevronDown, X } from "lucide-react"
 import {
   useEffect,
   useMemo,
@@ -57,54 +51,6 @@ const LIVE_PHASES = new Set<ChatRootsyOperationPhase>([
   "waiting",
   "executing",
 ])
-
-function OperationMascot({ phase }: { phase: ChatRootsyOperationPhase }) {
-  if (phase === "understanding") {
-    return <RootsyThinkingAsset className="size-10" />
-  }
-  if (phase === "preparing" || phase === "executing") {
-    return <RootsyWorkingAsset className="size-10" />
-  }
-  if (phase === "waiting") return <RootsyWaitingAsset className="size-10" />
-  if (phase === "completed") return <RootsySuccessAsset className="size-10" />
-  return <RootsyThinkingAsset className="size-10" />
-}
-
-function StepIcon({
-  status,
-}: {
-  status: ChatRootsyOperationStepView["status"]
-}) {
-  if (status === "done") {
-    return <Check className="size-3" aria-hidden />
-  }
-  if (status === "failed") {
-    return <X className="size-3 text-rootsy-danger" aria-hidden />
-  }
-  if (status === "active") {
-    return <span className="chat-rootsy-op-dot chat-rootsy-op-dot--live" />
-  }
-  return <Circle className="size-3 opacity-45" aria-hidden />
-}
-
-function TrailLink() {
-  return (
-    <svg
-      className="chat-rootsy-op-trail__link"
-      viewBox="0 0 14 28"
-      preserveAspectRatio="none"
-      aria-hidden
-    >
-      <path
-        d="M7 0 C 2 7, 12 10, 7 14 C 3 19, 11 22, 7 28"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
 
 function isPriceChange(change: ChatRootsyOfferChange): boolean {
   return /precio|price|saleprice/i.test(change.field + (change.key ?? ""))
@@ -176,6 +122,135 @@ function GlassButton({
   )
 }
 
+function OperationHeading({
+  operation,
+  collapsed,
+  titleAs,
+}: {
+  operation: ChatRootsyOperationView
+  collapsed: boolean
+  titleAs: "h3" | "span"
+}) {
+  const Title = titleAs
+
+  return (
+    <span className="min-w-0 flex-1">
+      <span
+        id={`${operation.id}-status`}
+        className="chat-rootsy-op-kicker"
+        aria-live="polite"
+      >
+        {taskPhaseTitle(operation.phase)}
+      </span>
+      <Title
+        id={`${operation.id}-title`}
+        className={cn(
+          "chat-rootsy-op-title mt-0.5 mb-0 block min-w-0 font-canopy text-sm font-semibold",
+          collapsed ? "truncate" : "text-pretty",
+        )}
+      >
+        {operation.title}
+      </Title>
+    </span>
+  )
+}
+
+const RING_SIZE = 62
+const RING_STROKE = 5
+const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
+const RING_CENTER = RING_SIZE / 2
+
+function TaskProgressRing({
+  operation,
+}: {
+  operation: ChatRootsyOperationView
+}) {
+  const { tone, current, total, ratio } = taskStepProgress(operation)
+  const progress = Math.max(0, Math.min(1, ratio))
+  const label =
+    tone === "ok" ? "OK" : tone === "error" ? null : `${current}/${total}`
+  const announced =
+    tone === "ok"
+      ? "Tarea finalizada"
+      : tone === "error"
+        ? "Tarea con error"
+        : `Paso ${current} de ${total}`
+
+  return (
+    <span
+      className="chat-rootsy-op-ring"
+      data-tone={tone}
+      aria-label={announced}
+    >
+      <svg
+        className="chat-rootsy-op-ring__arc"
+        width={RING_SIZE}
+        height={RING_SIZE}
+        viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+        aria-hidden
+      >
+        <circle
+          className="chat-rootsy-op-ring__track"
+          cx={RING_CENTER}
+          cy={RING_CENTER}
+          r={RING_RADIUS}
+          fill="none"
+          strokeWidth={RING_STROKE}
+        />
+        <circle
+          className="chat-rootsy-op-ring__bar"
+          cx={RING_CENTER}
+          cy={RING_CENTER}
+          r={RING_RADIUS}
+          fill="none"
+          strokeWidth={RING_STROKE}
+          pathLength={1}
+          strokeDasharray={`${progress} 1`}
+          transform={`rotate(-90 ${RING_CENTER} ${RING_CENTER})`}
+        />
+      </svg>
+      <span className="chat-rootsy-op-ring__label">
+        {tone === "error" ? <X className="size-4" strokeWidth={2.6} /> : label}
+      </span>
+    </span>
+  )
+}
+
+function HeaderRow({
+  operation,
+  collapsed,
+  canToggle,
+  expanded,
+  titleAs,
+}: {
+  operation: ChatRootsyOperationView
+  collapsed: boolean
+  canToggle: boolean
+  expanded: boolean
+  titleAs: "h3" | "span"
+}) {
+  return (
+    <>
+      {canToggle ? (
+        <ChevronDown
+          className={cn(
+            "chat-rootsy-op-chevron size-4 shrink-0",
+            collapsed ? "" : "mt-1",
+            expanded && "rotate-180",
+          )}
+          aria-hidden
+        />
+      ) : null}
+      <OperationHeading
+        operation={operation}
+        collapsed={collapsed}
+        titleAs={titleAs}
+      />
+      <TaskProgressRing operation={operation} />
+    </>
+  )
+}
+
 export function ChatRootsyOperationCard({
   operation,
   disabled,
@@ -216,9 +291,9 @@ export function ChatRootsyOperationCard({
     (offer) => offer.preview?.changes.length,
   )
   const live = LIVE_PHASES.has(operation.phase)
-  const collapsed =
-    !expanded &&
-    (operation.phase === "completed" || operation.phase === "stopped")
+  const canToggle =
+    operation.phase === "completed" || operation.phase === "stopped"
+  const collapsed = canToggle && !expanded
   const hasProgress = operation.steps.some((step) => step.status === "done")
   const hasUserDetails = chatRootsyOperationHasUserDetails(operation)
   const hostId = operation.pendingHostId
@@ -245,78 +320,56 @@ export function ChatRootsyOperationCard({
       aria-describedby={`${operation.id}-status`}
       aria-busy={live}
     >
-      <MundosHerramientasCrystal className="chat-rootsy-op-card__crystal">
+      <MundosHerramientasCrystal
+        className="chat-rootsy-op-card__crystal"
+        surface="flat"
+      >
         <div className="chat-rootsy-op-card__body">
-        <header
-          className={cn(
-            "flex gap-3 pr-14 pl-3.5",
-            collapsed ? "items-center py-3" : "items-start pb-2 pt-3",
-          )}
-        >
-          <div className="min-w-0 flex-1">
-            <h3
-              id={`${operation.id}-title`}
+        <header>
+          {canToggle ? (
+            <button
+              type="button"
               className={cn(
-                "chat-rootsy-op-title min-w-0 font-canopy text-sm font-semibold",
-                collapsed ? "truncate" : "text-pretty",
+                "chat-rootsy-op-toggle flex w-full gap-2.5 px-3.5 text-left",
+                collapsed ? "items-center py-3" : "items-start pb-2 pt-3",
               )}
-            >
-              {operation.title}
-            </h3>
-            <p
-              id={`${operation.id}-status`}
-              className="chat-rootsy-op-status mt-0.5 font-canopy text-xs"
-              aria-live="polite"
-            >
-              {operation.phase === "completed" ||
-              operation.phase === "stopped" ||
-              operation.phase === "error"
-                ? operation.pasoLabel
-                : `${phaseLabel(operation.phase)} · ${operation.pasoLabel}`}
-            </p>
-          </div>
-          {operation.phase === "completed" || operation.phase === "stopped" ? (
-            <GlassButton
-              tone="icon"
-              className="shrink-0"
-              aria-label={expanded ? "Cerrar pasos" : "Ver pasos"}
               aria-expanded={expanded}
+              aria-controls={`${operation.id}-content`}
               onClick={() => setExpanded((open) => !open)}
             >
-              <ChevronDown
-                className={cn(
-                  "size-3.5 transition-transform motion-reduce:transition-none",
-                  expanded && "rotate-180",
-                )}
+              <HeaderRow
+                operation={operation}
+                collapsed={collapsed}
+                canToggle
+                expanded={expanded}
+                titleAs="span"
               />
-            </GlassButton>
-          ) : null}
-        </header>
-
-        {!collapsed && !operation.steps.length ? (
-          <div className="chat-rootsy-op-trail chat-rootsy-op-trail--idle" aria-hidden>
-            <div className="chat-rootsy-op-trail__rail">
-              <span className="chat-rootsy-op-trail__node">
-                <span className="chat-rootsy-op-dot chat-rootsy-op-dot--live" />
-              </span>
-              <TrailLink />
+            </button>
+          ) : (
+            <div
+              className={cn(
+                "flex gap-2.5 px-3.5",
+                collapsed ? "items-center py-3" : "items-start pb-2 pt-3",
+              )}
+            >
+              <HeaderRow
+                operation={operation}
+                collapsed={collapsed}
+                canToggle={false}
+                expanded={expanded}
+                titleAs="h3"
+              />
             </div>
-          </div>
-        ) : null}
+          )}
+        </header>
+        <div id={`${operation.id}-content`}>
 
         {!collapsed && operation.steps.length ? (
-          <ol className="chat-rootsy-op-trail">
-            {operation.steps.map((step, index) => {
+          <ol className="chat-rootsy-op-steps">
+            {operation.steps.map((step) => {
               const detail = chatRootsyStepDetail(step)
-              const last = index === operation.steps.length - 1
               return (
                 <li key={step.id}>
-                  <div className="chat-rootsy-op-trail__rail">
-                    <span className="chat-rootsy-op-trail__node">
-                      <StepIcon status={step.status} />
-                    </span>
-                    {last ? null : <TrailLink />}
-                  </div>
                   <div
                     className="chat-rootsy-op-plate px-3 py-2"
                     data-kind={step.kind}
@@ -511,11 +564,8 @@ export function ChatRootsyOperationCard({
           <div className="h-3" />
         ) : null}
         </div>
+        </div>
       </MundosHerramientasCrystal>
-
-      <div className="chat-rootsy-op-asset" data-rootsy-asset-edge>
-        <OperationMascot phase={operation.phase} />
-      </div>
 
       <ChatRootsyDestructiveConfirmDialog
         open={deleteOpen}

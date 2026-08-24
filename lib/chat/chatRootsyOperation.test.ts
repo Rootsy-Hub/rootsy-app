@@ -8,6 +8,8 @@ import {
   chatRootsyStepUserDetails,
   deriveChatRootsyOperations,
   isChatRootsyOperationShell,
+  taskPhaseTitle,
+  taskStepProgress,
 } from "@/lib/chat/chatRootsyOperation"
 
 function row(partial: Partial<ChatMessageRow> & Pick<ChatMessageRow, "id" | "mine">): ChatMessageRow {
@@ -192,7 +194,7 @@ describe("operación en vivo del chat Rootsy", () => {
     assert.equal(ops[0]?.phase, "completed")
     assert.equal(ops[0]?.anchorMessageId, "a1")
     assert.equal(ops[0]?.title, "aumentar 50% el precio de las aguas")
-    assert.match(ops[0]?.pasoLabel ?? "", /Operación completada/)
+    assert.match(ops[0]?.pasoLabel ?? "", /Tarea completada/)
   })
 
   it("un paso de escritura resume el objetivo y deja el cambio para los detalles", () => {
@@ -395,5 +397,44 @@ describe("operación en vivo del chat Rootsy", () => {
       row({ id: "u2", mine: true, body: "mejor no" }),
     ])
     assert.equal(ops[0]?.phase, "stopped")
+  })
+
+  it("el encabezado de la card nombra la fase y el anillo de pasos", () => {
+    assert.equal(taskPhaseTitle("waiting"), "Esperando confirmación")
+    assert.equal(taskPhaseTitle("executing"), "Tarea en proceso")
+    assert.equal(taskPhaseTitle("completed"), "Tarea finalizada")
+    assert.equal(taskPhaseTitle("error"), "Tarea con error")
+    assert.deepEqual(
+      taskStepProgress({
+        phase: "waiting",
+        paso: 1,
+        steps: [{ status: "active" }],
+      }),
+      { tone: "progress", current: 1, total: 1, ratio: 0 },
+    )
+    assert.deepEqual(
+      taskStepProgress({
+        phase: "waiting",
+        paso: 2,
+        steps: [{ status: "done" }, { status: "active" }],
+      }),
+      { tone: "progress", current: 1, total: 2, ratio: 0.5 },
+    )
+    assert.deepEqual(
+      taskStepProgress({
+        phase: "completed",
+        paso: 2,
+        steps: [{ status: "done" }, { status: "done" }],
+      }),
+      { tone: "ok", current: 2, total: 2, ratio: 1 },
+    )
+    assert.equal(
+      taskStepProgress({
+        phase: "error",
+        paso: 1,
+        steps: [{ status: "failed" }],
+      }).tone,
+      "error",
+    )
   })
 })

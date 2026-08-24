@@ -1,6 +1,5 @@
 /**
- * Globos estilo WhatsApp: colita en el último de la racha,
- * alineada al lado del mensaje.
+ * Globos de chat. Colita WhatsApp invertida: abajo, borde recto y curva cóncava.
  */
 .chat-bubble-stack {
   display: flex;
@@ -80,11 +79,11 @@
 }
 
 .chat-bubble--tail-left {
-  border-bottom-left-radius: 0.25rem;
+  border-bottom-left-radius: 0;
 }
 
 .chat-bubble--tail-right {
-  border-bottom-right-radius: 0.25rem;
+  border-bottom-right-radius: 0;
 }
 
 .chat-bubble--emoji {
@@ -132,14 +131,19 @@
   height: 13px;
   color: var(--chat-bubble-fill);
   pointer-events: none;
+  overflow: visible;
 }
 
 .chat-bubble__tail--left {
-  left: -7px;
+  left: -8px;
+  transform: scale(-1, -1);
+  transform-origin: center;
 }
 
 .chat-bubble__tail--right {
-  right: -7px;
+  right: -8px;
+  transform: scaleY(-1);
+  transform-origin: center;
 }
 
 .chat-bubble-emoji-plain {

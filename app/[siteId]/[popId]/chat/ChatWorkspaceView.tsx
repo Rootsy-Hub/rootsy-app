@@ -165,12 +165,6 @@ export function ChatWorkspaceView() {
   )
   const threadKind = chatThreadKindFromChannel(selected)
 
-  const focusSendButton = useCallback(() => {
-    window.requestAnimationFrame(() => {
-      sendButtonRef.current?.focus()
-    })
-  }, [])
-
   const focusComposer = useCallback(() => {
     window.requestAnimationFrame(() => {
       composerRef.current?.focus()
@@ -188,13 +182,20 @@ export function ChatWorkspaceView() {
     ) {
       return
     }
-    focusSendButton()
+    if (
+      !mobileThreadOpen &&
+      !window.matchMedia("(min-width: 1024px)").matches
+    ) {
+      return
+    }
+    focusComposer()
   }, [
     createOpen,
     deleteOpen,
     editOpen,
-    focusSendButton,
+    focusComposer,
     isRootsyChat,
+    mobileThreadOpen,
     selectedId,
     threadLoading,
   ])
@@ -638,6 +639,7 @@ export function ChatWorkspaceView() {
                     userName={bootstrap?.userFullName ?? ""}
                     onBack={() => setMobileThreadOpen(false)}
                     onPreviewChange={setRootsyPreview}
+                    threadVisible={mobileThreadOpen}
                   />
                 ) : selected ? (
                   <>

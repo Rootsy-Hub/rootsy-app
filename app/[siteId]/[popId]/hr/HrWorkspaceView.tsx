@@ -56,6 +56,7 @@ import {
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAuth } from "@/context/AuthContextSupabase"
 import { cn } from "@/lib/utils"
 import { KeyRound, Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
@@ -91,6 +92,7 @@ type ConfirmAction =
   | { kind: "revoke"; invite: PendingInviteRow }
   | { kind: "leave"; person: EmployeeRow }
   | { kind: "return"; person: EmployeeRow }
+  | { kind: "clock"; person: EmployeeRow }
 
 function memberDisplayName(member: MemberRow): string {
   return `${member.firstName} ${member.lastName}`.trim() || "Sin nombre"
@@ -196,6 +198,7 @@ export function HrWorkspaceView() {
     error: bootstrapError,
     refresh,
   } = usePopWorkspace()
+  const { user } = useAuth()
 
   const hrSections = useMemo(
     () =>
@@ -434,6 +437,23 @@ export function HrWorkspaceView() {
         destructive: false,
       }
     }
+    if (confirmAction.kind === "clock") {
+      const name = personDisplayName(confirmAction.person)
+      if (confirmAction.person.isClockedIn) {
+        return {
+          title: "Marcar salida",
+          description: `¿${name} sale del local ahora?`,
+          confirmLabel: "Salió",
+          destructive: false,
+        }
+      }
+      return {
+        title: "Marcar llegada",
+        description: `¿${name} entra al local ahora?`,
+        confirmLabel: "Llegó",
+        destructive: false,
+      }
+    }
     return {
       title: "Eliminar usuario",
       description: `¿Eliminar a ${memberDisplayName(confirmAction.member)} de este negocio? No va a figurar más en RRHH.`,
@@ -643,8 +663,8 @@ export function HrWorkspaceView() {
     }
   }
 
-  const handleClock = async (person: EmployeeRow) => {
-    if (!popId) return
+  const handleClock = async (person: EmployeeRow): Promise<boolean> => {
+    if (!popId) return false
     setActionKey(`clock-${person.id}`)
     const res = person.isClockedIn
       ? await clockEmployeeOut(popId, person.id)
@@ -652,7 +672,7 @@ export function HrWorkspaceView() {
     setActionKey(null)
     if (!res.success) {
       setBanner({ type: "err", text: res.error || "No se pudo marcar." })
-      return
+      return false
     }
     setBanner({
       type: "ok",
@@ -661,6 +681,7 @@ export function HrWorkspaceView() {
         : `${personDisplayName(person)} entró al local.`,
     })
     await loadDashboard()
+    return true
   }
 
   const copyInviteUrl = async (url: string) => {
@@ -701,6 +722,12 @@ export function HrWorkspaceView() {
 
   const runConfirmAction = async () => {
     if (!popId || !siteId || !confirmAction) return
+
+    if (confirmAction.kind === "clock") {
+      const ok = await handleClock(confirmAction.person)
+      if (ok) setConfirmAction(null)
+      return
+    }
 
     if (confirmAction.kind === "revoke") {
       await handleRevoke(confirmAction.invite.id)
@@ -918,12 +945,17 @@ export function HrWorkspaceView() {
                       )
                       const invite = pendingInviteForPerson(person, pending)
                       const cardPerson = personForCard(person, member)
+                      const isSelf = Boolean(
+                        user?.id &&
+                          (person.userId === user.id || member?.userId === user.id),
+                      )
                       return (
                         <HrPersonCard
                           key={person.id}
                           person={cardPerson}
                           imageUrl={member?.imageUrl}
                           isOwner={Boolean(member?.isOwner)}
+                          isSelf={isSelf}
                           rootsyRole={
                             member?.isActive ? member.roleDisplayName : null
                           }
@@ -943,7 +975,9 @@ export function HrWorkspaceView() {
                             setPersonError(null)
                             setPersonOpen(true)
                           }}
-                          onClock={() => void handleClock(person)}
+                          onClock={() =>
+                            setConfirmAction({ kind: "clock", person: cardPerson })
+                          }
                           onInvite={() => openInvite(person)}
                           onCopyInvite={
                             invite

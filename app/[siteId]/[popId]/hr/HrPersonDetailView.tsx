@@ -46,6 +46,7 @@ import {
   RootsIconButton,
   rootsButtonCompactSizeClass,
 } from "@/components/rootsy-button"
+import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import {
   computeDataWorkspaceDateBounds,
   type DataWorkspaceDatePreset,
@@ -115,6 +116,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [clockBusy, setClockBusy] = useState(false)
+  const [clockConfirmOpen, setClockConfirmOpen] = useState(false)
   const [pinBusy, setPinBusy] = useState(false)
   const [dayMarkKind, setDayMarkKind] = useState<DayMarkKind>("franco")
   const [francoOpen, setFrancoOpen] = useState(false)
@@ -223,6 +225,8 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
       setError(res.error || "No se pudo marcar.")
       return
     }
+    setClockConfirmOpen(false)
+    setError(null)
     await loadDetail({ silent: true })
   }
 
@@ -433,7 +437,10 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
                       rootsButtonCompactSizeClass,
                       "shrink-0 gap-1.5 px-3 text-xs",
                     )}
-                    onClick={() => void handleClock()}
+                    onClick={() => {
+                      setError(null)
+                      setClockConfirmOpen(true)
+                    }}
                   >
                     {employee?.isClockedIn ? (
                       <DoorClosed className="size-3.5" aria-hidden />
@@ -575,6 +582,30 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
             if (!open) setPayError(null)
           }}
           onSubmit={(input) => void handlePay(input)}
+        />
+
+        <RootsConfirmDialog
+          open={clockConfirmOpen}
+          onOpenChange={(open) => {
+            if (!open && clockBusy) return
+            setClockConfirmOpen(open)
+          }}
+          title={
+            employee?.isClockedIn ? "Marcar salida" : "Marcar llegada"
+          }
+          description={
+            employee
+              ? employee.isClockedIn
+                ? `¿${personDisplayName(employee)} sale del local ahora?`
+                : `¿${personDisplayName(employee)} entra al local ahora?`
+              : undefined
+          }
+          confirmLabel={employee?.isClockedIn ? "Salió" : "Llegó"}
+          busy={clockBusy}
+          busyConfirmLabel={
+            employee?.isClockedIn ? "Marcando salida…" : "Marcando llegada…"
+          }
+          onConfirm={() => void handleClock()}
         />
       </div>
     </div>

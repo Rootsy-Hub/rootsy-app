@@ -49,8 +49,8 @@ export const ROOTSY_PRODUCT_WORLDS: RootsyProductWorld[] = [
   {
     id: "herramientas",
     name: "Herramientas de Rootsy",
-    usedIn: "Hilo de Rootsy en chat — paisaje y tarjetas de cristal.",
+    usedIn: "Hilo de Rootsy en chat — paisaje y tarjeta de tarea (superficie flat).",
     concept:
-      "El claro donde Rootsy trabaja. Fondo ilustrado, vidrio cian sobre el prado. No es éter ni savia de comanda.",
+      "El claro donde Rootsy trabaja. Fondo ilustrado, placa cian sobre el prado — glass con frost o flat con frost más marcado. No es éter ni savia de comanda.",
   },
 ]

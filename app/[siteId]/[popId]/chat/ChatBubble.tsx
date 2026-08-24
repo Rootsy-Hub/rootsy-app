@@ -29,33 +29,20 @@ type Props = {
 }
 
 function ChatBubbleTail({ side }: { side: "left" | "right" }) {
-  if (side === "left") {
-    return (
-      <svg
-        className="chat-bubble__tail chat-bubble__tail--left"
-        width="8"
-        height="13"
-        viewBox="0 0 8 13"
-        aria-hidden
-      >
-        <path
-          d="M1.533 2.568 8 11.193V0H2.812C1.04 0 .312 1.207 1.533 2.568z"
-          fill="currentColor"
-        />
-      </svg>
-    )
-  }
   return (
     <svg
-      className="chat-bubble__tail chat-bubble__tail--right"
+      className={cn(
+        "chat-bubble__tail",
+        side === "left" ? "chat-bubble__tail--left" : "chat-bubble__tail--right",
+      )}
       width="8"
       height="13"
       viewBox="0 0 8 13"
       aria-hidden
     >
       <path
-        d="M5.188 0H0v11.193l6.467-8.625C7.688 1.207 6.959 0 5.188 0z"
         fill="currentColor"
+        d="M5.188 0H0v11.193C1.2 8.4 4.1 4.6 6.467 2.568 7.688 1.207 6.959 0 5.188 0z"
       />
     </svg>
   )

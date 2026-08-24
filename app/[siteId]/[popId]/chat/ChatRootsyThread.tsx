@@ -52,6 +52,7 @@ type Props = {
   userName: string
   onBack: () => void
   onPreviewChange?: (body: string | null) => void
+  threadVisible?: boolean
 }
 
 export function ChatRootsyThread({
@@ -60,6 +61,7 @@ export function ChatRootsyThread({
   userName,
   onBack,
   onPreviewChange,
+  threadVisible = true,
 }: Props) {
   const [messages, setMessages] = useState<ChatMessageRow[]>([])
   const [hydrated, setHydrated] = useState(false)
@@ -108,10 +110,13 @@ export function ChatRootsyThread({
   }, [hydrated, messages.length, sending, scrollToEnd])
 
   useEffect(() => {
-    window.requestAnimationFrame(() => {
-      sendButtonRef.current?.focus()
+    const desktop = window.matchMedia("(min-width: 1024px)").matches
+    if (!desktop && !threadVisible) return
+    const frame = window.requestAnimationFrame(() => {
+      composerRef.current?.focus()
     })
-  }, [])
+    return () => window.cancelAnimationFrame(frame)
+  }, [threadVisible])
 
   const displayMessages = !hydrated
     ? []

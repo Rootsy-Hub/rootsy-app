@@ -1,7 +1,10 @@
 /**
- * Mundo Herramientas de Rootsy — paisaje + cristal (modelo cards.html).
+ * Mundo Herramientas de Rootsy — paisaje + placas (modelo cards.html).
+ * Superficies: glass (frost 20px) y flat (frost 32px, overlay, rim 1px).
  * Tipo: --rootsy-text-* · UI Nunito · montos Inter.
- * Radio: radius.xlarge (16px). Padding: space.300. Rim: space.050.
+ * Radio: radius.xlarge (16px).
+ * Glass — padding space.300; rim 025/050/075.
+ * Flat — padding 23px 27px; max 545px; rim space.025 (2px).
  */
 
 .mundos-herramientas-stage {
@@ -33,14 +36,15 @@
   box-shadow:
     0 13px 25px rgb(0 11 21 / 0.28),
     inset 0 1px rgb(255 255 255 / 0.72),
-    inset 0 -2px rgb(62 169 196 / 0.38),
+    inset 0 -3px rgb(62 169 196 / 0.42),
     inset 0 0 24px rgb(224 255 255 / 0.09);
 }
 
 /*
- * Frost real: backdrop-filter no muestra el paisaje aquí porque MundosWorldStage
- * (isolate + overflow-hidden) y la card (overflow-hidden) son backdrop roots.
- * Copiamos el fondo y lo desenfocamos con filter, que sí pinta.
+ * Frost: capa solo de paisaje. No usar backdrop-filter — overflow+isolate
+ * de la card son backdrop roots y el fondo no se ve. Copiamos la imagen y
+ * aplicamos filter acá, nunca en el padre, para no rasterizar el texto.
+ * Sin transform en esta capa: background-attachment:fixed se rompería.
  */
 .mundos-herramientas-card__frost {
   pointer-events: none;
@@ -76,7 +80,7 @@
   inset: 0;
   z-index: 2;
   border-radius: inherit;
-  padding: 0.25rem;
+  padding: var(--rootsy-space-025) var(--rootsy-space-050) var(--rootsy-space-075);
   background: linear-gradient(
     145deg,
     rgb(230 255 255 / 0.96),
@@ -97,7 +101,7 @@
 .mundos-herramientas-card__rim--glow {
   inset: -0.5rem;
   z-index: 0;
-  padding: 0.25rem;
+  padding: var(--rootsy-space-025) var(--rootsy-space-050) var(--rootsy-space-075);
   opacity: 0.7;
   filter: blur(4px);
 }
@@ -193,8 +197,59 @@
   background: var(--herramientas-bar);
 }
 
+/* Flat — prototipo: misma placa, frost más marcado, rim 1px, glow -5px. */
+.mundos-herramientas-card--flat {
+  isolation: isolate;
+  min-width: 0;
+  max-width: 545px;
+  min-height: 218px;
+  padding: 23px 27px;
+  background: transparent;
+  box-shadow:
+    0 13px 25px rgb(0 11 21 / 0.28),
+    inset 0 1px rgb(255 255 255 / 0.72),
+    inset 0 -2px rgb(62 169 196 / 0.38),
+    inset 0 0 24px rgb(224 255 255 / 0.09);
+}
+
+.mundos-herramientas-card--flat .mundos-herramientas-card__frost {
+  filter: blur(32px) saturate(1.3);
+}
+
+.mundos-herramientas-card--flat::before {
+  background: linear-gradient(
+    125deg,
+    rgb(220 255 255 / 0.22),
+    rgb(76 184 221 / 0.13) 48%,
+    rgb(7 59 96 / 0.25)
+  );
+}
+
+.mundos-herramientas-card--flat .mundos-herramientas-card__rim {
+  padding: var(--rootsy-space-025);
+}
+
+.mundos-herramientas-card--flat .mundos-herramientas-card__rim--glow {
+  inset: -5px;
+  padding: var(--rootsy-space-025);
+}
+
+.mundos-herramientas-card--flat .mundos-herramientas-card__spark {
+  height: 54px;
+  gap: 7px;
+}
+
+.mundos-herramientas-card--flat .mundos-herramientas-card__spark span {
+  width: 12px;
+  border-radius: 7px 7px 0 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mundos-herramientas-card__frost {
     filter: blur(16px) saturate(1.15);
+  }
+
+  .mundos-herramientas-card--flat .mundos-herramientas-card__frost {
+    filter: blur(24px) saturate(1.2);
   }
 }

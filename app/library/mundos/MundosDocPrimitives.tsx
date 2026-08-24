@@ -394,8 +394,8 @@ function MundosSombraStage() {
 function MundosHerramientasStage() {
   return (
     <MundosWorldStage
-      label="Mundo Herramientas de Rootsy — paisaje y cristal"
-      className="h-[30rem] sm:h-[32rem]"
+      label="Mundo Herramientas de Rootsy — paisaje, cristal y flat"
+      className="h-[42rem] sm:h-[44rem]"
     >
       <div className="mundos-herramientas-stage absolute inset-0" />
       <div className="relative z-10 flex h-full flex-wrap items-center gap-4 overflow-visible px-4 py-6 sm:gap-6 sm:px-6">

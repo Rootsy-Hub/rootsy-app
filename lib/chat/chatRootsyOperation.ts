@@ -203,6 +203,40 @@ export function phaseLabel(phase: ChatRootsyOperationPhase): string {
   return "Detenida"
 }
 
+export function taskPhaseTitle(phase: ChatRootsyOperationPhase): string {
+  if (phase === "waiting") return "Esperando confirmación"
+  if (phase === "completed") return "Tarea finalizada"
+  if (phase === "error") return "Tarea con error"
+  if (phase === "stopped") return "Tarea detenida"
+  return "Tarea en proceso"
+}
+
+export function taskStepProgress(operation: {
+  phase: ChatRootsyOperationPhase
+  paso: number
+  steps: { status: ChatRootsyOperationStepStatus }[]
+}): {
+  tone: "progress" | "ok" | "error"
+  current: number
+  total: number
+  ratio: number
+} {
+  const done = operation.steps.filter((step) => step.status === "done").length
+  const total = Math.max(operation.steps.length, operation.paso, 1)
+  if (operation.phase === "completed") {
+    return { tone: "ok", current: total, total, ratio: 1 }
+  }
+  if (operation.phase === "error") {
+    return { tone: "error", current: done, total, ratio: 1 }
+  }
+  return {
+    tone: "progress",
+    current: done === 0 ? Math.min(operation.paso, total) : done,
+    total,
+    ratio: done / total,
+  }
+}
+
 function stepCountLabel(paso: number): string {
   return paso <= 1 ? "1 paso" : `${paso} pasos`
 }
@@ -216,9 +250,9 @@ function pasoLabel(
   if (phase === "preparing") return `Paso ${currentPaso} · explorando`
   if (phase === "waiting") return `Paso ${currentPaso} · por aprobar`
   if (phase === "executing") return `Paso ${currentPaso} · en curso`
-  if (phase === "completed") return `Operación completada · ${stepCountLabel(stepCount)}`
-  if (phase === "error") return `Operación con error · ${stepCountLabel(stepCount)}`
-  return `Operación detenida · ${stepCountLabel(stepCount)}`
+  if (phase === "completed") return `Tarea completada · ${stepCountLabel(stepCount)}`
+  if (phase === "error") return `Tarea con error · ${stepCountLabel(stepCount)}`
+  return `Tarea detenida · ${stepCountLabel(stepCount)}`
 }
 
 function collectClusters(messages: ChatMessageRow[]): ChatMessageRow[][] {
@@ -627,7 +661,7 @@ export function chatRootsyApproveLabel(offers: ChatRootsyToolOffer[]): string {
 }
 
 export function chatRootsyRejectLabel(hasProgress: boolean): string {
-  return hasProgress ? "Detener operación" : "Rechazar paso"
+  return hasProgress ? "Detener tarea" : "Rechazar paso"
 }
 
 export function chatRootsyOffersAreDestructive(

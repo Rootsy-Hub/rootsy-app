@@ -19,6 +19,7 @@ import {
   dataWorkspaceEntityCardHeaderClass,
   dataWorkspaceEntityCardIsotypeClass,
   dataWorkspaceEntityCardLosetaClass,
+  dataWorkspaceEntityCardLosetaSelfClass,
   dataWorkspaceEntityCardMenuTriggerClass,
   dataWorkspaceEntityCardSaldoSectionClass,
   dataWorkspaceEntityCardStatLabelClass,
@@ -216,6 +217,7 @@ type Props = {
   onRestoreAccess?: () => void
   onLeave: () => void
   onReturn?: () => void
+  isSelf?: boolean
 }
 
 export function HrPersonCard({
@@ -240,6 +242,7 @@ export function HrPersonCard({
   onRestoreAccess,
   onLeave,
   onReturn,
+  isSelf = false,
 }: Props) {
   const name = personDisplayName(person)
   const salary =
@@ -295,7 +298,13 @@ export function HrPersonCard({
             : person.documentNumber || "Falta CUIL"
 
   return (
-    <article className={dataWorkspaceEntityCardLosetaClass}>
+    <article
+      className={cn(
+        dataWorkspaceEntityCardLosetaClass,
+        isSelf && dataWorkspaceEntityCardLosetaSelfClass,
+      )}
+      aria-current={isSelf ? "true" : undefined}
+    >
       <Link
         href={detailHref}
         className="flex min-h-0 flex-1 flex-col text-left outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)] focus-visible:ring-offset-2"
@@ -334,6 +343,10 @@ export function HrPersonCard({
                   "truncate pr-14",
                 )}
               >
+                {isSelf ? (
+                  <span className="text-[var(--rootsy-savia-800)]">Vos</span>
+                ) : null}
+                {isSelf ? " · " : null}
                 {person.jobTitle || "En el local"}
               </p>
               <h3

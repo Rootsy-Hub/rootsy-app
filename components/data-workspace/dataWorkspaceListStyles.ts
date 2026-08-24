@@ -188,6 +188,13 @@ export const dataWorkspaceEntityCardLosetaInactiveClass = cn(
   "hover:border-[var(--rootsy-bruma-200)]",
 )
 
+/** Loseta de la persona en sesión — mismo cuerpo, acento savia apenas perceptible. */
+export const dataWorkspaceEntityCardLosetaSelfClass = cn(
+  "border-[color-mix(in_srgb,var(--rootsy-savia-600)_28%,var(--rootsy-bruma-200))]",
+  "bg-[color-mix(in_srgb,var(--rootsy-savia-50)_55%,white)]",
+  "hover:border-[color-mix(in_srgb,var(--rootsy-savia-600)_42%,var(--rootsy-bruma-200))]",
+)
+
 /** Cuerpo saldo — fila flexible del grid de tarjeta. */
 export const dataWorkspaceEntityCardSaldoSectionClass = "min-w-0 px-4 py-4"
 
