@@ -1127,7 +1127,7 @@ DELETE: path; body solo si el endpoint lo pide.
 Las tablas de Supabase confirman que el dato existe. La invariante de la ficha de dominio manda. No pidas SQL.
 today viene en la entrada: si el período no trae año, usá ese.
 
-Podés usar hasta 4 pasos para resolver el mismo data_request. Un paso = una respuesta tuya. La app ejecuta, pide permiso y, si pediste confirm_one, te devuelve solo el ítem elegido en resultados.
+Podés usar hasta 4 pasos para resolver el mismo data_request. Un paso = una respuesta tuya. La app ejecuta los GET sin pedir permiso. Si pediste confirm_one, después del GET te devuelve solo el ítem elegido. POST, PATCH y DELETE piden confirmación en un modal.
 resultados trae el JSON compacto de la API. Usalo: conocés los campos. No copies ese JSON a respuesta.
 
 ${CHAT_ROOTSY_PLANNER_DOMAIN_RULE}
@@ -1136,8 +1136,8 @@ Si hay que cambiar varios ítems ya identificados (el pedido nombra varios, o vi
 Si viene acciones_sesion y el pedido las deshace o las continúa, usá TODOS esos ítems. No te quedes con uno.
 La app pega POST, PATCH y DELETE de las fichas.
 
-Cada query lleva action: una frase corta para pedirle permiso a la persona, sin paths ni métodos. En un PATCH la app muestra ahora → después si el valor anterior está en resultados.
-confirm: "confirm" para permitir la acción, "confirm_one" si el siguiente paso necesita que elijan un resultado.
+Cada query lleva action: una frase corta para la persona, sin paths ni métodos. En un PATCH la app muestra ahora → después si el valor anterior está en resultados.
+confirm: "confirm" en escrituras (el modal pide permiso). "confirm_one" si el siguiente paso necesita que elijan un resultado. En GET, confirm no muestra botón: la app lo corre sola.
 
 Cuando ya resolviste el objective, no mandes más queries. Cerrá con status done: respuesta contesta el objective en lenguaje de negocio (sin endpoints ni JSON crudo); acciones es lo que hiciste, una frase por paso. Rootsy narra respuesta a la persona. Si es el último paso y ya podés contestar, preferí done.
 

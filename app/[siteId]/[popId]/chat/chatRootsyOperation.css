@@ -461,7 +461,9 @@
   opacity: 0.48;
 }
 
-.chat-rootsy-op-btn--approve:hover:not(:disabled) {
+.chat-rootsy-op-btn--approve:hover:not(:disabled),
+.chat-rootsy-op-btn--apply:hover:not(:disabled),
+.chat-rootsy-op-btn--danger:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 
@@ -471,6 +473,24 @@
   background: rgb(51 167 198 / 0.38);
   box-shadow:
     inset 0 1px rgb(255 255 255 / 0.45),
+    0 4px 12px rgb(0 11 21 / 0.22);
+}
+
+.chat-rootsy-op-btn--apply {
+  color: #ecfdf3;
+  border: 1px solid rgb(134 239 172 / 0.55);
+  background: rgb(22 163 74 / 0.48);
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 0.4),
+    0 4px 12px rgb(0 11 21 / 0.22);
+}
+
+.chat-rootsy-op-btn--danger {
+  color: #fff1f2;
+  border: 1px solid rgb(252 165 165 / 0.55);
+  background: rgb(220 38 38 / 0.55);
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 0.28),
     0 4px 12px rgb(0 11 21 / 0.22);
 }
 

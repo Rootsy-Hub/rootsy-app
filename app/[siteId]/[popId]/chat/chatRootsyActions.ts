@@ -16,6 +16,7 @@ import {
   compactChatRootsyPlannerResponse,
   completeChatRootsyPlannerInforme,
   pickChatRootsyPlannerSelectedResponse,
+  CHAT_ROOTSY_PLANNER_MAX_STEPS,
   type ChatRootsyPlannerChoice,
   type ChatRootsyPlannerInforme,
   type ChatRootsyPlannerResultado,
@@ -25,6 +26,7 @@ import {
   buildChatRootsyDevTrace,
   chatRootsyDevJson,
   chatRootsyDevStep,
+  mergeChatRootsyDevTraces,
   type ChatRootsyDevStep,
   type ChatRootsyDevTrace,
 } from "@/lib/chat/chatRootsyDevTrace"
@@ -75,6 +77,7 @@ import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { validatePopAccess } from "@/lib/popHelpers"
 import { requirePopAction } from "@/lib/requirePopAction"
 import { siteIdsMatchClientRoute } from "@/lib/popRoutes"
+import { chatRootsyOffersAutoExecute } from "@/lib/chat/chatRootsyOperation"
 
 function plannerRoundSteps(input: {
   paso: number
@@ -119,8 +122,10 @@ export type SendRootsyChatResult =
   | {
       success: true
       reply: string
+      followUpReply?: string
       toolOffer?: ChatRootsyToolOffer
       toolOffers?: ChatRootsyToolOffer[]
+      toolResults?: ChatRootsyToolResult[]
       plannerRun?: ChatRootsyPlannerRun
       plannerChoices?: ChatRootsyPlannerChoice[]
       closeBrief?: ChatRootsyCloseBrief
@@ -314,6 +319,83 @@ export async function sendRootsyChatMessage(input: {
         })
       : undefined
 
+  const openingTrace = buildChatRootsyDevTrace(
+    [
+      chatRootsyDevStep({
+        lane: "rootsy",
+        title: "Apertura · contexto",
+        note:
+          appliedActions.length > 0
+            ? `Se inyectaron ${appliedActions.length} acciones de sesión.`
+            : "Sin acciones_sesion.",
+        body: {
+          pedido: lastUser.body,
+          acciones_sesion: appliedActions,
+        },
+      }),
+      chatRootsyDevStep({
+        lane: "rootsy",
+        title: "Apertura · crudo",
+        note: `Fuente: ${firstFetch.source}`,
+        body: firstFetch.raw ?? "(vacío)",
+      }),
+      chatRootsyDevStep({
+        lane: "rootsy",
+        title: "Apertura · parseado",
+        note: firstTurn.data_request
+          ? "Hay data_request válido → sigue el Planificador."
+          : rawDataRequest != null
+            ? "data_request vino y se descartó en la validación."
+            : "data_request es null. El Planificador no corre.",
+        body: {
+          reply: firstTurn.reply,
+          data_request: firstTurn.data_request,
+          data_request_crudo: rawDataRequest ?? null,
+        },
+      }),
+      ...plannerRoundSteps({
+        paso: 1,
+        sent: plannerSent,
+        raw: plannerRaw,
+        source: plannerSource,
+        note: plannerNote,
+        offers: toolOffers,
+        skipped: !shouldCallChatRootsyPlanner(firstTurn),
+      }),
+    ],
+    { error: plannerAiError },
+  )
+
+  if (
+    plannerRun &&
+    toolOffers.length &&
+    chatRootsyOffersAutoExecute(toolOffers)
+  ) {
+    const executed = await runRootsyChatTools({
+      popId,
+      siteId,
+      history,
+      plannerRun,
+      queries: queriesFromOffers(toolOffers),
+      recent: input.toolContext?.recent,
+    })
+    if (executed.success) {
+      return {
+        success: true,
+        reply: firstTurn.reply,
+        followUpReply: executed.reply.trim() || undefined,
+        toolResults: executed.toolResults,
+        toolOffers: executed.toolOffers,
+        plannerRun: executed.plannerRun ?? plannerRun,
+        plannerChoices: executed.plannerChoices,
+        closeBrief: executed.closeBrief ?? closeBrief,
+        devTrace:
+          mergeChatRootsyDevTraces([openingTrace, executed.devTrace]) ??
+          undefined,
+      }
+    }
+  }
+
   return {
     success: true,
     reply: firstTurn.reply,
@@ -321,52 +403,7 @@ export async function sendRootsyChatMessage(input: {
     toolOffers: toolOffers.length ? toolOffers : undefined,
     plannerRun,
     closeBrief,
-    devTrace: buildChatRootsyDevTrace(
-      [
-        chatRootsyDevStep({
-          lane: "rootsy",
-          title: "Apertura · contexto",
-          note:
-            appliedActions.length > 0
-              ? `Se inyectaron ${appliedActions.length} acciones de sesión.`
-              : "Sin acciones_sesion.",
-          body: {
-            pedido: lastUser.body,
-            acciones_sesion: appliedActions,
-          },
-        }),
-        chatRootsyDevStep({
-          lane: "rootsy",
-          title: "Apertura · crudo",
-          note: `Fuente: ${firstFetch.source}`,
-          body: firstFetch.raw ?? "(vacío)",
-        }),
-        chatRootsyDevStep({
-          lane: "rootsy",
-          title: "Apertura · parseado",
-          note: firstTurn.data_request
-            ? "Hay data_request válido → sigue el Planificador."
-            : rawDataRequest != null
-              ? "data_request vino y se descartó en la validación."
-              : "data_request es null. El Planificador no corre.",
-          body: {
-            reply: firstTurn.reply,
-            data_request: firstTurn.data_request,
-            data_request_crudo: rawDataRequest ?? null,
-          },
-        }),
-        ...plannerRoundSteps({
-          paso: 1,
-          sent: plannerSent,
-          raw: plannerRaw,
-          source: plannerSource,
-          note: plannerNote,
-          offers: toolOffers,
-          skipped: !shouldCallChatRootsyPlanner(firstTurn),
-        }),
-      ],
-      { error: plannerAiError },
-    ),
+    devTrace: openingTrace,
   }
 }
 
@@ -415,6 +452,19 @@ type RootsyToolQuery = {
   offerKey?: string
 }
 
+function queriesFromOffers(offers: ChatRootsyToolOffer[]): RootsyToolQuery[] {
+  return offers.map((offer) => ({
+    tool: offer.tool,
+    filters: offer.filters,
+    method: offer.method,
+    path: offer.path,
+    body: offer.body,
+    action: offer.action ?? offer.label,
+    confirm: offer.confirm,
+    offerKey: offer.offerKey ?? chatRootsyOfferKey(offer),
+  }))
+}
+
 export async function runRootsyChatTools(input: {
   popId: string
   siteId: string
@@ -422,6 +472,7 @@ export async function runRootsyChatTools(input: {
   queries: RootsyToolQuery[]
   recent?: ChatRootsyToolMatchContext["recent"]
   plannerRun?: ChatRootsyPlannerRun
+  readChain?: number
 }): Promise<
   | {
       success: true
@@ -672,22 +723,23 @@ export async function runRootsyChatTools(input: {
     tools: toolResults.map((row) => row.tool),
     outcome: "ok",
   })
-  return {
-    success: true,
+  const plannerRun = next.plannerRun
+    ? {
+        ...next.plannerRun,
+        aplicados: mergeChatRootsyHechos(
+          input.plannerRun?.aplicados,
+          toolResults
+            .map((row) => row.applied)
+            .filter((hecho): hecho is ChatRootsyCloseHecho => Boolean(hecho)),
+        ),
+      }
+    : next.plannerRun
+  const result = {
+    success: true as const,
     reply,
     toolResults,
     toolOffers: next.toolOffers,
-    plannerRun: next.plannerRun
-      ? {
-          ...next.plannerRun,
-          aplicados: mergeChatRootsyHechos(
-            input.plannerRun?.aplicados,
-            toolResults
-              .map((row) => row.applied)
-              .filter((hecho): hecho is ChatRootsyCloseHecho => Boolean(hecho)),
-          ),
-        }
-      : next.plannerRun,
+    plannerRun,
     plannerChoices: next.plannerChoices,
     closeBrief,
     devTrace: buildChatRootsyDevTrace(
@@ -751,6 +803,34 @@ export async function runRootsyChatTools(input: {
       },
     ),
   }
+
+  const nextReads = next.toolOffers ?? []
+  if (
+    nextReads.length &&
+    !next.plannerChoices?.length &&
+    chatRootsyOffersAutoExecute(nextReads) &&
+    (input.readChain ?? 0) < CHAT_ROOTSY_PLANNER_MAX_STEPS - 1
+  ) {
+    const chained = await runRootsyChatTools({
+      popId,
+      siteId,
+      history: input.history,
+      queries: queriesFromOffers(nextReads),
+      recent,
+      plannerRun,
+      readChain: (input.readChain ?? 0) + 1,
+    })
+    if (!chained.success) return chained
+    return {
+      ...chained,
+      toolResults: [...toolResults, ...chained.toolResults],
+      devTrace:
+        mergeChatRootsyDevTraces([result.devTrace, chained.devTrace]) ??
+        undefined,
+    }
+  }
+
+  return result
 }
 
 async function continuePlannerAfterResults(input: {
@@ -952,6 +1032,52 @@ export async function continueRootsyPlannerRun(input: {
     run: input.plannerRun,
     resultados,
   })
+
+  if (
+    next.toolOffers?.length &&
+    chatRootsyOffersAutoExecute(next.toolOffers) &&
+    next.plannerRun
+  ) {
+    const executed = await runRootsyChatTools({
+      popId,
+      siteId,
+      history: [
+        {
+          role: "user",
+          body: input.plannerRun.message,
+        },
+      ],
+      plannerRun: next.plannerRun,
+      queries: queriesFromOffers(next.toolOffers),
+    })
+    if (executed.success) {
+      return {
+        success: true,
+        reply: executed.reply,
+        followUpReply: executed.reply.trim() || undefined,
+        toolResults: executed.toolResults,
+        toolOffers: executed.toolOffers,
+        plannerRun: executed.plannerRun ?? next.plannerRun,
+        plannerChoices: executed.plannerChoices,
+        closeBrief: executed.closeBrief,
+        devTrace:
+          mergeChatRootsyDevTraces([
+            buildChatRootsyDevTrace([
+              chatRootsyDevStep({
+                lane: "choice",
+                title: "Ítem elegido",
+                note: input.choice.action,
+                body: {
+                  elegido: input.item,
+                  resultados,
+                },
+              }),
+            ]),
+            executed.devTrace,
+          ]) ?? undefined,
+      }
+    }
+  }
 
   const reply = next.toolOffers?.length
     ? ""

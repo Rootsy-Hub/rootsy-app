@@ -10,6 +10,7 @@ import {
   continueRootsyPlannerRun,
   runRootsyChatTools,
   sendRootsyChatMessage,
+  type SendRootsyChatResult,
 } from "@/app/[siteId]/[popId]/chat/chatRootsyActions"
 import { chatRootsyOfferKey } from "@/lib/chat/chatRootsyPlannerStep"
 import {
@@ -24,6 +25,7 @@ import {
 import {
   chatBubbleClusterFlags,
   type ChatMessageRow,
+  type ChatRootsyToolResult,
 } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import {
   dataWorkspaceDetailCardHeaderClass,
@@ -38,6 +40,7 @@ import {
 } from "@/lib/chat/chatRootsyDevTrace"
 import {
   deriveChatRootsyOperations,
+  chatRootsyOffersAutoExecute,
   isChatRootsyOperationShell,
   type ChatRootsyOperationLive,
 } from "@/lib/chat/chatRootsyOperation"
@@ -53,6 +56,52 @@ type Props = {
   onBack: () => void
   onPreviewChange?: (body: string | null) => void
   threadVisible?: boolean
+}
+
+function rootsyToolResultRows(
+  toolResults: ChatRootsyToolResult[],
+  now: string,
+): ChatMessageRow[] {
+  return toolResults.map((toolResult) => ({
+    id: `rootsy-tool:${crypto.randomUUID()}`,
+    authorUserId: ROOTSY_CHAT_AUTHOR_ID,
+    authorName: "Rootsy",
+    body: `${toolResult.title?.trim() || toolResult.tool} · ${toolResult.periodLabel}`,
+    createdAt: now,
+    mine: false,
+    toolResult,
+  }))
+}
+
+function rootsyFollowUpRow(
+  res: Extract<SendRootsyChatResult, { success: true }>,
+  now: string,
+  body: string,
+): ChatMessageRow | null {
+  const text = body.trim()
+  if (
+    !text &&
+    !res.toolOffers?.length &&
+    !res.plannerChoices?.length &&
+    !res.closeBrief &&
+    !res.devTrace
+  ) {
+    return null
+  }
+  return {
+    id: `rootsy-ai:${crypto.randomUUID()}`,
+    authorUserId: ROOTSY_CHAT_AUTHOR_ID,
+    authorName: "Rootsy",
+    body: text,
+    createdAt: now,
+    mine: false,
+    toolOffer: res.toolOffers?.[0],
+    toolOffers: res.toolOffers,
+    plannerRun: res.plannerRun,
+    plannerChoices: res.plannerChoices,
+    closeBrief: res.closeBrief,
+    devTrace: res.devTrace,
+  }
 }
 
 export function ChatRootsyThread({
@@ -76,6 +125,10 @@ export function ChatRootsyThread({
   const composerRef = useRef<HTMLInputElement>(null)
   const composerRangeRef = useRef({ start: 0, end: 0 })
   const sendButtonRef = useRef<HTMLButtonElement>(null)
+  const confirmReadsRef = useRef<
+    (hostId: string, keys: string[]) => void | Promise<void>
+  >(() => {})
+  const autoReadKeyRef = useRef("")
 
   useEffect(() => {
     const stored = loadRootsyChatMessages(popId)
@@ -133,6 +186,25 @@ export function ChatRootsyThread({
       }),
     [displayMessages, live, sendError, sending],
   )
+
+  useEffect(() => {
+    if (sending) return
+    const operation = operations.find(
+      (item) =>
+        item.pendingHostId &&
+        item.pendingOffers.length > 0 &&
+        item.pendingChoices.length === 0 &&
+        chatRootsyOffersAutoExecute(item.pendingOffers),
+    )
+    if (!operation?.pendingHostId) return
+    const keys = operation.pendingOffers.map((offer) =>
+      chatRootsyOfferKey(offer),
+    )
+    const key = `${operation.pendingHostId}:${keys.join("|")}`
+    if (autoReadKeyRef.current === key) return
+    autoReadKeyRef.current = key
+    void confirmReadsRef.current(operation.pendingHostId, keys)
+  }, [operations, sending])
   const operationByAnchor = useMemo(
     () => new Map(operations.map((item) => [item.anchorMessageId, item])),
     [operations],
@@ -263,23 +335,31 @@ export function ChatRootsyThread({
       return
     }
 
+    const now = new Date().toISOString()
+    const ranReads = Boolean(res.toolResults?.length)
+    const opening: ChatMessageRow = {
+      id: `rootsy-ai:${crypto.randomUUID()}`,
+      authorUserId: ROOTSY_CHAT_AUTHOR_ID,
+      authorName: "Rootsy",
+      body: res.reply,
+      createdAt: now,
+      mine: false,
+      toolOffer: ranReads ? undefined : res.toolOffer,
+      toolOffers: ranReads ? undefined : res.toolOffers,
+      plannerRun: res.plannerRun,
+      plannerChoices: ranReads ? undefined : res.plannerChoices,
+      closeBrief: ranReads ? undefined : res.closeBrief,
+      devTrace: ranReads ? undefined : res.devTrace,
+    }
+    const followUp = ranReads
+      ? rootsyFollowUpRow(res, now, res.followUpReply ?? "")
+      : null
     setMessages(
       [
         ...nextMessages,
-        {
-          id: `rootsy-ai:${crypto.randomUUID()}`,
-          authorUserId: ROOTSY_CHAT_AUTHOR_ID,
-          authorName: "Rootsy",
-          body: res.reply,
-          createdAt: new Date().toISOString(),
-          mine: false,
-          toolOffer: res.toolOffer,
-          toolOffers: res.toolOffers,
-          plannerRun: res.plannerRun,
-          plannerChoices: res.plannerChoices,
-          closeBrief: res.closeBrief,
-          devTrace: res.devTrace,
-        },
+        opening,
+        ...rootsyToolResultRows(res.toolResults ?? [], now),
+        ...(followUp ? [followUp] : []),
       ].slice(-ROOTSY_SESSION_HISTORY_MAX),
     )
     setSending(false)
@@ -413,6 +493,8 @@ export function ChatRootsyThread({
     window.requestAnimationFrame(() => composerRef.current?.focus())
   }
 
+  confirmReadsRef.current = confirmTools
+
   const cancelPlanner = (messageId: string) => {
     setMessages((current) =>
       current.map((row) => {
@@ -471,22 +553,17 @@ export function ChatRootsyThread({
       return
     }
 
+    const now = new Date().toISOString()
+    const followUp = rootsyFollowUpRow(
+      res,
+      now,
+      res.followUpReply ?? res.reply,
+    )
     setMessages((current) =>
       [
         ...current,
-        {
-          id: `rootsy-ai:${crypto.randomUUID()}`,
-          authorUserId: ROOTSY_CHAT_AUTHOR_ID,
-          authorName: "Rootsy",
-          body: res.reply,
-          createdAt: new Date().toISOString(),
-          mine: false,
-          toolOffer: res.toolOffer,
-          toolOffers: res.toolOffers,
-          plannerRun: res.plannerRun,
-          plannerChoices: res.plannerChoices,
-          devTrace: res.devTrace,
-        },
+        ...rootsyToolResultRows(res.toolResults ?? [], now),
+        ...(followUp ? [followUp] : []),
       ].slice(-ROOTSY_SESSION_HISTORY_MAX),
     )
     setSending(false)

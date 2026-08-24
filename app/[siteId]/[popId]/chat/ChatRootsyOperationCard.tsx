@@ -1,6 +1,7 @@
 "use client"
 
 import { ChatRootsyDestructiveConfirmDialog } from "@/app/[siteId]/[popId]/chat/ChatRootsyDestructiveConfirmDialog"
+import { ChatRootsyWriteConfirmDialog } from "@/app/[siteId]/[popId]/chat/ChatRootsyWriteConfirmDialog"
 import { MundosHerramientasCrystal } from "@/app/library/mundos/MundosHerramientasCard"
 import "@/app/[siteId]/[popId]/chat/chatRootsyOperation.css"
 import type { ChatRootsyToolItem } from "@/app/[siteId]/[popId]/chat/chatTypes"
@@ -8,10 +9,12 @@ import { RootsFormCheckbox } from "@/components/rootsy-form"
 import {
   chatRootsyApproveLabel,
   chatRootsyOffersAreDestructive,
+  chatRootsyOffersAutoExecute,
   chatRootsyOperationHasUserDetails,
   chatRootsyRejectLabel,
   chatRootsyStepDetail,
   chatRootsyStepUserDetails,
+  chatRootsyWriteConfirmCopy,
   taskPhaseTitle,
   taskStepProgress,
   type ChatRootsyOperationPhase,
@@ -55,6 +58,7 @@ const LIVE_PHASES = new Set<ChatRootsyOperationPhase>([
 ])
 
 function stepKindLabel(kind: ChatRootsyOperationStepKind): string {
+  if (kind === "create") return "Alta"
   if (kind === "write") return "Actualización"
   if (kind === "delete") return "Eliminación"
   if (kind === "choose") return "Elección"
@@ -164,7 +168,7 @@ function GlassButton({
   children,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
-  tone: "approve" | "quiet" | "ghost" | "icon"
+  tone: "approve" | "apply" | "danger" | "quiet" | "ghost" | "icon"
   children: ReactNode
 }) {
   return (
@@ -173,6 +177,8 @@ function GlassButton({
       className={cn(
         "chat-rootsy-op-btn font-canopy",
         tone === "approve" && "chat-rootsy-op-btn--approve",
+        tone === "apply" && "chat-rootsy-op-btn--apply",
+        tone === "danger" && "chat-rootsy-op-btn--danger",
         tone === "quiet" && "chat-rootsy-op-btn--quiet",
         tone === "ghost" && "chat-rootsy-op-btn--ghost",
         tone === "icon" && "chat-rootsy-op-btn--icon",
@@ -326,6 +332,7 @@ export function ChatRootsyOperationCard({
   )
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [writeOpen, setWriteOpen] = useState(false)
 
   useEffect(() => {
     if (operation.phase === "completed" || operation.phase === "stopped") {
@@ -343,6 +350,8 @@ export function ChatRootsyOperationCard({
 
   useEffect(() => {
     setSelected(pendingKey ? pendingKey.split("\n") : [])
+    setWriteOpen(false)
+    setDeleteOpen(false)
   }, [pendingKey])
 
   const selectedOffers = useMemo(
@@ -360,7 +369,10 @@ export function ChatRootsyOperationCard({
   const hasProgress = operation.steps.some((step) => step.status === "done")
   const hasUserDetails = chatRootsyOperationHasUserDetails(operation)
   const informe = operation.informe
-  const waitingOffers = operation.phase === "waiting" && pending.length > 0
+  const waitingOffers =
+    operation.phase === "waiting" &&
+    pending.length > 0 &&
+    !chatRootsyOffersAutoExecute(pending)
   const waitingChoices =
     operation.phase === "waiting" && operation.pendingChoices.length > 0
   const showDash =
@@ -375,6 +387,7 @@ export function ChatRootsyOperationCard({
   const hostId = operation.pendingHostId
   const approveLabel = chatRootsyApproveLabel(selectedOffers)
   const destructive = chatRootsyOffersAreDestructive(selectedOffers)
+  const writeCopy = chatRootsyWriteConfirmCopy(selectedOffers)
 
   const requestApprove = () => {
     if (!hostId || !selectedOffers.length) return
@@ -382,6 +395,13 @@ export function ChatRootsyOperationCard({
       setDeleteOpen(true)
       return
     }
+    setWriteOpen(true)
+  }
+
+  const confirmSelected = () => {
+    if (!hostId || !selectedOffers.length) return
+    setDeleteOpen(false)
+    setWriteOpen(false)
     onApprove?.(
       hostId,
       selectedOffers.map((offer) => chatRootsyOfferKey(offer)),
@@ -542,7 +562,7 @@ export function ChatRootsyOperationCard({
             ) : null}
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <GlassButton
-                tone="approve"
+                tone={destructive ? "danger" : "apply"}
                 disabled={disabled || selectedOffers.length === 0}
                 onClick={requestApprove}
               >
@@ -676,23 +696,64 @@ export function ChatRootsyOperationCard({
         </div>
       </MundosHerramientasCrystal>
 
+      <ChatRootsyWriteConfirmDialog
+        open={writeOpen}
+        title={writeCopy.title}
+        description={writeCopy.description}
+        confirmLabel={writeCopy.confirmLabel}
+        busy={disabled}
+        onOpenChange={setWriteOpen}
+        onConfirm={confirmSelected}
+      >
+        <ul className="mt-2 space-y-3">
+          {selectedOffers.map((offer) => (
+            <li
+              key={chatRootsyOfferKey(offer)}
+              className="rounded-lg bg-[color-mix(in_srgb,var(--rootsy-bruma-100)_88%,transparent)] px-3 py-2"
+            >
+              <p className="font-canopy text-sm font-medium text-rootsy-bruma-900">
+                {offer.preview?.subject ?? offer.action ?? offer.label}
+              </p>
+              {offer.preview?.changes.length ? (
+                <ul className="mt-1.5 space-y-1">
+                  {offer.preview.changes.map((change) => (
+                    <li
+                      key={`${change.field}-${change.before}-${change.after}`}
+                      className="flex flex-wrap items-baseline gap-x-2 font-canopy text-sm text-rootsy-bruma-800"
+                    >
+                      <span>{change.field}</span>
+                      <span className="text-rootsy-bruma-500 line-through">
+                        {change.before}
+                      </span>
+                      <span aria-hidden>→</span>
+                      <span className="font-semibold">{change.after}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : offer.action && offer.preview?.subject ? (
+                <p className="mt-1 font-canopy text-sm text-rootsy-bruma-700">
+                  {offer.action}
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </ChatRootsyWriteConfirmDialog>
+
       <ChatRootsyDestructiveConfirmDialog
         open={deleteOpen}
-        title="¿Eliminar estos registros?"
-        description="Los datos se borran del negocio y no se pueden recuperar desde acá."
+        title={
+          selectedOffers.length > 1
+            ? "¿Eliminar estos registros?"
+            : "¿Eliminar este registro?"
+        }
+        description="Los datos se borran del negocio y no se pueden recuperar desde acá. Escribí la frase para confirmar."
         items={selectedOffers.map(
           (offer) => offer.preview?.subject ?? offer.action ?? offer.label,
         )}
         busy={disabled}
         onOpenChange={setDeleteOpen}
-        onConfirm={() => {
-          if (!hostId) return
-          setDeleteOpen(false)
-          onApprove?.(
-            hostId,
-            selectedOffers.map((offer) => chatRootsyOfferKey(offer)),
-          )
-        }}
+        onConfirm={confirmSelected}
       />
     </section>
   )

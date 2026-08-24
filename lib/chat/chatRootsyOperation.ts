@@ -36,7 +36,12 @@ export type ChatRootsyOperationStepStatus =
   | "pending"
   | "failed"
 
-export type ChatRootsyOperationStepKind = "read" | "write" | "delete" | "choose"
+export type ChatRootsyOperationStepKind =
+  | "read"
+  | "create"
+  | "write"
+  | "delete"
+  | "choose"
 
 export type ChatRootsyOperationLive = {
   sending: boolean
@@ -112,17 +117,27 @@ function hasOperationSignal(row: ChatMessageRow): boolean {
   )
 }
 
-function kindFromMethod(method?: string): ChatRootsyOperationStepKind {
+export function chatRootsyOfferKind(
+  method?: string,
+): ChatRootsyOperationStepKind {
   const verb = (method ?? "GET").toUpperCase()
   if (verb === "DELETE") return "delete"
+  if (verb === "POST") return "create"
   if (isChatRootsyWriteMethod(verb)) return "write"
   return "read"
+}
+
+function kindFromMethod(method?: string): ChatRootsyOperationStepKind {
+  return chatRootsyOfferKind(method)
 }
 
 function impactForOffer(offer: ChatRootsyToolOffer): string {
   const kind = kindFromMethod(offer.method)
   if (kind === "delete") {
     return "Esta acción borra el registro y no se puede deshacer."
+  }
+  if (kind === "create") {
+    return "Voy a crear este registro en el negocio."
   }
   if (kind === "write") {
     return "Voy a actualizar estos datos en el negocio."
@@ -314,6 +329,7 @@ function joinNames(names: string[]): string {
 
 function groupKind(atoms: OperationAtom[]): ChatRootsyOperationStepKind {
   if (atoms.some((atom) => atom.kind === "delete")) return "delete"
+  if (atoms.some((atom) => atom.kind === "create")) return "create"
   if (atoms.some((atom) => atom.kind === "write")) return "write"
   if (atoms.some((atom) => atom.kind === "choose")) return "choose"
   return "read"
@@ -331,6 +347,11 @@ function groupTitle(atoms: OperationAtom[], kind: ChatRootsyOperationStepKind): 
   if (kind === "choose") return atoms.find((atom) => atom.kind === "choose")?.title ?? "Elegir un resultado"
   if (kind === "delete") {
     return atoms.length > 1 ? "Eliminar registros" : (atoms[0]?.title ?? "Eliminar")
+  }
+  if (kind === "create") {
+    return atoms.length > 1
+      ? "Crear registros"
+      : (atoms[0]?.title ?? "Crear")
   }
   if (kind === "write") {
     if (atoms.length === 1) return atoms[0]?.title ?? "Actualizar"
@@ -570,7 +591,12 @@ function buildOperationFromCluster(
   else if (liveBusy && live?.mode === "execute") {
     phase = "executing"
   } else if (pendingOffers.length || pendingChoices.length) {
-    phase = "waiting"
+    phase =
+      pendingOffers.length &&
+      chatRootsyOffersAutoExecute(pendingOffers) &&
+      !pendingChoices.length
+        ? "executing"
+        : "waiting"
   } else if (hasClose) {
     phase = "completed"
   } else if (
@@ -656,14 +682,57 @@ export function isChatRootsyOperationShell(row: ChatMessageRow): boolean {
 
 export function chatRootsyApproveLabel(offers: ChatRootsyToolOffer[]): string {
   const visible = offers.filter((offer) => offer.status === "offered")
-  if (!visible.length) return "Aprobar"
-  if (visible.every((offer) => kindFromMethod(offer.method) === "delete")) {
+  if (!visible.length) return "Confirmar"
+  const kinds = new Set(visible.map((offer) => kindFromMethod(offer.method)))
+  if (kinds.size === 1 && kinds.has("delete")) {
     return visible.length > 1 ? "Eliminar registros" : "Eliminar…"
   }
-  if (visible.some((offer) => kindFromMethod(offer.method) !== "read")) {
-    return visible.length > 1 ? "Aprobar actualizaciones" : "Aprobar actualización"
+  if (kinds.size === 1 && kinds.has("create")) {
+    return visible.length > 1 ? "Crear registros" : "Crear…"
   }
-  return visible.length > 1 ? "Aprobar consultas" : "Aprobar consulta"
+  if (visible.some((offer) => kindFromMethod(offer.method) !== "read")) {
+    return visible.length > 1 ? "Actualizar registros" : "Actualizar…"
+  }
+  return visible.length > 1 ? "Consultar" : "Consultar"
+}
+
+export function chatRootsyOffersAutoExecute(
+  offers: ChatRootsyToolOffer[],
+): boolean {
+  const pending = offers.filter((offer) => offer.status !== "used")
+  return (
+    pending.length > 0 &&
+    pending.every((offer) => kindFromMethod(offer.method) === "read")
+  )
+}
+
+export function chatRootsyWriteConfirmCopy(offers: ChatRootsyToolOffer[]): {
+  title: string
+  description: string
+  confirmLabel: string
+} {
+  const visible = offers.filter((offer) => offer.status !== "used")
+  const kinds = new Set(visible.map((offer) => kindFromMethod(offer.method)))
+  if (kinds.size === 1 && kinds.has("create")) {
+    return {
+      title:
+        visible.length > 1
+          ? "¿Crear estos registros?"
+          : "¿Crear este registro?",
+      description:
+        "Revisá el detalle. Si confirmás, queda guardado en el negocio.",
+      confirmLabel: visible.length > 1 ? "Crear registros" : "Crear",
+    }
+  }
+  return {
+    title:
+      visible.length > 1
+        ? "¿Aplicar estos cambios?"
+        : "¿Aplicar este cambio?",
+    description:
+      "Revisá el ahora → después. Si confirmás, el cambio queda en el negocio.",
+    confirmLabel: visible.length > 1 ? "Confirmar cambios" : "Confirmar",
+  }
 }
 
 export function chatRootsyRejectLabel(hasProgress: boolean): string {

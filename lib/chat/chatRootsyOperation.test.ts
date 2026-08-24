@@ -3,9 +3,11 @@ import { describe, it } from "node:test"
 import type { ChatMessageRow } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import {
   chatRootsyApproveLabel,
+  chatRootsyOffersAutoExecute,
   chatRootsyOperationHasUserDetails,
   chatRootsyStepDetail,
   chatRootsyStepUserDetails,
+  chatRootsyWriteConfirmCopy,
   deriveChatRootsyOperations,
   isChatRootsyOperationShell,
   taskPhaseTitle,
@@ -80,11 +82,11 @@ describe("operación en vivo del chat Rootsy", () => {
       }),
     ]
     const waiting = deriveChatRootsyOperations(messages)
-    assert.equal(waiting[0]?.phase, "waiting")
+    assert.equal(waiting[0]?.phase, "executing")
     assert.equal(waiting[0]?.anchorMessageId, "a1")
     assert.equal(waiting[0]?.title, "aumentar aguas 50%")
     assert.equal(waiting[0]?.pendingOffers.length, 1)
-    assert.equal(chatRootsyApproveLabel(waiting[0]!.pendingOffers), "Aprobar consulta")
+    assert.equal(chatRootsyOffersAutoExecute(waiting[0]!.pendingOffers), true)
 
     const after = deriveChatRootsyOperations([
       ...messages.map((item) =>
@@ -144,7 +146,7 @@ describe("operación en vivo del chat Rootsy", () => {
     assert.ok(after[0]?.steps.some((step) => step.status === "done"))
     assert.equal(
       chatRootsyApproveLabel(after[0]!.pendingOffers),
-      "Aprobar actualización",
+      "Actualizar…",
     )
     assert.equal(isChatRootsyOperationShell(messages[1]!), false)
     assert.equal(
@@ -417,6 +419,64 @@ describe("operación en vivo del chat Rootsy", () => {
       "Leí la matriz de inventario",
     ])
     assert.equal(chatRootsyOperationHasUserDetails(ops[0]!), true)
+  })
+
+  it("las lecturas se autoejecutan y las escrituras piden modal", () => {
+    assert.equal(
+      chatRootsyOffersAutoExecute([
+        {
+          tool: "get_articles",
+          label: "Buscar",
+          status: "offered",
+          method: "GET",
+        },
+      ]),
+      true,
+    )
+    assert.equal(
+      chatRootsyOffersAutoExecute([
+        {
+          tool: "patch_articles_articleId",
+          label: "Actualizar",
+          status: "offered",
+          method: "PATCH",
+        },
+      ]),
+      false,
+    )
+    assert.equal(
+      chatRootsyApproveLabel([
+        {
+          tool: "post_articles",
+          label: "Crear",
+          status: "offered",
+          method: "POST",
+        },
+      ]),
+      "Crear…",
+    )
+    assert.equal(
+      chatRootsyApproveLabel([
+        {
+          tool: "delete_articles_articleId",
+          label: "Eliminar",
+          status: "offered",
+          method: "DELETE",
+        },
+      ]),
+      "Eliminar…",
+    )
+    assert.equal(
+      chatRootsyWriteConfirmCopy([
+        {
+          tool: "post_articles",
+          label: "Crear agua",
+          status: "offered",
+          method: "POST",
+        },
+      ]).confirmLabel,
+      "Crear",
+    )
   })
 
   it("marca detenida si el usuario mandó otro pedido sin cerrar", () => {
