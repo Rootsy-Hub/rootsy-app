@@ -25,20 +25,13 @@ export function ChatRootsyDevTraceCard({ trace }: Props) {
   const lastId = trace.steps[trace.steps.length - 1]?.id
 
   return (
-    <details
-      className="mt-1 w-full max-w-[min(40rem,96%)] rounded-xl border border-dashed border-[var(--rootsy-sol-400)] bg-[var(--rootsy-sol-50)] px-3 py-2.5"
-      open
-    >
-      <summary className="cursor-pointer font-canopy text-[10px] font-bold uppercase tracking-wide text-[var(--rootsy-sol-800)]">
-        DEV · historial de la corrida · {trace.steps.length}{" "}
-        {trace.steps.length === 1 ? "paso" : "pasos"}
-      </summary>
-      <p className="mt-1 font-canopy text-[11px] leading-4 text-rootsy-bruma-600">
-        Ida y vuelta de Rootsy, el Planificador y la API. Solo se ve con el flag
-        de traza.
+    <div className="flex min-h-0 flex-1 flex-col">
+      <p className="font-canopy text-[11px] leading-4 text-rootsy-bruma-600">
+        Ida y vuelta de Rootsy, el Planificador y la API. {trace.steps.length}{" "}
+        {trace.steps.length === 1 ? "paso" : "pasos"}.
       </p>
       {trace.error ? (
-        <div className="mt-2 rounded-lg border border-[var(--rootsy-danger)]/40 bg-white px-2.5 py-2">
+        <div className="mt-3 rounded-lg border border-[var(--rootsy-danger)]/40 bg-white px-2.5 py-2">
           <p className="font-canopy text-[10px] font-bold uppercase tracking-wide text-rootsy-danger">
             Error
           </p>
@@ -47,7 +40,7 @@ export function ChatRootsyDevTraceCard({ trace }: Props) {
           </pre>
         </div>
       ) : null}
-      <ol className="mt-2 space-y-2">
+      <ol className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pb-4">
         {trace.steps.map((step, index) => (
           <DevStepBlock
             key={step.id ?? `${step.title}-${index}`}
@@ -57,7 +50,7 @@ export function ChatRootsyDevTraceCard({ trace }: Props) {
           />
         ))}
       </ol>
-    </details>
+    </div>
   )
 }
 
@@ -75,10 +68,7 @@ function DevStepBlock({
 
   return (
     <li>
-      <details
-        className="rounded-lg bg-white/80 px-2.5 py-2"
-        open={defaultOpen}
-      >
+      <details className="rounded-lg bg-rootsy-bruma-50 px-2.5 py-2" open={defaultOpen}>
         <summary className="flex cursor-pointer list-none items-center gap-2 font-canopy text-xs font-semibold text-rootsy-bruma-900 [&::-webkit-details-marker]:hidden">
           <span className="tabular-nums text-[10px] text-rootsy-bruma-400">
             {index + 1}

@@ -637,7 +637,6 @@ export function ChatWorkspaceView() {
                     siteId={siteId}
                     popId={popId}
                     userName={bootstrap?.userFullName ?? ""}
-                    onBack={() => setMobileThreadOpen(false)}
                     onPreviewChange={setRootsyPreview}
                     threadVisible={mobileThreadOpen}
                   />

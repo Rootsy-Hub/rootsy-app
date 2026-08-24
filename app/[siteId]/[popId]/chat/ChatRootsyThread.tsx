@@ -36,6 +36,13 @@ import {
 import { RootsIconButton, RootsPrimaryButton } from "@/components/rootsy-button"
 import { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
 import { RootsSpinner } from "@/components/rootsy-spinner"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { humanizeChatRootsyApiError } from "@/lib/chat/chatRootsyApiError"
 import {
   isChatRootsyDevTraceEnabled,
@@ -49,14 +56,13 @@ import {
 } from "@/lib/chat/chatRootsyOperation"
 import { collectChatRootsyAppliedActions } from "@/lib/chat/chatRootsySessionActions"
 import { cn } from "@/lib/utils"
-import { ArrowLeft, Send } from "lucide-react"
+import { Bug, Send } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 type Props = {
   siteId: string
   popId: string
   userName: string
-  onBack: () => void
   onPreviewChange?: (body: string | null) => void
   threadVisible?: boolean
 }
@@ -111,7 +117,6 @@ export function ChatRootsyThread({
   siteId,
   popId,
   userName,
-  onBack,
   onPreviewChange,
   threadVisible = true,
 }: Props) {
@@ -139,6 +144,10 @@ export function ChatRootsyThread({
   )
   const [haloExiting, setHaloExiting] = useState(false)
   const [arriveId, setArriveId] = useState<string | null>(null)
+  const [devOpen, setDevOpen] = useState(false)
+  const [inspectedOperationId, setInspectedOperationId] = useState<
+    string | null
+  >(null)
 
   useEffect(() => {
     const stored = loadRootsyChatMessages(popId)
@@ -281,14 +290,13 @@ export function ChatRootsyThread({
     }
     return map
   }, [displayMessages, operations])
-  const ownedTraceIds = useMemo(() => {
-    const ids = new Set<string>()
-    for (const operation of operations) {
-      if (!tracesByOperation.get(operation.id)) continue
-      for (const id of operation.memberIds) ids.add(id)
-    }
-    return ids
-  }, [operations, tracesByOperation])
+  const inspectedOperation =
+    operations.find((item) => item.id === inspectedOperationId) ??
+    operations.at(-1) ??
+    null
+  const inspectedTrace = inspectedOperation
+    ? (tracesByOperation.get(inspectedOperation.id) ?? null)
+    : mergeChatRootsyDevTraces(displayMessages.map((row) => row.devTrace))
 
   const bubbleMessages = useMemo(
     () =>
@@ -667,25 +675,25 @@ export function ChatRootsyThread({
           "chat-rootsy-thread-chrome flex items-center gap-3",
         )}
       >
-        <RootsIconButton
-          theme="workspace"
-          emphasis="ghost"
-          size="compact"
-          label="Volver a canales"
-          className="lg:hidden"
-          onClick={onBack}
-        >
-          <ArrowLeft />
-        </RootsIconButton>
         <ChatRootsyAvatar size="header" />
         <div className="min-w-0 flex-1">
           <h2 className={dataWorkspaceEntityCardTitleClass}>Rootsy</h2>
           <p className="mt-0.5 truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
-            {isChatRootsyDevTraceEnabled()
-              ? "DEV · historial de Rootsy y el Planificador"
-              : "Tu compañera del bosque"}
+            Tu compañera del bosque
           </p>
         </div>
+        {isChatRootsyDevTraceEnabled() ? (
+          <RootsIconButton
+            theme="workspace"
+            emphasis="ghost"
+            size="compact"
+            label="Ver traza de desarrollo"
+            className={inspectedTrace?.error ? "text-rootsy-danger" : undefined}
+            onClick={() => setDevOpen(true)}
+          >
+            <Bug />
+          </RootsIconButton>
+        ) : null}
       </header>
 
       <div className="relative z-0 flex min-h-0 flex-1 flex-col overflow-visible">
@@ -707,10 +715,7 @@ export function ChatRootsyThread({
         {displayMessages.map((message) => {
           const operation = operationByAnchor.get(message.id)
           if (hiddenIds.has(message.id) && !operation) {
-            if (ownedTraceIds.has(message.id)) return null
-            return isChatRootsyDevTraceEnabled() && message.devTrace ? (
-              <ChatRootsyDevTraceCard key={message.id} trace={message.devTrace} />
-            ) : null
+            return null
           }
           const bubbleIndex = bubbleIndexById.get(message.id)
           const cluster =
@@ -733,10 +738,9 @@ export function ChatRootsyThread({
                 clusterClass,
                 operation
                   ? "w-full max-w-[min(36rem,96%)] self-start items-start"
-                  : isChatRootsyDevTraceEnabled() && message.devTrace
-                    ? "max-w-[min(36rem,96%)] self-start items-start"
-                    : null,
-                message.mine ? "self-end items-end" : !operation && "self-start items-start",
+                  : message.mine
+                    ? "self-end items-end"
+                    : "self-start items-start",
                 arriveId === message.id && "chat-rootsy-thread-item--arrive",
               )}
             >
@@ -759,6 +763,14 @@ export function ChatRootsyThread({
                   <ChatRootsyOperationCard
                     operation={operation}
                     disabled={busy}
+                    onInspect={
+                      isChatRootsyDevTraceEnabled()
+                        ? () => {
+                            setInspectedOperationId(operation.id)
+                            setDevOpen(true)
+                          }
+                        : undefined
+                    }
                     onApprove={(hostId, keys) => {
                       void confirmTools(hostId, keys)
                     }}
@@ -767,18 +779,7 @@ export function ChatRootsyThread({
                       void pickPlannerChoice(hostId, choiceTool, items)
                     }}
                   />
-                  {isChatRootsyDevTraceEnabled() &&
-                  tracesByOperation.get(operation.id) ? (
-                    <ChatRootsyDevTraceCard
-                      trace={tracesByOperation.get(operation.id)!}
-                    />
-                  ) : null}
                 </div>
-              ) : null}
-              {isChatRootsyDevTraceEnabled() &&
-              message.devTrace &&
-              !ownedTraceIds.has(message.id) ? (
-                <ChatRootsyDevTraceCard trace={message.devTrace} />
               ) : null}
             </div>
           )
@@ -832,6 +833,38 @@ export function ChatRootsyThread({
           Enviar
         </RootsPrimaryButton>
       </form>
+      {isChatRootsyDevTraceEnabled() ? (
+        <Sheet open={devOpen} onOpenChange={setDevOpen}>
+          <SheetContent
+            side="right"
+            className="w-full gap-0 border-l border-rootsy-bruma-200 bg-white p-0 sm:max-w-lg"
+          >
+            <SheetHeader className="border-b border-rootsy-bruma-100">
+              <SheetTitle className="font-canopy text-sm font-bold text-rootsy-bruma-900">
+                {inspectedOperation?.title ?? "Traza de la corrida"}
+              </SheetTitle>
+              <SheetDescription className="font-canopy text-xs text-rootsy-bruma-600">
+                Click en una tarea del hilo para ver esa corrida. El chat no
+                cambia.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pt-3">
+              {inspectedTrace ? (
+                <ChatRootsyDevTraceCard
+                  key={inspectedOperation?.id ?? "session"}
+                  trace={inspectedTrace}
+                />
+              ) : (
+                <p className="font-canopy text-xs text-rootsy-bruma-500">
+                  {inspectedOperation
+                    ? "Esta tarea todavía no tiene traza para inspeccionar."
+                    : "Todavía no hay una corrida para inspeccionar."}
+                </p>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : null}
     </div>
   )
 }

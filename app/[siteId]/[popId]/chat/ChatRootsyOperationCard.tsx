@@ -43,6 +43,7 @@ import {
 type Props = {
   operation: ChatRootsyOperationView
   disabled?: boolean
+  onInspect?: () => void
   onApprove?: (hostId: string, keys: string[]) => void
   onReject?: (hostId: string) => void
   onPick?: (
@@ -325,6 +326,7 @@ function HeaderRow({
 export function ChatRootsyOperationCard({
   operation,
   disabled,
+  onInspect,
   onApprove,
   onReject,
   onPick,
@@ -432,7 +434,10 @@ export function ChatRootsyOperationCard({
               )}
               aria-expanded={expanded}
               aria-controls={`${operation.id}-content`}
-              onClick={() => setExpanded((open) => !open)}
+              onClick={() => {
+                onInspect?.()
+                setExpanded((open) => !open)
+              }}
             >
               <HeaderRow
                 operation={operation}
@@ -440,6 +445,23 @@ export function ChatRootsyOperationCard({
                 canToggle
                 expanded={expanded}
                 titleAs="span"
+              />
+            </button>
+          ) : onInspect ? (
+            <button
+              type="button"
+              className={cn(
+                "flex w-full gap-2.5 px-3.5 text-left",
+                collapsed ? "items-center py-3" : "items-start pb-2 pt-3",
+              )}
+              onClick={onInspect}
+            >
+              <HeaderRow
+                operation={operation}
+                collapsed={collapsed}
+                canToggle={false}
+                expanded={expanded}
+                titleAs="h3"
               />
             </button>
           ) : (
