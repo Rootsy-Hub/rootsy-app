@@ -386,8 +386,8 @@ export function ChatRootsyOperationCard({
         hasUserDetails,
     )
   const hostId = operation.pendingHostId
-  const approveLabel = chatRootsyApproveLabel(selectedOffers)
-  const destructive = chatRootsyOffersAreDestructive(selectedOffers)
+  const approveLabel = chatRootsyApproveLabel(pending)
+  const destructive = chatRootsyOffersAreDestructive(pending)
   const writeCopy = chatRootsyWriteConfirmCopy(selectedOffers)
 
   const requestApprove = () => {
@@ -803,10 +803,15 @@ function ChoiceActions({
                 role="radio"
                 aria-checked={checked}
                 disabled={disabled}
-                className="chat-rootsy-op-choice flex w-full items-baseline justify-between gap-3 px-2.5 py-2 text-left font-canopy text-sm"
+                className="chat-rootsy-op-choice flex w-full items-center gap-2.5 px-2.5 py-2 text-left font-canopy text-sm"
                 onClick={() => setSelectedId(item.id ?? item.name)}
               >
-                <span className="min-w-0">{item.name}</span>
+                <span className="chat-rootsy-op-choice__mark" aria-hidden>
+                  {checked ? (
+                    <Check className="size-3" strokeWidth={2.6} />
+                  ) : null}
+                </span>
+                <span className="min-w-0 flex-1">{item.name}</span>
                 {choiceSecondary(item) ? (
                   <span className="chat-rootsy-op-status shrink-0 text-xs">
                     {choiceSecondary(item)}

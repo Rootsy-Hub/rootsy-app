@@ -38,8 +38,13 @@ import { HrRolesOperativeCard } from "@/app/[siteId]/[popId]/hr/HrRolesOperative
 import { HrRoleSnapshotCard } from "@/app/[siteId]/[popId]/hr/HrRoleSnapshotCard"
 import {
   dataWorkspaceBlocksEmptyStateClass,
-  dataWorkspaceBlocksPageContentClass,
   dataWorkspaceBlocksPageMainClass,
+  dataWorkspaceBlocksSplitBannerClass,
+  dataWorkspaceBlocksSplitFrameClass,
+  dataWorkspaceBlocksSplitGridClass,
+  dataWorkspaceBlocksSplitPaneBodyGridClass,
+  dataWorkspaceBlocksSplitPaneClass,
+  dataWorkspaceBlocksSplitPaneRuleClass,
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
@@ -54,6 +59,7 @@ import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { cn } from "@/lib/utils"
 import { KeyRound, Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -886,23 +892,24 @@ export function HrWorkspaceView() {
           </>
         }
         mainMaxWidthClass="max-w-none"
-        mainClassName={dataWorkspaceBlocksPageMainClass}
+        mainClassName={cn(
+          dataWorkspaceBlocksPageMainClass,
+          "flex min-h-0 flex-1 flex-col overflow-hidden",
+        )}
       >
-        <div className={dataWorkspaceBlocksPageContentClass}>
-          {bootstrapError ? (
-            <RootsBanner
-              intent="danger"
-              layout="message"
-              message={`Cabecera: ${bootstrapError}`}
-            />
-          ) : null}
-
-          {pageLoading ? (
-            <HrPageSkeleton />
-          ) : error ? (
-            <RootsBanner intent="danger" layout="message" message={error} />
-          ) : (
-            <>
+        <div className={dataWorkspaceBlocksSplitFrameClass}>
+          {bootstrapError || error || banner ? (
+            <div className={dataWorkspaceBlocksSplitBannerClass}>
+              {bootstrapError ? (
+                <RootsBanner
+                  intent="danger"
+                  layout="message"
+                  message={`Cabecera: ${bootstrapError}`}
+                />
+              ) : null}
+              {error ? (
+                <RootsBanner intent="danger" layout="message" message={error} />
+              ) : null}
               {banner ? (
                 <RootsBanner
                   intent={
@@ -917,37 +924,41 @@ export function HrWorkspaceView() {
                   onDismiss={() => setBanner(null)}
                 />
               ) : null}
+            </div>
+          ) : null}
 
-              <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-                <div className="min-w-0 lg:col-span-9">
-                  <DataWorkspaceBlocksSection>
-                    <RootsFormSegmentField
-                      label="Ver personas"
-                      aria-label="Filtrar personas"
-                      layout="inline"
-                      className="[&>span:first-child]:sr-only"
-                      groupClassName="border-0"
-                      value={peopleFilter}
-                      onValueChange={(value) =>
-                        setPeopleFilter(value as PeopleFilter)
-                      }
-                      options={peopleFilterOptions}
-                    />
-
-                    {visiblePeople.length === 0 ? (
-                      <p className={dataWorkspaceBlocksEmptyStateClass}>
-                        {peopleFilter === "local"
-                          ? "Nadie está en el local ahora."
-                          : peopleFilter === "acceso"
-                            ? "Nadie de estas personas usa Rootsy todavía."
-                            : peopleFilter === "invitadas"
-                              ? "Nadie tiene una invitación pendiente."
-                              : peopleFilter === "baja"
-                                ? "Nadie figura como que ya no trabaja acá."
-                                : "Todavía no hay personas cargadas."}
-                      </p>
-                    ) : (
-                      <div className={dataWorkspaceEntityCardsGridClass}>
+          {pageLoading ? (
+            <HrPageSkeleton />
+          ) : (
+            <div className={dataWorkspaceBlocksSplitGridClass}>
+              <section className={cn(dataWorkspaceBlocksSplitPaneClass, "lg:col-span-9")}>
+                <DataWorkspaceBlocksSection>
+                  <RootsFormSegmentField
+                    label="Ver personas"
+                    aria-label="Filtrar personas"
+                    layout="inline"
+                    className="[&>span:first-child]:sr-only"
+                    groupClassName="border-0"
+                    value={peopleFilter}
+                    onValueChange={(value) =>
+                      setPeopleFilter(value as PeopleFilter)
+                    }
+                    options={peopleFilterOptions}
+                  />
+                  {visiblePeople.length === 0 ? (
+                    <p className={dataWorkspaceBlocksEmptyStateClass}>
+                      {peopleFilter === "local"
+                        ? "Nadie está en el local ahora."
+                        : peopleFilter === "acceso"
+                          ? "Nadie de estas personas usa Rootsy todavía."
+                          : peopleFilter === "invitadas"
+                            ? "Nadie tiene una invitación pendiente."
+                            : peopleFilter === "baja"
+                              ? "Nadie figura como que ya no trabaja acá."
+                              : "Todavía no hay personas cargadas."}
+                    </p>
+                  ) : (
+                    <div className={dataWorkspaceEntityCardsGridClass}>
                         {visiblePeople.map((person) => {
                           const member = members.find(
                             (item) => item.userId === person.userId,
@@ -1051,30 +1062,37 @@ export function HrWorkspaceView() {
                             />
                           )
                         })}
-                      </div>
-                    )}
-                  </DataWorkspaceBlocksSection>
-                </div>
+                    </div>
+                  )}
+                </DataWorkspaceBlocksSection>
+              </section>
 
-                <aside className="min-w-0 space-y-4 lg:col-span-3">
-                  <DataWorkspaceBlocksSection
-                    title="Roles en Rootsy"
-                    description="Qué puede hacer en el sistema."
-                    action={
-                      canManageInvites ? (
-                        <RootsDefaultButton
-                          type="button"
-                          size="compact"
-                          withIcon
-                          disabled={permModalLoading || permModalSaving}
-                          onClick={handleOpenCreateRole}
-                        >
-                          <Plus className="size-3.5" aria-hidden />
-                          Nuevo rol
-                        </RootsDefaultButton>
-                      ) : null
-                    }
-                  >
+              <aside
+                className={cn(
+                  dataWorkspaceBlocksSplitPaneClass,
+                  dataWorkspaceBlocksSplitPaneRuleClass,
+                  "lg:col-span-3",
+                )}
+              >
+                <DataWorkspaceBlocksSection
+                  title="Roles en Rootsy"
+                  description="Qué puede hacer en el sistema."
+                  action={
+                    canManageInvites ? (
+                      <RootsDefaultButton
+                        type="button"
+                        size="compact"
+                        withIcon
+                        disabled={permModalLoading || permModalSaving}
+                        onClick={handleOpenCreateRole}
+                      >
+                        <Plus className="size-3.5" aria-hidden />
+                        Nuevo rol
+                      </RootsDefaultButton>
+                    ) : null
+                  }
+                >
+                  <div className={dataWorkspaceBlocksSplitPaneBodyGridClass}>
                     <HrRolesOperativeCard
                       roles={operativeRoles}
                       canManage={canManageInvites}
@@ -1091,30 +1109,28 @@ export function HrWorkspaceView() {
                         tiene en el local.
                       </p>
                     ) : (
-                      <div className="space-y-3">
-                        {roles.map((role) => (
-                          <HrRoleSnapshotCard
-                            key={role.id}
-                            role={role}
-                            currentUserId={user?.id}
-                            people={(membersByRoleId.get(role.id) ?? []).map(
-                              (member) => ({
-                                userId: member.userId,
-                                firstName: member.firstName,
-                                lastName: member.lastName,
-                                imageUrl: member.imageUrl,
-                                jobTitle:
-                                  jobTitleByUserId.get(member.userId) ?? null,
-                              }),
-                            )}
-                          />
-                        ))}
-                      </div>
+                      roles.map((role) => (
+                        <HrRoleSnapshotCard
+                          key={role.id}
+                          role={role}
+                          currentUserId={user?.id}
+                          people={(membersByRoleId.get(role.id) ?? []).map(
+                            (member) => ({
+                              userId: member.userId,
+                              firstName: member.firstName,
+                              lastName: member.lastName,
+                              imageUrl: member.imageUrl,
+                              jobTitle:
+                                jobTitleByUserId.get(member.userId) ?? null,
+                            }),
+                          )}
+                        />
+                      ))
                     )}
-                  </DataWorkspaceBlocksSection>
-                </aside>
-              </div>
-            </>
+                  </div>
+                </DataWorkspaceBlocksSection>
+              </aside>
+            </div>
           )}
         </div>
       </DataWorkspaceModuleLayout>

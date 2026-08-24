@@ -1,8 +1,11 @@
 "use client"
 
 import {
-  dataWorkspaceBlocksPageContentClass,
   dataWorkspaceBlocksSkeletonBreathTone,
+  dataWorkspaceBlocksSplitGridClass,
+  dataWorkspaceBlocksSplitPaneBodyGridClass,
+  dataWorkspaceBlocksSplitPaneClass,
+  dataWorkspaceBlocksSplitPaneRuleClass,
   dataWorkspaceEntityCardHeaderClass,
   dataWorkspaceEntityCardLosetaGridClass,
   dataWorkspaceEntityCardLosetaSurfaceClass,
@@ -60,42 +63,54 @@ function PersonCard({ delay }: { delay: number }) {
 export function HrPageSkeleton() {
   return (
     <div
-      className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12"
+      className={dataWorkspaceBlocksSplitGridClass}
       role="status"
       aria-busy="true"
       aria-live="polite"
     >
-      <div className="space-y-4 lg:col-span-9">
-        <Bone className={cn("h-9 w-full max-w-md rounded-lg", sk.box)} />
-        <div className={dataWorkspaceEntityCardsGridClass}>
-          <PersonCard delay={1} />
-          <PersonCard delay={2} />
-          <PersonCard delay={3} />
+      <div className={cn(dataWorkspaceBlocksSplitPaneClass, "lg:col-span-9")}>
+        <div className="space-y-4">
+          <Bone className={cn("h-9 w-full max-w-md rounded-lg", sk.box)} />
+          <div className={dataWorkspaceEntityCardsGridClass}>
+            <PersonCard delay={1} />
+            <PersonCard delay={2} />
+            <PersonCard delay={3} />
+          </div>
         </div>
       </div>
-      <div className="space-y-4 lg:col-span-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-2">
-            <Bone className={cn("h-3.5 w-28", sk.bar)} />
-            <Bone className={cn("h-2.5 w-36 max-w-full", sk.pill)} />
+      <div
+        className={cn(
+          dataWorkspaceBlocksSplitPaneClass,
+          dataWorkspaceBlocksSplitPaneRuleClass,
+          "lg:col-span-3",
+        )}
+      >
+        <div className="space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-2">
+              <Bone className={cn("h-3.5 w-28", sk.bar)} />
+              <Bone className={cn("h-2.5 w-36 max-w-full", sk.pill)} />
+            </div>
+            <Bone className={cn("h-8 w-24 rounded-lg", sk.box)} />
           </div>
-          <Bone className={cn("h-8 w-24 rounded-lg", sk.box)} />
+          <div className={dataWorkspaceBlocksSplitPaneBodyGridClass}>
+            <article className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "h-auto")}>
+              <div className="space-y-3 px-4 py-4">
+                <Bone className={cn("h-4 w-32", sk.bar)} delay={1} />
+                <Bone className={cn("h-3 w-40", sk.pill)} delay={1} />
+                <Bone className={cn("h-4 w-24", sk.bar)} delay={2} />
+                <Bone className={cn("h-3 w-36", sk.pill)} delay={2} />
+              </div>
+            </article>
+            <article className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "h-auto")}>
+              <div className="space-y-3 px-4 py-4">
+                <Bone className={cn("h-3.5 w-20", sk.bar)} />
+                <Bone className={cn("h-8 w-full", sk.box)} delay={1} />
+                <Bone className={cn("h-8 w-full", sk.box)} delay={2} />
+              </div>
+            </article>
+          </div>
         </div>
-        <article className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "h-auto")}>
-          <div className="space-y-3 px-4 py-4">
-            <Bone className={cn("h-4 w-32", sk.bar)} delay={1} />
-            <Bone className={cn("h-3 w-40", sk.pill)} delay={1} />
-            <Bone className={cn("h-4 w-24", sk.bar)} delay={2} />
-            <Bone className={cn("h-3 w-36", sk.pill)} delay={2} />
-          </div>
-        </article>
-        <article className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "h-auto")}>
-          <div className="space-y-3 px-4 py-4">
-            <Bone className={cn("h-3.5 w-20", sk.bar)} />
-            <Bone className={cn("h-8 w-full", sk.box)} delay={1} />
-            <Bone className={cn("h-8 w-full", sk.box)} delay={2} />
-          </div>
-        </article>
       </div>
       <span className="sr-only">Preparando el equipo del local</span>
     </div>
@@ -104,7 +119,7 @@ export function HrPageSkeleton() {
 
 export function HrPageSkeletonScreen() {
   return (
-    <div className={dataWorkspaceBlocksPageContentClass}>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <HrPageSkeleton />
     </div>
   )

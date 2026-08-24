@@ -109,6 +109,40 @@ export const dataWorkspaceBlocksPageContentClass = cn(
   dataWorkspaceBlocksContentInnerClass,
 )
 
+/** Split 9/3 — cada pane scrollea entero (cabecera + grilla). */
+export const dataWorkspaceBlocksSplitFrameClass =
+  "flex min-h-0 flex-1 flex-col overflow-hidden"
+
+export const dataWorkspaceBlocksSplitBannerClass =
+  "shrink-0 space-y-3 px-4 pt-6 sm:px-6 lg:px-8"
+
+export const dataWorkspaceBlocksSplitGridClass = cn(
+  "game-scroll grid min-h-0 flex-1 grid-cols-1",
+  "overflow-y-auto overscroll-contain",
+  "lg:grid-cols-12 lg:overflow-hidden",
+)
+
+export const dataWorkspaceBlocksSplitPaneClass = cn(
+  "game-scroll flex min-h-0 min-w-0 flex-col",
+  "px-4 py-6 sm:px-6 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:px-8",
+)
+
+/**
+ * Divisoria suave entre panes: trazo que se desvanece, no una línea de borde a borde.
+ * En mobile es horizontal; en desktop, vertical.
+ */
+export const dataWorkspaceBlocksSplitPaneRuleClass = cn(
+  "relative before:pointer-events-none before:absolute before:content-['']",
+  "before:inset-x-8 before:top-0 before:h-px",
+  "before:bg-[linear-gradient(to_right,transparent,var(--rootsy-bruma-200)_18%,var(--rootsy-bruma-200)_82%,transparent)]",
+  "lg:before:inset-x-auto lg:before:top-[12%] lg:before:bottom-[12%] lg:before:left-0 lg:before:h-auto lg:before:w-px",
+  "lg:before:bg-[linear-gradient(to_bottom,transparent,var(--rootsy-bruma-200)_16%,var(--rootsy-bruma-200)_84%,transparent)]",
+)
+
+/** Grilla interna del pane. */
+export const dataWorkspaceBlocksSplitPaneBodyGridClass =
+  "grid min-w-0 grid-cols-1 gap-3"
+
 /** Skeleton bloques — bruma, sin tokens Nature tablas. */
 export const dataWorkspaceBlocksSkeletonTone = {
   bar: "animate-pulse rounded-sm bg-[var(--rootsy-bruma-200)]",
