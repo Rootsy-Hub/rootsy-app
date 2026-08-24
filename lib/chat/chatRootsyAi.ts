@@ -31,9 +31,8 @@ import {
   requestOpenAiStoredPrompt,
 } from "@/lib/chat/openaiStoredPrompt"
 import {
-  formatChatRootsyDevHttpWire,
-  formatChatRootsyDevModelInput,
-  formatChatRootsyDevWireJson,
+  formatChatRootsyDevModelOutput,
+  formatChatRootsyDevSentMessages,
 } from "@/lib/chat/chatRootsyDevTrace"
 
 const CHAT_AI_PROVIDER_ENV = "ROOTSY_CHAT_AI_PROVIDER"
@@ -68,7 +67,8 @@ export const CHAT_ROOTSY_FIRST_TURN_PROTOCOL = [
   "Si hay data_request, mandá también task_title: título corto de la tarea para la persona (verbo + sujeto, 3 a 7 palabras). No es el objective.",
   "No digas que no podés aplicar un cambio. Mandá data_request y en el reply anunciá que lo vas a hacer ahora.",
   "objective: qué hay que consultar o cambiar, en lenguaje de negocio. Sin tools, URLs, endpoints, q, filtros ni paginación. Es para quien arma las llamadas, no se muestra como título.",
-  "En el objective sé explícito: uno o varios (el agua mineral vs todas las aguas), consultar o cambiar, y el valor si lo dijeron (10%, $3750).",
+  "El objective ES el pedido. Verbo + qué. Uno o varios, consultar o cambiar, y el valor solo si lo dijeron. Sin motivos, sin “todavía no”, sin recap del mensaje.",
+  "Si falta el valor de un cambio, el objective es la consulta de ahora, no una nota de que no hay que escribir.",
   "El reply es tu voz. Prohibido URLs, tokens, herramientas, endpoints, Planificador, la palabra tarea o la palabra JSON en el reply.",
   "Si hay data_request, no pidas permiso. Anunciá lo que vas a consultar o preparar, en presente o futuro inmediato (voy a mirar, ahora busco). Nada de condicional (miraría). No inventes cifras ni digas que ya escribiste. El cambio se confirma después.",
   "Si data_request va null, el globo es solo conversación: no anuncies una búsqueda.",
@@ -253,10 +253,7 @@ async function requestGeminiTextWithFallbackDetailed(input: {
   const primaryTimeoutMs = input.primaryTimeoutMs ?? GEMINI_PRIMARY_TIMEOUT_MS
   const fallbackTimeoutMs = input.fallbackTimeoutMs ?? GEMINI_FALLBACK_TIMEOUT_MS
   const errors: string[] = []
-  let lastSent = formatChatRootsyDevHttpWire({
-    url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(input.models[0] ?? "unknown")}:generateContent`,
-    body: input.body,
-  })
+  let lastSent = formatChatRootsyDevSentMessages(input.body)
   let lastReceived = ""
 
   for (const [index, model] of input.models.entries()) {
@@ -273,7 +270,7 @@ async function requestGeminiTextWithFallbackDetailed(input: {
     }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(input.apiKey)}`
-    lastSent = formatChatRootsyDevHttpWire({ url, body: input.body })
+    lastSent = formatChatRootsyDevSentMessages(input.body)
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
     try {
@@ -284,7 +281,7 @@ async function requestGeminiTextWithFallbackDetailed(input: {
         signal: controller.signal,
       })
       const bodyText = await response.text()
-      lastReceived = formatChatRootsyDevWireJson(bodyText)
+      lastReceived = formatChatRootsyDevModelOutput(bodyText)
       if (!response.ok) {
         const message = readHttpErrorMessage(bodyText) || `gemini ${response.status}`
         errors.push(`${model}: ${message}`)
@@ -354,10 +351,7 @@ async function requestChatRootsyGeminiReply(
   }
   const body = JSON.stringify(requestBody)
   const models = geminiModelCandidates()
-  const sent = formatChatRootsyDevHttpWire({
-    url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(models[0] ?? "unknown")}:generateContent`,
-    body: requestBody,
-  })
+  const sent = formatChatRootsyDevSentMessages(requestBody)
   const apiKey = process.env.GEMINI_API_KEY?.trim()
   if (!apiKey) return { text: null, error: "Falta GEMINI_API_KEY", sent, received: "" }
 
@@ -397,10 +391,7 @@ async function requestChatRootsyOpenAiReply(
       })),
     ],
   }
-  const sent = formatChatRootsyDevHttpWire({
-    url: OPENAI_CHAT_COMPLETIONS_URL,
-    body: requestBody,
-  })
+  const sent = formatChatRootsyDevSentMessages(requestBody)
   const apiKey = process.env.OPENAI_API_KEY?.trim()
   if (!apiKey) {
     return { ok: false, reason: "missing_key", fallback: false, sent, received: "" }
@@ -422,7 +413,7 @@ async function requestChatRootsyOpenAiReply(
     })
 
     const bodyText = await response.text()
-    const received = formatChatRootsyDevWireJson(bodyText)
+    const received = formatChatRootsyDevModelOutput(bodyText)
     if (!response.ok) {
       return {
         ...classifyOpenAiHttpFailure(response.status, bodyText),
@@ -572,6 +563,69 @@ export async function requestChatRootsyReplyDetailed(
   }
 }
 
+export type ChatRootsyNarrationFetch = {
+  text: string | null
+  sent: string
+  received: string
+  source: "prompt-guardado" | "fallback-local" | "sin-respuesta"
+  error?: string
+}
+
+/** Cierre y aclaración: mismo prompt guardado de Rootsy. Sin reenviar la persona. */
+export async function requestChatRootsyNarration(
+  history: ChatRootsyHistoryTurn[],
+  options?: {
+    fetchImpl?: typeof fetch
+    now?: () => number
+    systemForFallback?: string
+  },
+): Promise<ChatRootsyNarrationFetch> {
+  const storedPromptId = readOpenAiPromptId(OPENAI_PROMPT_ROOTSY_ENV)
+  const stored = storedPromptId
+    ? await requestOpenAiStoredPrompt({
+        promptId: storedPromptId,
+        messages: history.map((turn) => ({
+          role: turn.role === "assistant" ? "assistant" : "user",
+          content: turn.body,
+        })),
+        timeoutMs: OPENAI_PRIMARY_TIMEOUT_MS,
+      })
+    : null
+  if (storedPromptId) {
+    return {
+      text: stored?.text ?? null,
+      sent: stored?.sent ?? "",
+      received: stored?.received ?? "",
+      source: stored?.text ? "prompt-guardado" : "sin-respuesta",
+      error: stored?.error,
+    }
+  }
+
+  const system = options?.systemForFallback?.trim()
+  if (!system) {
+    return {
+      text: null,
+      sent: "",
+      received: "",
+      source: "sin-respuesta",
+      error: "Falta OPENAI_PROMPT_ROOTSY",
+    }
+  }
+
+  const fallback = await requestChatRootsyReplyDetailed(system, history, {
+    fetchImpl: options?.fetchImpl,
+    now: options?.now,
+    sanitizeReply: false,
+  })
+  return {
+    text: fallback.text,
+    sent: fallback.sent ?? "",
+    received: fallback.received ?? "",
+    source: fallback.text ? "fallback-local" : "sin-respuesta",
+    error: fallback.error,
+  }
+}
+
 export type ChatRootsyFirstTurnFetch = {
   turn: ChatRootsyFirstTurn | null
   raw: string | null
@@ -586,7 +640,6 @@ function chatRootsyFirstTurnWire(input: {
   storedRaw: string | null
   fallback: ChatRootsyReplyFetch | null
   source: ChatRootsyFirstTurnFetch["source"]
-  system: string
   modelHistory: ChatRootsyHistoryTurn[]
 }): { sent: string; received: string } {
   if (input.storedRaw && input.stored) {
@@ -602,11 +655,12 @@ function chatRootsyFirstTurnWire(input: {
     return { sent: input.stored.sent, received: input.stored.received }
   }
   return {
-    sent: formatChatRootsyDevModelInput({
-      fuente: input.source,
-      system: input.system,
-      messages: input.modelHistory,
-    }),
+    sent: formatChatRootsyDevSentMessages(
+      input.modelHistory.map((turn) => ({
+        role: turn.role,
+        content: turn.body,
+      })),
+    ),
     received: "",
   }
 }
@@ -667,7 +721,6 @@ export async function requestChatRootsyFirstTurn(
     storedRaw,
     fallback,
     source,
-    system,
     modelHistory,
   })
   if (!raw) {

@@ -28,12 +28,12 @@ LÍMITES DEL DATO. Son hechos del recurso, no un pedido de impossible.
 - statistics/inventory es stock físico × costo. No es el saldo de Mercaderías (1.1.3.01).
 
 FICHAS DE DOMINIO
-Armá el plan completo. Cada paso tiene su confirm: no hereda el del siguiente. GET de consulta → confirm (corre, sin elegir). GET de un cambio singular con varios parecidos → confirm_one (eligen uno). GET de un conjunto de cambio → confirm_many (eligen uno, varios o todos). El write siguiente va con confirm (modal). Mismo endpoint × N filas → una oferta con $paso[oferta].items[].campo. Endpoints distintos = ofertas distintas. No escribas contra la invariante.
+Un viaje = el paquete de ofertas de ahora, no el plan entero. GET de consulta → confirm (corre, sin elegir). GET de un cambio singular con varios parecidos → confirm_one (eligen uno). GET de un conjunto de cambio → confirm_many (eligen uno, varios o todos). Write ya atado → confirm (modal). En el siguiente viaje usá ids y valores de resultados. Endpoints distintos = ofertas distintas. No escribas contra la invariante.
 Las tablas de Supabase solo confirman que el dato existe. La invariante de la ficha manda.
 
 ## Artículos
 Qué: Ficha del catálogo. No es venta, margen ni stock valorizado del período.
-Invariante: Se identifica por id. GET de cambio singular con q ambiguo → confirm_one. GET de conjunto → confirm_many. Consulta o write ya atado → confirm. El id se ata con $1[0].items[].id. isActive=false no se vende; igual se puede PATCH.
+Invariante: Se identifica por id. GET de cambio singular con q ambiguo → confirm_one. GET de conjunto → confirm_many. Consulta o write ya atado → confirm. En el siguiente viaje usá el id de resultados. isActive=false no se vende; igual se puede PATCH.
 Listar: GET /articles?q=nombre&pageSize=20
 Fila: id, name, salePrice, iva, isActive, stockOnHand, categoryId
 Escribir: PATCH /articles/:articleId body parcial {salePrice}|{name}|{iva}|{isActive}. POST crea ficha completa. DELETE pide confirmación en el chat; la app manda confirmationTyped. No lo pongas en el body.

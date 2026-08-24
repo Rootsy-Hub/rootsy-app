@@ -1,7 +1,8 @@
 import "server-only"
 
 import {
-  formatChatRootsyDevHttpWire,
+  formatChatRootsyDevModelOutput,
+  formatChatRootsyDevSentMessages,
   formatChatRootsyDevWireJson,
 } from "@/lib/chat/chatRootsyDevTrace"
 import {
@@ -66,10 +67,7 @@ export async function requestOpenAiStoredPrompt(input: {
     promptId: input.promptId,
     messages: input.messages,
   })
-  const sent = formatChatRootsyDevHttpWire({
-    url: OPENAI_RESPONSES_URL,
-    body: requestBody,
-  })
+  const sent = formatChatRootsyDevSentMessages(requestBody.input)
   const apiKey = process.env.OPENAI_API_KEY?.trim()
   if (!apiKey) return emptyStoredResult("Falta OPENAI_API_KEY", sent)
   if (input.messages.length === 0) {
@@ -89,7 +87,6 @@ export async function requestOpenAiStoredPrompt(input: {
       signal: controller.signal,
     })
     const receivedText = await response.text()
-    const received = formatChatRootsyDevWireJson(receivedText)
     const data = (() => {
       try {
         return JSON.parse(receivedText) as ResponsesOutput
@@ -97,6 +94,10 @@ export async function requestOpenAiStoredPrompt(input: {
         return null
       }
     })()
+    const text = data ? readResponsesText(data) : null
+    const received = text
+      ? formatChatRootsyDevWireJson(text)
+      : formatChatRootsyDevModelOutput(receivedText)
     if (!response.ok) {
       const message =
         data?.error?.message?.trim() || `openai-prompt ${response.status}`
@@ -112,7 +113,6 @@ export async function requestOpenAiStoredPrompt(input: {
         received,
       }
     }
-    const text = data ? readResponsesText(data) : null
     if (!text) {
       return {
         text: null,

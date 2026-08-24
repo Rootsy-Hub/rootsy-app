@@ -4,7 +4,8 @@ import {
   chatRootsyDevActorLabel,
   chatRootsyDevCall,
   fillChatRootsyDevStations,
-  formatChatRootsyDevHttpWire,
+  formatChatRootsyDevModelOutput,
+  formatChatRootsyDevSentMessages,
   formatChatRootsyDevWireJson,
   mergeChatRootsyDevTraces,
   redactChatRootsyDevUrl,
@@ -80,9 +81,51 @@ describe("historial DEV del chat Rootsy", () => {
     assert.equal(filled.calls[1]?.actor, "planner")
     assert.equal(filled.calls[1]?.sent, "")
     assert.equal(filled.calls[1]?.received, "")
+    assert.equal(filled.calls[1]?.phase, "Viaje 1")
     assert.equal(filled.calls[2]?.phase, "Cierre")
     assert.equal(filled.calls[2]?.sent, "")
     assert.equal(filled.calls[2]?.received, "")
+  })
+
+  it("deja un bloque enviado/recibido por cada viaje del Planificador", () => {
+    const filled = fillChatRootsyDevStations({
+      calls: [
+        chatRootsyDevCall({
+          id: "call:rootsy:apertura",
+          actor: "rootsy",
+          phase: "Apertura",
+          sent: "a",
+          received: "b",
+        }),
+        chatRootsyDevCall({
+          id: "call:planner:1",
+          actor: "planner",
+          phase: "Viaje 1",
+          sent: '{"paso":1}',
+          received: '{"status":"ok"}',
+        }),
+        chatRootsyDevCall({
+          id: "call:planner:2",
+          actor: "planner",
+          phase: "Viaje 2",
+          sent: '{"paso":2,"resultados":[]}',
+          received: '{"status":"done"}',
+        }),
+        chatRootsyDevCall({
+          id: "call:rootsy:cierre",
+          actor: "rootsy",
+          phase: "Cierre",
+          sent: "c",
+          received: "listo",
+        }),
+      ],
+    })
+    assert.equal(filled.calls.length, 4)
+    assert.equal(filled.calls[1]?.phase, "Viaje 1")
+    assert.match(filled.calls[1]?.sent ?? "", /paso":1/)
+    assert.equal(filled.calls[2]?.phase, "Viaje 2")
+    assert.match(filled.calls[2]?.sent ?? "", /paso":2/)
+    assert.equal(filled.calls[3]?.phase, "Cierre")
   })
 
   it("pone aclaración en el tercer paso si no hubo cierre", () => {
@@ -133,19 +176,64 @@ describe("historial DEV del chat Rootsy", () => {
     assert.equal(formatChatRootsyDevWireJson("no es json"), "no es json")
   })
 
-  it("arma el enviado HTTP con URL y body, sin API keys", () => {
-    const wire = formatChatRootsyDevHttpWire({
-      url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-x:generateContent?key=secret-token",
-      body: { prompt: { id: "pmpt_rootsy" }, input: [{ role: "user", content: "hola" }] },
+  it("en enviado deja solo los mensajes, sin URL ni prompt id", () => {
+    const sent = formatChatRootsyDevSentMessages({
+      url: "https://api.openai.com/v1/responses",
+      body: {
+        prompt: { id: "pmpt_rootsy" },
+        input: [
+          {
+            role: "user",
+            content:
+              '{"today":"2026-08-24","data_request":{"objective":"consultar aceites"}}',
+          },
+        ],
+      },
     })
-    assert.match(wire, /pmpt_rootsy/)
-    assert.match(wire, /v1beta\/models\/gemini-x:generateContent/)
-    assert.equal(wire.includes("secret-token"), false)
+    assert.match(sent, /consultar aceites/)
+    assert.equal(sent.includes("pmpt_rootsy"), false)
+    assert.equal(sent.includes("api.openai.com"), false)
     assert.equal(
       redactChatRootsyDevUrl(
         "https://api.example/v1?key=abc&other=1",
       ).includes("abc"),
       false,
+    )
+  })
+
+  it("en recibido deja solo el texto del modelo, no el envelope de Responses", () => {
+    const envelope = {
+      id: "resp_1",
+      object: "response",
+      instructions: [{ role: "developer", content: [{ text: "AXIOMA" }] }],
+      output: [
+        { type: "reasoning", content: [] },
+        {
+          type: "message",
+          content: [
+            {
+              type: "output_text",
+              text: '{"reply":"Voy a mirar los aceites","data_request":{"objective":"consultar aceites"}}',
+            },
+          ],
+        },
+      ],
+      usage: { total_tokens: 3744 },
+    }
+    const received = formatChatRootsyDevModelOutput(JSON.stringify(envelope))
+    assert.match(received, /Voy a mirar los aceites/)
+    assert.equal(received.includes("AXIOMA"), false)
+    assert.equal(received.includes("resp_1"), false)
+    assert.equal(received.includes("total_tokens"), false)
+    assert.equal(
+      formatChatRootsyDevModelOutput(
+        JSON.stringify({
+          id: "resp_2",
+          object: "response",
+          instructions: [{ content: [{ text: "AXIOMA" }] }],
+        }),
+      ),
+      "",
     )
   })
 })

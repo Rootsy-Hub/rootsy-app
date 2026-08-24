@@ -59,6 +59,152 @@ export function formatChatRootsyDevWireJson(value: unknown): string {
   return chatRootsyDevJson(value)
 }
 
+function parseDevJson(value: unknown): unknown {
+  if (typeof value !== "string") return value
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+  try {
+    return JSON.parse(trimmed) as unknown
+  } catch {
+    return value
+  }
+}
+
+function prettyDevContent(content: string): unknown {
+  const trimmed = content.trim()
+  if (!trimmed) return ""
+  try {
+    return JSON.parse(trimmed) as unknown
+  } catch {
+    return content
+  }
+}
+
+function formatDevMessageList(
+  rows: Array<{ role?: string; content?: unknown; body?: string; parts?: Array<{ text?: string }> }>,
+): string {
+  const messages = rows
+    .map((row) => {
+      const role = row.role?.trim() || "user"
+      if (role === "system" || role === "developer") return null
+      const fromParts = (row.parts ?? [])
+        .map((part) => part.text?.trim() ?? "")
+        .filter(Boolean)
+        .join("\n")
+      const content =
+        typeof row.content === "string"
+          ? row.content
+          : typeof row.body === "string"
+            ? row.body
+            : fromParts
+      if (!content.trim()) return null
+      return { role, content: prettyDevContent(content) }
+    })
+    .filter((row): row is { role: string; content: unknown } => Boolean(row))
+  if (messages.length === 1 && messages[0] && typeof messages[0].content !== "string") {
+    return chatRootsyDevJson(messages[0].content)
+  }
+  if (messages.length === 1 && messages[0] && typeof messages[0].content === "string") {
+    return messages[0].content
+  }
+  return chatRootsyDevJson(messages)
+}
+
+/** Mensajes de ida al modelo. Sin URL, prompt id, model ni system. */
+export function formatChatRootsyDevSentMessages(value: unknown): string {
+  const data = parseDevJson(value)
+  if (Array.isArray(data)) return formatDevMessageList(data)
+  if (!data || typeof data !== "object") {
+    return typeof data === "string" ? data : ""
+  }
+  const row = data as {
+    input?: unknown
+    messages?: unknown
+    contents?: unknown
+    body?: { input?: unknown; messages?: unknown; contents?: unknown }
+  }
+  const inner =
+    row.body && typeof row.body === "object" && !Array.isArray(row.body)
+      ? row.body
+      : row
+  const payload = inner as typeof row
+  if (Array.isArray(payload.input)) return formatDevMessageList(payload.input)
+  if (Array.isArray(payload.messages)) return formatDevMessageList(payload.messages)
+  if (Array.isArray(payload.contents)) return formatDevMessageList(payload.contents)
+  return ""
+}
+
+function readDevModelOutputFromUnknown(data: unknown): string {
+  if (data == null) return ""
+  if (typeof data === "string") return data.trim()
+  if (typeof data !== "object") return String(data)
+  const row = data as {
+    object?: string
+    output_text?: unknown
+    output?: Array<{
+      type?: string
+      content?: Array<{ type?: string; text?: string }> | string
+    }>
+    choices?: Array<{ message?: { content?: string } }>
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: string }> }
+    }>
+    error?: { message?: string }
+  }
+
+  const direct =
+    typeof row.output_text === "string" ? row.output_text.trim() : ""
+  if (direct) return direct
+
+  const fromOutput: string[] = []
+  for (const item of row.output ?? []) {
+    if (item.type && item.type !== "message") continue
+    if (typeof item.content === "string" && item.content.trim()) {
+      fromOutput.push(item.content.trim())
+      continue
+    }
+    if (!Array.isArray(item.content)) continue
+    for (const content of item.content) {
+      if (content.text?.trim()) fromOutput.push(content.text.trim())
+    }
+  }
+  if (fromOutput.length) return fromOutput.join("\n")
+
+  const fromChoice = row.choices?.[0]?.message?.content?.trim()
+  if (fromChoice) return fromChoice
+
+  const fromGemini = (row.candidates?.[0]?.content?.parts ?? [])
+    .map((part) => part.text?.trim() ?? "")
+    .filter(Boolean)
+    .join("\n")
+    .trim()
+  if (fromGemini) return fromGemini
+
+  if (
+    row.object === "response" ||
+    Array.isArray((row as { instructions?: unknown }).instructions) ||
+    Array.isArray(row.output) ||
+    Array.isArray(row.choices) ||
+    Array.isArray(row.candidates)
+  ) {
+    return row.error?.message?.trim() ?? ""
+  }
+
+  try {
+    return JSON.stringify(data)
+  } catch {
+    return ""
+  }
+}
+
+/** Texto que contestó el modelo. Nunca el envelope HTTP. */
+export function formatChatRootsyDevModelOutput(raw: unknown): string {
+  if (raw == null) return ""
+  const extracted = readDevModelOutputFromUnknown(parseDevJson(raw))
+  if (!extracted) return typeof raw === "string" && !raw.trim().startsWith("{") ? raw : ""
+  return formatChatRootsyDevWireJson(extracted)
+}
+
 /** Pedido HTTP exacto (URL + body), sin API keys. */
 export function formatChatRootsyDevHttpWire(input: {
   url: string
@@ -138,7 +284,39 @@ function stationCall(input: {
   }
 }
 
-/** Siempre 3 pasos: Rootsy apertura, Planificador, Rootsy cierre/aclaración. Sin dato, vacío. */
+function plannerPasoFromCall(call: ChatRootsyDevCall, fallback: number): number {
+  const fromId = /call:planner:(\d+)/.exec(call.id ?? "")
+  if (fromId?.[1]) return Number(fromId[1])
+  const fromPhase = /viaje\s+(\d+)/i.exec(call.phase ?? "")
+  if (fromPhase?.[1]) return Number(fromPhase[1])
+  return fallback
+}
+
+function plannerStations(calls: ChatRootsyDevCall[]): ChatRootsyDevCall[] {
+  const rows = calls.filter((call) => call.actor === "planner")
+  if (!rows.length) {
+    return [
+      stationCall({
+        id: `${CHAT_ROOTSY_DEV_STATION_IDS.planner}:1`,
+        actor: "planner",
+        phase: "Viaje 1",
+      }),
+    ]
+  }
+  return [...rows]
+    .sort((left, right) => plannerPasoFromCall(left, 0) - plannerPasoFromCall(right, 0))
+    .map((row, index) => {
+      const paso = plannerPasoFromCall(row, index + 1)
+      return stationCall({
+        id: row.id ?? `${CHAT_ROOTSY_DEV_STATION_IDS.planner}:${paso}`,
+        actor: "planner",
+        phase: `Viaje ${paso}`,
+        found: row,
+      })
+    })
+}
+
+/** Rootsy apertura, un bloque por viaje del Planificador, Rootsy cierre/aclaración. */
 export function fillChatRootsyDevStations(
   trace: ChatRootsyDevTrace | null | undefined,
 ): ChatRootsyDevTrace {
@@ -146,9 +324,6 @@ export function fillChatRootsyDevStations(
   const apertura =
     callById(calls, CHAT_ROOTSY_DEV_STATION_IDS.apertura) ??
     calls.find((call) => call.actor === "rootsy" && call.phase === "Apertura")
-  const planner =
-    callById(calls, CHAT_ROOTSY_DEV_STATION_IDS.planner) ??
-    calls.find((call) => call.actor === "planner")
   const cierre = callById(calls, CHAT_ROOTSY_DEV_STATION_IDS.cierre)
   const aclaracion = callById(calls, CHAT_ROOTSY_DEV_STATION_IDS.aclaracion)
   const final =
@@ -173,12 +348,7 @@ export function fillChatRootsyDevStations(
         phase: "Apertura",
         found: apertura,
       }),
-      stationCall({
-        id: CHAT_ROOTSY_DEV_STATION_IDS.planner,
-        actor: "planner",
-        phase: "Plan",
-        found: planner,
-      }),
+      ...plannerStations(calls),
       stationCall({
         id: CHAT_ROOTSY_DEV_STATION_IDS.cierre,
         actor: "rootsy",

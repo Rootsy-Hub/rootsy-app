@@ -23,9 +23,34 @@ export const ROOTSY_AI_HISTORY_TURNS = 20
 export const ROOTSY_AI_HISTORY_BODY = 800
 
 const STORAGE_PREFIX = "rootsy-mascot-chat:"
+const DEV_RELOAD_CLEARED = "__rootsyChatDevReloadCleared"
 
 function storageKey(popId: string) {
   return `${STORAGE_PREFIX}${popId}`
+}
+
+function isChatRootsyDevReload(): boolean {
+  return process.env.NODE_ENV === "development"
+}
+
+function takeChatRootsyDevReloadClear(): boolean {
+  if (!isChatRootsyDevReload() || typeof globalThis === "undefined") return false
+  const slot = globalThis as typeof globalThis & {
+    [DEV_RELOAD_CLEARED]?: boolean
+  }
+  if (slot[DEV_RELOAD_CLEARED]) return false
+  slot[DEV_RELOAD_CLEARED] = true
+  return true
+}
+
+function clearRootsyChatStorage() {
+  if (typeof sessionStorage === "undefined") return
+  const keys: string[] = []
+  for (let index = 0; index < sessionStorage.length; index += 1) {
+    const key = sessionStorage.key(index)
+    if (key?.startsWith(STORAGE_PREFIX)) keys.push(key)
+  }
+  for (const key of keys) sessionStorage.removeItem(key)
 }
 
 function isStoredMessage(value: unknown): value is ChatMessageRow {
@@ -43,6 +68,10 @@ function isStoredMessage(value: unknown): value is ChatMessageRow {
 
 export function loadRootsyChatMessages(popId: string): ChatMessageRow[] {
   if (typeof sessionStorage === "undefined" || !popId) return []
+  if (takeChatRootsyDevReloadClear()) {
+    clearRootsyChatStorage()
+    return []
+  }
   try {
     const raw = sessionStorage.getItem(storageKey(popId))
     if (!raw) return []

@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import {
   buildChatRootsyCloseBrief,
+  buildChatRootsyClarifyModelPayload,
+  buildChatRootsyCloseModelPayload,
   fallbackChatRootsyClarifyReply,
   fallbackChatRootsyCloseReply,
   readChatRootsyCloseReply,
@@ -180,6 +182,27 @@ describe("cierre de Rootsy", () => {
       ),
       "Listo, las aguas ya quedaron al nuevo precio.",
     )
+  })
+
+  it("el payload de cierre y aclaración lleva fase, sin la persona", () => {
+    const close = buildChatRootsyCloseModelPayload(
+      buildChatRootsyCloseBrief({
+        pedido: "subí el aceite",
+        proposals: [],
+        informe: { respuesta: "Vi dos aceites.", acciones: ["Consultar aceites"] },
+      }),
+    )
+    assert.equal(close.fase, "cierre")
+    assert.equal(close.pedido, "subí el aceite")
+    assert.equal(JSON.stringify(close).includes("Pixar"), false)
+    assert.equal(JSON.stringify(close).includes("Sos Rootsy"), false)
+
+    const clarify = buildChatRootsyClarifyModelPayload({
+      pedido: "armá una promo",
+      pregunta: "¿en qué artículos?",
+    })
+    assert.equal(clarify.fase, "aclaracion")
+    assert.equal(clarify.pregunta, "¿en qué artículos?")
   })
 
   it("usa la pregunta del Planificador como fallback de aclaración", () => {

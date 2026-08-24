@@ -213,11 +213,32 @@ export function preferChatRootsyPlannerAction(
 export function buildChatRootsyPlannerStoredPayload(input: {
   today: string
   dataRequest: ChatRootsyDataRequest
-}): string {
-  return JSON.stringify({
+  paso?: number
+  resultados?: ChatRootsyPlannerResultado[]
+}): {
+  today: string
+  data_request: { objective: string }
+  paso: number
+  pasos_max: number
+  resultados: ChatRootsyPlannerResultado[]
+} {
+  const paso =
+    input.paso && input.paso > 0
+      ? Math.min(Math.floor(input.paso), CHAT_ROOTSY_PLANNER_MAX_STEPS)
+      : 1
+  return {
     today: input.today,
     data_request: { objective: input.dataRequest.objective },
-  })
+    paso,
+    pasos_max: CHAT_ROOTSY_PLANNER_MAX_STEPS,
+    resultados: input.resultados ?? [],
+  }
+}
+
+export function stringifyChatRootsyPlannerStoredPayload(
+  input: Parameters<typeof buildChatRootsyPlannerStoredPayload>[0],
+): string {
+  return JSON.stringify(buildChatRootsyPlannerStoredPayload(input))
 }
 
 function rowId(row: Record<string, unknown>): string | null {

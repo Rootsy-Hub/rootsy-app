@@ -15,16 +15,13 @@ type Props = {
 export function ChatRootsyDevTraceCard({ trace }: Props) {
   const filled = fillChatRootsyDevStations(trace)
   const calls = filled.calls
-  const lastWithData = [...calls]
-    .reverse()
-    .find((call) => call.sent.trim() || call.received.trim())
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <p className="font-canopy text-[11px] leading-4 text-rootsy-bruma-600">
-        Siempre los 3 pasos: Rootsy apertura, Planificador, Rootsy cierre o
-        aclaración. Enviado y recibido son el JSON HTTP exacto hacia el modelo
-        (sin API keys). Si un paso no corrió, quedan vacíos.
+        Rootsy apertura, cada viaje del Planificador y Rootsy cierre o
+        aclaración. Cada uno tiene enviado y recibido. Al abrir, todo queda
+        cerrado.
       </p>
       {filled.error ? (
         <div className="mt-3 rounded-lg border border-[var(--rootsy-danger)]/40 bg-white px-2.5 py-2">
@@ -42,7 +39,6 @@ export function ChatRootsyDevTraceCard({ trace }: Props) {
             key={call.id ?? `${call.actor}-${index}`}
             call={call}
             index={index}
-            defaultOpen={call.id === lastWithData?.id}
           />
         ))}
       </ol>
@@ -53,11 +49,9 @@ export function ChatRootsyDevTraceCard({ trace }: Props) {
 function DevCallBlock({
   call,
   index,
-  defaultOpen,
 }: {
   call: ChatRootsyDevCall
   index: number
-  defaultOpen: boolean
 }) {
   const actor = chatRootsyDevActorLabel(call.actor)
   return (
@@ -82,13 +76,8 @@ function DevCallBlock({
         </p>
       ) : null}
       <div className="mt-2 space-y-2">
-        <DevIoBlock letter="a" label="Enviado" body={call.sent} defaultOpen={defaultOpen} />
-        <DevIoBlock
-          letter="b"
-          label="Recibido"
-          body={call.received}
-          defaultOpen={defaultOpen}
-        />
+        <DevIoBlock letter="a" label="Enviado" body={call.sent} />
+        <DevIoBlock letter="b" label="Recibido" body={call.received} />
       </div>
     </li>
   )
@@ -98,16 +87,14 @@ function DevIoBlock({
   letter,
   label,
   body,
-  defaultOpen,
 }: {
   letter: string
   label: string
   body: string
-  defaultOpen: boolean
 }) {
   const [copied, setCopied] = useState(false)
   return (
-    <details className="rounded-lg bg-rootsy-bruma-50 px-2.5 py-2" open={defaultOpen}>
+    <details className="rounded-lg bg-rootsy-bruma-50 px-2.5 py-2">
       <summary className="flex cursor-pointer list-none items-center gap-2 font-canopy text-xs font-semibold text-rootsy-bruma-900 [&::-webkit-details-marker]:hidden">
         <span className="tabular-nums text-[10px] text-rootsy-bruma-400">
           {letter}.

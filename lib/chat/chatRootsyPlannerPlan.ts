@@ -374,7 +374,7 @@ export function extractChatRootsyPlannerSlot(input: {
   items: ChatRootsyToolItem[]
   payload?: unknown
 }): ChatRootsyPlannerSlot {
-  const rows = input.items.length
+    const rows = input.items.length
     ? input.items.map((item) => {
         const compact = asRecord(
           pickChatRootsyPlannerSelectedResponse(input.payload, item),
@@ -383,12 +383,7 @@ export function extractChatRootsyPlannerSlot(input: {
         if (item.id && row.id == null) row.id = item.id
         if (item.name) row.name = item.name
         if (item.sales != null && row.salePrice == null) row.salePrice = item.sales
-        const picked: Record<string, unknown> = {}
-        for (const field of ["id", "name", ...input.demandas]) {
-          const fromRow = rowField(row, field)
-          if (fromRow !== undefined) picked[field] = fromRow
-        }
-        return Object.keys(picked).length ? picked : row
+        return row
       })
     : (() => {
         const compact = asRecord(input.payload)

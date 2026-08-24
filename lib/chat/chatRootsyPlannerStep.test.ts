@@ -133,30 +133,31 @@ describe("pasos del planificador Rootsy", () => {
     )
   })
 
-  it("arma el payload de ChatGPT solo con today y data_request", () => {
-    const payload = JSON.parse(
-      buildChatRootsyPlannerStoredPayload({
-        today: "2026-08-23",
-        dataRequest: { objective: "aumentar 50% el precio del agua mineral" },
-      }),
-    ) as {
-      today: string
-      data_request: { objective: string }
-      message?: string
-      paso?: number
-      resultados?: unknown
-      acciones_sesion?: unknown
-    }
+  it("arma el payload de ChatGPT con today, objective, paso, pasos_max y resultados", () => {
+    const payload = buildChatRootsyPlannerStoredPayload({
+      today: "2026-08-23",
+      dataRequest: { objective: "aumentar 50% el precio del agua mineral" },
+      paso: 2,
+      resultados: [
+        {
+          method: "GET",
+          path: "/v1/pops/:popId/articles",
+          action: "Buscar aguas",
+          confirm: "confirm_many",
+          response: [{ id: "a1", name: "Agua 500", salePrice: 1000 }],
+        },
+      ],
+    })
 
     assert.equal(payload.today, "2026-08-23")
     assert.equal(
       payload.data_request.objective,
       "aumentar 50% el precio del agua mineral",
     )
+    assert.equal(payload.paso, 2)
+    assert.equal(payload.pasos_max, 8)
+    assert.equal(payload.resultados.length, 1)
     assert.equal("message" in payload, false)
-    assert.equal("paso" in payload, false)
-    assert.equal("resultados" in payload, false)
-    assert.equal("acciones_sesion" in payload, false)
   })
 
   it("elige la fila del payload cuando confirm_one", () => {

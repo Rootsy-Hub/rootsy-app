@@ -29,7 +29,7 @@ describe("plan de ejecución del planificador", () => {
     assert.equal(parseChatRootsyPlanBinding("art-1"), null)
   })
 
-  it("parsea un plan completo y aplana el primer GET", () => {
+  it("de un plan de varios pasos solo toma este viaje", () => {
     const parsed = parseChatRootsyPlannerPlan(
       JSON.stringify({
         status: "ok",
@@ -66,13 +66,13 @@ describe("plan de ejecución del planificador", () => {
       }),
     )
     assert.ok(parsed)
-    assert.equal(parsed?.steps?.length, 2)
+    assert.equal(parsed?.steps?.length, 1)
     assert.equal(parsed?.queries[0]?.path, "/v1/pops/:popId/articles")
     assert.equal(parsed?.queries[0]?.filters.q, "agua")
     assert.equal(parsed?.queries[0]?.action, "Buscar las aguas")
     assert.equal(parsed?.steps?.[0]?.ofertas[0]?.action, "Buscar las aguas")
     assert.equal(parsed?.steps?.[0]?.confirm, "confirm_many")
-    assert.equal(parsed?.steps?.[1]?.confirm, "confirm")
+    assert.equal(parsed?.steps?.[1], undefined)
   })
 
   it("expande una plantilla del mismo endpoint por fila", () => {
@@ -108,6 +108,8 @@ describe("plan de ejecución del planificador", () => {
       slots,
     )
     assert.equal(expanded.length, 2)
+    assert.equal(slots[0]?.rows[0]?.name, "Agua 500")
+    assert.equal(slots[0]?.rows[0]?.salePrice, 1000)
     assert.equal(expanded[0]?.params.articleId, "a1")
     assert.equal(expanded[0]?.body?.salePrice, 1100)
     assert.equal(expanded[1]?.params.articleId, "a2")

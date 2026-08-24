@@ -544,9 +544,12 @@ export function ChatRootsyThread({
                 ? undefined
                 : planRes.toolOffers,
               plannerRun: planRes.plannerRun ?? row.plannerRun,
-              plannerChoices: attachWorkToFollowUp
-                ? undefined
-                : planRes.plannerChoices,
+              plannerChoices:
+                attachWorkToFollowUp && followUp
+                  ? undefined
+                  : planRes.toolResults?.length
+                    ? undefined
+                    : planRes.plannerChoices,
               closeBrief: attachWorkToFollowUp ? undefined : planRes.closeBrief,
               toolError: planRes.executionError,
               devTrace:
@@ -556,9 +559,17 @@ export function ChatRootsyThread({
             }
           : row,
       )
+      const resultRows = rootsyToolResultRows(planRes.toolResults ?? [], now)
+      if (!followUp && planRes.plannerChoices?.length && resultRows.length) {
+        const last = resultRows[resultRows.length - 1]
+        if (last) {
+          last.plannerChoices = planRes.plannerChoices
+          last.plannerRun = planRes.plannerRun
+        }
+      }
       return [
         ...next,
-        ...rootsyToolResultRows(planRes.toolResults ?? [], now),
+        ...resultRows,
         ...(followUp ? [followUp] : []),
       ].slice(-ROOTSY_SESSION_HISTORY_MAX)
     })
@@ -654,6 +665,14 @@ export function ChatRootsyThread({
 
     const now = new Date().toISOString()
     const followUp = rootsyFollowUpRow(res, now, res.reply)
+    const resultRows = rootsyToolResultRows(res.toolResults, now)
+    if (!followUp && res.plannerChoices?.length && resultRows.length) {
+      const last = resultRows[resultRows.length - 1]
+      if (last) {
+        last.plannerChoices = res.plannerChoices
+        last.plannerRun = res.plannerRun ?? host?.plannerRun
+      }
+    }
     setMessages((current) =>
       [
         ...current.map((row) => {
@@ -663,7 +682,7 @@ export function ChatRootsyThread({
             ? { ...next, toolError: res.executionError }
             : next
         }),
-        ...rootsyToolResultRows(res.toolResults, now),
+        ...resultRows,
         ...(followUp ? [followUp] : []),
       ].slice(-ROOTSY_SESSION_HISTORY_MAX),
     )

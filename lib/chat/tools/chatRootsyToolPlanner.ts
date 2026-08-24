@@ -1,6 +1,7 @@
 import type { ChatRootsyDataRequest } from "@/lib/chat/chatRootsyDataRequest"
 import { normalizeChatRootsyApiMethod } from "@/lib/chat/apiDocumentacion"
 import {
+  buildChatRootsyPlannerStoredPayload,
   chatRootsyOfferKey,
   fallbackChatRootsyPlannerAction,
   readChatRootsyPlannerConfirm,
@@ -8,6 +9,7 @@ import {
   sanitizeChatRootsyPlannerAction,
   type ChatRootsyPlannerConfirm,
   type ChatRootsyPlannerInforme,
+  type ChatRootsyPlannerResultado,
 } from "@/lib/chat/chatRootsyPlannerStep"
 import {
   chatRootsyPlanHasBinding,
@@ -245,7 +247,7 @@ export function parseChatRootsyPlannerPlan(
         informe: readChatRootsyPlannerInforme(parsed),
       }
     }
-    const steps = readChatRootsyExecutionPlan(parsed)
+    const steps = readChatRootsyExecutionPlan(parsed).slice(0, 1)
     if (steps.length) {
       const first = steps[0]!
       const queries: ChatRootsyPlannerQuery[] = []
@@ -540,10 +542,17 @@ export function buildChatRootsyPlannerUserPayload(input: {
   today: string
   dataRequest: ChatRootsyDataRequest
   index: readonly ChatRootsyPlannerIndexEntry[]
+  paso?: number
+  resultados?: ChatRootsyPlannerResultado[]
 }): string {
-  return JSON.stringify({
+  const turn = buildChatRootsyPlannerStoredPayload({
     today: input.today,
-    data_request: { objective: input.dataRequest.objective },
+    dataRequest: input.dataRequest,
+    paso: input.paso,
+    resultados: input.resultados,
+  })
+  return JSON.stringify({
+    ...turn,
     catalog: input.index,
   })
 }

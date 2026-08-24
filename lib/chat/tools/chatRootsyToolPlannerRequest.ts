@@ -1,7 +1,10 @@
 import "server-only"
 
 import type { ChatRootsyDataRequest } from "@/lib/chat/chatRootsyDataRequest"
-import { buildChatRootsyPlannerStoredPayload } from "@/lib/chat/chatRootsyPlannerStep"
+import {
+  stringifyChatRootsyPlannerStoredPayload,
+  type ChatRootsyPlannerResultado,
+} from "@/lib/chat/chatRootsyPlannerStep"
 import {
   buildChatRootsyPlannerIndex,
   buildChatRootsyPlannerUserPayload,
@@ -12,8 +15,8 @@ import {
 } from "@/lib/chat/tools/chatRootsyToolPlanner"
 import type { ChatRootsyToolMatchContext } from "@/lib/chat/tools/chatRootsyToolTypes"
 import {
-  formatChatRootsyDevHttpWire,
-  formatChatRootsyDevWireJson,
+  formatChatRootsyDevModelOutput,
+  formatChatRootsyDevSentMessages,
 } from "@/lib/chat/chatRootsyDevTrace"
 import {
   OPENAI_PROMPT_PLANIFICADOR_ENV,
@@ -35,7 +38,7 @@ function geminiGenerateUrl(model: string, apiKey?: string): string {
 }
 
 const PLANNER_TIMEOUT_MS = 6_000
-const PLANNER_STORED_TIMEOUT_MS = 60_000
+const PLANNER_STORED_TIMEOUT_MS = 20_000
 const PLANNER_MAX_OUTPUT_TOKENS = 5000
 const GEMINI_PLANNER_MODELS = [
   "gemini-3.5-flash-lite",
@@ -50,12 +53,12 @@ export type ChatRootsyPlannerProvider = "gemini" | "openai"
 
 export const CHAT_ROOTSY_PLANNER_SYSTEM = [
   "Elegí consultas del catálogo. No tenés personalidad ni voz de Rootsy.",
-  "Recibís today y un data_request. Armá el plan completo de esa tarea. Sin historial ni mensaje de la persona.",
-  "Hasta 8 pasos. Un paso puede tener varias ofertas. Si el mismo endpoint se aplica a N filas, mandalo una vez con variables $paso[oferta].items[].campo.",
-  'Devolvé solo JSON: {"status":"ok","plan":[{"paso":1,"action":"...","confirm":"confirm","ofertas":[],"demandas":["id"]}]}',
-  "action es una línea para el tablero (verbo + qué), sin endpoints. Cada paso trae su confirm. GET consulta: confirm. GET cambio singular: confirm_one. GET conjunto: confirm_many. Write: confirm (modal).",
+  "Recibís today, data_request, paso, pasos_max y resultados. Devolvé SOLO las ofertas de este viaje. Sin historial ni mensaje de la persona.",
+  "Hasta 8 viajes. Un viaje puede tener varias ofertas. En el siguiente usá ids reales de resultados.",
+  'Devolvé solo JSON: {"status":"ok","plan":[{"paso":1,"action":"...","confirm":"confirm","ofertas":[]}]}',
+  "action es una línea para el tablero (verbo + qué), sin endpoints. Cada viaje trae su confirm. GET consulta: confirm. GET cambio singular: confirm_one. GET conjunto: confirm_many. Write: confirm (modal). Si el objective ya está, status done.",
   "Sin prosa, sin markdown, sin razonamiento.",
-  "Fechas ISO YYYY-MM-DD. No inventes ids reales: usá variables de pasos anteriores.",
+  "Fechas ISO YYYY-MM-DD. No inventes ids: leelos de resultados.",
 ].join(" ")
 
 type GeminiResponse = {
@@ -110,10 +113,7 @@ async function planWithGemini(
     },
   }
   const body = JSON.stringify(requestBody)
-  let lastSent = formatChatRootsyDevHttpWire({
-    url: geminiGenerateUrl(models[0] ?? "unknown"),
-    body: requestBody,
-  })
+  let lastSent = formatChatRootsyDevSentMessages(requestBody)
   let lastReceived = ""
   if (!apiKey) {
     return { text: null, sent: lastSent, received: lastReceived }
@@ -121,7 +121,7 @@ async function planWithGemini(
 
   for (const model of models) {
     const url = geminiGenerateUrl(model, apiKey)
-    lastSent = formatChatRootsyDevHttpWire({ url, body: requestBody })
+    lastSent = formatChatRootsyDevSentMessages(requestBody)
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), PLANNER_TIMEOUT_MS)
     try {
@@ -132,7 +132,7 @@ async function planWithGemini(
         signal: controller.signal,
       })
       const receivedText = await response.text()
-      lastReceived = formatChatRootsyDevWireJson(receivedText)
+      lastReceived = formatChatRootsyDevModelOutput(receivedText)
       if (!response.ok) continue
       const text = readGeminiText(JSON.parse(receivedText) as GeminiResponse)
       if (text) return { text, sent: lastSent, received: lastReceived }
@@ -160,10 +160,7 @@ async function planWithOpenAi(
       { role: "user", content: payload },
     ],
   }
-  const sent = formatChatRootsyDevHttpWire({
-    url: OPENAI_CHAT_COMPLETIONS_URL,
-    body: requestBody,
-  })
+  const sent = formatChatRootsyDevSentMessages(requestBody)
   const apiKey = process.env.OPENAI_API_KEY?.trim()
   if (!apiKey) return { text: null, sent, received: "" }
   const controller = new AbortController()
@@ -179,7 +176,7 @@ async function planWithOpenAi(
       signal: controller.signal,
     })
     const receivedText = await response.text()
-    const received = formatChatRootsyDevWireJson(receivedText)
+    const received = formatChatRootsyDevModelOutput(receivedText)
     if (!response.ok) return { text: null, sent, received }
     const data = JSON.parse(receivedText) as OpenAiResponse
     return {
@@ -224,6 +221,8 @@ export async function planChatRootsyTools(input: {
   context?: ChatRootsyToolMatchContext
   permissionKeys?: readonly string[]
   today?: string
+  paso?: number
+  resultados?: ChatRootsyPlannerResultado[]
 }): Promise<ChatRootsyPlannerFetch> {
   const empty: ChatRootsyValidatedPlan = { proposals: [], discarded: 0 }
   if (!input.dataRequest?.objective?.trim()) {
@@ -253,14 +252,18 @@ export async function planChatRootsyTools(input: {
   }
 
   const today = input.today ?? new Date().toISOString().slice(0, 10)
-  const storedPayload = buildChatRootsyPlannerStoredPayload({
+  const storedPayload = stringifyChatRootsyPlannerStoredPayload({
     today,
     dataRequest: input.dataRequest,
+    paso: input.paso,
+    resultados: input.resultados,
   })
   const payload = buildChatRootsyPlannerUserPayload({
     today,
     dataRequest: input.dataRequest,
     index,
+    paso: input.paso,
+    resultados: input.resultados,
   })
   const provider = storedPromptId
     ? "openai"

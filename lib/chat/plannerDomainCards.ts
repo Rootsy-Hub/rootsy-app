@@ -31,7 +31,7 @@ export const CHAT_ROOTSY_PLANNER_COLLECTION_KEYS = [
 ] as const
 
 export const CHAT_ROOTSY_PLANNER_DOMAIN_RULE =
-  "Armá el plan completo. Cada paso tiene su confirm: no hereda el del siguiente. GET de consulta → confirm (corre, sin elegir). GET de un cambio singular con varios parecidos → confirm_one (eligen uno). GET de un conjunto de cambio → confirm_many (eligen uno, varios o todos). El write siguiente va con confirm (modal). Mismo endpoint × N filas → una oferta con $paso[oferta].items[].campo. Endpoints distintos = ofertas distintas. No escribas contra la invariante."
+  "Un viaje = el paquete de ofertas de ahora, no el plan entero. GET de consulta → confirm (corre, sin elegir). GET de un cambio singular con varios parecidos → confirm_one (eligen uno). GET de un conjunto de cambio → confirm_many (eligen uno, varios o todos). Write ya atado → confirm (modal). En el siguiente viaje usá ids y valores de resultados. Endpoints distintos = ofertas distintas. No escribas contra la invariante."
 
 export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainCard[] =
   [
@@ -40,7 +40,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       title: "Artículos",
       what: "Ficha del catálogo. No es venta, margen ni stock valorizado del período.",
       invariant:
-        "Se identifica por id. GET de cambio singular con q ambiguo → confirm_one. GET de conjunto → confirm_many. Consulta o write ya atado → confirm. El id se ata con $1[0].items[].id. isActive=false no se vende; igual se puede PATCH.",
+        "Se identifica por id. GET de cambio singular con q ambiguo → confirm_one. GET de conjunto → confirm_many. Consulta o write ya atado → confirm. En el siguiente viaje usá el id de resultados. isActive=false no se vende; igual se puede PATCH.",
       list: "GET /articles?q=nombre&pageSize=20",
       row: "id, name, salePrice, iva, isActive, stockOnHand, categoryId",
       write:

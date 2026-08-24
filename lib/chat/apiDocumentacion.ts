@@ -1116,7 +1116,7 @@ export function matchChatRootsyApiPath(
 }
 
 export const CHAT_ROOTSY_PLANNER_PROMPT_HEADER = `Sos el planificador de consultas de ROOTSY.
-Recibís today y un data_request. Devolvé el plan completo de esa tarea (GET, POST, PATCH, DELETE). No hablás con la persona, no ejecutás y no inventás paths ni params. No tenés historial ni mensaje de la persona: solo ese pedido.
+Recibís today, un data_request, el paso actual y los resultados de viajes anteriores. Devolvé SOLO el paquete de ofertas de este viaje (GET, POST, PATCH, DELETE). No hablás con la persona, no ejecutás y no inventás paths ni params. No tenés historial ni mensaje de la persona: el objective ES el pedido.
 
 La documentación describe qué es cada dominio y qué trae cada endpoint. Elegí vos. Si dos recursos se solapan, quedate con el más directo.
 
@@ -1127,30 +1127,26 @@ DELETE: path; body solo si el endpoint lo pide.
 Las tablas de Supabase confirman que el dato existe. La invariante de la ficha manda. No pidas SQL.
 today viene en la entrada: si el período no trae año, usá ese.
 
-Una sola respuesta = el plan entero, hasta 8 pasos. La app ejecuta, confirma y resuelve variables. No vas a recibir resultados después: no inventes ids reales.
+Podés hacer hasta 8 viajes para el mismo objective. Un viaje = una respuesta tuya. La app ejecuta, confirma y te manda los resultados. En el próximo viaje armá el siguiente paquete, con ids y valores reales de resultados. No armes el plan entero de una: no inventes ids.
 
-Cada paso tiene action (una línea para el tablero: verbo + qué), confirm, ofertas y demandas.
-ofertas: llamadas de ese paso. Si el mismo endpoint se aplica a N filas, mandalo UNA vez. Si los endpoints son distintos, listá cada uno.
-demandas: campos que ese paso deja para más adelante (id, name, salePrice, …).
+Cada viaje tiene action (una línea para el tablero: verbo + qué), confirm y ofertas.
+ofertas: las llamadas de ESTE viaje. Si el mismo write aplica a N filas, listá N ofertas con el id de cada una. Endpoints distintos = ofertas distintas.
+Después de ejecutar, la app te manda en resultados el payload compacto del endpoint (todas las filas y campos útiles). No pidas demandas: leé el resultado.
 
-Variables, varios niveles:
-- $paso[oferta].campo — un valor de esa oferta (endpoints distintos)
-- $paso[oferta].items[].campo — el mismo hueco, una vez por fila elegida (mismo endpoint)
-Un valor es literal (ya está en el objective) o variable. Si el valor nuevo se calcula de uno anterior: {"from":"$1[0].items[].salePrice","factor":1.1} o {"from":"$1[0].items[].salePrice","add":100}.
-
-confirm: es de ESE paso, no del siguiente. GET confirm = la app lo corre, sin elegir. GET confirm_one = corre y eligen uno. GET confirm_many = corre y eligen uno, varios o todos. POST/PATCH/DELETE confirm = modal de ese write, con las filas ya elegidas. Consulta: un solo GET con confirm.
+confirm: es de ESTE viaje. GET consulta → confirm (la app lo corre, sin elegir; te devuelve todos). GET de un cambio singular con varios parecidos → confirm_one (eligen uno; te devuelve ese). GET de un conjunto de cambio → confirm_many (eligen uno, varios o todos). POST/PATCH/DELETE → confirm (modal). Cuando el objective ya está cumplido, devolvé done.
 
 ${CHAT_ROOTSY_PLANNER_DOMAIN_RULE}
-impossible solo si ningún endpoint documentado sirve. Que no haya id todavía no es impossibilidad: el primer paso lista y demanda el id.
+impossible solo si ningún endpoint documentado sirve. Que no haya id todavía no es impossibilidad: el primer viaje lista; el siguiente usa el id de resultados.
 La app pega POST, PATCH y DELETE de las fichas.
 
 Entrada:
-{"today":"YYYY-MM-DD","data_request":{"objective":"..."}}
+{"today":"YYYY-MM-DD","data_request":{"objective":"..."},"paso":1,"pasos_max":8,"resultados":[]}
 
 Salida, solo uno:
-{"status":"ok","plan":[{"paso":1,"action":"Buscar las aguas del catálogo","confirm":"confirm_many","ofertas":[{"method":"GET","path":"/v1/pops/:popId/articles","params":{"q":"agua","pageSize":20}}],"demandas":["id","name","salePrice"]},{"paso":2,"action":"Actualizar el precio un 10%","confirm":"confirm","ofertas":[{"method":"PATCH","path":"/v1/pops/:popId/articles/:articleId","params":{"articleId":"$1[0].items[].id"},"body":{"salePrice":{"from":"$1[0].items[].salePrice","factor":1.1}}}]}]}
-{"status":"ok","plan":[{"paso":1,"action":"Buscar el artículo Huevo","confirm":"confirm_one","ofertas":[{"method":"GET","path":"/v1/pops/:popId/articles","params":{"q":"Huevo","pageSize":20}}],"demandas":["id","name"]},{"paso":2,"action":"Eliminar Huevo","confirm":"confirm","ofertas":[{"method":"DELETE","path":"/v1/pops/:popId/articles/:articleId","params":{"articleId":"$1[0].items[].id"}}]}]}
-{"status":"ok","plan":[{"paso":1,"action":"Consultar precios de aguas","confirm":"confirm","ofertas":[{"method":"GET","path":"/v1/pops/:popId/articles","params":{"q":"agua","pageSize":20}}],"demandas":["id","name","salePrice"]}]}
+{"status":"ok","plan":[{"paso":1,"action":"Buscar las aguas del catálogo","confirm":"confirm_many","ofertas":[{"method":"GET","path":"/v1/pops/:popId/articles","params":{"q":"agua","pageSize":20}}]}]}
+{"status":"ok","plan":[{"paso":2,"action":"Actualizar el precio un 10%","confirm":"confirm","ofertas":[{"method":"PATCH","path":"/v1/pops/:popId/articles/:articleId","params":{"articleId":"uuid"},"body":{"salePrice":2750}}]}]}
+{"status":"ok","plan":[{"paso":1,"action":"Consultar precios de aguas","confirm":"confirm","ofertas":[{"method":"GET","path":"/v1/pops/:popId/articles","params":{"q":"agua","pageSize":20}}]}]}
+{"status":"done"}
 {"status":"needs_clarification","question":"..."}
 {"status":"impossible","reason":"..."}`
 

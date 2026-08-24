@@ -197,6 +197,7 @@ export function buildChatRootsyCloseModelPayload(
 ): Record<string, unknown> {
   const hasInforme = Boolean(brief.informe?.respuesta)
   return {
+    fase: "cierre",
     pedido: brief.pedido,
     estado: brief.estado,
     ...(brief.error ? { error: brief.error } : {}),
@@ -214,6 +215,17 @@ export function buildChatRootsyCloseModelPayload(
         : hasInforme
           ? []
           : brief.hechos,
+  }
+}
+
+export function buildChatRootsyClarifyModelPayload(input: {
+  pedido: string
+  pregunta: string
+}): { fase: "aclaracion"; pedido: string; pregunta: string } {
+  return {
+    fase: "aclaracion",
+    pedido: input.pedido,
+    pregunta: input.pregunta,
   }
 }
 
