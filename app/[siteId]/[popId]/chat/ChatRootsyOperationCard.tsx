@@ -15,6 +15,8 @@ import {
   taskPhaseTitle,
   taskStepProgress,
   type ChatRootsyOperationPhase,
+  type ChatRootsyOperationStepKind,
+  type ChatRootsyOperationStepView,
   type ChatRootsyOperationView,
 } from "@/lib/chat/chatRootsyOperation"
 import {
@@ -24,7 +26,7 @@ import {
 import type { ChatRootsyOfferChange } from "@/lib/chat/chatRootsyOfferPreview"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
-import { ArrowRight, ChevronDown, X } from "lucide-react"
+import { ArrowRight, Check, ChevronDown, X } from "lucide-react"
 import {
   useEffect,
   useMemo,
@@ -51,6 +53,67 @@ const LIVE_PHASES = new Set<ChatRootsyOperationPhase>([
   "waiting",
   "executing",
 ])
+
+function stepKindLabel(kind: ChatRootsyOperationStepKind): string {
+  if (kind === "write") return "Actualización"
+  if (kind === "delete") return "Eliminación"
+  if (kind === "choose") return "Elección"
+  return "Consulta"
+}
+
+function StepNode({
+  status,
+}: {
+  status: ChatRootsyOperationStepView["status"]
+}) {
+  return (
+    <span className="chat-rootsy-op-dash__node" data-status={status}>
+      {status === "done" ? (
+        <Check className="size-3" strokeWidth={2.6} aria-hidden />
+      ) : status === "failed" ? (
+        <X className="size-3" strokeWidth={2.6} aria-hidden />
+      ) : (
+        <span className="chat-rootsy-op-dash__pip" aria-hidden />
+      )}
+    </span>
+  )
+}
+
+function StepInstrument({
+  step,
+  index,
+}: {
+  step: ChatRootsyOperationStepView
+  index: number
+}) {
+  const detail = chatRootsyStepDetail(step)
+  const delta = step.items.find((item) => item.changes?.length)?.changes?.[0]
+
+  return (
+    <div
+      className="chat-rootsy-op-dash__instrument"
+      data-kind={step.kind}
+      data-status={step.status}
+    >
+      <div className="chat-rootsy-op-dash__chrome">
+        <span>
+          {String(index + 1).padStart(2, "0")} · {stepKindLabel(step.kind)}
+        </span>
+        {detail.text ? (
+          <span className="chat-rootsy-op-dash__metric">{detail.text}</span>
+        ) : null}
+      </div>
+      <p className="chat-rootsy-op-dash__subject">{step.title}</p>
+      {delta ? (
+        <p className="chat-rootsy-op-dash__delta">
+          <span>{delta.before}</span>
+          <ArrowRight className="size-3 shrink-0 opacity-70" aria-hidden />
+          <span>{delta.after}</span>
+        </p>
+      ) : null}
+    </div>
+  )
+}
 
 function isPriceChange(change: ChatRootsyOfferChange): boolean {
   return /precio|price|saleprice/i.test(change.field + (change.key ?? ""))
@@ -296,6 +359,18 @@ export function ChatRootsyOperationCard({
   const collapsed = canToggle && !expanded
   const hasProgress = operation.steps.some((step) => step.status === "done")
   const hasUserDetails = chatRootsyOperationHasUserDetails(operation)
+  const waitingOffers = operation.phase === "waiting" && pending.length > 0
+  const waitingChoices =
+    operation.phase === "waiting" && operation.pendingChoices.length > 0
+  const showDash =
+    !collapsed &&
+    Boolean(
+      operation.steps.length ||
+        operation.error ||
+        waitingOffers ||
+        waitingChoices ||
+        hasUserDetails,
+    )
   const hostId = operation.pendingHostId
   const approveLabel = chatRootsyApproveLabel(selectedOffers)
   const destructive = chatRootsyOffersAreDestructive(selectedOffers)
@@ -363,44 +438,42 @@ export function ChatRootsyOperationCard({
           )}
         </header>
         <div id={`${operation.id}-content`}>
+        {showDash ? (
+          <div className="chat-rootsy-op-dash">
+            {operation.steps.length ? (
+              <ol
+                className={cn(
+                  "chat-rootsy-op-dash__list",
+                  operation.steps.length > 1 && "chat-rootsy-op-dash__list--trail",
+                )}
+              >
+                {operation.steps.map((step, index) => {
+                  const last = index === operation.steps.length - 1
+                  return (
+                    <li key={step.id}>
+                      {operation.steps.length > 1 ? (
+                        <div className="chat-rootsy-op-dash__rail" aria-hidden>
+                          <StepNode status={step.status} />
+                          {last ? null : (
+                            <span className="chat-rootsy-op-dash__stem" />
+                          )}
+                        </div>
+                      ) : null}
+                      <StepInstrument step={step} index={index} />
+                    </li>
+                  )
+                })}
+              </ol>
+            ) : null}
 
-        {!collapsed && operation.steps.length ? (
-          <ol className="chat-rootsy-op-steps">
-            {operation.steps.map((step) => {
-              const detail = chatRootsyStepDetail(step)
-              return (
-                <li key={step.id}>
-                  <div
-                    className="chat-rootsy-op-plate px-3 py-2"
-                    data-kind={step.kind}
-                    data-status={step.status}
-                  >
-                    <p className="font-canopy text-sm">
-                      {step.title}
-                    </p>
-                    {detail.text ? (
-                      <p className="chat-rootsy-op-status mt-0.5 font-canopy text-[11px] leading-4">
-                        {detail.text}
-                      </p>
-                    ) : null}
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
-        ) : null}
+            {operation.error ? (
+              <p className="chat-rootsy-op-alert chat-rootsy-op-dash__slot" role="alert">
+                {operation.error}
+              </p>
+            ) : null}
 
-        {operation.error ? (
-          <p
-            className="chat-rootsy-op-alert mx-3.5 mt-3 px-3 py-2 font-canopy text-xs"
-            role="alert"
-          >
-            {operation.error}
-          </p>
-        ) : null}
-
-        {operation.phase === "waiting" && pending.length ? (
-          <div className="px-3.5 pt-3">
+            {waitingOffers ? (
+          <div className="chat-rootsy-op-dash__slot">
             {previewOffers.length >= 2 ? (
               <div className="mb-2.5 space-y-1.5">
                 {previewOffers.map((offer) =>
@@ -485,28 +558,35 @@ export function ChatRootsyOperationCard({
               </GlassButton>
             </div>
           </div>
-        ) : null}
+            ) : null}
 
-        {operation.phase === "waiting" && operation.pendingChoices.length
-          ? operation.pendingChoices.map((choice) => (
-              <ChoiceActions
-                key={`${operation.id}-${choice.tool}`}
-                choice={choice}
-                disabled={disabled}
-                onPick={(item) => {
-                  if (operation.choiceHostId) {
-                    onPick?.(operation.choiceHostId, choice.tool, item)
-                  }
-                }}
-                onReject={() => {
-                  if (operation.choiceHostId) onReject?.(operation.choiceHostId)
-                }}
-              />
-            ))
-          : null}
+            {waitingChoices
+              ? operation.pendingChoices.map((choice) => (
+                  <div
+                    className="chat-rootsy-op-dash__slot"
+                    key={`${operation.id}-${choice.tool}`}
+                  >
+                    <ChoiceActions
+                      choice={choice}
+                      disabled={disabled}
+                      embedded
+                      onPick={(item) => {
+                        if (operation.choiceHostId) {
+                          onPick?.(operation.choiceHostId, choice.tool, item)
+                        }
+                      }}
+                      onReject={() => {
+                        if (operation.choiceHostId) {
+                          onReject?.(operation.choiceHostId)
+                        }
+                      }}
+                    />
+                  </div>
+                ))
+              : null}
 
-        {!collapsed && hasUserDetails ? (
-          <footer className="chat-rootsy-op-details mt-3">
+            {hasUserDetails ? (
+          <footer className="chat-rootsy-op-details">
             <button
               type="button"
               className="chat-rootsy-op-details__toggle flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left"
@@ -560,6 +640,8 @@ export function ChatRootsyOperationCard({
               </div>
             ) : null}
           </footer>
+            ) : null}
+          </div>
         ) : !collapsed ? (
           <div className="h-3" />
         ) : null}
@@ -592,11 +674,13 @@ export function ChatRootsyOperationCard({
 function ChoiceActions({
   choice,
   disabled,
+  embedded,
   onPick,
   onReject,
 }: {
   choice: ChatRootsyPlannerChoice
   disabled?: boolean
+  embedded?: boolean
   onPick: (item: ChatRootsyToolItem) => void
   onReject: () => void
 }) {
@@ -610,7 +694,7 @@ function ChoiceActions({
   )
 
   return (
-    <div className="px-3.5 pt-3">
+    <div className={embedded ? undefined : "px-3.5 pt-3"}>
       <p className="chat-rootsy-op-status mb-2 font-canopy text-xs">
         Elegí un resultado para seguir.
       </p>
