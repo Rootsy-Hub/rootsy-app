@@ -94,6 +94,11 @@ describe("consultora de consultas Rootsy", () => {
     assert.equal(offered.proposals[0]?.action, "Buscar artículos que coincidan con Agua")
     assert.equal(offered.proposals[0]?.confirm, "confirm_one")
 
+    const many = parseChatRootsyPlannerPlan(
+      '{"status":"ok","queries":[{"method":"GET","path":"/v1/pops/:popId/articles","params":{"q":"coca"},"action":"Buscar artículos que coincidan con coca","confirm":"confirm_many"}]}',
+    )
+    assert.equal(many?.queries[0]?.confirm, "confirm_many")
+
     const done = parseChatRootsyPlannerPlan('{"status":"done"}')
     assert.equal(done?.done, true)
     assert.equal(done?.queries.length, 0)

@@ -40,16 +40,24 @@ export async function rootsyApiFetch<T>(
   const token = session?.access_token
   if (!token) throw new RootsyApiError("Unauthorized", 401)
 
-  const res = await fetch(`${apiBase()}${path}`, {
-    ...init,
-    headers: {
-      accept: "application/json",
-      authorization: `Bearer ${token}`,
-      [SECRET_HEADER]: apiSecret(),
-      ...(init?.headers ?? {}),
-    },
-    cache: "no-store",
-  })
+  let res: Response
+  try {
+    res = await fetch(`${apiBase()}${path}`, {
+      ...init,
+      headers: {
+        accept: "application/json",
+        authorization: `Bearer ${token}`,
+        [SECRET_HEADER]: apiSecret(),
+        ...(init?.headers ?? {}),
+      },
+      cache: "no-store",
+      signal: init?.signal ?? AbortSignal.timeout(20_000),
+    })
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "rootsy-api no responde"
+    throw new RootsyApiError(message, 502)
+  }
 
   const body = await res.json().catch(() => null)
   if (!res.ok) {

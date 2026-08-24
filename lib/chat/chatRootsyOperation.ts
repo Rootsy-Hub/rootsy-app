@@ -382,7 +382,12 @@ function groupSummary(atoms: OperationAtom[], kind: ChatRootsyOperationStepKind)
     if (kind === "write") return "No se pudo actualizar."
     return "No se pudo completar."
   }
-  if (kind === "choose") return "Elegí un resultado para seguir."
+  if (kind === "choose") {
+    if (atoms.some((atom) => /cuáles/i.test(atom.impact))) {
+      return "Elegí una, varias o todas."
+    }
+    return "Elegí un resultado para seguir."
+  }
   if (kind === "delete") {
     return atoms[0]?.impact || (atoms.length > 1 ? `${atoms.length} registros` : "")
   }
@@ -534,7 +539,10 @@ function collectAtoms(rest: ChatMessageRow[]): OperationAtom[] {
           id: `${row.id}:choose:${choice.tool}`,
           hostMessageId: row.id,
           title: choice.action,
-          impact: "Elegí un resultado para que pueda seguir.",
+          impact:
+            choice.confirm === "confirm_many"
+              ? "Elegí cuáles para que pueda seguir."
+              : "Elegí un resultado para que pueda seguir.",
           status: "active",
           kind: "choose",
         })

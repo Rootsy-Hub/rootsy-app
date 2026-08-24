@@ -56,10 +56,12 @@ describe("fichas de dominio del planificador", () => {
 
   it("entra en el prompt que se copia a ChatGPT", () => {
     const prompt = buildChatRootsyPlannerPrompt()
-    assert.match(prompt, new RegExp(CHAT_ROOTSY_PLANNER_DOMAIN_RULE))
+    assert.equal(prompt.includes(CHAT_ROOTSY_PLANNER_DOMAIN_RULE), true)
     assert.match(prompt, /FICHAS DE DOMINIO/)
     assert.match(prompt, /## RRHH/)
     assert.match(prompt, /## Artículos/)
+    assert.match(prompt, /confirm_many/)
+    assert.match(prompt, /confirm_one/)
     assert.match(prompt, /"status":"done"/)
     assert.match(prompt, /respuesta/)
     assert.equal(

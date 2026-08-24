@@ -34,7 +34,7 @@ export type ChatRootsyToolProposal = {
   body?: Record<string, unknown>
   action?: string
   subject?: string
-  confirm?: "confirm" | "confirm_one"
+  confirm?: "confirm" | "confirm_one" | "confirm_many"
   offerKey?: string
   next?: ChatRootsyFollowUp
 }

@@ -24,6 +24,7 @@ import {
   type ChatRootsyOperationView,
 } from "@/lib/chat/chatRootsyOperation"
 import {
+  chatRootsyChoiceItemKey,
   chatRootsyOfferKey,
   type ChatRootsyPlannerChoice,
 } from "@/lib/chat/chatRootsyPlannerStep"
@@ -47,7 +48,7 @@ type Props = {
   onPick?: (
     hostId: string,
     choiceTool: string,
-    item: ChatRootsyToolItem,
+    items: ChatRootsyToolItem[],
   ) => void
 }
 
@@ -591,9 +592,9 @@ export function ChatRootsyOperationCard({
                       choice={choice}
                       disabled={disabled}
                       embedded
-                      onPick={(item) => {
+                      onPick={(items) => {
                         if (operation.choiceHostId) {
-                          onPick?.(operation.choiceHostId, choice.tool, item)
+                          onPick?.(operation.choiceHostId, choice.tool, items)
                         }
                       }}
                       onReject={() => {
@@ -774,36 +775,56 @@ function ChoiceActions({
   choice: ChatRootsyPlannerChoice
   disabled?: boolean
   embedded?: boolean
-  onPick: (item: ChatRootsyToolItem) => void
+  onPick: (items: ChatRootsyToolItem[]) => void
   onReject: () => void
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(
-    choice.items.length === 1
-      ? (choice.items[0]?.id ?? choice.items[0]?.name ?? null)
-      : null,
-  )
-  const selected = choice.items.find(
-    (item) => (item.id ?? item.name) === selectedId,
+  const many = choice.confirm === "confirm_many"
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => {
+    if (many) return choice.items.map((item) => chatRootsyChoiceItemKey(item))
+    if (choice.items.length === 1) {
+      return [chatRootsyChoiceItemKey(choice.items[0]!)]
+    }
+    return []
+  })
+  const selected = choice.items.filter((item) =>
+    selectedIds.includes(chatRootsyChoiceItemKey(item)),
   )
 
   return (
     <div className={embedded ? undefined : "px-3.5 pt-3"}>
       <p className="chat-rootsy-op-status mb-2 font-canopy text-xs">
-        Elegí un resultado para seguir.
+        {many
+          ? "Elegí una, varias o todas."
+          : "Elegí un resultado para seguir."}
       </p>
-      <ul className="space-y-1.5" role="radiogroup" aria-label={choice.action}>
+      <ul
+        className="space-y-1.5"
+        role={many ? "group" : "radiogroup"}
+        aria-label={choice.action}
+      >
         {choice.items.map((item) => {
           const key = item.id ?? `${item.rank}-${item.name}`
-          const checked = selectedId === (item.id ?? item.name)
+          const itemKey = chatRootsyChoiceItemKey(item)
+          const checked = selectedIds.includes(itemKey)
           return (
             <li key={key}>
               <button
                 type="button"
-                role="radio"
+                role={many ? "checkbox" : "radio"}
                 aria-checked={checked}
                 disabled={disabled}
                 className="chat-rootsy-op-choice flex w-full items-center gap-2.5 px-2.5 py-2 text-left font-canopy text-sm"
-                onClick={() => setSelectedId(item.id ?? item.name)}
+                onClick={() => {
+                  if (many) {
+                    setSelectedIds((current) =>
+                      current.includes(itemKey)
+                        ? current.filter((id) => id !== itemKey)
+                        : [...current, itemKey],
+                    )
+                    return
+                  }
+                  setSelectedIds([itemKey])
+                }}
               >
                 <span className="chat-rootsy-op-choice__mark" aria-hidden>
                   {checked ? (
@@ -824,12 +845,14 @@ function ChoiceActions({
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <GlassButton
           tone="approve"
-          disabled={disabled || !selected}
+          disabled={disabled || selected.length === 0}
           onClick={() => {
-            if (selected) onPick(selected)
+            if (selected.length) onPick(selected)
           }}
         >
-          Seguir con este
+          {many && selected.length > 1
+            ? `Seguir con ${selected.length}`
+            : "Seguir con este"}
         </GlassButton>
         <GlassButton tone="quiet" disabled={disabled} onClick={onReject}>
           Rechazar paso

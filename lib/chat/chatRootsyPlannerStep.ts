@@ -5,7 +5,7 @@ import { compactChatRootsyApiPayload } from "@/lib/chat/chatRootsyApiQuery"
 
 export const CHAT_ROOTSY_PLANNER_MAX_STEPS = 4
 
-export type ChatRootsyPlannerConfirm = "confirm" | "confirm_one"
+export type ChatRootsyPlannerConfirm = "confirm" | "confirm_one" | "confirm_many"
 
 export type ChatRootsyPlannerResultado = {
   method: string
@@ -38,6 +38,7 @@ export type ChatRootsyPlannerChoice = {
   action: string
   items: ChatRootsyToolItem[]
   payload?: unknown
+  confirm?: ChatRootsyPlannerConfirm
 }
 
 const ACTION_FORBIDDEN = /https?:\/\/|sk-[a-zA-Z0-9_-]+|\/v1\/|endpoint|token/i
@@ -52,7 +53,42 @@ export function readChatRootsyPlannerConfirm(
 ): ChatRootsyPlannerConfirm {
   const value = typeof raw === "string" ? raw.trim().toLowerCase() : ""
   if (value === "confirm_one" || value === "choose_one") return "confirm_one"
+  if (
+    value === "confirm_many" ||
+    value === "choose_many" ||
+    value === "confirm_some"
+  ) {
+    return "confirm_many"
+  }
   return "confirm"
+}
+
+export function isChatRootsyPlannerPickConfirm(
+  confirm: ChatRootsyPlannerConfirm,
+): confirm is "confirm_one" | "confirm_many" {
+  return confirm === "confirm_one" || confirm === "confirm_many"
+}
+
+export function looksLikeChatRootsyPluralPedido(message: string): boolean {
+  return /\b(todas?|todos|ambos|ambas|varios|varias|las|los)\b/i.test(message)
+}
+
+export function resolveChatRootsyPlannerPickConfirm(input: {
+  confirm: ChatRootsyPlannerConfirm
+  message: string
+  itemCount: number
+}): ChatRootsyPlannerConfirm {
+  if (!isChatRootsyPlannerPickConfirm(input.confirm)) return input.confirm
+  if (input.itemCount <= 1) return "confirm_one"
+  if (input.confirm === "confirm_many") return "confirm_many"
+  if (looksLikeChatRootsyPluralPedido(input.message)) return "confirm_many"
+  return "confirm_one"
+}
+
+export function chatRootsyChoiceItemKey(
+  item: Pick<ChatRootsyToolItem, "id" | "name">,
+): string {
+  return item.id?.trim() || item.name
 }
 
 function looksLikeEndpoint(value: string): boolean {
@@ -170,7 +206,7 @@ export function buildChatRootsyPlannerStoredPayload(input: {
       ? {
           acciones_sesion: acciones,
           nota_acciones_sesion:
-            "Si el pedido deshace o sigue estos cambios, usá todos los ítems. No te quedes con uno. Para varios ya identificados: GET con confirm (no confirm_one) y PATCH de cada uno.",
+            "Si el pedido deshace o sigue estos cambios, usá todos los ítems. No te quedes con uno. Pedido en plural/conjunto: GET confirm_many. Ítems ya identificados: GET confirm y PATCH de cada uno.",
         }
       : {}),
   })
@@ -249,6 +285,22 @@ export function pickChatRootsyPlannerSelectedResponse(
   if (item.sales != null) fallback.salePrice = item.sales
   if (item.balance != null) fallback.balance = item.balance
   return fallback
+}
+
+export function pickChatRootsyPlannerSelectedResponses(
+  payload: unknown,
+  items: Array<Pick<ChatRootsyToolItem, "id" | "name" | "sales" | "balance">>,
+): unknown[] {
+  return items.map((item) => pickChatRootsyPlannerSelectedResponse(payload, item))
+}
+
+export function compactChatRootsyPlannerChoiceResponse(
+  choice: Pick<ChatRootsyPlannerChoice, "confirm" | "payload">,
+  items: Array<Pick<ChatRootsyToolItem, "id" | "name" | "sales" | "balance">>,
+): unknown {
+  const rows = pickChatRootsyPlannerSelectedResponses(choice.payload, items)
+  if (choice.confirm === "confirm_many") return rows
+  return rows[0] ?? null
 }
 
 export function chatRootsyOfferKey(offer: {

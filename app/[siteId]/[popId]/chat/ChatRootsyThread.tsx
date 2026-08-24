@@ -539,12 +539,12 @@ export function ChatRootsyThread({
   const pickPlannerChoice = async (
     messageId: string,
     choiceTool: string,
-    item: { id?: string; name: string; sales?: number; balance?: number },
+    items: Array<{ id?: string; name: string; sales?: number; balance?: number }>,
   ) => {
     if (sending) return
     const host = messages.find((row) => row.id === messageId)
     const choice = host?.plannerChoices?.find((row) => row.tool === choiceTool)
-    if (!host?.plannerRun || !choice) return
+    if (!host?.plannerRun || !choice || !items.length) return
     setSendError(null)
     setSending(true)
     setLive({ sending: true, mode: "choose", hostId: messageId })
@@ -560,7 +560,7 @@ export function ChatRootsyThread({
       popId,
       plannerRun: host.plannerRun,
       choice,
-      item,
+      items,
     })
 
     if (!res.success) {
@@ -702,8 +702,8 @@ export function ChatRootsyThread({
                       void confirmTools(hostId, keys)
                     }}
                     onReject={(hostId) => cancelPlanner(hostId)}
-                    onPick={(hostId, choiceTool, item) => {
-                      void pickPlannerChoice(hostId, choiceTool, item)
+                    onPick={(hostId, choiceTool, items) => {
+                      void pickPlannerChoice(hostId, choiceTool, items)
                     }}
                   />
                   {isChatRootsyDevTraceEnabled() &&

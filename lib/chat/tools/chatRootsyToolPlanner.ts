@@ -502,7 +502,7 @@ export function buildChatRootsyPlannerUserPayload(input: {
       ? {
           acciones_sesion: acciones,
           nota_acciones_sesion:
-            "Si el pedido deshace o sigue estos cambios, usá todos los ítems. No te quedes con uno. Para varios ya identificados: GET con confirm (no confirm_one) y PATCH de cada uno.",
+            "Si el pedido deshace o sigue estos cambios, usá todos los ítems. No te quedes con uno. Pedido en plural/conjunto: GET confirm_many. Ítems ya identificados: GET confirm y PATCH de cada uno.",
         }
       : {}),
     recent: (input.context?.recent ?? []).map((row) => ({

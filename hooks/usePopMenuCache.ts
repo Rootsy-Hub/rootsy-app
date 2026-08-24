@@ -68,11 +68,9 @@ export function usePopMenuCache(popId: string) {
     [pop, enabledModules],
   )
 
-  const hasCached =
-    (cachedProfile !== undefined || profileQuery.data !== undefined) &&
-    (cachedPops !== undefined || popsQuery.data !== undefined)
-  const isLoading = !hasCached && (!queriesEnabled || profileQuery.isPending || popsQuery.isPending)
-  const loadError = profileQuery.isError || popsQuery.isError
+  const hasCachedPops = cachedPops !== undefined || popsQuery.data !== undefined
+  const isLoading = !hasCachedPops && (!queriesEnabled || popsQuery.isPending)
+  const loadError = popsQuery.isError && !hasCachedPops
 
   return {
     isLoading,

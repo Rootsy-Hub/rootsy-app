@@ -40,7 +40,7 @@ export const CHAT_ROOTSY_PLANNER_SYSTEM = [
   "Si viene acciones_sesion y el pedido las deshace o las continúa, usá todos esos ítems. No te quedes con uno.",
   "Un paso por respuesta. Máximo 4 pasos.",
   'Devolvé solo JSON: {"status":"ok","queries":[{"id":"<id>","filters":{},"action":"...","confirm":"confirm"}]}.',
-  'confirm_one si el siguiente paso necesita un ítem. done si ya alcanzó.',
+  'confirm_one si el pedido nombra UNO y hay varios. confirm_many si nombra un conjunto. done si ya alcanzó.',
   "Sin prosa, sin markdown, sin razonamiento.",
   "Solo ids del catálogo. Fechas ISO YYYY-MM-DD.",
   "No inventes ids, URLs, endpoints ni cálculos.",

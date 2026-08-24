@@ -13,9 +13,11 @@ import type {
 import {
   canContinueChatRootsyPlanner,
   chatRootsyOfferKey,
+  compactChatRootsyPlannerChoiceResponse,
   compactChatRootsyPlannerResponse,
   completeChatRootsyPlannerInforme,
-  pickChatRootsyPlannerSelectedResponse,
+  isChatRootsyPlannerPickConfirm,
+  resolveChatRootsyPlannerPickConfirm,
   CHAT_ROOTSY_PLANNER_MAX_STEPS,
   type ChatRootsyPlannerChoice,
   type ChatRootsyPlannerInforme,
@@ -870,7 +872,10 @@ export async function runRootsyChatTools(input: {
           ? [
               chatRootsyDevStep({
                 lane: "choice",
-                title: "confirm_one · esperando elección",
+                title:
+                  next.plannerChoices.some((row) => row.confirm === "confirm_many")
+                    ? "confirm_many · esperando elección"
+                    : "confirm_one · esperando elección",
                 note: next.note,
                 body: next.plannerChoices,
               }),
@@ -967,13 +972,18 @@ async function continuePlannerAfterResults(input: {
     const path = proposal.path ?? ""
     const action = proposal.action ?? result.title ?? "Continuar con esta acción"
     const confirm = proposal.confirm ?? "confirm"
-    if (confirm === "confirm_one") {
+    if (isChatRootsyPlannerPickConfirm(confirm)) {
+      const pick = resolveChatRootsyPlannerPickConfirm({
+        confirm,
+        message: run.message,
+        itemCount: result.items.length,
+      })
       if (!result.items.length) {
         resultados.push({
           method,
           path,
           action,
-          confirm,
+          confirm: pick,
           response: compactChatRootsyPlannerResponse(result.payload ?? []),
         })
         continue
@@ -985,6 +995,7 @@ async function continuePlannerAfterResults(input: {
         action,
         items: result.items,
         payload: result.payload,
+        confirm: pick,
       })
       continue
     }
@@ -1001,7 +1012,9 @@ async function continuePlannerAfterResults(input: {
     return {
       plannerRun: { ...run, resultados },
       plannerChoices,
-      note: "Esperando que elijan un resultado (confirm_one).",
+      note: plannerChoices.some((row) => row.confirm === "confirm_many")
+        ? "Esperando que elijan uno, varios o todos (confirm_many)."
+        : "Esperando que elijan un resultado (confirm_one).",
     }
   }
 
@@ -1091,12 +1104,16 @@ export async function continueRootsyPlannerRun(input: {
   siteId: string
   plannerRun: ChatRootsyPlannerRun
   choice: ChatRootsyPlannerChoice
-  item: { id?: string; name: string; sales?: number; balance?: number }
+  items: Array<{ id?: string; name: string; sales?: number; balance?: number }>
 }): Promise<SendRootsyChatResult> {
   const popId = input.popId.trim()
   const siteId = input.siteId.trim()
   if (!popId || !siteId) {
     return { success: false, error: "Parámetros inválidos" }
+  }
+  const items = input.items.filter((item) => item.id?.trim() || item.name.trim())
+  if (!items.length) {
+    return { success: false, error: "Elegí al menos un resultado" }
   }
 
   const access = await validatePopAccess(popId)
@@ -1112,17 +1129,15 @@ export async function continueRootsyPlannerRun(input: {
     return { success: false, error: "Sitio inválido para este negocio" }
   }
 
+  const confirm = input.choice.confirm ?? "confirm_one"
   const resultados: ChatRootsyPlannerResultado[] = [
     ...input.plannerRun.resultados,
     {
       method: input.choice.method,
       path: input.choice.path,
       action: input.choice.action,
-      confirm: "confirm_one",
-      response: pickChatRootsyPlannerSelectedResponse(
-        input.choice.payload,
-        input.item,
-      ),
+      confirm,
+      response: compactChatRootsyPlannerChoiceResponse(input.choice, items),
     },
   ]
 
@@ -1168,7 +1183,7 @@ export async function continueRootsyPlannerRun(input: {
                 title: "Ítem elegido",
                 note: input.choice.action,
                 body: {
-                  elegido: input.item,
+                  elegidos: items,
                   resultados,
                 },
               }),
@@ -1197,7 +1212,7 @@ export async function continueRootsyPlannerRun(input: {
         title: "Ítem elegido",
         note: input.choice.action,
         body: {
-          elegido: input.item,
+          elegidos: items,
           resultados,
         },
       }),

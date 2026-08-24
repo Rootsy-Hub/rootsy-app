@@ -5,17 +5,49 @@ import {
   canContinueChatRootsyPlanner,
   completeChatRootsyPlannerInforme,
   pickChatRootsyPlannerSelectedResponse,
+  compactChatRootsyPlannerChoiceResponse,
+  looksLikeChatRootsyPluralPedido,
   readChatRootsyPlannerConfirm,
+  resolveChatRootsyPlannerPickConfirm,
   readChatRootsyPlannerInforme,
   sanitizeChatRootsyPlannerAction,
 } from "@/lib/chat/chatRootsyPlannerStep"
 
 describe("pasos del planificador Rootsy", () => {
-  it("lee confirm y confirm_one", () => {
+  it("lee confirm, confirm_one y confirm_many", () => {
     assert.equal(readChatRootsyPlannerConfirm("confirm_one"), "confirm_one")
     assert.equal(readChatRootsyPlannerConfirm("choose_one"), "confirm_one")
+    assert.equal(readChatRootsyPlannerConfirm("confirm_many"), "confirm_many")
+    assert.equal(readChatRootsyPlannerConfirm("choose_many"), "confirm_many")
     assert.equal(readChatRootsyPlannerConfirm("confirm"), "confirm")
     assert.equal(readChatRootsyPlannerConfirm(undefined), "confirm")
+  })
+
+  it("sube confirm_one a confirm_many si el pedido es plural", () => {
+    assert.equal(
+      looksLikeChatRootsyPluralPedido("quiero aumentar un 10% al precio de las cocas"),
+      true,
+    )
+    assert.equal(
+      looksLikeChatRootsyPluralPedido("aumentá la coca un 10%"),
+      false,
+    )
+    assert.equal(
+      resolveChatRootsyPlannerPickConfirm({
+        confirm: "confirm_one",
+        message: "aumentá un 10% las cocas",
+        itemCount: 3,
+      }),
+      "confirm_many",
+    )
+    assert.equal(
+      resolveChatRootsyPlannerPickConfirm({
+        confirm: "confirm_one",
+        message: "eliminá Huevo",
+        itemCount: 3,
+      }),
+      "confirm_one",
+    )
   })
 
   it("limpia action y no deja endpoints", () => {
@@ -123,6 +155,20 @@ describe("pasos del planificador Rootsy", () => {
 
     assert.equal(selected.id, "b")
     assert.equal(selected.salePrice, 1800)
+
+    const many = compactChatRootsyPlannerChoiceResponse(
+      { confirm: "confirm_many", payload: { data: [
+        { id: "a", name: "Agua 500", salePrice: 2500 },
+        { id: "b", name: "Agua 1.5", salePrice: 1800 },
+      ] } },
+      [
+        { id: "a", name: "Agua 500" },
+        { id: "b", name: "Agua 1.5" },
+      ],
+    ) as Array<{ id: string }>
+    assert.equal(many.length, 2)
+    assert.equal(many[0]?.id, "a")
+    assert.equal(many[1]?.id, "b")
   })
 
   it("corta a 4 pasos", () => {

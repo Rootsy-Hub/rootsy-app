@@ -328,18 +328,20 @@ function MenuPage() {
     popAccess != null &&
     popAccess.pop.siteId.trim().toLowerCase() !== siteId.trim().toLowerCase()
 
-  const contentPending = !isMounted || isLoading || !popAccess
-  const menuReady = !contentPending && sections.length > 0
+  const contentPending = !isMounted || isLoading
+  const menuReady = !contentPending && Boolean(popAccess) && sections.length > 0
   const error =
     !popId || !siteId
       ? "No se encontró el punto de venta."
       : loadError
         ? "Error al cargar el menú."
-        : cacheMismatch
-          ? "La URL no coincide con este punto de venta."
-          : popAccess && !popAccess.canEnter
-            ? "No tenés acceso activo a este punto de venta."
-            : null
+        : !contentPending && !popAccess
+          ? "No se encontró el punto de venta."
+          : cacheMismatch
+            ? "La URL no coincide con este punto de venta."
+            : popAccess && !popAccess.canEnter
+              ? "No tenés acceso activo a este punto de venta."
+              : null
   const popLogoFallback = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=1a1f1d`
   const headerPopLogoSrc = contentPending
     ? popLogoFallback
