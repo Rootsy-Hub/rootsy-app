@@ -633,7 +633,8 @@ export function ChatRootsyThread({
             <div
               key={message.id}
               className={cn(
-                "flex flex-col gap-1",
+                "flex flex-col",
+                operation ? "gap-0" : "gap-1",
                 clusterClass,
                 operation
                   ? "w-full max-w-[min(36rem,96%)] self-start items-start"
@@ -655,11 +656,10 @@ export function ChatRootsyThread({
                   lastInCluster={cluster.lastInCluster}
                   tail={cluster.lastInCluster && !operation}
                   hideTime={message.id === ROOTSY_CHAT_WELCOME.id}
-                  timeClassName="chat-rootsy-thread-caption text-rootsy-bruma-700"
                 />
               ) : null}
               {operation ? (
-                <div className="w-full">
+                <div className="mt-4 mb-4 w-full">
                   <ChatRootsyOperationCard
                     operation={operation}
                     disabled={sending}

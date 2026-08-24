@@ -100,7 +100,7 @@
 }
 
 .chat-bubble--text {
-  padding: 0.5rem 0.875rem 0.625rem;
+  padding: 0.45rem 0.7rem 0.35rem 0.8rem;
 }
 
 .chat-bubble__name {
@@ -122,6 +122,55 @@
   font-size: inherit;
   line-height: inherit;
   white-space: nowrap;
+}
+
+.chat-bubble-time-pad {
+  display: inline-block;
+  margin-left: 0.45rem;
+  font-size: 0.625rem;
+  line-height: 1.15;
+  visibility: hidden;
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.chat-bubble-time {
+  position: absolute;
+  right: 0.7rem;
+  bottom: 0.28rem;
+  margin: 0;
+  padding: 0;
+  font-size: 0.625rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.chat-bubble--mine .chat-bubble-time {
+  color: rgb(255 255 255 / 0.62);
+}
+
+.chat-bubble--theirs .chat-bubble-time {
+  color: var(--rootsy-bruma-500);
+}
+
+.chat-bubble--emoji.chat-bubble--timed {
+  padding-bottom: 1.15rem;
+}
+
+.chat-bubble-emoji-plain-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.chat-bubble-emoji-plain-wrap .chat-bubble-time {
+  position: static;
+  margin-top: 0.15rem;
+  color: var(--rootsy-bruma-500);
 }
 
 .chat-bubble__tail {
@@ -151,12 +200,4 @@
   padding: 0 0.25rem;
   font-size: 4.5rem;
   line-height: 1;
-}
-
-.chat-bubble-time {
-  margin: 0;
-  padding: 0.125rem 0.25rem 0;
-  font-size: 0.6875rem;
-  line-height: 1rem;
-  color: var(--rootsy-bruma-500);
 }

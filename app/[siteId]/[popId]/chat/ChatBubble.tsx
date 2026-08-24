@@ -73,6 +73,8 @@ export function ChatBubble({
   const showAvatar = showAvatarSlot && lastInCluster
   const photo = authorImageUrl?.trim() || null
   const initials = chatAuthorInitials(authorName)
+  const timeLabel = formatChatTime(createdAt)
+  const showTime = Boolean(timeLabel) && !hideTime
 
   return (
     <article
@@ -100,7 +102,17 @@ export function ChatBubble({
           )
         ) : null}
         {emojiCount === 1 ? (
-          <p className="chat-bubble-emoji-plain">{text}</p>
+          <div className="chat-bubble-emoji-plain-wrap">
+            <p className="chat-bubble-emoji-plain">{text}</p>
+            {showTime ? (
+              <time
+                className={cn("chat-bubble-time font-canopy", timeClassName)}
+                dateTime={createdAt}
+              >
+                {timeLabel}
+              </time>
+            ) : null}
+          </div>
         ) : (
           <div
             className={cn(
@@ -110,6 +122,7 @@ export function ChatBubble({
               emojiCount === 2 && "chat-bubble--emoji chat-bubble--emoji-2",
               emojiCount === 3 && "chat-bubble--emoji chat-bubble--emoji-3",
               !emojiCount && "chat-bubble--text",
+              showTime && "chat-bubble--timed",
               pending && "opacity-70",
             )}
           >
@@ -123,23 +136,26 @@ export function ChatBubble({
                 {authorName}
               </p>
             ) : null}
-            <p className="chat-bubble__body">{text}</p>
+            <p className="chat-bubble__body">
+              {text}
+              {showTime && !emojiCount ? (
+                <span className="chat-bubble-time-pad font-canopy" aria-hidden>
+                  {timeLabel}
+                </span>
+              ) : null}
+            </p>
+            {showTime ? (
+              <time
+                className={cn("chat-bubble-time font-canopy", timeClassName)}
+                dateTime={createdAt}
+              >
+                {timeLabel}
+              </time>
+            ) : null}
             {withTail ? <ChatBubbleTail side={mine ? "right" : "left"} /> : null}
           </div>
         )}
       </div>
-      {hideTime || !lastInCluster ? null : (
-        <time
-          className={cn(
-            "chat-bubble-time font-canopy",
-            mine && "self-end",
-            showAvatarSlot && "ml-[2.125rem]",
-            timeClassName,
-          )}
-        >
-          {formatChatTime(createdAt)}
-        </time>
-      )}
     </article>
   )
 }
