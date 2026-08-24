@@ -87,56 +87,80 @@ function HrPermissionVerbRow({
   const approvalId = verb.approvalKey
     ? `perm-${verb.approvalKey.replace(/:/g, "-")}`
     : undefined
+  const showApproval = Boolean(granted && verb.approvalKey && approvalId)
 
   return (
-    <div className="relative">
-      <RootsFormCheckboxChoiceRow
-        id={executeId}
-        label={verb.actionLabel}
-        description={
-          approvalOnly
-            ? "Este rol pide confirmación; no ejecuta la acción."
-            : (verb.description ?? undefined)
-        }
-        checked={granted}
-        onCheckedChange={(checked) =>
-          applyChanges(
-            onApplyGrantKeys,
-            checked ? grantVerbExecute(verb) : revokeVerb(verb),
-          )
-        }
-      />
-      {granted && verb.approvalKey && approvalId ? (
-        <>
-          <span
-            aria-hidden
-            className="pointer-events-none absolute left-3 top-7 bottom-5 w-5 rounded-bl-[6px] border-b border-l border-rootsy-bruma-300"
+    <div className="px-1">
+      <div className="flex gap-3">
+        <div
+          className={cn(
+            "flex w-4 shrink-0 flex-col items-center",
+            showApproval && "pb-5",
+          )}
+        >
+          <RootsFormCheckbox
+            id={executeId}
+            checked={granted}
+            className="mt-3"
+            onCheckedChange={(value) =>
+              applyChanges(
+                onApplyGrantKeys,
+                value === true ? grantVerbExecute(verb) : revokeVerb(verb),
+              )
+            }
+            aria-label={verb.actionLabel}
           />
-          <div className="flex min-h-10 items-center pl-8">
-            <label
-              htmlFor={approvalId}
-              className="flex min-h-10 cursor-pointer items-center gap-3"
-            >
-              <RootsFormCheckbox
-                id={approvalId}
-                checked={approvalOnly}
-                onCheckedChange={(value) => {
-                  const next = grantVerbApproval(verb)
-                  if (!next) return
-                  applyChanges(
-                    onApplyGrantKeys,
-                    value === true ? next : grantVerbExecute(verb),
-                  )
-                }}
-                aria-label={`Pedir aprobación: ${verb.actionLabel}`}
-              />
-              <span className="font-canopy text-sm font-medium leading-5 text-rootsy-bruma-800">
-                Pedir aprobación
+          {showApproval ? (
+            <span
+              aria-hidden
+              className="w-px min-h-3 flex-1 bg-rootsy-bruma-500"
+            />
+          ) : null}
+        </div>
+        <div className="min-w-0 flex-1">
+          <label htmlFor={executeId} className="flex cursor-pointer flex-col gap-0.5 py-2.5">
+            <span className="font-canopy text-sm font-medium leading-5 text-rootsy-bruma-900">
+              {verb.actionLabel}
+            </span>
+            {verb.description || approvalOnly ? (
+              <span className="font-canopy text-xs leading-4 text-rootsy-bruma-500">
+                {approvalOnly
+                  ? "Este rol pide confirmación; no ejecuta la acción."
+                  : verb.description}
               </span>
-            </label>
-          </div>
-        </>
-      ) : null}
+            ) : null}
+          </label>
+          {showApproval && approvalId ? (
+            <div className="flex h-10 items-center">
+              <span
+                aria-hidden
+                className="-ml-5 h-px w-5 bg-rootsy-bruma-500"
+              />
+              <label
+                htmlFor={approvalId}
+                className="flex cursor-pointer items-center gap-3"
+              >
+                <RootsFormCheckbox
+                  id={approvalId}
+                  checked={approvalOnly}
+                  onCheckedChange={(value) => {
+                    const next = grantVerbApproval(verb)
+                    if (!next) return
+                    applyChanges(
+                      onApplyGrantKeys,
+                      value === true ? next : grantVerbExecute(verb),
+                    )
+                  }}
+                  aria-label={`Pedir aprobación: ${verb.actionLabel}`}
+                />
+                <span className="font-canopy text-sm font-medium leading-5 text-rootsy-bruma-900">
+                  Pedir aprobación
+                </span>
+              </label>
+            </div>
+          ) : null}
+        </div>
+      </div>
     </div>
   )
 }
@@ -290,7 +314,10 @@ export function HrRolePermissionsDialog({
                           />
                           <CollapsibleTrigger
                             type="button"
-                            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 text-left hover:bg-rootsy-bruma-100/80"
+                            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-1 text-left outline-none hover:bg-rootsy-bruma-100/80 focus:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]"
+                            onPointerUp={(event) => {
+                              event.currentTarget.blur()
+                            }}
                             aria-label={
                               expanded
                                 ? `Ocultar permisos de ${section.label}`

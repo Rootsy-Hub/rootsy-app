@@ -1,5 +1,6 @@
 "use client"
 
+import { ChatBubble } from "@/app/[siteId]/[popId]/chat/ChatBubble"
 import { ChatChannelAvatar } from "@/app/[siteId]/[popId]/chat/ChatChannelAvatar"
 import { ChatChannelDialog } from "@/app/[siteId]/[popId]/chat/ChatChannelDialog"
 import { ChatEmojiPicker } from "@/app/[siteId]/[popId]/chat/ChatEmojiPicker"
@@ -22,8 +23,9 @@ import {
   removeChatMessageFromCache,
 } from "@/app/[siteId]/[popId]/chat/chatRealtime"
 import {
-  chatAuthorNameTone,
-  chatStandaloneEmojiCount,
+  chatBubbleClusterFlags,
+  chatMessageAuthorImageUrl,
+  chatThreadKindFromChannel,
   formatChatTime,
   type ChatMessageRow,
   type UpsertChatChannelInput,
@@ -161,6 +163,7 @@ export function ChatWorkspaceView() {
     () => channels.find((item) => item.id === selectedId) ?? null,
     [channels, selectedId],
   )
+  const threadKind = chatThreadKindFromChannel(selected)
 
   const focusSendButton = useCallback(() => {
     window.requestAnimationFrame(() => {
@@ -704,7 +707,7 @@ export function ChatWorkspaceView() {
                         threadListRef.current = node
                         setThreadListEl(node)
                       }}
-                      className="chat-thread-surface game-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 [overflow-anchor:none]"
+                      className="chat-thread-surface game-scroll flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 [overflow-anchor:none]"
                       onScroll={(event) => {
                         const el = event.currentTarget
                         stickToBottomRef.current =
@@ -729,52 +732,32 @@ export function ChatWorkspaceView() {
                           Todavía no hay mensajes en este canal.
                         </p>
                       ) : (
-                        messages.map((message) => {
-                          const emojiCount = chatStandaloneEmojiCount(message.body)
+                        messages.map((message, index) => {
+                          const cluster = chatBubbleClusterFlags(messages, index)
                           return (
-                          <article
+                          <ChatBubble
                             key={message.id}
-                            className={cn(
-                              "flex max-w-[min(28rem,92%)] flex-col gap-1",
-                              message.mine
-                                ? "self-end items-end"
-                                : "self-start items-start",
+                            variant={threadKind}
+                            mine={message.mine}
+                            body={message.body}
+                            authorName={message.authorName}
+                            authorUserId={message.authorUserId}
+                            authorImageUrl={chatMessageAuthorImageUrl(
+                              message,
+                              members,
                             )}
-                          >
-                            {!message.mine ? (
-                              <p
-                                className={cn(
-                                  "px-1 font-canopy text-[11px] font-bold",
-                                  chatAuthorNameTone(message.authorUserId),
-                                )}
-                              >
-                                {message.authorName}
-                              </p>
-                            ) : null}
-                            <p
-                              className={cn(
-                                "font-canopy",
-                                emojiCount === 1 && "px-1 text-[4.5rem] leading-none",
-                                emojiCount === 2 &&
-                                  "rounded-[1.125rem] px-3 py-2 text-[3rem] leading-none",
-                                emojiCount === 3 &&
-                                  "rounded-[1.125rem] px-3 py-2 text-[2.25rem] leading-none",
-                                !emojiCount &&
-                                  "rounded-[1.125rem] px-3.5 py-2.5 text-sm leading-5",
-                                emojiCount === 1
-                                  ? null
-                                  : message.mine
-                                    ? "rounded-br-md bg-[var(--rootsy-savia-600)] text-white"
-                                    : "rounded-bl-md border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-900)]",
-                                message.pending ? "opacity-70" : null,
-                              )}
-                            >
-                              {message.body.trim()}
-                            </p>
-                            <time className="px-1 font-canopy text-[11px] text-[var(--rootsy-bruma-500)]">
-                              {formatChatTime(message.createdAt)}
-                            </time>
-                          </article>
+                            createdAt={message.createdAt}
+                            firstInCluster={cluster.firstInCluster}
+                            lastInCluster={cluster.lastInCluster}
+                            pending={message.pending}
+                            className={
+                              index === 0
+                                ? "mt-0"
+                                : cluster.firstInCluster
+                                  ? "mt-3"
+                                  : "mt-0.5"
+                            }
+                          />
                           )
                         })
                       )}

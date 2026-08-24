@@ -41,6 +41,10 @@ export function chatMessageFromEvent(
   const id = typeof row.id === "string" ? row.id : ""
   const authorUserId = typeof row.authorUserId === "string" ? row.authorUserId : ""
   const authorName = typeof row.authorName === "string" ? row.authorName : ""
+  const authorImageUrl =
+    typeof row.authorImageUrl === "string" && row.authorImageUrl.trim()
+      ? row.authorImageUrl.trim()
+      : null
   const body = typeof row.body === "string" ? row.body : ""
   const createdAt = typeof row.createdAt === "string" ? row.createdAt : ""
   if (!id || !authorUserId || !body || !createdAt) return null
@@ -48,6 +52,7 @@ export function chatMessageFromEvent(
     id,
     authorUserId,
     authorName,
+    authorImageUrl,
     body,
     createdAt,
     mine: sameChatUserId(authorUserId, currentUserId),

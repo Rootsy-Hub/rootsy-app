@@ -7,6 +7,7 @@ import {
   RootsyWaitingAsset,
   RootsyWorkingAsset,
 } from "@/app/[siteId]/[popId]/chat/ChatRootsyMascotAssets"
+import { MundosHerramientasCrystal } from "@/app/library/mundos/MundosHerramientasCard"
 import "@/app/[siteId]/[popId]/chat/chatRootsyOperation.css"
 import type { ChatRootsyToolItem } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import { RootsFormCheckbox } from "@/components/rootsy-form"
@@ -136,7 +137,7 @@ function OperationChangePlates({
             {change.before}
           </span>
           <ArrowRight
-            className="size-3 shrink-0 text-white/70"
+            className="size-3 shrink-0 opacity-70"
             aria-hidden
           />
           <span className="chat-rootsy-op-value__after font-canopy text-[11px] tabular-nums">
@@ -244,8 +245,8 @@ export function ChatRootsyOperationCard({
       aria-describedby={`${operation.id}-status`}
       aria-busy={live}
     >
-      <div className="chat-rootsy-op-card__glass">
-        <span className="chat-rootsy-op-card__sheen" aria-hidden />
+      <MundosHerramientasCrystal className="chat-rootsy-op-card__crystal">
+        <div className="chat-rootsy-op-card__body">
         <header
           className={cn(
             "flex gap-3 pr-14 pl-3.5",
@@ -321,7 +322,7 @@ export function ChatRootsyOperationCard({
                     data-kind={step.kind}
                     data-status={step.status}
                   >
-                    <p className="font-canopy text-sm text-white">
+                    <p className="font-canopy text-sm">
                       {step.title}
                     </p>
                     {detail.text ? (
@@ -387,7 +388,7 @@ export function ChatRootsyOperationCard({
                       }}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block font-canopy text-sm text-white">
+                      <span className="block font-canopy text-sm">
                         {offer.preview?.subject && previewOffers.length >= 2
                           ? offer.preview.subject
                           : offer.action ?? offer.label}
@@ -464,7 +465,7 @@ export function ChatRootsyOperationCard({
               </span>
               <ChevronDown
                 className={cn(
-                  "size-3.5 shrink-0 text-white/55 transition-transform motion-reduce:transition-none",
+                  "size-3.5 shrink-0 opacity-60 transition-transform motion-reduce:transition-none",
                   detailsOpen && "rotate-180",
                 )}
                 aria-hidden
@@ -477,14 +478,14 @@ export function ChatRootsyOperationCard({
                   if (!details.length) return null
                   return (
                     <div key={`${step.id}-details`}>
-                      <p className="font-canopy text-xs font-semibold text-white">
+                      <p className="font-canopy text-xs font-semibold">
                         {step.title}
                       </p>
                       <ul className="mt-1 space-y-1.5">
                         {details.map((item) => (
                           <li
                             key={item.id}
-                            className="min-w-0 font-canopy text-sm text-white"
+                            className="min-w-0 font-canopy text-sm"
                           >
                             <div className="flex items-baseline justify-between gap-3">
                               <span className="min-w-0">{item.label}</span>
@@ -509,7 +510,8 @@ export function ChatRootsyOperationCard({
         ) : !collapsed ? (
           <div className="h-3" />
         ) : null}
-      </div>
+        </div>
+      </MundosHerramientasCrystal>
 
       <div className="chat-rootsy-op-asset" data-rootsy-asset-edge>
         <OperationMascot phase={operation.phase} />
@@ -573,7 +575,7 @@ function ChoiceActions({
                 role="radio"
                 aria-checked={checked}
                 disabled={disabled}
-                className="chat-rootsy-op-choice flex w-full items-baseline justify-between gap-3 px-2.5 py-2 text-left font-canopy text-sm text-white"
+                className="chat-rootsy-op-choice flex w-full items-baseline justify-between gap-3 px-2.5 py-2 text-left font-canopy text-sm"
                 onClick={() => setSelectedId(item.id ?? item.name)}
               >
                 <span className="min-w-0">{item.name}</span>

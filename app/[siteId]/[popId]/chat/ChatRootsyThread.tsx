@@ -1,5 +1,6 @@
 "use client"
 
+import { ChatBubble } from "@/app/[siteId]/[popId]/chat/ChatBubble"
 import { ChatEmojiPicker } from "@/app/[siteId]/[popId]/chat/ChatEmojiPicker"
 import "@/app/[siteId]/[popId]/chat/chatRootsy.css"
 import { ChatRootsyAvatar } from "@/app/[siteId]/[popId]/chat/ChatRootsyAvatar"
@@ -21,8 +22,7 @@ import {
   saveRootsyChatMessages,
 } from "@/app/[siteId]/[popId]/chat/chatRootsy"
 import {
-  chatStandaloneEmojiCount,
-  formatChatTime,
+  chatBubbleClusterFlags,
   type ChatMessageRow,
 } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import {
@@ -164,6 +164,20 @@ export function ChatRootsyThread({
     }
     return ids
   }, [operations, tracesByOperation])
+
+  const bubbleMessages = useMemo(
+    () =>
+      displayMessages.filter((message) => {
+        const operation = operationByAnchor.get(message.id)
+        if (hiddenIds.has(message.id) && !operation) return false
+        return message.body.trim().length > 0
+      }),
+    [displayMessages, hiddenIds, operationByAnchor],
+  )
+  const bubbleIndexById = useMemo(
+    () => new Map(bubbleMessages.map((message, index) => [message.id, index])),
+    [bubbleMessages],
+  )
 
   const rememberComposerRange = () => {
     const el = composerRef.current
@@ -506,7 +520,7 @@ export function ChatRootsyThread({
 
       <div
         ref={listRef}
-        className="game-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain bg-transparent px-4 py-4 sm:px-6 [overflow-anchor:none]"
+        className="game-scroll flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain bg-transparent px-4 py-4 sm:px-6 [overflow-anchor:none]"
       >
         {!hydrated ? (
           <div className="flex w-full justify-center py-2">
@@ -521,56 +535,46 @@ export function ChatRootsyThread({
               <ChatRootsyDevTraceCard key={message.id} trace={message.devTrace} />
             ) : null
           }
-          const emojiCount = chatStandaloneEmojiCount(message.body)
+          const bubbleIndex = bubbleIndexById.get(message.id)
+          const cluster =
+            bubbleIndex != null
+              ? chatBubbleClusterFlags(bubbleMessages, bubbleIndex)
+              : { firstInCluster: true, lastInCluster: true }
+          const clusterClass =
+            bubbleIndex === 0
+              ? "mt-0"
+              : cluster.firstInCluster
+                ? "mt-3"
+                : "mt-0.5"
+          const hasBody = Boolean(message.body.trim())
           return (
-            <article
+            <div
               key={message.id}
               className={cn(
                 "flex flex-col gap-1",
+                clusterClass,
                 operation
                   ? "w-full max-w-[min(36rem,96%)] self-start items-start"
                   : isChatRootsyDevTraceEnabled() && message.devTrace
                     ? "max-w-[min(36rem,96%)] self-start items-start"
-                    : "max-w-[min(28rem,92%)]",
+                    : null,
                 message.mine ? "self-end items-end" : !operation && "self-start items-start",
               )}
             >
-              {!message.mine && message.body.trim() ? (
-                <p className="chat-rootsy-thread-caption px-1 font-canopy text-[11px] font-bold text-rootsy-savia-800">
-                  Rootsy
-                </p>
-              ) : null}
-              {message.body.trim() ? (
-                <p
-                  className={cn(
-                    "font-canopy",
-                    emojiCount === 1 && "px-1 text-[4.5rem] leading-none",
-                    emojiCount === 2 &&
-                      "rounded-[1.125rem] px-3 py-2 text-[3rem] leading-none",
-                    emojiCount === 3 &&
-                      "rounded-[1.125rem] px-3 py-2 text-[2.25rem] leading-none",
-                    !emojiCount &&
-                      "rounded-[1.125rem] px-3.5 py-2.5 text-sm leading-5",
-                    message.mine && !emojiCount && "self-end",
-                    emojiCount === 1
-                      ? null
-                      : message.mine
-                        ? "rounded-br-md bg-rootsy-savia-600 text-white"
-                        : "rounded-bl-md border border-rootsy-bruma-200 bg-white text-rootsy-bruma-900",
-                  )}
-                >
-                  {message.body.trim()}
-                </p>
-              ) : null}
-              {message.id !== ROOTSY_CHAT_WELCOME.id && message.body.trim() ? (
-                <time
-                  className={cn(
-                    "chat-rootsy-thread-caption px-1 font-canopy text-[11px] text-rootsy-bruma-700",
-                    message.mine && "self-end",
-                  )}
-                >
-                  {formatChatTime(message.createdAt)}
-                </time>
+              {hasBody ? (
+                <ChatBubble
+                  variant="direct"
+                  mine={message.mine}
+                  body={message.body}
+                  authorName={message.authorName}
+                  authorUserId={message.authorUserId}
+                  createdAt={message.createdAt}
+                  firstInCluster={cluster.firstInCluster}
+                  lastInCluster={cluster.lastInCluster}
+                  tail={cluster.lastInCluster && !operation}
+                  hideTime={message.id === ROOTSY_CHAT_WELCOME.id}
+                  timeClassName="chat-rootsy-thread-caption text-rootsy-bruma-700"
+                />
               ) : null}
               {operation ? (
                 <div className="w-full">
@@ -598,11 +602,11 @@ export function ChatRootsyThread({
               !ownedTraceIds.has(message.id) ? (
                 <ChatRootsyDevTraceCard trace={message.devTrace} />
               ) : null}
-            </article>
+            </div>
           )
         })}
         {sending && !liveOperation ? (
-          <div className="flex items-center gap-2 px-1 py-1">
+          <div className="mt-3 flex items-center gap-2 px-1 py-1">
             <RootsSpinner size="sm" label="Rootsy está pensando" />
             <span className="chat-rootsy-thread-caption font-canopy text-xs text-rootsy-bruma-700">
               Rootsy está pensando…

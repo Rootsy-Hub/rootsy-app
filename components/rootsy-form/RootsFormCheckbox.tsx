@@ -55,7 +55,9 @@ export const RootsFormCheckbox = forwardRef<ElementRef<typeof Checkbox>, Props>(
           onMouseLeave?.(event)
         }}
         onFocus={(event) => {
-          interactionHandlers.onFocus()
+          if (event.currentTarget.matches(":focus-visible")) {
+            interactionHandlers.onFocus()
+          }
           onFocus?.(event)
         }}
         onBlur={(event) => {

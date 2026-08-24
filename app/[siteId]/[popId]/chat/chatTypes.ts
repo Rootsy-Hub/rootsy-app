@@ -13,7 +13,10 @@ export type ChatEligibleUser = {
   lastName: string
   roleId: string
   roleDisplayName: string
+  imageUrl?: string | null
 }
+
+export type ChatThreadKind = "direct" | "team"
 
 export type ChatRoleOption = {
   id: string
@@ -82,6 +85,7 @@ export type ChatMessageRow = {
   id: string
   authorUserId: string
   authorName: string
+  authorImageUrl?: string | null
   body: string
   createdAt: string
   mine: boolean
@@ -159,6 +163,10 @@ export function chatStandaloneEmojiCount(body: string): 1 | 2 | 3 | null {
   return graphemes.length as 1 | 2 | 3
 }
 
+export function sameChatAuthorId(a: string, b: string): boolean {
+  return a.replace(/-/g, "").toLowerCase().trim() === b.replace(/-/g, "").toLowerCase().trim()
+}
+
 export function chatAuthorNameTone(userId: string) {
   const key = userId.replace(/-/g, "").toLowerCase()
   let hash = 0
@@ -166,6 +174,53 @@ export function chatAuthorNameTone(userId: string) {
     hash = (hash * 31 + key.charCodeAt(i)) >>> 0
   }
   return CHAT_AUTHOR_NAME_TONES[hash % CHAT_AUTHOR_NAME_TONES.length] ?? CHAT_AUTHOR_NAME_TONES[0]
+}
+
+export function chatAuthorInitials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  if (words.length >= 2) {
+    return `${words[0]![0] ?? ""}${words[1]![0] ?? ""}`.toUpperCase()
+  }
+  return name.trim().slice(0, 2).toUpperCase() || "?"
+}
+
+export function chatBubbleClusterFlags<T extends { authorUserId: string }>(
+  items: T[],
+  index: number,
+): { firstInCluster: boolean; lastInCluster: boolean } {
+  const current = items[index]
+  if (!current) return { firstInCluster: true, lastInCluster: true }
+  const prev = items[index - 1]
+  const next = items[index + 1]
+  return {
+    firstInCluster:
+      !prev || !sameChatAuthorId(prev.authorUserId, current.authorUserId),
+    lastInCluster:
+      !next || !sameChatAuthorId(current.authorUserId, next.authorUserId),
+  }
+}
+
+export function chatThreadKindFromChannel(channel: {
+  isEquipo: boolean
+  memberCount: number
+} | null | undefined): ChatThreadKind {
+  if (!channel) return "team"
+  if (channel.isEquipo || channel.memberCount > 2) return "team"
+  return "direct"
+}
+
+export function chatMessageAuthorImageUrl(
+  message: Pick<ChatMessageRow, "authorUserId" | "authorImageUrl">,
+  members: Array<{ userId: string; imageUrl?: string | null }>,
+): string | null {
+  const fromMessage = message.authorImageUrl?.trim()
+  if (fromMessage) return fromMessage
+  const key = message.authorUserId.replace(/-/g, "").toLowerCase()
+  const member = members.find(
+    (item) => item.userId.replace(/-/g, "").toLowerCase() === key,
+  )
+  const fromMember = member?.imageUrl?.trim()
+  return fromMember || null
 }
 
 export function formatChatTime(iso: string | null | undefined): string {

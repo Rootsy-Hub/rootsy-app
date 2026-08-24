@@ -1,0 +1,158 @@
+/**
+ * Globos estilo WhatsApp: colita en el último de la racha,
+ * alineada al lado del mensaje.
+ */
+.chat-bubble-stack {
+  display: flex;
+  max-width: min(28rem, 92%);
+  flex-direction: column;
+}
+
+.chat-bubble-stack--mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.chat-bubble-stack--theirs {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.chat-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.375rem;
+}
+
+.chat-bubble-row--mine {
+  flex-direction: row-reverse;
+}
+
+.chat-bubble-avatar,
+.chat-bubble-avatar-slot {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+}
+
+.chat-bubble-avatar {
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rootsy-savia-600) 12%, white);
+  color: var(--rootsy-savia-800);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-bubble-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-bubble-avatar__initials {
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.chat-bubble {
+  position: relative;
+  overflow: visible;
+  max-width: 100%;
+  border-radius: 1.125rem;
+  --chat-bubble-fill: white;
+}
+
+.chat-bubble--mine {
+  --chat-bubble-fill: var(--rootsy-savia-600);
+  background: var(--chat-bubble-fill);
+  color: white;
+}
+
+.chat-bubble--theirs {
+  --chat-bubble-fill: white;
+  background: var(--chat-bubble-fill);
+  color: var(--rootsy-bruma-900);
+  box-shadow: 0 1px 1px rgb(15 23 20 / 6%);
+}
+
+.chat-bubble--tail-left {
+  border-bottom-left-radius: 0.25rem;
+}
+
+.chat-bubble--tail-right {
+  border-bottom-right-radius: 0.25rem;
+}
+
+.chat-bubble--emoji {
+  padding: 0.5rem 0.75rem;
+  line-height: 1;
+}
+
+.chat-bubble--emoji-2 {
+  font-size: 3rem;
+}
+
+.chat-bubble--emoji-3 {
+  font-size: 2.25rem;
+}
+
+.chat-bubble--text {
+  padding: 0.5rem 0.875rem 0.625rem;
+}
+
+.chat-bubble__name {
+  margin: 0 0 0.125rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.chat-bubble__body {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-bubble--emoji .chat-bubble__body {
+  font-size: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.chat-bubble__tail {
+  position: absolute;
+  bottom: 0;
+  width: 8px;
+  height: 13px;
+  color: var(--chat-bubble-fill);
+  pointer-events: none;
+}
+
+.chat-bubble__tail--left {
+  left: -7px;
+}
+
+.chat-bubble__tail--right {
+  right: -7px;
+}
+
+.chat-bubble-emoji-plain {
+  margin: 0;
+  padding: 0 0.25rem;
+  font-size: 4.5rem;
+  line-height: 1;
+}
+
+.chat-bubble-time {
+  margin: 0;
+  padding: 0.125rem 0.25rem 0;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  color: var(--rootsy-bruma-500);
+}

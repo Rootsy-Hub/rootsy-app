@@ -56,7 +56,9 @@ export const RootsFormSwitch = forwardRef<
         onMouseLeave?.(event)
       }}
       onFocus={(event) => {
-        interactionHandlers.onFocus()
+        if (event.currentTarget.matches(":focus-visible")) {
+          interactionHandlers.onFocus()
+        }
         onFocus?.(event)
       }}
       onBlur={(event) => {

@@ -1,9 +1,35 @@
 "use client"
 
 import "@/app/library/mundos/mundosHerramientas.css"
+import { cn } from "@/lib/utils"
+import type { ReactNode } from "react"
 
 const SPARK_A = ["28%", "72%", "46%", "96%", "64%"] as const
 const SPARK_B = ["40%", "22%", "68%", "54%", "88%"] as const
+
+type MundosHerramientasCrystalProps = {
+  className?: string
+  children: ReactNode
+}
+
+/** Cáscara de cristal del mundo Herramientas — paisaje, rim y sheen. */
+export function MundosHerramientasCrystal({
+  className,
+  children,
+}: MundosHerramientasCrystalProps) {
+  return (
+    <div className={cn("mundos-herramientas-card", className)}>
+      <div className="mundos-herramientas-card__frost" aria-hidden />
+      <div
+        className="mundos-herramientas-card__rim mundos-herramientas-card__rim--glow"
+        aria-hidden
+      />
+      <div className="mundos-herramientas-card__rim" aria-hidden />
+      <span className="mundos-herramientas-card__sheen" aria-hidden />
+      {children}
+    </div>
+  )
+}
 
 type MundosHerramientasCardProps = {
   eyebrow: string
@@ -23,15 +49,7 @@ function MundosHerramientasCard({
   spark,
 }: MundosHerramientasCardProps) {
   return (
-    <div className="mundos-herramientas-card">
-      <div className="mundos-herramientas-card__frost" aria-hidden />
-      <div
-        className="mundos-herramientas-card__rim mundos-herramientas-card__rim--glow"
-        aria-hidden
-      />
-      <div className="mundos-herramientas-card__rim" aria-hidden />
-      <span className="mundos-herramientas-card__sheen" aria-hidden />
-
+    <MundosHerramientasCrystal>
       <div className="mundos-herramientas-card__chrome">
         <span>{eyebrow}</span>
       </div>
@@ -52,7 +70,7 @@ function MundosHerramientasCard({
         <span className="mundos-herramientas-card__delta">{delta}</span>
         <span>{status}</span>
       </div>
-    </div>
+    </MundosHerramientasCrystal>
   )
 }
 
