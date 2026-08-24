@@ -71,7 +71,8 @@ export function ColorNewMundosSection() {
         <ColorDocLead>
           El producto habita mundos, no swatches sueltos. Tres son marca — sombra, bruma,
           savia. Cuatro son clima: suelo, cielo, sol y éter. Alba es composición (bruma),
-          no rampa. Atmósfera del hero no es un mundo de producto.
+          no rampa. Atmósfera del hero no es un mundo de producto. Las pantallas habitadas
+          — cómo se ve cada mundo con piezas reales — viven en Fundamentos → Mundos.
         </ColorDocLead>
 
         <ColorDocSection

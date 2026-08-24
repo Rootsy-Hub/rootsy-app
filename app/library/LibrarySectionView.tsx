@@ -14,6 +14,8 @@ import { ConceptFoundationView } from "@/app/library/concept/ConceptFoundationVi
 import { isConceptLibrarySection } from "@/app/library/concept/conceptLibraryNav"
 import { ColorNewFoundationView } from "@/app/library/color/ColorNewFoundationView"
 import { isColorNewLibrarySection } from "@/app/library/color/colorNewLibraryNav"
+import { MundosFoundationView } from "@/app/library/mundos/MundosFoundationView"
+import { isMundosLibrarySection } from "@/app/library/mundos/mundosLibraryNav"
 import { isColorLibrarySection } from "@/app/library/color/colorLibraryNav"
 import { SpacingFoundationView } from "@/app/library/spacing/SpacingFoundationView"
 import { isSpacingLibrarySection } from "@/app/library/spacing/spacingLibraryNav"
@@ -76,6 +78,10 @@ export function LibrarySectionView({ sectionId }: LibrarySectionViewProps) {
   if (isColorLibrarySection(sectionId) || isColorNewLibrarySection(sectionId)) {
     const resolvedSection = isColorLibrarySection(sectionId) ? "colors-new" : sectionId
     return <ColorNewFoundationView sectionId={resolvedSection} />
+  }
+
+  if (isMundosLibrarySection(sectionId)) {
+    return <MundosFoundationView sectionId={sectionId} />
   }
 
   if (isSpacingLibrarySection(sectionId)) {

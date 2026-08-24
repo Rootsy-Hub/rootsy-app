@@ -1,0 +1,200 @@
+/**
+ * Mundo Herramientas de Rootsy — paisaje + cristal (modelo cards.html).
+ * Tipo: --rootsy-text-* · UI Nunito · montos Inter.
+ * Radio: radius.xlarge (16px). Padding: space.300. Rim: space.050.
+ */
+
+.mundos-herramientas-stage {
+  background-color: var(--rootsy-eter-900);
+  background-image: url("/images/fondo-rootsy-ia.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center 52%;
+  background-attachment: fixed;
+}
+
+.mundos-herramientas-card {
+  --herramientas-ink: #e0feff;
+  --herramientas-mute: #d8fbff;
+  --herramientas-bar: #c9fbff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  width: 100%;
+  min-width: 18rem;
+  max-width: 22rem;
+  min-height: 12.5rem;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  color: var(--herramientas-ink);
+  background: transparent;
+  box-shadow:
+    0 13px 25px rgb(0 11 21 / 0.28),
+    inset 0 1px rgb(255 255 255 / 0.72),
+    inset 0 -2px rgb(62 169 196 / 0.38),
+    inset 0 0 24px rgb(224 255 255 / 0.09);
+}
+
+/*
+ * Frost real: backdrop-filter no muestra el paisaje aquí porque MundosWorldStage
+ * (isolate + overflow-hidden) y la card (overflow-hidden) son backdrop roots.
+ * Copiamos el fondo y lo desenfocamos con filter, que sí pinta.
+ */
+.mundos-herramientas-card__frost {
+  pointer-events: none;
+  position: absolute;
+  inset: -1.5rem;
+  z-index: 0;
+  background-color: var(--rootsy-eter-900);
+  background-image: url("/images/fondo-rootsy-ia.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center 52%;
+  background-attachment: fixed;
+  filter: blur(20px) saturate(1.25);
+}
+
+.mundos-herramientas-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: linear-gradient(
+    125deg,
+    rgb(220 255 255 / 0.2),
+    rgb(76 184 221 / 0.12) 48%,
+    rgb(7 59 96 / 0.22)
+  );
+}
+
+.mundos-herramientas-card__rim {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 0.25rem;
+  background: linear-gradient(
+    145deg,
+    rgb(230 255 255 / 0.96),
+    rgb(142 238 250 / 0.38) 28%,
+    rgb(51 167 198 / 0.18) 60%,
+    rgb(163 246 255 / 0.78)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+.mundos-herramientas-card__rim--glow {
+  inset: -0.5rem;
+  z-index: 0;
+  padding: 0.25rem;
+  opacity: 0.7;
+  filter: blur(4px);
+}
+
+.mundos-herramientas-card__sheen {
+  display: block;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+  top: -50%;
+  left: -18%;
+  width: 58%;
+  height: 110%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.14),
+    transparent
+  );
+  transform: rotate(23deg);
+}
+
+.mundos-herramientas-card__chrome {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-family: var(--rootsy-font-ui);
+  font-size: var(--rootsy-text-body-small-size);
+  font-weight: 500;
+  line-height: var(--rootsy-text-body-small-lh);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 1px rgb(0 11 21 / 0.32);
+}
+
+.mundos-herramientas-card__main {
+  position: relative;
+  z-index: 3;
+}
+
+.mundos-herramientas-card__main {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.mundos-herramientas-card__metric {
+  margin: 0;
+  font-family: var(--rootsy-font-numeric);
+  font-size: var(--rootsy-text-metric-large-size);
+  font-weight: 700;
+  line-height: var(--rootsy-text-metric-large-lh);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+  text-shadow: 0 1px 1px rgb(0 11 21 / 0.32);
+}
+
+.mundos-herramientas-card__subject {
+  margin: 0.25rem 0 0;
+  font-family: var(--rootsy-font-ui);
+  font-size: var(--rootsy-text-body-size);
+  font-weight: 400;
+  line-height: var(--rootsy-text-body-lh);
+  color: var(--herramientas-mute);
+  text-shadow: 0 1px 1px rgb(0 11 21 / 0.32);
+}
+
+.mundos-herramientas-card__delta {
+  font-family: var(--rootsy-font-numeric);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.mundos-herramientas-card__spark {
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+  height: 3rem;
+  gap: 0.5rem;
+  filter: drop-shadow(0 0 10px rgb(201 251 255 / 0.75));
+}
+
+.mundos-herramientas-card__spark span {
+  display: block;
+  width: 0.75rem;
+  border-radius: 0.5rem 0.5rem 0 0;
+  background: var(--herramientas-bar);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mundos-herramientas-card__frost {
+    filter: blur(16px) saturate(1.15);
+  }
+}

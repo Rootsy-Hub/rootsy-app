@@ -261,6 +261,7 @@ export function HrWorkspaceView() {
   const [permModalLoading, setPermModalLoading] = useState(false)
   const [permModalSaving, setPermModalSaving] = useState(false)
   const [permModalError, setPermModalError] = useState<string | null>(null)
+  const [permModalCanApprove, setPermModalCanApprove] = useState(false)
 
   const loadDashboard = useCallback(async () => {
     if (!popId || !siteId) return
@@ -451,6 +452,7 @@ export function HrWorkspaceView() {
     setPermModalLoading(false)
     setPermModalSaving(false)
     setPermModalError(null)
+    setPermModalCanApprove(false)
   }
 
   const handleOpenCreateRole = () => {
@@ -461,6 +463,7 @@ export function HrWorkspaceView() {
     setPermModalSelected([])
     setPermModalLoading(false)
     setPermModalError(null)
+    setPermModalCanApprove(false)
     setPermModalOpen(true)
   }
 
@@ -473,6 +476,7 @@ export function HrWorkspaceView() {
     setPermModalDisplayName(role.displayName)
     setPermModalList(hrCatalogRows)
     setPermModalSelected([])
+    setPermModalCanApprove(false)
     setPermModalOpen(true)
     const res = await getRolePermissionsEditorData(popId, role.id)
     setPermModalLoading(false)
@@ -484,24 +488,18 @@ export function HrWorkspaceView() {
     setPermModalRole(res.role)
     setPermModalDisplayName(res.role.displayName)
     setPermModalList(hrCatalogRows)
-    setPermModalSelected([...res.selectedGrantKeys])
-  }
-
-  const togglePermSelection = (grantKey: string) => {
-    setPermModalSelected((prev) =>
-      prev.includes(grantKey)
-        ? prev.filter((key) => key !== grantKey)
-        : [...prev, grantKey],
+    const catalogKeySet = new Set(hrCatalogRows.map((row) => row.key))
+    setPermModalSelected(
+      res.selectedGrantKeys.filter((key) => catalogKeySet.has(key)),
     )
+    setPermModalCanApprove(res.canApprove)
   }
 
-  const togglePermSection = (keys: string[], enabled: boolean) => {
+  const applyPermGrantKeys = (grant: string[], revoke: string[]) => {
     setPermModalSelected((prev) => {
       const next = new Set(prev)
-      for (const key of keys) {
-        if (enabled) next.add(key)
-        else next.delete(key)
-      }
+      for (const key of grant) next.add(key)
+      for (const key of revoke) next.delete(key)
       return [...next]
     })
   }
@@ -516,6 +514,7 @@ export function HrWorkspaceView() {
         popId,
         permModalDisplayName,
         permModalSelected,
+        permModalCanApprove,
       )
       setPermModalSaving(false)
       if (!res.success) {
@@ -537,6 +536,7 @@ export function HrWorkspaceView() {
       popId,
       permModalRole.id,
       permModalSelected,
+      permModalCanApprove,
     )
     setPermModalSaving(false)
     if (!res.success) {
@@ -1147,9 +1147,10 @@ export function HrWorkspaceView() {
           if (!open && !permModalSaving) closePermModal()
         }}
         onDisplayNameChange={setPermModalDisplayName}
-        onToggleKey={togglePermSelection}
-        onToggleSection={togglePermSection}
+        onApplyGrantKeys={applyPermGrantKeys}
         onSave={() => void handleSaveRolePermissions()}
+        canApprove={permModalCanApprove}
+        onCanApproveChange={setPermModalCanApprove}
       />
 
       <RootsConfirmDialog

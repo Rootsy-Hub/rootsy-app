@@ -28,6 +28,7 @@ export function getConceptPageMeta(sectionId: string): ConceptPageMeta | undefin
 
 export const CONCEPT_RELATED_LINKS = [
   { sectionId: "colors-new", label: "Color", hint: "Sombra, bruma y savia en producto." },
+  { sectionId: "mundos", label: "Mundos", hint: "Hábitats de producto: éter, bruma, suelo, sombra." },
   { sectionId: "motion", label: "Movimiento", hint: "Animaciones con inercia natural." },
   { sectionId: "logos", label: "Logos", hint: "Identidad visual de la marca." },
   { sectionId: "spacing", label: "Espaciado", hint: "Proporciones y ritmo entre elementos." },

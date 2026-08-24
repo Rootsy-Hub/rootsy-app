@@ -8,7 +8,6 @@ import {
   ExpenseModulePageSkeleton,
   HrModulePageSkeleton,
   InventoryModulePageSkeleton,
-  ManufacturingModulePageSkeleton,
   MesasModulePageSkeleton,
   MostradorModulePageSkeleton,
   PrintersModulePageSkeleton,
@@ -65,7 +64,6 @@ const POP_MODULE_PAGE_SKELETONS: Record<string, PopModulePageSkeleton> = {
   comandas: page(ComandasModulePageSkeleton),
   mostrador: page(MostradorModulePageSkeleton),
   alerts: page(AlertsModulePageSkeleton),
-  manufacturing: page(ManufacturingModulePageSkeleton),
 }
 
 export function getPopModulePageSkeleton(

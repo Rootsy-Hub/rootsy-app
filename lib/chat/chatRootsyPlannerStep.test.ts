@@ -1,0 +1,131 @@
+import assert from "node:assert/strict"
+import { describe, it } from "node:test"
+import {
+  buildChatRootsyPlannerStoredPayload,
+  canContinueChatRootsyPlanner,
+  pickChatRootsyPlannerSelectedResponse,
+  readChatRootsyPlannerConfirm,
+  sanitizeChatRootsyPlannerAction,
+} from "@/lib/chat/chatRootsyPlannerStep"
+
+describe("pasos del planificador Rootsy", () => {
+  it("lee confirm y confirm_one", () => {
+    assert.equal(readChatRootsyPlannerConfirm("confirm_one"), "confirm_one")
+    assert.equal(readChatRootsyPlannerConfirm("choose_one"), "confirm_one")
+    assert.equal(readChatRootsyPlannerConfirm("confirm"), "confirm")
+    assert.equal(readChatRootsyPlannerConfirm(undefined), "confirm")
+  })
+
+  it("limpia action y no deja endpoints", () => {
+    assert.equal(
+      sanitizeChatRootsyPlannerAction(
+        "Buscar artículos que coincidan con Agua mineral",
+        "Consultar esos datos",
+      ),
+      "Buscar artículos que coincidan con Agua mineral",
+    )
+    assert.equal(
+      sanitizeChatRootsyPlannerAction(
+        "GET /v1/pops/:popId/articles",
+        "Buscar artículos",
+      ),
+      "Buscar artículos",
+    )
+  })
+
+  it("arma el payload de ChatGPT con paso y resultados", () => {
+    const payload = JSON.parse(
+      buildChatRootsyPlannerStoredPayload({
+        today: "2026-08-23",
+        message: "subí el agua 50%",
+        dataRequest: { objective: "aumentar 50% el precio del agua mineral" },
+        paso: 2,
+        resultados: [
+          {
+            method: "GET",
+            path: "/v1/pops/:popId/articles",
+            action: "Buscar artículos que coincidan con Agua mineral",
+            confirm: "confirm_one",
+            response: { id: "art-1", name: "Agua mineral 500", salePrice: 2500 },
+          },
+        ],
+      }),
+    ) as {
+      paso: number
+      pasos_max: number
+      resultados: Array<{ confirm: string; response: { id: string } }>
+      data_request: { objective: string }
+    }
+
+    assert.equal(payload.paso, 2)
+    assert.equal(payload.pasos_max, 4)
+    assert.equal(payload.resultados[0]?.confirm, "confirm_one")
+    assert.equal(payload.resultados[0]?.response.id, "art-1")
+    assert.equal(
+      payload.data_request.objective,
+      "aumentar 50% el precio del agua mineral",
+    )
+    assert.equal("hint" in payload, false)
+    assert.equal("acciones_sesion" in payload, false)
+  })
+
+  it("incluye acciones_sesion cuando hay escrituras previas", () => {
+    const payload = JSON.parse(
+      buildChatRootsyPlannerStoredPayload({
+        today: "2026-08-23",
+        message: "revertí las aguas",
+        dataRequest: { objective: "volver las aguas al precio anterior" },
+        accionesSesion: [
+          {
+            accion: "Actualizar Agua mineral",
+            sujeto: "Agua mineral",
+            id: "art-1",
+            cambios: [
+              {
+                campo: "Precio",
+                antes: "$2.500",
+                despues: "$3.750",
+                clave: "salePrice",
+                valorAntes: 2500,
+                valorDespues: 3750,
+              },
+            ],
+          },
+          {
+            accion: "Actualizar Agua 2 L",
+            sujeto: "Agua mineral 2 L x6",
+            id: "art-2",
+          },
+        ],
+      }),
+    ) as {
+      acciones_sesion: Array<{ sujeto?: string; id?: string }>
+      nota_acciones_sesion?: string
+    }
+
+    assert.equal(payload.acciones_sesion.length, 2)
+    assert.equal(payload.acciones_sesion[1]?.sujeto, "Agua mineral 2 L x6")
+    assert.match(payload.nota_acciones_sesion ?? "", /todos/i)
+  })
+
+  it("elige la fila del payload cuando confirm_one", () => {
+    const selected = pickChatRootsyPlannerSelectedResponse(
+      {
+        data: [
+          { id: "a", name: "Agua 500", salePrice: 2500 },
+          { id: "b", name: "Agua 1.5", salePrice: 1800 },
+        ],
+      },
+      { id: "b", name: "Agua 1.5" },
+    ) as { id: string; salePrice: number }
+
+    assert.equal(selected.id, "b")
+    assert.equal(selected.salePrice, 1800)
+  })
+
+  it("corta a 4 pasos", () => {
+    assert.equal(canContinueChatRootsyPlanner(1), true)
+    assert.equal(canContinueChatRootsyPlanner(3), true)
+    assert.equal(canContinueChatRootsyPlanner(4), false)
+  })
+})

@@ -1,13 +1,23 @@
 "use client"
 
 import { ChatEmojiPicker } from "@/app/[siteId]/[popId]/chat/ChatEmojiPicker"
+import "@/app/[siteId]/[popId]/chat/chatRootsy.css"
 import { ChatRootsyAvatar } from "@/app/[siteId]/[popId]/chat/ChatRootsyAvatar"
-import { sendRootsyChatMessage } from "@/app/[siteId]/[popId]/chat/chatRootsyActions"
+import { ChatRootsyDevTraceCard } from "@/app/[siteId]/[popId]/chat/ChatRootsyDevTraceCard"
+import { ChatRootsyOperationCard } from "@/app/[siteId]/[popId]/chat/ChatRootsyOperationCard"
+import {
+  continueRootsyPlannerRun,
+  runRootsyChatTools,
+  sendRootsyChatMessage,
+} from "@/app/[siteId]/[popId]/chat/chatRootsyActions"
+import { chatRootsyOfferKey } from "@/lib/chat/chatRootsyPlannerStep"
 import {
   ROOTSY_CHAT_AUTHOR_ID,
   ROOTSY_CHAT_WELCOME,
+  ROOTSY_SESSION_HISTORY_MAX,
   loadRootsyChatMessages,
   rootsyHistoryFromMessages,
+  rootsyToolContextFromMessages,
   saveRootsyChatMessages,
 } from "@/app/[siteId]/[popId]/chat/chatRootsy"
 import {
@@ -22,9 +32,19 @@ import {
 import { RootsIconButton, RootsPrimaryButton } from "@/components/rootsy-button"
 import { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
 import { RootsSpinner } from "@/components/rootsy-spinner"
+import {
+  isChatRootsyDevTraceEnabled,
+  mergeChatRootsyDevTraces,
+} from "@/lib/chat/chatRootsyDevTrace"
+import {
+  deriveChatRootsyOperations,
+  isChatRootsyOperationShell,
+  type ChatRootsyOperationLive,
+} from "@/lib/chat/chatRootsyOperation"
+import { collectChatRootsyAppliedActions } from "@/lib/chat/chatRootsySessionActions"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, Send } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 type Props = {
   siteId: string
@@ -46,6 +66,10 @@ export function ChatRootsyThread({
   const [draft, setDraft] = useState("")
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const [live, setLive] = useState<ChatRootsyOperationLive>({
+    sending: false,
+    mode: "idle",
+  })
   const listRef = useRef<HTMLDivElement | null>(null)
   const composerRef = useRef<HTMLInputElement>(null)
   const composerRangeRef = useRef({ start: 0, end: 0 })
@@ -53,7 +77,14 @@ export function ChatRootsyThread({
 
   useEffect(() => {
     const stored = loadRootsyChatMessages(popId)
-    setMessages(stored)
+    const showDev = isChatRootsyDevTraceEnabled()
+    setMessages(
+      showDev
+        ? stored
+        : stored.map((row) =>
+            row.devTrace ? { ...row, devTrace: undefined } : row,
+          ),
+    )
     setHydrated(true)
   }, [popId])
 
@@ -87,6 +118,52 @@ export function ChatRootsyThread({
     : messages.length === 0
       ? [ROOTSY_CHAT_WELCOME]
       : messages
+
+  const operations = useMemo(
+    () =>
+      deriveChatRootsyOperations(displayMessages, {
+        ...live,
+        sending,
+        error: sendError,
+      }),
+    [displayMessages, live, sendError, sending],
+  )
+  const operationByAnchor = useMemo(
+    () => new Map(operations.map((item) => [item.anchorMessageId, item])),
+    [operations],
+  )
+  const hiddenIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const row of displayMessages) {
+      if (isChatRootsyOperationShell(row)) ids.add(row.id)
+    }
+    return ids
+  }, [displayMessages])
+  const liveOperation = operations.some((item) =>
+    ["understanding", "preparing", "waiting", "executing"].includes(item.phase),
+  )
+  const tracesByOperation = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof mergeChatRootsyDevTraces>>()
+    for (const operation of operations) {
+      map.set(
+        operation.id,
+        mergeChatRootsyDevTraces(
+          operation.memberIds.map(
+            (id) => displayMessages.find((row) => row.id === id)?.devTrace,
+          ),
+        ),
+      )
+    }
+    return map
+  }, [displayMessages, operations])
+  const ownedTraceIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const operation of operations) {
+      if (!tracesByOperation.get(operation.id)) continue
+      for (const id of operation.memberIds) ids.add(id)
+    }
+    return ids
+  }, [operations, tracesByOperation])
 
   const rememberComposerRange = () => {
     const el = composerRef.current
@@ -123,46 +200,288 @@ export function ChatRootsyThread({
       createdAt: new Date().toISOString(),
       mine: true,
     }
-    const nextMessages = [...messages, userMessage]
+    const nextMessages = [...messages, userMessage].slice(
+      -ROOTSY_SESSION_HISTORY_MAX,
+    )
     setDraft("")
     setSendError(null)
     setSending(true)
+    setLive({ sending: true, mode: "understand", hostId: userMessage.id })
     setMessages(nextMessages)
 
     const res = await sendRootsyChatMessage({
       siteId,
       popId,
       history: rootsyHistoryFromMessages(nextMessages),
+      toolContext: rootsyToolContextFromMessages(nextMessages),
+      appliedActions: collectChatRootsyAppliedActions(nextMessages),
     })
 
     if (!res.success) {
-      setMessages(messages)
       setDraft((current) => (current.trim() ? current : body))
-      setSendError(res.error)
+      setSendError(
+        isChatRootsyDevTraceEnabled() && res.devTrace?.error
+          ? res.devTrace.error
+          : res.error,
+      )
+      setMessages(
+        [
+          ...nextMessages,
+          {
+            id: `rootsy-dev:${crypto.randomUUID()}`,
+            authorUserId: ROOTSY_CHAT_AUTHOR_ID,
+            authorName: "Rootsy",
+            body: res.error,
+            createdAt: new Date().toISOString(),
+            mine: false,
+            devTrace: res.devTrace,
+          },
+        ].slice(-ROOTSY_SESSION_HISTORY_MAX),
+      )
       setSending(false)
+      setLive({ sending: false, mode: "idle" })
       window.requestAnimationFrame(() => composerRef.current?.focus())
       return
     }
 
-    setMessages([
-      ...nextMessages,
-      {
-        id: `rootsy-ai:${crypto.randomUUID()}`,
-        authorUserId: ROOTSY_CHAT_AUTHOR_ID,
-        authorName: "Rootsy",
-        body: res.reply,
-        createdAt: new Date().toISOString(),
-        mine: false,
-      },
-    ])
+    setMessages(
+      [
+        ...nextMessages,
+        {
+          id: `rootsy-ai:${crypto.randomUUID()}`,
+          authorUserId: ROOTSY_CHAT_AUTHOR_ID,
+          authorName: "Rootsy",
+          body: res.reply,
+          createdAt: new Date().toISOString(),
+          mine: false,
+          toolOffer: res.toolOffer,
+          toolOffers: res.toolOffers,
+          plannerRun: res.plannerRun,
+          plannerChoices: res.plannerChoices,
+          closeBrief: res.closeBrief,
+          devTrace: res.devTrace,
+        },
+      ].slice(-ROOTSY_SESSION_HISTORY_MAX),
+    )
     setSending(false)
+    setLive({ sending: false, mode: "idle" })
+    window.requestAnimationFrame(() => composerRef.current?.focus())
+  }
+
+  const confirmTools = async (messageId: string, tools: string[]) => {
+    if (sending || tools.length === 0) return
+    const host = messages.find((row) => row.id === messageId)
+    const offers = host?.toolOffers?.length
+      ? host.toolOffers
+      : host?.toolOffer
+        ? [host.toolOffer]
+        : []
+    const selected = new Set(tools)
+    setSendError(null)
+    setSending(true)
+    setLive({ sending: true, mode: "execute", hostId: messageId })
+    setMessages((current) =>
+      current.map((row) => {
+        if (row.id !== messageId) return row
+        return {
+          ...row,
+          toolOffer:
+            row.toolOffer && selected.has(chatRootsyOfferKey(row.toolOffer))
+              ? { ...row.toolOffer, status: "used" as const }
+              : row.toolOffer,
+          toolOffers: row.toolOffers?.map((item) =>
+            selected.has(chatRootsyOfferKey(item))
+              ? { ...item, status: "used" as const }
+              : item,
+          ),
+        }
+      }),
+    )
+
+    const res = await runRootsyChatTools({
+      siteId,
+      popId,
+      history: rootsyHistoryFromMessages(messages),
+      recent: rootsyToolContextFromMessages(messages).recent,
+      plannerRun: host?.plannerRun,
+      queries: tools.map((key) => {
+        const offer = offers.find((row) => chatRootsyOfferKey(row) === key)
+        return {
+          tool: offer?.tool ?? key,
+          filters: offer?.filters,
+          method: offer?.method,
+          path: offer?.path,
+          body: offer?.body,
+          action: offer?.action ?? offer?.label,
+          confirm: offer?.confirm,
+          offerKey: offer?.offerKey ?? key,
+        }
+      }),
+    })
+
+    if (!res.success) {
+      setSendError(
+        isChatRootsyDevTraceEnabled() && res.devTrace?.error
+          ? res.devTrace.error
+          : res.error,
+      )
+      setMessages((current) => {
+        const restored = current.map((row) => {
+          if (row.id !== messageId) return row
+          return {
+            ...row,
+            toolOffer: undefined,
+            toolOffers: undefined,
+          }
+        })
+        if (!res.devTrace) return restored
+        return [
+          ...restored,
+          {
+            id: `rootsy-dev:${crypto.randomUUID()}`,
+            authorUserId: ROOTSY_CHAT_AUTHOR_ID,
+            authorName: "Rootsy",
+            body: res.error,
+            createdAt: new Date().toISOString(),
+            mine: false,
+            devTrace: res.devTrace,
+          },
+        ].slice(-ROOTSY_SESSION_HISTORY_MAX)
+      })
+      setSending(false)
+      setLive({ sending: false, mode: "idle", hostId: messageId, error: res.error })
+      return
+    }
+
+    const now = new Date().toISOString()
+    const followUp =
+      res.reply.trim() ||
+      res.toolOffers?.length ||
+      res.plannerChoices?.length ||
+      res.devTrace
+        ? {
+            id: `rootsy-ai:${crypto.randomUUID()}`,
+            authorUserId: ROOTSY_CHAT_AUTHOR_ID,
+            authorName: "Rootsy",
+            body: res.reply,
+            createdAt: now,
+            mine: false,
+            toolOffer: res.toolOffers?.[0],
+            toolOffers: res.toolOffers,
+            plannerRun: res.plannerRun,
+            plannerChoices: res.plannerChoices,
+            closeBrief: res.closeBrief,
+            devTrace: res.devTrace,
+          }
+        : null
+    setMessages((current) =>
+      [
+        ...current,
+        ...res.toolResults.map((toolResult) => ({
+          id: `rootsy-tool:${crypto.randomUUID()}`,
+          authorUserId: ROOTSY_CHAT_AUTHOR_ID,
+          authorName: "Rootsy",
+          body: `${toolResult.title?.trim() || toolResult.tool} · ${toolResult.periodLabel}`,
+          createdAt: now,
+          mine: false,
+          toolResult,
+        })),
+        ...(followUp ? [followUp] : []),
+      ].slice(-ROOTSY_SESSION_HISTORY_MAX),
+    )
+    setSending(false)
+    setLive({ sending: false, mode: "idle" })
+    window.requestAnimationFrame(() => composerRef.current?.focus())
+  }
+
+  const cancelPlanner = (messageId: string) => {
+    setMessages((current) =>
+      current.map((row) => {
+        if (row.id !== messageId) return row
+        return {
+          ...row,
+          toolOffer: undefined,
+          toolOffers: undefined,
+          plannerChoices: undefined,
+        }
+      }),
+    )
+  }
+
+  const pickPlannerChoice = async (
+    messageId: string,
+    choiceTool: string,
+    item: { id?: string; name: string; sales?: number; balance?: number },
+  ) => {
+    if (sending) return
+    const host = messages.find((row) => row.id === messageId)
+    const choice = host?.plannerChoices?.find((row) => row.tool === choiceTool)
+    if (!host?.plannerRun || !choice) return
+    setSendError(null)
+    setSending(true)
+    setLive({ sending: true, mode: "choose", hostId: messageId })
+    setMessages((current) =>
+      current.map((row) => {
+        if (row.id !== messageId) return row
+        return { ...row, plannerChoices: undefined }
+      }),
+    )
+
+    const res = await continueRootsyPlannerRun({
+      siteId,
+      popId,
+      plannerRun: host.plannerRun,
+      choice,
+      item,
+    })
+
+    if (!res.success) {
+      setSendError(
+        isChatRootsyDevTraceEnabled() && res.devTrace?.error
+          ? res.devTrace.error
+          : res.error,
+      )
+      setMessages((current) =>
+        current.map((row) => {
+          if (row.id !== messageId) return row
+          return { ...row, plannerChoices: host.plannerChoices }
+        }),
+      )
+      setSending(false)
+      setLive({ sending: false, mode: "idle", hostId: messageId, error: res.error })
+      return
+    }
+
+    setMessages((current) =>
+      [
+        ...current,
+        {
+          id: `rootsy-ai:${crypto.randomUUID()}`,
+          authorUserId: ROOTSY_CHAT_AUTHOR_ID,
+          authorName: "Rootsy",
+          body: res.reply,
+          createdAt: new Date().toISOString(),
+          mine: false,
+          toolOffer: res.toolOffer,
+          toolOffers: res.toolOffers,
+          plannerRun: res.plannerRun,
+          plannerChoices: res.plannerChoices,
+          devTrace: res.devTrace,
+        },
+      ].slice(-ROOTSY_SESSION_HISTORY_MAX),
+    )
+    setSending(false)
+    setLive({ sending: false, mode: "idle" })
     window.requestAnimationFrame(() => composerRef.current?.focus())
   }
 
   return (
-    <>
+    <div className="chat-rootsy-thread-surface relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <header
-        className={cn(dataWorkspaceDetailCardHeaderClass, "flex items-center gap-3")}
+        className={cn(
+          dataWorkspaceDetailCardHeaderClass,
+          "chat-rootsy-thread-chrome flex items-center gap-3",
+        )}
       >
         <RootsIconButton
           theme="workspace"
@@ -178,14 +497,16 @@ export function ChatRootsyThread({
         <div className="min-w-0 flex-1">
           <h2 className={dataWorkspaceEntityCardTitleClass}>Rootsy</h2>
           <p className="mt-0.5 truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
-            Tu compañera del bosque
+            {isChatRootsyDevTraceEnabled()
+              ? "DEV · historial de Rootsy y el Planificador"
+              : "Tu compañera del bosque"}
           </p>
         </div>
       </header>
 
       <div
         ref={listRef}
-        className="chat-thread-surface game-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 [overflow-anchor:none]"
+        className="game-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain bg-transparent px-4 py-4 sm:px-6 [overflow-anchor:none]"
       >
         {!hydrated ? (
           <div className="flex w-full justify-center py-2">
@@ -193,63 +514,110 @@ export function ChatRootsyThread({
           </div>
         ) : null}
         {displayMessages.map((message) => {
+          const operation = operationByAnchor.get(message.id)
+          if (hiddenIds.has(message.id) && !operation) {
+            if (ownedTraceIds.has(message.id)) return null
+            return isChatRootsyDevTraceEnabled() && message.devTrace ? (
+              <ChatRootsyDevTraceCard key={message.id} trace={message.devTrace} />
+            ) : null
+          }
           const emojiCount = chatStandaloneEmojiCount(message.body)
           return (
             <article
               key={message.id}
               className={cn(
-                "flex max-w-[min(28rem,92%)] flex-col gap-1",
-                message.mine ? "self-end items-end" : "self-start items-start",
+                "flex flex-col gap-1",
+                operation
+                  ? "w-full max-w-[min(36rem,96%)] self-start items-start"
+                  : isChatRootsyDevTraceEnabled() && message.devTrace
+                    ? "max-w-[min(36rem,96%)] self-start items-start"
+                    : "max-w-[min(28rem,92%)]",
+                message.mine ? "self-end items-end" : !operation && "self-start items-start",
               )}
             >
-              {!message.mine ? (
-                <p className="px-1 font-canopy text-[11px] font-bold text-[var(--rootsy-savia-800)]">
+              {!message.mine && message.body.trim() ? (
+                <p className="chat-rootsy-thread-caption px-1 font-canopy text-[11px] font-bold text-rootsy-savia-800">
                   Rootsy
                 </p>
               ) : null}
-              <p
-                className={cn(
-                  "font-canopy",
-                  emojiCount === 1 && "px-1 text-[4.5rem] leading-none",
-                  emojiCount === 2 &&
-                    "rounded-[1.125rem] px-3 py-2 text-[3rem] leading-none",
-                  emojiCount === 3 &&
-                    "rounded-[1.125rem] px-3 py-2 text-[2.25rem] leading-none",
-                  !emojiCount && "rounded-[1.125rem] px-3.5 py-2.5 text-sm leading-5",
-                  emojiCount === 1
-                    ? null
-                    : message.mine
-                      ? "rounded-br-md bg-[var(--rootsy-savia-600)] text-white"
-                      : "rounded-bl-md border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-900)]",
-                )}
-              >
-                {message.body.trim()}
-              </p>
-              {message.id !== ROOTSY_CHAT_WELCOME.id ? (
-                <time className="px-1 font-canopy text-[11px] text-[var(--rootsy-bruma-500)]">
+              {message.body.trim() ? (
+                <p
+                  className={cn(
+                    "font-canopy",
+                    emojiCount === 1 && "px-1 text-[4.5rem] leading-none",
+                    emojiCount === 2 &&
+                      "rounded-[1.125rem] px-3 py-2 text-[3rem] leading-none",
+                    emojiCount === 3 &&
+                      "rounded-[1.125rem] px-3 py-2 text-[2.25rem] leading-none",
+                    !emojiCount &&
+                      "rounded-[1.125rem] px-3.5 py-2.5 text-sm leading-5",
+                    message.mine && !emojiCount && "self-end",
+                    emojiCount === 1
+                      ? null
+                      : message.mine
+                        ? "rounded-br-md bg-rootsy-savia-600 text-white"
+                        : "rounded-bl-md border border-rootsy-bruma-200 bg-white text-rootsy-bruma-900",
+                  )}
+                >
+                  {message.body.trim()}
+                </p>
+              ) : null}
+              {message.id !== ROOTSY_CHAT_WELCOME.id && message.body.trim() ? (
+                <time
+                  className={cn(
+                    "chat-rootsy-thread-caption px-1 font-canopy text-[11px] text-rootsy-bruma-700",
+                    message.mine && "self-end",
+                  )}
+                >
                   {formatChatTime(message.createdAt)}
                 </time>
+              ) : null}
+              {operation ? (
+                <div className="w-full">
+                  <ChatRootsyOperationCard
+                    operation={operation}
+                    disabled={sending}
+                    onApprove={(hostId, keys) => {
+                      void confirmTools(hostId, keys)
+                    }}
+                    onReject={(hostId) => cancelPlanner(hostId)}
+                    onPick={(hostId, choiceTool, item) => {
+                      void pickPlannerChoice(hostId, choiceTool, item)
+                    }}
+                  />
+                  {isChatRootsyDevTraceEnabled() &&
+                  tracesByOperation.get(operation.id) ? (
+                    <ChatRootsyDevTraceCard
+                      trace={tracesByOperation.get(operation.id)!}
+                    />
+                  ) : null}
+                </div>
+              ) : null}
+              {isChatRootsyDevTraceEnabled() &&
+              message.devTrace &&
+              !ownedTraceIds.has(message.id) ? (
+                <ChatRootsyDevTraceCard trace={message.devTrace} />
               ) : null}
             </article>
           )
         })}
-        {sending ? (
+        {sending && !liveOperation ? (
           <div className="flex items-center gap-2 px-1 py-1">
             <RootsSpinner size="sm" label="Rootsy está pensando" />
-            <span className="font-canopy text-xs text-[var(--rootsy-bruma-500)]">
+            <span className="chat-rootsy-thread-caption font-canopy text-xs text-rootsy-bruma-700">
               Rootsy está pensando…
             </span>
           </div>
         ) : null}
-        {sendError ? (
-          <p className="font-canopy text-xs text-[var(--rootsy-danger)]">
+        {sendError && !operations.some((item) => item.error) ? (
+          <p className="font-canopy text-xs text-rootsy-danger">
             {sendError}
           </p>
         ) : null}
       </div>
 
       <form
-        className="flex shrink-0 items-center gap-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6"
+        className="chat-rootsy-thread-chrome flex shrink-0 items-center gap-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6"
         onSubmit={(event) => {
           event.preventDefault()
           void sendDraft()
@@ -282,6 +650,6 @@ export function ChatRootsyThread({
           Enviar
         </RootsPrimaryButton>
       </form>
-    </>
+    </div>
   )
 }

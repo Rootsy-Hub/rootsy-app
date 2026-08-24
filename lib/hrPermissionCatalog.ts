@@ -2,12 +2,14 @@ import { POP_ACCESS_MODULE_TO_PAGE_KEY } from "@/lib/popAccessModuleMap"
 import {
   POP_PAGES,
   type PopPageKey,
-  permissionKeysForPage,
+  permissionByLabel,
 } from "@/lib/popPageCrudConstants"
 import {
   modulesAvailableForPop,
   type RootsModuleDefinition,
 } from "@/lib/rootsySubscriptionCatalog"
+
+export type HrCrudVerb = "read" | "create" | "update" | "delete"
 
 export type HrPermissionCatalogRow = {
   key: string
@@ -17,10 +19,24 @@ export type HrPermissionCatalogRow = {
   actionLabel: string
 }
 
+export type HrPermissionVerb = {
+  verb: HrCrudVerb
+  executeKey: string
+  approvalKey: string | null
+  actionLabel: string
+  description: string | null
+}
+
 export type HrPermissionSection = {
   pageKey: PopPageKey
   label: string
+  verbs: HrPermissionVerb[]
   permissions: HrPermissionCatalogRow[]
+}
+
+export type GrantKeyChanges = {
+  grant: string[]
+  revoke: string[]
 }
 
 const SECTION_LABELS: Record<PopPageKey, string> = {
@@ -55,6 +71,7 @@ const SECTION_LABELS: Record<PopPageKey, string> = {
   menu: "Menú",
   checks: "Cheques",
   "current-accounts": "Cuentas corrientes",
+  audit: "Auditoría",
 }
 
 /** Orden de secciones en el editor de permisos (alineado al menú del POP). */
@@ -88,21 +105,51 @@ const SECTION_ORDER: PopPageKey[] = [
   "alerts",
   "chat",
   "settings",
+  "audit",
   "cobrar-servicios",
 ]
 
-const ACTION_LABELS: Record<string, string> = {
+const ACTION_LABELS: Record<HrCrudVerb, string> = {
   read: "Ver",
   create: "Crear / cargar",
   update: "Editar",
   delete: "Eliminar",
 }
 
-const ACTION_DESCRIPTIONS: Record<string, string> = {
+const ACTION_DESCRIPTIONS: Record<HrCrudVerb, string> = {
   read: "Entrar a la sección y consultar datos.",
   create: "Registrar operaciones nuevas (ventas, cargas, altas).",
   update: "Modificar registros ya existentes.",
   delete: "Anular, quitar o eliminar registros.",
+}
+
+const CRUD_VERBS: readonly HrCrudVerb[] = ["read", "create", "update", "delete"]
+
+type HrPagePermissionShape = {
+  verbs: readonly HrCrudVerb[]
+  allowApproval: boolean
+}
+
+const DEFAULT_PAGE_SHAPE: HrPagePermissionShape = {
+  verbs: CRUD_VERBS,
+  allowApproval: true,
+}
+
+/**
+ * Qué acciones ofrece el editor de roles por módulo.
+ * No cambia las keys de `POP_PAGES`; solo recorta lo que se puede asignar en HR.
+ */
+const HR_PAGE_PERMISSION_SHAPE: Partial<Record<PopPageKey, HrPagePermissionShape>> = {
+  chat: { verbs: CRUD_VERBS, allowApproval: false },
+  audit: { verbs: ["read"], allowApproval: false },
+  alerts: { verbs: ["read"], allowApproval: false },
+  reports: { verbs: ["read"], allowApproval: false },
+  statistics: { verbs: ["read"], allowApproval: false },
+  comandas: { verbs: ["read", "update"], allowApproval: false },
+}
+
+function pageShape(pageKey: PopPageKey): HrPagePermissionShape {
+  return HR_PAGE_PERMISSION_SHAPE[pageKey] ?? DEFAULT_PAGE_SHAPE
 }
 
 function splitGrantKey(key: string): { resource: string; action: string } {
@@ -111,15 +158,53 @@ function splitGrantKey(key: string): { resource: string; action: string } {
   return { resource: key.slice(0, i), action: key.slice(i + 1) }
 }
 
-function rowFromKey(key: string): HrPermissionCatalogRow {
+function rowFromKey(
+  key: string,
+  verb: HrCrudVerb,
+  asApproval = false,
+): HrPermissionCatalogRow {
   const { resource, action } = splitGrantKey(key)
   return {
     key,
     resource,
     action,
-    actionLabel: ACTION_LABELS[action] ?? action,
-    description: ACTION_DESCRIPTIONS[action] ?? null,
+    actionLabel: asApproval
+      ? `Con aprobación · ${ACTION_LABELS[verb]}`
+      : ACTION_LABELS[verb],
+    description: asApproval
+      ? "Puede pedir que alguien con permiso de ejecutar confirme la acción con su código."
+      : ACTION_DESCRIPTIONS[verb],
   }
+}
+
+function verbsForPage(pageKey: PopPageKey): HrPermissionVerb[] {
+  const shape = pageShape(pageKey)
+  const verbs: HrPermissionVerb[] = []
+  for (const verb of shape.verbs) {
+    const executeKey = permissionByLabel(pageKey, verb)
+    if (!executeKey) continue
+    const approvalKey =
+      shape.allowApproval && verb !== "read"
+        ? (permissionByLabel(pageKey, `${verb}RequestApproval`) ??
+          `${executeKey}:request_approval`)
+        : null
+    verbs.push({
+      verb,
+      executeKey,
+      approvalKey,
+      actionLabel: ACTION_LABELS[verb],
+      description: ACTION_DESCRIPTIONS[verb],
+    })
+  }
+  return verbs
+}
+
+function rowsFromVerb(verb: HrPermissionVerb): HrPermissionCatalogRow[] {
+  const rows = [rowFromKey(verb.executeKey, verb.verb)]
+  if (verb.approvalKey) {
+    rows.push(rowFromKey(verb.approvalKey, verb.verb, true))
+  }
+  return rows
 }
 
 export type HrPopModuleScope = {
@@ -131,7 +216,6 @@ export type HrPopModuleScope = {
 function sectionsFromModules(
   modules: readonly RootsModuleDefinition[],
 ): HrPermissionSection[] {
-  const actionOrder = ["read", "create", "update", "delete"]
   const availablePages = new Set<PopPageKey>()
   for (const mod of modules) {
     const pageKey = POP_ACCESS_MODULE_TO_PAGE_KEY[mod.key]
@@ -144,17 +228,12 @@ function sectionsFromModules(
   ]
 
   return ordered.map((pageKey) => {
-    const permissions = permissionKeysForPage(pageKey)
-      .map(rowFromKey)
-      .sort(
-        (a, b) =>
-          actionOrder.indexOf(a.action) - actionOrder.indexOf(b.action) ||
-          a.key.localeCompare(b.key, "es"),
-      )
+    const verbs = verbsForPage(pageKey)
     return {
       pageKey,
       label: SECTION_LABELS[pageKey] ?? pageKey,
-      permissions,
+      verbs,
+      permissions: verbs.flatMap(rowsFromVerb),
     }
   })
 }
@@ -187,5 +266,72 @@ export function buildHrPermissionSections(
 }
 
 export function sectionGrantKeys(section: HrPermissionSection): string[] {
-  return section.permissions.map((p) => p.key)
+  return section.verbs.map((verb) => verb.executeKey)
+}
+
+export function verbIsGranted(
+  verb: HrPermissionVerb,
+  selectedKeys: readonly string[],
+): boolean {
+  if (selectedKeys.includes(verb.executeKey)) return true
+  return Boolean(verb.approvalKey && selectedKeys.includes(verb.approvalKey))
+}
+
+export function verbIsApprovalOnly(
+  verb: HrPermissionVerb,
+  selectedKeys: readonly string[],
+): boolean {
+  return Boolean(
+    verb.approvalKey &&
+      selectedKeys.includes(verb.approvalKey) &&
+      !selectedKeys.includes(verb.executeKey),
+  )
+}
+
+export function grantVerbExecute(verb: HrPermissionVerb): GrantKeyChanges {
+  return {
+    grant: [verb.executeKey],
+    revoke: verb.approvalKey ? [verb.approvalKey] : [],
+  }
+}
+
+export function revokeVerb(verb: HrPermissionVerb): GrantKeyChanges {
+  return {
+    grant: [],
+    revoke: verb.approvalKey
+      ? [verb.executeKey, verb.approvalKey]
+      : [verb.executeKey],
+  }
+}
+
+export function grantVerbApproval(verb: HrPermissionVerb): GrantKeyChanges | null {
+  if (!verb.approvalKey) return null
+  return {
+    grant: [verb.approvalKey],
+    revoke: [verb.executeKey],
+  }
+}
+
+export function sectionSelectAllChanges(
+  section: HrPermissionSection,
+): GrantKeyChanges {
+  return {
+    grant: section.verbs.map((verb) => verb.executeKey),
+    revoke: section.verbs.flatMap((verb) =>
+      verb.approvalKey ? [verb.approvalKey] : [],
+    ),
+  }
+}
+
+export function sectionClearChanges(
+  section: HrPermissionSection,
+): GrantKeyChanges {
+  return {
+    grant: [],
+    revoke: section.verbs.flatMap((verb) =>
+      verb.approvalKey
+        ? [verb.executeKey, verb.approvalKey]
+        : [verb.executeKey],
+    ),
+  }
 }

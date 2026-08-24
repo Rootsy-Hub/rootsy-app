@@ -6,6 +6,7 @@ import type {
 import {
   POP_PAGES,
   type PopPageKey,
+  type PopPagePermissionMap,
 } from "@/lib/popPageCrudConstants"
 import {
   formatPlanLimitValue,
@@ -68,12 +69,12 @@ function resolveModulePermissions(
   if (!pageKey || !(pageKey in POP_PAGES)) {
     return { read: false, create: false, update: false, delete: false }
   }
-  const perms = POP_PAGES[pageKey].permissions
+  const perms = POP_PAGES[pageKey].permissions as PopPagePermissionMap
   return {
-    read: grants.includes(perms.read),
-    create: grants.includes(perms.create),
-    update: grants.includes(perms.update),
-    delete: grants.includes(perms.delete),
+    read: Boolean(perms.read && grants.includes(perms.read)),
+    create: Boolean(perms.create && grants.includes(perms.create)),
+    update: Boolean(perms.update && grants.includes(perms.update)),
+    delete: Boolean(perms.delete && grants.includes(perms.delete)),
   }
 }
 

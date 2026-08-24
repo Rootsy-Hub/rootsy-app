@@ -1,3 +1,29 @@
+.chat-rootsy-thread-surface {
+  background-color: color-mix(in srgb, var(--rootsy-savia-200) 55%, var(--rootsy-suelo-300));
+  background-image:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, white 16%, transparent),
+      color-mix(in srgb, white 6%, transparent) 44%,
+      color-mix(in srgb, white 14%, transparent)
+    ),
+    url("/images/fondo-rootsy-ia.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center 52%;
+}
+
+.chat-rootsy-thread-chrome {
+  background-color: color-mix(in srgb, white 82%, var(--rootsy-savia-50));
+  backdrop-filter: blur(8px);
+}
+
+.chat-rootsy-thread-caption {
+  text-shadow:
+    0 1px 1px rgb(255 255 255 / 78%),
+    0 0 10px rgb(255 255 255 / 42%);
+}
+
 .chat-rootsy-avatar {
   background-color: color-mix(in srgb, var(--rootsy-suelo-50) 78%, white);
   background-image:

@@ -93,6 +93,7 @@ export const ROOTS_SHARED_MODULES: Record<
     { key: "accounts", label: "Cuentas" },
     { key: "hr", label: "Recursos Humanos" },
     { key: "settings", label: "Ajustes" },
+    { key: "audit", label: "Auditoría" },
   ],
 }
 

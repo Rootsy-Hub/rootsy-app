@@ -28,8 +28,10 @@ import {
 } from "@/components/rootsy-dropdown"
 import { RootsImageLightbox } from "@/components/rootsy-lightbox/RootsImageLightbox"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { ApprovalCodeDialog } from "@/components/pop-workspace/ApprovalCodeDialog"
+import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
-import { ImageIcon, LogOut, UserCog } from "lucide-react"
+import { ImageIcon, KeyRound, LogOut, UserCog } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -65,6 +67,10 @@ export function DataWorkspaceHeaderUserMenu({
   const theme = isDarkChromeHeader(headerVariant) ? "dark" : "light"
   const { logOut } = useAuth()
   const router = useRouter()
+  const popWorkspace = usePopWorkspaceOptional()
+  const canSetApprovalCode = Boolean(popWorkspace?.bootstrap?.canSetApprovalCode)
+  const approvalPopId = popWorkspace?.bootstrap?.popId ?? popWorkspace?.popId ?? ""
+  const [approvalOpen, setApprovalOpen] = useState(false)
 
   const profileAvatarSrc = userAvatarSrc?.trim() || null
   const [profileImageFailed, setProfileImageFailed] = useState(false)
@@ -246,6 +252,16 @@ export function DataWorkspaceHeaderUserMenu({
             <span className="min-w-0 flex-1 truncate">Editar perfil</span>
           </Link>
         </RootsDropdownItem>
+        {canSetApprovalCode && approvalPopId ? (
+          <RootsDropdownItem
+            theme={theme}
+            className="gap-2"
+            onSelect={() => setApprovalOpen(true)}
+          >
+            <KeyRound className="size-4 shrink-0 opacity-70" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">Código de aprobación</span>
+          </RootsDropdownItem>
+        ) : null}
         <RootsDropdownSeparator theme={theme} className={dropdownSeparatorClass} />
         <RootsDropdownItem
           theme={theme}
@@ -267,6 +283,13 @@ export function DataWorkspaceHeaderUserMenu({
         title={userName}
         frameClassName="rounded-full"
       />
+      {canSetApprovalCode && approvalPopId ? (
+        <ApprovalCodeDialog
+          popId={approvalPopId}
+          open={approvalOpen}
+          onOpenChange={setApprovalOpen}
+        />
+      ) : null}
     </RootsDropdownMenu>
   )
 }

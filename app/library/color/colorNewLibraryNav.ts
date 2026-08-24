@@ -148,7 +148,8 @@ export function getColorNewPageMeta(sectionId: string): ColorNewPageMeta | undef
 export const COLOR_NEW_RELATED_LINKS = [
   { sectionId: "colors-new-semantic", label: "Semántica", hint: "Tokens oficiales." },
   { sectionId: "colors-new-themes", label: "Temas", hint: "POS · workspace · marketing." },
-  { sectionId: "colors-new-mundos", label: "Mundos", hint: "Suelo · cielo · sol · éter." },
+  { sectionId: "colors-new-mundos", label: "Mundos", hint: "Rampas y mapa de uso." },
+  { sectionId: "mundos", label: "Mundos en producto", hint: "Éter, bruma, suelo, sombra y herramientas." },
   { sectionId: "colors-new-palettes", label: "Paletas", hint: "Tres familias." },
   { sectionId: "colors-new-atmosphere", label: "Atmósfera", hint: "Hero marketing." },
   { sectionId: "colors-new-sombra", label: "Sombra", hint: "Bajo el dosel." },

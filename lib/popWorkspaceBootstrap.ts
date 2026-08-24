@@ -11,6 +11,7 @@ export type PopWorkspaceBootstrapData = {
   userImageUrl: string | null
   roleLabel: string
   permissionKeys: string[]
+  canSetApprovalCode: boolean
   hasValidPopFiscalCuit: boolean
   popEmisorIvaCondition: PopEmisorIvaCondition
 }

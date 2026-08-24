@@ -9,6 +9,8 @@ import {
   COLOR_NEW_LIBRARY_SUBITEMS,
 } from "@/app/library/color/colorNewLibraryNav"
 import { isColorNewLibrarySection } from "@/app/library/color/colorNewLibraryNav"
+import { MUNDOS_LIBRARY_ROOT } from "@/app/library/mundos/mundosLibraryNav"
+import { isMundosLibrarySection } from "@/app/library/mundos/mundosLibraryNav"
 import { SPACING_LIBRARY_ROOT, SPACING_LIBRARY_SUBITEMS } from "@/app/library/spacing/spacingLibraryNav"
 import { isSpacingLibrarySection } from "@/app/library/spacing/spacingLibraryNav"
 import { GRID_LIBRARY_ROOT, GRID_LIBRARY_SUBITEMS } from "@/app/library/grid/gridLibraryNav"
@@ -94,6 +96,7 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
         ...COLOR_NEW_LIBRARY_ROOT,
         children: [...COLOR_NEW_LIBRARY_SUBITEMS],
       },
+      { ...MUNDOS_LIBRARY_ROOT },
       {
         ...SPACING_LIBRARY_ROOT,
         children: [...SPACING_LIBRARY_SUBITEMS],
@@ -181,6 +184,7 @@ export function getLibraryNavGroup(sectionId: string): LibraryNavGroup | undefin
   if (
     isConceptLibrarySection(sectionId) ||
     isColorNewLibrarySection(sectionId) ||
+    isMundosLibrarySection(sectionId) ||
     isSpacingLibrarySection(sectionId) ||
     isGridLibrarySection(sectionId) ||
     isTypographyLibrarySection(sectionId) ||

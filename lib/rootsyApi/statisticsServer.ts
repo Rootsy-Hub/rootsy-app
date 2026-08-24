@@ -2,7 +2,7 @@ import "server-only"
 
 import type { StatisticsSectionData } from "@/app/[siteId]/[popId]/statistics/actions"
 import type { StatisticsSectionId } from "@/lib/statisticsCatalog"
-import { rootsyApiFetch } from "@/lib/rootsyApi/server"
+import { RootsyApiError, rootsyApiFetch } from "@/lib/rootsyApi/server"
 import {
   mergeStatisticsSectionData,
   type StatisticsSectionQuery,
@@ -58,6 +58,9 @@ export async function fetchStatisticsSectionDetailsServer(
     if (!res.success) return { success: false, error: "No se pudieron cargar los detalles." }
     return res
   } catch (error) {
+    if (error instanceof RootsyApiError && (error.status === 401 || error.status === 403)) {
+      return { success: false, error: "Sin permiso." }
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : "Error desconocido",

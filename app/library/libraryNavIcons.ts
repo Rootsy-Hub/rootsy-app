@@ -8,6 +8,7 @@ import {
   Code,
   Component,
   CornerDownRight,
+  Globe,
   GripVertical,
   Hash,
   Heading,
@@ -32,6 +33,7 @@ import {
 const LIBRARY_NAV_ICONS: Record<string, LucideIcon> = {
   concept: Sparkles,
   "colors-new": Palette,
+  mundos: Globe,
   spacing: Move,
   grid: LayoutGrid,
   typography: Type,

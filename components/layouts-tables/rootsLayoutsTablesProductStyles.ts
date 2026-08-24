@@ -55,7 +55,7 @@ export const layoutsTablesFooterPageLabelClass =
   "px-1.5 font-canopy text-sm font-semibold tabular-nums text-[var(--rootsy-suelo-50)]"
 
 export const layoutsTablesFooterPageSizeClusterClass =
-  "hidden items-center justify-end gap-2 md:flex"
+  "hidden items-center justify-end gap-2 md:flex md:justify-self-end"
 
 export const layoutsTablesFooterSelectTriggerClass = cn(
   "!h-10 !min-h-10 !w-[4.5rem] min-w-[4.5rem] max-w-[4.5rem] justify-between gap-1 px-2 text-xs font-medium",

@@ -1,3 +1,12 @@
+import type { ChatRootsyCloseBrief, ChatRootsyCloseHecho } from "@/lib/chat/chatRootsyCloseBrief"
+import type { ChatRootsyDevTrace } from "@/lib/chat/chatRootsyDevTrace"
+import type { ChatRootsyOfferPreview } from "@/lib/chat/chatRootsyOfferPreview"
+import type {
+  ChatRootsyPlannerChoice,
+  ChatRootsyPlannerConfirm,
+  ChatRootsyPlannerRun,
+} from "@/lib/chat/chatRootsyPlannerStep"
+
 export type ChatEligibleUser = {
   userId: string
   firstName: string
@@ -25,6 +34,50 @@ export type ChatChannelListItem = {
   memberCount: number
 }
 
+export type ChatRootsyToolOffer = {
+  tool: string
+  label: string
+  status: "offered" | "used"
+  hint?: string
+  filters?: Record<string, string | number | boolean>
+  method?: string
+  path?: string
+  body?: Record<string, unknown>
+  action?: string
+  confirm?: ChatRootsyPlannerConfirm
+  offerKey?: string
+  preview?: ChatRootsyOfferPreview
+  next?: {
+    method: string
+    path: string
+    body?: Record<string, unknown>
+  }
+}
+
+export type ChatRootsyToolItem = {
+  rank: number
+  name: string
+  id?: string
+  sharePercent?: number
+  sales?: number
+  cost?: number
+  profit?: number
+  marginPercent?: number
+  balance?: number
+  overdueAmount?: number
+  openCount?: number
+}
+
+export type ChatRootsyToolResult = {
+  tool: string
+  periodLabel: string
+  items: ChatRootsyToolItem[]
+  payload?: unknown
+  title?: string
+  offerKey?: string
+  applied?: ChatRootsyCloseHecho
+}
+
 export type ChatMessageRow = {
   id: string
   authorUserId: string
@@ -33,6 +86,13 @@ export type ChatMessageRow = {
   createdAt: string
   mine: boolean
   pending?: boolean
+  toolOffer?: ChatRootsyToolOffer
+  toolOffers?: ChatRootsyToolOffer[]
+  toolResult?: ChatRootsyToolResult
+  plannerRun?: ChatRootsyPlannerRun
+  plannerChoices?: ChatRootsyPlannerChoice[]
+  closeBrief?: ChatRootsyCloseBrief
+  devTrace?: ChatRootsyDevTrace
 }
 
 export type ChatWorkspaceData = {

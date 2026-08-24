@@ -29,6 +29,7 @@ export function buildWorkspaceBootstrapFromAccess(
     userImageUrl: profile.imageUrl,
     roleLabel: buildPopRoleLabel(normalized),
     permissionKeys: permissionKeysFromPopAccess(normalized),
+    canSetApprovalCode: normalized.isOwner || Boolean(normalized.role?.canApprove),
     hasValidPopFiscalCuit: normalized.fiscal.hasValidCuit,
     popEmisorIvaCondition: normalized.fiscal.emisorIvaCondition,
   }

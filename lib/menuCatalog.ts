@@ -22,6 +22,7 @@ import {
   PieChart,
   Printer,
   Receipt,
+  ScrollText,
   ShoppingBag,
   ShoppingCart,
   Sparkles,
@@ -66,6 +67,7 @@ export type MenuItemLink =
   | "alerts"
   | "chat"
   | "manufacturing"
+  | "audit"
   | "section"
 
 /** Identificador de un acceso directo del dock (solo rutas navegables). */
@@ -150,6 +152,7 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Alertas", icon: Bell, link: "alerts", moduleKey: "alerts" },
       { name: "Chat", icon: MessageSquare, link: "chat", moduleKey: "chat" },
       { name: "Ajustes", icon: Cog, link: "settings" },
+      { name: "Auditoría", icon: ScrollText, link: "audit", moduleKey: "audit" },
     ],
   },
 }

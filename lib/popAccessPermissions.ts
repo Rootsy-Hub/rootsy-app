@@ -4,6 +4,7 @@ import {
   allUniquePermissionKeys,
   POP_PAGES,
   type PopPageKey,
+  type PopPagePermissionMap,
 } from "@/lib/popPageCrudConstants"
 import { permissionKeysInclude } from "@/lib/popPermissionConstants"
 
@@ -18,12 +19,14 @@ export function permissionKeysFromPopAccess(access: PopAccessCache): string[] {
     if (!mod.permissions) continue
     const pageKey = POP_ACCESS_MODULE_TO_PAGE_KEY[mod.key]
     if (!pageKey) continue
-    const perms = POP_PAGES[pageKey as PopPageKey]?.permissions
+    const perms = POP_PAGES[pageKey as PopPageKey]?.permissions as
+      | PopPagePermissionMap
+      | undefined
     if (!perms) continue
-    if (mod.permissions.read) keys.add(perms.read)
-    if (mod.permissions.create) keys.add(perms.create)
-    if (mod.permissions.update) keys.add(perms.update)
-    if (mod.permissions.delete) keys.add(perms.delete)
+    if (mod.permissions.read && perms.read) keys.add(perms.read)
+    if (mod.permissions.create && perms.create) keys.add(perms.create)
+    if (mod.permissions.update && perms.update) keys.add(perms.update)
+    if (mod.permissions.delete && perms.delete) keys.add(perms.delete)
   }
   return [...keys]
 }

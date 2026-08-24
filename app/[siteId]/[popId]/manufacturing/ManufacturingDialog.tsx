@@ -1,6 +1,9 @@
 "use client"
 
+import { ManufacturingConfirmDialog } from "@/app/[siteId]/[popId]/manufacturing/ManufacturingConfirmDialog"
 import type { ManufacturableRecipe } from "@/app/[siteId]/[popId]/manufacturing/manufacturingTypes"
+import { ManufacturingRecipeSearchField } from "@/app/[siteId]/[popId]/manufacturing/ManufacturingRecipeSearchField"
+import { RecipeOutputArticleField } from "@/app/[siteId]/[popId]/recipes/components/RecipeOutputArticleField"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -11,19 +14,19 @@ import {
 } from "@/components/rootsy-dialog"
 import {
   RootsFormDateField,
-  RootsFormSelectField,
-  RootsFormSelectItem,
-  RootsFormTextField,
+  RootsFormQuantityField,
 } from "@/components/rootsy-form"
+import { unitOfMeasureAffix } from "@/components/rootsy-form/RootsFormUnitOfMeasureAffix"
 import {
   formatInventoryQtyWithUnit,
 } from "@/app/[siteId]/[popId]/inventory/inventoryFormat"
+import { labelUnitOfMeasure } from "@/lib/articleItemKind"
 import { Dialog } from "@/components/ui/dialog"
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 
 type Props = {
   open: boolean
-  recipes: ManufacturableRecipe[]
+  popId: string
   defaultDay: string
   saving: boolean
   error: string | null
@@ -33,39 +36,57 @@ type Props = {
     quantity: number
     producedAt: string
     expiresAt: string | null
+    outputArticleId: string | null
   }) => void | Promise<void>
 }
 
 export function ManufacturingDialog({
   open,
-  recipes,
+  popId,
   defaultDay,
   saving,
   error,
   onOpenChange,
   onSubmit,
 }: Props) {
-  const [recipeId, setRecipeId] = useState("")
+  const [recipe, setRecipe] = useState<ManufacturableRecipe | null>(null)
   const [quantity, setQuantity] = useState("1")
   const [producedAt, setProducedAt] = useState(defaultDay)
   const [expiresAt, setExpiresAt] = useState("")
+  const [outputArticleId, setOutputArticleId] = useState("")
+  const [outputArticleName, setOutputArticleName] = useState("")
+  const [outputUnitOfMeasure, setOutputUnitOfMeasure] = useState("")
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmValue, setConfirmValue] = useState("")
 
   useEffect(() => {
-    if (!open) return
-    setRecipeId(recipes[0]?.id ?? "")
+    if (!open) {
+      setConfirmOpen(false)
+      setConfirmValue("")
+      return
+    }
+    setRecipe(null)
     setQuantity("1")
     setProducedAt(defaultDay)
     setExpiresAt("")
-  }, [defaultDay, open, recipes])
-
-  const recipe = useMemo(
-    () => recipes.find((item) => item.id === recipeId) ?? null,
-    [recipeId, recipes],
-  )
+    setOutputArticleId("")
+    setOutputArticleName("")
+    setOutputUnitOfMeasure("")
+    setConfirmOpen(false)
+    setConfirmValue("")
+  }, [defaultDay, open])
 
   const qty = Number(quantity.replace(",", "."))
-  const qtyOk = Number.isFinite(qty) && qty > 0 && qty <= 10000
+  const qtyOk = Number.isInteger(qty) && qty > 0 && qty <= 10000
   const dayOk = /^\d{4}-\d{2}-\d{2}$/.test(producedAt.trim())
+  const outputOk = outputArticleId.trim().length > 0
+  const qtyAffix = unitOfMeasureAffix(
+    outputUnitOfMeasure || null,
+    outputArticleId ? "uds." : "—",
+  )
+  const qtyUnitLabel = outputUnitOfMeasure
+    ? labelUnitOfMeasure(outputUnitOfMeasure)
+    : ""
 
   const preview = useMemo(() => {
     if (!recipe || !qtyOk) return []
@@ -85,21 +106,71 @@ export function ManufacturingDialog({
     preview.some((line) => line.short)
 
   const canSubmit =
-    Boolean(recipe) && qtyOk && dayOk && !blockedByStock && recipes.length > 0
+    Boolean(recipe) && qtyOk && dayOk && outputOk && !blockedByStock
+
+  const applyOutput = (input: {
+    id: string
+    name: string
+    unitOfMeasure: string
+  }) => {
+    setOutputArticleId(input.id)
+    setOutputArticleName(input.name)
+    setOutputUnitOfMeasure(input.unitOfMeasure)
+  }
+
+  const clearOutput = () => {
+    setOutputArticleId("")
+    setOutputArticleName("")
+    setOutputUnitOfMeasure("")
+  }
+
+  const handleRecipeSelect = (next: ManufacturableRecipe) => {
+    setRecipe(next)
+    if (next.outputArticleId) {
+      applyOutput({
+        id: next.outputArticleId,
+        name: next.outputArticleName,
+        unitOfMeasure: next.outputUnitOfMeasure,
+      })
+      return
+    }
+    clearOutput()
+  }
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
+    if (!canSubmit || !recipe) return
+    setConfirmValue("")
+    setConfirmOpen(true)
+  }
+
+  const handleConfirm = () => {
     if (!canSubmit || !recipe) return
     void onSubmit({
       recipeId: recipe.id,
       quantity: qty,
       producedAt: producedAt.trim(),
       expiresAt: expiresAt.trim() || null,
+      outputArticleId: outputArticleId.trim() || null,
     })
   }
 
+  const closeConfirm = () => {
+    if (saving) return
+    setConfirmOpen(false)
+    setConfirmValue("")
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (saving) return
+        if (!next) closeConfirm()
+        onOpenChange(next)
+      }}
+    >
       <RootsDialogContent showCloseButton={!saving}>
         <RootsDialogForm onSubmit={handleSubmit}>
           <RootsDialogHeader
@@ -108,96 +179,97 @@ export function ManufacturingDialog({
             description="Una receta, una cantidad, un día. Baja los insumos y entra el artículo al depósito."
           />
           <RootsDialogBody className="space-y-4">
-            {recipes.length === 0 ? (
-              <p className="text-sm text-[var(--rootsy-bruma-500)]">
-                Ninguna receta declara qué produce. Completalo en Recetas, en
-                «Artículo que produce».
-              </p>
-            ) : (
-              <>
-                <RootsFormSelectField
-                  label="Receta"
-                  id="manufacturing-recipe"
-                  value={recipeId}
-                  onValueChange={setRecipeId}
-                  placeholder="Elegir receta"
-                >
-                  {recipes.map((item) => (
-                    <RootsFormSelectItem key={item.id} value={item.id}>
-                      {item.name}
-                    </RootsFormSelectItem>
+            <ManufacturingRecipeSearchField
+              id="manufacturing-recipe"
+              popId={popId}
+              selectedId={recipe?.id ?? ""}
+              selectedName={recipe?.name ?? ""}
+              onSelect={handleRecipeSelect}
+              onClear={() => {
+                setRecipe(null)
+                clearOutput()
+              }}
+            />
+            <RecipeOutputArticleField
+              id="manufacturing-output-article"
+              popId={popId}
+              selectedId={outputArticleId}
+              selectedName={outputArticleName}
+              excludeIds={recipe?.ingredients.map((line) => line.articleId) ?? []}
+              onSelect={(option) => applyOutput(option)}
+              onClear={clearOutput}
+            />
+            <RootsFormQuantityField
+              label={
+                qtyUnitLabel ? `Cantidad en ${qtyUnitLabel}` : "Cantidad"
+              }
+              id="manufacturing-qty"
+              value={quantity}
+              prefix={qtyAffix.prefix}
+              prefixClassName={qtyAffix.prefixClassName}
+              disabled={!outputArticleId}
+              onChange={setQuantity}
+              hint={
+                !outputArticleId
+                  ? "Elegí el artículo para ver la unidad."
+                  : qtyAffix.hint
+              }
+            />
+            <RootsFormDateField
+              label="Día"
+              id="manufacturing-day"
+              value={producedAt}
+              onChange={setProducedAt}
+            />
+            <RootsFormDateField
+              label="Vencimiento (opcional)"
+              id="manufacturing-expires"
+              value={expiresAt}
+              onChange={setExpiresAt}
+            />
+            {preview.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-rootsy-bruma-700">
+                  Insumos que se descuentan
+                </p>
+                <ul className="space-y-1.5">
+                  {preview.map((line) => (
+                    <li
+                      key={line.articleId}
+                      className="flex items-start justify-between gap-3 text-sm"
+                    >
+                      <span className="min-w-0 text-rootsy-bruma-900">
+                        {line.articleName}
+                      </span>
+                      <span
+                        className={
+                          line.short
+                            ? "shrink-0 text-right text-xs text-red-600"
+                            : "shrink-0 text-right text-xs text-rootsy-bruma-500"
+                        }
+                      >
+                        {formatInventoryQtyWithUnit(
+                          line.need,
+                          line.unitOfMeasure,
+                        )}
+                        {" · hay "}
+                        {formatInventoryQtyWithUnit(
+                          line.onHand,
+                          line.unitOfMeasure,
+                        )}
+                      </span>
+                    </li>
                   ))}
-                </RootsFormSelectField>
-                {recipe ? (
-                  <p className="text-xs text-[var(--rootsy-bruma-500)]">
-                    Entra {recipe.outputArticleName || "el artículo"} al
-                    depósito.
+                </ul>
+                {blockedByStock ? (
+                  <p className="text-xs text-red-600">
+                    No hay stock suficiente de un insumo. Esta receta no
+                    permite quedar en negativo.
                   </p>
                 ) : null}
-                <RootsFormTextField
-                  label="Cantidad"
-                  id="manufacturing-qty"
-                  inputMode="decimal"
-                  value={quantity}
-                  onChange={(event) => setQuantity(event.target.value)}
-                />
-                <RootsFormDateField
-                  label="Día"
-                  id="manufacturing-day"
-                  value={producedAt}
-                  onChange={setProducedAt}
-                />
-                <RootsFormDateField
-                  label="Vencimiento (opcional)"
-                  id="manufacturing-expires"
-                  value={expiresAt}
-                  onChange={setExpiresAt}
-                />
-                {preview.length > 0 ? (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-[var(--rootsy-bruma-700)]">
-                      Insumos que se descuentan
-                    </p>
-                    <ul className="space-y-1.5">
-                      {preview.map((line) => (
-                        <li
-                          key={line.articleId}
-                          className="flex items-start justify-between gap-3 text-sm"
-                        >
-                          <span className="min-w-0 text-[var(--rootsy-bruma-900)]">
-                            {line.articleName}
-                          </span>
-                          <span
-                            className={
-                              line.short
-                                ? "shrink-0 text-right text-xs text-red-600"
-                                : "shrink-0 text-right text-xs text-[var(--rootsy-bruma-500)]"
-                            }
-                          >
-                            {formatInventoryQtyWithUnit(
-                              line.need,
-                              line.unitOfMeasure,
-                            )}
-                            {" · hay "}
-                            {formatInventoryQtyWithUnit(
-                              line.onHand,
-                              line.unitOfMeasure,
-                            )}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    {blockedByStock ? (
-                      <p className="text-xs text-red-600">
-                        No hay stock suficiente de un insumo. Esta receta no
-                        permite quedar en negativo.
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
-              </>
-            )}
-            {error ? (
+              </div>
+            ) : null}
+            {error && !confirmOpen ? (
               <RootsDialogErrorBanner>{error}</RootsDialogErrorBanner>
             ) : null}
           </RootsDialogBody>
@@ -212,5 +284,35 @@ export function ManufacturingDialog({
         </RootsDialogForm>
       </RootsDialogContent>
     </Dialog>
+    <ManufacturingConfirmDialog
+      open={confirmOpen}
+      recipeName={recipe?.name ?? ""}
+      outputArticleName={outputArticleName}
+      quantity={qtyOk ? qty : 0}
+      unitOfMeasure={outputUnitOfMeasure}
+      producedAt={producedAt.trim()}
+      expiresAt={expiresAt.trim()}
+      lines={preview.map((line) => ({
+        articleId: line.articleId,
+        articleName: line.articleName,
+        itemKind: line.itemKind ?? "raw_material",
+        need: line.need,
+        unitOfMeasure: line.unitOfMeasure,
+      }))}
+      confirmValue={confirmValue}
+      banner={error}
+      busy={saving}
+      onOpenChange={(next) => {
+        if (next) {
+          setConfirmOpen(true)
+          return
+        }
+        closeConfirm()
+      }}
+      onClose={closeConfirm}
+      onConfirmValueChange={setConfirmValue}
+      onConfirm={handleConfirm}
+    />
+    </>
   )
 }

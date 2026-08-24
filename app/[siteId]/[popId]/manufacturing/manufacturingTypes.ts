@@ -1,6 +1,7 @@
 export type ManufacturingIngredientPreview = {
   articleId: string
   articleName: string
+  itemKind: "merchandise" | "raw_material" | "supply"
   unitOfMeasure: string
   quantityPerUnit: number
   wastePct: number | null

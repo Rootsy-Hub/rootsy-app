@@ -266,16 +266,6 @@ export function AlertsModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   )
 }
 
-export function ManufacturingModulePageSkeleton(layout: PopModuleSkeletonLayout) {
-  return (
-    <ComingSoonModulePageSkeleton
-      layout={layout}
-      title="Fabricar"
-      description={COMING_SOON_COPY}
-    />
-  )
-}
-
 export function ComandasModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
     <BlocksModulePageSkeleton

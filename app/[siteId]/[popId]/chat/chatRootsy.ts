@@ -17,8 +17,12 @@ export type ChatRootsyHistoryTurn = {
   body: string
 }
 
+/** Solo sesión del navegador. No se guarda en Supabase ni otra base. */
+export const ROOTSY_SESSION_HISTORY_MAX = 80
+export const ROOTSY_AI_HISTORY_TURNS = 20
+export const ROOTSY_AI_HISTORY_BODY = 800
+
 const STORAGE_PREFIX = "rootsy-mascot-chat:"
-const MAX_STORED = 80
 
 function storageKey(popId: string) {
   return `${STORAGE_PREFIX}${popId}`
@@ -44,7 +48,7 @@ export function loadRootsyChatMessages(popId: string): ChatMessageRow[] {
     if (!raw) return []
     const parsed = JSON.parse(raw) as unknown
     if (!Array.isArray(parsed)) return []
-    return parsed.filter(isStoredMessage).slice(-MAX_STORED)
+    return parsed.filter(isStoredMessage).slice(-ROOTSY_SESSION_HISTORY_MAX)
   } catch {
     return []
   }
@@ -57,7 +61,7 @@ export function saveRootsyChatMessages(
   if (typeof sessionStorage === "undefined" || !popId) return
   const stored = messages
     .filter((row) => !row.pending && row.id !== ROOTSY_CHAT_WELCOME.id)
-    .slice(-MAX_STORED)
+    .slice(-ROOTSY_SESSION_HISTORY_MAX)
   try {
     sessionStorage.setItem(storageKey(popId), JSON.stringify(stored))
   } catch {
@@ -69,9 +73,17 @@ export function rootsyHistoryFromMessages(
   messages: ChatMessageRow[],
 ): ChatRootsyHistoryTurn[] {
   return messages
-    .filter((row) => !row.pending && row.body.trim().length > 0)
+    .filter(
+      (row) =>
+        !row.pending &&
+        !row.toolResult &&
+        row.body.trim().length > 0,
+    )
     .map((row) => ({
       role: row.mine ? "user" : "assistant",
-      body: row.body.trim(),
+      body: row.body.trim().slice(0, ROOTSY_AI_HISTORY_BODY),
     }))
+    .slice(-ROOTSY_AI_HISTORY_TURNS)
 }
+
+export { rootsyToolContextFromMessages } from "@/lib/chat/chatRootsyTools"

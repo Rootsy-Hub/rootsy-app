@@ -121,6 +121,8 @@ export const POP_PERMS = {
   PURCHASE_ORDERS_READ: { resource: "purchase_orders", action: "read" },
   PURCHASE_ORDERS_CREATE: { resource: "purchase_orders", action: "create" },
   PURCHASE_ORDERS_DELETE: { resource: "purchase_orders", action: "delete" },
+
+  AUDIT_READ: { resource: "audit", action: "read" },
 } as const
 
 export function permissionKeysInclude(

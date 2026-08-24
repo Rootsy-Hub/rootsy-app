@@ -32,4 +32,5 @@ export const POP_ACCESS_MODULE_TO_PAGE_KEY: Record<string, PopPageKey | null> = 
   purchase_orders: "purchase_orders",
   manufacturing: "manufacturing",
   chat: "chat",
+  audit: "audit",
 }

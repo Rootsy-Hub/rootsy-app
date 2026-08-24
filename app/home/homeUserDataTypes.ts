@@ -47,6 +47,7 @@ export type PopAccessRole = {
   name: string
   displayName: string
   permissionGrants: string[]
+  canApprove: boolean
 }
 
 import type { PopEmisorIvaCondition } from "@/lib/saleComprobanteRules"

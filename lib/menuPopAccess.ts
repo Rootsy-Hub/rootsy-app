@@ -5,7 +5,7 @@ import type {
   PopAccessModulePermissions,
 } from "@/app/home/homeUserDataTypes"
 import { POP_ACCESS_MODULE_TO_PAGE_KEY } from "@/lib/popAccessModuleMap"
-import { POP_PAGES, type PopPageKey } from "@/lib/popPageCrudConstants"
+import { POP_PAGES, type PopPageKey, type PopPagePermissionMap } from "@/lib/popPageCrudConstants"
 import type { MenuItemDef, MenuItemLink, MenuSectionKey } from "@/lib/menuCatalog"
 import { isPopMenuPathname, popModuleKeyFromPath } from "@/lib/popRoutes"
 import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
@@ -48,6 +48,7 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   alerts: "alerts",
   chat: "chat",
   manufacturing: "manufacturing",
+  audit: "audit",
 }
 
 /** Módulo de suscripción → link principal del menú (sin alias como cobrar-servicios). */
@@ -103,6 +104,7 @@ const MENU_MODULE_KEY_ORDER: Record<MenuModuleSection, readonly string[]> = {
     "alerts",
     "chat",
     "settings",
+    "audit",
   ],
 }
 
@@ -283,12 +285,12 @@ function moduleCrud(
       delete: false,
     }
   }
-  const perms = POP_PAGES[pageKey].permissions
+  const perms = POP_PAGES[pageKey].permissions as PopPagePermissionMap
   return {
-    read: permissions.includes(perms.read),
-    create: permissions.includes(perms.create),
-    update: permissions.includes(perms.update),
-    delete: permissions.includes(perms.delete),
+    read: Boolean(perms.read && permissions.includes(perms.read)),
+    create: Boolean(perms.create && permissions.includes(perms.create)),
+    update: Boolean(perms.update && permissions.includes(perms.update)),
+    delete: Boolean(perms.delete && permissions.includes(perms.delete)),
   }
 }
 
@@ -363,11 +365,17 @@ export function homePopToMenuAccess(
       emisorIvaCondition: "responsable_inscripto",
     },
     isOwner: pop.isOwner,
-    role: {
-      name: pop.roleName,
-      displayName: pop.roleName,
-      permissionGrants: pop.permissions,
-    },
+    role: pop.role
+      ? {
+          ...pop.role,
+          canApprove: pop.isOwner || pop.role.canApprove,
+        }
+      : {
+          name: pop.roleName,
+          displayName: pop.roleName,
+          permissionGrants: pop.permissions,
+          canApprove: pop.isOwner,
+        },
     canEnter: pop.canEnter,
   }
 }
@@ -404,6 +412,7 @@ const PATH_SEGMENT_TO_MENU_LINK: Record<string, MenuItemLink> = {
   alerts: "alerts",
   chat: "chat",
   manufacturing: "manufacturing",
+  audit: "audit",
 }
 
 /** Segmento de URL POP → ítem de menú, o null si la ruta no se controla. */

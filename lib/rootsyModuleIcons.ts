@@ -21,6 +21,7 @@ import {
   PieChart,
   Printer,
   Receipt,
+  ScrollText,
   ShoppingBag,
   ShoppingCart,
   Sparkles,
@@ -63,6 +64,7 @@ const ROOTS_MODULE_ICON_MAP: Record<string, LucideIcon> = {
   invoices: FileBarChart,
   printers: Printer,
   chat: MessageSquare,
+  audit: ScrollText,
 }
 
 export function getRootsModuleIcon(key: string): LucideIcon {

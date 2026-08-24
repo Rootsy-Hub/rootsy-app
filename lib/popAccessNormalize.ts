@@ -30,5 +30,6 @@ export function popAccessCacheNeedsRefresh(
   const moduleKeys = new Set(access.enabledModules.map((mod) => mod.key))
   if (!moduleKeys.has("services")) return true
   if (!moduleKeys.has("active_services")) return true
+  if (!moduleKeys.has("audit")) return true
   return false
 }

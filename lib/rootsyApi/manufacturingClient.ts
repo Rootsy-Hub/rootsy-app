@@ -1,4 +1,7 @@
-import type { ManufacturingWorkspaceData } from "@/app/[siteId]/[popId]/manufacturing/manufacturingTypes"
+import type {
+  ManufacturableRecipe,
+  ManufacturingWorkspaceData,
+} from "@/app/[siteId]/[popId]/manufacturing/manufacturingTypes"
 
 type ApiOk<T> = { success: true; data: T }
 type ApiErr = { success: false; error?: string; redirect?: string }
@@ -44,6 +47,25 @@ export async function fetchManufacturingWorkspace(
   return parseJson<ManufacturingWorkspaceData>(res)
 }
 
+export async function searchManufacturingRecipes(
+  popId: string,
+  query: string,
+): Promise<
+  | { success: true; recipes: ManufacturableRecipe[] }
+  | { success: false; error: string }
+> {
+  const params = new URLSearchParams({ q: query })
+  const res = await fetch(
+    `/api/pops/${popId}/manufacturing/recipes?${params}`,
+    { headers: { accept: "application/json" } },
+  )
+  const parsed = await parseJson<{ recipes: ManufacturableRecipe[] }>(res)
+  if (!parsed.success) {
+    return { success: false, error: parsed.error }
+  }
+  return { success: true, recipes: parsed.data.recipes }
+}
+
 export async function createManufacturingRun(
   popId: string,
   input: {
@@ -51,6 +73,7 @@ export async function createManufacturingRun(
     quantity: number
     producedAt: string
     expiresAt: string | null
+    outputArticleId: string | null
   },
 ): Promise<MutateResult> {
   const res = await fetch(`/api/pops/${popId}/manufacturing`, {

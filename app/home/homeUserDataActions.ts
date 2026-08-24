@@ -43,11 +43,13 @@ type MemberRoleRow = {
     display_name: string
     permission_grants: unknown
     pop_id: string | null
+    can_approve: boolean | null
   } | {
     name: string
     display_name: string
     permission_grants: unknown
     pop_id: string | null
+    can_approve: boolean | null
   }[] | null
 }
 
@@ -66,6 +68,7 @@ function mapMemberRole(role: MemberRoleRow["roles"]): PopAccessRole | null {
     name: String(row.name ?? "").trim(),
     displayName: String(row.display_name ?? row.name ?? "").trim(),
     permissionGrants: parseRolePermissionGrants(row.permission_grants),
+    canApprove: row.can_approve === true,
   }
 }
 
@@ -195,7 +198,7 @@ export async function getPopAccessCache(
       .select(
         `
         pop_id,
-        roles:role_id ( name, display_name, permission_grants, pop_id )
+        roles:role_id ( name, display_name, permission_grants, pop_id, can_approve )
       `,
       )
       .eq("user_id", user.uid)
@@ -258,7 +261,7 @@ export async function getUserPopsAccessBatch(): Promise<UserPopsAccessBatchCache
       .select(
         `
         pop_id,
-        roles:role_id ( name, display_name, permission_grants, pop_id )
+        roles:role_id ( name, display_name, permission_grants, pop_id, can_approve )
       `,
       )
       .eq("user_id", user.uid)

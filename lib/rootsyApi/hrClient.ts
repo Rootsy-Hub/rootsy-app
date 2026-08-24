@@ -345,6 +345,7 @@ export async function getRolePermissionsEditorData(
       role: { id: string; displayName: string; name: string }
       permissions: PermissionCatalogRow[]
       selectedGrantKeys: string[]
+      canApprove: boolean
     }
   | { success: false; error: string }
 > {
@@ -352,7 +353,7 @@ export async function getRolePermissionsEditorData(
     headers: { accept: "application/json" },
   })
   const parsed = await parseJson<{
-    role: { id: string; displayName: string; name: string }
+    role: { id: string; displayName: string; name: string; canApprove?: boolean }
     selectedGrantKeys: string[]
   }>(res)
   if (!parsed.success) return parsed
@@ -365,6 +366,7 @@ export async function getRolePermissionsEditorData(
     role: parsed.data.role,
     permissions,
     selectedGrantKeys: parsed.data.selectedGrantKeys,
+    canApprove: parsed.data.role.canApprove === true,
   }
 }
 
@@ -372,11 +374,12 @@ export async function savePopRolePermissions(
   popId: string,
   roleId: string,
   grantKeys: string[],
+  canApprove: boolean,
 ) {
   const res = await fetch(`/api/pops/${popId}/hr/roles/${roleId}`, {
     method: "PATCH",
     headers: { accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ grantKeys }),
+    body: JSON.stringify({ grantKeys, canApprove }),
   })
   return parseMutate(res)
 }
@@ -385,11 +388,12 @@ export async function createPopRole(
   popId: string,
   displayName: string,
   grantKeys: string[],
+  canApprove: boolean,
 ): Promise<{ success: true; roleId: string } | { success: false; error: string }> {
   const res = await fetch(`/api/pops/${popId}/hr/roles`, {
     method: "POST",
     headers: { accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ displayName, grantKeys }),
+    body: JSON.stringify({ displayName, grantKeys, canApprove }),
   })
   const parsed = await parseJson<{ roleId: string }>(res)
   if (!parsed.success) return parsed
