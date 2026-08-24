@@ -116,4 +116,39 @@ describe("acciones aplicadas de la sesión", () => {
     ])
     assert.equal(acciones.length, 0)
   })
+
+  it("no toma escrituras de una corrida que cerró con error", () => {
+    const acciones = collectChatRootsyAppliedActions([
+      row({
+        id: "offers",
+        toolError: "No se puede eliminar Huevo: tiene movimientos de stock.",
+        toolOffers: [
+          {
+            tool: "delete_articles_articleId",
+            label: "Eliminar Huevo",
+            status: "used",
+            method: "DELETE",
+            path: "/v1/pops/:popId/articles/:articleId",
+            filters: { articleId: "art-1" },
+            action: "Eliminar el artículo Huevo del catálogo",
+            preview: {
+              subject: "Huevo",
+              changes: [],
+            },
+          },
+        ],
+      }),
+      row({
+        id: "close",
+        body: "No pude borrar Huevo.",
+        closeBrief: {
+          pedido: "Borrá Huevo",
+          estado: "no_aplicado",
+          error: "No se puede eliminar Huevo: tiene movimientos de stock.",
+          hechos: [{ accion: "Eliminar Huevo", sujeto: "Huevo" }],
+        },
+      }),
+    ])
+    assert.equal(acciones.length, 0)
+  })
 })

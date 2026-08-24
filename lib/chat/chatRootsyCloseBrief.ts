@@ -2,6 +2,7 @@ import { parseChatRootsyFirstTurn } from "@/lib/chat/chatRootsyDataRequest"
 import {
   buildChatRootsyOfferPreview,
   readPlannerTargetId,
+  rowsFromPlannerResultados,
 } from "@/lib/chat/chatRootsyOfferPreview"
 import type {
   ChatRootsyPlannerInforme,
@@ -31,8 +32,9 @@ export type ChatRootsyCloseHecho = {
 
 export type ChatRootsyCloseBrief = {
   pedido: string
-  estado: "aplicado" | "consultado"
+  estado: "aplicado" | "consultado" | "no_aplicado"
   hechos: ChatRootsyCloseHecho[]
+  error?: string
   informe?: ChatRootsyPlannerInforme
 }
 
@@ -76,6 +78,25 @@ export function mergeChatRootsyHechos(
   return out
 }
 
+function subjectFromWrite(
+  proposal: ChatRootsyToolProposal,
+  resultados?: ChatRootsyPlannerResultado[],
+  preview?: ReturnType<typeof buildChatRootsyOfferPreview>,
+): string | undefined {
+  const fromPreview = preview?.subject?.trim()
+  if (fromPreview) return fromPreview
+  const fromProposal = proposal.subject?.trim()
+  if (fromProposal) return fromProposal
+  const id = readPlannerTargetId(proposal)
+  if (!id) return undefined
+  const row = rowsFromPlannerResultados(resultados).find((item) => {
+    const rowId = item.id
+    return rowId != null && String(rowId) === id
+  })
+  const name = typeof row?.name === "string" ? row.name.trim() : ""
+  return name || undefined
+}
+
 export function hechoFromWriteProposal(
   proposal: ChatRootsyToolProposal,
   resultados?: ChatRootsyPlannerResultado[],
@@ -83,7 +104,7 @@ export function hechoFromWriteProposal(
   const preview = buildChatRootsyOfferPreview(proposal, resultados)
   return {
     accion: proposal.action?.trim() || "Cambio aplicado",
-    sujeto: preview?.subject,
+    sujeto: subjectFromWrite(proposal, resultados, preview),
     id: readPlannerTargetId(proposal) ?? undefined,
     cambios: preview?.changes.map((change) => ({
       campo: change.field,
@@ -105,11 +126,22 @@ export function buildChatRootsyCloseBrief(input: {
   toolResults?: ChatRootsyToolResult[]
   previos?: ChatRootsyCloseHecho[]
   informe?: ChatRootsyPlannerInforme
+  error?: string
 }): ChatRootsyCloseBrief {
   const pedido = input.pedido.trim() || "este pedido"
   const writes = input.proposals
     .filter((row) => isChatRootsyWriteMethod(row.method))
     .map((proposal) => hechoFromWriteProposal(proposal, input.resultados))
+  const error = input.error?.replace(/\s+/g, " ").trim()
+  if (error) {
+    return {
+      pedido,
+      estado: "no_aplicado",
+      error,
+      hechos: writes.length ? writes : [],
+      informe: input.informe,
+    }
+  }
   const fromResults = (input.toolResults ?? [])
     .map((result) => result.applied)
     .filter((hecho): hecho is ChatRootsyCloseHecho => Boolean(hecho))
@@ -167,6 +199,7 @@ export function buildChatRootsyCloseModelPayload(
   return {
     pedido: brief.pedido,
     estado: brief.estado,
+    ...(brief.error ? { error: brief.error } : {}),
     ...(brief.informe
       ? {
           informe: {
@@ -176,7 +209,7 @@ export function buildChatRootsyCloseModelPayload(
         }
       : {}),
     hechos:
-      brief.estado === "aplicado"
+      brief.estado === "aplicado" || brief.estado === "no_aplicado"
         ? brief.hechos
         : hasInforme
           ? []
@@ -187,6 +220,14 @@ export function buildChatRootsyCloseModelPayload(
 export function fallbackChatRootsyCloseReply(
   brief: ChatRootsyCloseBrief,
 ): string {
+  if (brief.estado === "no_aplicado") {
+    const reason = brief.error?.trim()
+    const sujeto = brief.hechos.find((hecho) => hecho.sujeto?.trim())?.sujeto
+    if (reason) return reason.slice(0, 800)
+    if (sujeto) return `No pude completar el pedido con ${sujeto}.`
+    return "No pude completar el pedido."
+  }
+
   const informe = brief.informe?.respuesta?.trim()
   if (informe) return informe.slice(0, 800)
 
@@ -237,7 +278,8 @@ export function readChatRootsyCloseReply(raw: string | null): string | null {
 
 export const CHAT_ROOTSY_CLOSE_PROMPT = [
   "El planificador ya resolvió el data_request.",
-  "Si hay informe.respuesta, narrá ESO con tu voz: es la respuesta al pedido. No la reemplaces con un listado de filas.",
+  "Si estado es no_aplicado, explicá que no se pudo hacer y por qué (campo error). No digas que quedó aplicado. No copies SQL, tablas ni constraints.",
+  "Si hay informe.respuesta y estado no es no_aplicado, narrá ESO con tu voz: es la respuesta al pedido. No la reemplaces con un listado de filas.",
   "informe.acciones es el rastro de la tarea; no hace falta recitarlo entero.",
   "Si estado es aplicado, usá hechos (antes → después) para no inventar cifras de cambios. Si hay varios, nombrá todos.",
   "Si no hay informe, narrá solo con hechos.",

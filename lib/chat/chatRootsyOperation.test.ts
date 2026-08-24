@@ -584,7 +584,106 @@ describe("operación en vivo del chat Rootsy", () => {
     const ops = deriveChatRootsyOperations(messages)
     assert.equal(ops[0]?.phase, "error")
     assert.match(ops[0]?.error ?? "", /Eliminar/)
-    assert.equal(ops[0]?.pendingOffers.length, 1)
+    assert.equal(ops[0]?.pendingOffers.length, 0)
     assert.equal(chatRootsyOperationHasUserDetails(ops[0]!), true)
+  })
+
+  it("humaniza un FK persistido y cierra la tarjeta", () => {
+    const messages = [
+      row({ id: "u1", mine: true, body: "Borrá Huevo" }),
+      row({
+        id: "a1",
+        mine: false,
+        body: "Lo busco.",
+        plannerRun: {
+          message: "Borrá Huevo",
+          dataRequest: { objective: "borrar Huevo" },
+          paso: 2,
+          resultados: [],
+        },
+      }),
+      row({
+        id: "d1",
+        mine: false,
+        body: "",
+        toolError:
+          'update or delete on table "articles" violates foreign key constraint "inventory_movements_article_id_fkey" on table "inventory_movements"',
+        toolOffers: [
+          {
+            tool: "delete_articles_articleId",
+            label: "Eliminar",
+            status: "offered",
+            method: "DELETE",
+            path: "/v1/pops/:popId/articles/:articleId",
+            filters: { articleId: "art-1" },
+          },
+        ],
+      }),
+    ]
+    const ops = deriveChatRootsyOperations(messages)
+    assert.equal(ops[0]?.phase, "error")
+    assert.equal(ops[0]?.pendingOffers.length, 0)
+    assert.match(ops[0]?.error ?? "", /movimientos de stock/)
+    assert.equal((ops[0]?.error ?? "").includes("fkey"), false)
+  })
+
+  it("un write usado que falló no queda como OK ni deja reintentar", () => {
+    const messages = [
+      row({ id: "u1", mine: true, body: "Borrá Huevo" }),
+      row({
+        id: "a1",
+        mine: false,
+        body: "Lo busco.",
+        plannerRun: {
+          message: "Borrá Huevo",
+          dataRequest: { objective: "borrar Huevo" },
+          paso: 2,
+          resultados: [],
+        },
+      }),
+      row({
+        id: "t1",
+        mine: false,
+        body: "Buscar artículos",
+        toolResult: {
+          tool: "get_articles",
+          periodLabel: "Consulta",
+          items: [{ rank: 1, name: "Huevo", id: "art-1" }],
+        },
+      }),
+      row({
+        id: "d1",
+        mine: false,
+        body: "",
+        toolError: "No se puede eliminar Huevo: tiene movimientos de stock.",
+        toolOffers: [
+          {
+            tool: "delete_articles_articleId",
+            label: "Eliminar",
+            status: "used",
+            method: "DELETE",
+            path: "/v1/pops/:popId/articles/:articleId",
+            filters: { articleId: "art-1" },
+            action: "Eliminar el artículo Huevo del catálogo",
+          },
+        ],
+      }),
+      row({
+        id: "c1",
+        mine: false,
+        body: "No pude borrar Huevo porque tiene movimientos de stock.",
+        closeBrief: {
+          pedido: "Borrá Huevo",
+          estado: "no_aplicado",
+          error: "No se puede eliminar Huevo: tiene movimientos de stock.",
+          hechos: [{ accion: "Eliminar Huevo", sujeto: "Huevo" }],
+        },
+      }),
+    ]
+    const ops = deriveChatRootsyOperations(messages)
+    assert.equal(ops[0]?.phase, "error")
+    assert.equal(ops[0]?.pendingOffers.length, 0)
+    const write = ops[0]?.steps.find((step) => step.kind === "delete")
+    assert.equal(write?.status, "failed")
   })
 })

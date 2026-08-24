@@ -19,241 +19,168 @@
 }
 
 .chat-rootsy-thread-list {
-  transition: padding-bottom 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  padding-bottom: 1rem;
+  transition: padding-bottom 640ms cubic-bezier(0.22, 1.18, 0.36, 1);
 }
 
 .chat-rootsy-thread-list--thinking {
-  padding-bottom: 5.25rem;
+  padding-bottom: 5.125rem;
+}
+
+.chat-rootsy-thread-item {
+  will-change: transform;
+}
+
+.chat-rootsy-thread-list--rise .chat-rootsy-thread-item {
+  animation: chat-rootsy-thread-rise 760ms cubic-bezier(0.22, 1.18, 0.36, 1) both;
+}
+
+.chat-rootsy-thread-list--settle
+  .chat-rootsy-thread-item:not(.chat-rootsy-thread-item--arrive) {
+  animation: chat-rootsy-thread-settle 720ms cubic-bezier(0.22, 1.18, 0.36, 1)
+    both;
+}
+
+.chat-rootsy-thread-item--arrive {
+  animation: chat-rootsy-thread-arrive 780ms cubic-bezier(0.22, 1.18, 0.36, 1)
+    both;
 }
 
 .chat-rootsy-thread-chrome--thinking {
   box-shadow:
-    0 -32px 70px rgb(201 251 255 / 0.24),
-    0 -10px 28px rgb(224 254 255 / 0.14);
+    0 -28px 56px rgb(76 184 221 / 0.14),
+    0 -8px 22px rgb(224 255 255 / 0.12);
 }
 
 /**
- * Presencia de pensamiento — material de las tarjetas de tarea, aún sin forma.
- * Cuerpo: respiración. Mente: pulso irregular. Cáustica + membrana: cristal Herramientas.
+ * Presencia de pensamiento — dos elipses que derivan sobre el pie del hilo.
  */
 .chat-rootsy-thinking {
-  --think-ink: #e0feff;
-  --think-mute: #d8fbff;
-  --think-bar: #c9fbff;
   pointer-events: none;
   position: absolute;
   z-index: 2;
   inset-inline: 0;
   bottom: 0;
-  height: 10.25rem;
-  overflow: hidden;
-  animation: chat-rootsy-thinking-enter 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  height: 82px;
+  overflow: visible;
+  margin-bottom: 0;
+  animation: chat-rootsy-thinking-enter 560ms ease-out both;
 }
 
-.chat-rootsy-thinking__depth,
-.chat-rootsy-thinking__body,
-.chat-rootsy-thinking__mind,
-.chat-rootsy-thinking__membrane {
+.chat-rootsy-thinking--exit {
+  animation: chat-rootsy-thinking-exit 420ms ease-in both;
+}
+
+.chat-rootsy-thinking__glow {
   position: absolute;
   left: 50%;
   border-radius: 50%;
-}
-
-.chat-rootsy-thinking__depth {
-  bottom: -58%;
-  width: 150%;
-  height: 150%;
   background: radial-gradient(
-    ellipse 72% 54% at 50% 32%,
-    rgb(62 169 196 / 0.42) 0%,
-    rgb(51 167 198 / 0.2) 34%,
-    rgb(7 59 96 / 0.12) 58%,
+    ellipse at center,
+    rgb(224 255 255 / 0.36) 0%,
+    rgb(142 238 250 / 0.28) 20%,
+    rgb(76 184 221 / 0.13) 47%,
     transparent 72%
   );
-  filter: blur(48px);
-  animation: chat-rootsy-thinking-depth 12.5s cubic-bezier(0.45, 0.05, 0.55, 0.95)
-    infinite;
+  filter: blur(11px);
 }
 
-.chat-rootsy-thinking__body {
-  bottom: -42%;
-  width: 96%;
-  height: 122%;
-  background: radial-gradient(
-    ellipse 64% 48% at 50% 36%,
-    rgb(224 254 255 / 0.82) 0%,
-    rgb(216 251 255 / 0.5) 22%,
-    rgb(201 251 255 / 0.38) 40%,
-    rgb(142 238 250 / 0.16) 58%,
-    transparent 74%
-  );
-  animation: chat-rootsy-thinking-body 8.8s cubic-bezier(0.45, 0.05, 0.55, 0.95)
-    infinite;
+.chat-rootsy-thinking__glow--near {
+  bottom: -68px;
+  height: 126px;
+  width: min(76vw, 560px);
+  animation: chat-rootsy-drift-glow 5.4s ease-in-out infinite;
 }
 
-.chat-rootsy-thinking__caustic {
-  position: absolute;
-  left: 6%;
-  bottom: -18%;
-  width: 48%;
-  height: 88%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgb(224 254 255 / 0.42),
-    rgb(201 251 255 / 0.18),
-    transparent
-  );
-  filter: blur(22px);
-  animation: chat-rootsy-thinking-caustic 8.8s cubic-bezier(0.45, 0.05, 0.55, 0.95)
-    infinite;
-}
-
-.chat-rootsy-thinking__membrane {
-  bottom: 4%;
-  width: 78%;
-  height: 46%;
-  background: radial-gradient(
-    ellipse 78% 55% at 50% 100%,
-    transparent 38%,
-    rgb(230 255 255 / 0.55) 48%,
-    rgb(201 251 255 / 0.28) 56%,
-    rgb(163 246 255 / 0.08) 64%,
-    transparent 74%
-  );
-  filter: blur(9px);
-  animation: chat-rootsy-thinking-membrane 8.8s cubic-bezier(0.45, 0.05, 0.55, 0.95)
-    infinite;
-}
-
-.chat-rootsy-thinking__mind {
-  bottom: -6%;
-  width: 30%;
-  height: 54%;
-  background: radial-gradient(
-    circle at 50% 58%,
-    rgb(255 255 255 / 0.88) 0%,
-    rgb(224 254 255 / 0.62) 22%,
-    rgb(201 251 255 / 0.22) 48%,
-    transparent 72%
-  );
-  filter: blur(15px);
-  animation: chat-rootsy-thinking-mind 3.2s cubic-bezier(0.37, 0, 0.63, 1)
-    infinite;
-}
-
-.chat-rootsy-thinking__veil {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgb(201 251 255 / 0.24) 0%,
-    rgb(224 254 255 / 0.08) 38%,
-    transparent 70%
-  );
-  animation: chat-rootsy-thinking-veil 8.8s cubic-bezier(0.45, 0.05, 0.55, 0.95)
-    infinite;
-  animation-delay: -2.4s;
+.chat-rootsy-thinking__glow--far {
+  bottom: -92px;
+  height: 150px;
+  width: min(82vw, 650px);
+  opacity: 0.8;
+  animation: chat-rootsy-drift-glow-soft 7.2s ease-in-out -2.1s infinite;
 }
 
 @keyframes chat-rootsy-thinking-enter {
   from {
     opacity: 0;
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes chat-rootsy-thinking-depth {
-  0%,
-  100% {
-    opacity: 0.5;
-    transform: translateX(-50%) scale(1);
-  }
-  50% {
-    opacity: 0.92;
-    transform: translateX(-50%) scale(1.05);
-  }
-}
-
-@keyframes chat-rootsy-thinking-body {
-  0%,
-  100% {
-    opacity: 0.62;
-    filter: blur(36px) saturate(1.12);
-    transform: translateX(-50%) translateY(8%) scale(0.96);
-  }
-  50% {
+@keyframes chat-rootsy-thinking-exit {
+  from {
     opacity: 1;
-    filter: blur(26px) saturate(1.38);
-    transform: translateX(-50%) translateY(-12%) scale(1.06);
+  }
+  to {
+    opacity: 0;
   }
 }
 
-@keyframes chat-rootsy-thinking-caustic {
+@keyframes chat-rootsy-drift-glow {
   0%,
   100% {
-    opacity: 0.2;
-    transform: rotate(23deg) translateX(-18%);
+    transform: translateX(-50%) translateY(0) scale(1);
   }
   50% {
-    opacity: 0.7;
-    transform: rotate(23deg) translateX(36%);
+    transform: translateX(-50%) translateY(-10px) scale(1.06);
   }
 }
 
-@keyframes chat-rootsy-thinking-membrane {
+@keyframes chat-rootsy-drift-glow-soft {
   0%,
   100% {
-    opacity: 0.42;
-    transform: translateX(-50%) scaleX(0.92);
-  }
-  50% {
-    opacity: 1;
-    transform: translateX(-50%) scaleX(1.06);
-  }
-}
-
-@keyframes chat-rootsy-thinking-mind {
-  0%,
-  100% {
-    opacity: 0.28;
-    transform: translateX(-50%) scale(0.86);
-  }
-  12% {
-    opacity: 0.62;
-    transform: translateX(-50%) scale(0.98);
-  }
-  20% {
-    opacity: 0.34;
-    transform: translateX(-50%) scale(0.9);
-  }
-  38% {
-    opacity: 1;
-    transform: translateX(-50%) translateY(-12%) scale(1.16);
-  }
-  52% {
-    opacity: 0.4;
-    transform: translateX(-50%) scale(0.94);
-  }
-  68% {
     opacity: 0.72;
-    transform: translateX(-50%) translateY(-4%) scale(1.06);
-  }
-  84% {
-    opacity: 0.32;
-    transform: translateX(-50%) scale(0.88);
-  }
-}
-
-@keyframes chat-rootsy-thinking-veil {
-  0%,
-  100% {
-    opacity: 0.4;
+    transform: translateX(-50%) translateY(0) scale(1.02);
   }
   50% {
     opacity: 0.95;
+    transform: translateX(-50%) translateY(-14px) scale(1.08);
+  }
+}
+
+@keyframes chat-rootsy-thread-rise {
+  0% {
+    transform: translateY(0);
+  }
+  36% {
+    transform: translateY(-28px);
+  }
+  62% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes chat-rootsy-thread-settle {
+  0% {
+    transform: translateY(-14px);
+  }
+  48% {
+    transform: translateY(5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes chat-rootsy-thread-arrive {
+  0% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.98);
+  }
+  58% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -262,32 +189,23 @@
     transition: none;
   }
 
+  .chat-rootsy-thread-item,
+  .chat-rootsy-thread-item--arrive,
+  .chat-rootsy-thread-list--rise .chat-rootsy-thread-item,
+  .chat-rootsy-thread-list--settle .chat-rootsy-thread-item,
+  .chat-rootsy-thread-list--thinking .chat-rootsy-thread-item {
+    animation: none !important;
+    transform: none !important;
+  }
+
   .chat-rootsy-thinking,
-  .chat-rootsy-thinking__depth,
-  .chat-rootsy-thinking__body,
-  .chat-rootsy-thinking__caustic,
-  .chat-rootsy-thinking__membrane,
-  .chat-rootsy-thinking__mind,
-  .chat-rootsy-thinking__veil {
+  .chat-rootsy-thinking__glow {
     animation: none !important;
   }
 
-  .chat-rootsy-thinking__body {
-    opacity: 0.82;
-    filter: blur(30px) saturate(1.25);
-  }
-
-  .chat-rootsy-thinking__mind {
-    opacity: 0.55;
-  }
-
-  .chat-rootsy-thinking__caustic {
-    opacity: 0.35;
-    transform: rotate(23deg);
-  }
-
-  .chat-rootsy-thinking__membrane {
-    opacity: 0.7;
+  .chat-rootsy-thinking__glow--near,
+  .chat-rootsy-thinking__glow--far {
+    transform: translateX(-50%);
   }
 }
 

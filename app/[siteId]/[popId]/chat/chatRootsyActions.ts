@@ -77,7 +77,9 @@ import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { validatePopAccess } from "@/lib/popHelpers"
 import { requirePopAction } from "@/lib/requirePopAction"
 import { siteIdsMatchClientRoute } from "@/lib/popRoutes"
+import { humanizeChatRootsyApiError } from "@/lib/chat/chatRootsyApiError"
 import { chatRootsyOffersAutoExecute } from "@/lib/chat/chatRootsyOperation"
+import type { PopAccessCache } from "@/app/home/homeUserDataTypes"
 
 function plannerRoundSteps(input: {
   paso: number
@@ -118,6 +120,96 @@ function plannerRoundSteps(input: {
   ]
 }
 
+async function narrateChatRootsyClose(input: {
+  popAccess: PopAccessCache
+  siteId: string
+  pedido: string
+  brief: ChatRootsyCloseBrief
+}): Promise<{
+  reply: string
+  narrationText: string | null
+  narrationError?: string
+}> {
+  const fallback = fallbackChatRootsyCloseReply(input.brief)
+  const seen = new Set<string>()
+  const modules: Array<{ key: string; label: string }> = []
+  for (const mod of buildMenuRootsyAllowedModuleIndex(
+    input.popAccess,
+    input.siteId,
+  ).values()) {
+    if (seen.has(mod.moduleKey)) continue
+    seen.add(mod.moduleKey)
+    modules.push({ key: mod.moduleKey, label: mod.label })
+  }
+  const system = [
+    CHAT_ROOTSY_SYSTEM_PROMPT,
+    CHAT_ROOTSY_CLOSE_PROMPT,
+    "Tarjeta del negocio (JSON):",
+    JSON.stringify(
+      buildChatRootsyBusinessCard({
+        popName: input.popAccess.pop.name,
+        businessType:
+          input.popAccess.subscription.businessTypeDisplayName ||
+          input.popAccess.subscription.businessTypeName ||
+          "Negocio",
+        roleName: input.popAccess.isOwner
+          ? "Dueño"
+          : input.popAccess.role?.displayName?.trim() ||
+            input.popAccess.role?.name?.trim() ||
+            "Miembro",
+        isOwner: input.popAccess.isOwner,
+        modules,
+      }),
+    ),
+  ].join("\n")
+  const closeHistory = [
+    { role: "user" as const, body: input.pedido || "Cerrá esta corrida." },
+    {
+      role: "user" as const,
+      body: `Hechos ya confirmados (JSON):\n${chatRootsyDevJson(buildChatRootsyCloseModelPayload(input.brief))}`,
+    },
+  ]
+  const narration = await requestChatRootsyReplyDetailed(system, closeHistory, {
+    sanitizeReply: false,
+  })
+  const narrationText = readChatRootsyCloseReply(narration.text)
+  return {
+    reply: narrationText ?? fallback,
+    narrationText,
+    narrationError: narration.error,
+  }
+}
+
+function closeNarrationDevSteps(input: {
+  closeBrief?: ChatRootsyCloseBrief
+  narrationText: string | null
+  narrationError?: string
+  reply: string
+}): ChatRootsyDevStep[] {
+  return [
+    chatRootsyDevStep({
+      lane: "close",
+      title: "Informe para Rootsy",
+      note: input.narrationText
+        ? input.closeBrief?.estado === "no_aplicado"
+          ? "Cierre fallido. Rootsy narra el rechazo."
+          : input.closeBrief?.informe?.respuesta
+            ? "Cierre con informe del Planificador. Rootsy narra eso."
+            : "Cierre con hechos. Rootsy solo narra esto."
+        : `Fallback. ${input.narrationError ?? ""}`.trim(),
+      body: input.closeBrief,
+    }),
+    chatRootsyDevStep({
+      lane: "rootsy",
+      title: "Cierre · crudo",
+      note: input.narrationText
+        ? "Reply de cierre."
+        : "La IA no narró. Se usó el fallback.",
+      body: input.narrationText ?? input.reply,
+    }),
+  ]
+}
+
 export type SendRootsyChatResult =
   | {
       success: true
@@ -129,6 +221,7 @@ export type SendRootsyChatResult =
       plannerRun?: ChatRootsyPlannerRun
       plannerChoices?: ChatRootsyPlannerChoice[]
       closeBrief?: ChatRootsyCloseBrief
+      executionError?: string
       devTrace?: ChatRootsyDevTrace
     }
   | { success: false; error: string; devTrace?: ChatRootsyDevTrace }
@@ -389,6 +482,7 @@ export async function sendRootsyChatMessage(input: {
         plannerRun: executed.plannerRun ?? plannerRun,
         plannerChoices: executed.plannerChoices,
         closeBrief: executed.closeBrief ?? closeBrief,
+        executionError: executed.executionError,
         devTrace:
           mergeChatRootsyDevTraces([openingTrace, executed.devTrace]) ??
           undefined,
@@ -434,6 +528,9 @@ export async function runRootsyChatTool(input: {
     recent,
   })
   if (!res.success) return res
+  if (res.executionError) {
+    return { success: false, error: res.executionError }
+  }
   const toolResult = res.toolResults[0]
   if (!toolResult) {
     return { success: false, error: "Parámetros inválidos" }
@@ -484,6 +581,7 @@ export async function runRootsyChatTools(input: {
       plannerRun?: ChatRootsyPlannerRun
       plannerChoices?: ChatRootsyPlannerChoice[]
       closeBrief?: ChatRootsyCloseBrief
+      executionError?: string
       devTrace?: ChatRootsyDevTrace
     }
   | { success: false; error: string; devTrace?: ChatRootsyDevTrace }
@@ -636,17 +734,57 @@ export async function runRootsyChatTools(input: {
   }
 
   if (!toolResults.length) {
+    const subject =
+      ordered[0]
+        ? hechoFromWriteProposal(ordered[0], input.plannerRun?.resultados)
+            .sujeto
+        : undefined
+    const human = humanizeChatRootsyApiError(lastError, {
+      subject,
+      method: ordered[0]?.method,
+      path: ordered[0]?.path,
+      tool: ordered[0]?.tool,
+    })
+    const pedido =
+      input.plannerRun?.message.trim() ||
+      [...history].reverse().find((turn) => turn.role === "user")?.body ||
+      ""
+    const closeBrief = buildChatRootsyCloseBrief({
+      pedido,
+      proposals: ordered,
+      resultados: input.plannerRun?.resultados,
+      error: human,
+    })
+    const narration = await narrateChatRootsyClose({
+      popAccess,
+      siteId,
+      pedido,
+      brief: closeBrief,
+    })
     return {
-      success: false,
-      error: lastError,
-      devTrace: buildChatRootsyDevTrace([
-        chatRootsyDevStep({
-          lane: "api",
-          title: `Paso ${input.plannerRun?.paso ?? "?"} · consultas`,
-          note: lastError,
-          body: runLog,
-        }),
-      ]),
+      success: true as const,
+      reply: narration.reply,
+      toolResults: [],
+      plannerRun: input.plannerRun,
+      closeBrief,
+      executionError: human,
+      devTrace: buildChatRootsyDevTrace(
+        [
+          chatRootsyDevStep({
+            lane: "api",
+            title: `Paso ${input.plannerRun?.paso ?? "?"} · consultas`,
+            note: lastError,
+            body: runLog,
+          }),
+          ...closeNarrationDevSteps({
+            closeBrief,
+            narrationText: narration.narrationText,
+            narrationError: narration.narrationError,
+            reply: narration.reply,
+          }),
+        ],
+        { error: lastError },
+      ),
     }
   }
 
@@ -682,48 +820,15 @@ export async function runRootsyChatTools(input: {
       ),
     })
     closeBrief = brief
-    const fallback = fallbackChatRootsyCloseReply(brief)
-    const seen = new Set<string>()
-    const modules: Array<{ key: string; label: string }> = []
-    for (const mod of buildMenuRootsyAllowedModuleIndex(popAccess, siteId).values()) {
-      if (seen.has(mod.moduleKey)) continue
-      seen.add(mod.moduleKey)
-      modules.push({ key: mod.moduleKey, label: mod.label })
-    }
-    const system = [
-      CHAT_ROOTSY_SYSTEM_PROMPT,
-      CHAT_ROOTSY_CLOSE_PROMPT,
-      "Tarjeta del negocio (JSON):",
-      JSON.stringify(
-        buildChatRootsyBusinessCard({
-          popName: popAccess.pop.name,
-          businessType:
-            popAccess.subscription.businessTypeDisplayName ||
-            popAccess.subscription.businessTypeName ||
-            "Negocio",
-          roleName: popAccess.isOwner
-            ? "Dueño"
-            : popAccess.role?.displayName?.trim() ||
-              popAccess.role?.name?.trim() ||
-              "Miembro",
-          isOwner: popAccess.isOwner,
-          modules,
-        }),
-      ),
-    ].join("\n")
-    const closeHistory = [
-      { role: "user" as const, body: pedido || "Cerrá esta corrida." },
-      {
-        role: "user" as const,
-        body: `Hechos ya confirmados (JSON):\n${chatRootsyDevJson(buildChatRootsyCloseModelPayload(brief))}`,
-      },
-    ]
-    const narration = await requestChatRootsyReplyDetailed(system, closeHistory, {
-      sanitizeReply: false,
+    const narration = await narrateChatRootsyClose({
+      popAccess,
+      siteId,
+      pedido,
+      brief,
     })
-    narrationText = readChatRootsyCloseReply(narration.text)
-    narrationError = narration.error
-    reply = narrationText ?? fallback
+    narrationText = narration.narrationText
+    narrationError = narration.narrationError
+    reply = narration.reply
   }
 
   console.info("[rootsy-tool]", {
@@ -780,26 +885,12 @@ export async function runRootsyChatTools(input: {
               })
             : []),
         ...(!plannerContinues
-          ? [
-              chatRootsyDevStep({
-                lane: "close",
-                title: "Informe para Rootsy",
-                note: narrationText
-                  ? closeBrief?.informe?.respuesta
-                    ? "Cierre con informe del Planificador. Rootsy narra eso."
-                    : "Cierre con hechos. Rootsy solo narra esto."
-                  : `Fallback. ${narrationError ?? ""}`.trim(),
-                body: closeBrief,
-              }),
-              chatRootsyDevStep({
-                lane: "rootsy",
-                title: "Cierre · crudo",
-                note: narrationText
-                  ? "Reply de cierre."
-                  : "La IA no narró. Se usó el fallback.",
-                body: narrationText ?? reply,
-              }),
-            ]
+          ? closeNarrationDevSteps({
+              closeBrief,
+              narrationText,
+              narrationError,
+              reply,
+            })
           : []),
       ],
       {
@@ -1067,6 +1158,7 @@ export async function continueRootsyPlannerRun(input: {
         plannerRun: executed.plannerRun ?? next.plannerRun,
         plannerChoices: executed.plannerChoices,
         closeBrief: executed.closeBrief,
+        executionError: executed.executionError,
         devTrace:
           mergeChatRootsyDevTraces([
             buildChatRootsyDevTrace([

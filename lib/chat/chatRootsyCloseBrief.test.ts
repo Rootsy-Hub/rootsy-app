@@ -133,6 +133,45 @@ describe("cierre de Rootsy", () => {
     )
   })
 
+  it("cierra como no_aplicado y no usa el informe de consulta", () => {
+    const brief = buildChatRootsyCloseBrief({
+      pedido: "borrá Huevo",
+      proposals: [
+        {
+          tool: "delete_articles_articleId",
+          method: "DELETE",
+          path: "/v1/pops/:popId/articles/:articleId",
+          filters: { articleId: "art-1" },
+          action: "Eliminar el artículo Huevo del catálogo",
+          subject: "Huevo",
+        },
+      ],
+      resultados: [
+        {
+          method: "GET",
+          path: "/v1/pops/:popId/articles",
+          action: "Buscar Huevo",
+          confirm: "confirm",
+          response: {
+            articles: [{ id: "art-1", name: "Huevo" }],
+          },
+        },
+      ],
+      informe: {
+        respuesta: "Encontré Huevo en el catálogo.",
+        acciones: ["Busqué Huevo"],
+      },
+      error: "No se puede eliminar Huevo: tiene movimientos de stock.",
+    })
+
+    assert.equal(brief.estado, "no_aplicado")
+    assert.equal(brief.hechos[0]?.sujeto, "Huevo")
+    assert.equal(
+      fallbackChatRootsyCloseReply(brief),
+      "No se puede eliminar Huevo: tiene movimientos de stock.",
+    )
+  })
+
   it("saca el reply si la IA cierra en JSON de primer turno", () => {
     assert.equal(
       readChatRootsyCloseReply(

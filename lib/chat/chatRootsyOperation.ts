@@ -5,6 +5,7 @@ import type {
   ChatRootsyToolResult,
 } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import { ROOTSY_CHAT_WELCOME } from "@/app/[siteId]/[popId]/chat/chatRootsy"
+import { humanizeChatRootsyApiError } from "@/lib/chat/chatRootsyApiError"
 import {
   isChatRootsyWriteMethod,
   type ChatRootsyCloseHecho,
@@ -229,6 +230,12 @@ export function taskPhaseTitle(phase: ChatRootsyOperationPhase): string {
   return "Tarea en proceso"
 }
 
+export function isChatRootsySettledPhase(
+  phase: ChatRootsyOperationPhase,
+): boolean {
+  return phase === "completed" || phase === "stopped" || phase === "error"
+}
+
 export function taskStepProgress(operation: {
   phase: ChatRootsyOperationPhase
   paso: number
@@ -369,6 +376,12 @@ function groupTitle(atoms: OperationAtom[], kind: ChatRootsyOperationStepKind): 
 }
 
 function groupSummary(atoms: OperationAtom[], kind: ChatRootsyOperationStepKind): string {
+  if (atoms.some((atom) => atom.status === "failed")) {
+    if (kind === "delete") return "No se pudo eliminar."
+    if (kind === "create") return "No se pudo crear."
+    if (kind === "write") return "No se pudo actualizar."
+    return "No se pudo completar."
+  }
   if (kind === "choose") return "Elegí un resultado para seguir."
   if (kind === "delete") {
     return atoms[0]?.impact || (atoms.length > 1 ? `${atoms.length} registros` : "")
@@ -480,9 +493,13 @@ function collectAtoms(rest: ChatMessageRow[]): OperationAtom[] {
 
   for (const row of rest) {
     const rowOffers = offersOf(row)
+    const failedHost = Boolean(row.toolError?.trim())
     for (const offer of rowOffers) {
-      const status: ChatRootsyOperationStepStatus =
-        offer.status === "used" ? "done" : "pending"
+      const status: ChatRootsyOperationStepStatus = failedHost
+        ? "failed"
+        : offer.status === "used"
+          ? "done"
+          : "pending"
       const key = chatRootsyOfferKey(offer)
       const existing = atoms.find((atom) => atom.offerKey === key)
       const next = atomFromOffer(offer, row.id, status)
@@ -629,6 +646,8 @@ function buildOperationFromCluster(
     !liveBusy
   ) {
     phase = "error"
+    pendingOffers = []
+    pendingHostId = null
   }
   if (liveBusy && live?.mode === "execute") {
     for (const step of steps) {
@@ -657,8 +676,11 @@ function buildOperationFromCluster(
     pendingHostId,
     pendingChoices,
     choiceHostId,
-    error:
-      (live?.error && liveOnHost ? live.error : undefined) ?? persistedError,
+    error: (() => {
+      const raw =
+        (live?.error && liveOnHost ? live.error : undefined) ?? persistedError
+      return raw?.trim() ? humanizeChatRootsyApiError(raw) : undefined
+    })(),
     memberIds,
     informe,
   }

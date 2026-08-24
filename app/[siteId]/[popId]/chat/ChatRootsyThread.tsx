@@ -35,6 +35,7 @@ import {
 import { RootsIconButton, RootsPrimaryButton } from "@/components/rootsy-button"
 import { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
 import { RootsSpinner } from "@/components/rootsy-spinner"
+import { humanizeChatRootsyApiError } from "@/lib/chat/chatRootsyApiError"
 import {
   isChatRootsyDevTraceEnabled,
   mergeChatRootsyDevTraces,
@@ -126,10 +127,17 @@ export function ChatRootsyThread({
   const composerRef = useRef<HTMLInputElement>(null)
   const composerRangeRef = useRef({ start: 0, end: 0 })
   const sendButtonRef = useRef<HTMLButtonElement>(null)
+  const messagesRef = useRef<ChatMessageRow[]>([])
+  const skipThreadMotionRef = useRef(true)
   const confirmReadsRef = useRef<
     (hostId: string, keys: string[]) => void | Promise<void>
   >(() => {})
   const autoReadKeyRef = useRef("")
+  const [threadMotion, setThreadMotion] = useState<"idle" | "rise" | "settle">(
+    "idle",
+  )
+  const [haloExiting, setHaloExiting] = useState(false)
+  const [arriveId, setArriveId] = useState<string | null>(null)
 
   useEffect(() => {
     const stored = loadRootsyChatMessages(popId)
@@ -151,17 +159,57 @@ export function ChatRootsyThread({
     onPreviewChange?.(last?.body ?? null)
   }, [hydrated, messages, onPreviewChange, popId])
 
-  const scrollToEnd = useCallback(() => {
+  messagesRef.current = messages
+
+  const scrollToEnd = useCallback((smooth = false) => {
     const list = listRef.current
     if (!list) return
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (smooth && !reduce) {
+      list.scrollTo({ top: list.scrollHeight, behavior: "smooth" })
+      return
+    }
     list.scrollTop = list.scrollHeight
   }, [])
 
   useEffect(() => {
     if (!hydrated) return
-    const frame = window.requestAnimationFrame(scrollToEnd)
+    const frame = window.requestAnimationFrame(() =>
+      scrollToEnd(sending || threadMotion === "settle"),
+    )
     return () => window.cancelAnimationFrame(frame)
-  }, [hydrated, messages.length, sending, scrollToEnd])
+  }, [hydrated, messages.length, sending, threadMotion, scrollToEnd])
+
+  useEffect(() => {
+    if (skipThreadMotionRef.current) {
+      skipThreadMotionRef.current = false
+      return
+    }
+    if (sending) {
+      setHaloExiting(false)
+      setThreadMotion("rise")
+      setArriveId(null)
+      return
+    }
+    const last = [...messagesRef.current]
+      .reverse()
+      .find(
+        (row) =>
+          !row.mine &&
+          row.body.trim() &&
+          !row.toolResult &&
+          row.id !== ROOTSY_CHAT_WELCOME.id,
+      )
+    setThreadMotion((current) => (current === "rise" ? "settle" : current))
+    setArriveId(last?.id ?? null)
+    setHaloExiting(true)
+    const settleTimer = window.setTimeout(() => {
+      setThreadMotion("idle")
+      setHaloExiting(false)
+      setArriveId(null)
+    }, 800)
+    return () => window.clearTimeout(settleTimer)
+  }, [sending])
 
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 1024px)").matches
@@ -335,6 +383,7 @@ export function ChatRootsyThread({
 
     const now = new Date().toISOString()
     const ranReads = Boolean(res.toolResults?.length)
+    const closedFailed = Boolean(res.executionError)
     const opening: ChatMessageRow = {
       id: `rootsy-ai:${crypto.randomUUID()}`,
       authorUserId: ROOTSY_CHAT_AUTHOR_ID,
@@ -342,16 +391,18 @@ export function ChatRootsyThread({
       body: res.reply,
       createdAt: now,
       mine: false,
-      toolOffer: ranReads ? undefined : res.toolOffer,
-      toolOffers: ranReads ? undefined : res.toolOffers,
+      toolOffer: ranReads || closedFailed ? undefined : res.toolOffer,
+      toolOffers: ranReads || closedFailed ? undefined : res.toolOffers,
       plannerRun: res.plannerRun,
-      plannerChoices: ranReads ? undefined : res.plannerChoices,
-      closeBrief: ranReads ? undefined : res.closeBrief,
-      devTrace: ranReads ? undefined : res.devTrace,
+      plannerChoices: ranReads || closedFailed ? undefined : res.plannerChoices,
+      closeBrief: ranReads || closedFailed ? undefined : res.closeBrief,
+      toolError: res.executionError,
+      devTrace: ranReads || closedFailed ? undefined : res.devTrace,
     }
-    const followUp = ranReads
-      ? rootsyFollowUpRow(res, now, res.followUpReply ?? "")
-      : null
+    const followUp =
+      ranReads || closedFailed
+        ? rootsyFollowUpRow(res, now, res.followUpReply ?? "")
+        : null
     setMessages(
       [
         ...nextMessages,
@@ -419,73 +470,49 @@ export function ChatRootsyThread({
     })
 
     if (!res.success) {
-      setSendError(
-        isChatRootsyDevTraceEnabled() && res.devTrace?.error
-          ? res.devTrace.error
-          : res.error,
-      )
+      const human = humanizeChatRootsyApiError(res.error)
       setMessages((current) => {
-        const restored = current.map((row) => {
+        const closed = current.map((row) => {
           if (row.id !== messageId) return row
           return {
             ...row,
-            toolOffer: host?.toolOffer,
-            toolOffers: host?.toolOffers,
-            toolError: res.error,
+            toolError: human,
           }
         })
-        if (!res.devTrace) return restored
         return [
-          ...restored,
+          ...closed,
           {
-            id: `rootsy-dev:${crypto.randomUUID()}`,
+            id: `rootsy-ai:${crypto.randomUUID()}`,
             authorUserId: ROOTSY_CHAT_AUTHOR_ID,
             authorName: "Rootsy",
-            body: res.error,
+            body: human,
             createdAt: new Date().toISOString(),
             mine: false,
-            devTrace: res.devTrace,
+            closeBrief: {
+              pedido: host?.plannerRun?.message ?? "este pedido",
+              estado: "no_aplicado" as const,
+              error: human,
+              hechos: [],
+            },
+            devTrace: isChatRootsyDevTraceEnabled() ? res.devTrace : undefined,
           },
         ].slice(-ROOTSY_SESSION_HISTORY_MAX)
       })
       setSending(false)
-      setLive({ sending: false, mode: "idle", hostId: messageId, error: res.error })
+      setLive({ sending: false, mode: "idle" })
       return
     }
 
     const now = new Date().toISOString()
-    const followUp =
-      res.reply.trim() ||
-      res.toolOffers?.length ||
-      res.plannerChoices?.length ||
-      res.devTrace
-        ? {
-            id: `rootsy-ai:${crypto.randomUUID()}`,
-            authorUserId: ROOTSY_CHAT_AUTHOR_ID,
-            authorName: "Rootsy",
-            body: res.reply,
-            createdAt: now,
-            mine: false,
-            toolOffer: res.toolOffers?.[0],
-            toolOffers: res.toolOffers,
-            plannerRun: res.plannerRun,
-            plannerChoices: res.plannerChoices,
-            closeBrief: res.closeBrief,
-            devTrace: res.devTrace,
-          }
-        : null
+    const followUp = rootsyFollowUpRow(res, now, res.reply)
     setMessages((current) =>
       [
-        ...current,
-        ...res.toolResults.map((toolResult) => ({
-          id: `rootsy-tool:${crypto.randomUUID()}`,
-          authorUserId: ROOTSY_CHAT_AUTHOR_ID,
-          authorName: "Rootsy",
-          body: `${toolResult.title?.trim() || toolResult.tool} · ${toolResult.periodLabel}`,
-          createdAt: now,
-          mine: false,
-          toolResult,
-        })),
+        ...current.map((row) =>
+          row.id === messageId && res.executionError
+            ? { ...row, toolError: res.executionError }
+            : row,
+        ),
+        ...rootsyToolResultRows(res.toolResults, now),
         ...(followUp ? [followUp] : []),
       ].slice(-ROOTSY_SESSION_HISTORY_MAX),
     )
@@ -602,12 +629,15 @@ export function ChatRootsyThread({
         </div>
       </header>
 
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-visible">
         <div
           ref={listRef}
           className={cn(
             "chat-rootsy-thread-list game-scroll flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto overscroll-contain bg-transparent px-4 pt-4 sm:px-6 [overflow-anchor:none]",
-            sending ? "chat-rootsy-thread-list--thinking" : "pb-4",
+            (sending || threadMotion !== "idle") &&
+              "chat-rootsy-thread-list--thinking",
+            threadMotion === "rise" && "chat-rootsy-thread-list--rise",
+            threadMotion === "settle" && "chat-rootsy-thread-list--settle",
           )}
         >
         {!hydrated ? (
@@ -639,7 +669,7 @@ export function ChatRootsyThread({
             <div
               key={message.id}
               className={cn(
-                "flex flex-col",
+                "chat-rootsy-thread-item flex flex-col",
                 operation ? "gap-0" : "gap-1",
                 clusterClass,
                 operation
@@ -648,6 +678,7 @@ export function ChatRootsyThread({
                     ? "max-w-[min(36rem,96%)] self-start items-start"
                     : null,
                 message.mine ? "self-end items-end" : !operation && "self-start items-start",
+                arriveId === message.id && "chat-rootsy-thread-item--arrive",
               )}
             >
               {hasBody ? (
@@ -699,13 +730,16 @@ export function ChatRootsyThread({
             </p>
           ) : null}
         </div>
-        {sending ? <ChatRootsyThinkingHalo /> : null}
+        {sending || haloExiting ? (
+          <ChatRootsyThinkingHalo exiting={haloExiting && !sending} />
+        ) : null}
       </div>
 
       <form
         className={cn(
           "chat-rootsy-thread-chrome flex shrink-0 items-center gap-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6",
-          sending && "chat-rootsy-thread-chrome--thinking",
+          (sending || threadMotion !== "idle") &&
+            "chat-rootsy-thread-chrome--thinking",
         )}
         onSubmit={(event) => {
           event.preventDefault()

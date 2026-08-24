@@ -27,6 +27,8 @@ export function collectChatRootsyAppliedActions(
       : row.toolOffer
         ? [row.toolOffer]
         : []
+    if (row.toolError?.trim()) continue
+    if (row.closeBrief?.estado === "no_aplicado") continue
     for (const offer of offers) {
       if (offer.status !== "used") continue
       if (!isChatRootsyWriteMethod(offer.method)) continue

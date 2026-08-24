@@ -15,6 +15,7 @@ import {
   chatRootsyStepDetail,
   chatRootsyStepUserDetails,
   chatRootsyWriteConfirmCopy,
+  isChatRootsySettledPhase,
   taskPhaseTitle,
   taskStepProgress,
   type ChatRootsyOperationPhase,
@@ -328,14 +329,14 @@ export function ChatRootsyOperationCard({
   onPick,
 }: Props) {
   const [expanded, setExpanded] = useState(
-    () => operation.phase !== "completed" && operation.phase !== "stopped",
+    () => !isChatRootsySettledPhase(operation.phase),
   )
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [writeOpen, setWriteOpen] = useState(false)
 
   useEffect(() => {
-    if (operation.phase === "completed" || operation.phase === "stopped") {
+    if (isChatRootsySettledPhase(operation.phase)) {
       setExpanded(false)
       setDetailsOpen(false)
       return
@@ -363,19 +364,17 @@ export function ChatRootsyOperationCard({
     (offer) => offer.preview?.changes.length,
   )
   const live = LIVE_PHASES.has(operation.phase)
-  const canToggle =
-    operation.phase === "completed" || operation.phase === "stopped"
+  const canToggle = isChatRootsySettledPhase(operation.phase)
   const collapsed = canToggle && !expanded
   const hasProgress = operation.steps.some((step) => step.status === "done")
   const hasUserDetails = chatRootsyOperationHasUserDetails(operation)
   const informe = operation.informe
   const waitingOffers =
-    (operation.phase === "waiting" || operation.phase === "error") &&
+    operation.phase === "waiting" &&
     pending.length > 0 &&
     !chatRootsyOffersAutoExecute(pending)
   const waitingChoices =
-    (operation.phase === "waiting" || operation.phase === "error") &&
-    operation.pendingChoices.length > 0
+    operation.phase === "waiting" && operation.pendingChoices.length > 0
   const showDash =
     !collapsed &&
     Boolean(
