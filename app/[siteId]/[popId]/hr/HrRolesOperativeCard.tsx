@@ -1,24 +1,37 @@
 "use client"
 
 import type { PopRoleRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
-import {
-  dataWorkspaceEntityCardEyebrowClass,
-  dataWorkspaceEntityCardLosetaSurfaceClass,
-} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { dataWorkspaceEntityCardLosetaSurfaceClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   RootsDangerSubtleButton,
   RootsDefaultButton,
 } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
 
+export type HrOperativeRoleRow = {
+  role: PopRoleRow
+  peopleCount: number
+  permissionGranted: number | null
+  permissionTotal: number
+}
+
 type Props = {
-  roles: PopRoleRow[]
+  roles: HrOperativeRoleRow[]
   canManage: boolean
   editBusy?: boolean
   deleteBusy?: boolean
-  onCreate?: () => void
   onEdit?: (role: PopRoleRow) => void
   onDelete?: (role: PopRoleRow) => void
+}
+
+function roleMetaLine(item: HrOperativeRoleRow): string {
+  const people =
+    item.peopleCount === 1
+      ? "1 persona"
+      : `${item.peopleCount} personas`
+  if (!item.role.popId) return `${people} · Plantilla de Rootsy`
+  if (item.permissionGranted == null) return people
+  return `${people} · ${item.permissionGranted} de ${item.permissionTotal} permisos`
 }
 
 export function HrRolesOperativeCard({
@@ -26,52 +39,39 @@ export function HrRolesOperativeCard({
   canManage,
   editBusy = false,
   deleteBusy = false,
-  onCreate,
   onEdit,
   onDelete,
 }: Props) {
   return (
     <article className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "h-auto")}>
-      {canManage && onCreate ? (
-        <div className="flex items-center border-b border-rootsy-bruma-200 px-4 py-3">
-          <RootsDefaultButton
-            type="button"
-            size="compact"
-            disabled={editBusy}
-            onClick={onCreate}
-          >
-            Nuevo rol
-          </RootsDefaultButton>
-        </div>
-      ) : null}
-
       {roles.length === 0 ? (
         <p className="px-4 py-6 font-canopy text-sm text-rootsy-bruma-500">
           No hay roles cargados.
         </p>
       ) : (
         <ul className="divide-y divide-rootsy-bruma-200">
-          {roles.map((role) => {
-            const canEditRole = canManage && Boolean(role.popId)
+          {roles.map((item) => {
+            const canEditRole = canManage && Boolean(item.role.popId)
             return (
-              <li key={role.id} className="space-y-2 px-4 py-3">
+              <li
+                key={item.role.id}
+                className="flex items-start justify-between gap-2 px-4 py-3"
+              >
                 <div className="min-w-0">
                   <p className="truncate font-canopy text-sm font-semibold text-rootsy-bruma-900">
-                    {role.displayName}
+                    {item.role.displayName}
                   </p>
-                  {!role.popId ? (
-                    <p className={cn(dataWorkspaceEntityCardEyebrowClass, "mt-0.5")}>
-                      Plantilla de Rootsy
-                    </p>
-                  ) : null}
+                  <p className="mt-0.5 font-canopy text-xs leading-snug text-rootsy-bruma-500">
+                    {roleMetaLine(item)}
+                  </p>
                 </div>
                 {canEditRole ? (
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-1.5">
                     <RootsDefaultButton
                       type="button"
                       size="compact"
                       disabled={editBusy}
-                      onClick={() => onEdit?.(role)}
+                      onClick={() => onEdit?.(item.role)}
                     >
                       Editar
                     </RootsDefaultButton>
@@ -79,7 +79,7 @@ export function HrRolesOperativeCard({
                       type="button"
                       size="compact"
                       disabled={deleteBusy || editBusy}
-                      onClick={() => onDelete?.(role)}
+                      onClick={() => onDelete?.(item.role)}
                     >
                       Eliminar
                     </RootsDangerSubtleButton>

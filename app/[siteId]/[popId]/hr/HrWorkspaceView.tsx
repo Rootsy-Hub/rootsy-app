@@ -8,7 +8,7 @@ import type {
   PopRoleRow,
   UpsertEmployeeInput,
 } from "@/app/[siteId]/[popId]/hr/hrTypes"
-import { buildHrPermissionSectionsForPop } from "@/lib/hrPermissionCatalog"
+import { buildHrPermissionSectionsForPop, countHrGrantedVerbs } from "@/lib/hrPermissionCatalog"
 import {
   clockEmployeeIn,
   clockEmployeeOut,
@@ -49,6 +49,7 @@ import {
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { RootsBanner } from "@/components/rootsy-banner"
+import { RootsDefaultButton } from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -193,6 +194,9 @@ export function HrWorkspaceView() {
   const [permModalSaving, setPermModalSaving] = useState(false)
   const [permModalError, setPermModalError] = useState<string | null>(null)
   const [permModalCanApprove, setPermModalCanApprove] = useState(false)
+  const [roleGrantKeys, setRoleGrantKeys] = useState<Record<string, string[]>>(
+    {},
+  )
 
   const loadDashboard = useCallback(async () => {
     if (!popId || !siteId) return
@@ -233,6 +237,33 @@ export function HrWorkspaceView() {
       cancelled = true
     }
   }, [popId, siteId, loadDashboard])
+
+  useEffect(() => {
+    if (!popId) return
+    const editable = roles.filter((role) => role.popId)
+    if (editable.length === 0) {
+      setRoleGrantKeys({})
+      return
+    }
+    let cancelled = false
+    const catalogKeySet = new Set(hrCatalogRows.map((row) => row.key))
+    void (async () => {
+      const entries = await Promise.all(
+        editable.map(async (role) => {
+          const res = await getRolePermissionsEditorData(popId, role.id)
+          if (!res.success) return [role.id, [] as string[]] as const
+          return [
+            role.id,
+            res.selectedGrantKeys.filter((key) => catalogKeySet.has(key)),
+          ] as const
+        }),
+      )
+      if (!cancelled) setRoleGrantKeys(Object.fromEntries(entries))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [popId, roles, hrCatalogRows])
 
   const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
@@ -311,6 +342,28 @@ export function HrWorkspaceView() {
     }
     return map
   }, [employees])
+
+  const hrPermissionTotal = useMemo(
+    () => countHrGrantedVerbs(hrSections, []).total,
+    [hrSections],
+  )
+
+  const operativeRoles = useMemo(
+    () =>
+      roles.map((role) => {
+        const grantKeys = roleGrantKeys[role.id]
+        return {
+          role,
+          peopleCount: membersByRoleId.get(role.id)?.length ?? 0,
+          permissionGranted:
+            role.popId && grantKeys
+              ? countHrGrantedVerbs(hrSections, grantKeys).granted
+              : null,
+          permissionTotal: hrPermissionTotal,
+        }
+      }),
+    [roles, membersByRoleId, roleGrantKeys, hrSections, hrPermissionTotal],
+  )
 
   const confirmCopy = useMemo(() => {
     if (!confirmAction) {
@@ -485,6 +538,10 @@ export function HrWorkspaceView() {
         return
       }
       setBanner({ type: "ok", text: "Rol creado correctamente." })
+      setRoleGrantKeys((prev) => ({
+        ...prev,
+        [res.roleId]: permModalSelected,
+      }))
       closePermModal()
       await loadDashboard()
       return
@@ -507,6 +564,10 @@ export function HrWorkspaceView() {
       return
     }
     setBanner({ type: "ok", text: "Permisos del rol actualizados." })
+    setRoleGrantKeys((prev) => ({
+      ...prev,
+      [permModalRole.id]: permModalSelected,
+    }))
     closePermModal()
     await Promise.all([loadDashboard(), refresh()])
   }
@@ -858,54 +919,7 @@ export function HrWorkspaceView() {
               ) : null}
 
               <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-                <aside className="order-2 min-w-0 space-y-4 lg:order-1 lg:col-span-3">
-                  <DataWorkspaceBlocksSection
-                    title="Si entra a Rootsy"
-                    description="Qué puede hacer en el sistema. Distinto del puesto en el local."
-                  >
-                    <HrRolesOperativeCard
-                      roles={roles}
-                      canManage={canManageInvites}
-                      editBusy={permModalLoading || permModalSaving}
-                      deleteBusy={Boolean(actionKey?.startsWith("del-role-"))}
-                      onCreate={
-                        canManageInvites ? handleOpenCreateRole : undefined
-                      }
-                      onEdit={(role) => void handleOpenEditRole(role)}
-                      onDelete={(role) =>
-                        setConfirmAction({ kind: "delete-role", role })
-                      }
-                    />
-                    {roles.length === 0 ? (
-                      <p className={dataWorkspaceBlocksEmptyStateClass}>
-                        Cuando haya roles, acá se ve quién entra y qué puesto
-                        tiene en el local.
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {roles.map((role) => (
-                          <HrRoleSnapshotCard
-                            key={role.id}
-                            role={role}
-                            currentUserId={user?.id}
-                            people={(membersByRoleId.get(role.id) ?? []).map(
-                              (member) => ({
-                                userId: member.userId,
-                                firstName: member.firstName,
-                                lastName: member.lastName,
-                                imageUrl: member.imageUrl,
-                                jobTitle:
-                                  jobTitleByUserId.get(member.userId) ?? null,
-                              }),
-                            )}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </DataWorkspaceBlocksSection>
-                </aside>
-
-                <div className="order-1 min-w-0 lg:order-2 lg:col-span-9">
+                <div className="min-w-0 lg:col-span-9">
                   <DataWorkspaceBlocksSection>
                     <RootsFormSegmentField
                       label="Ver personas"
@@ -1041,6 +1055,64 @@ export function HrWorkspaceView() {
                     )}
                   </DataWorkspaceBlocksSection>
                 </div>
+
+                <aside className="min-w-0 space-y-4 lg:col-span-3">
+                  <DataWorkspaceBlocksSection
+                    title="Si entra a Rootsy"
+                    description="Qué puede hacer en el sistema. Distinto del puesto en el local."
+                    action={
+                      canManageInvites ? (
+                        <RootsDefaultButton
+                          type="button"
+                          size="compact"
+                          withIcon
+                          disabled={permModalLoading || permModalSaving}
+                          onClick={handleOpenCreateRole}
+                        >
+                          <Plus className="size-3.5" aria-hidden />
+                          Nuevo rol
+                        </RootsDefaultButton>
+                      ) : null
+                    }
+                  >
+                    <HrRolesOperativeCard
+                      roles={operativeRoles}
+                      canManage={canManageInvites}
+                      editBusy={permModalLoading || permModalSaving}
+                      deleteBusy={Boolean(actionKey?.startsWith("del-role-"))}
+                      onEdit={(role) => void handleOpenEditRole(role)}
+                      onDelete={(role) =>
+                        setConfirmAction({ kind: "delete-role", role })
+                      }
+                    />
+                    {roles.length === 0 ? (
+                      <p className={dataWorkspaceBlocksEmptyStateClass}>
+                        Cuando haya roles, acá se ve quién entra y qué puesto
+                        tiene en el local.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {roles.map((role) => (
+                          <HrRoleSnapshotCard
+                            key={role.id}
+                            role={role}
+                            currentUserId={user?.id}
+                            people={(membersByRoleId.get(role.id) ?? []).map(
+                              (member) => ({
+                                userId: member.userId,
+                                firstName: member.firstName,
+                                lastName: member.lastName,
+                                imageUrl: member.imageUrl,
+                                jobTitle:
+                                  jobTitleByUserId.get(member.userId) ?? null,
+                              }),
+                            )}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </DataWorkspaceBlocksSection>
+                </aside>
               </div>
             </>
           )}
