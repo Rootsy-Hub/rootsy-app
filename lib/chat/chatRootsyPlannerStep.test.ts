@@ -7,6 +7,7 @@ import {
   pickChatRootsyPlannerSelectedResponse,
   compactChatRootsyPlannerChoiceResponse,
   looksLikeChatRootsyPluralPedido,
+  looksLikeChatRootsyWritePedido,
   readChatRootsyPlannerConfirm,
   resolveChatRootsyPlannerPickConfirm,
   readChatRootsyPlannerInforme,
@@ -47,6 +48,47 @@ describe("pasos del planificador Rootsy", () => {
         itemCount: 3,
       }),
       "confirm_one",
+    )
+  })
+
+  it("en una consulta no pide elegir: sigue con todos los resultados", () => {
+    assert.equal(
+      looksLikeChatRootsyWritePedido("en que precio estan ahora?"),
+      false,
+    )
+    assert.equal(
+      looksLikeChatRootsyWritePedido(
+        "quiero cambiar el precio de las aguas y aumentarle un 10%",
+      ),
+      true,
+    )
+    assert.equal(looksLikeChatRootsyWritePedido("eliminá Huevo"), true)
+    assert.equal(
+      resolveChatRootsyPlannerPickConfirm({
+        confirm: "confirm_one",
+        message: "en que precio estan ahora?",
+        objective: "precios de las aguas",
+        itemCount: 5,
+      }),
+      "confirm",
+    )
+    assert.equal(
+      resolveChatRootsyPlannerPickConfirm({
+        confirm: "confirm_many",
+        message: "en que precio estan ahora?",
+        objective: "consultar precios de las aguas",
+        itemCount: 5,
+      }),
+      "confirm",
+    )
+    assert.equal(
+      resolveChatRootsyPlannerPickConfirm({
+        confirm: "confirm_one",
+        message: "en que precio estan ahora?",
+        objective: "cambiar el precio de las aguas un 10%",
+        itemCount: 5,
+      }),
+      "confirm_many",
     )
   })
 

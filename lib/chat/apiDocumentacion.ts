@@ -1133,6 +1133,7 @@ resultados trae el JSON compacto de la API. Usalo: conocés los campos. No copie
 ${CHAT_ROOTSY_PLANNER_DOMAIN_RULE}
 impossible solo si ningún endpoint documentado sirve. Que no haya id en el primer paso no es impossibilidad: primero listá.
 Si el pedido nombra un conjunto (las cocas, todas las aguas), GET con confirm_many — no confirm_one — y después el write de cada ítem elegido.
+Si el pedido solo consulta (ver precios, listar), GET con confirm y cerrá con esos resultados. No pidas que elijan uno.
 Si hay que cambiar ítems ya identificados (acciones_sesion o ya elegidos), GET con confirm y write de cada uno.
 Si viene acciones_sesion y el pedido las deshace o las continúa, usá TODOS esos ítems. No te quedes con uno.
 La app pega POST, PATCH y DELETE de las fichas.
@@ -1148,6 +1149,7 @@ Entrada:
 Salida, solo uno:
 {"status":"ok","queries":[{"method":"GET","path":"/v1/pops/:popId/articles","params":{"q":"coca","pageSize":20},"action":"Buscar artículos que coincidan con coca","confirm":"confirm_many"}]}
 {"status":"ok","queries":[{"method":"GET","path":"/v1/pops/:popId/articles","params":{"q":"Huevo","pageSize":20},"action":"Buscar el artículo Huevo","confirm":"confirm_one"}]}
+{"status":"ok","queries":[{"method":"GET","path":"/v1/pops/:popId/articles","params":{"q":"agua","pageSize":20},"action":"Consultar precios de aguas","confirm":"confirm"}]}
 {"status":"ok","queries":[{"method":"PATCH","path":"/v1/pops/:popId/articles/:articleId","params":{"articleId":"uuid"},"body":{"salePrice":3750},"action":"Actualizar el precio de Agua mineral 500 a $3750","confirm":"confirm"}]}
 {"status":"done","respuesta":"El rol Mozos no tiene permiso para eliminar artículos. Puede consultar el catálogo y vender.","acciones":["Listé los roles y tomé Mozos","Leí la matriz de permisos de inventario"]}
 {"status":"needs_clarification","question":"..."}

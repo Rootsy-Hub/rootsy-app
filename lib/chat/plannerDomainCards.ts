@@ -31,7 +31,7 @@ export const CHAT_ROOTSY_PLANNER_COLLECTION_KEYS = [
 ] as const
 
 export const CHAT_ROOTSY_PLANNER_DOMAIN_RULE =
-  "Después de un listado, aplicá la invariante de la ficha. Un destinatario claro → write con confirm. Pedido singular y varios parecidos → confirm_one (eligen uno). Pedido en plural o conjunto → confirm_many (eligen uno, varios o todos). No escribas contra la invariante."
+  "Después de un listado, aplicá la invariante de la ficha. Un destinatario claro → write con confirm. Pedido singular de cambio y varios parecidos → confirm_one (eligen uno). Pedido en plural o conjunto de cambio → confirm_many (eligen uno, varios o todos). Consulta (ver precios, listar) → GET confirm y cerrá con todos; no pidas elegir. No escribas contra la invariante."
 
 export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainCard[] =
   [
@@ -40,7 +40,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       title: "Artículos",
       what: "Ficha del catálogo. No es venta, margen ni stock valorizado del período.",
       invariant:
-        "Se identifica por id. Pedido singular y q trae varios → confirm_one. Pedido en plural/conjunto → confirm_many. isActive=false no se vende; igual se puede PATCH.",
+        "Se identifica por id. Pedido singular de cambio y q trae varios → confirm_one. Pedido en plural/conjunto de cambio → confirm_many. Consulta de precios o listado → GET confirm y listá todos. isActive=false no se vende; igual se puede PATCH.",
       list: "GET /articles?q=nombre&pageSize=20",
       row: "id, name, salePrice, iva, isActive, stockOnHand, categoryId",
       write:

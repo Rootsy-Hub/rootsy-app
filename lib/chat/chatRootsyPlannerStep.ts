@@ -73,15 +73,24 @@ export function looksLikeChatRootsyPluralPedido(message: string): boolean {
   return /\b(todas?|todos|ambos|ambas|varios|varias|las|los)\b/i.test(message)
 }
 
+export function looksLikeChatRootsyWritePedido(text: string): boolean {
+  return /(?:^|[\s¿¡])(aument(?:ar|á|ale|arle)?|sub(?:ir|í|ile|irle)|baj(?:ar|á|ale|arle)|elimin(?:ar|á)|borr(?:ar|á)|cre(?:ar|á)|actualiz(?:ar|á)|cambi(?:ar|á|ale|arle))(?=$|[\s,.;:!?])/i.test(
+    text,
+  )
+}
+
 export function resolveChatRootsyPlannerPickConfirm(input: {
   confirm: ChatRootsyPlannerConfirm
   message: string
+  objective?: string
   itemCount: number
 }): ChatRootsyPlannerConfirm {
   if (!isChatRootsyPlannerPickConfirm(input.confirm)) return input.confirm
   if (input.itemCount <= 1) return "confirm_one"
+  const text = `${input.message} ${input.objective ?? ""}`
+  if (!looksLikeChatRootsyWritePedido(text)) return "confirm"
   if (input.confirm === "confirm_many") return "confirm_many"
-  if (looksLikeChatRootsyPluralPedido(input.message)) return "confirm_many"
+  if (looksLikeChatRootsyPluralPedido(text)) return "confirm_many"
   return "confirm_one"
 }
 

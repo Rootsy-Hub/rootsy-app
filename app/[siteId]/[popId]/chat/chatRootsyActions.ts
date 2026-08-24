@@ -976,8 +976,21 @@ async function continuePlannerAfterResults(input: {
       const pick = resolveChatRootsyPlannerPickConfirm({
         confirm,
         message: run.message,
+        objective: run.dataRequest.objective,
         itemCount: result.items.length,
       })
+      if (!isChatRootsyPlannerPickConfirm(pick)) {
+        resultados.push({
+          method,
+          path,
+          action,
+          confirm: pick,
+          response: compactChatRootsyPlannerResponse(
+            result.payload ?? result.items,
+          ),
+        })
+        continue
+      }
       if (!result.items.length) {
         resultados.push({
           method,

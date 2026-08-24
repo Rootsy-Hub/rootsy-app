@@ -12,9 +12,15 @@ const POP_CREATE_PATH = "/pops/create"
 type AuthGateProps = {
   children: ReactNode
   tone?: "light" | "dark"
+  /** Home: el cielo y el skeleton. Resto: spinner de sesión. */
+  pending?: "spinner" | "children"
 }
 
-export function AuthGate({ children, tone = "light" }: AuthGateProps) {
+export function AuthGate({
+  children,
+  tone = "light",
+  pending = "spinner",
+}: AuthGateProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
 
@@ -28,6 +34,10 @@ export function AuthGate({ children, tone = "light" }: AuthGateProps) {
     }
     router.replace(LOGIN_PATH)
   }, [user, loading, router])
+
+  if (loading && pending === "children") {
+    return <>{children}</>
+  }
 
   if (loading || !user) {
     const isDark = tone === "dark"
