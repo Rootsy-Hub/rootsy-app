@@ -12,181 +12,68 @@
   );
 }
 
-.home-eter-sky {
-  opacity: 0.35;
-  background: radial-gradient(
-    ellipse 90% 55% at 50% -28%,
-    color-mix(in srgb, var(--rootsy-eter-100) 8%, transparent) 0%,
-    transparent 58%
-  );
-}
-
-.home-eter-core {
-  opacity: 0.38;
-  background: radial-gradient(
-    ellipse 120% 80% at 50% 108%,
-    color-mix(in srgb, var(--rootsy-eter-100) 4%, transparent) 0%,
-    transparent 62%
-  );
-}
-
-/** El mundo, apenas bajo el umbral — su corona sube al éter. */
-.home-eter-world {
-  left: 50%;
-  bottom: -46%;
-  width: 168%;
-  height: 72%;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  opacity: 0.42;
-  background: radial-gradient(
-    ellipse 70% 55% at 50% 28%,
-    color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent) 0%,
-    color-mix(in srgb, var(--rootsy-eter-200) 8%, transparent) 36%,
-    transparent 72%
-  );
-  filter: blur(52px);
-}
-
-.home-eter-world-aura {
-  opacity: 0.5;
-  background: radial-gradient(
-    ellipse 88% 70% at 50% 112%,
-    color-mix(in srgb, var(--rootsy-eter-100) 14%, transparent) 0%,
-    color-mix(in srgb, var(--rootsy-eter-100) 6%, transparent) 38%,
-    transparent 70%
-  );
-  animation: home-eter-world-breathe 16s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-}
-
-.home-eter-nebula {
-  width: 32.5rem;
-  height: 32.5rem;
-  opacity: 0.4;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--rootsy-eter-100) 7%, transparent) 0%,
-    transparent 72%
-  );
-}
-
-.home-eter-stars {
+/**
+ * Cielo de home — mismo éter, un layer estático.
+ * Sin animation, filter ni box-shadow: el paint queda en compositor idle.
+ */
+.home-eter-atmosphere {
   pointer-events: none;
-  opacity: 0.58;
-  background-image:
-    radial-gradient(circle at 6% 18%, rgba(255, 255, 255, 0.72) 0, rgba(255, 255, 255, 0.72) 0.5px, transparent 1.2px),
-    radial-gradient(circle at 12% 62%, rgba(255, 255, 255, 0.4) 0, rgba(255, 255, 255, 0.4) 0.45px, transparent 1.1px),
-    radial-gradient(circle at 19% 34%, rgba(255, 255, 255, 0.55) 0, rgba(255, 255, 255, 0.55) 0.5px, transparent 1.2px),
-    radial-gradient(circle at 27% 78%, rgba(255, 255, 255, 0.36) 0, rgba(255, 255, 255, 0.36) 0.4px, transparent 1.05px),
-    radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.5) 0, rgba(255, 255, 255, 0.5) 0.5px, transparent 1.2px),
-    radial-gradient(circle at 41% 54%, rgba(255, 255, 255, 0.42) 0, rgba(255, 255, 255, 0.42) 0.45px, transparent 1.1px),
-    radial-gradient(circle at 48% 12%, rgba(255, 255, 255, 0.48) 0, rgba(255, 255, 255, 0.48) 0.5px, transparent 1.2px),
-    radial-gradient(circle at 55% 71%, rgba(255, 255, 255, 0.38) 0, rgba(255, 255, 255, 0.38) 0.4px, transparent 1.05px),
-    radial-gradient(circle at 62% 39%, rgba(255, 255, 255, 0.56) 0, rgba(255, 255, 255, 0.56) 0.5px, transparent 1.2px),
-    radial-gradient(circle at 69% 86%, rgba(255, 255, 255, 0.34) 0, rgba(255, 255, 255, 0.34) 0.4px, transparent 1.05px),
-    radial-gradient(circle at 76% 28%, rgba(255, 255, 255, 0.52) 0, rgba(255, 255, 255, 0.52) 0.5px, transparent 1.2px),
-    radial-gradient(circle at 83% 58%, rgba(255, 255, 255, 0.44) 0, rgba(255, 255, 255, 0.44) 0.45px, transparent 1.1px),
-    radial-gradient(circle at 90% 16%, rgba(255, 255, 255, 0.6) 0, rgba(255, 255, 255, 0.6) 0.5px, transparent 1.2px),
-    radial-gradient(circle at 94% 74%, rgba(255, 255, 255, 0.4) 0, rgba(255, 255, 255, 0.4) 0.45px, transparent 1.1px);
-}
-
-.home-eter-star {
   position: absolute;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow:
-    0 0 4px rgba(255, 255, 255, 0.75),
-    0 0 12px color-mix(in srgb, var(--rootsy-eter-100) 28%, transparent);
-  animation: home-eter-star-pulse 6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-}
-
-.home-eter-star--sm {
-  width: 1px;
-  height: 1px;
-}
-
-.home-eter-star--md {
-  width: 1.5px;
-  height: 1.5px;
-}
-
-.home-eter-star:nth-child(1) {
-  left: 14%;
-  top: 22%;
-  animation-delay: -0.8s;
-}
-
-.home-eter-star:nth-child(2) {
-  left: 31%;
-  top: 48%;
-  animation-delay: -2.4s;
-  animation-duration: 7.2s;
-}
-
-.home-eter-star:nth-child(3) {
-  left: 47%;
-  top: 18%;
-  animation-delay: -1.1s;
-  animation-duration: 5.4s;
-}
-
-.home-eter-star:nth-child(4) {
-  left: 62%;
-  top: 56%;
-  animation-delay: -3.6s;
-}
-
-.home-eter-star:nth-child(5) {
-  left: 74%;
-  top: 28%;
-  animation-delay: -0.3s;
-  animation-duration: 6.8s;
-}
-
-.home-eter-star:nth-child(6) {
-  left: 86%;
-  top: 64%;
-  animation-delay: -4.2s;
-  animation-duration: 5.8s;
-}
-
-.home-eter-star:nth-child(7) {
-  left: 8%;
-  top: 72%;
-  animation-delay: -1.9s;
-  animation-duration: 7.6s;
-}
-
-@keyframes home-eter-star-pulse {
-  0%,
-  100% {
-    opacity: 0.5;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.25);
-    box-shadow:
-      0 0 6px rgba(255, 255, 255, 0.95),
-      0 0 16px color-mix(in srgb, var(--rootsy-eter-100) 36%, transparent);
-  }
-}
-
-@keyframes home-eter-world-breathe {
-  0%,
-  100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.58;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-eter-star,
-  .home-eter-world-aura {
-    animation: none !important;
-  }
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 14% 22%, rgba(255, 255, 255, 0.95) 0 0.65px, transparent 1.55px),
+    radial-gradient(circle at 31% 48%, rgba(255, 255, 255, 0.7) 0 0.45px, transparent 1.2px),
+    radial-gradient(circle at 47% 18%, rgba(255, 255, 255, 0.9) 0 0.65px, transparent 1.55px),
+    radial-gradient(circle at 62% 56%, rgba(255, 255, 255, 0.68) 0 0.45px, transparent 1.2px),
+    radial-gradient(circle at 74% 28%, rgba(255, 255, 255, 0.88) 0 0.65px, transparent 1.55px),
+    radial-gradient(circle at 86% 64%, rgba(255, 255, 255, 0.66) 0 0.45px, transparent 1.2px),
+    radial-gradient(circle at 8% 72%, rgba(255, 255, 255, 0.92) 0 0.65px, transparent 1.55px),
+    radial-gradient(circle at 6% 18%, rgba(255, 255, 255, 0.72) 0 0.5px, transparent 1.2px),
+    radial-gradient(circle at 12% 62%, rgba(255, 255, 255, 0.4) 0 0.45px, transparent 1.1px),
+    radial-gradient(circle at 19% 34%, rgba(255, 255, 255, 0.55) 0 0.5px, transparent 1.2px),
+    radial-gradient(circle at 27% 78%, rgba(255, 255, 255, 0.36) 0 0.4px, transparent 1.05px),
+    radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.5) 0 0.5px, transparent 1.2px),
+    radial-gradient(circle at 41% 54%, rgba(255, 255, 255, 0.42) 0 0.45px, transparent 1.1px),
+    radial-gradient(circle at 48% 12%, rgba(255, 255, 255, 0.48) 0 0.5px, transparent 1.2px),
+    radial-gradient(circle at 55% 71%, rgba(255, 255, 255, 0.38) 0 0.4px, transparent 1.05px),
+    radial-gradient(circle at 62% 39%, rgba(255, 255, 255, 0.56) 0 0.5px, transparent 1.2px),
+    radial-gradient(circle at 69% 86%, rgba(255, 255, 255, 0.34) 0 0.4px, transparent 1.05px),
+    radial-gradient(circle at 76% 28%, rgba(255, 255, 255, 0.52) 0 0.5px, transparent 1.2px),
+    radial-gradient(circle at 83% 58%, rgba(255, 255, 255, 0.44) 0 0.45px, transparent 1.1px),
+    radial-gradient(circle at 90% 16%, rgba(255, 255, 255, 0.6) 0 0.5px, transparent 1.2px),
+    radial-gradient(circle at 94% 74%, rgba(255, 255, 255, 0.4) 0 0.45px, transparent 1.1px),
+    radial-gradient(
+      ellipse 90% 55% at 50% -28%,
+      color-mix(in srgb, var(--rootsy-eter-100) 8%, transparent) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 70% 48% at 50% 42%,
+      color-mix(in srgb, var(--rootsy-eter-100) 7%, transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 90% 40% at 50% -8%,
+      color-mix(in srgb, var(--rootsy-eter-100) 6%, transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 120% 80% at 50% 108%,
+      color-mix(in srgb, var(--rootsy-eter-100) 4%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 88% 55% at 50% 112%,
+      color-mix(in srgb, var(--rootsy-eter-100) 12%, transparent) 0%,
+      color-mix(in srgb, var(--rootsy-eter-100) 5%, transparent) 38%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 70% 45% at 50% 118%,
+      color-mix(in srgb, var(--rootsy-eter-100) 18%, transparent) 0%,
+      color-mix(in srgb, var(--rootsy-eter-200) 7%, transparent) 32%,
+      transparent 64%
+    );
 }
 
 .home-rootsy-saludo {
@@ -212,18 +99,6 @@
   .home-rootsy-saludo {
     width: 7rem;
     height: 7rem;
-  }
-}
-
-@media (max-width: 767px) {
-  .home-eter-nebula {
-    width: 20rem;
-    height: 20rem;
-  }
-
-  .home-eter-world {
-    width: 220%;
-    bottom: -52%;
   }
 }
 
