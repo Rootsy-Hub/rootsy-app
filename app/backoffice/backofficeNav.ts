@@ -1,6 +1,7 @@
 import {
   Building2,
   CreditCard,
+  GitBranch,
   Home,
   LayoutDashboard,
   Mail,
@@ -60,6 +61,12 @@ export const BACKOFFICE_NAV: BackofficeNavItem[] = [
     href: "/backoffice/planes",
     label: "Planes",
     icon: CreditCard,
+  },
+  {
+    id: "bridge-rootsy",
+    href: "/backoffice/bridge-rootsy",
+    label: "Bridge Rootsy",
+    icon: GitBranch,
   },
   {
     id: "emails",

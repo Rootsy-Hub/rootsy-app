@@ -15,6 +15,7 @@ import {
   logSubscriptionBillingEvent,
 } from "@/lib/platformBilling/trialBillingService"
 import { notifyTrialConversionFailure } from "@/lib/platformBilling/trialBillingAlerts"
+import { mirrorPlatformSubscriptionPayment } from "@/lib/rootsyTenantOperations"
 
 export type TrialBillingJobItemResult = {
   popId: string
@@ -170,6 +171,20 @@ async function processTrialBillingItem(
             charge_id: chargeId,
             mercadopago_status: mpPayment.status,
             source: "trial_billing_job",
+          },
+        })
+
+        await mirrorPlatformSubscriptionPayment({
+          customerPopId: item.popId,
+          amount: balanceDue,
+          paidAt: mpPayment.date_approved ?? new Date().toISOString(),
+          externalPaymentId: paymentId,
+          notes: `Conversión trial — ${owner.popName}`,
+          metadata: {
+            source: "trial_billing_job",
+            trial_conversion: true,
+            charge_id: chargeId,
+            subscription_id: item.subscriptionId,
           },
         })
       }
