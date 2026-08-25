@@ -3,6 +3,7 @@ import {
   CHAT_ROOTSY_POSTMAN_ROUTES,
   type ChatRootsyPostmanMethod,
 } from "@/lib/chat/plannerCatalog.generated"
+import { CHAT_ROOTSY_PLANNER_REQUIRED_TEXT } from "@/lib/chat/plannerRequired.generated"
 import {
   buildChatRootsyPlannerDomainCardsText,
   CHAT_ROOTSY_PLANNER_DOMAIN_RULE,
@@ -61,6 +62,7 @@ export const CHAT_ROOTSY_API_RULES = [
   "Si el dato está en el JSON y no hay filtro (nombre de producto, etc.), pedí el endpoint igual. Rootsy lee la respuesta.",
   "Un listado paginado no incluye el gran total en la misma respuesta.",
   "statistics/services y statistics/manufacturing son placeholder vacío. Los recursos reales son /services, operations?view=services y /manufacturing.",
+  "Si el endpoint está en OBLIGATORIOS, esos campos van en params (GET) o body (POST/PATCH). Sin ellos la API responde 400.",
 ] as const
 
 export const CHAT_ROOTSY_API_ACCOUNTS: readonly ChatRootsyApiAccount[] = [
@@ -540,17 +542,17 @@ export const CHAT_ROOTSY_API_GROUPS: readonly ChatRootsyApiGroup[] = [
         id: "inventory_rows",
         method: "GET",
         path: "/v1/pops/:popId/inventory/rows",
-        solves: "Filas de stock paginadas, por vista.",
+        solves: "Filas de stock paginadas. Sin view = pantry.",
         returns: "articleId, quantity, attention. Máx. 50.",
         filters: [
-          { name: "view", values: "pantry|red|overstock|purchase|recommend", note: "Obligatorio." },
+          { name: "view", values: "pantry|red|overstock|purchase|recommend", note: "Opcional. Default pantry (listado barato). Las otras vistas filtran o calculan." },
           { name: "attention", values: "negative|empty|below_min", note: "Solo tiene sentido con view=red." },
           Q,
           PAGE,
           PAGE_SIZE,
         ],
         cost: "alto",
-        useWhen: "Qué artículos están en falta, sobre stock o para comprar.",
+        useWhen: "Buscar stock por nombre, o ver falta / sobrestock / compra.",
         doNot: "No existe GET /inventory. No uses esto para valorizar. No listar articles.",
       },
       {
@@ -1006,6 +1008,7 @@ export const CHAT_ROOTSY_API_GAPS = [
   "statistics/manufacturing está vacío. El recurso de producción es GET /manufacturing?from=&to=.",
   "Caja son tres cosas distintas: turno abierto (cash-registers), dinero operativo (treasury/balances), caja contable (1.1.1.01).",
   "statistics/inventory es stock físico × costo. No es el saldo de Mercaderías (1.1.3.01).",
+  "GET /inventory/rows: view es opcional (default pantry, listado barato). red|overstock|purchase|recommend filtran o calculan y son más caras.",
 ] as const
 
 export function getChatRootsyApiEndpoint(
@@ -1166,6 +1169,8 @@ export function buildChatRootsyApiDocumentationPrompt(): string {
     ...CHAT_ROOTSY_API_GAPS.map((gap) => `- ${gap}`),
     "",
     buildChatRootsyPlannerDomainCardsText(),
+    "",
+    CHAT_ROOTSY_PLANNER_REQUIRED_TEXT.trim(),
     "",
     CHAT_ROOTSY_PLANNER_CATALOG_TEXT.trim(),
   ].join("\n")

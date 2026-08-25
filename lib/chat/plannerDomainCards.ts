@@ -151,7 +151,7 @@ export const CHAT_ROOTSY_PLANNER_DOMAIN_CARDS: readonly ChatRootsyPlannerDomainC
       title: "Inventario",
       what: "Stock físico, ubicaciones, vencimientos, ajustes. No es el saldo de Mercaderías 1.1.3.01.",
       invariant: "Un artículo de stock se busca por articleId o q. Ajustar exige el artículo.",
-      list: "GET /inventory/rows?q= o /inventory/articles?q=. Resumen: /inventory/summary. Saldo: /inventory/balance?articleId=",
+      list: "GET /inventory/rows?q= — view opcional, default pantry. red|overstock|purchase|recommend filtran. Artículos: /inventory/articles?q=. Resumen: /inventory/summary. Saldo: /inventory/balance?articleId=",
       row: "articleId, name, quantity, location",
       write:
         "Ajuste: POST /inventory/adjustments. Transferencia: POST /inventory/transfers. Ubicación: POST /inventory/locations. Vencimiento: PATCH /inventory/layers/:layerId/expiry.",

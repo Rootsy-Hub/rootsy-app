@@ -11,7 +11,7 @@ import {
   healCartLinesAlreadySent,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
-import { saveCounterOrderCheckout, closeCounterOrderCheckout } from "@/app/[siteId]/[popId]/mostrador/actions"
+import { saveCounterOrderCheckoutApi, closeCounterOrderCheckoutApi } from "@/lib/rootsyApi/mostradorClient"
 import {
   emptyTableSessionCheckout,
   type MesasCartItem,
@@ -191,6 +191,7 @@ export function useMostradorSaleCheckout(
     onSaleComplete?: () => void
     catalogSidebarOpen?: boolean
     catalogLoadEnabled?: boolean
+    toolboxLoadEnabled?: boolean
     onCartLineAdded?: (lineId: string) => void
   },
 ) {
@@ -200,6 +201,7 @@ export function useMostradorSaleCheckout(
   const catalogEnabled =
     options?.catalogLoadEnabled ??
     (Boolean(counterOrderId) || Boolean(options?.catalogSidebarOpen))
+  const toolboxEnabled = options?.toolboxLoadEnabled ?? catalogEnabled
 
   const {
     menuCategorySections,
@@ -213,20 +215,31 @@ export function useMostradorSaleCheckout(
     canReadCashRegisters,
     openCashSession,
     invoiceTypeSiteId,
+    hasValidPopFiscalCuit: apiHasValidPopFiscalCuit,
+    popEmisorIvaCondition: apiPopEmisorIvaCondition,
+    comprobantesLoaded,
     catalogLoading,
     catalogItemsEnsuring,
     catalogError,
     catalogLoadAttempted,
+    toolboxLoading,
     mergeCatalogArticles,
     mergeCatalogRecipes,
     ensureCatalogItems,
-  } = useMenuCatalogLoader(popId, { enabled: catalogEnabled })
+  } = useMenuCatalogLoader(popId, {
+    enabled: catalogEnabled,
+    toolboxEnabled,
+  })
 
-  const {
-    hasValidPopFiscalCuit,
-    popEmisorIvaCondition,
-    bootstrapLoaded,
-  } = usePopSaleComprobanteFiscalContext()
+  const fiscalBootstrap = usePopSaleComprobanteFiscalContext()
+  const hasValidPopFiscalCuit = comprobantesLoaded
+    ? apiHasValidPopFiscalCuit
+    : fiscalBootstrap.hasValidPopFiscalCuit
+  const popEmisorIvaCondition = comprobantesLoaded
+    ? apiPopEmisorIvaCondition
+    : fiscalBootstrap.popEmisorIvaCondition
+  const bootstrapLoaded =
+    comprobantesLoaded || fiscalBootstrap.bootstrapLoaded
 
   const { bootstrap } = usePopWorkspace()
   const canCreateClient = useMemo(
@@ -388,13 +401,13 @@ export function useMostradorSaleCheckout(
   const flushCheckoutPersist = useCallback(
     async (sessionId: string, snap: TableSessionCheckoutSnapshot) => {
       if (!popId) return
-      const res = await saveCounterOrderCheckout(popId, siteId, sessionId, snap)
+      const res = await saveCounterOrderCheckoutApi(popId, sessionId, snap)
       if (res.success) {
         lastSavedUpdatedAtRef.current = res.updatedAt
         lastAppliedRemoteUpdatedAtRef.current = res.updatedAt
       }
     },
-    [popId, siteId],
+    [popId],
   )
 
   useEffect(() => {
@@ -1435,9 +1448,8 @@ export function useMostradorSaleCheckout(
     setSubmitError(null)
     setSubmitting(true)
     try {
-      const res = await closeCounterOrderCheckout(
+      const res = await closeCounterOrderCheckoutApi(
         popId,
-        siteId,
         counterOrderId,
         cerrarPedidoMode,
       )
@@ -1814,6 +1826,8 @@ export function useMostradorSaleCheckout(
     catalogItemsEnsuring,
     catalogError,
     catalogLoadAttempted,
+    catalogLoadEnabled: catalogEnabled,
+    toolboxLoading,
     orderPanelLoading,
     mergeCatalogArticles,
     mergeCatalogRecipes,

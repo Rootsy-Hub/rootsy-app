@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  getComandaById,
   getComandaStations,
   getComandas,
   moveComandaStatus,
@@ -12,13 +11,6 @@ import type {
   ComandaStatus,
   ComandaTicket,
 } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
-import {
-  createKeyedDebouncer,
-  readRealtimeRowId,
-  subscribePostgresChanges,
-  type RealtimeConnectionStatus,
-} from "@/lib/supabaseRealtimeHelpers"
-import { createClient } from "@/utils/supabase/client"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 export function useComandasState(popId: string, siteId: string) {
@@ -28,21 +20,12 @@ export function useComandasState(popId: string, siteId: string) {
   const [loading, setLoading] = useState(true)
   const [stationsLoading, setStationsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [realtimeStatus, setRealtimeStatus] =
-    useState<RealtimeConnectionStatus>("connecting")
   const inFlightMovesRef = useRef(new Map<string, ComandaTicket>())
-  const ticketSyncDebouncerRef = useRef(createKeyedDebouncer())
-  const wasDisconnectedRef = useRef(false)
-  const knownTicketIdsRef = useRef(new Set<string>())
   const stationIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     stationIdRef.current = stationId
   }, [stationId])
-
-  useEffect(() => {
-    knownTicketIdsRef.current = new Set(tickets.map((ticket) => ticket.id))
-  }, [tickets])
 
   const applyServerTickets = useCallback((serverTickets: ComandaTicket[]) => {
     const visible = serverTickets.filter(
@@ -61,11 +44,6 @@ export function useComandasState(popId: string, siteId: string) {
           : serverTicket
       }),
     )
-  }, [])
-
-  const removeTicket = useCallback((ticketId: string) => {
-    ticketSyncDebouncerRef.current.cancel(ticketId)
-    setTickets((prev) => prev.filter((ticket) => ticket.id !== ticketId))
   }, [])
 
   const upsertTicket = useCallback((ticket: ComandaTicket) => {
@@ -130,74 +108,6 @@ export function useComandasState(popId: string, siteId: string) {
     setLoading(true)
     void reloadTickets().finally(() => setLoading(false))
   }, [stationId, reloadTickets])
-
-  const syncTicketFromServer = useCallback(
-    async (ticketId: string) => {
-      if (!popId || !siteId) return
-      const res = await getComandaById(popId, siteId, ticketId)
-      if (!res.success) {
-        setError(res.error)
-        return
-      }
-      setError(null)
-      if (res.ticket) {
-        upsertTicket(res.ticket)
-        return
-      }
-      if (knownTicketIdsRef.current.has(ticketId)) {
-        removeTicket(ticketId)
-      }
-    },
-    [popId, siteId, upsertTicket, removeTicket],
-  )
-
-  const scheduleTicketSync = useCallback(
-    (ticketId: string) => {
-      ticketSyncDebouncerRef.current.schedule(ticketId, () => {
-        void syncTicketFromServer(ticketId)
-      })
-    },
-    [syncTicketFromServer],
-  )
-
-  useEffect(() => {
-    if (!popId) return
-    const supabase = createClient()
-    const debouncer = ticketSyncDebouncerRef.current
-
-    const channel = subscribePostgresChanges({
-      supabase,
-      channelName: `comandas:${popId}`,
-      table: "comandas",
-      filter: `pop_id=eq.${popId}`,
-      onStatusChange: (status) => {
-        if (status === "connected") {
-          if (wasDisconnectedRef.current) {
-            wasDisconnectedRef.current = false
-            void reloadTickets()
-          }
-          setRealtimeStatus("connected")
-          return
-        }
-        wasDisconnectedRef.current = true
-        setRealtimeStatus("disconnected")
-      },
-      onChange: (payload) => {
-        if (payload.eventType === "DELETE") {
-          const ticketId = readRealtimeRowId(payload)
-          if (ticketId) removeTicket(ticketId)
-          return
-        }
-        const ticketId = readRealtimeRowId(payload)
-        if (ticketId) scheduleTicketSync(ticketId)
-      },
-    })
-
-    return () => {
-      debouncer.clear()
-      void supabase.removeChannel(channel)
-    }
-  }, [popId, reloadTickets, removeTicket, scheduleTicketSync])
 
   const applyOptimisticStatus = useCallback(
     (ticketId: string, status: ComandaStatus) => {
@@ -286,7 +196,6 @@ export function useComandasState(popId: string, siteId: string) {
     tickets,
     loading: loading || stationsLoading,
     error,
-    realtimeStatus,
     moveTicket,
     reloadTickets,
   }

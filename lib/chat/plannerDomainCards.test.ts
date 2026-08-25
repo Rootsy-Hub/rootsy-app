@@ -6,6 +6,7 @@ import {
   CHAT_ROOTSY_PLANNER_DOMAIN_CARDS,
   CHAT_ROOTSY_PLANNER_DOMAIN_RULE,
 } from "@/lib/chat/plannerDomainCards"
+import { CHAT_ROOTSY_PLANNER_REQUIRED_TEXT } from "@/lib/chat/plannerRequired.generated"
 
 describe("fichas de dominio del planificador", () => {
   it("cubre todos los dominios del negocio", () => {
@@ -70,6 +71,13 @@ describe("fichas de dominio del planificador", () => {
     assert.match(prompt, /resultados/)
     assert.match(prompt, /hasta 8 viajes/)
     assert.match(prompt, /clave a:\/r:\/p:/)
+    assert.match(prompt, /OBLIGATORIOS/)
+    assert.match(
+      prompt,
+      /POST \/inventory\/adjustments articleId quantityDelta note/,
+    )
+    assert.match(prompt, /GET \/inventory\/balance articleId/)
+    assert.doesNotMatch(CHAT_ROOTSY_PLANNER_REQUIRED_TEXT, /inventory\/rows/)
     assert.equal(
       prompt.includes(buildChatRootsyPlannerDomainCardsText()),
       true,

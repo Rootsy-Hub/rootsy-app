@@ -5,7 +5,6 @@ import {
   closeTableSession,
   getMesasLayout,
   getMesasReservationSettings,
-  getOpenTableSessionById,
   getOpenTableSessions,
   getTableReservations,
   openTableSession,
@@ -40,14 +39,6 @@ import type {
   MesaSession,
   MesaTable,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
-import {
-  createKeyedDebouncer,
-  readRealtimeForeignKey,
-  readRealtimeRowId,
-  subscribePostgresChanges,
-  type RealtimeConnectionStatus,
-} from "@/lib/supabaseRealtimeHelpers"
-import { createClient } from "@/utils/supabase/client"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 function firstActiveSalonId(salons: MesaSalon[]): string {
@@ -210,8 +201,6 @@ export function useMesasState(popId: string, siteId: string) {
   const initialOccupancyLoadedRef = useRef(false)
   const [layoutError, setLayoutError] = useState<string | null>(null)
   const [sessionError, setSessionError] = useState<string | null>(null)
-  const [realtimeStatus, setRealtimeStatus] =
-    useState<RealtimeConnectionStatus>("connecting")
   const [layoutData, setLayoutData] = useState<MesasLayoutData | null>(null)
   const [floorNow, setFloorNow] = useState(() => new Date())
   const [reservationSettings, setReservationSettings] =
@@ -226,14 +215,6 @@ export function useMesasState(popId: string, siteId: string) {
     const id = window.setInterval(() => setFloorNow(new Date()), 60_000)
     return () => window.clearInterval(id)
   }, [])
-
-  const sessionSyncDebouncerRef = useRef(createKeyedDebouncer())
-  const wasDisconnectedRef = useRef(false)
-  const knownSessionIdsRef = useRef(new Set<string>())
-
-  useEffect(() => {
-    knownSessionIdsRef.current = new Set(sessions.map((session) => session.id))
-  }, [sessions])
 
   const visibleReservations = useMemo(
     () =>
@@ -270,7 +251,6 @@ export function useMesasState(popId: string, siteId: string) {
   )
 
   const removeSession = useCallback((sessionId: string) => {
-    sessionSyncDebouncerRef.current.cancel(sessionId)
     setSessions((prev) => prev.filter((session) => session.id !== sessionId))
   }, [])
 
@@ -284,38 +264,6 @@ export function useMesasState(popId: string, siteId: string) {
       return next
     })
   }, [])
-
-  const syncSessionFromServer = useCallback(
-    async (sessionId: string) => {
-      if (!popId || !siteId) return
-
-      const res = await getOpenTableSessionById(popId, siteId, sessionId)
-      if (!res.success) {
-        setSessionError(res.error)
-        return
-      }
-
-      setSessionError(null)
-      if (res.session) {
-        upsertSession(res.session)
-        return
-      }
-
-      if (knownSessionIdsRef.current.has(sessionId)) {
-        removeSession(sessionId)
-      }
-    },
-    [popId, siteId, upsertSession, removeSession],
-  )
-
-  const scheduleSessionSync = useCallback(
-    (sessionId: string) => {
-      sessionSyncDebouncerRef.current.schedule(sessionId, () => {
-        void syncSessionFromServer(sessionId)
-      })
-    },
-    [syncSessionFromServer],
-  )
 
   const reloadSessions = useCallback(async () => {
     if (!popId || !siteId) return
@@ -442,80 +390,6 @@ export function useMesasState(popId: string, siteId: string) {
     void reloadLayout()
     void reloadOccupancy()
   }, [reloadLayout, reloadOccupancy])
-
-  useEffect(() => {
-    if (!popId) return
-
-    const supabase = createClient()
-    const debouncer = sessionSyncDebouncerRef.current
-
-    const handleRealtimeStatus = (status: RealtimeConnectionStatus) => {
-      if (status === "connected") {
-        if (wasDisconnectedRef.current) {
-          wasDisconnectedRef.current = false
-          void reloadSessions()
-          void reloadReservations()
-        }
-        setRealtimeStatus("connected")
-        return
-      }
-
-      wasDisconnectedRef.current = true
-      setRealtimeStatus("disconnected")
-    }
-
-    const sessionChannel = subscribePostgresChanges({
-      supabase,
-      channelName: `mesas-table-sessions:${popId}`,
-      table: "table_sessions",
-      filter: `pop_id=eq.${popId}`,
-      onStatusChange: handleRealtimeStatus,
-      onChange: (payload) => {
-        if (payload.eventType === "DELETE") {
-          const sessionId = readRealtimeRowId(payload)
-          if (sessionId) removeSession(sessionId)
-          return
-        }
-
-        const sessionId = readRealtimeRowId(payload)
-        if (sessionId) scheduleSessionSync(sessionId)
-      },
-    })
-
-    const mergeChannel = subscribePostgresChanges({
-      supabase,
-      channelName: `mesas-table-session-tables:${popId}`,
-      table: "table_session_tables",
-      onChange: (payload) => {
-        const sessionId = readRealtimeForeignKey(payload, "table_session_id")
-        if (!sessionId) return
-        if (
-          payload.eventType !== "INSERT" &&
-          !knownSessionIdsRef.current.has(sessionId)
-        ) {
-          return
-        }
-        scheduleSessionSync(sessionId)
-      },
-    })
-
-    const reservationChannel = subscribePostgresChanges({
-      supabase,
-      channelName: `mesas-table-reservations:${popId}`,
-      table: "table_reservations",
-      filter: `pop_id=eq.${popId}`,
-      onChange: () => {
-        void reloadReservations()
-      },
-    })
-
-    return () => {
-      debouncer.clear()
-      void supabase.removeChannel(sessionChannel)
-      void supabase.removeChannel(mergeChannel)
-      void supabase.removeChannel(reservationChannel)
-    }
-  }, [popId, reloadSessions, reloadReservations, removeSession, scheduleSessionSync])
 
   useEffect(() => {
     if (!activeSalonId) {
@@ -940,7 +814,6 @@ export function useMesasState(popId: string, siteId: string) {
     floorLoading: layoutLoading || occupancyLoading,
     layoutError,
     sessionError,
-    realtimeStatus,
     layoutData,
     reloadLayout,
     reloadSessions,

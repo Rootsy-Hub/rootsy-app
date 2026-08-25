@@ -2,7 +2,7 @@
 
 import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
 import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-catalog/actions"
-import { findMenuCatalogItemByScan } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import { findMenuCatalogItemByScan } from "@/lib/rootsyApi/menuCatalogClient"
 import { findSaleCatalogArticleByScan } from "@/lib/rootsyApi/saleClient"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
 import type { MenuCartItemKind } from "@/lib/menuCart"
@@ -96,6 +96,8 @@ type Props = {
   itemsSource?: CatalogScope
   mergeCatalogArticles?: (articles: Parameters<typeof menuArticleToProduct>[0][]) => void
   mergeCatalogRecipes?: (recipes: Parameters<typeof menuRecipeToProduct>[0][]) => void
+  /** Pedir páginas del catálogo. En Mesas/Mostrador: solo cuando esa UI se ve. */
+  itemsEnabled?: boolean
   /** Devuelve foco al input escaneo tras acciones (p. ej. Vender). */
   keepScanFocused?: boolean
   className?: string
@@ -121,6 +123,7 @@ export function SaleCatalogBrowser({
   itemsSource,
   mergeCatalogArticles,
   mergeCatalogRecipes,
+  itemsEnabled = true,
   keepScanFocused = false,
   className,
 }: Props) {
@@ -317,18 +320,32 @@ export function SaleCatalogBrowser({
   const saleCategoryItems = useSaleCatalogItems(
     popId,
     itemsFilter,
-    Boolean(popId) && !error && source === "sale" && itemsQueryReady && !isSearch,
+    Boolean(popId) &&
+      !error &&
+      source === "sale" &&
+      itemsEnabled &&
+      itemsQueryReady &&
+      !isSearch,
   )
   const saleSearchItems = useSaleCatalogSearch(
     popId,
     itemsFilter,
-    Boolean(popId) && !error && source === "sale" && itemsQueryReady && isSearch,
+    Boolean(popId) &&
+      !error &&
+      source === "sale" &&
+      itemsEnabled &&
+      itemsQueryReady &&
+      isSearch,
   )
   const saleItems = isSearch ? saleSearchItems : saleCategoryItems
   const menuItems = useMenuCatalogItems(
     popId,
     itemsFilter,
-    Boolean(popId) && !error && source === "menu" && itemsQueryReady,
+    Boolean(popId) &&
+      !error &&
+      source === "menu" &&
+      itemsEnabled &&
+      itemsQueryReady,
   )
   const paged = source === "sale" ? saleItems : menuItems
   const pagedRecipes = source === "menu" ? menuItems.recipes : []

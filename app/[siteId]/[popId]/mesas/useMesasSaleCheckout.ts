@@ -190,13 +190,16 @@ export function useMesasSaleCheckout(
   options?: {
     onSessionClose?: () => void | Promise<void>
     catalogSidebarOpen?: boolean
+    catalogLoadEnabled?: boolean
+    toolboxLoadEnabled?: boolean
     onCartLineAdded?: (lineId: string) => void
   },
 ) {
   const onSessionClose = options?.onSessionClose
   const onCartLineAdded = options?.onCartLineAdded
-  // Precarga el catálogo al entrar a Mesas para que el ticket no renderice ítems parciales.
-  const catalogEnabled = Boolean(popId)
+  const catalogEnabled =
+    options?.catalogLoadEnabled ?? Boolean(tableSessionId)
+  const toolboxEnabled = options?.toolboxLoadEnabled ?? catalogEnabled
 
   const {
     menuCategorySections,
@@ -210,20 +213,31 @@ export function useMesasSaleCheckout(
     canReadCashRegisters,
     openCashSession,
     invoiceTypeSiteId,
+    hasValidPopFiscalCuit: apiHasValidPopFiscalCuit,
+    popEmisorIvaCondition: apiPopEmisorIvaCondition,
+    comprobantesLoaded,
     catalogLoading,
     catalogItemsEnsuring,
     catalogError,
     catalogLoadAttempted,
+    toolboxLoading,
     mergeCatalogArticles,
     mergeCatalogRecipes,
     ensureCatalogItems,
-  } = useMenuCatalogLoader(popId, { enabled: catalogEnabled })
+  } = useMenuCatalogLoader(popId, {
+    enabled: catalogEnabled,
+    toolboxEnabled,
+  })
 
-  const {
-    hasValidPopFiscalCuit,
-    popEmisorIvaCondition,
-    bootstrapLoaded,
-  } = usePopSaleComprobanteFiscalContext()
+  const fiscalBootstrap = usePopSaleComprobanteFiscalContext()
+  const hasValidPopFiscalCuit = comprobantesLoaded
+    ? apiHasValidPopFiscalCuit
+    : fiscalBootstrap.hasValidPopFiscalCuit
+  const popEmisorIvaCondition = comprobantesLoaded
+    ? apiPopEmisorIvaCondition
+    : fiscalBootstrap.popEmisorIvaCondition
+  const bootstrapLoaded =
+    comprobantesLoaded || fiscalBootstrap.bootstrapLoaded
 
   const { bootstrap } = usePopWorkspace()
   const canCreateClient = useMemo(
@@ -1837,6 +1851,8 @@ export function useMesasSaleCheckout(
     catalogLoading,
     catalogError,
     catalogLoadAttempted,
+    catalogLoadEnabled: catalogEnabled,
+    toolboxLoading,
     mergeCatalogArticles,
     mergeCatalogRecipes,
     orderPanelLoading,

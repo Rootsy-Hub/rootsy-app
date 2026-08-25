@@ -36,7 +36,6 @@ import {
   mesasFloorEmptyStrongClass,
   mesasFloorEmptyTextClass,
   mesasLayoutErrorBannerClass,
-  mesasRealtimeBannerClass,
 } from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import {
@@ -44,6 +43,7 @@ import {
   MesasTablePickerListSkeleton,
 } from "@/components/sale-operation/OperarChannelCanvasSkeletons"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
+import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -112,7 +112,6 @@ export function MesasWorkspace({
     floorLoading,
     layoutError,
     sessionError,
-    realtimeStatus,
     layoutData,
     reloadLayout,
     moveTable,
@@ -175,7 +174,11 @@ export function MesasWorkspace({
     remoteSession,
     {
       onSessionClose: handleSessionClose,
-      catalogSidebarOpen: catalogSidebarOpen || showCatalog,
+      catalogLoadEnabled:
+        showCatalog || mobileStage?.stage === "catalog",
+      toolboxLoadEnabled:
+        showCatalog ||
+        (mobileStage?.stage === "ticket" && selectedSession != null),
       onCartLineAdded: handleCartLineAdded,
     },
   )
@@ -489,20 +492,19 @@ export function MesasWorkspace({
         <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />
       ) : null}
 
-      {realtimeStatus === "disconnected" ? (
-        <div className={mesasRealtimeBannerClass}>
-          Conexión en vivo interrumpida. Reconectando… los cambios pueden demorar
-          unos segundos.
-        </div>
-      ) : null}
-
       <LayoutsOperarMainGrid
         mobileHomeLabel="Mesas"
         mobileHome={mobileFloorCanvas}
         mobileCatalog={catalogPanel}
         mobileCatalogDisabled={!selectedSession}
         catalog={!showCatalog ? floorCanvas : catalogPanel}
-        toolbox={<SaleOperationToolbox {...checkout.toolbox} />}
+        toolbox={
+          checkout.toolboxLoading ? (
+            <SaleOperationToolboxSkeleton />
+          ) : (
+            <SaleOperationToolbox {...checkout.toolbox} />
+          )
+        }
         desktopToolbox={showCatalog}
         ticket={
           <aside

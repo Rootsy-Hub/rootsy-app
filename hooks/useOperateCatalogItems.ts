@@ -1,8 +1,8 @@
 "use client"
 
 import type { SaleCatalogArticle } from "@/app/[siteId]/[popId]/sale/actions"
-import { getMenuCatalogItemsPage } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import { getPurchaseCatalogItemsPage } from "@/app/[siteId]/[popId]/purchases/actions"
+import { fetchMenuCatalogItemsPage } from "@/lib/rootsyApi/menuCatalogClient"
 import { fetchSaleCatalogItemsPage } from "@/lib/rootsyApi/saleClient"
 import {
   operateCatalogFilterKey,
@@ -245,7 +245,7 @@ export function useMenuCatalogItems(
   const query = useInfiniteQuery({
     queryKey: menuCatalogItemsQueryKey(popId ?? "", filterKey),
     queryFn: async ({ pageParam }) => {
-      const res = await getMenuCatalogItemsPage(popId!, filter, pageParam)
+      const res = await fetchMenuCatalogItemsPage(popId!, filter, pageParam)
       if (!res.success) throw new Error(res.error)
       return res.page
     },

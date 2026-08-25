@@ -73,13 +73,6 @@ export const mesasFloorGridPatternStyle: CSSProperties = {
   backgroundSize: "24px 24px",
 }
 
-export const mesasRealtimeBannerClass = cn(
-  "relative z-20 border-b px-4 py-2 text-sm",
-  "border-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-savia-950)_72%,var(--rootsy-sombra-900))]",
-  "text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]",
-)
-
 export const mesasLayoutErrorBannerClass = cn(
   "border-b px-4 py-2 text-sm",
   "border-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)]",

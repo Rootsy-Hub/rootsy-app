@@ -8,7 +8,6 @@ import {
   mesasFloorEmptyStrongClass,
   mesasFloorEmptyTextClass,
   mesasLayoutErrorBannerClass,
-  mesasRealtimeBannerClass,
   MESAS_FLOOR_PLAN_CANVAS_BG,
 } from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
 import {
@@ -41,8 +40,6 @@ export const mostradorBoardCountPillClass = cn(
   "rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums",
   operarCanvasToolbarCountPillTotalActiveClass,
 )
-
-export const mostradorRealtimeBannerClass = mesasRealtimeBannerClass
 
 export const mostradorErrorBannerClass = mesasLayoutErrorBannerClass
 

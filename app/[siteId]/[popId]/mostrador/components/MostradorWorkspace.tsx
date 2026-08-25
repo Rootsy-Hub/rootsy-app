@@ -21,8 +21,8 @@ import {
   layoutsOperarSummaryPanelInnerGridClass,
   layoutsOperarSummaryPanelTabBodyClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
-import { mostradorRealtimeBannerClass } from "@/app/[siteId]/[popId]/mostrador/mostradorOperarStyles"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
+import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback } from "react"
@@ -46,7 +46,6 @@ export function MostradorWorkspace({
     orders,
     loading,
     orderError,
-    realtimeStatus,
     selectedOrderId,
     selectedOrder,
     selectOrder,
@@ -84,12 +83,12 @@ export function MostradorWorkspace({
     {
       isPaid: selectedOrder?.isPaid,
       onSaleComplete: () => void reloadOrders(),
-      catalogSidebarOpen,
       catalogLoadEnabled:
-        catalogSidebarOpen ||
-        selectedOrderId != null ||
-        creating ||
-        showCatalog,
+        showCatalog || mobileStage?.stage === "catalog",
+      toolboxLoadEnabled:
+        showCatalog ||
+        (mobileStage?.stage === "ticket" &&
+          (selectedOrderId != null || creating)),
       onCartLineAdded: handleCartLineAdded,
     },
   )
@@ -167,20 +166,19 @@ export function MostradorWorkspace({
         <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />
       ) : null}
 
-      {realtimeStatus === "disconnected" ? (
-        <div className={mostradorRealtimeBannerClass}>
-          Conexión en vivo interrumpida. Reconectando… los cambios pueden demorar
-          unos segundos.
-        </div>
-      ) : null}
-
       <LayoutsOperarMainGrid
         mobileHomeLabel="Mostrador"
         mobileHome={boardCanvas}
         mobileCatalog={catalogPanel}
         mobileCatalogDisabled={!selectedOrder && !creating}
         catalog={!showCatalog ? boardCanvas : catalogPanel}
-        toolbox={<SaleOperationToolbox {...checkout.toolbox} />}
+        toolbox={
+          checkout.toolboxLoading ? (
+            <SaleOperationToolboxSkeleton />
+          ) : (
+            <SaleOperationToolbox {...checkout.toolbox} />
+          )
+        }
         desktopToolbox={showCatalog}
         ticket={
           <aside

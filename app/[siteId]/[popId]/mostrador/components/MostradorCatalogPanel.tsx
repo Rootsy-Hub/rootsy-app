@@ -48,6 +48,7 @@ export function MostradorCatalogPanel({
         onCatalogSidebarOpenChange={onCatalogSidebarOpenChange}
         catalogScope="menu"
         itemsSource="menu"
+        itemsEnabled={checkout.catalogLoadEnabled}
         mergeCatalogArticles={mergeCatalogArticles}
         mergeCatalogRecipes={mergeCatalogRecipes}
       />
