@@ -11,6 +11,7 @@
   --mensaje-intent: var(--rootsy-bruma-500);
   --mensaje-ring: rgb(148 163 184 / 0.45);
   --mensaje-pip: var(--rootsy-bruma-400, #94a3b8);
+  --mensaje-stroke: rgb(15 23 20 / 0.12);
   display: flex;
   width: max-content;
   max-width: min(22.5rem, calc(100vw - 1.5rem));
@@ -133,18 +134,49 @@
   bottom: auto;
 }
 
-.rootsy-mensaje__bubble {
+.rootsy-mensaje__speech {
   position: relative;
   min-width: 0;
   flex: 1;
+  overflow: visible;
+}
+
+.rootsy-mensaje__speech-shape {
+  position: relative;
+  min-width: 0;
+  overflow: visible;
+}
+
+.rootsy-mensaje.is-side-left .rootsy-mensaje__speech-shape {
+  padding-left: 10px;
+  margin-left: -10px;
+}
+
+.rootsy-mensaje.is-side-right .rootsy-mensaje__speech-shape {
+  padding-right: 10px;
+  margin-right: -10px;
+}
+
+.rootsy-mensaje__outline-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.rootsy-mensaje__outline-defs feFlood {
+  flood-color: var(--mensaje-stroke);
+}
+
+.rootsy-mensaje__bubble {
+  position: relative;
+  min-width: 0;
   overflow: visible;
   padding: 0.5rem 0.75rem 0.4rem 0.85rem;
   border-radius: 1.125rem;
   background: var(--mensaje-fill);
   color: var(--mensaje-ink);
-  box-shadow:
-    0 1px 1px rgb(15 23 20 / 0.06),
-    0 10px 28px rgb(0 11 21 / 0.14);
 }
 
 .rootsy-mensaje.is-edge-bottom.is-side-left .rootsy-mensaje__bubble {
@@ -282,7 +314,7 @@
   top: auto;
   right: auto;
   bottom: 0;
-  left: -8px;
+  left: -7px;
   transform: scale(-1, -1);
 }
 
@@ -290,7 +322,7 @@
   top: auto;
   left: auto;
   bottom: 0;
-  right: -8px;
+  right: -7px;
   transform: scaleY(-1);
 }
 
@@ -298,7 +330,7 @@
   right: auto;
   bottom: auto;
   top: 0;
-  left: -8px;
+  left: -7px;
   transform: scaleX(-1);
 }
 
@@ -306,7 +338,7 @@
   left: auto;
   bottom: auto;
   top: 0;
-  right: -8px;
+  right: -7px;
   transform: none;
 }
 
@@ -314,32 +346,27 @@
   --mensaje-intent: var(--rootsy-savia-700, #0f766e);
   --mensaje-ring: rgb(45 212 191 / 0.7);
   --mensaje-pip: #2dd4bf;
+  --mensaje-stroke: color-mix(in srgb, var(--mensaje-intent) 28%, transparent);
 }
 
 .rootsy-mensaje.is-intent-success {
   --mensaje-intent: var(--rootsy-savia-800, #065f46);
   --mensaje-ring: rgb(16 185 129 / 0.7);
   --mensaje-pip: #10b981;
+  --mensaje-stroke: color-mix(in srgb, var(--mensaje-intent) 28%, transparent);
 }
 
 .rootsy-mensaje.is-intent-warning {
   --mensaje-intent: #b45309;
   --mensaje-ring: rgb(245 158 11 / 0.75);
   --mensaje-pip: #f59e0b;
+  --mensaje-stroke: color-mix(in srgb, var(--mensaje-intent) 28%, transparent);
 }
 
 .rootsy-mensaje.is-intent-danger {
   --mensaje-intent: #dc2626;
   --mensaje-ring: rgb(248 113 113 / 0.8);
   --mensaje-pip: #ef4444;
+  --mensaje-stroke: color-mix(in srgb, var(--mensaje-intent) 28%, transparent);
 }
 
-.rootsy-mensaje.is-intent-info .rootsy-mensaje__bubble,
-.rootsy-mensaje.is-intent-success .rootsy-mensaje__bubble,
-.rootsy-mensaje.is-intent-warning .rootsy-mensaje__bubble,
-.rootsy-mensaje.is-intent-danger .rootsy-mensaje__bubble {
-  box-shadow:
-    0 1px 1px rgb(15 23 20 / 0.06),
-    0 10px 28px rgb(0 11 21 / 0.14),
-    0 0 0 1px color-mix(in srgb, var(--mensaje-intent) 28%, transparent);
-}

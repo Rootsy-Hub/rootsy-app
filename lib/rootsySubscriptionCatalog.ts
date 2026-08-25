@@ -90,8 +90,8 @@ export const ROOTS_SHARED_MODULES: Record<
   ],
   configurar: [
     { key: "alerts", label: "Alertas" },
-    { key: "accounts", label: "Cuentas" },
-    { key: "hr", label: "Recursos Humanos" },
+    { key: "accounts", label: "Dinero" },
+    { key: "hr", label: "Personal" },
     { key: "settings", label: "Ajustes" },
     { key: "audit", label: "Auditoría" },
   ],
@@ -131,7 +131,7 @@ const ROOTS_PUBLIC_BUSINESS_TYPE_MODULES: Record<
         { key: "inventory", label: "Inventario" },
       ],
       administrar: [
-        { key: "stock", label: "Stock" },
+        { key: "stock", label: "Artículos" },
         { key: "suppliers", label: "Proveedores" },
         { key: "promotions", label: "Promociones" },
         { key: "quotes", label: "Presupuestos" },
@@ -157,7 +157,7 @@ const ROOTS_PUBLIC_BUSINESS_TYPE_MODULES: Record<
         { key: "inventory", label: "Inventario" },
       ],
       administrar: [
-        { key: "stock", label: "Stock" },
+        { key: "stock", label: "Artículos" },
         { key: "suppliers", label: "Proveedores" },
         { key: "recipes", label: "Recetas" },
         { key: "promotions", label: "Promociones" },
@@ -183,7 +183,7 @@ const ROOTS_PUBLIC_BUSINESS_TYPE_MODULES: Record<
         { key: "inventory", label: "Inventario" },
       ],
       administrar: [
-        { key: "stock", label: "Stock" },
+        { key: "stock", label: "Artículos" },
         { key: "suppliers", label: "Proveedores" },
         { key: "recipes", label: "Recetas" },
         { key: "promotions", label: "Promociones" },

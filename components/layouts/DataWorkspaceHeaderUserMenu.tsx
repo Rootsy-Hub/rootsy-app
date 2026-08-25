@@ -45,6 +45,8 @@ export type DataWorkspaceHeaderUserMenuProps = {
   size?: RootsIconButtonSize
   roleLabel?: string
   hasResolvedRole?: boolean
+  /** Rol del POP todavía no llegó: barra fantasma en la segunda línea. */
+  rolePending?: boolean
   /** Si es false, solo el avatar — útil en headers compactos. */
   showIdentity?: boolean
   pending?: boolean
@@ -60,6 +62,7 @@ export function DataWorkspaceHeaderUserMenu({
   headerVariant = "default",
   size = "default",
   roleLabel,
+  rolePending = false,
   showIdentity = true,
   pending = false,
 }: DataWorkspaceHeaderUserMenuProps) {
@@ -159,6 +162,11 @@ export function DataWorkspaceHeaderUserMenu({
               >
                 {resolvedRoleLabel}
               </span>
+            ) : rolePending ? (
+              <span
+                className={cn(menuGhostBarClass, "mt-0.5 h-2.5 w-16")}
+                aria-hidden
+              />
             ) : null}
           </div>
           <span

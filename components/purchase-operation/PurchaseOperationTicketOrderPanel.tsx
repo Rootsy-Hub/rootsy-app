@@ -19,13 +19,12 @@ import {
   type PurchaseLineEditInput,
 } from "@/components/purchase-operation/PurchaseCartLineCard"
 import { OperarMobileToolboxIcons } from "@/components/layouts-module/OperarMobileToolbox"
-import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { OperarTicketEmptyState } from "@/components/layouts-module/OperarTicketEmptyState"
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
 import type { CartListScrollHighlightValue } from "@/hooks/useCartListScrollHighlight"
 import { CartListScrollHighlightProvider } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
-import { Receipt } from "lucide-react"
 
 type ActionsProps = React.ComponentProps<typeof SaleOperationActionsBar>
 type TotalProps = React.ComponentProps<typeof SaleOperationTotalBar>
@@ -42,6 +41,7 @@ type Props = {
   totalBar: TotalProps
   listTitle?: string
   emptyTitle?: string
+  emptyDescription?: string
   cartScrollHighlight?: CartListScrollHighlightValue
 }
 
@@ -54,7 +54,8 @@ export function PurchaseOperationTicketOrderPanel({
   actions,
   totalBar,
   listTitle = "Tu compra",
-  emptyTitle = "Compra vacía",
+  emptyTitle,
+  emptyDescription,
   cartScrollHighlight,
 }: Props) {
   const cartScrollContainerRef = cartScrollHighlight?.scrollRef
@@ -79,9 +80,11 @@ export function PurchaseOperationTicketOrderPanel({
         </div>
 
         {ticketLineCount === 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
-            <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
-          </div>
+          <OperarTicketEmptyState
+            kind="purchase"
+            title={emptyTitle}
+            description={emptyDescription}
+          />
         ) : (
           <div
             className={cn(

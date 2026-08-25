@@ -861,7 +861,7 @@ export function HrWorkspaceView() {
         siteId={siteId}
         popId={popId}
         popName={popName}
-        title="RRHH"
+        title="Personal"
         headerVariant={dataWorkspaceModuleHeaderVariant}
         contentFlush
         loading={pageLoading}

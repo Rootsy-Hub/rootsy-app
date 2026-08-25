@@ -1312,7 +1312,6 @@ export function SaleWorkspaceView() {
                   cambiarCantidadPorLinea={cambiarCantidadPorLineaConFoco}
                   quitarQuantityDealApplication={quitarQuantityDealApplicationConFoco}
                   listTitle="Pedido"
-                  emptyTitle="Pedido vacío"
                   cartScrollHighlight={cartScrollHighlight}
                   actions={{
                     discardDisabled: !hayItemsEnPedido,

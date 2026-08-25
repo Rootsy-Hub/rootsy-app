@@ -1,0 +1,121 @@
+"use client"
+
+import { HomeWorkspaceBackdrop } from "@/components/layouts/HomeWorkspaceBackdrop"
+import {
+  ROOTSY_EMPTY_STATE_DEFAULT_IMAGE,
+  ROOTSY_EMPTY_STATE_DEFAULT_WORLD,
+  type RootsyEmptyStateWorld,
+} from "@/components/rootsy-empty-state/rootsyEmptyState"
+import {
+  ROOTSY_ELSEWHERE_LABEL,
+  useRootsyPortraitSlot,
+  type RootsyPortraitSlot,
+} from "@/components/rootsy-empty-state/rootsyPortraitPresence"
+import { cn } from "@/lib/utils"
+import type { ReactNode } from "react"
+import "@/components/rootsy-empty-state/rootsyEmptyState.css"
+
+export type RootsyEmptyStateProps = {
+  imageSrc?: string
+  /**
+   * Contenido del círculo. Gana sobre imageSrc.
+   * Si Rootsy está en otro lado, se ignora y se muestran los tres puntos.
+   */
+  image?: ReactNode
+  /** Voz: ROOTSY_EMPTY_STATE_VOICE — nombra lo que falta, en primera persona. */
+  title: string
+  /** Voz: un paso concreto. Si no hace falta, omitilo. */
+  description?: string
+  world?: RootsyEmptyStateWorld
+  imageAlt?: string
+  className?: string
+  /**
+   * Superficie de producto. Reclama el retrato según toast → catálogo → pedido.
+   * En la galería no se pasa: siempre se muestra el retrato.
+   */
+  slot?: RootsyPortraitSlot
+  /** Forzar retrato o continuación. Si no se pasa, lo decide `slot`. */
+  presence?: "portrait" | "elsewhere"
+}
+
+function EmptyStateWorldFill({ world }: { world: RootsyEmptyStateWorld }) {
+  if (world === "eter") {
+    return <HomeWorkspaceBackdrop className="rootsy-empty-state__eter" />
+  }
+
+  return (
+    <span
+      className={cn("rootsy-empty-state__world", `rootsy-empty-state__world--${world}`)}
+      aria-hidden
+    />
+  )
+}
+
+/** Tres puntos — la conversación sigue donde está el retrato. Sin animación. */
+export function RootsyEmptyStateEllipsis({
+  label = "Rootsy está en otro lado",
+}: {
+  label?: string
+}) {
+  return (
+    <span className="rootsy-empty-state__ellipsis" title={label} aria-hidden>
+      <span className="rootsy-empty-state__ellipsis-dot" />
+      <span className="rootsy-empty-state__ellipsis-dot" />
+      <span className="rootsy-empty-state__ellipsis-dot" />
+    </span>
+  )
+}
+
+export function RootsyEmptyState({
+  imageSrc = ROOTSY_EMPTY_STATE_DEFAULT_IMAGE,
+  image,
+  title,
+  description,
+  world = ROOTSY_EMPTY_STATE_DEFAULT_WORLD,
+  imageAlt = "",
+  className,
+  slot,
+  presence,
+}: RootsyEmptyStateProps) {
+  const claimed = useRootsyPortraitSlot(slot)
+  const resolvedPresence =
+    presence ?? (slot ? (claimed.showPortrait ? "portrait" : "elsewhere") : "portrait")
+  const toward = claimed.elsewhereToward
+  const elsewhereLabel = toward ? ROOTSY_ELSEWHERE_LABEL[toward] : "Rootsy está en otro lado"
+  const showEllipsis = resolvedPresence === "elsewhere"
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      data-world={world}
+      data-presence={resolvedPresence}
+      data-slot={slot}
+      className={cn("rootsy-empty-state", className)}
+    >
+      <div className="rootsy-empty-state__portrait rootsy-hero-rise">
+        <span className="rootsy-empty-state__frame">
+          <EmptyStateWorldFill world={world} />
+          {showEllipsis ? (
+            <RootsyEmptyStateEllipsis label={elsewhereLabel} />
+          ) : image ? (
+            <span className="rootsy-empty-state__image-slot">{image}</span>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageSrc}
+              alt={imageAlt}
+              className="rootsy-empty-state__image"
+            />
+          )}
+        </span>
+      </div>
+      <div className="rootsy-empty-state__copy rootsy-hero-rise rootsy-hero-rise-d2">
+        <p className="rootsy-empty-state__title font-canopy">{title}</p>
+        {description ? (
+          <p className="rootsy-empty-state__description font-canopy">{description}</p>
+        ) : null}
+      </div>
+    </div>
+  )
+}

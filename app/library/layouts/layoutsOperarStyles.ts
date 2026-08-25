@@ -377,25 +377,32 @@ export function layoutsOperarCatalogGridTemplate(columns: number): string {
   return `repeat(${columns}, minmax(0, 1fr))`
 }
 
-/** Empty catálogo — mascota + burbuja de diálogo (bruma sobre dosel). */
+/** Empty catálogo — retrato centrado, mismo círculo que el toast, aire del dosel. */
+export const layoutsOperarCatalogEmptyCanvasClass =
+  "relative flex h-full min-h-0 flex-col overflow-hidden p-0"
+
 export const layoutsOperarCatalogEmptyMascotShellClass =
-  "rootsy-hero-slide-in-right pointer-events-none absolute right-[-50px] bottom-[-25px] z-10"
+  "flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-8 text-center"
 
-export const layoutsOperarCatalogEmptySpeechBubbleClass = cn(
-  "relative w-max max-w-[11.75rem] rounded-2xl border border-[var(--rootsy-bruma-200)] bg-white",
-  "px-3.5 py-2.5 shadow-[0_10px_28px_-12px_color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]",
-  "after:pointer-events-none after:absolute after:-bottom-1.5 after:right-5 after:size-2.5 after:rotate-45",
-  "after:border-r after:border-b after:border-[var(--rootsy-bruma-200)] after:bg-white",
-)
+export const layoutsOperarCatalogEmptyPortraitClass =
+  "layouts-operar-empty-portrait relative size-[6.5rem] shrink-0"
 
-export const layoutsOperarCatalogEmptySpeechTitleClass =
-  "font-canopy text-sm font-semibold leading-snug text-[var(--rootsy-bruma-900)]"
+export const layoutsOperarCatalogEmptyPortraitFrameClass =
+  "layouts-operar-empty-portrait__frame relative grid size-full place-items-center overflow-hidden rounded-full"
 
-export const layoutsOperarCatalogEmptySpeechHintClass =
-  "mt-0.5 font-canopy text-xs leading-snug text-[var(--rootsy-bruma-600)]"
+export const layoutsOperarCatalogEmptyPortraitWorldClass =
+  "layouts-operar-empty-portrait__world"
 
-export const layoutsOperarCatalogEmptyMascotImageClass =
-  "h-auto w-full max-w-[260px] shrink-0 object-contain opacity-95"
+export const layoutsOperarCatalogEmptyPortraitImageClass =
+  "relative z-[1] block size-full object-contain object-[center_62%]"
+
+export const layoutsOperarCatalogEmptyCopyClass = "max-w-[16rem]"
+
+export const layoutsOperarCatalogEmptyTitleClass =
+  "font-canopy text-sm font-semibold leading-snug text-[color-mix(in_srgb,var(--rootsy-bruma-50)_92%,transparent)]"
+
+export const layoutsOperarCatalogEmptyHintClass =
+  "mt-1 font-canopy text-xs leading-snug text-[color-mix(in_srgb,var(--rootsy-sombra-300)_88%,transparent)]"
 
 /** Skeleton catálogo — 2 tonos sombra muy cercanos (700 base · bloque apenas más oscuro). */
 export const layoutsOperarCatalogSkeletonSurfaceClass = "bg-[var(--rootsy-sombra-700)]"

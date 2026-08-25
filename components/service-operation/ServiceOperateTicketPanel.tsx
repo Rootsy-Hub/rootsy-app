@@ -18,7 +18,7 @@ import {
   layoutsOperarTicketProposalHeaderClass,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
-import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { OperarTicketEmptyState } from "@/components/layouts-module/OperarTicketEmptyState"
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
 import {
@@ -51,7 +51,6 @@ import {
   type ServiceChargeBillingScope,
 } from "@/lib/serviceChargeTypes"
 import { cn } from "@/lib/utils"
-import { Sparkles } from "lucide-react"
 import { useMemo } from "react"
 
 const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
@@ -155,12 +154,7 @@ export function ServiceOperateTicketPanel({
           )}
         >
         {!selectedService ? (
-          <DataWorkspaceDetailEmptyState
-            icon={Sparkles}
-            title="Armá un cargo en segundos"
-            description="Elegí un servicio del catálogo, configurá cliente y facturación en la barra inferior, y confirmá acá."
-            className="border-0 bg-transparent py-10 text-white/70 [&_h3]:text-white/85 [&_p]:text-white/45"
-          />
+          <OperarTicketEmptyState kind="service" />
         ) : (
           <div className={cn(rootsFormColumnClass, "gap-4 p-3")}>
             <RootsFormSelectField

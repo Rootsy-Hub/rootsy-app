@@ -1281,7 +1281,6 @@ function PurchasesPage() {
                   onApplyLineEdits={aplicarEdicionLineaCompra}
                   onRemoveLine={quitarDelCarrito}
                   listTitle="Tu compra"
-                  emptyTitle="Compra vacía"
                   cartScrollHighlight={cartScrollHighlight}
                   actions={{
                     discardDisabled: !hayItemsEnPedido,

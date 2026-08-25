@@ -24,24 +24,12 @@ export const sessionListQueryOptions = {
 
 /**
  * Catálogos de operar (Vender / Mostrador / Mesas / Compras).
- * Misma cache de sesión, pero al volver a la pantalla refetch si se invalidaron
+ * Cache de sesión; al volver a la pantalla refetch si se invalidaron
  * (p. ej. al ocultar o reordenar categorías en Artículos).
  */
 export const operateCatalogQueryOptions = {
   ...sessionListQueryOptions,
   refetchOnMount: true,
-} as const
-
-/**
- * Categorías y artículos del tablero de Vender: cache infinita + persist IndexedDB.
- * La búsqueda no usa esto.
- */
-export const operateBoardPersistQueryOptions = {
-  staleTime: Number.POSITIVE_INFINITY,
-  gcTime: Number.POSITIVE_INFINITY,
-  refetchOnMount: false,
-  refetchOnWindowFocus: false,
-  refetchOnReconnect: false,
 } as const
 
 /**

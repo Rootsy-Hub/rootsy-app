@@ -1,5 +1,7 @@
+import { clearPopLocalArticlesHydrateMarks } from "@/lib/popLocalDb"
 import {
   menuCatalogQueryKey,
+  popLocalArticlesHydrateQueryRoot,
   purchaseCatalogQueryKey,
   saleBoardArticlesQueryRoot,
   saleBoardCategoriesQueryKey,
@@ -21,10 +23,6 @@ export function invalidatePopOperateCatalogs(
     ...opts,
   })
   void queryClient.invalidateQueries({
-    queryKey: saleBoardArticlesQueryRoot(popId),
-    ...opts,
-  })
-  void queryClient.invalidateQueries({
     queryKey: purchaseCatalogQueryKey(popId),
     ...opts,
   })
@@ -32,4 +30,16 @@ export function invalidatePopOperateCatalogs(
     queryKey: menuCatalogQueryKey(popId),
     ...opts,
   })
+  void clearPopLocalArticlesHydrateMarks(popId)
+    .catch(() => undefined)
+    .then(() => {
+      void queryClient.invalidateQueries({
+        queryKey: saleBoardArticlesQueryRoot(popId),
+        ...opts,
+      })
+      void queryClient.invalidateQueries({
+        queryKey: popLocalArticlesHydrateQueryRoot(popId),
+        ...opts,
+      })
+    })
 }

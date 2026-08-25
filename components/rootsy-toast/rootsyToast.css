@@ -164,7 +164,7 @@
   animation: rootsy-toast-avatar-in 480ms var(--toast-chat-ease-in) both;
 }
 
-.rootsy-toast-mensaje[data-state="open"] .rootsy-mensaje__bubble {
+.rootsy-toast-mensaje[data-state="open"] .rootsy-mensaje__speech-shape {
   animation: rootsy-toast-bubble-in 520ms var(--toast-chat-ease-in) 55ms both;
 }
 
@@ -173,25 +173,25 @@
   animation: rootsy-toast-avatar-out var(--toast-chat-out) var(--toast-chat-ease-out) both;
 }
 
-.rootsy-toast-mensaje[data-state="closed"] .rootsy-mensaje__bubble,
-.rootsy-toast-mensaje[data-swipe="end"] .rootsy-mensaje__bubble {
+.rootsy-toast-mensaje[data-state="closed"] .rootsy-mensaje__speech-shape,
+.rootsy-toast-mensaje[data-swipe="end"] .rootsy-mensaje__speech-shape {
   animation: rootsy-toast-bubble-out var(--toast-chat-out) var(--toast-chat-ease-out) both;
 }
 
-.rootsy-toast-mensaje .rootsy-mensaje.is-side-left.is-edge-bottom .rootsy-mensaje__bubble {
-  transform-origin: -8px 100%;
+.rootsy-toast-mensaje .rootsy-mensaje.is-side-left.is-edge-bottom .rootsy-mensaje__speech-shape {
+  transform-origin: 0% 100%;
 }
 
-.rootsy-toast-mensaje .rootsy-mensaje.is-side-left.is-edge-top .rootsy-mensaje__bubble {
-  transform-origin: -8px 0%;
+.rootsy-toast-mensaje .rootsy-mensaje.is-side-left.is-edge-top .rootsy-mensaje__speech-shape {
+  transform-origin: 0% 0%;
 }
 
-.rootsy-toast-mensaje .rootsy-mensaje.is-side-right.is-edge-bottom .rootsy-mensaje__bubble {
-  transform-origin: calc(100% + 8px) 100%;
+.rootsy-toast-mensaje .rootsy-mensaje.is-side-right.is-edge-bottom .rootsy-mensaje__speech-shape {
+  transform-origin: 100% 100%;
 }
 
-.rootsy-toast-mensaje .rootsy-mensaje.is-side-right.is-edge-top .rootsy-mensaje__bubble {
-  transform-origin: calc(100% + 8px) 0%;
+.rootsy-toast-mensaje .rootsy-mensaje.is-side-right.is-edge-top .rootsy-mensaje__speech-shape {
+  transform-origin: 100% 0%;
 }
 
 .rootsy-toast-mensaje .rootsy-mensaje__avatar {
@@ -205,7 +205,7 @@
 }
 
 .rootsy-toast-mensaje[data-swipe="move"] .rootsy-mensaje__avatar,
-.rootsy-toast-mensaje[data-swipe="move"] .rootsy-mensaje__bubble {
+.rootsy-toast-mensaje[data-swipe="move"] .rootsy-mensaje__speech-shape {
   animation: none;
 }
 
@@ -366,11 +366,11 @@
   .rootsy-toast-mensaje[data-state="closed"],
   .rootsy-toast-mensaje[data-swipe="end"],
   .rootsy-toast-mensaje[data-state="open"] .rootsy-mensaje__avatar,
-  .rootsy-toast-mensaje[data-state="open"] .rootsy-mensaje__bubble,
+  .rootsy-toast-mensaje[data-state="open"] .rootsy-mensaje__speech-shape,
   .rootsy-toast-mensaje[data-state="closed"] .rootsy-mensaje__avatar,
-  .rootsy-toast-mensaje[data-state="closed"] .rootsy-mensaje__bubble,
+  .rootsy-toast-mensaje[data-state="closed"] .rootsy-mensaje__speech-shape,
   .rootsy-toast-mensaje[data-swipe="end"] .rootsy-mensaje__avatar,
-  .rootsy-toast-mensaje[data-swipe="end"] .rootsy-mensaje__bubble {
+  .rootsy-toast-mensaje[data-swipe="end"] .rootsy-mensaje__speech-shape {
     animation-duration: 0.01ms;
     animation-delay: 0s;
     animation-iteration-count: 1;

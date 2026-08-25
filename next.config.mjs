@@ -45,6 +45,12 @@ const nextConfig = {
         ...config.resolve.alias,
         jspdf: path.join(projectRoot, "node_modules/jspdf/dist/jspdf.es.min.js"),
       }
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      }
     }
     return config
   },

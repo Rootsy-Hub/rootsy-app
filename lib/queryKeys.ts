@@ -263,8 +263,29 @@ export function saleBoardArticlesQueryKey(
   popId: string,
   categoryId: string,
   search = "",
+  source: "local" | "http" = "local",
 ) {
-  return [...saleBoardArticlesQueryRoot(popId), categoryId, search.trim()] as const
+  return [
+    ...saleBoardArticlesQueryRoot(popId),
+    categoryId,
+    search.trim(),
+    source,
+  ] as const
+}
+
+export function popLocalDbQueryRoot(popId: string) {
+  return ["pop-local-db", popId] as const
+}
+
+export function popLocalArticlesHydrateQueryRoot(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "articles"] as const
+}
+
+export function popLocalArticlesHydrateQueryKey(
+  popId: string,
+  categoryId: string,
+) {
+  return [...popLocalArticlesHydrateQueryRoot(popId), categoryId] as const
 }
 
 export function popPriceListsQueryKey(popId: string) {

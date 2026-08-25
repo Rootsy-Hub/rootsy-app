@@ -72,7 +72,7 @@ import {
 import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { LayoutsModuleShellWithContent } from "@/app/library/layouts/LayoutsModuleDocPrimitives"
 import { ROOTSY_LAYOUTS_MODULE_HEADER } from "@/app/library/layouts/rootsyLayoutsModuleSystem"
-import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { OperarTicketEmptyState } from "@/components/layouts-module/OperarTicketEmptyState"
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
 import {
@@ -89,7 +89,6 @@ import {
   ArrowLeft,
   Maximize2,
   PanelLeftOpen,
-  Receipt,
   Store,
 } from "lucide-react"
 import { useState } from "react"
@@ -399,7 +398,7 @@ function LayoutsOperarSummaryCartHeader() {
 }
 
 function LayoutsOperarSummaryEmptyOrder() {
-  return <DataWorkspaceDetailEmptyState icon={Receipt} title="Pedido vacío" />
+  return <OperarTicketEmptyState kind="order" />
 }
 
 function LayoutsOperarAnatomyScope({

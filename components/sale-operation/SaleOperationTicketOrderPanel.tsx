@@ -12,7 +12,7 @@ import {
   layoutsOperarTicketScrollColumnClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { OperarMobileToolboxIcons } from "@/components/layouts-module/OperarMobileToolbox"
-import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { OperarTicketEmptyState } from "@/components/layouts-module/OperarTicketEmptyState"
 import { dataWorkspaceBlocksSkeletonTone } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   layoutsOperarTicketProposalActionsClass,
@@ -29,7 +29,6 @@ import { getRowPaymentStatus } from "@/lib/partialCheckoutSelection"
 import type { CartListScrollHighlightValue } from "@/hooks/useCartListScrollHighlight"
 import { CartListScrollHighlightProvider } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
-import { Receipt } from "lucide-react"
 import { useMemo } from "react"
 
 type ActionsProps = React.ComponentProps<typeof SaleOperationActionsBar>
@@ -58,6 +57,7 @@ type Props = {
     valueSize?: "prominent" | "compact"
   }
   emptyTitle?: string
+  emptyDescription?: string
   flush?: boolean
   loading?: boolean
   cartScrollHighlight?: CartListScrollHighlightValue
@@ -102,7 +102,8 @@ export function SaleOperationTicketOrderPanel({
   totalBar,
   listTitle = "Pedido",
   contextLabel,
-  emptyTitle = "Pedido vacío",
+  emptyTitle,
+  emptyDescription,
   loading = false,
   cartScrollHighlight,
 }: Props) {
@@ -140,9 +141,11 @@ export function SaleOperationTicketOrderPanel({
         {loading ? (
           <SaleOperationTicketOrderPanelSkeleton />
         ) : ticketLineCount === 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
-            <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
-          </div>
+          <OperarTicketEmptyState
+            kind="order"
+            title={emptyTitle}
+            description={emptyDescription}
+          />
         ) : (
           <div
             className={cn(

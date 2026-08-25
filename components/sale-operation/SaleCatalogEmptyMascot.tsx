@@ -1,26 +1,18 @@
 "use client"
 
 import {
-  layoutsOperarCatalogEmptyMascotImageClass,
-  layoutsOperarCatalogEmptyMascotShellClass,
-  layoutsOperarCatalogEmptySpeechBubbleClass,
-  layoutsOperarCatalogEmptySpeechHintClass,
-  layoutsOperarCatalogEmptySpeechTitleClass,
-} from "@/app/library/layouts/layoutsOperarStyles"
+  RootsyEmptyState,
+  ROOTSY_EMPTY_STATE_COPY,
+} from "@/components/rootsy-empty-state"
 import { cn } from "@/lib/utils"
-import Image from "next/image"
 
 export function getSaleCatalogEmptyMascotCopy(hasSearch: boolean) {
-  if (hasSearch) {
-    return {
-      line1: "No encontré nada.",
-      line2: "¿Escaneamos otro?",
-    }
-  }
-
+  const copy = hasSearch
+    ? ROOTSY_EMPTY_STATE_COPY.catalog.search
+    : ROOTSY_EMPTY_STATE_COPY.catalog.idle
   return {
-    line1: "No encontré nada.",
-    line2: "¿Probamos otra búsqueda?",
+    line1: copy.title,
+    line2: copy.description,
   }
 }
 
@@ -42,33 +34,12 @@ export function SaleCatalogEmptyMascot({
   const resolvedLine2 = line2 ?? copy.line2
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={cn(layoutsOperarCatalogEmptyMascotShellClass, className)}
-    >
-      <div className="relative shrink-0">
-        <Image
-          src="/empty-products-mascot.png"
-          alt=""
-          width={260}
-          height={260}
-          className={layoutsOperarCatalogEmptyMascotImageClass}
-        />
-        <div
-          aria-hidden
-          className={cn(
-            layoutsOperarCatalogEmptySpeechBubbleClass,
-            "rootsy-hero-rise rootsy-hero-rise-d2 absolute right-[54%] bottom-[58%]",
-          )}
-        >
-          <p className={layoutsOperarCatalogEmptySpeechTitleClass}>{resolvedLine1}</p>
-          <p className={layoutsOperarCatalogEmptySpeechHintClass}>{resolvedLine2}</p>
-        </div>
-      </div>
-      <span className="sr-only">
-        {resolvedLine1} {resolvedLine2}
-      </span>
-    </div>
+    <RootsyEmptyState
+      slot="catalog"
+      world="sombra"
+      title={resolvedLine1}
+      description={resolvedLine2}
+      className={cn("h-full", className)}
+    />
   )
 }

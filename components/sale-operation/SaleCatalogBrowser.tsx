@@ -63,6 +63,7 @@ import {
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
+  layoutsOperarCatalogEmptyCanvasClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
@@ -141,7 +142,6 @@ export function SaleCatalogBrowser({
     () => readSavedSaleCatalogView(popId),
     () => undefined,
   )
-  const savedCategoryId = saleCatalogCategoryIdFromView(savedView)
   const saleCategoriesQuery = useSaleBoardCategories(popId, {
     enabled: isSaleBoard && itemsEnabled && Boolean(popId),
   })
@@ -295,7 +295,7 @@ export function SaleCatalogBrowser({
   }, [debouncedSearch, priceListId, railCategories, railSections, vistaResuelta])
   const isSearch = Boolean(itemsFilter.search.trim())
   const saleBoardCategoryId = isSaleBoard
-    ? savedCategoryId ?? saleCatalogCategoryIdFromView(vistaCatalogo)
+    ? saleCatalogCategoryIdFromView(vistaResuelta)
     : null
   const itemsQueryReady = isSaleBoard
     ? isSearch ||
@@ -374,6 +374,12 @@ export function SaleCatalogBrowser({
       isSaleBoard &&
       itemsEnabled &&
       itemsQueryReady &&
+      itemsFilter.section !== "promotions",
+    hydrate:
+      Boolean(popId) &&
+      isSaleBoard &&
+      itemsEnabled &&
+      Boolean(saleBoardCategoryId) &&
       itemsFilter.section !== "promotions",
     search: isSearch ? itemsFilter.search : "",
     priceListId,
@@ -665,7 +671,7 @@ export function SaleCatalogBrowser({
               : displayError
                 ? "flex flex-1 flex-col p-6"
                 : isEmpty
-                  ? "relative overflow-hidden p-0"
+                  ? layoutsOperarCatalogEmptyCanvasClass
                   : cn(layoutsOperarCatalogCanvasScrollClass),
           )}
         >

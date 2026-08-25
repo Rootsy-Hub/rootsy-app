@@ -36,7 +36,7 @@ function HrPersonDetailPage() {
       siteId={siteId}
       popId={popId}
       popName={bootstrap?.popName ?? ""}
-      title="RRHH"
+      title="Personal"
       headerVariant={dataWorkspaceModuleHeaderVariant}
       loading={bootstrapLoading}
       userName={bootstrap?.userFullName}

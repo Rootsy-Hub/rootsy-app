@@ -42,6 +42,7 @@ export type ModuleWorkspaceHeaderProps = {
   loading?: boolean
   brandPending?: boolean
   userPending?: boolean
+  rolePending?: boolean
   headerVariant?: DataWorkspaceHeaderVariant
   titleAdornment?: ReactNode
   headerActions?: ReactNode
@@ -75,6 +76,7 @@ export function ModuleWorkspaceHeader({
   loading = false,
   brandPending: brandPendingProp = false,
   userPending: userPendingProp = false,
+  rolePending = false,
   headerVariant = "dark",
   titleAdornment,
   headerActions,
@@ -102,6 +104,8 @@ export function ModuleWorkspaceHeader({
   const showSidebarToggle = canCollapseSidebar && Boolean(onToggleSidebar)
   const brandPending = brandPendingProp || (loading && !popName)
   const userPending = userPendingProp || (loading && !userName)
+  const roleLinePending =
+    rolePending || (loading && !hasResolvedRole && !subline?.trim())
   const showBrand = brandPending || Boolean(popLogoSrc || popName)
   const showUser = userPending || Boolean(userName)
   const desktopMoreActions = headerMoreActions ?? []
@@ -283,6 +287,7 @@ export function ModuleWorkspaceHeader({
                 size="compact"
                 roleLabel={subline}
                 hasResolvedRole={hasResolvedRole}
+                rolePending={roleLinePending}
                 pending={userPending}
               />
             ) : null}

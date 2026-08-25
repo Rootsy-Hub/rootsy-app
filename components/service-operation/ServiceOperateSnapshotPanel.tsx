@@ -19,7 +19,7 @@ import {
   type ServiceOperateSnapshotPanelView,
 } from "@/components/service-operation/ServiceOperateSnapshotPanelTabs"
 import { OperarMobileToolboxIcons } from "@/components/layouts-module/OperarMobileToolbox"
-import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { OperarTicketEmptyState } from "@/components/layouts-module/OperarTicketEmptyState"
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
 import type { ServiceDiscountMode } from "@/lib/serviceCatalogTypes"
@@ -30,7 +30,6 @@ import { computeSelectedAddonsTotal } from "@/lib/serviceChargeAddonSelection"
 import { parseMoneyInput } from "@/lib/moneyInput"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { cn } from "@/lib/utils"
-import { Receipt } from "lucide-react"
 import { useMemo, useState } from "react"
 
 const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
@@ -132,9 +131,7 @@ export function ServiceOperateSnapshotPanel({
       >
         <div className="min-h-0 flex-1 overflow-y-auto">
           {!selectedService ? (
-            <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
-              <DataWorkspaceDetailEmptyState icon={Receipt} title="Cargo vacío" />
-            </div>
+            <OperarTicketEmptyState kind="service" />
           ) : (
             <ServiceOperateChargeSnapshotContent
               view={snapshotView}

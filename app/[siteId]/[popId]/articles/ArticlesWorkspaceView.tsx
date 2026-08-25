@@ -1091,7 +1091,7 @@ export function ArticlesWorkspaceView() {
         siteId,
         popId,
         popName: bootstrap?.popName ?? "",
-        title: "Stock",
+        title: "Artículos",
         loading: bootstrapLoading && !bootstrap,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,

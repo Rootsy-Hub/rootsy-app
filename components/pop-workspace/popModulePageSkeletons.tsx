@@ -121,7 +121,7 @@ function OperarCatalogColumnSkeleton() {
 
 export function HrModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
-    <BlocksModulePageSkeleton layout={layout} title="RRHH">
+    <BlocksModulePageSkeleton layout={layout} title="Personal">
       <HrPageSkeleton />
     </BlocksModulePageSkeleton>
   )
@@ -153,7 +153,7 @@ export function CashRegistersModulePageSkeleton(layout: PopModuleSkeletonLayout)
 
 export function AccountsModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
-    <BlocksModulePageSkeleton layout={layout} title="Cuentas">
+    <BlocksModulePageSkeleton layout={layout} title="Dinero">
       <TreasuryAccountsGridSkeleton />
     </BlocksModulePageSkeleton>
   )

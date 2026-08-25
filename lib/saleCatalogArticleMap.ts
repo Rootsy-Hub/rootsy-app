@@ -6,6 +6,8 @@ import {
   effectiveArticleSalePrice,
   isArticleDiscountMode,
 } from "@/lib/articleDiscount"
+import { articleListItemToSnapshot } from "@/lib/popLocalDb/mapArticle"
+import type { ArticleSnapshot } from "@/lib/popLocalDb/types"
 
 export const SALE_CATALOG_ARTICLE_SELECT = `
   id,
@@ -71,8 +73,8 @@ export function mapSaleCatalogArticleRow(
   }
 }
 
-export function articleListItemToSaleCatalogArticle(
-  row: ArticleListItem,
+export function articleSnapshotToSaleCatalogArticle(
+  row: ArticleSnapshot,
   priceListId?: string,
 ): SaleCatalogArticle {
   const principal = Number(row.salePrice ?? 0) || 0
@@ -105,4 +107,14 @@ export function articleListItemToSaleCatalogArticle(
     imageUrl: row.imageUrl,
     barcode: row.barcode,
   }
+}
+
+export function articleListItemToSaleCatalogArticle(
+  row: ArticleListItem,
+  priceListId?: string,
+): SaleCatalogArticle {
+  return articleSnapshotToSaleCatalogArticle(
+    articleListItemToSnapshot(row),
+    priceListId,
+  )
 }

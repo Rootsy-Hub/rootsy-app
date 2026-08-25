@@ -15,7 +15,6 @@ import {
   FileCheck,
   FileText,
   Home,
-  Landmark,
   MessageSquare,
   Monitor,
   Package,
@@ -31,6 +30,7 @@ import {
   Users,
   UtensilsCrossed,
   Wallet,
+  WalletCards,
 } from "lucide-react"
 import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 import { canAccessMenuItem } from "@/lib/menuPermissions"
@@ -130,7 +130,7 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Clientes", icon: Users, link: "clients" },
       { name: "Proveedores", icon: Truck, link: "suppliers" },
       { name: "Facturas", icon: FileBarChart, link: "invoices" },
-      { name: "Stock", icon: Package, link: "articles" },
+      { name: "Artículos", icon: Package, link: "articles" },
       { name: "Recetas", icon: BookOpen, link: "recipes" },
       { name: "Promociones", icon: Sparkles, link: "promotions" },
       { name: "Servicios", icon: Briefcase, link: "services" },
@@ -145,8 +145,8 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
   configurar: {
     title: "Configurar",
     items: [
-      { name: "Cuentas", icon: Landmark, link: "accounts" },
-      { name: "Recursos Humanos", icon: UserCog, link: "hr" },
+      { name: "Dinero", icon: WalletCards, link: "accounts" },
+      { name: "Personal", icon: UserCog, link: "hr" },
       { name: "Cajas", icon: Calculator, link: "cash-registers" },
       { name: "Impresoras", icon: Printer, link: "printers" },
       { name: "Alertas", icon: Bell, link: "alerts", moduleKey: "alerts" },

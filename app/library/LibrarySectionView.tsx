@@ -8,6 +8,7 @@ import { LayoutFormLibrarySection } from "@/app/library/components/LayoutFormLib
 import { LayoutBannerLibrarySection } from "@/app/library/LayoutBannerLibrarySection"
 import { LayoutButtonLibrarySection } from "@/app/library/LayoutButtonLibrarySection"
 import { LayoutToastLibrarySection } from "@/app/library/LayoutToastLibrarySection"
+import { LayoutEmptyStateLibrarySection } from "@/app/library/LayoutEmptyStateLibrarySection"
 import { LayoutDropdownLibrarySection } from "@/app/library/LayoutDropdownLibrarySection"
 import { LayoutModalLibrarySection } from "@/app/library/LayoutModalLibrarySection"
 import { LayoutAlertDialogLibrarySection } from "@/app/library/LayoutAlertDialogLibrarySection"
@@ -231,6 +232,8 @@ export function LibrarySectionView({ sectionId }: LibrarySectionViewProps) {
       return <LayoutBannerLibrarySection />
     case "toast":
       return <LayoutToastLibrarySection />
+    case "empty-state":
+      return <LayoutEmptyStateLibrarySection />
     case "modals":
       return <LayoutModalLibrarySection />
     case "modals-alert":

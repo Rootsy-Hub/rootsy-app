@@ -14,7 +14,6 @@ import {
   FileBarChart,
   FileCheck,
   FileText,
-  Landmark,
   MessageSquare,
   Monitor,
   Package,
@@ -30,6 +29,7 @@ import {
   Users,
   UtensilsCrossed,
   Wallet,
+  WalletCards,
 } from "lucide-react"
 
 const ROOTS_MODULE_ICON_MAP: Record<string, LucideIcon> = {
@@ -41,7 +41,7 @@ const ROOTS_MODULE_ICON_MAP: Record<string, LucideIcon> = {
   operations: Activity,
   expenses: Receipt,
   alerts: Bell,
-  accounts: Landmark,
+  accounts: WalletCards,
   hr: UserCog,
   settings: Cog,
   sale: ShoppingCart,

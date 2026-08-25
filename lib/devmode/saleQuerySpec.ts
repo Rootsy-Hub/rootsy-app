@@ -21,7 +21,8 @@ export type SaleQuerySpecPlace = {
 
 const CACHE_TANSTACK_24H = "TanStack · 24 h"
 const CACHE_TANSTACK_24H_REFETCH_MOUNT = "TanStack · 24 h · refetch al montar"
-const CACHE_TANSTACK_INDEXEDDB = "TanStack · IndexedDB · infinito"
+const CACHE_TANSTACK_SESSION_REFETCH = "TanStack · sesión · refetch al montar"
+const CACHE_SQLITE_OPFS = "SQLite · OPFS · por pop"
 const CACHE_NONE = "No"
 
 /** Spec de consultas de Vender. Se completa a mano; el panel solo la muestra. */
@@ -38,7 +39,7 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "GET /v1/pops/:popId/cash-registers/open-session",
                 detail:
-                  "Turno de caja abierto por el usuario. En paralelo con categories, articles (si hay categoryId), payment-context y comprobantes. Si no hay turno propio, session es null. No cae a cajas de otros. Tras un cobro rechazado por caja cerrada se invalida.",
+                  "Turno de caja abierto por el usuario. En paralelo con categories, payment-context y comprobantes. El GET de articles no sale acá: espera categoryId de localStorage o la primera categoría del rail. Si no hay turno propio, session es null. No cae a cajas de otros. Tras un cobro rechazado por caja cerrada se invalida.",
                 cache: CACHE_TANSTACK_24H_REFETCH_MOUNT,
               },
             ],
@@ -81,8 +82,8 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
                 endpoint:
                   "GET /v1/pops/:popId/categories?itemKind=merchandise&showInSale=true",
                 detail:
-                  "Rail de categorías de producto visibles en venta. En paralelo con articles (si hay categoryId en localStorage), payment-context, comprobantes y open-session. Queda en IndexedDB: F5 y pestaña nueva reusan el resultado hasta invalidar.",
-                cache: CACHE_TANSTACK_INDEXEDDB,
+                  "Rail de categorías de producto visibles en venta. En paralelo con payment-context, comprobantes y open-session. Si Vender ya tiene categoryId en localStorage, el GET de articles sale en paralelo; si no, articles espera este listado y usa la primera categoría.",
+                cache: CACHE_TANSTACK_SESSION_REFETCH,
               },
             ],
           },
@@ -96,10 +97,10 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             calls: [
               {
                 endpoint:
-                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&soloActivos=true&conStock=true&categoryId=:id&page=1&pageSize=50",
+                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&soloActivos=true&categoryId=:id&page=1&pageSize=100",
                 detail:
-                  "Si localStorage tiene la última categoría, va en paralelo con categories. Si no, espera categories, guarda la primera en localStorage y recién ahí pega. IndexedDB por categoryId: volver a esa categoría no pega.",
-                cache: CACHE_TANSTACK_INDEXEDDB,
+                  "Si esa categoría ya está en SQLite (OPFS), solo SELECT local: no hay GET. Si no está, GET con categoryId de localStorage o la primera del rail, hidrata y marca la categoría. Sin categoryId no hay GET. Fallback HTTP si SQLite no carga.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },
@@ -107,10 +108,10 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             title: "Al scrollear",
             calls: [
               {
-                endpoint: "GET /v1/pops/:popId/articles",
+                endpoint: "SELECT articles WHERE category_id",
                 detail:
-                  "Siguiente page cuando el listado se acerca al fondo (~240px). Mismos filtros: producto, activo, con stock, categoryId. Se repite hasta totalCount. Las páginas quedan en IndexedDB con la categoría.",
-                cache: CACHE_TANSTACK_INDEXEDDB,
+                  "Siguiente página local (LIMIT 50 OFFSET) cuando el listado se acerca al fondo (~240px). No pega a la API.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },
@@ -118,10 +119,10 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             title: "Al buscar",
             calls: [
               {
-                endpoint: "GET /v1/pops/:popId/articles?q=",
+                endpoint: "SELECT articles WHERE name|barcode|sku LIKE",
                 detail:
-                  "Al tipear, espera 300 ms y pega con q. Producto, activo, con stock. Sin categoryId. Siempre va a red.",
-                cache: CACHE_NONE,
+                  "Al tipear, espera 300 ms y busca en SQLite. Sin categoryId. No pega a la API.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },
@@ -129,10 +130,10 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             title: "Al cambiar de categoría",
             calls: [
               {
-                endpoint: "GET /v1/pops/:popId/articles",
+                endpoint: "SELECT articles WHERE category_id",
                 detail:
-                  "Guarda el categoryId en localStorage. Si esa categoría ya está en IndexedDB, no pega; si no, page 1 y se persiste.",
-                cache: CACHE_TANSTACK_INDEXEDDB,
+                  "Guarda el categoryId en localStorage y lee SQLite. GET a articles solo si esa categoría nunca se hidrató (o se invalidó el catálogo). Si ya está en OPFS, no hay red.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },

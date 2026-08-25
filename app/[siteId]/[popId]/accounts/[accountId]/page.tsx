@@ -36,7 +36,7 @@ function TreasuryAccountDetailPage() {
       siteId={siteId}
       popId={popId}
       popName={bootstrap?.popName ?? ""}
-      title="Cuentas"
+      title="Dinero"
       headerVariant={dataWorkspaceModuleHeaderVariant}
       loading={bootstrapLoading}
       userName={bootstrap?.userFullName}

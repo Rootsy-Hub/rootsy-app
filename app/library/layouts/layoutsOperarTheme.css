@@ -341,3 +341,62 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.62'/%3E%3C/svg%3E");
   background-size: 120px 120px;
 }
+
+/**
+ * Retrato empty catálogo — círculo del toast, aire del mundo Sombra.
+ */
+.layouts-operar-empty-portrait__frame {
+  background: var(--rootsy-sombra-950);
+  box-shadow:
+    0 0 0 1.5px color-mix(in srgb, var(--rootsy-savia-400) 38%, transparent),
+    0 1px 2px rgb(15 23 20 / 0.28);
+}
+
+.layouts-operar-empty-portrait__world {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background: linear-gradient(
+    168deg,
+    var(--rootsy-sombra-800) 0%,
+    var(--rootsy-sombra-950) 100%
+  );
+}
+
+.layouts-operar-empty-portrait__world::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--rootsy-savia-400) 26%, transparent) 0%,
+    transparent 72%
+  );
+  filter: blur(12px);
+  transform: translate(-50%, -50%);
+}
+
+.layouts-operar-empty-portrait__world::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -42%;
+  width: 170%;
+  height: 78%;
+  border-radius: 50%;
+  opacity: 0.72;
+  background: radial-gradient(
+    ellipse 70% 55% at 50% 28%,
+    color-mix(in srgb, var(--rootsy-savia-400) 22%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-sombra-600) 45%, transparent) 40%,
+    transparent 72%
+  );
+  filter: blur(10px);
+  transform: translateX(-50%);
+}

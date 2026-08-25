@@ -32,6 +32,7 @@ import {
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
+  layoutsOperarCatalogEmptyCanvasClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
@@ -292,7 +293,7 @@ export function PurchaseCatalogBrowser({
               : displayError
                 ? "flex flex-1 flex-col p-6"
                 : isEmpty
-                  ? "relative overflow-hidden p-0"
+                  ? layoutsOperarCatalogEmptyCanvasClass
                   : layoutsOperarCatalogCanvasScrollClass,
           )}
         >

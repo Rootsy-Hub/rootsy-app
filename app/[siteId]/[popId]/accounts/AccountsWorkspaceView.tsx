@@ -411,7 +411,7 @@ export function AccountsWorkspaceView() {
         siteId={siteId}
         popId={popId}
         popName={popName}
-        title="Cuentas"
+        title="Dinero"
         headerVariant={dataWorkspaceModuleHeaderVariant}
         loading={pageLoading}
         userName={bootstrap?.userFullName}

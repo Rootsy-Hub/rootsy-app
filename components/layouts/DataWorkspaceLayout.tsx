@@ -41,7 +41,7 @@ export type DataWorkspaceLayoutProps = {
   /** Isotipo a la izquierda del nombre. Si no se pasa, usa la foto del POP. */
   popLogoSrc?: string
   title?: string
-  /** Segunda línea bajo el nombre del usuario. Por defecto usa el rol del POP (`usePopWorkspace`); si no hay rol, `pillLabel`. */
+  /** Segunda línea bajo el nombre, solo si el rol del POP ya está. Mientras carga, hay esqueleto. */
   pillLabel?: string
   /** Respaldo opcional si el bootstrap del POP aún no tiene rol. */
   userRoleLabel?: string
@@ -273,7 +273,11 @@ export function DataWorkspaceLayout({
       userRoleLabel?.trim() ||
       ""
     : userRoleLabel?.trim() || ""
-  const subline = resolvedUserRoleLabel || pillLabel
+  const rolePending =
+    Boolean(popId) &&
+    !resolvedUserRoleLabel &&
+    (!afterHydration || menuCache.isLoading || loading)
+  const subline = resolvedUserRoleLabel || (rolePending ? "" : pillLabel)
   const fillViewport = !useBackdrop || usePopBackdrop
   const showPopBackdrop = useBackdrop && usePopBackdrop
   const showHomeBackdrop = useBackdrop && !usePopBackdrop && useHomeBackdrop
@@ -348,6 +352,7 @@ export function DataWorkspaceLayout({
             loading={loading}
             brandPending={brandPending}
             userPending={userPending}
+            rolePending={rolePending}
             headerVariant={headerVariant}
             titleAdornment={titleAdornment}
             headerActions={headerActions}

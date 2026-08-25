@@ -38,6 +38,8 @@ export const MUNDOS_RELATED_LINKS = [
     label: "Mensaje de Rootsy",
     hint: "Globo de chat recibido — retrato, colita e intents.",
   },
+  { sectionId: "toast", label: "Toast", hint: "Globo vivo sobre el paisaje." },
+  { sectionId: "empty-state", label: "Empty state", hint: "Retrato por mundo cuando no hay nada." },
   { sectionId: "layouts-operar", label: "Layout · Operar", hint: "Sombra en catálogo, suelo en toolbox." },
   { sectionId: "layouts-tables", label: "Layout · Tablas", hint: "Suelo en el pie de listados." },
   { sectionId: "colors-new", label: "Color", hint: "Sombra, bruma, savia y climas." },

@@ -2,6 +2,7 @@
 
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { RootsBannerIcon } from "@/components/rootsy-banner/RootsBannerIcon"
+import { claimRootsyPortrait } from "@/components/rootsy-empty-state/rootsyPortraitPresence"
 import { RootsyMensajeToast } from "@/components/rootsy-mensaje"
 import {
   ROOTSY_MENSAJE_TOAST_DEFAULT_PLACEMENT,
@@ -15,6 +16,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
+import { useLayoutEffect } from "react"
 import "./rootsyToast.css"
 
 function resolveToastIntent(intent: RootsyToastIntent | undefined, variant: string | undefined) {
@@ -38,6 +40,11 @@ export function RootsyToaster() {
   const swipeSide = mensajePlacement
     ? rootsyMensajePlacementParts(mensajePlacement).side
     : "right"
+
+  useLayoutEffect(() => {
+    if (!mensajePlacement) return
+    return claimRootsyPortrait("toast")
+  }, [mensajePlacement])
 
   return (
     <ToastPrimitives.Provider

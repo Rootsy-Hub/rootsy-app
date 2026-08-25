@@ -3,7 +3,7 @@
 import { formatChatTime } from "@/app/[siteId]/[popId]/chat/chatTypes"
 import { HomeWorkspaceBackdrop } from "@/components/layouts/HomeWorkspaceBackdrop"
 import { cn } from "@/lib/utils"
-import type { ReactNode } from "react"
+import { useId, type ReactNode } from "react"
 import {
   ROOTSY_MENSAJE_DEFAULT_PLACEMENT,
   ROOTSY_MENSAJE_DEFAULT_PORTRAIT,
@@ -73,14 +73,52 @@ function MensajeIntentMark({ intent }: { intent: RootsyMensajeIntent }) {
   )
 }
 
+const MENSAJE_TAIL_FILL =
+  "M5.188 0H0v11.193C1.2 8.4 4.1 4.6 6.467 2.568 7.688 1.207 6.959 0 5.188 0z"
+
 function MensajeTail() {
   return (
     <svg className="rootsy-mensaje__tail" width="8" height="13" viewBox="0 0 8 13" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M5.188 0H0v11.193C1.2 8.4 4.1 4.6 6.467 2.568 7.688 1.207 6.959 0 5.188 0z"
-      />
+      <path d={MENSAJE_TAIL_FILL} fill="currentColor" />
     </svg>
+  )
+}
+
+function MensajeSpeech({ children }: { children: ReactNode }) {
+  const filterId = `mensaje-outline-${useId().replace(/:/g, "")}`
+
+  return (
+    <div className="rootsy-mensaje__speech">
+      <svg className="rootsy-mensaje__outline-defs" width="0" height="0" aria-hidden focusable="false">
+        <filter
+          id={filterId}
+          x="-0.2"
+          y="-0.25"
+          width="1.4"
+          height="1.5"
+          filterUnits="objectBoundingBox"
+          primitiveUnits="userSpaceOnUse"
+          colorInterpolationFilters="sRGB"
+        >
+          <feMorphology in="SourceAlpha" operator="dilate" radius="1" result="dilated" />
+          <feFlood result="fill" />
+          <feComposite in="fill" in2="dilated" operator="in" result="colored" />
+          <feComposite in="colored" in2="SourceAlpha" operator="out" result="ring" />
+          <feMerge>
+            <feMergeNode in="ring" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </svg>
+      <div
+        className="rootsy-mensaje__speech-shape"
+        style={{
+          filter: `url(#${filterId}) drop-shadow(0 1px 1px rgb(15 23 20 / 0.06)) drop-shadow(0 10px 16px rgb(0 11 21 / 0.14))`,
+        }}
+      >
+        {children}
+      </div>
+    </div>
   )
 }
 
@@ -131,7 +169,8 @@ export function RootsyMensajeToast({
           <span className="rootsy-mensaje__pip" aria-hidden />
         </div>
 
-        <div className="rootsy-mensaje__bubble">
+        <MensajeSpeech>
+          <div className="rootsy-mensaje__bubble">
           <div className="rootsy-mensaje__meta">
             <span className="rootsy-mensaje__intent">
               <MensajeIntentMark intent={intent} />
@@ -193,7 +232,8 @@ export function RootsyMensajeToast({
           ) : null}
 
           <MensajeTail />
-        </div>
+          </div>
+        </MensajeSpeech>
       </div>
     </article>
   )

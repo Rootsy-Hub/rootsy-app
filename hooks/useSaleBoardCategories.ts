@@ -1,7 +1,7 @@
 "use client"
 
 import { saleBoardCategoriesQueryKey } from "@/lib/queryKeys"
-import { operateBoardPersistQueryOptions } from "@/lib/queryStaleTimes"
+import { operateCatalogQueryOptions } from "@/lib/queryStaleTimes"
 import { fetchPopArticleCategories } from "@/lib/rootsyApi/categoriesClient"
 import { useQuery } from "@tanstack/react-query"
 
@@ -21,6 +21,6 @@ export function useSaleBoardCategories(
         showInSale: true,
       }),
     enabled: Boolean(popId) && (options?.enabled ?? true),
-    ...operateBoardPersistQueryOptions,
+    ...operateCatalogQueryOptions,
   })
 }
