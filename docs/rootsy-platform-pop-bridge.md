@@ -4,12 +4,10 @@ Rootsy registra sus ingresos de plataforma (suscripciones SaaS) como **operacion
 
 ## Requisitos
 
-1. **POP Rootsy** creado y operativo (servicios, tesorería, plan contable).
-2. Variable de entorno en el servidor:
-
-```bash
-ROOTSY_POP_ID=<uuid-del-pop-rootsy>
-```
+1. **POP Rootsy** operativo (servicios, tesorería, plan contable).
+2. Configuración del POP (una de dos):
+   - **Uroboros → Bridge Rootsy:** elegir y guardar el POP Rootsy, o
+   - Variable de entorno (fallback): `ROOTSY_POP_ID=<uuid>`
 
 3. Al menos un **servicio de suscripción** cargado en ese POP (Administrar → Servicios).
 4. **Bindings** en Uroboros → Bridge Rootsy: mapeo `plan + ciclo (+ rubro)` → `service_type_id`.
@@ -27,15 +25,15 @@ La idempotencia usa `_platform_operation_links.external_payment_id` (ID de pago 
 
 ## Setup paso a paso
 
-1. Configurar `ROOTSY_POP_ID` en `.env.local` / entorno de deploy.
-2. Aplicar migración `20260825180000_platform_rootsy_service_bridge.sql`.
+1. Aplicar migraciones `20260825180000_platform_rootsy_service_bridge.sql` y `20260825190000_platform_settings.sql`.
+2. En `/backoffice/bridge-rootsy`, elegir y guardar el **POP Rootsy** (o setear `ROOTSY_POP_ID` como fallback).
 3. En el POP Rootsy, crear servicios para cada plan/ciclo que se cobra.
-4. En `/backoffice/bridge-rootsy`, crear bindings (ej. `professional` + `monthly` → UUID del servicio).
+4. En el mismo bridge, crear bindings eligiendo plan + ciclo + **servicio** (dropdown).
 5. Probar un pago de prueba y verificar en **Operaciones → Servicios** del POP Rootsy.
 
 ## Código relevante
 
-- `lib/rootsyPlatformPop.ts` — lectura de `ROOTSY_POP_ID`
+- `lib/rootsyPlatformPop.ts` — resolución POP Rootsy (DB → env fallback)
 - `lib/rootsyTenantOperations/` — mirror, clientes org, operaciones
 - `app/backoffice/bridge-rootsy/` — UI de bindings
 - Hooks: `app/pops/create/actions.ts`, `lib/platformBilling/mercadopago/webhookHandler.ts`, `lib/platformBilling/jobs/processTrialBilling.ts`
@@ -50,7 +48,7 @@ La idempotencia usa `_platform_operation_links.external_payment_id` (ID de pago 
 
 | Síntoma | Causa probable |
 |---------|----------------|
-| Billing OK, sin operación en POP | Falta `ROOTSY_POP_ID` o binding |
+| Billing OK, sin operación en POP | Falta POP Rootsy (Uroboros o env) o binding |
 | Log `Sin binding para plan X` | Crear binding en Bridge Rootsy |
 | Signup OK, sin cliente en POP | Fail-open en dev; revisar logs `[rootsyTenantOperations]` |
 | Cargo duplicado | No debería ocurrir; revisar `_platform_operation_links` |

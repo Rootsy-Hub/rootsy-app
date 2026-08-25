@@ -120,7 +120,7 @@ export type CreatePlatformServiceOperationInput = {
 export async function createPlatformServiceOperation(
   input: CreatePlatformServiceOperationInput,
 ): Promise<{ chargeId: string; paymentId: string }> {
-  const rootsyPopId = requireRootsyPlatformPopId()
+  const rootsyPopId = await requireRootsyPlatformPopId()
   const actorUserId = await getRootsyPlatformPopActorUserId()
   const supabase = createServiceRoleClient()
 

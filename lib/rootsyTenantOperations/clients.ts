@@ -10,7 +10,7 @@ export async function ensureRootsyPlatformClient(
 ): Promise<EnsureRootsyPlatformClientResult> {
   try {
     const supabase = createServiceRoleClient()
-    const rootsyPopId = requireRootsyPlatformPopId()
+    const rootsyPopId = await requireRootsyPlatformPopId()
     const organizationId = input.organizationId.trim()
 
     const { data: existingLink, error: linkError } = await supabase

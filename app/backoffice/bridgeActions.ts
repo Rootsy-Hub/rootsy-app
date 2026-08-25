@@ -2,8 +2,11 @@
 
 import { requireBackofficeAccess } from "@/app/backoffice/backofficeAuth"
 import {
-  getRootsyPlatformPopId,
+  getRootsyPlatformPopIdFromEnv,
   isRootsyPlatformPopConfigured,
+  resolveRootsyPlatformPopId,
+  saveRootsyPlatformPopIdSetting,
+  type RootsyPlatformPopSource,
 } from "@/lib/rootsyPlatformPop"
 import { createServiceRoleClient } from "@/utils/supabase/service-role"
 
@@ -35,46 +38,100 @@ export type BackofficeBridgeBusinessTypeOption = {
   displayName: string
 }
 
+export type BackofficeBridgePopOption = {
+  id: string
+  name: string
+  siteId: string
+  isActive: boolean
+}
+
+export type BackofficeBridgeServiceOption = {
+  id: string
+  name: string
+  billingPeriod: string
+  defaultPrice: number
+  isActive: boolean
+}
+
 export type BackofficeBridgeContext = {
   rootsyPopId: string | null
+  rootsyPopSource: RootsyPlatformPopSource | null
   rootsyPopConfigured: boolean
   rootsyPopName: string | null
   rootsyPopSiteId: string | null
+  envFallbackPopId: string | null
   bindings: BackofficePlatformServiceBindingRow[]
   planOptions: BackofficeBridgePlanOption[]
   businessTypeOptions: BackofficeBridgeBusinessTypeOption[]
+  popOptions: BackofficeBridgePopOption[]
+  serviceOptions: BackofficeBridgeServiceOption[]
+}
+
+async function loadServiceOptions(
+  supabase: Awaited<ReturnType<typeof backofficeDb>>,
+  rootsyPopId: string | null,
+): Promise<BackofficeBridgeServiceOption[]> {
+  if (!rootsyPopId) return []
+
+  const { data, error } = await supabase
+    .from("service_types")
+    .select("id, name, billing_period, default_price, is_active")
+    .eq("pop_id", rootsyPopId)
+    .is("deleted_at", null)
+    .order("name", { ascending: true })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    name: String(row.name ?? ""),
+    billingPeriod: String(row.billing_period ?? ""),
+    defaultPrice: Number(row.default_price ?? 0),
+    isActive: Boolean(row.is_active),
+  }))
 }
 
 export async function getBackofficeBridgeContext(): Promise<BackofficeBridgeContext> {
   const supabase = await backofficeDb()
-  const rootsyPopId = getRootsyPlatformPopId()
+  const { popId: rootsyPopId, source: rootsyPopSource } =
+    await resolveRootsyPlatformPopId()
+  const envFallbackPopId = getRootsyPlatformPopIdFromEnv()
 
-  const [plansRes, typesRes, bindingsRes, popRes] = await Promise.all([
-    supabase
-      .from("_subscription_plans")
-      .select("name, display_name, is_active")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("_business_types")
-      .select("name, display_name, is_active")
-      .eq("is_active", true)
-      .order("display_name", { ascending: true }),
-    supabase
-      .from("_platform_service_bindings")
-      .select(
-        "id, plan_name, business_type_name, billing_cycle, service_type_id, is_active, notes",
-      )
-      .order("plan_name", { ascending: true })
-      .order("billing_cycle", { ascending: true }),
-    rootsyPopId
-      ? supabase
-          .from("pops")
-          .select("id, name, site_id")
-          .eq("id", rootsyPopId)
-          .maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
-  ])
+  const [plansRes, typesRes, bindingsRes, popRes, popsRes, serviceOptions] =
+    await Promise.all([
+      supabase
+        .from("_subscription_plans")
+        .select("name, display_name, is_active")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("_business_types")
+        .select("name, display_name, is_active")
+        .eq("is_active", true)
+        .order("display_name", { ascending: true }),
+      supabase
+        .from("_platform_service_bindings")
+        .select(
+          "id, plan_name, business_type_name, billing_cycle, service_type_id, is_active, notes",
+        )
+        .order("plan_name", { ascending: true })
+        .order("billing_cycle", { ascending: true }),
+      rootsyPopId
+        ? supabase
+            .from("pops")
+            .select("id, name, site_id")
+            .eq("id", rootsyPopId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      supabase
+        .from("pops")
+        .select("id, name, site_id, is_active")
+        .order("name", { ascending: true })
+        .limit(200),
+      loadServiceOptions(supabase, rootsyPopId),
+    ])
 
   const planOptions = (plansRes.data ?? [])
     .filter((row) => !["free_trial", "rootsy_internal"].includes(String(row.name)))
@@ -90,6 +147,15 @@ export async function getBackofficeBridgeContext(): Promise<BackofficeBridgeCont
       displayName: String(row.display_name ?? row.name ?? ""),
     }))
 
+  const popOptions: BackofficeBridgePopOption[] = (popsRes.data ?? []).map(
+    (row) => ({
+      id: String(row.id),
+      name: String(row.name ?? ""),
+      siteId: String(row.site_id ?? ""),
+      isActive: Boolean(row.is_active),
+    }),
+  )
+
   const planDisplayByName = new Map(
     planOptions.map((plan) => [plan.name, plan.displayName]),
   )
@@ -97,23 +163,9 @@ export async function getBackofficeBridgeContext(): Promise<BackofficeBridgeCont
     businessTypeOptions.map((type) => [type.name, type.displayName]),
   )
 
-  const serviceTypeIds = [
-    ...new Set(
-      (bindingsRes.data ?? []).map((row) => String(row.service_type_id)),
-    ),
-  ]
-
-  const serviceNameById = new Map<string, string>()
-  if (rootsyPopId && serviceTypeIds.length > 0) {
-    const { data: services } = await supabase
-      .from("service_types")
-      .select("id, name")
-      .eq("pop_id", rootsyPopId)
-      .in("id", serviceTypeIds)
-    for (const row of services ?? []) {
-      serviceNameById.set(String(row.id), String(row.name ?? ""))
-    }
-  }
+  const serviceNameById = new Map(
+    serviceOptions.map((service) => [service.id, service.name]),
+  )
 
   const bindings: BackofficePlatformServiceBindingRow[] = (
     bindingsRes.data ?? []
@@ -143,13 +195,32 @@ export async function getBackofficeBridgeContext(): Promise<BackofficeBridgeCont
 
   return {
     rootsyPopId,
-    rootsyPopConfigured: isRootsyPlatformPopConfigured(),
+    rootsyPopSource,
+    rootsyPopConfigured: await isRootsyPlatformPopConfigured(),
     rootsyPopName: popRes.data?.name != null ? String(popRes.data.name) : null,
     rootsyPopSiteId:
       popRes.data?.site_id != null ? String(popRes.data.site_id) : null,
+    envFallbackPopId,
     bindings,
     planOptions,
     businessTypeOptions,
+    popOptions,
+    serviceOptions,
+  }
+}
+
+export async function saveBackofficeRootsyPlatformPop(
+  popId: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    await requireBackofficeAccess()
+    await saveRootsyPlatformPopIdSetting(popId)
+    return { success: true }
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido",
+    }
   }
 }
 
@@ -168,11 +239,12 @@ export async function upsertBackofficePlatformBinding(
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const supabase = await backofficeDb()
-    const rootsyPopId = getRootsyPlatformPopId()
+    const { popId: rootsyPopId } = await resolveRootsyPlatformPopId()
     if (!rootsyPopId) {
       return {
         success: false,
-        error: "ROOTSY_POP_ID no está configurado en el entorno.",
+        error:
+          "Elegí el POP Rootsy en la configuración del bridge o definí ROOTSY_POP_ID.",
       }
     }
 
@@ -185,7 +257,7 @@ export async function upsertBackofficePlatformBinding(
       return { success: false, error: "Elegí un plan." }
     }
     if (!/^[0-9a-f-]{36}$/i.test(serviceTypeId)) {
-      return { success: false, error: "service_type_id inválido." }
+      return { success: false, error: "Elegí un servicio válido." }
     }
 
     const { data: serviceRow } = await supabase

@@ -5,7 +5,7 @@ import { requireRootsyPlatformPopId } from "@/lib/rootsyPlatformPop"
 export async function resolveMercadoPagoTreasuryAccountId(): Promise<
   string | null
 > {
-  const popId = requireRootsyPlatformPopId()
+  const popId = await requireRootsyPlatformPopId()
   const supabase = createServiceRoleClient()
   const context = await fetchTreasuryPaymentContext(supabase, popId)
   if (!context.success) {

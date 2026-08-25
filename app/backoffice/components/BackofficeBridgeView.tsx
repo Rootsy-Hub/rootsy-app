@@ -5,6 +5,7 @@ import Link from "next/link"
 import {
   deleteBackofficePlatformBinding,
   getBackofficeBridgeContext,
+  saveBackofficeRootsyPlatformPop,
   upsertBackofficePlatformBinding,
   type BackofficeBridgeContext,
   type BackofficePlatformServiceBindingRow,
@@ -14,6 +15,7 @@ import {
   BackofficePanel,
   BackofficeSection,
   BackofficeStatusBadge,
+  formatBackofficeMoney,
 } from "@/app/backoffice/components/BackofficeSection"
 import { FoundationSpecCard } from "@/app/library/libraryFoundationDocShared"
 import { Button } from "@/components/ui/button"
@@ -28,6 +30,27 @@ import {
 } from "@/components/ui/select"
 
 const ALL_BUSINESS_TYPES = "__all__"
+const NO_POP_SELECTED = "__none__"
+const NO_SERVICE_SELECTED = "__none__"
+
+function formatBillingPeriod(value: string): string {
+  switch (value) {
+    case "monthly":
+      return "Mensual"
+    case "yearly":
+      return "Anual"
+    case "hourly":
+      return "Por hora"
+    case "weekly":
+      return "Semanal"
+    case "custom":
+      return "Personalizado"
+    case "none":
+      return "Sin período"
+    default:
+      return value || "—"
+  }
+}
 
 export function BackofficeBridgeView() {
   const [context, setContext] = useState<BackofficeBridgeContext | null>(null)
@@ -35,13 +58,15 @@ export function BackofficeBridgeView() {
   const [error, setError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [savingPop, setSavingPop] = useState(false)
 
+  const [selectedPopId, setSelectedPopId] = useState(NO_POP_SELECTED)
   const [planName, setPlanName] = useState("")
   const [businessTypeName, setBusinessTypeName] = useState(ALL_BUSINESS_TYPES)
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly",
   )
-  const [serviceTypeId, setServiceTypeId] = useState("")
+  const [serviceTypeId, setServiceTypeId] = useState(NO_SERVICE_SELECTED)
   const [notes, setNotes] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -49,7 +74,9 @@ export function BackofficeBridgeView() {
     setLoading(true)
     setError(null)
     try {
-      setContext(await getBackofficeBridgeContext())
+      const next = await getBackofficeBridgeContext()
+      setContext(next)
+      setSelectedPopId(next.rootsyPopId ?? NO_POP_SELECTED)
     } catch {
       setError("No se pudo cargar el bridge Rootsy.")
     } finally {
@@ -66,7 +93,7 @@ export function BackofficeBridgeView() {
     setPlanName("")
     setBusinessTypeName(ALL_BUSINESS_TYPES)
     setBillingCycle("monthly")
-    setServiceTypeId("")
+    setServiceTypeId(NO_SERVICE_SELECTED)
     setNotes("")
     setFormError(null)
   }
@@ -81,7 +108,32 @@ export function BackofficeBridgeView() {
     setFormError(null)
   }
 
+  const handleSavePop = async () => {
+    if (selectedPopId === NO_POP_SELECTED) {
+      setFormError("Elegí un POP Rootsy.")
+      return
+    }
+    setSavingPop(true)
+    setFormError(null)
+    const result = await saveBackofficeRootsyPlatformPop(selectedPopId)
+    setSavingPop(false)
+    if (!result.success) {
+      setFormError(result.error)
+      return
+    }
+    await load()
+  }
+
   const handleSave = async () => {
+    if (!context?.rootsyPopConfigured) {
+      setFormError("Configurá el POP Rootsy antes de crear bindings.")
+      return
+    }
+    if (serviceTypeId === NO_SERVICE_SELECTED) {
+      setFormError("Elegí un servicio.")
+      return
+    }
+
     setSaving(true)
     setFormError(null)
     const result = await upsertBackofficePlatformBinding({
@@ -118,46 +170,80 @@ export function BackofficeBridgeView() {
       ? `/${context.rootsyPopSiteId}/${context.rootsyPopId}/operations`
       : null
 
+  const activeServices =
+    context?.serviceOptions.filter((service) => service.isActive) ?? []
+
   return (
     <BackofficeSection title="Bridge Rootsy" loading={loading} error={error}>
       {context ? (
         <div className="space-y-6">
-          <FoundationSpecCard className="space-y-3">
+          <FoundationSpecCard className="space-y-4">
             <p className="text-sm leading-relaxed text-[var(--rootsy-bruma-700)]">
               Conecta planes de plataforma con servicios del POP Rootsy. Al
               confirmar un pago SaaS, se crea una operación de servicios en ese
               POP (dual-write con el billing actual).
             </p>
-            <dl className="grid gap-2 text-sm sm:grid-cols-2">
-              <div>
-                <dt className="font-medium text-[var(--rootsy-bruma-600)]">
-                  ROOTSY_POP_ID
-                </dt>
-                <dd className="font-mono text-xs text-[var(--rootsy-bruma-900)]">
-                  {context.rootsyPopId ?? "— no configurado —"}
-                </dd>
+
+            <div className="space-y-3">
+              <Label htmlFor="bridge-pop-select">POP Rootsy</Label>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <Select value={selectedPopId} onValueChange={setSelectedPopId}>
+                  <SelectTrigger id="bridge-pop-select" className="sm:max-w-md">
+                    <SelectValue placeholder="Elegí el POP interno de Rootsy" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_POP_SELECTED} disabled>
+                      Elegí un POP
+                    </SelectItem>
+                    {context.popOptions.map((pop) => (
+                      <SelectItem key={pop.id} value={pop.id}>
+                        {pop.name}
+                        {!pop.isActive ? " (inactivo)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  onClick={() => void handleSavePop()}
+                  disabled={savingPop || selectedPopId === NO_POP_SELECTED}
+                >
+                  {savingPop ? "Guardando…" : "Guardar POP"}
+                </Button>
               </div>
-              <div>
-                <dt className="font-medium text-[var(--rootsy-bruma-600)]">
-                  POP
-                </dt>
-                <dd className="text-[var(--rootsy-bruma-900)]">
-                  {context.rootsyPopName ?? "—"}
-                  {context.rootsyPopConfigured ? (
-                    <span className="ml-2">
-                      <BackofficeStatusBadge active activeLabel="Configurado" />
-                    </span>
-                  ) : (
-                    <span className="ml-2">
-                      <BackofficeStatusBadge
-                        active={false}
-                        inactiveLabel="Falta env"
-                      />
-                    </span>
-                  )}
-                </dd>
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                {context.rootsyPopConfigured ? (
+                  <BackofficeStatusBadge active activeLabel="POP configurado" />
+                ) : (
+                  <BackofficeStatusBadge
+                    active={false}
+                    inactiveLabel="Sin POP"
+                  />
+                )}
+                {context.rootsyPopSource === "database" ? (
+                  <span className="text-[var(--rootsy-bruma-600)]">
+                    Fuente: Uroboros
+                  </span>
+                ) : null}
+                {context.rootsyPopSource === "env" ? (
+                  <span className="text-[var(--rootsy-bruma-600)]">
+                    Fuente: ROOTSY_POP_ID en entorno
+                  </span>
+                ) : null}
+                {context.envFallbackPopId &&
+                context.rootsyPopSource === "database" ? (
+                  <span className="text-xs text-[var(--rootsy-bruma-500)]">
+                    Env fallback disponible
+                  </span>
+                ) : null}
               </div>
-            </dl>
+              {context.rootsyPopName ? (
+                <p className="text-sm text-[var(--rootsy-bruma-800)]">
+                  Activo: {context.rootsyPopName}
+                </p>
+              ) : null}
+            </div>
+
             {popWorkspaceHref ? (
               <Link
                 href={popWorkspaceHref}
@@ -173,6 +259,11 @@ export function BackofficeBridgeView() {
               <h2 className="text-base font-semibold text-[var(--rootsy-bruma-900)]">
                 {editingId ? "Editar binding" : "Nuevo binding"}
               </h2>
+              {!context.rootsyPopConfigured ? (
+                <p className="text-sm text-[var(--rootsy-bruma-600)]">
+                  Elegí y guardá el POP Rootsy antes de crear bindings.
+                </p>
+              ) : null}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="bridge-plan">Plan plataforma</Label>
@@ -228,14 +319,27 @@ export function BackofficeBridgeView() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bridge-service">service_type_id</Label>
-                  <Input
-                    id="bridge-service"
+                  <Label htmlFor="bridge-service">Servicio del POP Rootsy</Label>
+                  <Select
                     value={serviceTypeId}
-                    onChange={(event) => setServiceTypeId(event.target.value)}
-                    placeholder="UUID del servicio en el POP Rootsy"
-                    className="font-mono text-xs"
-                  />
+                    onValueChange={setServiceTypeId}
+                    disabled={!context.rootsyPopConfigured}
+                  >
+                    <SelectTrigger id="bridge-service">
+                      <SelectValue placeholder="Elegí un servicio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_SERVICE_SELECTED} disabled>
+                        Elegí un servicio
+                      </SelectItem>
+                      {activeServices.map((service) => (
+                        <SelectItem key={service.id} value={service.id}>
+                          {service.name} · {formatBillingPeriod(service.billingPeriod)} ·{" "}
+                          {formatBackofficeMoney(service.defaultPrice)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <Label htmlFor="bridge-notes">Notas</Label>
@@ -251,7 +355,11 @@ export function BackofficeBridgeView() {
                 <p className="text-sm text-destructive">{formError}</p>
               ) : null}
               <div className="flex flex-wrap gap-2">
-                <Button type="button" onClick={() => void handleSave()} disabled={saving}>
+                <Button
+                  type="button"
+                  onClick={() => void handleSave()}
+                  disabled={saving || !context.rootsyPopConfigured}
+                >
                   {saving ? "Guardando…" : editingId ? "Actualizar" : "Agregar"}
                 </Button>
                 {editingId ? (
@@ -264,7 +372,7 @@ export function BackofficeBridgeView() {
           </BackofficePanel>
 
           {context.bindings.length === 0 ? (
-            <BackofficeEmptyState message="Todavía no hay bindings. Agregá al menos uno para el plan de prueba." />
+            <BackofficeEmptyState message="Todavía no hay bindings. Configurá el POP y agregá al menos uno." />
           ) : (
             <BackofficePanel>
               <div className="overflow-x-auto">
@@ -294,9 +402,6 @@ export function BackofficeBridgeView() {
                         </td>
                         <td className="px-4 py-3">
                           <div>{row.serviceTypeName ?? "—"}</div>
-                          <div className="font-mono text-[11px] text-[var(--rootsy-bruma-500)]">
-                            {row.serviceTypeId}
-                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <BackofficeStatusBadge active={row.isActive} />

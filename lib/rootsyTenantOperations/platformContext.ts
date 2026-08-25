@@ -44,7 +44,7 @@ export async function resolvePlatformServiceBinding(input: {
 
 export async function getRootsyPlatformPopActorUserId(): Promise<string> {
   const supabase = createServiceRoleClient()
-  const popId = requireRootsyPlatformPopId()
+  const popId = await requireRootsyPlatformPopId()
   const { data, error } = await supabase
     .from("pops")
     .select("owner_user_id")

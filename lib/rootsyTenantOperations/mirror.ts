@@ -1,4 +1,4 @@
-import { getRootsyPlatformPopId } from "@/lib/rootsyPlatformPop"
+import { resolveRootsyPlatformPopId } from "@/lib/rootsyPlatformPop"
 import { getCustomerPopBillingMirrorContext } from "@/lib/rootsyTenantOperations/billingContext"
 import { ensureRootsyPlatformClient } from "@/lib/rootsyTenantOperations/clients"
 import {
@@ -15,8 +15,9 @@ export async function mirrorPlatformSubscriptionPayment(
   input: MirrorPlatformSubscriptionPaymentInput,
 ): Promise<MirrorPlatformSubscriptionPaymentResult> {
   try {
-    if (!getRootsyPlatformPopId()) {
-      return { mirrored: false, reason: "ROOTSY_POP_ID no configurado" }
+    const { popId: rootsyPopId } = await resolveRootsyPlatformPopId()
+    if (!rootsyPopId) {
+      return { mirrored: false, reason: "POP Rootsy no configurado" }
     }
 
     const externalPaymentId = input.externalPaymentId.trim()
