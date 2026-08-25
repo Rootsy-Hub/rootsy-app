@@ -1,13 +1,15 @@
 "use client"
 
 import {
-  deleteMesasFloorDecor,
-  getMesasLayout,
-  reorderMesasDecors,
-  upsertMesasFloorDecor,
-  type MesasFloorDecorRow,
-  type MesasLayoutData,
-  type UpsertMesasFloorDecorInput,
+  deleteMesasFloorDecorApi,
+  fetchMesasLayout,
+  reorderMesasDecorsApi,
+  upsertMesasFloorDecorApi,
+} from "@/lib/rootsyApi/mesasClient"
+import type {
+  MesasFloorDecorRow,
+  MesasLayoutData,
+  UpsertMesasFloorDecorInput,
 } from "@/app/[siteId]/[popId]/mesas/actions"
 import { MesaFloorDecorPreview } from "@/app/[siteId]/[popId]/mesas/components/MesaFloorDecorNode"
 import { MesasLayoutSortableList } from "@/app/[siteId]/[popId]/mesas/components/MesasLayoutSortableList"
@@ -140,7 +142,7 @@ export function MesasDecorsDialog({
   const loadRows = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const res = await getMesasLayout(popId, siteId)
+    const res = await fetchMesasLayout(popId)
     setLoading(false)
     if (!res.success) {
       setError(res.error)
@@ -207,7 +209,7 @@ export function MesasDecorsDialog({
       setPendingCreate({ name: createdName, salonId: payload.salonId })
       setForm(defaultDecorForm(payload.salonId, rows.length + 1))
     }
-    const res = await upsertMesasFloorDecor(popId, siteId, payload)
+    const res = await upsertMesasFloorDecorApi(popId, payload)
     if (!res.success) {
       if (isCreate) {
         setPendingCreate(null)
@@ -242,7 +244,7 @@ export function MesasDecorsDialog({
       )
     }
     setDeleteTarget(null)
-    const res = await deleteMesasFloorDecor(popId, siteId, target.id)
+    const res = await deleteMesasFloorDecorApi(popId, target.id)
     if (!res.success) {
       setPendingDeleteId(null)
       setSaving(false)
@@ -267,9 +269,8 @@ export function MesasDecorsDialog({
         return [...others, ...nextFiltered]
       })
       setError(null)
-      const res = await reorderMesasDecors(
+      const res = await reorderMesasDecorsApi(
         popId,
-        siteId,
         reorderSalonId,
         mesasSortOrderUpdatesFromIds(ordered.map((item) => item.id)),
       )
@@ -289,7 +290,7 @@ export function MesasDecorsDialog({
       if (!row) return
       setSaving(true)
       setError(null)
-      const res = await upsertMesasFloorDecor(popId, siteId, {
+      const res = await upsertMesasFloorDecorApi(popId, {
         ...decorRowToForm(row),
         isActive: !row.isActive,
       })

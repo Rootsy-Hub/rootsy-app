@@ -1,8 +1,7 @@
+import { isDevModeEnabled } from "@/lib/devmode"
+
 export function isChatRootsyDevTraceEnabled(): boolean {
-  const flag =
-    process.env.NEXT_PUBLIC_ROOTSY_CHAT_SHOW_DEV_TRACE ??
-    process.env.ROOTSY_CHAT_SHOW_DEV_TRACE
-  return flag === "1" || flag === "true"
+  return isDevModeEnabled()
 }
 
 export const ROOTSY_CHAT_SHOW_DEV_TRACE = isChatRootsyDevTraceEnabled()

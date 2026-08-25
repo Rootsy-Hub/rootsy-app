@@ -43,10 +43,18 @@ async function parseMutate(res: Response): Promise<MutateResult> {
 
 export async function fetchPopArticleCategories(
   popId: string,
+  filters?: { itemKind?: ArticleItemKind; showInSale?: boolean },
 ): Promise<ArticleCategoryOption[]> {
-  const res = await fetch(`/api/pops/${popId}/categories`, {
-    headers: { accept: "application/json" },
-  })
+  const params = new URLSearchParams()
+  if (filters?.itemKind) params.set("itemKind", filters.itemKind)
+  if (filters?.showInSale != null) {
+    params.set("showInSale", filters.showInSale ? "true" : "false")
+  }
+  const search = params.toString()
+  const res = await fetch(
+    `/api/pops/${popId}/categories${search ? `?${search}` : ""}`,
+    { headers: { accept: "application/json" } },
+  )
   const json = (await res.json().catch(() => null)) as
     | ApiOk<CategoryDto[]>
     | ApiErr

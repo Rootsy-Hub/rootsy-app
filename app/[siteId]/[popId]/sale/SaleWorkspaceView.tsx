@@ -11,6 +11,7 @@ import {
   type SaleCatalogClient,
   type SaleCatalogPaymentOption,
 } from "@/app/[siteId]/[popId]/sale/actions"
+import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
 import { useSaleCatalogLoader } from "@/hooks/useSaleCatalogLoader"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
 import { useQueryClient } from "@tanstack/react-query"
@@ -43,7 +44,9 @@ import {
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { SaleCatalogBrowser } from "@/components/sale-operation/SaleCatalogBrowser"
+import { SaleDevtoolsPanel } from "@/components/sale-operation/SaleDevtoolsPanel"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
+import { isDevModeEnabled } from "@/lib/devmode"
 import type { SaleComprobantePreviewInput } from "@/components/checkout/SaleComprobanteTicketPreview"
 
 const OperationPartyPickerDialog = dynamic(
@@ -255,6 +258,12 @@ export function SaleWorkspaceView() {
     catalogError: catalogQueryError,
   } = useSaleCatalogLoader(popId, { enabled: Boolean(popId && siteId) })
   const catalogLoading = !popId || !siteId ? false : catalogQueryLoading
+  useSaleOpenCashSessionToasts(
+    siteId,
+    popId,
+    Boolean(popId && siteId),
+    Boolean(popId && siteId) && !catalogLoading,
+  )
   const catalogError =
     !popId || !siteId ? "Punto de venta no encontrado" : catalogQueryError
   const hasValidPopFiscalCuit = comprobantesLoaded
@@ -610,7 +619,8 @@ export function SaleWorkspaceView() {
           !payOnClientAccount && metodoPagoSeleccionado?.kind === "check"
             ? metodoPagoSeleccionado.checkDetails ?? null
             : null,
-        generalDiscountMode: modoDescuento === "porcentaje" ? "porcentaje" : "fijo",
+        generalDiscountMode:
+          modoDescuento === "porcentaje" ? "porcentaje" : "fijo",
         valorDescuentoPorcentaje,
         valorDescuentoFijo,
         invoiceTypeLabel: comprobante,
@@ -1194,6 +1204,9 @@ export function SaleWorkspaceView() {
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
+        headerActions={
+          isDevModeEnabled() ? <SaleDevtoolsPanel /> : undefined
+        }
         headerMoreActions={[
           {
             label: "Crear presupuesto",

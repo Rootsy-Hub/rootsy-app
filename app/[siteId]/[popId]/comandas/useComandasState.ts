@@ -1,10 +1,10 @@
 "use client"
 
 import {
-  getComandaStations,
-  getComandas,
-  moveComandaStatus,
-} from "@/app/[siteId]/[popId]/comandas/actions"
+  fetchComandaStations,
+  fetchComandas,
+  moveComandaStatusApi,
+} from "@/lib/rootsyApi/comandasClient"
 import { canMoveComandaTo } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type {
   ComandaStation,
@@ -13,7 +13,7 @@ import type {
 } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-export function useComandasState(popId: string, siteId: string) {
+export function useComandasState(popId: string, _siteId: string) {
   const [stations, setStations] = useState<ComandaStation[]>([])
   const [stationId, setStationId] = useState<string | null>(null)
   const [tickets, setTickets] = useState<ComandaTicket[]>([])
@@ -63,8 +63,8 @@ export function useComandasState(popId: string, siteId: string) {
   }, [])
 
   const reloadStations = useCallback(async () => {
-    if (!popId || !siteId) return
-    const res = await getComandaStations(popId, siteId)
+    if (!popId) return
+    const res = await fetchComandaStations(popId)
     if (!res.success) {
       setError(res.error)
       setStations([])
@@ -77,14 +77,14 @@ export function useComandasState(popId: string, siteId: string) {
       }
       return res.stations[0]?.id ?? null
     })
-  }, [popId, siteId])
+  }, [popId])
 
   const reloadTickets = useCallback(async () => {
-    if (!popId || !siteId || !stationId) {
+    if (!popId || !stationId) {
       setTickets([])
       return
     }
-    const res = await getComandas(popId, siteId, stationId)
+    const res = await fetchComandas(popId, stationId)
     if (!res.success) {
       setError(res.error)
       setTickets([])
@@ -92,7 +92,7 @@ export function useComandasState(popId: string, siteId: string) {
     }
     setError(null)
     applyServerTickets(res.tickets)
-  }, [popId, siteId, stationId, applyServerTickets])
+  }, [popId, stationId, applyServerTickets])
 
   useEffect(() => {
     setStationsLoading(true)
@@ -158,7 +158,7 @@ export function useComandasState(popId: string, siteId: string) {
 
   const moveTicket = useCallback(
     async (ticketId: string, status: ComandaStatus) => {
-      if (!popId || !siteId) return false
+      if (!popId) return false
       const current = tickets.find((ticket) => ticket.id === ticketId)
       if (!current) return false
       if (!canMoveComandaTo(current.status, status)) return false
@@ -166,7 +166,7 @@ export function useComandasState(popId: string, siteId: string) {
       const { previous, skipped } = applyOptimisticStatus(ticketId, status)
       if (skipped || !previous) return true
 
-      const res = await moveComandaStatus(popId, siteId, ticketId, status)
+      const res = await moveComandaStatusApi(popId, ticketId, status)
       if (!res.success) {
         inFlightMovesRef.current.delete(ticketId)
         const sendId = previous.sendId
@@ -186,7 +186,7 @@ export function useComandasState(popId: string, siteId: string) {
       upsertTicket(res.ticket)
       return true
     },
-    [popId, siteId, tickets, applyOptimisticStatus, upsertTicket],
+    [popId, tickets, applyOptimisticStatus, upsertTicket],
   )
 
   return {

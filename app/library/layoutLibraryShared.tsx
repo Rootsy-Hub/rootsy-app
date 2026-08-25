@@ -140,6 +140,7 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
       { id: "formulario", label: "Formulario" },
       { id: "sortable-list", label: "Lista ordenable" },
       { id: "feedback", label: "Banners" },
+      { id: "toast", label: "Toast" },
     ],
   },
   {

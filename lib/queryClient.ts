@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query"
 import {
   defaultQueryOptions,
+  operateBoardPersistQueryOptions,
   sessionListQueryOptions,
 } from "@/lib/queryStaleTimes"
 
@@ -12,7 +13,7 @@ export function createQueryClient() {
         retry: 1,
       },
       hydrate: {
-        queries: sessionListQueryOptions,
+        queries: operateBoardPersistQueryOptions,
       },
     },
   })

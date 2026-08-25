@@ -11,7 +11,6 @@
   --op-inner: rgb(7 59 96 / 0.28);
   --op-radius-inner: 0.75rem;
   position: relative;
-  isolation: isolate;
   color: var(--op-ink);
 }
 
@@ -52,7 +51,6 @@
 .chat-rootsy-op-card__body {
   position: relative;
   z-index: 3;
-  transform: translateZ(0);
 }
 
 .chat-rootsy-op-toggle {

@@ -2,10 +2,8 @@
 
 import { MesasLayoutAdmin } from "@/app/[siteId]/[popId]/mesas/components/MesasLayoutAdmin"
 import { MesasWorkspace } from "@/app/[siteId]/[popId]/mesas/components/MesasWorkspace"
-import {
-  getMesasLayout,
-  type MesasLayoutData,
-} from "@/app/[siteId]/[popId]/mesas/actions"
+import { fetchMesasLayout } from "@/lib/rootsyApi/mesasClient"
+import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
 import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import {
   DataWorkspaceOperationsLayout,
@@ -14,12 +12,11 @@ import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSi
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { mesasAccessFromKeys } from "@/lib/popWorkspaceAccess"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 function MesasPage() {
   const params = useParams()
-  const router = useRouter()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
   const { user } = useAuth()
@@ -47,7 +44,7 @@ function MesasPage() {
       return
     }
     setLayoutLoading(true)
-    const layoutRes = await getMesasLayout(popId, siteId)
+    const layoutRes = await fetchMesasLayout(popId)
     setLayoutLoading(false)
 
     if (layoutRes.success) {
@@ -61,10 +58,8 @@ function MesasPage() {
             isActive: s.isActive,
           })),
       )
-    } else if (layoutRes.redirect) {
-      router.replace(layoutRes.redirect)
     }
-  }, [popId, siteId, router])
+  }, [popId, siteId])
 
   useEffect(() => {
     void loadLayout()

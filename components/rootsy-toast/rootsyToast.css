@@ -1,6 +1,7 @@
 /**
- * Toast Rootsy — viento con intención.
- * Tokens: motion.flag.enter (ráfaga · aterrizaje) / motion.flag.exit (corriente · despegue).
+ * Toast Rootsy — llegada de mensaje, no ráfaga lateral.
+ * Entrada: spring desde la colita (mismo easing que el hilo del chat).
+ * Salida: se recoge hacia el retrato.
  */
 
 .rootsy-toast-layer {
@@ -8,22 +9,70 @@
   --motion-duration-long: 250ms;
   --motion-easing-out-bold: cubic-bezier(0, 0.4, 0, 1);
   --motion-easing-in-practical: cubic-bezier(0.6, 0, 0.8, 0.6);
+  --toast-chat-in: 560ms;
+  --toast-chat-out: 320ms;
+  --toast-chat-ease-in: cubic-bezier(0.22, 1.18, 0.36, 1);
+  --toast-chat-ease-out: cubic-bezier(0.4, 0, 1, 0.35);
   --elevation-shadow-overlay: 0 22px 70px -18px rgb(5 8 7 / 0.28);
 }
 
 .rootsy-toast-viewport {
   position: fixed;
-  top: max(1.25rem, env(safe-area-inset-top));
-  left: 50%;
   z-index: 600;
   display: flex;
-  width: min(22rem, calc(100vw - 2rem));
-  transform: translateX(-50%);
+  width: min(22.5rem, calc(100vw - 1.5rem));
   flex-direction: column;
-  align-items: center;
   gap: var(--rootsy-space-100, 0.5rem);
+  margin: 0;
+  overflow: visible;
   padding: 0;
+  list-style: none;
   pointer-events: none;
+}
+
+.rootsy-toast-viewport.is-top-center {
+  top: max(1.25rem, env(safe-area-inset-top));
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
+.rootsy-toast-viewport.is-top-left {
+  top: max(1.25rem, env(safe-area-inset-top));
+  left: max(1rem, env(safe-area-inset-left));
+  right: auto;
+  bottom: auto;
+  transform: none;
+  align-items: flex-start;
+}
+
+.rootsy-toast-viewport.is-top-right {
+  top: max(0.75rem, env(safe-area-inset-top));
+  right: max(0.75rem, env(safe-area-inset-right));
+  left: auto;
+  bottom: auto;
+  transform: none;
+  align-items: flex-end;
+}
+
+.rootsy-toast-viewport.is-bottom-left {
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  left: max(1rem, env(safe-area-inset-left));
+  top: auto;
+  right: auto;
+  transform: none;
+  align-items: flex-start;
+}
+
+.rootsy-toast-viewport.is-bottom-right {
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  right: max(0.75rem, env(safe-area-inset-right));
+  top: auto;
+  left: auto;
+  transform: none;
+  align-items: flex-end;
 }
 
 .rootsy-toast {
@@ -33,6 +82,7 @@
   max-width: 100%;
   align-items: center;
   gap: var(--rootsy-space-150, 0.75rem);
+  overflow: visible;
   border-radius: 1.375rem;
   border: 1px solid rgb(0 0 0 / 0.04);
   background: #fff;
@@ -40,6 +90,7 @@
   padding: var(--rootsy-space-100, 0.5rem) var(--rootsy-space-200, 1rem);
   color: var(--rootsy-bruma-900);
   outline: none;
+  transform-origin: 50% 100%;
 }
 
 .rootsy-toast[data-intent="success"] {
@@ -59,25 +110,113 @@
 }
 
 .rootsy-toast[data-state="open"] {
-  animation: rootsy-toast-breeze-in var(--motion-duration-long) var(--motion-easing-out-bold) both;
+  animation: rootsy-toast-chat-in var(--toast-chat-in) var(--toast-chat-ease-in) both;
 }
 
 .rootsy-toast[data-state="closed"] {
-  animation: rootsy-toast-breeze-out var(--motion-duration-medium) var(--motion-easing-in-practical) both;
+  animation: rootsy-toast-chat-out var(--toast-chat-out) var(--toast-chat-ease-out) both;
 }
 
 .rootsy-toast[data-swipe="move"] {
+  animation: none;
   transform: translateX(var(--radix-toast-swipe-move-x));
   transition: none;
 }
 
 .rootsy-toast[data-swipe="cancel"] {
+  animation: none;
   transform: translateX(0);
-  transition: transform var(--motion-duration-medium) var(--motion-easing-out-bold);
+  transition: transform var(--motion-duration-medium) var(--toast-chat-ease-in);
 }
 
 .rootsy-toast[data-swipe="end"] {
-  animation: rootsy-toast-breeze-out var(--motion-duration-medium) var(--motion-easing-in-practical) both;
+  animation: rootsy-toast-chat-out var(--toast-chat-out) var(--toast-chat-ease-out) both;
+}
+
+.rootsy-toast-mensaje {
+  pointer-events: auto;
+  display: flex;
+  width: max-content;
+  max-width: 100%;
+  overflow: visible;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+.rootsy-toast-mensaje[data-placement="top-right"],
+.rootsy-toast-mensaje[data-placement="bottom-right"] {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.rootsy-toast-mensaje[data-state="open"] {
+  animation: rootsy-toast-mensaje-in var(--toast-chat-in) var(--toast-chat-ease-in) both;
+}
+
+.rootsy-toast-mensaje[data-state="closed"] {
+  animation: rootsy-toast-mensaje-out var(--toast-chat-out) var(--toast-chat-ease-out) both;
+}
+
+.rootsy-toast-mensaje[data-state="open"] .rootsy-mensaje__avatar {
+  animation: rootsy-toast-avatar-in 480ms var(--toast-chat-ease-in) both;
+}
+
+.rootsy-toast-mensaje[data-state="open"] .rootsy-mensaje__bubble {
+  animation: rootsy-toast-bubble-in 520ms var(--toast-chat-ease-in) 55ms both;
+}
+
+.rootsy-toast-mensaje[data-state="closed"] .rootsy-mensaje__avatar,
+.rootsy-toast-mensaje[data-swipe="end"] .rootsy-mensaje__avatar {
+  animation: rootsy-toast-avatar-out var(--toast-chat-out) var(--toast-chat-ease-out) both;
+}
+
+.rootsy-toast-mensaje[data-state="closed"] .rootsy-mensaje__bubble,
+.rootsy-toast-mensaje[data-swipe="end"] .rootsy-mensaje__bubble {
+  animation: rootsy-toast-bubble-out var(--toast-chat-out) var(--toast-chat-ease-out) both;
+}
+
+.rootsy-toast-mensaje .rootsy-mensaje.is-side-left.is-edge-bottom .rootsy-mensaje__bubble {
+  transform-origin: -8px 100%;
+}
+
+.rootsy-toast-mensaje .rootsy-mensaje.is-side-left.is-edge-top .rootsy-mensaje__bubble {
+  transform-origin: -8px 0%;
+}
+
+.rootsy-toast-mensaje .rootsy-mensaje.is-side-right.is-edge-bottom .rootsy-mensaje__bubble {
+  transform-origin: calc(100% + 8px) 100%;
+}
+
+.rootsy-toast-mensaje .rootsy-mensaje.is-side-right.is-edge-top .rootsy-mensaje__bubble {
+  transform-origin: calc(100% + 8px) 0%;
+}
+
+.rootsy-toast-mensaje .rootsy-mensaje__avatar {
+  transform-origin: 50% 50%;
+}
+
+.rootsy-toast-mensaje[data-swipe="move"] {
+  animation: none;
+  transform: translateX(var(--radix-toast-swipe-move-x));
+  transition: none;
+}
+
+.rootsy-toast-mensaje[data-swipe="move"] .rootsy-mensaje__avatar,
+.rootsy-toast-mensaje[data-swipe="move"] .rootsy-mensaje__bubble {
+  animation: none;
+}
+
+.rootsy-toast-mensaje[data-swipe="cancel"] {
+  animation: none;
+  transform: translateX(0);
+  transition: transform var(--motion-duration-medium) var(--toast-chat-ease-in);
+}
+
+.rootsy-toast-mensaje[data-swipe="end"] {
+  animation: rootsy-toast-mensaje-out var(--toast-chat-out) var(--toast-chat-ease-out) both;
 }
 
 .rootsy-toast-copy {
@@ -129,10 +268,34 @@
   outline-offset: 2px;
 }
 
-@keyframes rootsy-toast-breeze-in {
+@keyframes rootsy-toast-chat-in {
   from {
     opacity: 0;
-    transform: translate3d(-0.75rem, -0.5rem, 0);
+    transform: translate3d(0, 12px, 0) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes rootsy-toast-chat-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.96);
+  }
+}
+
+@keyframes rootsy-toast-mensaje-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
   }
 
   to {
@@ -141,7 +304,7 @@
   }
 }
 
-@keyframes rootsy-toast-breeze-out {
+@keyframes rootsy-toast-mensaje-out {
   from {
     opacity: 1;
     transform: translate3d(0, 0, 0);
@@ -149,15 +312,67 @@
 
   to {
     opacity: 0;
-    transform: translate3d(1rem, -0.35rem, 0);
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+@keyframes rootsy-toast-avatar-in {
+  from {
+    transform: scale(0.62);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes rootsy-toast-avatar-out {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(0.78);
+  }
+}
+
+@keyframes rootsy-toast-bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes rootsy-toast-bubble-out {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(0.9);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .rootsy-toast[data-state="open"],
   .rootsy-toast[data-state="closed"],
-  .rootsy-toast[data-swipe="end"] {
+  .rootsy-toast[data-swipe="end"],
+  .rootsy-toast-mensaje[data-state="open"],
+  .rootsy-toast-mensaje[data-state="closed"],
+  .rootsy-toast-mensaje[data-swipe="end"],
+  .rootsy-toast-mensaje[data-state="open"] .rootsy-mensaje__avatar,
+  .rootsy-toast-mensaje[data-state="open"] .rootsy-mensaje__bubble,
+  .rootsy-toast-mensaje[data-state="closed"] .rootsy-mensaje__avatar,
+  .rootsy-toast-mensaje[data-state="closed"] .rootsy-mensaje__bubble,
+  .rootsy-toast-mensaje[data-swipe="end"] .rootsy-mensaje__avatar,
+  .rootsy-toast-mensaje[data-swipe="end"] .rootsy-mensaje__bubble {
     animation-duration: 0.01ms;
+    animation-delay: 0s;
     animation-iteration-count: 1;
   }
 }

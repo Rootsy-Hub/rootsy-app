@@ -1,17 +1,17 @@
 "use client"
 
 import {
-  getPendingComandasForSource,
-  sendComandaBatch,
-  voidComandaBatch,
-} from "@/app/[siteId]/[popId]/comandas/actions"
+  fetchPendingComandasForSource,
+  sendComandaBatchApi,
+  voidComandaBatchApi,
+} from "@/lib/rootsyApi/comandasClient"
 import {
   applyComandaSendToCart,
   applyComandaVoidToCart,
   healCartLinesAlreadySent,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
-import { saveTableSessionCheckout, closeTableSessionCheckout } from "@/app/[siteId]/[popId]/mesas/actions"
+import { saveTableSessionCheckoutApi, closeTableSessionCheckoutApi } from "@/lib/rootsyApi/mesasClient"
 import {
   emptyTableSessionCheckout,
   type MesasCartItem,
@@ -399,7 +399,7 @@ export function useMesasSaleCheckout(
   const flushCheckoutPersist = useCallback(
     async (sessionId: string, snap: TableSessionCheckoutSnapshot) => {
       if (!popId) return
-      const res = await saveTableSessionCheckout(popId, siteId, sessionId, snap)
+      const res = await saveTableSessionCheckoutApi(popId, sessionId, snap)
       if (res.success) {
         lastSavedUpdatedAtRef.current = res.updatedAt
         lastAppliedRemoteUpdatedAtRef.current = res.updatedAt
@@ -804,9 +804,8 @@ export function useMesasSaleCheckout(
     setComandasOpen(true)
     setComandasLoading(true)
     await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
-    const res = await getPendingComandasForSource(
+    const res = await fetchPendingComandasForSource(
       popId,
-      siteId,
       "table",
       tableSessionId,
     )
@@ -844,7 +843,7 @@ export function useMesasSaleCheckout(
       setComandasSubmitting(true)
       setComandasError(null)
       await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
-      const res = await sendComandaBatch(popId, siteId, {
+      const res = await sendComandaBatchApi(popId, {
         sourceKind: "table",
         sourceId: tableSessionId,
         quantities: input.quantities,
@@ -894,7 +893,7 @@ export function useMesasSaleCheckout(
         input.quantity,
         input.comment,
       )
-      const res = await voidComandaBatch(popId, siteId, {
+      const res = await voidComandaBatchApi(popId, {
         sourceKind: "table",
         sourceId: tableSessionId,
         ...payload,
@@ -1471,9 +1470,8 @@ export function useMesasSaleCheckout(
         // El cierre lee el checkout en server; no frenar si el persist falla.
       }
 
-      const res = await closeTableSessionCheckout(
+      const res = await closeTableSessionCheckoutApi(
         popId,
-        siteId,
         tableSessionId,
         cerrarMesaMode,
       )

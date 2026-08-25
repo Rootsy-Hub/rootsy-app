@@ -37,10 +37,10 @@ import {
 } from "@/lib/salePriceListSession"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
+import { useSaleBoardArticles } from "@/hooks/useSaleBoardArticles"
+import { useSaleBoardCategories } from "@/hooks/useSaleBoardCategories"
 import {
   useMenuCatalogItems,
-  useSaleCatalogItems,
-  useSaleCatalogSearch,
 } from "@/hooks/useOperateCatalogItems"
 import { findCatalogProductByScanQuery } from "@/lib/saleCatalogScan"
 import {
@@ -49,9 +49,12 @@ import {
 import {
   readSavedSaleCatalogView,
   resolveSaleCatalogView,
+  saleCatalogCategoryIdFromView,
   saleCatalogViewLabel,
+  saleCatalogViewsEqual,
   saleCatalogViewToItemsFilter,
   saleCatalogVisibleCategoryIds,
+  subscribeSaleCatalogView,
   writeSavedSaleCatalogView,
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
@@ -72,10 +75,14 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react"
 import { flushSync } from "react-dom"
 
 type CatalogScope = "sale" | "menu"
+
+const EMPTY_SALE_BOARD_CATEGORIES: SaleCatalogCategory[] = []
+const EMPTY_SALE_BOARD_SECTIONS: MenuCatalogCategorySection[] = []
 
 type Props = {
   siteId: string
@@ -128,6 +135,44 @@ export function SaleCatalogBrowser({
   className,
 }: Props) {
   const source = itemsSource ?? catalogScope
+  const isSaleBoard = source === "sale"
+  const savedView = useSyncExternalStore(
+    subscribeSaleCatalogView,
+    () => readSavedSaleCatalogView(popId),
+    () => undefined,
+  )
+  const savedCategoryId = saleCatalogCategoryIdFromView(savedView)
+  const saleCategoriesQuery = useSaleBoardCategories(popId, {
+    enabled: isSaleBoard && itemsEnabled && Boolean(popId),
+  })
+  const saleBoardCategories = useMemo(() => {
+    const rows = saleCategoriesQuery.data
+    if (!rows?.length) return EMPTY_SALE_BOARD_CATEGORIES
+    return rows.map((category) => ({
+      id: category.id,
+      name: category.name,
+      sortOrder: category.sortOrder,
+    }))
+  }, [saleCategoriesQuery.data])
+  const saleBoardSections = useMemo((): MenuCatalogCategorySection[] => {
+    if (saleBoardCategories.length === 0) return EMPTY_SALE_BOARD_SECTIONS
+    return [
+      {
+        id: "products",
+        label: "Productos",
+        categories: saleBoardCategories,
+      },
+    ]
+  }, [saleBoardCategories])
+  const railCategories = isSaleBoard ? saleBoardCategories : categories
+  const railSections = isSaleBoard ? saleBoardSections : categorySections
+  const railLoading = isSaleBoard ? saleCategoriesQuery.isLoading : loading
+  const saleCategoriesError =
+    saleCategoriesQuery.error instanceof Error
+      ? saleCategoriesQuery.error.message
+      : saleCategoriesQuery.error
+        ? String(saleCategoriesQuery.error)
+        : null
   const scanFocus = useSaleScanInputFocus()
   const internalSidebar = useDataWorkspaceSidebar(
     siteId,
@@ -224,44 +269,50 @@ export function SaleCatalogBrowser({
     OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
   )
   const vistaResuelta = useMemo(
-    () => resolveSaleCatalogView(vistaCatalogo, categories, categorySections),
-    [categories, categorySections, vistaCatalogo],
+    () =>
+      resolveSaleCatalogView(
+        savedView ?? vistaCatalogo,
+        railCategories,
+        railSections,
+      ),
+    [railCategories, railSections, savedView, vistaCatalogo],
   )
   const itemsFilter = useMemo(() => {
     const base = saleCatalogViewToItemsFilter(
       vistaResuelta,
       debouncedSearch,
-      categories,
-      categorySections,
+      railCategories,
+      railSections,
     )
     return {
       ...base,
       priceListId,
       catalogCategoryIds: saleCatalogVisibleCategoryIds(
-        categories,
-        categorySections,
+        railCategories,
+        railSections,
       ),
     }
-  }, [categories, categorySections, debouncedSearch, priceListId, vistaResuelta])
+  }, [debouncedSearch, priceListId, railCategories, railSections, vistaResuelta])
   const isSearch = Boolean(itemsFilter.search.trim())
-  const itemsQueryReady = isSearch
-    ? !loading
-    : itemsFilter.section === "promotions"
+  const saleBoardCategoryId = isSaleBoard
+    ? savedCategoryId ?? saleCatalogCategoryIdFromView(vistaCatalogo)
+    : null
+  const itemsQueryReady = isSaleBoard
+    ? isSearch ||
+      itemsFilter.section === "promotions" ||
+      Boolean(saleBoardCategoryId)
+    : isSearch
       ? !loading
-      : itemsFilter.section === "discounts" || Boolean(itemsFilter.categoryId)
+      : itemsFilter.section === "promotions"
+        ? !loading
+        : itemsFilter.section === "discounts" || Boolean(itemsFilter.categoryId)
 
   useEffect(() => {
-    if (loading) return
-    if (
-      vistaCatalogo.modo === vistaResuelta.modo &&
-      (vistaCatalogo.modo !== "categoria" ||
-        vistaCatalogo.categoria === vistaResuelta.categoria)
-    ) {
-      return
-    }
+    if (railLoading) return
+    if (saleCatalogViewsEqual(vistaCatalogo, vistaResuelta)) return
     setVistaCatalogo(vistaResuelta)
     writeSavedSaleCatalogView(popId, vistaResuelta)
-  }, [loading, popId, vistaCatalogo, vistaResuelta])
+  }, [popId, railLoading, vistaCatalogo, vistaResuelta])
 
   useEffect(() => {
     if (priceLists.length === 0) return
@@ -296,8 +347,8 @@ export function SaleCatalogBrowser({
   )
   const categoryLabel = saleCatalogViewLabel(
     vistaResuelta,
-    categories,
-    categorySections,
+    railCategories,
+    railSections,
   )
   const usesMobileStage = useRegisterOperarMobileCategoryPicker(
     categoryLabel || "Categoría",
@@ -317,27 +368,16 @@ export function SaleCatalogBrowser({
     return () => registerPriceList(null)
   }, [registerPriceList, priceListId, priceListOptions])
 
-  const saleCategoryItems = useSaleCatalogItems(
-    popId,
-    itemsFilter,
-    Boolean(popId) &&
-      !error &&
-      source === "sale" &&
+  const saleBoardItems = useSaleBoardArticles(popId, saleBoardCategoryId, {
+    enabled:
+      Boolean(popId) &&
+      isSaleBoard &&
       itemsEnabled &&
       itemsQueryReady &&
-      !isSearch,
-  )
-  const saleSearchItems = useSaleCatalogSearch(
-    popId,
-    itemsFilter,
-    Boolean(popId) &&
-      !error &&
-      source === "sale" &&
-      itemsEnabled &&
-      itemsQueryReady &&
-      isSearch,
-  )
-  const saleItems = isSearch ? saleSearchItems : saleCategoryItems
+      itemsFilter.section !== "promotions",
+    search: isSearch ? itemsFilter.search : "",
+    priceListId,
+  })
   const menuItems = useMenuCatalogItems(
     popId,
     itemsFilter,
@@ -347,7 +387,7 @@ export function SaleCatalogBrowser({
       itemsEnabled &&
       itemsQueryReady,
   )
-  const paged = source === "sale" ? saleItems : menuItems
+  const paged = source === "sale" ? saleBoardItems : menuItems
   const pagedRecipes = source === "menu" ? menuItems.recipes : []
 
   useEffect(() => {
@@ -474,10 +514,11 @@ export function SaleCatalogBrowser({
   )
 
   useEffect(() => {
-    setVistaCatalogo((prev) =>
-      resolveSaleCatalogView(prev, categories, categorySections),
-    )
-  }, [categories, categorySections])
+    setVistaCatalogo((prev) => {
+      const next = resolveSaleCatalogView(prev, railCategories, railSections)
+      return saleCatalogViewsEqual(prev, next) ? prev : next
+    })
+  }, [railCategories, railSections])
 
   useEffect(() => {
     const trimmed = busqueda.trim()
@@ -501,17 +542,18 @@ export function SaleCatalogBrowser({
   }, [busqueda, vistaCatalogo])
 
   useEffect(() => {
-    if (!keepScanFocused || loading) return
+    if (!keepScanFocused || railLoading) return
     refocusScan()
-  }, [keepScanFocused, loading, refocusScan])
+  }, [keepScanFocused, railLoading, refocusScan])
 
   const itemsError = paged.error
+  const boardError = isSaleBoard ? saleCategoriesError : error
   const showGridSkeleton =
-    !error &&
-    (paged.isLoading || (loading && !itemsQueryReady)) &&
+    !boardError &&
+    (paged.isLoading || (railLoading && !itemsQueryReady)) &&
     productosFiltrados.length === 0 &&
     itemsFilter.section !== "promotions"
-  const displayError = error ?? itemsError
+  const displayError = boardError ?? itemsError
   const isEmpty =
     !showGridSkeleton &&
     !displayError &&
@@ -533,12 +575,12 @@ export function SaleCatalogBrowser({
         aria-label="Filtros del catálogo"
       >
         <div className={layoutsOperarCatalogSidebarInnerClass}>
-          {loading && !error ? (
+          {railLoading && !boardError ? (
             <SaleCatalogSidebarNavSkeleton />
           ) : (
             <SaleCatalogSidebarNav
-              categories={categories}
-              categorySections={categorySections}
+              categories={railCategories}
+              categorySections={railSections}
               vistaCatalogo={vistaResuelta}
               onVistaChange={persistVistaCatalogo}
             />
@@ -576,8 +618,8 @@ export function SaleCatalogBrowser({
             )}
           >
             <SaleCatalogSidebarNav
-              categories={categories}
-              categorySections={categorySections}
+              categories={railCategories}
+              categorySections={railSections}
               vistaCatalogo={vistaResuelta}
               onVistaChange={persistVistaCatalogo}
               density="comfortable"

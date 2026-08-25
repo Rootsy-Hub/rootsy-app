@@ -9,6 +9,7 @@ import { ButtonsUiSection } from "@/app/library/ui-components/sections/ButtonsUi
 import { FormsUiSection } from "@/app/library/ui-components/sections/FormsUiSection"
 import { BannersUiSection } from "@/app/library/ui-components/sections/BannersUiSection"
 import { DropdownUiSection } from "@/app/library/ui-components/sections/DropdownUiSection"
+import { MensajeRootsyUiSection } from "@/app/library/ui-components/sections/MensajeRootsyUiSection"
 import { ModalsUiSection } from "@/app/library/ui-components/sections/ModalsUiSection"
 import { UiComponentsOverviewSection } from "@/app/library/ui-components/sections/UiComponentsOverviewSection"
 import type { ReactNode } from "react"
@@ -35,6 +36,9 @@ export function UiComponentsFoundationView({ sectionId }: Props) {
       break
     case "ui-components-banners":
       content = <BannersUiSection />
+      break
+    case "ui-components-mensaje-rootsy":
+      content = <MensajeRootsyUiSection />
       break
     case "ui-components-dropdown":
       content = <DropdownUiSection />

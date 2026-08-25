@@ -7,8 +7,10 @@ import type { ToastActionElement, ToastProps } from '@/components/ui/toast'
 import {
   ROOTSY_TOAST_DURATION_MS,
   ROOTSY_TOAST_EXIT_MS,
+  type RootsyToastAppearance,
   type RootsyToastIntent,
 } from '@/components/rootsy-toast/rootsyToast'
+import type { RootsyMensajePlacement } from '@/components/rootsy-mensaje/rootsyMensaje'
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = ROOTSY_TOAST_EXIT_MS + 50
@@ -20,6 +22,16 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
   intent?: RootsyToastIntent
   dismissible?: boolean
+  appearance?: RootsyToastAppearance
+  portrait?: React.ReactNode
+  portraitSrc?: string
+  portraitAlt?: string
+  eyebrow?: string
+  statusLabel?: string
+  actionLabel?: string
+  onAction?: () => void
+  createdAt?: string
+  placement?: RootsyMensajePlacement
 }
 
 const actionTypes = {

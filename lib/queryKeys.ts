@@ -47,6 +47,10 @@ export function saleComprobantesQueryKey(popId: string) {
   return ["sale-catalog", popId, "comprobantes"] as const
 }
 
+export function cashRegisterOpenSessionQueryKey(popId: string) {
+  return ["cash-registers", popId, "open-session"] as const
+}
+
 export function purchaseCatalogQueryKey(popId: string) {
   return ["purchase-catalog", popId] as const
 }
@@ -245,6 +249,22 @@ export function popArticleQueryKey(popId: string, articleId: string) {
 
 export function popArticleCategoriesQueryKey(popId: string) {
   return ["pop-article-categories", popId] as const
+}
+
+export function saleBoardCategoriesQueryKey(popId: string) {
+  return ["categories", popId, "sale-board"] as const
+}
+
+export function saleBoardArticlesQueryRoot(popId: string) {
+  return ["articles", popId, "sale-board"] as const
+}
+
+export function saleBoardArticlesQueryKey(
+  popId: string,
+  categoryId: string,
+  search = "",
+) {
+  return [...saleBoardArticlesQueryRoot(popId), categoryId, search.trim()] as const
 }
 
 export function popPriceListsQueryKey(popId: string) {

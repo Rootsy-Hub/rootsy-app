@@ -1,13 +1,15 @@
 "use client"
 
 import {
-  deleteMesasTable,
-  getMesasLayout,
-  reorderMesasTables,
-  upsertMesasTable,
-  type MesasLayoutData,
-  type MesasTableRow,
-  type UpsertMesasTableInput,
+  deleteMesasTableApi,
+  fetchMesasLayout,
+  reorderMesasTablesApi,
+  upsertMesasTableApi,
+} from "@/lib/rootsyApi/mesasClient"
+import type {
+  MesasLayoutData,
+  MesasTableRow,
+  UpsertMesasTableInput,
 } from "@/app/[siteId]/[popId]/mesas/actions"
 import { MesasLayoutSortableList } from "@/app/[siteId]/[popId]/mesas/components/MesasLayoutSortableList"
 import {
@@ -139,7 +141,7 @@ export function MesasTablesDialog({
   const loadRows = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const res = await getMesasLayout(popId, siteId)
+    const res = await fetchMesasLayout(popId)
     setLoading(false)
     if (!res.success) {
       setError(res.error)
@@ -205,7 +207,7 @@ export function MesasTablesDialog({
       setPendingCreate({ name: createdName, salonId: payload.salonId })
       setForm(defaultTableForm(payload.salonId, rows.length + 1))
     }
-    const res = await upsertMesasTable(popId, siteId, payload)
+    const res = await upsertMesasTableApi(popId, payload)
     if (!res.success) {
       if (isCreate) {
         setPendingCreate(null)
@@ -236,7 +238,7 @@ export function MesasTablesDialog({
       )
     }
     setDeleteTarget(null)
-    const res = await deleteMesasTable(popId, siteId, target.id)
+    const res = await deleteMesasTableApi(popId, target.id)
     if (!res.success) {
       setPendingDeleteId(null)
       setSaving(false)
@@ -261,9 +263,8 @@ export function MesasTablesDialog({
         return [...others, ...nextFiltered]
       })
       setError(null)
-      const res = await reorderMesasTables(
+      const res = await reorderMesasTablesApi(
         popId,
-        siteId,
         reorderSalonId,
         mesasSortOrderUpdatesFromIds(ordered.map((item) => item.id)),
       )
@@ -283,7 +284,7 @@ export function MesasTablesDialog({
       if (!row) return
       setSaving(true)
       setError(null)
-      const res = await upsertMesasTable(popId, siteId, {
+      const res = await upsertMesasTableApi(popId, {
         ...tableRowToForm(row),
         isActive: !row.isActive,
       })

@@ -7,6 +7,51 @@ export type SaleCatalogViewPersisted =
 
 const STORAGE_PREFIX = "rootsy:sale-catalog-view:"
 
+const saleCatalogViewListeners = new Set<() => void>()
+const saleCatalogViewSnapshot = new Map<
+  string,
+  { raw: string | null; view: SaleCatalogViewPersisted | undefined }
+>()
+
+function emitSaleCatalogViewChange() {
+  for (const listener of saleCatalogViewListeners) listener()
+}
+
+export function subscribeSaleCatalogView(onStoreChange: () => void) {
+  saleCatalogViewListeners.add(onStoreChange)
+  if (typeof window === "undefined") {
+    return () => {
+      saleCatalogViewListeners.delete(onStoreChange)
+    }
+  }
+  const onStorage = (event: StorageEvent) => {
+    if (event.key == null || event.key.startsWith(STORAGE_PREFIX)) {
+      onStoreChange()
+    }
+  }
+  window.addEventListener("storage", onStorage)
+  return () => {
+    saleCatalogViewListeners.delete(onStoreChange)
+    window.removeEventListener("storage", onStorage)
+  }
+}
+
+export function saleCatalogViewsEqual(
+  a: SaleCatalogViewPersisted | undefined,
+  b: SaleCatalogViewPersisted | undefined,
+): boolean {
+  if (a === b) return true
+  if (!a || !b || a.modo !== b.modo) return false
+  if (a.modo === "categoria" && b.modo === "categoria") {
+    return a.categoria === b.categoria
+  }
+  return true
+}
+
+export function saleBoardCategoryView(categoryId: string): SaleCatalogViewPersisted {
+  return { modo: "categoria", categoria: `products:${categoryId}` }
+}
+
 export const SALE_CATALOG_TODOS = "Todos"
 
 type CategoryRef = { name: string; id?: string }
@@ -152,9 +197,12 @@ export function readSavedSaleCatalogView(
   if (typeof window === "undefined") return undefined
   try {
     const raw = window.localStorage.getItem(`${STORAGE_PREFIX}${popId}`)
-    if (!raw) return undefined
-    const parsed: unknown = JSON.parse(raw)
-    return isSaleCatalogViewPersisted(parsed) ? parsed : undefined
+    const cached = saleCatalogViewSnapshot.get(popId)
+    if (cached && cached.raw === raw) return cached.view
+    const parsed: unknown = raw ? JSON.parse(raw) : undefined
+    const view = isSaleCatalogViewPersisted(parsed) ? parsed : undefined
+    saleCatalogViewSnapshot.set(popId, { raw, view })
+    return view
   } catch {
     return undefined
   }
@@ -187,7 +235,12 @@ export function writeSavedSaleCatalogView(
 ): void {
   if (typeof window === "undefined") return
   try {
-    window.localStorage.setItem(`${STORAGE_PREFIX}${popId}`, JSON.stringify(view))
+    const raw = JSON.stringify(view)
+    const cached = saleCatalogViewSnapshot.get(popId)
+    if (cached && cached.raw === raw) return
+    window.localStorage.setItem(`${STORAGE_PREFIX}${popId}`, raw)
+    saleCatalogViewSnapshot.set(popId, { raw, view })
+    emitSaleCatalogViewChange()
   } catch {
     /* quota / private mode */
   }

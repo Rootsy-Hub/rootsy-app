@@ -7,6 +7,7 @@ import { isTextComponentLibrarySection } from "@/app/library/text-component/text
 import { LayoutFormLibrarySection } from "@/app/library/components/LayoutFormLibrarySection"
 import { LayoutBannerLibrarySection } from "@/app/library/LayoutBannerLibrarySection"
 import { LayoutButtonLibrarySection } from "@/app/library/LayoutButtonLibrarySection"
+import { LayoutToastLibrarySection } from "@/app/library/LayoutToastLibrarySection"
 import { LayoutDropdownLibrarySection } from "@/app/library/LayoutDropdownLibrarySection"
 import { LayoutModalLibrarySection } from "@/app/library/LayoutModalLibrarySection"
 import { LayoutAlertDialogLibrarySection } from "@/app/library/LayoutAlertDialogLibrarySection"
@@ -228,6 +229,8 @@ export function LibrarySectionView({ sectionId }: LibrarySectionViewProps) {
       )
     case "feedback":
       return <LayoutBannerLibrarySection />
+    case "toast":
+      return <LayoutToastLibrarySection />
     case "modals":
       return <LayoutModalLibrarySection />
     case "modals-alert":

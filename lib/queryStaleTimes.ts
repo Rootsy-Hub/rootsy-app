@@ -31,3 +31,27 @@ export const operateCatalogQueryOptions = {
   ...sessionListQueryOptions,
   refetchOnMount: true,
 } as const
+
+/**
+ * Categorías y artículos del tablero de Vender: cache infinita + persist IndexedDB.
+ * La búsqueda no usa esto.
+ */
+export const operateBoardPersistQueryOptions = {
+  staleTime: Number.POSITIVE_INFINITY,
+  gcTime: Number.POSITIVE_INFINITY,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+} as const
+
+/**
+ * Turno de caja del usuario en operar (Vender / Mostrador / Mesas).
+ * 24 h; al montar refetch si está stale (p. ej. tras invalidar un cobro rechazado).
+ */
+export const operateOpenSessionQueryOptions = {
+  staleTime: ONE_DAY_MS,
+  gcTime: ONE_DAY_MS,
+  refetchOnMount: true,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+} as const

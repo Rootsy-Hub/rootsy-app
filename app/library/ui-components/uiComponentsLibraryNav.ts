@@ -10,6 +10,7 @@ export const UI_COMPONENTS_LIBRARY_SUBITEMS = [
   { id: "ui-components-forms", label: "Formulario UI" },
   { id: "ui-components-modals", label: "Modales UI" },
   { id: "ui-components-banners", label: "Banners UI" },
+  { id: "ui-components-mensaje-rootsy", label: "Mensaje de Rootsy" },
   { id: "ui-components-dropdown", label: "Dropdown UI" },
 ] as const
 
@@ -61,6 +62,12 @@ export const UI_COMPONENTS_PAGE_META: Record<string, UiComponentsPageMeta> = {
     description:
       "Feedback inline — intents semánticos · tint 8% · radius.large · sin shadow · densidad default/compact · acción y dismiss.",
   },
+  "ui-components-mensaje-rootsy": {
+    id: "ui-components-mensaje-rootsy",
+    title: "Mensaje de Rootsy",
+    description:
+      "Globo de chat recibido — colita, hora y retrato de Rootsy · intent en el nombre del globo.",
+  },
   "ui-components-dropdown": {
     id: "ui-components-dropdown",
     title: "Dropdown UI",
@@ -78,7 +85,10 @@ export const UI_COMPONENTS_RELATED_LINKS = [
   { sectionId: "ui-components-forms", label: "Formulario UI", hint: "Controles · stack · toolbar listado." },
   { sectionId: "ui-components-modals", label: "Modales UI", hint: "Modal · alert · footers." },
   { sectionId: "ui-components-banners", label: "Banners UI", hint: "Intents · densidad · dismiss." },
+  { sectionId: "ui-components-mensaje-rootsy", label: "Mensaje de Rootsy", hint: "Globo de chat · retrato · intents." },
+  { sectionId: "toast", label: "Toast", hint: "Globo vivo · esquinas · canto opcional." },
   { sectionId: "ui-components-dropdown", label: "Dropdown UI", hint: "Overlay · ítems · triggers." },
+  { sectionId: "mundos", label: "Mundos", hint: "Herramientas · placa cristal." },
   { sectionId: "colors-new", label: "Color", hint: "Savia · bruma · funcional." },
   { sectionId: "typography", label: "Tipografía", hint: "Labels y body en campos." },
   { sectionId: "radius", label: "Radio", hint: "radius.large en controles." },

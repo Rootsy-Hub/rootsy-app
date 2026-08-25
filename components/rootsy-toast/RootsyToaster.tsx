@@ -2,6 +2,12 @@
 
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { RootsBannerIcon } from "@/components/rootsy-banner/RootsBannerIcon"
+import { RootsyMensajeToast } from "@/components/rootsy-mensaje"
+import {
+  ROOTSY_MENSAJE_TOAST_DEFAULT_PLACEMENT,
+  rootsyMensajePlacementParts,
+  type RootsyMensajePlacement,
+} from "@/components/rootsy-mensaje/rootsyMensaje"
 import {
   ROOTSY_TOAST_DURATION_MS,
   type RootsyToastIntent,
@@ -17,11 +23,27 @@ function resolveToastIntent(intent: RootsyToastIntent | undefined, variant: stri
   return "neutral"
 }
 
+function viewportClass(placement: RootsyMensajePlacement | "top-center") {
+  return `rootsy-toast-viewport is-${placement}`
+}
+
 export function RootsyToaster() {
   const { toasts } = useToast()
+  const active = toasts[0]
+  const mensajePlacement =
+    active?.appearance === "mensaje"
+      ? (active.placement ?? ROOTSY_MENSAJE_TOAST_DEFAULT_PLACEMENT)
+      : undefined
+  const viewportPlacement = mensajePlacement ?? "top-center"
+  const swipeSide = mensajePlacement
+    ? rootsyMensajePlacementParts(mensajePlacement).side
+    : "right"
 
   return (
-    <ToastPrimitives.Provider swipeDirection="right" duration={ROOTSY_TOAST_DURATION_MS}>
+    <ToastPrimitives.Provider
+      swipeDirection={swipeSide}
+      duration={ROOTSY_TOAST_DURATION_MS}
+    >
       <div className="rootsy-toast-layer rootsy-app-light">
         {toasts.map(function ({
           id,
@@ -32,10 +54,53 @@ export function RootsyToaster() {
           dismissible,
           variant,
           className,
+          appearance,
+          portrait,
+          portraitSrc,
+          portraitAlt,
+          eyebrow: _eyebrow,
+          statusLabel,
+          actionLabel,
+          onAction,
+          createdAt,
+          placement,
           ...props
         }) {
           const resolvedIntent = resolveToastIntent(intent, variant)
           const showClose = dismissible || !Number.isFinite(props.duration ?? ROOTSY_TOAST_DURATION_MS)
+          const closeToast = () => props.onOpenChange?.(false)
+          const resolvedPlacement = placement ?? ROOTSY_MENSAJE_TOAST_DEFAULT_PLACEMENT
+
+          if (appearance === "mensaje") {
+            return (
+              <ToastPrimitives.Root
+                key={id}
+                className={cn("rootsy-toast-mensaje", className)}
+                data-intent={resolvedIntent}
+                data-placement={resolvedPlacement}
+                {...props}
+              >
+                <RootsyMensajeToast
+                  intent={resolvedIntent}
+                  placement={resolvedPlacement}
+                  title={typeof title === "string" ? title : ""}
+                  message={description}
+                  portrait={portrait}
+                  portraitSrc={portraitSrc}
+                  portraitAlt={portraitAlt}
+                  statusLabel={statusLabel}
+                  actionLabel={actionLabel}
+                  onAction={() => {
+                    onAction?.()
+                    closeToast()
+                  }}
+                  dismissible={showClose}
+                  onDismiss={closeToast}
+                  createdAt={createdAt}
+                />
+              </ToastPrimitives.Root>
+            )
+          }
 
           return (
             <ToastPrimitives.Root
@@ -64,7 +129,7 @@ export function RootsyToaster() {
             </ToastPrimitives.Root>
           )
         })}
-        <ToastPrimitives.Viewport className="rootsy-toast-viewport" />
+        <ToastPrimitives.Viewport className={viewportClass(viewportPlacement)} />
       </div>
     </ToastPrimitives.Provider>
   )

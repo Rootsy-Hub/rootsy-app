@@ -1,12 +1,14 @@
 "use client"
 
 import {
-  deleteMesasSalon,
-  getMesasLayout,
-  reorderMesasSalons,
-  upsertMesasSalon,
-  type MesasSalonRow,
-  type UpsertMesasSalonInput,
+  deleteMesasSalonApi,
+  fetchMesasLayout,
+  reorderMesasSalonsApi,
+  upsertMesasSalonApi,
+} from "@/lib/rootsyApi/mesasClient"
+import type {
+  MesasSalonRow,
+  UpsertMesasSalonInput,
 } from "@/app/[siteId]/[popId]/mesas/actions"
 import { MesasLayoutSortableList } from "@/app/[siteId]/[popId]/mesas/components/MesasLayoutSortableList"
 import {
@@ -86,7 +88,7 @@ export function MesasSalonsDialog({
   const loadRows = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const res = await getMesasLayout(popId, siteId)
+    const res = await fetchMesasLayout(popId)
     setLoading(false)
     if (!res.success) {
       setError(res.error)
@@ -119,7 +121,7 @@ export function MesasSalonsDialog({
       setPendingCreateName(createdName)
       setForm(defaultSalonForm(rows.length + 1))
     }
-    const res = await upsertMesasSalon(popId, siteId, payload)
+    const res = await upsertMesasSalonApi(popId, payload)
     if (!res.success) {
       if (isCreate) {
         setPendingCreateName(null)
@@ -143,7 +145,7 @@ export function MesasSalonsDialog({
     setPendingDeleteId(target.id)
     if (form.id === target.id) setForm(defaultSalonForm(rows.length - 1))
     setDeleteTarget(null)
-    const res = await deleteMesasSalon(popId, siteId, target.id)
+    const res = await deleteMesasSalonApi(popId, target.id)
     if (!res.success) {
       setPendingDeleteId(null)
       setSaving(false)
@@ -161,9 +163,8 @@ export function MesasSalonsDialog({
       const nextRows = mergeSalonOrder(sortedRows, ordered.map((item) => item.id))
       setRows(nextRows)
       setError(null)
-      const res = await reorderMesasSalons(
+      const res = await reorderMesasSalonsApi(
         popId,
-        siteId,
         mesasSortOrderUpdatesFromIds(ordered.map((item) => item.id)),
       )
       if (!res.success) {
@@ -182,7 +183,7 @@ export function MesasSalonsDialog({
       if (!row) return
       setSaving(true)
       setError(null)
-      const res = await upsertMesasSalon(popId, siteId, {
+      const res = await upsertMesasSalonApi(popId, {
         id: row.id,
         name: row.name,
         sortOrder: row.sortOrder,

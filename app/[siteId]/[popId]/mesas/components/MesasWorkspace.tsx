@@ -9,10 +9,8 @@ import { MesasTablePickerList } from "@/app/[siteId]/[popId]/mesas/components/Me
 import { MesasOrderPanel } from "@/app/[siteId]/[popId]/mesas/components/MesasOrderPanel"
 import { MesasRightPanelTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasRightPanelTabs"
 import { MesasSalonTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasSalonTabs"
-import {
-  getMesasWaiters,
-  type MesasLayoutData,
-} from "@/app/[siteId]/[popId]/mesas/actions"
+import { fetchMesasWaiters } from "@/lib/rootsyApi/mesasClient"
+import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
 import type {
   MesaOpenSessionInput,
   MesaReservation,
@@ -186,7 +184,7 @@ export function MesasWorkspace({
   useEffect(() => {
     if (!popId || !siteId) return
     void (async () => {
-      const res = await getMesasWaiters(popId, siteId)
+      const res = await fetchMesasWaiters(popId)
       if (res.success) {
         setWaiters(res.waiters)
       } else {

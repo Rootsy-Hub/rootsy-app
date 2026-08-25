@@ -1,22 +1,24 @@
 "use client"
 
 import {
-  cancelTableReservation,
-  closeTableSession,
-  getMesasLayout,
-  getMesasReservationSettings,
-  getOpenTableSessions,
-  getTableReservations,
-  openTableSession,
-  saveMesasLayoutPositions,
-  setTableSessionFloorStatus,
-  updateTableReservationStatus,
-  updateTableSession,
-  updateMesasReservationSettings,
-  upsertTableReservation,
-  type MesasLayoutData,
-  type MesaReservationRow,
-  type MesaSessionRow,
+  cancelTableReservationApi,
+  closeTableSessionApi,
+  fetchMesasLayout,
+  fetchMesasReservationSettings,
+  fetchOpenTableSessions,
+  fetchTableReservations,
+  openTableSessionApi,
+  saveMesasLayoutPositionsApi,
+  setTableSessionFloorStatusApi,
+  updateTableReservationStatusApi,
+  updateTableSessionApi,
+  updateMesasReservationSettingsApi,
+  upsertTableReservationApi,
+} from "@/lib/rootsyApi/mesasClient"
+import type {
+  MesasLayoutData,
+  MesaReservationRow,
+  MesaSessionRow,
 } from "@/app/[siteId]/[popId]/mesas/actions"
 import {
   isMesaOccupiedNow,
@@ -268,7 +270,7 @@ export function useMesasState(popId: string, siteId: string) {
   const reloadSessions = useCallback(async () => {
     if (!popId || !siteId) return
 
-    const res = await getOpenTableSessions(popId, siteId)
+    const res = await fetchOpenTableSessions(popId)
     if (!res.success) {
       setSessionError(res.error)
       return
@@ -281,7 +283,7 @@ export function useMesasState(popId: string, siteId: string) {
   const reloadReservations = useCallback(async () => {
     if (!popId || !siteId) return
 
-    const res = await getTableReservations(popId, siteId)
+    const res = await fetchTableReservations(popId)
     if (!res.success) {
       setSessionError(res.error)
       return
@@ -294,7 +296,7 @@ export function useMesasState(popId: string, siteId: string) {
   const reloadReservationSettings = useCallback(async () => {
     if (!popId || !siteId) return
 
-    const res = await getMesasReservationSettings(popId, siteId)
+    const res = await fetchMesasReservationSettings(popId)
     if (!res.success) {
       setSessionError(res.error)
       return
@@ -340,7 +342,7 @@ export function useMesasState(popId: string, siteId: string) {
     async (input: MesasReservationSettings): Promise<boolean> => {
       if (!popId || !siteId) return false
 
-      const res = await updateMesasReservationSettings(popId, siteId, {
+      const res = await updateMesasReservationSettingsApi(popId, {
         floorBufferMinutes: input.floorBufferMinutes,
         graceMinutes: input.graceMinutes,
       })
@@ -365,7 +367,7 @@ export function useMesasState(popId: string, siteId: string) {
     setLayoutLoading(true)
     setLayoutError(null)
 
-    const res = await getMesasLayout(popId, siteId)
+    const res = await fetchMesasLayout(popId)
     setLayoutLoading(false)
 
     if (!res.success) {
@@ -515,9 +517,8 @@ export function useMesasState(popId: string, siteId: string) {
     ) => {
       if (!popId || !siteId) return
 
-      const res = await saveMesasLayoutPositions(
+      const res = await saveMesasLayoutPositionsApi(
         popId,
-        siteId,
         kind === "table"
           ? { tables: [{ id, x: pos.x, y: pos.y }] }
           : { decors: [{ id, x: pos.x, y: pos.y }] },
@@ -540,7 +541,7 @@ export function useMesasState(popId: string, siteId: string) {
         const table = prev.find((t) => t.id === id)
         if (!table) return prev
         const rotation = (table.rotation + 45) % 360
-        void saveMesasLayoutPositions(popId, siteId, {
+        void saveMesasLayoutPositionsApi(popId, {
           tables: [{ id, x: table.x, y: table.y, rotation }],
         })
         return prev.map((t) => (t.id === id ? { ...t, rotation } : t))
@@ -552,7 +553,7 @@ export function useMesasState(popId: string, siteId: string) {
       const decor = prev.find((d) => d.id === id)
       if (!decor) return prev
       const rotation = (decor.rotation + 45) % 360
-      void saveMesasLayoutPositions(popId, siteId, {
+      void saveMesasLayoutPositionsApi(popId, {
         decors: [{ id, x: decor.x, y: decor.y, rotation }],
       })
       return prev.map((d) => (d.id === id ? { ...d, rotation } : d))
@@ -564,7 +565,7 @@ export function useMesasState(popId: string, siteId: string) {
       if (!popId || !siteId) return false
 
       setSessionError(null)
-      const res = await openTableSession(popId, siteId, toSessionInput(input))
+      const res = await openTableSessionApi(popId, toSessionInput(input))
       if (!res.success) {
         setSessionError(res.error)
         return false
@@ -593,9 +594,8 @@ export function useMesasState(popId: string, siteId: string) {
       if (!popId || !siteId) return false
 
       setSessionError(null)
-      const res = await updateTableSession(
+      const res = await updateTableSessionApi(
         popId,
-        siteId,
         sessionId,
         toSessionInput(input),
       )
@@ -615,7 +615,7 @@ export function useMesasState(popId: string, siteId: string) {
       if (!popId || !siteId) return false
 
       setSessionError(null)
-      const res = await closeTableSession(popId, siteId, sessionId)
+      const res = await closeTableSessionApi(popId, sessionId)
       if (!res.success) {
         setSessionError(res.error)
         return false
@@ -633,7 +633,7 @@ export function useMesasState(popId: string, siteId: string) {
       if (!popId || !siteId) return false
 
       setSessionError(null)
-      const res = await setTableSessionFloorStatus(popId, siteId, sessionId, floorStatus)
+      const res = await setTableSessionFloorStatusApi(popId, sessionId, floorStatus)
       if (!res.success) {
         setSessionError(res.error)
         return false
@@ -656,7 +656,7 @@ export function useMesasState(popId: string, siteId: string) {
       if (!popId || !siteId) return false
 
       setSessionError(null)
-      const res = await upsertTableReservation(popId, siteId, input)
+      const res = await upsertTableReservationApi(popId, input)
       if (!res.success) {
         setSessionError(res.error)
         return false
@@ -680,7 +680,7 @@ export function useMesasState(popId: string, siteId: string) {
       if (!popId || !siteId) return false
 
       setSessionError(null)
-      const res = await cancelTableReservation(popId, siteId, reservationId)
+      const res = await cancelTableReservationApi(popId, reservationId)
       if (!res.success) {
         setSessionError(res.error)
         return false
@@ -714,9 +714,8 @@ export function useMesasState(popId: string, siteId: string) {
       if (!popId || !siteId) return false
 
       setSessionError(null)
-      const res = await updateTableReservationStatus(
+      const res = await updateTableReservationStatusApi(
         popId,
-        siteId,
         reservationId,
         "no_show",
       )

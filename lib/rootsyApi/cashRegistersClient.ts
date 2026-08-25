@@ -30,6 +30,18 @@ function periodSearch(from: string | null, to: string | null): string {
   return params.toString()
 }
 
+export type OperateOpenCashSalePoint = {
+  id: string
+  ptoVta: number
+}
+
+export type OperateOpenCashSession = {
+  sessionId: string
+  cashRegisterId: string
+  openedAt: string
+  salePoint: OperateOpenCashSalePoint | null
+}
+
 async function getJson<T>(
   path: string,
 ): Promise<{ success: true; data: T } | { success: false; error: string }> {
@@ -56,6 +68,19 @@ export async function fetchCashRegistersPeriodTotals(
   return getJson<CashRegistersPeriodTotals>(
     `/api/pops/${popId}/cash-registers/period/totals?${periodSearch(from, to)}`,
   )
+}
+
+export async function fetchOpenCashSession(
+  popId: string,
+): Promise<
+  | { success: true; session: OperateOpenCashSession | null }
+  | { success: false; error: string }
+> {
+  const result = await getJson<{ session: OperateOpenCashSession | null }>(
+    `/api/pops/${popId}/cash-registers/open-session`,
+  )
+  if (!result.success) return result
+  return { success: true, session: result.data.session }
 }
 
 export async function fetchCashRegistersPeriodReport(

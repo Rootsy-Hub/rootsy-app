@@ -1,8 +1,13 @@
 "use client"
 
 import { createQueryClient } from "@/lib/queryClient"
-import { clearLegacyQueryPersist } from "@/lib/queryPersist"
-import { QueryClientProvider } from "@tanstack/react-query"
+import {
+  clearLegacyQueryPersist,
+  createSaleBoardPersister,
+  SALE_BOARD_PERSIST_BUSTER,
+  shouldDehydrateSaleBoardQuery,
+} from "@/lib/queryPersist"
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import {
   createContext,
@@ -20,19 +25,30 @@ export function useQueryPersistReady(): boolean {
 
 export function QueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => createQueryClient())
+  const [persister] = useState(() => createSaleBoardPersister())
 
   useEffect(() => {
     clearLegacyQueryPersist()
   }, [])
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: Number.POSITIVE_INFINITY,
+        buster: SALE_BOARD_PERSIST_BUSTER,
+        dehydrateOptions: {
+          shouldDehydrateQuery: shouldDehydrateSaleBoardQuery,
+        },
+      }}
+    >
       <PersistReadyContext.Provider value={true}>
         {children}
         {process.env.NODE_ENV === "development" ? (
           <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
         ) : null}
       </PersistReadyContext.Provider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   )
 }

@@ -1,10 +1,10 @@
 "use client"
 
 import {
-  getPendingComandasForSource,
-  sendComandaBatch,
-  voidComandaBatch,
-} from "@/app/[siteId]/[popId]/comandas/actions"
+  fetchPendingComandasForSource,
+  sendComandaBatchApi,
+  voidComandaBatchApi,
+} from "@/lib/rootsyApi/comandasClient"
 import {
   applyComandaSendToCart,
   applyComandaVoidToCart,
@@ -809,9 +809,8 @@ export function useMostradorSaleCheckout(
     setComandasOpen(true)
     setComandasLoading(true)
     await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
-    const res = await getPendingComandasForSource(
+    const res = await fetchPendingComandasForSource(
       popId,
-      siteId,
       "counter",
       counterOrderId,
     )
@@ -849,7 +848,7 @@ export function useMostradorSaleCheckout(
       setComandasSubmitting(true)
       setComandasError(null)
       await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
-      const res = await sendComandaBatch(popId, siteId, {
+      const res = await sendComandaBatchApi(popId, {
         sourceKind: "counter",
         sourceId: counterOrderId,
         quantities: input.quantities,
@@ -899,7 +898,7 @@ export function useMostradorSaleCheckout(
         input.quantity,
         input.comment,
       )
-      const res = await voidComandaBatch(popId, siteId, {
+      const res = await voidComandaBatchApi(popId, {
         sourceKind: "counter",
         sourceId: counterOrderId,
         ...payload,

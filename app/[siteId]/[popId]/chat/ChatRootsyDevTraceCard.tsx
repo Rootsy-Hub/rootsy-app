@@ -6,6 +6,8 @@ import {
   type ChatRootsyDevCall,
   type ChatRootsyDevTrace,
 } from "@/lib/chat/chatRootsyDevTrace"
+import { downloadDevmodeJson } from "@/lib/devmode"
+import { Download } from "lucide-react"
 import { useState } from "react"
 
 type Props = {
@@ -23,6 +25,19 @@ export function ChatRootsyDevTraceCard({ trace }: Props) {
         aclaración. Cada uno tiene enviado y recibido. Al abrir, todo queda
         cerrado.
       </p>
+      <button
+        type="button"
+        className="mt-2 inline-flex items-center gap-1 font-canopy text-[11px] font-semibold text-[var(--rootsy-sol-800)] underline-offset-2 hover:underline"
+        onClick={() =>
+          downloadDevmodeJson(
+            `chat-rootsy-devmode-${Date.now()}.json`,
+            filled,
+          )
+        }
+      >
+        <Download className="size-3" aria-hidden />
+        Bajar JSON
+      </button>
       {filled.error ? (
         <div className="mt-3 rounded-lg border border-[var(--rootsy-danger)]/40 bg-white px-2.5 py-2">
           <p className="font-canopy text-[10px] font-bold uppercase tracking-wide text-rootsy-danger">

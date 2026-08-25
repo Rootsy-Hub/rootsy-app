@@ -1,4 +1,5 @@
 import type { SaleCatalogArticle } from "@/app/[siteId]/[popId]/sale/actions"
+import type { ArticleListItem } from "@/lib/rootsyApi/articlesClient"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
 import {
   articleHasCatalogDiscount,
@@ -67,5 +68,41 @@ export function mapSaleCatalogArticleRow(
       row.barcode != null && String(row.barcode).trim()
         ? String(row.barcode).trim()
         : null,
+  }
+}
+
+export function articleListItemToSaleCatalogArticle(
+  row: ArticleListItem,
+  priceListId?: string,
+): SaleCatalogArticle {
+  const principal = Number(row.salePrice ?? 0) || 0
+  const override =
+    priceListId && priceListId !== "principal"
+      ? row.listPrices.find((price) => price.listId === priceListId)?.amount
+      : undefined
+  const listPrice =
+    override != null && Number.isFinite(override) ? override : principal
+  const hasDiscount = articleHasCatalogDiscount(
+    row.discountMode,
+    row.discountValue,
+  )
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    salePrice: effectiveArticleSalePrice(
+      listPrice,
+      row.discountMode,
+      row.discountValue,
+    ),
+    originalSalePrice: hasDiscount ? listPrice : undefined,
+    discountMode: hasDiscount ? row.discountMode : null,
+    discountValue: hasDiscount ? row.discountValue : null,
+    iva: row.iva,
+    categoryId: row.categoryId,
+    categoryName: row.categoryName.trim() ? row.categoryName : "—",
+    unitOfMeasure: row.unitOfMeasure,
+    imageUrl: row.imageUrl,
+    barcode: row.barcode,
   }
 }
