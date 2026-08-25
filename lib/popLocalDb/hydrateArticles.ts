@@ -14,6 +14,7 @@ import {
   isArticlesCategoryHydrated,
   markArticlesCategoryHydrated,
 } from "@/lib/popLocalDb/hydrateMarks"
+import { prefetchCatalogProductImages } from "@/lib/catalogProductImageCache"
 import { articleListItemToSnapshot } from "@/lib/popLocalDb/mapArticle"
 import { getOpenedPopLocalDb } from "@/lib/popLocalDb/store"
 import type { ArticleSnapshot } from "@/lib/popLocalDb/types"
@@ -85,6 +86,7 @@ export async function hydratePopArticlesFromNetwork(
           articleListItemToSnapshot,
         )
         upsertArticleSnapshots(handle.database, snapshots)
+        prefetchCatalogProductImages(snapshots.map((row) => row.imageUrl))
         for (const row of snapshots) seenIds.push(row.id)
         handle.markDirty()
         options.onProgress?.()

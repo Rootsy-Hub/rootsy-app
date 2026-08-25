@@ -5,7 +5,6 @@ import {
   menuFooterEntityVeilClass,
   menuHeaderEntityBodyClass,
   menuHeaderEntityClass,
-  menuHeaderEntityVeilClass,
 } from "@/app/[siteId]/[popId]/menu/menuHeaderEntityStyles"
 import "@/app/[siteId]/[popId]/menu/menuHeaderEntity.css"
 import {
@@ -50,33 +49,24 @@ export function MenuHeaderEntity({
           isFooter && !isDialog && "pb-[env(safe-area-inset-bottom)]",
         )}
       >
-        <div aria-hidden className="menu-header-entity-core" />
-        <div aria-hidden className="menu-header-entity-sky" />
-        <div
-          aria-hidden
-          className={isFooter ? menuFooterEntityVeilClass : menuHeaderEntityVeilClass}
-        />
-        <div aria-hidden className="menu-header-entity-weight" />
-        <div aria-hidden className="menu-header-entity-edge" />
         {isFooter ? (
-          <div aria-hidden className="menu-header-entity-soil" />
+          <>
+            <div aria-hidden className="menu-header-entity-core" />
+            <div aria-hidden className="menu-header-entity-sky" />
+            <div aria-hidden className={menuFooterEntityVeilClass} />
+            <div aria-hidden className="menu-header-entity-weight" />
+            <div aria-hidden className="menu-header-entity-edge" />
+            <div aria-hidden className="menu-header-entity-soil" />
+            <div aria-hidden className="menu-header-entity-horizon" />
+          </>
         ) : (
           <>
-            <div aria-hidden className="menu-header-entity-stars" />
-            <div aria-hidden className="menu-header-entity-stars--bright">
-              <span className="menu-header-entity-star menu-header-entity-star--md" />
-              <span className="menu-header-entity-star menu-header-entity-star--sm" />
-              <span className="menu-header-entity-star menu-header-entity-star--md" />
-              <span className="menu-header-entity-star menu-header-entity-star--sm" />
-              <span className="menu-header-entity-star menu-header-entity-star--md" />
-              <span className="menu-header-entity-star menu-header-entity-star--sm" />
-              <span className="menu-header-entity-star menu-header-entity-star--md" />
-            </div>
+            <div aria-hidden className="menu-header-entity-atmosphere" />
+            <div aria-hidden className="menu-header-entity-horizon" />
+            {isDialog ? null : (
+              <div aria-hidden className="menu-header-entity-bridge" />
+            )}
           </>
-        )}
-        <div aria-hidden className="menu-header-entity-horizon" />
-        {isFooter || isDialog ? null : (
-          <div aria-hidden className="menu-header-entity-bridge" />
         )}
         <div className={cn(heightClass, "relative z-[1]")}>{children}</div>
       </div>

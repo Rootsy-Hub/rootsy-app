@@ -1,7 +1,6 @@
 "use client"
 
 import { formatChatTime } from "@/app/[siteId]/[popId]/chat/chatTypes"
-import { HomeWorkspaceBackdrop } from "@/components/layouts/HomeWorkspaceBackdrop"
 import { cn } from "@/lib/utils"
 import { useId, type ReactNode } from "react"
 import {
@@ -157,7 +156,7 @@ export function RootsyMensajeToast({
       <div className="rootsy-mensaje__row">
         <div className="rootsy-mensaje__avatar">
           <span className="rootsy-mensaje__avatar-frame">
-            <HomeWorkspaceBackdrop className="rootsy-mensaje__eter" />
+            <span className="rootsy-mensaje__eter" aria-hidden />
             {portrait ?? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

@@ -17,6 +17,7 @@ import {
   purchaseCatalogCostHint,
   type PurchaseCatalogProduct,
 } from "@/components/purchase-operation/purchaseCatalogTypes"
+import { isCatalogProductPhotoUrl } from "@/lib/catalogProductImageCache"
 import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
 import Image from "next/image"
@@ -40,7 +41,7 @@ export function PurchaseCatalogProductCard({
   const layoutVariant = isList ? "list" : "grid"
   const proposalId = LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL
   const imagenTrim = product.imagen?.trim() ?? ""
-  const showEmptyState = imagenTrim.length === 0 || imageFailed
+  const showEmptyState = !isCatalogProductPhotoUrl(imagenTrim) || imageFailed
   const mediaStyle = layoutsOperarProductCardProposalMediaStyle(proposalId)
 
   return (
@@ -70,6 +71,8 @@ export function PurchaseCatalogProductCard({
             src={product.imagen}
             alt=""
             fill
+            loading="eager"
+            decoding="async"
             onError={() => setImageFailed(true)}
             className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
             unoptimized

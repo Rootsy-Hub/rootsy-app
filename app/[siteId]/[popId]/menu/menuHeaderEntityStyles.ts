@@ -16,8 +16,6 @@ export const menuHeaderEntityClass = cn(
 const menuUniverseEntityBodySurfaceClass = cn(
   "menu-header-entity-body relative w-full overflow-hidden",
   "bg-[linear-gradient(168deg,var(--rootsy-eter-800)_0%,var(--rootsy-eter-900)_52%,var(--rootsy-eter-950)_100%)]",
-  "backdrop-blur-[10px] backdrop-saturate-[1.01]",
-  "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent),inset_0_-16px_28px_color-mix(in_srgb,var(--rootsy-eter-950)_28%,transparent)]",
 )
 
 export const menuHeaderEntityBodyClass = cn(

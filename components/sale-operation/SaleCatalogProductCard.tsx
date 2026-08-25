@@ -20,6 +20,7 @@ import {
   SaleCatalogProductOfferOverlay,
 } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
+import { isCatalogProductPhotoUrl } from "@/lib/catalogProductImageCache"
 import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
 import Image from "next/image"
@@ -47,7 +48,7 @@ export function SaleCatalogProductCard({
   const showOfferOverlay =
     product.precioOriginal != null && product.precioOriginal > product.precio
   const imagenTrim = product.imagen?.trim() ?? ""
-  const showEmptyState = imagenTrim.length === 0 || imageFailed
+  const showEmptyState = !isCatalogProductPhotoUrl(imagenTrim) || imageFailed
   const mediaStyle = layoutsOperarProductCardProposalMediaStyle(proposalId)
 
   return (
@@ -77,6 +78,8 @@ export function SaleCatalogProductCard({
             src={product.imagen}
             alt=""
             fill
+            loading="eager"
+            decoding="async"
             onError={() => setImageFailed(true)}
             className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
             unoptimized

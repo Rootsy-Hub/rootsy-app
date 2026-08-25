@@ -69,26 +69,36 @@
 }
 
 .rootsy-mensaje__eter {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
   z-index: 0;
+  overflow: hidden;
   border-radius: inherit;
-}
-
-.rootsy-mensaje__eter .home-eter-nebula {
-  width: 3.25rem;
-  height: 3.25rem;
-}
-
-.rootsy-mensaje__eter .blur-\[160px\],
-.rootsy-mensaje__eter .blur-\[120px\] {
-  filter: blur(14px);
-}
-
-.rootsy-mensaje__eter .home-eter-world {
-  width: 210%;
-  height: 78%;
-  bottom: -38%;
-  filter: blur(8px);
-  opacity: 0.55;
+  background-color: var(--rootsy-eter-950);
+  background-image:
+    radial-gradient(circle at 18% 28%, rgba(255, 255, 255, 0.7) 0 0.5px, transparent 1.1px),
+    radial-gradient(circle at 42% 16%, rgba(255, 255, 255, 0.48) 0 0.45px, transparent 1px),
+    radial-gradient(circle at 68% 30%, rgba(255, 255, 255, 0.6) 0 0.5px, transparent 1.15px),
+    radial-gradient(circle at 84% 58%, rgba(255, 255, 255, 0.38) 0 0.4px, transparent 1px),
+    radial-gradient(circle at 28% 72%, rgba(255, 255, 255, 0.36) 0 0.4px, transparent 1px),
+    radial-gradient(circle at 56% 64%, rgba(255, 255, 255, 0.46) 0 0.45px, transparent 1.05px),
+    radial-gradient(
+      ellipse 88% 70% at 50% 118%,
+      color-mix(in srgb, var(--rootsy-eter-100) 16%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 90% 55% at 50% -28%,
+      color-mix(in srgb, var(--rootsy-eter-100) 10%, transparent) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      168deg,
+      var(--rootsy-eter-800) 0%,
+      var(--rootsy-eter-900) 46%,
+      var(--rootsy-eter-950) 100%
+    );
 }
 
 .rootsy-mensaje__avatar-frame img,

@@ -18,12 +18,13 @@ import {
 import type { ArticleSnapshot } from "@/lib/popLocalDb/types"
 import type { ArticleListItem } from "@/lib/rootsyApi/articlesClient"
 import { fetchPopArticlesTable } from "@/lib/rootsyApi/articlesClient"
+import { prefetchCatalogProductImages } from "@/lib/catalogProductImageCache"
 import {
   articleListItemToSaleCatalogArticle,
   articleSnapshotToSaleCatalogArticle,
 } from "@/lib/saleCatalogArticleMap"
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 
 export const SALE_BOARD_ARTICLE_PAGE_SIZE = 50
 
@@ -200,6 +201,10 @@ export function useSaleBoardArticles(
   }, [networkQuery.data, options?.priceListId])
 
   const articles = sqliteReady ? localArticles : networkArticles
+
+  useEffect(() => {
+    prefetchCatalogProductImages(articles.map((row) => row.imageUrl))
+  }, [articles])
   const waitingLocalHydrate =
     sqliteReady &&
     Boolean(categoryId) &&
