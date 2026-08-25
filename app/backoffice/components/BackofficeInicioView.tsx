@@ -44,7 +44,10 @@ export function BackofficeInicioView() {
           </div>
           <p className="text-sm leading-relaxed text-[var(--rootsy-bruma-600)]">
             Operación del negocio y del tenant Rootsy. Todo queda en el propio
-            Rootsy — no lo duplicamos en Uroboros.
+            Rootsy — no lo duplicamos en Uroboros. Los cobros SaaS se espejan
+            como operaciones de servicios vía{" "}
+            <span className="font-medium">Bridge Rootsy</span> en Uroboros
+            (plan → service_type_id).
           </p>
           <ul className="space-y-2 text-sm text-[var(--rootsy-bruma-800)]">
             {ROOTSY_ITEMS.map((item) => (

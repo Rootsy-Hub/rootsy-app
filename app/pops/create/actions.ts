@@ -16,6 +16,10 @@ import {
   startPopTrial,
   upsertOrganizationPaymentMethod,
 } from "@/lib/platformBilling/actions"
+import {
+  ensureRootsyPlatformClientBestEffort,
+  mirrorPlatformSubscriptionPayment,
+} from "@/lib/rootsyTenantOperations"
 import { createClient } from "@/utils/supabase/server"
 
 export type BusinessTypeOption = {
@@ -188,6 +192,15 @@ export async function finalizePopCreation(
     }
 
     const organizationId = String(popRow.organization_id)
+
+    await ensureRootsyPlatformClientBestEffort({
+      organizationId,
+      organizationName:
+        billingContext?.organizationName?.trim() || input.popName.trim(),
+      ownerUserId: user.uid,
+      ownerEmail: user.email ?? null,
+    })
+
     const mpCustomer = await findOrCreateMercadoPagoCustomer(user.email ?? "")
     const savedCard = await saveMercadoPagoCustomerCard({
       customerId: mpCustomer.id,
@@ -305,6 +318,19 @@ export async function finalizePopCreation(
           details: registerResult.error,
         }
       }
+
+      await mirrorPlatformSubscriptionPayment({
+        customerPopId: popResult.pop.id,
+        amount: openCharge.balanceDue,
+        paidAt: mpPayment.date_approved ?? new Date().toISOString(),
+        externalPaymentId: String(mpPayment.id),
+        notes: `Alta POP — ${popResult.pop.name}`,
+        metadata: {
+          source: "pop_create_paid",
+          charge_id: openCharge.chargeId,
+          mercadopago_status: mpPayment.status,
+        },
+      })
     } else if (
       mpPayment.status !== "pending" &&
       mpPayment.status !== "in_process"

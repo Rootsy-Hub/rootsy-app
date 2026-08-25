@@ -9,6 +9,7 @@ import {
   recordBillingProviderEvent,
   registerPopSubscriptionPaymentAsSystem,
 } from "@/lib/platformBilling/serviceActions"
+import { mirrorPlatformSubscriptionPayment } from "@/lib/rootsyTenantOperations"
 
 export type MercadoPagoWebhookRequest = {
   url: string
@@ -139,6 +140,19 @@ export async function handleMercadoPagoWebhook(
         charge_id: billingContext.chargeId ?? null,
         external_reference: payment.external_reference ?? null,
         webhook_event_id: eventId,
+      },
+    })
+
+    await mirrorPlatformSubscriptionPayment({
+      customerPopId: billingContext.popId,
+      amount,
+      paidAt: payment.date_approved ?? new Date().toISOString(),
+      externalPaymentId: paymentId,
+      notes: "Webhook Mercado Pago",
+      metadata: {
+        source: "mercadopago_webhook",
+        webhook_event_id: eventId,
+        charge_id: billingContext.chargeId ?? null,
       },
     })
 
