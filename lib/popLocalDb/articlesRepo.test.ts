@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { createPopLocalDatabase } from "./engine"
 import {
+  countLocalArticles,
+  deleteArticleById,
   deleteMerchandiseNotInCategory,
   listSaleBoardArticles,
   replaceMerchandiseArticles,
@@ -164,6 +166,22 @@ describe("pop local db articles", () => {
     )
     assert.equal(recipes?.name, "recipes")
     assert.equal(promotions?.name, "promotions")
+  })
+
+  it("borra un artículo por id y deja el resto", async () => {
+    const db = await createPopLocalDatabase()
+    upsertArticleSnapshots(db, [
+      snap({ id: "a1", name: "Coca" }),
+      snap({ id: "a2", name: "Fanta" }),
+    ])
+    deleteArticleById(db, "a1")
+    assert.equal(countLocalArticles(db), 1)
+    const page = listSaleBoardArticles(db, {
+      categoryId: "cat-1",
+      page: 1,
+      pageSize: 50,
+    })
+    assert.deepEqual(page.articles.map((row) => row.id), ["a2"])
   })
 
   it("mapea un artículo de API al snapshot liviano", () => {

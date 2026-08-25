@@ -1,5 +1,10 @@
 import type { GetPopArticlesTableInput } from "@/app/[siteId]/[popId]/articles/actions"
 import {
+  beginCatalogArticleHydrate,
+  catalogHydrateEpochIsCurrent,
+  endCatalogArticleHydrate,
+} from "@/lib/catalogRealtime/hydrateGate"
+import {
   deleteMerchandiseNotInCategory,
   upsertArticleSnapshots,
 } from "@/lib/popLocalDb/articlesRepo"
@@ -66,33 +71,40 @@ export async function hydratePopArticlesFromNetwork(
       }
       return
     }
-    const seenIds: string[] = []
-    let page = 1
-    for (;;) {
-      const res = await fetchPopArticlesTable(
-        popId,
-        popLocalArticlesHydrateInput(page, categoryId),
-      )
-      if (!res.success) throw new Error(res.error)
-      const snapshots: ArticleSnapshot[] = res.articles.map(
-        articleListItemToSnapshot,
-      )
-      upsertArticleSnapshots(handle.database, snapshots)
-      for (const row of snapshots) seenIds.push(row.id)
+    const startedEpoch = beginCatalogArticleHydrate()
+    try {
+      const seenIds: string[] = []
+      let page = 1
+      for (;;) {
+        const res = await fetchPopArticlesTable(
+          popId,
+          popLocalArticlesHydrateInput(page, categoryId),
+        )
+        if (!res.success) throw new Error(res.error)
+        const snapshots: ArticleSnapshot[] = res.articles.map(
+          articleListItemToSnapshot,
+        )
+        upsertArticleSnapshots(handle.database, snapshots)
+        for (const row of snapshots) seenIds.push(row.id)
+        handle.markDirty()
+        options.onProgress?.()
+        if (page * POP_LOCAL_ARTICLES_PAGE_SIZE >= res.totalCount) break
+        page += 1
+      }
+      if (!catalogHydrateEpochIsCurrent(startedEpoch)) return
+      handle.database.transaction(() => {
+        deleteMerchandiseNotInCategory(handle.database, categoryId, seenIds)
+      })
+      if (!catalogHydrateEpochIsCurrent(startedEpoch)) return
+      const hydratedAt = new Date().toISOString()
+      handle.database.setMeta("articles_last_hydrated_at", hydratedAt)
+      markArticlesCategoryHydrated(handle.database, categoryId, hydratedAt)
       handle.markDirty()
+      await handle.flush()
       options.onProgress?.()
-      if (page * POP_LOCAL_ARTICLES_PAGE_SIZE >= res.totalCount) break
-      page += 1
+    } finally {
+      endCatalogArticleHydrate(startedEpoch)
     }
-    handle.database.transaction(() => {
-      deleteMerchandiseNotInCategory(handle.database, categoryId, seenIds)
-    })
-    const hydratedAt = new Date().toISOString()
-    handle.database.setMeta("articles_last_hydrated_at", hydratedAt)
-    markArticlesCategoryHydrated(handle.database, categoryId, hydratedAt)
-    handle.markDirty()
-    await handle.flush()
-    options.onProgress?.()
   })()
 
   hydrateLocks.set(lockKey, run)

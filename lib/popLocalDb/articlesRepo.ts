@@ -138,6 +138,10 @@ export function listSaleBoardArticles(
   }
 }
 
+export function deleteArticleById(db: PopLocalDatabase, articleId: string) {
+  db.run("DELETE FROM articles WHERE id = ?", [articleId])
+}
+
 export function countLocalArticles(db: PopLocalDatabase): number {
   const row = db.get<{ total: number }>("SELECT COUNT(*) AS total FROM articles")
   return Number(row?.total ?? 0)

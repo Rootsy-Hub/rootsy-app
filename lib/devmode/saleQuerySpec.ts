@@ -87,6 +87,17 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               },
             ],
           },
+          {
+            title: "En vivo",
+            calls: [
+              {
+                endpoint: "WS domain:categories",
+                detail:
+                  "Parche del rail (nombre, orden, showInSale). Si el aviso no trae name y la categoría no está en cache, GET de categories. El reorder emite categories.updated, no un evento layout.",
+                cache: CACHE_TANSTACK_SESSION_REFETCH,
+              },
+            ],
+          },
         ],
       },
       {
@@ -133,6 +144,17 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
                 endpoint: "SELECT articles WHERE category_id",
                 detail:
                   "Guarda el categoryId en localStorage y lee SQLite. GET a articles solo si esa categoría nunca se hidrató (o se invalidó el catálogo). Si ya está en OPFS, no hay red.",
+                cache: CACHE_SQLITE_OPFS,
+              },
+            ],
+          },
+          {
+            title: "En vivo",
+            calls: [
+              {
+                endpoint: "WS domain:articles",
+                detail:
+                  "Parche en SQLite (upsert/delete) sin borrar la marca de hidratado. Si hay GET en curso, los avisos se encolan y se aplican al terminar. lastSeq vive en SQLite. Resync (gap/empty) borra marcas y vuelve a hidratar.",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],

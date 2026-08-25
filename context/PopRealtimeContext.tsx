@@ -12,6 +12,12 @@ import type {
   ServerMessage,
 } from "@/lib/realtime/protocol"
 import { popRealtimeBaseUrl, popRealtimeWsUrl } from "@/lib/realtime/url"
+import {
+  loadRealtimeLastSeq,
+  persistRealtimeLastSeq,
+  readSessionRealtimeLastSeq,
+  writeSessionRealtimeLastSeq,
+} from "@/lib/popLocalDb/realtimeSeq"
 import { createClient } from "@/utils/supabase/client"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -24,8 +30,6 @@ import {
   useState,
   type ReactNode,
 } from "react"
-
-const SEQ_STORAGE_PREFIX = "rootsy-realtime-seq:"
 
 export type RealtimeEventHandler = (event: DomainEvent) => void
 export type RealtimeResyncHandler = (channels: string[], reason: "gap" | "empty") => void
@@ -46,17 +50,7 @@ const PopRealtimeContext = createContext<PopRealtimeContextValue | undefined>(
   undefined,
 )
 
-function readStoredSeq(popId: string): number | null {
-  if (typeof window === "undefined") return null
-  const raw = sessionStorage.getItem(`${SEQ_STORAGE_PREFIX}${popId}`)
-  if (!raw) return null
-  const seq = Number(raw)
-  return Number.isFinite(seq) && seq >= 0 ? seq : null
-}
-
-function writeStoredSeq(popId: string, seq: number) {
-  sessionStorage.setItem(`${SEQ_STORAGE_PREFIX}${popId}`, String(seq))
-}
+const SEQ_PERSIST_MS = 300
 
 export function PopRealtimeProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
@@ -68,11 +62,13 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
   const [lastSeq, setLastSeq] = useState<number | null>(null)
   const [members, setMembers] = useState<PresenceMember[]>([])
   const [wantsSocket, setWantsSocket] = useState(false)
+  const [seqReady, setSeqReady] = useState(false)
 
   const socketRef = useRef<PopRealtimeSocket | null>(null)
   const refsRef = useRef(new Map<string, number>())
   const lastSeqRef = useRef<number | null>(null)
   const helloSeqRef = useRef<number | null>(null)
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const eventHandlersRef = useRef(new Set<RealtimeEventHandler>())
   const resyncHandlersRef = useRef(new Set<RealtimeResyncHandler>())
   const presenceHandlersRef = useRef(new Set<RealtimePresenceHandler>())
@@ -82,7 +78,13 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
       if (lastSeqRef.current != null && seq <= lastSeqRef.current) return
       lastSeqRef.current = seq
       setLastSeq(seq)
-      if (popId) writeStoredSeq(popId, seq)
+      if (!popId) return
+      writeSessionRealtimeLastSeq(popId, seq)
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+      persistTimerRef.current = setTimeout(() => {
+        persistTimerRef.current = null
+        void persistRealtimeLastSeq(popId, seq)
+      }, SEQ_PERSIST_MS)
     },
     [popId],
   )
@@ -201,12 +203,43 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    lastSeqRef.current = popId ? readStoredSeq(popId) : null
+    lastSeqRef.current = popId ? readSessionRealtimeLastSeq(popId) : null
     setLastSeq(lastSeqRef.current)
+    setSeqReady(false)
+    const id = popId
+    return () => {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current)
+        persistTimerRef.current = null
+      }
+      const seq = lastSeqRef.current
+      if (id && seq != null) void persistRealtimeLastSeq(id, seq)
+    }
   }, [popId])
 
   useEffect(() => {
-    if (!enabled || !wantsSocket || !user || !popId || !popRealtimeBaseUrl()) {
+    if (!popId || !wantsSocket) return
+    let cancelled = false
+    void loadRealtimeLastSeq(popId).then((seq) => {
+      if (cancelled) return
+      lastSeqRef.current = seq
+      setLastSeq(seq)
+      setSeqReady(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [popId, wantsSocket])
+
+  useEffect(() => {
+    if (
+      !enabled ||
+      !wantsSocket ||
+      !seqReady ||
+      !user ||
+      !popId ||
+      !popRealtimeBaseUrl()
+    ) {
       socketRef.current?.close()
       socketRef.current = null
       setStatus("idle")
@@ -232,7 +265,7 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
       socket.close()
       if (socketRef.current === socket) socketRef.current = null
     }
-  }, [enabled, handleMessage, popId, user, wantsSocket])
+  }, [enabled, handleMessage, popId, seqReady, user, wantsSocket])
 
   const value = useMemo(
     (): PopRealtimeContextValue => ({

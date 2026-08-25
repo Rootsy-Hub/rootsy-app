@@ -7,12 +7,21 @@ export {
 } from "@/lib/popLocalDb/store"
 export {
   countLocalArticles,
+  deleteArticleById,
   deleteMerchandiseNotIn,
   deleteMerchandiseNotInCategory,
   listSaleBoardArticles,
   replaceMerchandiseArticles,
   upsertArticleSnapshots,
 } from "@/lib/popLocalDb/articlesRepo"
+export {
+  loadRealtimeLastSeq,
+  persistRealtimeLastSeq,
+  parseRealtimeLastSeq,
+  REALTIME_LAST_SEQ_META,
+  readSessionRealtimeLastSeq,
+  writeSessionRealtimeLastSeq,
+} from "@/lib/popLocalDb/realtimeSeq"
 export {
   clearPopLocalArticlesHydrateMarks,
   hydratePopArticlesFromNetwork,

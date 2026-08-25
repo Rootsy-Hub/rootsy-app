@@ -51,7 +51,7 @@ function EmptyStateWorldFill({ world }: { world: RootsyEmptyStateWorld }) {
   )
 }
 
-/** Tres puntos — la conversación sigue donde está el retrato. Sin animación. */
+/** Tres puntos quietos sobre un orb de luz — la conversación sigue en otro lado. */
 export function RootsyEmptyStateEllipsis({
   label = "Rootsy está en otro lado",
 }: {
@@ -59,9 +59,16 @@ export function RootsyEmptyStateEllipsis({
 }) {
   return (
     <span className="rootsy-empty-state__ellipsis" title={label} aria-hidden>
-      <span className="rootsy-empty-state__ellipsis-dot" />
-      <span className="rootsy-empty-state__ellipsis-dot" />
-      <span className="rootsy-empty-state__ellipsis-dot" />
+      <span className="rootsy-empty-state__orb">
+        <span className="rootsy-empty-state__orb-spin" />
+        <span className="rootsy-empty-state__orb-blob is-a" />
+        <span className="rootsy-empty-state__orb-blob is-b" />
+      </span>
+      <span className="rootsy-empty-state__ellipsis-marks">
+        <span className="rootsy-empty-state__ellipsis-dot" />
+        <span className="rootsy-empty-state__ellipsis-dot" />
+        <span className="rootsy-empty-state__ellipsis-dot" />
+      </span>
     </span>
   )
 }

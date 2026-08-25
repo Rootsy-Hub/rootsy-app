@@ -103,6 +103,7 @@ import {
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopArticleCategories } from "@/hooks/usePopArticleCategories"
+import { usePopCatalogRealtime } from "@/hooks/usePopCatalogRealtime"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { usePopArticlesTable } from "@/hooks/usePopArticlesTable"
 import { usePopPriceLists } from "@/hooks/usePopPriceLists"
@@ -297,6 +298,7 @@ export function ArticlesWorkspaceView() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
+  usePopCatalogRealtime(popId)
   const queryClient = useQueryClient()
 
   const { bootstrap, loading: bootstrapLoading, hasPermission } =
