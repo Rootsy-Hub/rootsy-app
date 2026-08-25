@@ -1,6 +1,5 @@
 "use client"
 
-import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { CounterOrderPanel } from "@/app/[siteId]/[popId]/mostrador/components/CounterOrderPanel"
 import { MesasCheckoutModals } from "@/app/[siteId]/[popId]/mesas/components/MesasCheckoutModals"
 import { MostradorBoard } from "@/app/[siteId]/[popId]/mostrador/components/MostradorBoard"
@@ -24,6 +23,7 @@ import {
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
+import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback } from "react"
 
@@ -93,6 +93,13 @@ export function MostradorWorkspace({
     },
   )
 
+  useSaleOpenCashSessionToasts(
+    siteId,
+    popId,
+    Boolean(popId && siteId),
+    !loading,
+  )
+
   useEffect(() => {
     if (!selectedOrder) {
       setRightView("detail")
@@ -159,12 +166,6 @@ export function MostradorWorkspace({
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
       <OperationsModuleBackdrop />
-
-      {checkout.catalogLoadAttempted &&
-      !checkout.catalogLoading &&
-      !checkout.openCashSession ? (
-        <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />
-      ) : null}
 
       <LayoutsOperarMainGrid
         mobileHomeLabel="Mostrador"

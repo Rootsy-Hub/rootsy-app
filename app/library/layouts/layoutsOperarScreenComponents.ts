@@ -26,9 +26,9 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   },
   {
     layer: "Shell",
-    component: "OpenCashSessionBanner",
-    token: "variant dark · condicional",
-    source: "sale/page.tsx",
+    component: "showRootsyMensajeToast",
+    token: "caja abierta · top-right · persistente",
+    source: "useSaleOpenCashSessionToasts",
   },
   {
     layer: "Grid",

@@ -35,14 +35,14 @@ import {
   mesasFloorEmptyTextClass,
   mesasLayoutErrorBannerClass,
 } from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
-import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
+import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
+import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import {
   MesasFloorPlanSkeleton,
   MesasTablePickerListSkeleton,
 } from "@/components/sale-operation/OperarChannelCanvasSkeletons"
-import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
-import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
+import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
 import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
@@ -179,6 +179,13 @@ export function MesasWorkspace({
         (mobileStage?.stage === "ticket" && selectedSession != null),
       onCartLineAdded: handleCartLineAdded,
     },
+  )
+
+  useSaleOpenCashSessionToasts(
+    siteId,
+    popId,
+    Boolean(popId && siteId),
+    !floorLoading,
   )
 
   useEffect(() => {
@@ -483,12 +490,6 @@ export function MesasWorkspace({
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
       <OperationsModuleBackdrop />
-
-      {checkout.catalogLoadAttempted &&
-      !checkout.catalogLoading &&
-      !checkout.openCashSession ? (
-        <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />
-      ) : null}
 
       <LayoutsOperarMainGrid
         mobileHomeLabel="Mesas"

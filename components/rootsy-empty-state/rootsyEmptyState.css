@@ -87,9 +87,8 @@
     var(--orb-a) 264deg,
     var(--orb-b) 360deg
   );
-  filter: blur(20px) saturate(0.78);
-  opacity: var(--orb-spin-opacity, 0.4);
-  animation: rootsy-empty-orb-spin 22s linear infinite;
+  filter: blur(22px) saturate(0.7);
+  opacity: var(--orb-spin-opacity, 0.22);
 }
 
 .rootsy-empty-state__orb-blob {
@@ -97,15 +96,14 @@
   width: 64%;
   height: 64%;
   border-radius: 999px;
-  filter: blur(16px);
-  opacity: 0.55;
+  filter: blur(18px);
+  opacity: 0.32;
 }
 
 .rootsy-empty-state__orb-blob.is-a {
   top: -10%;
   left: -8%;
   background: radial-gradient(circle, var(--orb-a) 0%, transparent 70%);
-  animation: rootsy-empty-orb-drift 11s ease-in-out infinite;
 }
 
 .rootsy-empty-state__orb-blob.is-b {
@@ -114,7 +112,6 @@
   width: 72%;
   height: 72%;
   background: radial-gradient(circle, var(--orb-c) 0%, transparent 72%);
-  animation: rootsy-empty-orb-drift 15s ease-in-out infinite reverse;
 }
 
 .rootsy-empty-state__ellipsis-marks {
@@ -138,32 +135,6 @@
 .rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__world::before,
 .rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__world::after {
   opacity: 0.18;
-}
-
-@keyframes rootsy-empty-orb-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes rootsy-empty-orb-drift {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  40% {
-    transform: translate(16%, -12%) scale(1.14);
-  }
-  72% {
-    transform: translate(-12%, 14%) scale(0.9);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rootsy-empty-state__orb-spin,
-  .rootsy-empty-state__orb-blob {
-    animation: none;
-  }
 }
 
 .rootsy-empty-state__copy {
@@ -206,16 +177,10 @@
 }
 
 .rootsy-empty-state[data-world="eter"][data-presence="elsewhere"] {
-  --orb-a: rgb(186 198 214 / 0.42);
-  --orb-b: rgb(100 116 139 / 0.38);
-  --orb-c: rgb(226 232 240 / 0.22);
-  --orb-spin-opacity: 0.42;
-}
-
-.rootsy-empty-state[data-world="eter"][data-presence="elsewhere"] .rootsy-empty-state__frame {
-  box-shadow:
-    0 0 0 1.5px color-mix(in srgb, var(--rootsy-eter-200) 18%, transparent),
-    0 1px 2px rgb(15 23 20 / 0.28);
+  --orb-a: rgb(186 198 214 / 0.32);
+  --orb-b: rgb(100 116 139 / 0.28);
+  --orb-c: rgb(226 232 240 / 0.16);
+  --orb-spin-opacity: 0.24;
 }
 
 .rootsy-empty-state__eter {
@@ -264,16 +229,10 @@
 }
 
 .rootsy-empty-state[data-world="bruma"][data-presence="elsewhere"] {
-  --orb-a: rgb(148 163 184 / 0.4);
-  --orb-b: rgb(203 213 225 / 0.55);
-  --orb-c: rgb(241 245 249 / 0.7);
-  --orb-spin-opacity: 0.22;
-}
-
-.rootsy-empty-state[data-world="bruma"][data-presence="elsewhere"] .rootsy-empty-state__frame {
-  box-shadow:
-    0 0 0 1.5px color-mix(in srgb, var(--rootsy-bruma-300) 55%, transparent),
-    0 1px 2px rgb(15 23 20 / 0.08);
+  --orb-a: rgb(148 163 184 / 0.28);
+  --orb-b: rgb(203 213 225 / 0.4);
+  --orb-c: rgb(241 245 249 / 0.5);
+  --orb-spin-opacity: 0.14;
 }
 
 .rootsy-empty-state__world--bruma {
@@ -322,16 +281,10 @@
 }
 
 .rootsy-empty-state[data-world="suelo"][data-presence="elsewhere"] {
-  --orb-a: rgb(168 162 148 / 0.4);
-  --orb-b: rgb(120 113 100 / 0.35);
-  --orb-c: rgb(214 211 204 / 0.28);
-  --orb-spin-opacity: 0.4;
-}
-
-.rootsy-empty-state[data-world="suelo"][data-presence="elsewhere"] .rootsy-empty-state__frame {
-  box-shadow:
-    0 0 0 1.5px color-mix(in srgb, var(--rootsy-suelo-400) 22%, transparent),
-    0 1px 2px rgb(15 23 20 / 0.28);
+  --orb-a: rgb(168 162 148 / 0.3);
+  --orb-b: rgb(120 113 100 / 0.26);
+  --orb-c: rgb(214 211 204 / 0.18);
+  --orb-spin-opacity: 0.22;
 }
 
 .rootsy-empty-state__world--suelo {
@@ -397,16 +350,10 @@
 }
 
 .rootsy-empty-state[data-world="sombra"][data-presence="elsewhere"] {
-  --orb-a: rgb(148 163 184 / 0.4);
-  --orb-b: rgb(71 85 105 / 0.38);
-  --orb-c: rgb(226 232 240 / 0.24);
-  --orb-spin-opacity: 0.4;
-}
-
-.rootsy-empty-state[data-world="sombra"][data-presence="elsewhere"] .rootsy-empty-state__frame {
-  box-shadow:
-    0 0 0 1.5px color-mix(in srgb, var(--rootsy-bruma-400) 22%, transparent),
-    0 1px 2px rgb(15 23 20 / 0.28);
+  --orb-a: rgb(148 163 184 / 0.28);
+  --orb-b: rgb(71 85 105 / 0.26);
+  --orb-c: rgb(226 232 240 / 0.14);
+  --orb-spin-opacity: 0.22;
 }
 
 .rootsy-empty-state__world--sombra {
@@ -476,16 +423,10 @@
 }
 
 .rootsy-empty-state[data-world="herramientas"][data-presence="elsewhere"] {
-  --orb-a: rgb(196 212 216 / 0.4);
-  --orb-b: rgb(148 163 184 / 0.32);
-  --orb-c: rgb(226 232 240 / 0.22);
-  --orb-spin-opacity: 0.4;
-}
-
-.rootsy-empty-state[data-world="herramientas"][data-presence="elsewhere"] .rootsy-empty-state__frame {
-  box-shadow:
-    0 0 0 1.5px rgb(224 255 255 / 0.22),
-    0 1px 2px rgb(0 11 21 / 0.28);
+  --orb-a: rgb(196 212 216 / 0.28);
+  --orb-b: rgb(148 163 184 / 0.22);
+  --orb-c: rgb(226 232 240 / 0.14);
+  --orb-spin-opacity: 0.22;
 }
 
 .rootsy-empty-state__world--herramientas {
@@ -494,4 +435,41 @@
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center 52%;
+}
+
+/* ——— Elsewhere: se funde con el mundo ——— */
+
+.rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__portrait {
+  -webkit-mask-image: radial-gradient(
+    circle at 50% 48%,
+    #000 36%,
+    rgb(0 0 0 / 0.55) 56%,
+    transparent 74%
+  );
+  mask-image: radial-gradient(
+    circle at 50% 48%,
+    #000 36%,
+    rgb(0 0 0 / 0.55) 56%,
+    transparent 74%
+  );
+}
+
+.rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__frame {
+  background: transparent;
+  box-shadow: none;
+}
+
+.rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__world,
+.rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__eter {
+  opacity: 0.32;
+}
+
+.rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__ellipsis-dot {
+  width: 0.3rem;
+  height: 0.3rem;
+  opacity: 0.4;
+}
+
+.rootsy-empty-state[data-world="bruma"][data-presence="elsewhere"] .rootsy-empty-state__ellipsis-dot {
+  opacity: 0.34;
 }

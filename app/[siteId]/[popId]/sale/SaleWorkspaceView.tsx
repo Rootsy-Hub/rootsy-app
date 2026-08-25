@@ -43,7 +43,6 @@ import {
   type ClientIvaConditionValue,
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
-import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { SaleCatalogBrowser } from "@/components/sale-operation/SaleCatalogBrowser"
 import { SaleDevtoolsPanel } from "@/components/sale-operation/SaleDevtoolsPanel"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
@@ -1239,10 +1238,6 @@ export function SaleWorkspaceView() {
                 Preparando ítems, cliente y condiciones de la venta
               </p>
             </div>
-          ) : null}
-
-          {!catalogLoading && !openCashSession ? (
-            <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />
           ) : null}
 
           <LayoutsOperarMainGrid
