@@ -32,7 +32,7 @@ const SECTION_LEADS: Record<string, string> = {
   "colors-new-ceniza":
     "Carbón verdoso bajo el dosel — shell, rail, canvas, cards y toolbox. El hero de marketing usa los mismos oscuros (sombra 900), no una paleta aparte.",
   "colors-new-bruma":
-    "Neblina matinal para la columna TU PEDIDO, filas del ticket y tablas workspace. Aire claro que contrasta con la sombra del catálogo y deja brillar la savia.",
+    "Neblina matinal para la columna TU PEDIDO, filas del ticket y tablas workspace. Aire claro que contrasta con la sombra del catálogo y deja brillar la savia. De noche, los mismos tokens arman Bruma oscura — no una familia nueva.",
   "colors-new-savia":
     "La savia del árbol — emerald operativo sobre sombra. Incluye la extensión teal del CTA hero (savia.teal).",
   "colors-new-atmosphere":

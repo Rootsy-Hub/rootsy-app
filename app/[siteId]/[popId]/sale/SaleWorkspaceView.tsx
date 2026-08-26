@@ -252,6 +252,7 @@ export function SaleWorkspaceView() {
     hasValidPopFiscalCuit: apiHasValidPopFiscalCuit,
     popEmisorIvaCondition: apiPopEmisorIvaCondition,
     comprobanteOptions,
+    comprobanteEmitter,
     comprobantesLoaded,
     mergeCatalogArticles,
     ensureCatalogArticles,
@@ -1420,7 +1421,7 @@ export function SaleWorkspaceView() {
           if (popId) writeSavedSaleComprobante(popId, value)
         }}
         previewInput={comprobantePreviewInput}
-        cashRegisterId={openCashSession?.cashRegisterId ?? null}
+        emitter={comprobanteEmitter}
       />
 
       <SalePaymentMethodDialog

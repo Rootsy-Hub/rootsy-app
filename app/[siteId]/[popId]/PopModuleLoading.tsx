@@ -144,7 +144,7 @@ export function PopModuleLoading({
           <DataWorkspaceTableListLoadingBody moduleKey={moduleKey} title={title} />
         ) : (
           <div
-            className="flex min-h-0 flex-1 flex-col gap-3 p-4"
+            className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-4"
             role="status"
             aria-live="polite"
             aria-busy="true"

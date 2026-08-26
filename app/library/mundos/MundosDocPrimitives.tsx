@@ -5,6 +5,7 @@ import "@/app/library/libraryColorTheme.css"
 import "@/app/library/mundos/mundosHerramientas.css"
 import "@/app/library/radius/rootsyRadiusSystem.css"
 import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
+import "@/components/data-workspace/dataWorkspaceBlocksAtmosphereBrumaOscura.css"
 import { MundosHerramientasCards } from "@/app/library/mundos/MundosHerramientasCard"
 import { HomeWorkspaceBackdrop } from "@/components/layouts/HomeWorkspaceBackdrop"
 import { HomeSubtleButton } from "@/app/home/HomeSubtleButton"
@@ -285,6 +286,85 @@ function MundosBrumaStage() {
   )
 }
 
+function MundosBrumaOscuraAccountCard({
+  eyebrow,
+  title,
+  amount,
+  open,
+}: {
+  eyebrow: string
+  title: string
+  amount: string
+  open?: boolean
+}) {
+  return (
+    <article className="relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[1.375rem] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_1px_0_color-mix(in_srgb,var(--rootsy-bruma-50)_7%,transparent)]">
+      <div className="border-b border-[var(--color-border)] px-4 py-4">
+        <div className="flex items-start gap-3">
+          <span
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-elevated)] text-[var(--color-text-secondary)]"
+            aria-hidden
+          >
+            {open ? <Wallet className="size-5" /> : <Landmark className="size-5" />}
+          </span>
+          <div className="min-w-0">
+            <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--color-text-secondary)]">
+              {eyebrow}
+            </p>
+            <p className="font-canopy text-base font-semibold text-[var(--color-text-primary)]">
+              {title}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="px-4 py-4">
+        <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--color-text-secondary)]">
+          Saldo
+        </p>
+        <p className="block min-w-0 truncate font-numeric text-2xl font-bold tabular-nums tracking-tight text-[var(--color-text-primary)]">
+          {amount}
+        </p>
+        {open ? (
+          <p className="mt-2 inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,var(--color-border))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_16%,var(--color-surface))] px-2.5 py-1 font-canopy text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--rootsy-savia-300)]">
+            Abierta
+          </p>
+        ) : (
+          <p className="mt-2 font-canopy text-[length:var(--rootsy-text-body-small-size)] text-[var(--color-text-secondary)]">
+            Banco
+          </p>
+        )}
+      </div>
+    </article>
+  )
+}
+
+function MundosBrumaOscuraStage() {
+  return (
+    <MundosWorldStage label="Mundo Bruma oscura — cuentas y cajas">
+      <div className="rootsy-theme-bruma-oscura data-workspace-blocks-atmosphere-bruma-oscura flex h-full flex-col">
+        <div className="relative z-1 flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-4 py-5 sm:px-6">
+          <p className="font-canopy text-[length:var(--rootsy-text-heading-small-size)] leading-[var(--rootsy-text-heading-small-lh)] text-[var(--color-text-primary)]">
+            Cuentas
+          </p>
+          <div className="grid min-h-0 grid-cols-1 gap-4 sm:grid-cols-2">
+            <MundosBrumaOscuraAccountCard
+              eyebrow="Caja"
+              title="Caja mostrador"
+              amount="$ 48.320"
+              open
+            />
+            <MundosBrumaOscuraAccountCard
+              eyebrow="Banco"
+              title="Galicia · operativa"
+              amount="$ 1.284.500"
+            />
+          </div>
+        </div>
+      </div>
+    </MundosWorldStage>
+  )
+}
+
 function MundosSueloStage() {
   return (
     <MundosWorldStage label="Mundo Suelo — toolbox y pie de tablas">
@@ -406,11 +486,12 @@ function MundosHerramientasStage() {
 }
 
 const WORLD_STAGES: Record<
-  "eter" | "bruma" | "suelo" | "sombra" | "herramientas",
+  "eter" | "bruma" | "bruma-oscura" | "suelo" | "sombra" | "herramientas",
   () => ReactNode
 > = {
   eter: MundosEterStage,
   bruma: MundosBrumaStage,
+  "bruma-oscura": MundosBrumaOscuraStage,
   suelo: MundosSueloStage,
   sombra: MundosSombraStage,
   herramientas: MundosHerramientasStage,

@@ -19,7 +19,7 @@
   --rootsy-sombra-300: #8fa396;
   --rootsy-sombra-border: #2a3530;
 
-  /* Bruma — neblina clara */
+  /* Bruma — neblina (clara de día, oscura de noche) */
   --rootsy-bruma-50: #f4f6f9;
   --rootsy-bruma-100: #eef1f5;
   --rootsy-bruma-200: #dfe4ea;
@@ -28,7 +28,9 @@
   --rootsy-bruma-500: #64748b;
   --rootsy-bruma-600: #475569;
   --rootsy-bruma-700: #334155;
+  --rootsy-bruma-800: #1a1f28;
   --rootsy-bruma-900: #121417;
+  --rootsy-bruma-950: #0a0c0f;
 
   /* Savia — vida y acción */
   --rootsy-savia-990: #061009;

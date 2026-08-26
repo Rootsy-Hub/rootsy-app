@@ -49,7 +49,7 @@ const FUNCTIONAL = {
   infoDark: "#0D9488",
 } as const
 
-export type ColorThemeId = "pos" | "workspace" | "marketing" | "library"
+export type ColorThemeId = "pos" | "workspace" | "bruma-oscura" | "marketing" | "library"
 
 /** @deprecated Usar "marketing". Alias de migración desde landing. */
 export type LegacyColorThemeId = ColorThemeId | "landing"
@@ -208,6 +208,22 @@ export const ROOTSY_THEMES: ColorTheme[] = [
     border: hx("bruma", "200"),
     textPrimary: hx("bruma", "900"),
     textSecondary: hx("bruma", "500"),
+    action: hx("savia", "600"),
+    actionText: W,
+    accent: hx("savia", "400"),
+  },
+  {
+    id: "bruma-oscura",
+    label: "Bruma oscura",
+    subtitle: "Workspace night",
+    description:
+      "Variante dark de bruma — la misma neblina invertida. Lienzo 950, losetas 800, texto 50. No es sombra ni éter.",
+    shell: hx("bruma", "950"),
+    surface: hx("bruma", "800"),
+    elevated: hx("bruma", "700"),
+    border: "#2C3544",
+    textPrimary: hx("bruma", "50"),
+    textSecondary: hx("bruma", "400"),
     action: hx("savia", "600"),
     actionText: W,
     accent: hx("savia", "400"),
@@ -522,6 +538,16 @@ export const ROOTSY_COMPLEMENTARY_PAIRINGS: ComplementaryPairing[] = [
     usage: "Formularios, modales, tablas workspace.",
   },
   {
+    id: "workspace-bruma-oscura",
+    title: "Bruma oscura + Savia",
+    description: "La misma lectura de noche — bruma 50 sobre 950, confirmación savia 600.",
+    primary: { label: "Bruma 950", hex: hx("bruma", "950") },
+    secondary: { label: "Savia 600", hex: hx("savia", "600") },
+    accent: { label: "Bruma 50", hex: hx("bruma", "50") },
+    harmony: "neutral-action",
+    usage: "Workspaces y cuentas en variante dark. .rootsy-theme-bruma-oscura.",
+  },
+  {
     id: "workspace-header",
     title: "Sombra header + Bruma body",
     description: "Continuidad POS→workspace — header bajo el dosel, contenido en bruma.",
@@ -606,6 +632,30 @@ export const ROOTSY_CONTRAST_PAIRS: ContrastPair[] = [
     ratio: "12.4:1",
     level: "AAA",
     context: "Texto principal en TU PEDIDO.",
+  },
+  {
+    id: "bruma-oscura-body",
+    foreground: hx("bruma", "50"),
+    background: hx("bruma", "950"),
+    ratio: "16.1:1",
+    level: "AAA",
+    context: "Texto principal en bruma oscura — lienzo 950.",
+  },
+  {
+    id: "bruma-oscura-card",
+    foreground: hx("bruma", "50"),
+    background: hx("bruma", "800"),
+    ratio: "13.4:1",
+    level: "AAA",
+    context: "Título de loseta sobre bruma 800.",
+  },
+  {
+    id: "bruma-oscura-muted",
+    foreground: hx("bruma", "400"),
+    background: hx("bruma", "950"),
+    ratio: "8.2:1",
+    level: "AAA",
+    context: "Metadato sobre lienzo bruma oscura.",
   },
   {
     id: "pos-muted",
@@ -704,6 +754,13 @@ export const ROOTSY_SURFACE_STACKS: Record<ColorThemeId, SurfaceLayer[]> = {
     { level: 2, label: "Subtle", token: "bruma-50", hex: hx("bruma", "50"), usage: "Filas zebra." },
     { level: 3, label: "Header", token: "sombra-700", hex: hx("sombra", "700"), usage: "Cabecera oscura." },
     { level: 4, label: "Overlay", token: "sombra-950/40", hex: "#05080766", usage: "Scrim modal." },
+  ],
+  "bruma-oscura": [
+    { level: 0, label: "Shell", token: "bruma-950", hex: hx("bruma", "950"), usage: "Lienzo night." },
+    { level: 1, label: "Surface", token: "bruma-800", hex: hx("bruma", "800"), usage: "Losetas, cards." },
+    { level: 2, label: "Subtle", token: "bruma-700", hex: hx("bruma", "700"), usage: "Isotipo, zebra." },
+    { level: 3, label: "Border", token: "bruma-600/52", hex: "#2C3544", usage: "Hairline de loseta." },
+    { level: 4, label: "Text", token: "bruma-50", hex: hx("bruma", "50"), usage: "Lectura sobre neblina." },
   ],
   marketing: [
     { level: 0, label: "Atmosphere", token: "sombra-900", hex: hx("sombra", "900"), usage: "Hero fijo." },

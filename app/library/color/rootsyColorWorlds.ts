@@ -59,6 +59,21 @@ export const ROOTSY_COLOR_WORLDS: RootsyColorWorld[] = [
     ],
   },
   {
+    id: "bruma-oscura",
+    name: "Bruma oscura",
+    kind: "composicion",
+    concept: "La misma neblina, de noche. Aire frío para leer.",
+    usedIn: "Variante dark de cuentas, cajas y workspaces claros. Misma estructura que bruma.",
+    not: "No es sombra (bosque) ni éter (espacio). No inventes una familia bruma-oscura-*.",
+    token: "bruma-950 · 800 · 50 — .rootsy-theme-bruma-oscura",
+    hexes: [
+      { label: "950", hex: hx("bruma", "950") },
+      { label: "800", hex: hx("bruma", "800") },
+      { label: "700", hex: hx("bruma", "700") },
+      { label: "50", hex: hx("bruma", "50") },
+    ],
+  },
+  {
     id: "savia",
     name: "Savia",
     kind: "marca",
@@ -154,4 +169,5 @@ export const ROOTSY_COLOR_WORLD_DONT = [
   "Sol ≠ warning. Preparando es clima; stock/pendiente es semántica UX.",
   "Suelo ≠ earth de forms. Pills y avisos van a bruma.",
   "Sombra ≠ éter. El dosel es bosque; el header es afuera del planeta.",
+  "Bruma oscura ≠ sombra. La noche de leer es neblina invertida, no el catálogo bajo el dosel.",
 ] as const

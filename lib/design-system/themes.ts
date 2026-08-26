@@ -5,7 +5,7 @@
 
 import { rootsyColorHex } from "@/lib/design-system/tokens/colors"
 
-export type RootsyThemeId = "pos" | "workspace" | "marketing" | "library"
+export type RootsyThemeId = "pos" | "workspace" | "bruma-oscura" | "marketing" | "library"
 
 /** @deprecated Usar "marketing" */
 export type LegacyRootsyThemeId = RootsyThemeId | "landing"
@@ -50,6 +50,20 @@ export const ROOTSY_THEMES: RootsyThemeTokens[] = [
     border: rootsyColorHex("bruma", "200"),
     textPrimary: rootsyColorHex("bruma", "900"),
     textSecondary: rootsyColorHex("bruma", "500"),
+    action: rootsyColorHex("savia", "600"),
+    actionText: "#FFFFFF",
+    accent: rootsyColorHex("savia", "400"),
+  },
+  {
+    id: "bruma-oscura",
+    label: "Bruma oscura",
+    className: "rootsy-theme-bruma-oscura",
+    shell: rootsyColorHex("bruma", "950"),
+    surface: rootsyColorHex("bruma", "800"),
+    elevated: rootsyColorHex("bruma", "700"),
+    border: "#2C3544",
+    textPrimary: rootsyColorHex("bruma", "50"),
+    textSecondary: rootsyColorHex("bruma", "400"),
     action: rootsyColorHex("savia", "600"),
     actionText: "#FFFFFF",
     accent: rootsyColorHex("savia", "400"),

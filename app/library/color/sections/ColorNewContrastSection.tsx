@@ -64,6 +64,10 @@ export function ColorNewContrastSection() {
               100 — metadatos en bruma 500 mínimo.
             </li>
             <li>
+              <strong className="text-[var(--rootsy-bruma-900)]">Bruma oscura:</strong> bruma 50 sobre 950 u
+              800 — metadatos en bruma 400. No uses sombra 300: ese mute es del dosel.
+            </li>
+            <li>
               <strong className="text-[var(--rootsy-bruma-900)]">Marketing:</strong> blanco o savia 400 sobre
               sombra 900 — neón de atmósfera nunca como color de texto.
             </li>

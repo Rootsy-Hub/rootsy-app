@@ -22,6 +22,7 @@ export type SaleQuerySpecPlace = {
 const CACHE_TANSTACK_24H = "TanStack · 24 h"
 const CACHE_TANSTACK_24H_REFETCH_MOUNT = "TanStack · 24 h · refetch al montar"
 const CACHE_TANSTACK_SESSION_REFETCH = "TanStack · sesión · refetch al montar"
+const CACHE_TANSTACK_SESSION = "TanStack · sesión · staleTime ∞"
 const CACHE_SQLITE_OPFS = "SQLite · OPFS · por pop"
 const CACHE_NONE = "No"
 
@@ -218,14 +219,14 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "GET /v1/pops/:popId/sale/payment-context",
                 detail:
-                  "En paralelo con categories, articles, comprobantes y open-session. Alimenta el slot de pago.",
-                cache: CACHE_TANSTACK_24H,
+                  "Al entrar, en paralelo con categories, articles, comprobantes y open-session. El modal de Pago no vuelve a pegar: lee esta cache.",
+                cache: CACHE_TANSTACK_SESSION,
               },
               {
                 endpoint: "GET /v1/pops/:popId/sale/comprobantes",
                 detail:
-                  "En paralelo con categories, articles, payment-context y open-session. Trae las opciones del picker; no espera un click.",
-                cache: CACHE_TANSTACK_24H,
+                  "Al entrar, en paralelo con categories, articles, payment-context y open-session. Trae opciones y datos fiscales del emisor. El modal de Comprobante no vuelve a pegar: lista y vista previa leen esta cache.",
+                cache: CACHE_TANSTACK_SESSION,
               },
             ],
           },

@@ -68,7 +68,7 @@ export const BRUMA_FAMILY: NatureFamily = {
   title: "Bruma · neblina clara",
   subtitle: "Ticket y listados",
   description:
-    "Off-white frío como neblina matinal — columnas de resumen, tickets y tablas workspace. Contraste limpio con sombra bajo el dosel y acentos savia.",
+    "Off-white frío como neblina matinal — columnas de resumen, tickets y tablas workspace. De noche, los mismos pasos 950/800/50 arman Bruma oscura. Contraste limpio con sombra bajo el dosel y acentos savia.",
   steps: [
     { id: "b50", label: "50", hex: hx("bruma", "50"), usage: "★ Superficie listado — ítems del ticket." },
     { id: "b100", label: "100", hex: hx("bruma", "100"), usage: "★ Panel resumen — aside TU PEDIDO." },
@@ -77,8 +77,10 @@ export const BRUMA_FAMILY: NatureFamily = {
     { id: "b400", label: "400", hex: hx("bruma", "400"), usage: "Metadatos — contador de líneas." },
     { id: "b500", label: "500", hex: hx("bruma", "500"), usage: "Encabezados secundarios — TU PEDIDO." },
     { id: "b600", label: "600", hex: hx("bruma", "600"), usage: "Descripciones — hints en panel claro." },
-    { id: "b700", label: "700", hex: hx("bruma", "700"), usage: "Texto empty state — títulos muted." },
+    { id: "b700", label: "700", hex: hx("bruma", "700"), usage: "Texto empty state — títulos muted. Elevada en bruma oscura." },
+    { id: "b800", label: "800", hex: hx("bruma", "800"), usage: "★ Superficie loseta — bruma oscura." },
     { id: "b900", label: "900", hex: hx("bruma", "900"), usage: "★ Texto principal — cuerpo en panel claro." },
+    { id: "b950", label: "950", hex: hx("bruma", "950"), usage: "★ Lienzo bruma oscura — no es sombra-950." },
   ],
 }
 

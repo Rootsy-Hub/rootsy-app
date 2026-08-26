@@ -1,4 +1,5 @@
 import {
+  CloudFog,
   ListPlus,
   MessageCircle,
   Package,
@@ -10,6 +11,7 @@ import {
 export type RootsyEmptyStateWorld =
   | "eter"
   | "bruma"
+  | "bruma-oscura"
   | "suelo"
   | "sombra"
   | "herramientas"
@@ -23,6 +25,7 @@ export const ROOTSY_EMPTY_STATE_WORLDS: {
 }[] = [
   { id: "eter", label: "Éter", usage: "Home y headers — noche sideral." },
   { id: "bruma", label: "Bruma", usage: "Pedido de Operar, cuentas y cajas." },
+  { id: "bruma-oscura", label: "Bruma oscura", usage: "Misma lectura que bruma, de noche." },
   { id: "suelo", label: "Suelo", usage: "Toolbox de Operar y pie de tablas." },
   { id: "sombra", label: "Sombra", usage: "Catálogo de productos en Operar." },
   { id: "herramientas", label: "Herramientas", usage: "Hilo de Rootsy en chat." },
@@ -32,6 +35,7 @@ export const ROOTSY_EMPTY_STATE_WORLDS: {
 export const ROOTSY_EMPTY_STATE_WORLD_ICONS: Record<RootsyEmptyStateWorld, LucideIcon> = {
   eter: Sparkles,
   bruma: ListPlus,
+  "bruma-oscura": CloudFog,
   suelo: Wrench,
   sombra: Package,
   herramientas: MessageCircle,

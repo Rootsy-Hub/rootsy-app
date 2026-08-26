@@ -82,9 +82,24 @@ export const workspaceTableSurfaceClass =
 export const dataWorkspaceTablesSheetFrameClass =
   "relative z-1 flex min-h-0 min-w-0 flex-1 flex-col"
 
-/** Hoja flush — tabla + pie universo, sin radio ni gutter. */
+/** Hoja flush — tabla + piso stripe (no blanco) bajo la última fila. */
 export const dataWorkspaceTablesSheetClass = cn(
-  "flex min-h-0 flex-1 flex-col overflow-hidden bg-white",
+  "flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--wt-surface-stripe)]",
+)
+
+/** Piso del listado — el “otro” de las filas (stripe), no el blanco. */
+export const dataWorkspaceTableBodyFloorClass = "bg-[var(--wt-surface-stripe)]"
+
+/** Cuerpo de tabla — mismo `game-scroll` que el body de los modales. */
+export const dataWorkspaceTableBodyScrollClass = cn(
+  "game-scroll absolute inset-0 overflow-auto overscroll-contain",
+  dataWorkspaceTableBodyFloorClass,
+)
+
+/** Cuerpo de tabla mientras carga — sin barras (el esqueleto no scrollea). */
+export const dataWorkspaceTableBodyScrollHiddenClass = cn(
+  "absolute inset-0 overflow-hidden",
+  dataWorkspaceTableBodyFloorClass,
 )
 
 /** Scope raíz — tokens --wt-* (ver rootsyNaturePalette.css). */

@@ -1215,6 +1215,7 @@ export function ArticlesWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
             <DataWorkspaceTableListShell
+              lockScroll={listFetching}
               activeFiltersBar={
                 hasFilterChips ? (
                   <DataWorkspaceListActiveFiltersBar

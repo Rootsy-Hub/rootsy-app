@@ -53,7 +53,7 @@ export function ColorNewOverviewSection() {
         <ColorDocSection
           id="colors-new-themes-preview"
           title="Contextos de producto"
-          description="POS, workspace, marketing y librería — composiciones de las tres familias."
+          description="POS, workspace, bruma oscura, marketing y librería — composiciones de las tres familias."
         >
           <ThemeGallery />
         </ColorDocSection>

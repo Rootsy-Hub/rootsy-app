@@ -42,7 +42,7 @@ export const dataWorkspaceTableListNatureShellClass = workspaceLayoutsTablesShel
 
 /** Clases del cuerpo de página listado tabla — error + nature shell. */
 export const dataWorkspaceTableListPageBodyClass =
-  "relative flex min-h-0 min-w-0 w-full flex-1 flex-col"
+  "relative flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden"
 
 export const dataWorkspaceTableListErrorBannerClass = "relative shrink-0"
 
@@ -86,7 +86,7 @@ export function DataWorkspaceTableListPage({
       useHomeBackdrop={false}
       contentFlush
       sidebarCollapsible={false}
-      mainClassName="min-h-0"
+      mainClassName="min-h-0 overflow-hidden"
     >
       <div className={dataWorkspaceTableListPageBodyClass}>
         {error ? (

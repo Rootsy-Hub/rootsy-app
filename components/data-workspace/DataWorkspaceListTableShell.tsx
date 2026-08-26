@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils"
 import { useEffect, useState, type ReactNode } from "react"
 import {
   dataWorkspaceShellCard,
+  dataWorkspaceTableBodyScrollClass,
+  dataWorkspaceTableBodyScrollHiddenClass,
   listTableChromeStackClass,
   listTableChromeStackFollowRowClass,
   workspaceTableListBodyScopeClass,
@@ -32,6 +34,8 @@ export type DataWorkspaceListTableShellProps = {
   footerFloatingCentered?: boolean
   /** Al cambiar, el scroll del listado vuelve arriba. */
   scrollResetKey?: string | number
+  /** Sin barras — p. ej. esqueleto de carga. */
+  lockScroll?: boolean
   className?: string
   infinite?: DataWorkspaceTableListInfinite
 }
@@ -47,6 +51,7 @@ export function DataWorkspaceListTableShell({
   footerFloating = false,
   footerFloatingCentered = false,
   scrollResetKey,
+  lockScroll = false,
   className,
   infinite,
 }: DataWorkspaceListTableShellProps) {
@@ -98,7 +103,9 @@ export function DataWorkspaceListTableShell({
           <div
             ref={setScrollRoot}
             className={cn(
-              "rootsy-scroll-minimal absolute inset-0 overflow-auto",
+              lockScroll
+                ? dataWorkspaceTableBodyScrollHiddenClass
+                : dataWorkspaceTableBodyScrollClass,
               workspaceTableListBodyScopeClass,
               workspaceTableLayoutListBodyScopeClass,
             )}

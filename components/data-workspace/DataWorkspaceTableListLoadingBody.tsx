@@ -137,7 +137,7 @@ export function DataWorkspaceTableListLoadingBody({
   return (
     <>
       <TableListFiltersSkeleton layout={config.filterLayout} />
-      <DataWorkspaceTableListShell>
+      <DataWorkspaceTableListShell lockScroll>
         <DataWorkspaceListTableFrame>
           <table
             className={cn(

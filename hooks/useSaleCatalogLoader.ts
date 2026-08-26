@@ -113,6 +113,7 @@ export function useSaleCatalogLoader(
     popEmisorIvaCondition:
       comprobantesQuery.data?.emisorIvaCondition ?? "responsable_inscripto",
     comprobanteOptions: comprobantesQuery.data?.options ?? [],
+    comprobanteEmitter: comprobantesQuery.data?.emitter ?? null,
     comprobantesLoaded: comprobantesQuery.isSuccess,
     catalogLoading: catalogQuery.isLoading,
     catalogError:

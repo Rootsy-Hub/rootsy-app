@@ -416,10 +416,13 @@ export function DataWorkspaceLayout({
                 contentFlush
                   ? cn(
                       "min-h-0 p-0",
-                      fillViewport ? "overflow-y-auto" : "overflow-hidden",
+                      fillViewport && !loading
+                        ? "overflow-y-auto"
+                        : "overflow-hidden",
                     )
                   : cn(
-                      "overflow-y-auto px-3 py-4 sm:px-6 sm:py-8 sm:pl-5 sm:pr-8",
+                      loading ? "overflow-hidden" : "overflow-y-auto",
+                      "px-3 py-4 sm:px-6 sm:py-8 sm:pl-5 sm:pr-8",
                       mainMaxWidthClass,
                       "mx-auto w-full max-w-none",
                     ),
@@ -437,10 +440,13 @@ export function DataWorkspaceLayout({
               contentFlush
                 ? cn(
                     "min-h-0 p-0",
-                    fillViewport ? "overflow-y-auto" : "overflow-hidden",
+                    fillViewport && !loading
+                      ? "overflow-y-auto"
+                      : "overflow-hidden",
                   )
                 : cn(
-                    "mx-auto overflow-y-auto px-3 py-4 sm:px-6 sm:py-8",
+                    "mx-auto px-3 py-4 sm:px-6 sm:py-8",
+                    loading ? "overflow-hidden" : "overflow-y-auto",
                     mainMaxWidthClass,
                   ),
               mainClassName,

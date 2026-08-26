@@ -284,6 +284,51 @@
   filter: blur(8px) saturate(0.72) brightness(1.06);
 }
 
+/* ——— Bruma oscura ——— */
+
+.rootsy-empty-state[data-world="bruma-oscura"] .rootsy-empty-state__title {
+  color: var(--rootsy-bruma-50);
+}
+
+.rootsy-empty-state[data-world="bruma-oscura"] .rootsy-empty-state__description {
+  color: var(--rootsy-bruma-400);
+}
+
+.rootsy-empty-state[data-world="bruma-oscura"] .rootsy-empty-state__mark {
+  color: var(--rootsy-bruma-300);
+  opacity: 0.55;
+}
+
+.rootsy-empty-state[data-world="bruma-oscura"] {
+  --orb-a: rgb(148 163 184 / 0.22);
+  --orb-b: rgb(51 65 85 / 0.36);
+  --orb-c: rgb(244 246 249 / 0.12);
+  --orb-spin-opacity: 0.18;
+}
+
+.rootsy-empty-state__world--bruma-oscura {
+  background:
+    radial-gradient(
+      ellipse 90% 42% at 50% -8%,
+      color-mix(in srgb, var(--rootsy-bruma-700) 48%, transparent) 0%,
+      transparent 72%
+    ),
+    var(--rootsy-bruma-950);
+}
+
+.rootsy-empty-state__world--bruma-oscura::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -20% 0;
+  height: 78%;
+  background-image: url("/images/rootsyplanet.jpeg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 68% 42%;
+  opacity: 0.22;
+  filter: blur(8px) saturate(0.5) brightness(0.42);
+}
+
 /* ——— Suelo ——— */
 
 .rootsy-empty-state[data-world="suelo"] .rootsy-empty-state__title {

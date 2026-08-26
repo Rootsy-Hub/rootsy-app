@@ -1,0 +1,65 @@
+/**
+ * Aire de bloques — bruma de noche.
+ * Misma estructura que la bruma clara: planeta atrás, trabajo en las losetas.
+ * El lienzo es bruma-950, no sombra-950.
+ */
+
+.data-workspace-blocks-atmosphere-bruma-oscura {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--rootsy-bruma-950);
+  background-image:
+    radial-gradient(
+      ellipse 90% 42% at 50% -8%,
+      color-mix(in srgb, var(--rootsy-bruma-700) 42%, transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 70% 36% at 50% 108%,
+      color-mix(in srgb, var(--rootsy-savia-500) 10%, transparent) 0%,
+      transparent 72%
+    );
+  background-repeat: no-repeat;
+}
+
+.data-workspace-blocks-atmosphere-bruma-oscura::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: min(56vh, 100%);
+  background-image: url("/images/rootsyplanet.jpeg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 68% 42%;
+  opacity: 0.18;
+  filter: blur(22px) saturate(0.55) brightness(0.42);
+  transform: scale(1.12);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.95) 0%,
+    rgb(0 0 0 / 0.4) 58%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.95) 0%,
+    rgb(0 0 0 / 0.4) 58%,
+    transparent 100%
+  );
+}
+
+.data-workspace-blocks-atmosphere-bruma-oscura > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .data-workspace-blocks-atmosphere-bruma-oscura::before {
+    content: none;
+  }
+}

@@ -9,6 +9,7 @@ import type {
 } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import type { OperateCatalogItemsFilter, OperateCatalogItemsPage } from "@/lib/operateCatalogPage"
 import type { SaleComprobantePickerOption } from "@/lib/saleComprobantePicker"
+import type { SaleComprobanteEmitterContext } from "@/lib/saleComprobantePreview"
 import type { PopEmisorIvaCondition } from "@/lib/saleComprobanteRules"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 
@@ -41,6 +42,7 @@ export type SaleComprobantesPayload = {
   hasValidFiscalCuit: boolean
   emisorIvaCondition: PopEmisorIvaCondition
   options: SaleComprobantePickerOption[]
+  emitter?: SaleComprobanteEmitterContext | null
 }
 
 async function parseOk<T>(

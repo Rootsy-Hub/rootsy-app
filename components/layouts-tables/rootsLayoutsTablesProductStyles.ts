@@ -67,6 +67,6 @@ export const layoutsTablesFooterSelectItemClass = "py-1.5 text-xs"
 export const workspaceLayoutsTablesScopeClass = "workspace-layouts-tables"
 
 export const workspaceLayoutsTablesShellClass = cn(
-  "data-workspace-tables-atmosphere rootsy-app-light flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden",
+  "data-workspace-tables-atmosphere rootsy-app-light flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
   workspaceLayoutsTablesScopeClass,
 )

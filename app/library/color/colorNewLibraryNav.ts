@@ -64,7 +64,7 @@ export const COLOR_NEW_PAGE_META: Record<string, ColorNewPageMeta> = {
   "colors-new-themes": {
     id: "colors-new-themes",
     title: "Temas",
-    description: "POS, workspace, marketing y librería — composiciones de las tres familias.",
+    description: "POS, workspace, bruma oscura, marketing y librería — composiciones de las tres familias.",
   },
   "colors-new-pairings": {
     id: "colors-new-pairings",
@@ -76,7 +76,7 @@ export const COLOR_NEW_PAGE_META: Record<string, ColorNewPageMeta> = {
     id: "colors-new-mundos",
     title: "Mundos",
     description:
-      "Sombra, bruma, savia, suelo, cielo, sol y éter — dónde vive cada uno y qué no es.",
+      "Sombra, bruma, savia, suelo, cielo, sol y éter — dónde vive cada uno y qué no es. Bruma oscura es la misma neblina de noche.",
   },
   "colors-new-contrast": {
     id: "colors-new-contrast",
@@ -119,7 +119,8 @@ export const COLOR_NEW_PAGE_META: Record<string, ColorNewPageMeta> = {
   "colors-new-bruma": {
     id: "colors-new-bruma",
     title: "Bruma",
-    description: "Neblina clara — ticket, tablas y workspace.",
+    description:
+      "Neblina para leer — de día en 50/100, de noche en 950/800. Ticket, tablas y workspace. Bruma oscura es variante, no familia.",
   },
   "colors-new-savia": {
     id: "colors-new-savia",
@@ -149,7 +150,7 @@ export const COLOR_NEW_RELATED_LINKS = [
   { sectionId: "colors-new-semantic", label: "Semántica", hint: "Tokens oficiales." },
   { sectionId: "colors-new-themes", label: "Temas", hint: "POS · workspace · marketing." },
   { sectionId: "colors-new-mundos", label: "Mundos", hint: "Rampas y mapa de uso." },
-  { sectionId: "mundos", label: "Mundos en producto", hint: "Éter, bruma, suelo, sombra y herramientas." },
+  { sectionId: "mundos", label: "Mundos en producto", hint: "Éter, bruma, bruma oscura, suelo, sombra y herramientas." },
   { sectionId: "colors-new-palettes", label: "Paletas", hint: "Tres familias." },
   { sectionId: "colors-new-atmosphere", label: "Atmósfera", hint: "Hero marketing." },
   { sectionId: "colors-new-sombra", label: "Sombra", hint: "Bajo el dosel." },

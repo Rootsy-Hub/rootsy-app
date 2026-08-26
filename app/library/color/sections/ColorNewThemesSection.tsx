@@ -23,9 +23,8 @@ export function ColorNewThemesSection() {
     <LibrarySection id="colors-new-themes" title={meta.title} description={meta.description}>
       <div className="space-y-10">
         <ColorDocLead>
-          Cuatro contextos de producto: POS split sombra/bruma, workspace bruma con header
-          sombra, marketing noche del parque con savia promocional, y librería como spec
-          vivo.
+          Cuatro contextos de producto — POS, workspace, marketing y librería — más la
+          variante night de bruma: misma neblina, invertida. No es un quinto contexto POS.
         </ColorDocLead>
 
         <ColorDocSection
@@ -52,14 +51,15 @@ export function ColorNewThemesSection() {
           <div className="grid gap-8 lg:grid-cols-2">
             <SurfaceStackDemo themeId="POS" layers={ROOTSY_SURFACE_STACKS.pos} />
             <SurfaceStackDemo themeId="Workspace" layers={ROOTSY_SURFACE_STACKS.workspace} />
+            <SurfaceStackDemo themeId="Bruma oscura" layers={ROOTSY_SURFACE_STACKS["bruma-oscura"]} />
             <SurfaceStackDemo themeId="Marketing" layers={ROOTSY_SURFACE_STACKS.marketing} />
             <SurfaceStackDemo themeId="Librería" layers={ROOTSY_SURFACE_STACKS.library} />
           </div>
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Header sombra + cuerpo bruma en workspace y librería — continuidad con POS."
-          dontText="No mezcles sombra 900 de marketing como fondo de formularios operativos."
+          doText="Header sombra + cuerpo bruma en workspace y librería. Bruma oscura usa la misma rampa, invertida — clase .rootsy-theme-bruma-oscura."
+          dontText="No pintes un workspace con sombra-950. Eso es el dosel del catálogo, no la neblina de noche."
         />
       </div>
     </LibrarySection>

@@ -5,7 +5,7 @@
 .data-workspace-tables-atmosphere {
   position: relative;
   isolation: isolate;
-  overflow-x: hidden;
+  overflow: hidden;
   background-color: var(--rootsy-bruma-50);
 }
 

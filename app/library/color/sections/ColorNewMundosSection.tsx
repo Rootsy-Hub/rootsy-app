@@ -70,9 +70,10 @@ export function ColorNewMundosSection() {
       <div className="space-y-10">
         <ColorDocLead>
           El producto habita mundos, no swatches sueltos. Tres son marca — sombra, bruma,
-          savia. Cuatro son clima: suelo, cielo, sol y éter. Alba es composición (bruma),
-          no rampa. Atmósfera del hero no es un mundo de producto. Las pantallas habitadas
-          — cómo se ve cada mundo con piezas reales — viven en Fundamentos → Mundos.
+          savia. Cuatro son clima: suelo, cielo, sol y éter. Alba y bruma oscura son
+          composición (bruma), no rampa nueva. Atmósfera del hero no es un mundo de producto.
+          Las pantallas habitadas — cómo se ve cada mundo con piezas reales — viven en
+          Fundamentos → Mundos.
         </ColorDocLead>
 
         <ColorDocSection
@@ -102,7 +103,7 @@ export function ColorNewMundosSection() {
 
         <GuidelinePair
           doText="Nombrá el mundo antes que el hex: éter en el header, suelo en el pie, cielo en enviada, sol en preparando."
-          dontText="Cielo no es éter. Sol no es warning. Suelo no es earth de forms. Sombra no es el espacio del header."
+          dontText="Cielo no es éter. Sol no es warning. Suelo no es earth de forms. Sombra no es el espacio del header. Bruma oscura no es sombra."
         />
       </div>
     </LibrarySection>
