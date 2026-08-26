@@ -17,6 +17,7 @@ import {
 } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import {
   dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersGridFourClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
   workspaceTableLayoutHeaderHeadClass,
@@ -54,23 +55,22 @@ function TableListFiltersSkeleton({
 }: {
   layout?: PopTableListFilterLayout
 }) {
+  const extraFilterCount = layout === "quad" ? 3 : layout === "triple" ? 2 : 1
+
   return (
     <DataWorkspaceTableListFiltersBar ariaLabel="Cargando filtros del listado">
-      <div className={dataWorkspaceListFiltersGridClass}>
-        {layout === "triple" ? (
-          <>
-            <div className={dataWorkspaceListFiltersPanelClass}>
-              <FilterFieldSkeleton labelWidth="w-14" />
-            </div>
-            <div className={dataWorkspaceListFiltersPanelClass}>
-              <FilterFieldSkeleton labelWidth="w-12" />
-            </div>
-          </>
-        ) : (
-          <div className={dataWorkspaceListFiltersPanelClass}>
-            <FilterFieldSkeleton labelWidth="w-12" />
+      <div
+        className={
+          layout === "quad"
+            ? dataWorkspaceListFiltersGridFourClass
+            : dataWorkspaceListFiltersGridClass
+        }
+      >
+        {Array.from({ length: extraFilterCount }, (_, index) => (
+          <div key={`filter-sk-${index}`} className={dataWorkspaceListFiltersPanelClass}>
+            <FilterFieldSkeleton labelWidth={index === 0 ? "w-14" : "w-12"} />
           </div>
-        )}
+        ))}
         <div className={dataWorkspaceListFiltersPanelLastClass}>
           <FilterFieldSkeleton labelWidth="w-14" />
         </div>

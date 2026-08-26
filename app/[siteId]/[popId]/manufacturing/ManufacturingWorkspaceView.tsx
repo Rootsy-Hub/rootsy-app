@@ -329,6 +329,7 @@ export function ManufacturingWorkspaceView() {
               world: "manufacturing",
               hasMore: slice.hasMore,
               isFetchingMore: false,
+              hasItems: totalCount > 0,
               onLoadMore: slice.loadMore,
             }}
           >

@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 type Props = {
+  siteId?: string
   popId?: string
   mergeCatalogArticles?: (articles: PurchaseCatalogArticle[]) => void
   categorySections: readonly PurchaseCatalogCategorySection[]
@@ -91,6 +92,7 @@ function isValidPurchaseCatalogView(
 }
 
 export function PurchaseCatalogBrowser({
+  siteId,
   popId,
   mergeCatalogArticles,
   categorySections,
@@ -304,7 +306,21 @@ export function PurchaseCatalogBrowser({
               <p className="max-w-md text-sm text-rose-300">{displayError}</p>
             </div>
           ) : isEmpty ? (
-            <SaleCatalogEmptyMascot hasSearch={busqueda.trim().length > 0} />
+            <SaleCatalogEmptyMascot
+              hasSearch={busqueda.trim().length > 0}
+              categoryName={
+                busqueda.trim().length === 0 && categoryLabel !== "Categoría"
+                  ? categoryLabel
+                  : undefined
+              }
+              articlesHref={
+                busqueda.trim().length > 0 || !siteId || !popId
+                  ? undefined
+                  : `/${siteId}/${popId}/articles${
+                      itemsFilter.categoryId ? `?cat=${itemsFilter.categoryId}` : ""
+                    }`
+              }
+            />
           ) : (
             <SaleCatalogVirtualGrid
               items={productosFiltrados}

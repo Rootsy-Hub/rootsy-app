@@ -9,6 +9,7 @@ export {
   ROOTSY_EMPTY_STATE_WORLDS,
   ROOTSY_EMPTY_STATE_VOICE,
   ROOTSY_EMPTY_STATE_COPY,
+  rootsyEmptyStateCatalogIdleCopy,
   type RootsyEmptyStateWorld,
   type RootsyEmptyStateCopy,
 } from "@/components/rootsy-empty-state/rootsyEmptyState"

@@ -1,17 +1,14 @@
 "use client"
 
-import "@/components/data-workspace/dataWorkspaceTableInfinite.css"
-import {
-  dataWorkspaceTableInfiniteCopy,
-  type DataWorkspaceTableInfiniteWorld,
-} from "@/components/data-workspace/dataWorkspaceTableInfiniteCopy"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
+import type { DataWorkspaceTableInfiniteWorld } from "@/components/data-workspace/dataWorkspaceTableInfiniteCopy"
 
 export type DataWorkspaceTableListInfinite = {
   world: DataWorkspaceTableInfiniteWorld
   hasMore: boolean
   isFetchingMore: boolean
   onLoadMore: () => void
+  hasItems?: boolean
 }
 
 export function tableListInfiniteFromQuery(
@@ -19,6 +16,7 @@ export function tableListInfiniteFromQuery(
     hasNextPage: boolean
     isFetchingNextPage: boolean
     fetchNextPage: () => unknown
+    data?: { totalCount?: number } | null
   },
   world: DataWorkspaceTableInfiniteWorld,
 ): DataWorkspaceTableListInfinite {
@@ -26,6 +24,7 @@ export function tableListInfiniteFromQuery(
     world,
     hasMore: Boolean(query.hasNextPage),
     isFetchingMore: query.isFetchingNextPage,
+    hasItems: (query.data?.totalCount ?? 0) > 0,
     onLoadMore: () => {
       if (!query.hasNextPage || query.isFetchingNextPage) return
       void query.fetchNextPage()
@@ -34,7 +33,6 @@ export function tableListInfiniteFromQuery(
 }
 
 export function DataWorkspaceTableInfiniteSentinel({
-  world,
   hasMore,
   isFetchingMore,
   onLoadMore,
@@ -43,22 +41,18 @@ export function DataWorkspaceTableInfiniteSentinel({
   root: Element | null
 }) {
   const sentinelRef = useRef<HTMLDivElement>(null)
-  const [intersecting, setIntersecting] = useState(false)
   const onLoadMoreRef = useRef(onLoadMore)
   onLoadMoreRef.current = onLoadMore
 
   useEffect(() => {
     const node = sentinelRef.current
-    if (!node || !root || !hasMore) {
-      setIntersecting(false)
-      return
-    }
+    if (!node || !root || !hasMore) return
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const isVisible = entries.some((entry) => entry.isIntersecting)
-        setIntersecting(isVisible)
-        if (isVisible) onLoadMoreRef.current()
+        if (entries.some((entry) => entry.isIntersecting)) {
+          onLoadMoreRef.current()
+        }
       },
       { root, rootMargin: "180px 0px", threshold: 0 },
     )
@@ -66,38 +60,9 @@ export function DataWorkspaceTableInfiniteSentinel({
     return () => observer.disconnect()
   }, [hasMore, root])
 
-  const showCopy = hasMore && (isFetchingMore || intersecting)
   if (!hasMore && !isFetchingMore) return null
 
-  const copy = dataWorkspaceTableInfiniteCopy(world)
-
   return (
-    <div
-      ref={sentinelRef}
-      className="data-workspace-table-infinite"
-      aria-hidden={!showCopy}
-    >
-      {showCopy ? (
-        <div className="data-workspace-table-infinite__stage">
-          <p
-            className="data-workspace-table-infinite__copy"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            <span
-              className="data-workspace-table-infinite__phrase"
-              data-text={copy}
-            >
-              {copy}
-            </span>
-            <span className="data-workspace-table-infinite__dots" aria-hidden>
-              <span />
-              <span />
-              <span />
-            </span>
-          </p>
-        </div>
-      ) : null}
-    </div>
+    <div ref={sentinelRef} className="h-px w-full shrink-0" aria-hidden />
   )
 }

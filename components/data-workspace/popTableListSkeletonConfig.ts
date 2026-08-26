@@ -30,7 +30,7 @@ export type PopTableListSkeletonHeaderCell =
       srOnly?: boolean
     }
 
-export type PopTableListFilterLayout = "dual" | "triple"
+export type PopTableListFilterLayout = "dual" | "triple" | "quad"
 
 export type PopTableListSkeletonConfig = {
   columns: WorkspaceTableSkeletonColumn[]
@@ -117,7 +117,7 @@ function suppliersConfig(): PopTableListSkeletonConfig {
 
 function articlesConfig(): PopTableListSkeletonConfig {
   return {
-    filterLayout: "dual",
+    filterLayout: "quad",
     tableMinWidth: "min-w-[72rem]",
     columns: articlesSkeletonColumns({ hasActionsColumn: true }),
     headers: [

@@ -43,7 +43,7 @@ export type RootsyEmptyStateCopy = {
  * Un solo retrato a la vez. Gana el toast, después el catálogo, después el pedido.
  * El copy sigue en cada lado; el que cede muestra tres puntos: la conversación sigue.
  *
- * Sí, juntos: “Acá no hay productos todavía.” → “El pedido espera.”
+ * Sí, juntos: “No tenemos productos en Bebidas.” → “El pedido espera.”
  * No: dos veces “Acá no hay…” / “Pedido vacío.”
  */
 export const ROOTSY_EMPTY_STATE_VOICE = {
@@ -53,20 +53,34 @@ export const ROOTSY_EMPTY_STATE_VOICE = {
   title: "Nombra lo que falta, como quien está al lado.",
   description: "Un paso concreto. Rootsy hace, no instruye.",
   conversation:
-    "Catálogo y pedido se leen como un solo turno: primero lo que ve, después dónde lo anota.",
+    "Catálogo y pedido se leen como un solo turno: primero lo que falta, después dónde espera.",
   presence:
     "Un solo retrato. Toast, después catálogo, después pedido. El resto muestra tres puntos: sigo hablando en otro lado.",
   examples: {
-    yes: "Acá no hay productos todavía. El pedido espera.",
-    no: "Acá no hay productos todavía. Acá no hay nada todavía.",
+    yes: "No tenemos productos en Bebidas. El pedido espera.",
+    no: "No tenemos productos. No hay nada en el pedido.",
   },
 } as const
+
+export function rootsyEmptyStateCatalogIdleCopy(categoryName?: string): RootsyEmptyStateCopy {
+  const name = categoryName?.trim()
+  if (!name) {
+    return {
+      title: "No tenemos productos.",
+      description: "Activalos o agregalos en Artículos.",
+    }
+  }
+  return {
+    title: `No tenemos productos en ${name}.`,
+    description: "Activalos o agregalos en Artículos.",
+  }
+}
 
 export const ROOTSY_EMPTY_STATE_COPY = {
   catalog: {
     idle: {
-      title: "Acá no hay productos todavía.",
-      description: "Cuando los cargues en Artículos, los veo yo.",
+      title: "No tenemos productos.",
+      description: "Activalos o agregalos en Artículos.",
     },
     search: {
       title: "No encontré productos.",
@@ -76,11 +90,9 @@ export const ROOTSY_EMPTY_STATE_COPY = {
   ticket: {
     order: {
       title: "El pedido espera.",
-      description: "Cuando elijas, los anoto yo.",
     },
     purchase: {
       title: "La compra espera.",
-      description: "Cuando elijas, los anoto yo.",
     },
     service: {
       title: "El cargo espera.",

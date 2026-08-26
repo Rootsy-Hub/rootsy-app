@@ -1236,6 +1236,7 @@ function PurchasesPage() {
           <LayoutsOperarMainGrid
             catalog={
               <PurchaseCatalogBrowser
+                siteId={siteId}
                 popId={popId}
                 mergeCatalogArticles={mergeCatalogArticles}
                 categorySections={catalogCategorySections}

@@ -8,6 +8,7 @@ import { ArticleDeleteDialog } from "@/app/[siteId]/[popId]/articles/ArticleDele
 import { ArticleCategoriesDialog } from "@/app/[siteId]/[popId]/articles/ArticleCategoriesDialog"
 import { ArticleCategoryDeleteDialog } from "@/app/[siteId]/[popId]/articles/ArticleCategoryDeleteDialog"
 import { ArticlePriceListsDialog } from "@/app/[siteId]/[popId]/articles/ArticlePriceListsDialog"
+import { ArticleCategoryToolbarFilter } from "@/app/[siteId]/[popId]/articles/ArticleCategoryToolbarFilter"
 import { ArticleItemKindToolbarFilter, articleItemKindFilterToQuery, resolveArticleItemKindFilterId } from "@/app/[siteId]/[popId]/articles/ArticleItemKindToolbarFilter"
 import type {
   ArticleCategoryOption,
@@ -73,7 +74,7 @@ import {
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersGridFourClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
   workspaceTableLayoutActionsBodyCellClass,
@@ -477,10 +478,8 @@ export function ArticlesWorkspaceView() {
   const articlesTableQuery = usePopArticlesTable(popId, articlesListParams, {
     enabled: Boolean(popId && siteId),
   })
-  const categoriesNeeded =
-    createOpen || editRow !== null || categoriesOpen
   const categoriesQuery = usePopArticleCategories(popId, {
-    enabled: categoriesNeeded,
+    enabled: Boolean(popId),
   })
   const categoryOptions = categoriesQuery.data ?? []
   const priceListsNeeded = createOpen || editRow !== null || priceListsOpen
@@ -972,11 +971,35 @@ export function ArticlesWorkspaceView() {
 
   const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
+  const categoryFilterOptions = useMemo(() => {
+    const selectedId = workspaceParsed.categoryId.trim()
+    const filtered =
+      activeItemKindFilterId === "all"
+        ? categoryOptions
+        : categoryOptions.filter(
+            (category) =>
+              category.itemKind === activeItemKindFilterId ||
+              category.id === selectedId,
+          )
+    return [...filtered].sort((a, b) => {
+      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
+      return a.name.localeCompare(b.name, "es")
+    })
+  }, [
+    activeItemKindFilterId,
+    categoryOptions,
+    workspaceParsed.categoryId,
+  ])
+
   const categoryLabelForChip = useMemo(() => {
     const id = workspaceParsed.categoryId.trim()
     if (!id) return ""
-    return articles.find((row) => row.categoryId === id)?.categoryName ?? ""
-  }, [articles, workspaceParsed.categoryId])
+    return (
+      categoryOptions.find((category) => category.id === id)?.name ||
+      articles.find((row) => row.categoryId === id)?.categoryName ||
+      ""
+    )
+  }, [articles, categoryOptions, workspaceParsed.categoryId])
 
   const modalFiltersActiveCount = useMemo(() => {
     const filters = articlesModalFiltersFromWorkspace(workspaceParsed)
@@ -997,8 +1020,14 @@ export function ArticlesWorkspaceView() {
     if (workspaceParsed.q.trim()) count++
     count += modalFiltersActiveCount
     if (activeItemKindFilterId !== "all") count++
+    if (workspaceParsed.categoryId.trim()) count++
     return count
-  }, [workspaceParsed.q, modalFiltersActiveCount, activeItemKindFilterId])
+  }, [
+    workspaceParsed.q,
+    workspaceParsed.categoryId,
+    modalFiltersActiveCount,
+    activeItemKindFilterId,
+  ])
 
   const resultsSummary = useMemo(() => {
     if (listFetching && totalCount === 0) return "…"
@@ -1013,6 +1042,7 @@ export function ArticlesWorkspaceView() {
       q: "",
       ...defaultArticlesModalFilters(),
       itemKinds: [],
+      categoryId: "",
       page: 1,
     })
     searchInputRef.current?.focus()
@@ -1097,16 +1127,46 @@ export function ArticlesWorkspaceView() {
     >
       <DataWorkspaceTableListNatureShell>
         <DataWorkspaceTableListFiltersBar>
-              <div className={dataWorkspaceListFiltersGridClass}>
+              <div className={dataWorkspaceListFiltersGridFourClass}>
                 <div className={dataWorkspaceListFiltersPanelClass}>
                   <ArticleItemKindToolbarFilter
                     value={activeItemKindFilterId}
-                    onChange={(id) =>
+                    onChange={(id) => {
+                      const selectedCategory = categoryOptions.find(
+                        (category) =>
+                          category.id === workspaceParsed.categoryId.trim(),
+                      )
+                      const nextCategoryId =
+                        id !== "all" &&
+                        selectedCategory &&
+                        selectedCategory.itemKind !== id
+                          ? ""
+                          : undefined
                       replaceWorkspaceQuery({
                         itemKinds: articleItemKindFilterToQuery(id),
+                        ...(nextCategoryId !== undefined
+                          ? { categoryId: nextCategoryId }
+                          : {}),
+                        page: 1,
+                      })
+                    }}
+                  />
+                </div>
+
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <ArticleCategoryToolbarFilter
+                    value={workspaceParsed.categoryId}
+                    onChange={(categoryId) =>
+                      replaceWorkspaceQuery({
+                        categoryId,
                         page: 1,
                       })
                     }
+                    categories={categoryFilterOptions}
+                    loading={
+                      categoriesQuery.isPending && !categoriesQuery.data
+                    }
+                    fallbackLabel={categoryLabelForChip}
                   />
                 </div>
 

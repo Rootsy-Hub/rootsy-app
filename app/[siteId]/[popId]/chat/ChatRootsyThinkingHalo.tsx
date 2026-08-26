@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils"
+import { RootsyThinkingHalo } from "@/components/rootsy-thinking/RootsyThinkingHalo"
 
 type Props = {
   variant?: "rootsy" | "planner"
@@ -15,43 +15,10 @@ export function ChatRootsyThinkingHalo({
 }: Props) {
   const planner = variant === "planner"
   return (
-    <div
+    <RootsyThinkingHalo
       id={planner ? "planner-thinking-footer" : "rootsy-thinking-footer"}
-      className={cn(
-        "chat-rootsy-thinking",
-        planner && "chat-rootsy-thinking--planner",
-        exiting && "chat-rootsy-thinking--exit",
-      )}
-      role="status"
-      aria-live="polite"
-    >
-      <span className="sr-only">
-        {planner ? "El Planificador está pensando" : "Rootsy está pensando"}
-      </span>
-      <span
-        className="chat-rootsy-thinking__glow chat-rootsy-thinking__glow--signal"
-        aria-hidden
-      />
-      <span
-        className="chat-rootsy-thinking__glow chat-rootsy-thinking__glow--wash"
-        aria-hidden
-      />
-      <span
-        className="chat-rootsy-thinking__glow chat-rootsy-thinking__glow--core"
-        aria-hidden
-      />
-      <span
-        className="chat-rootsy-thinking__dot chat-rootsy-thinking__dot--mid"
-        aria-hidden
-      />
-      <span
-        className="chat-rootsy-thinking__dot chat-rootsy-thinking__dot--right"
-        aria-hidden
-      />
-      <span
-        className="chat-rootsy-thinking__dot chat-rootsy-thinking__dot--left"
-        aria-hidden
-      />
-    </div>
+      label={planner ? "El Planificador está pensando" : "Rootsy está pensando"}
+      exiting={exiting}
+    />
   )
 }

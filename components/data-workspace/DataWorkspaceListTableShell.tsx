@@ -1,6 +1,13 @@
 "use client"
 
+import "@/components/data-workspace/dataWorkspaceTableInfinite.css"
+import { RootsyThinkingHalo, useRootsyThinkingPresence } from "@/components/rootsy-thinking/RootsyThinkingHalo"
+import {
+  dataWorkspaceTableInfiniteCopy,
+  dataWorkspaceTableInfiniteEndCopy,
+} from "@/components/data-workspace/dataWorkspaceTableInfiniteCopy"
 import { cn } from "@/lib/utils"
+import { useEffect, useState, type ReactNode } from "react"
 import {
   dataWorkspaceShellCard,
   listTableChromeStackClass,
@@ -13,7 +20,6 @@ import {
   DataWorkspaceTableInfiniteSentinel,
   type DataWorkspaceTableListInfinite,
 } from "./DataWorkspaceTableInfiniteSentinel"
-import { useState, type ReactNode } from "react"
 
 export type DataWorkspaceListTableShellProps = {
   children: ReactNode
@@ -44,6 +50,38 @@ export function DataWorkspaceListTableShell({
   const useChromeStack = activeFiltersBar != null
   const bodySurfaceClass = isFlush ? workspaceTableSurfaceClass : dataWorkspaceShellCard
   const resolvedBodySurface = className ? undefined : bodySurfaceClass
+  const fetchingMore = Boolean(infinite?.isFetchingMore)
+  const floorHalo = useRootsyThinkingPresence(fetchingMore)
+  const [atScrollEnd, setAtScrollEnd] = useState(false)
+
+  useEffect(() => {
+    const node = scrollRoot
+    if (!node) return
+
+    const update = () => {
+      const gap = node.scrollHeight - node.scrollTop - node.clientHeight
+      setAtScrollEnd(gap <= 32)
+    }
+
+    update()
+    node.addEventListener("scroll", update, { passive: true })
+    const observer = new ResizeObserver(update)
+    observer.observe(node)
+    const inner = node.firstElementChild
+    if (inner) observer.observe(inner)
+    return () => {
+      node.removeEventListener("scroll", update)
+      observer.disconnect()
+    }
+  }, [scrollRoot, infinite?.hasMore, fetchingMore, infinite?.hasItems])
+
+  const endCopyActive =
+    Boolean(infinite?.hasItems) &&
+    !infinite?.hasMore &&
+    !fetchingMore &&
+    !floorHalo.visible &&
+    atScrollEnd
+  const endCopy = useRootsyThinkingPresence(endCopyActive)
 
   return (
     <div
@@ -96,6 +134,29 @@ export function DataWorkspaceListTableShell({
               ) : null}
             </div>
           </div>
+          {floorHalo.visible && infinite ? (
+            <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+              <RootsyThinkingHalo
+                className="rootsy-thinking--floor"
+                label={dataWorkspaceTableInfiniteCopy(infinite.world)}
+                showDots={false}
+                exiting={floorHalo.exiting}
+              />
+            </div>
+          ) : null}
+          {endCopy.visible && infinite ? (
+            <div
+              className="data-workspace-table-infinite__end"
+              data-exiting={endCopy.exiting ? "true" : undefined}
+            >
+              <p
+                className="data-workspace-table-infinite__end-copy font-canopy"
+                role="status"
+              >
+                {dataWorkspaceTableInfiniteEndCopy(infinite.world)}
+              </p>
+            </div>
+          ) : null}
           {overlay ? (
             <div className="pointer-events-none absolute inset-0 z-10 overflow-visible">
               {overlay}

@@ -25,7 +25,7 @@ export type RootsyEmptyStateProps = {
   /** Voz: ROOTSY_EMPTY_STATE_VOICE — nombra lo que falta, en primera persona. */
   title: string
   /** Voz: un paso concreto. Si no hace falta, omitilo. */
-  description?: string
+  description?: ReactNode
   world?: RootsyEmptyStateWorld
   imageAlt?: string
   className?: string

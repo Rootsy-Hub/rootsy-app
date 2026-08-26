@@ -682,7 +682,21 @@ export function SaleCatalogBrowser({
               <p className="max-w-md text-sm text-rose-300">{displayError}</p>
             </div>
           ) : isEmpty ? (
-            <SaleCatalogEmptyMascot hasSearch={busqueda.trim().length > 0} />
+            <SaleCatalogEmptyMascot
+              hasSearch={busqueda.trim().length > 0}
+              categoryName={
+                !isSearch && vistaResuelta.modo === "categoria" && categoryLabel !== "Categoría"
+                  ? categoryLabel
+                  : undefined
+              }
+              articlesHref={
+                isSearch
+                  ? undefined
+                  : `/${siteId}/${popId}/articles${
+                      itemsFilter.categoryId ? `?cat=${itemsFilter.categoryId}` : ""
+                    }`
+              }
+            />
           ) : (
             <SaleCatalogVirtualGrid
               items={productosFiltrados}
