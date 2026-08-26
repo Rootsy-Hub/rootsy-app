@@ -1,11 +1,10 @@
 export {
   RootsyEmptyState,
-  RootsyEmptyStateEllipsis,
   type RootsyEmptyStateProps,
 } from "@/components/rootsy-empty-state/RootsyEmptyState"
 export {
-  ROOTSY_EMPTY_STATE_DEFAULT_IMAGE,
   ROOTSY_EMPTY_STATE_DEFAULT_WORLD,
+  ROOTSY_EMPTY_STATE_WORLD_ICONS,
   ROOTSY_EMPTY_STATE_WORLDS,
   ROOTSY_EMPTY_STATE_VOICE,
   ROOTSY_EMPTY_STATE_COPY,

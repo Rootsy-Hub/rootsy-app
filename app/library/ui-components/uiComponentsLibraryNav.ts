@@ -87,7 +87,7 @@ export const UI_COMPONENTS_RELATED_LINKS = [
   { sectionId: "ui-components-banners", label: "Banners UI", hint: "Intents · densidad · dismiss." },
   { sectionId: "ui-components-mensaje-rootsy", label: "Mensaje de Rootsy", hint: "Globo de chat · retrato · intents." },
   { sectionId: "toast", label: "Toast", hint: "Globo vivo · esquinas · canto opcional." },
-  { sectionId: "empty-state", label: "Empty state", hint: "Retrato · título · mundo." },
+  { sectionId: "empty-state", label: "Empty state", hint: "Ícono · título · mundo." },
   { sectionId: "ui-components-dropdown", label: "Dropdown UI", hint: "Overlay · ítems · triggers." },
   { sectionId: "mundos", label: "Mundos", hint: "Herramientas · placa cristal." },
   { sectionId: "colors-new", label: "Color", hint: "Savia · bruma · funcional." },

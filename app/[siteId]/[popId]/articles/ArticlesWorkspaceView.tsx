@@ -63,6 +63,7 @@ import {
   DataWorkspaceTableListShell,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableInfiniteEndRow } from "@/components/data-workspace/DataWorkspaceTableInfiniteEndRow"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -1633,6 +1634,14 @@ export function ArticlesWorkspaceView() {
                       </WorkspaceTableBodyRow>
                     )})
                   )}
+                  {!listFetching ? (
+                    <DataWorkspaceTableInfiniteEndRow
+                      world="articles"
+                      colSpan={8 + (canUpdate || canDelete ? 1 : 0)}
+                      loadedCount={pageRows.length}
+                      totalCount={totalCount}
+                    />
+                  ) : null}
                 </TableBody>
               </table>
               {!listFetching && totalCount === 0 ? (

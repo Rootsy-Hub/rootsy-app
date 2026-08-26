@@ -132,11 +132,13 @@ export function SaleOperationTicketOrderPanel({
         aria-label="Pedido"
         aria-busy={loading || undefined}
       >
-        <div className={layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL)}>
-          <div className="min-w-0">
-            <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
+        {loading || hasTicketItems ? (
+          <div className={layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL)}>
+            <div className="min-w-0">
+              <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {loading ? (
           <SaleOperationTicketOrderPanelSkeleton />

@@ -1,5 +1,5 @@
 /**
- * Empty state — retrato que se funde con el mundo, mismo aire que los tres puntos.
+ * Empty state — ícono suave sobre el glow del mundo.
  * El contenedor no entra animado. La figura interior sí: fade + scale suave.
  */
 
@@ -22,6 +22,7 @@
   width: 6.5rem;
   height: 6.5rem;
   flex-shrink: 0;
+  overflow: visible;
 }
 
 .rootsy-empty-state__frame {
@@ -30,7 +31,7 @@
   place-items: center;
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
 }
 
@@ -39,20 +40,24 @@
 .rootsy-empty-state__orb {
   pointer-events: none;
   position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: 999px;
+  inset: -22%;
+  overflow: visible;
+  border-radius: 0;
   -webkit-mask-image: radial-gradient(
     circle at 50% 50%,
-    #000 36%,
-    rgb(0 0 0 / 0.58) 62%,
-    transparent 78%
+    #000 12%,
+    rgb(0 0 0 / 0.55) 34%,
+    rgb(0 0 0 / 0.22) 54%,
+    rgb(0 0 0 / 0.06) 74%,
+    transparent 100%
   );
   mask-image: radial-gradient(
     circle at 50% 50%,
-    #000 36%,
-    rgb(0 0 0 / 0.58) 62%,
-    transparent 78%
+    #000 12%,
+    rgb(0 0 0 / 0.55) 34%,
+    rgb(0 0 0 / 0.22) 54%,
+    rgb(0 0 0 / 0.06) 74%,
+    transparent 100%
   );
 }
 
@@ -75,6 +80,13 @@
 .rootsy-empty-state__image-slot {
   display: grid;
   place-items: center;
+}
+
+.rootsy-empty-state__mark {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: currentColor;
+  opacity: 0.42;
 }
 
 .rootsy-empty-state__figure {
@@ -101,17 +113,6 @@
 .rootsy-empty-state__figure-layer[data-active] {
   opacity: 1;
   transform: scale(1);
-}
-
-.rootsy-empty-state__ellipsis {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.28rem;
-  width: 100%;
-  height: 100%;
 }
 
 .rootsy-empty-state__orb {
@@ -157,24 +158,6 @@
   width: 72%;
   height: 72%;
   background: radial-gradient(circle, var(--orb-c) 0%, transparent 72%);
-}
-
-.rootsy-empty-state__ellipsis-marks {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: inherit;
-}
-
-.rootsy-empty-state__ellipsis-dot {
-  width: 0.375rem;
-  height: 0.375rem;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: var(--rootsy-bruma-300);
-  opacity: 0.42;
 }
 
 .rootsy-empty-state__copy {
@@ -238,9 +221,9 @@
   color: color-mix(in srgb, var(--rootsy-eter-200) 68%, transparent);
 }
 
-.rootsy-empty-state[data-world="eter"] .rootsy-empty-state__ellipsis-dot {
-  background: var(--rootsy-eter-200);
-  opacity: 0.4;
+.rootsy-empty-state[data-world="eter"] .rootsy-empty-state__mark {
+  color: var(--rootsy-eter-200);
+  opacity: 0.5;
 }
 
 .rootsy-empty-state[data-world="eter"] {
@@ -266,9 +249,9 @@
   color: var(--rootsy-bruma-500);
 }
 
-.rootsy-empty-state[data-world="bruma"] .rootsy-empty-state__ellipsis-dot {
-  background: var(--rootsy-bruma-400);
-  opacity: 0.46;
+.rootsy-empty-state[data-world="bruma"] .rootsy-empty-state__mark {
+  color: var(--rootsy-bruma-400);
+  opacity: 0.55;
 }
 
 .rootsy-empty-state[data-world="bruma"] {
@@ -311,9 +294,9 @@
   color: color-mix(in srgb, var(--rootsy-suelo-400) 88%, transparent);
 }
 
-.rootsy-empty-state[data-world="suelo"] .rootsy-empty-state__ellipsis-dot {
-  background: var(--rootsy-suelo-300);
-  opacity: 0.4;
+.rootsy-empty-state[data-world="suelo"] .rootsy-empty-state__mark {
+  color: var(--rootsy-suelo-300);
+  opacity: 0.5;
 }
 
 .rootsy-empty-state[data-world="suelo"] {
@@ -377,9 +360,9 @@
   color: color-mix(in srgb, var(--rootsy-savia-400) 82%, white);
 }
 
-.rootsy-empty-state[data-world="sombra"] .rootsy-empty-state__ellipsis-dot {
-  background: var(--rootsy-sombra-300);
-  opacity: 0.48;
+.rootsy-empty-state[data-world="sombra"] .rootsy-empty-state__mark {
+  color: var(--rootsy-sombra-300);
+  opacity: 0.55;
 }
 
 .rootsy-empty-state[data-world="sombra"] {
@@ -443,9 +426,9 @@
   color: color-mix(in srgb, #d8fbff 78%, transparent);
 }
 
-.rootsy-empty-state[data-world="herramientas"] .rootsy-empty-state__ellipsis-dot {
-  background: rgb(196 212 216);
-  opacity: 0.38;
+.rootsy-empty-state[data-world="herramientas"] .rootsy-empty-state__mark {
+  color: rgb(196 212 216);
+  opacity: 0.48;
 }
 
 .rootsy-empty-state[data-world="herramientas"] {
@@ -461,6 +444,20 @@
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center 52%;
+}
+
+/** Pedido vacío — el bloque se ancla al 44% de la columna, no al centro. */
+.layouts-operar-ticket-empty {
+  position: relative;
+}
+
+.layouts-operar-ticket-empty > .rootsy-empty-state {
+  position: absolute;
+  top: 44%;
+  right: 0;
+  left: 0;
+  height: auto;
+  transform: translateY(-50%);
 }
 
 @media (prefers-reduced-motion: reduce) {

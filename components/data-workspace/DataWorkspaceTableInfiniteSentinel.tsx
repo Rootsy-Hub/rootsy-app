@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef } from "react"
 import type { DataWorkspaceTableInfiniteWorld } from "@/components/data-workspace/dataWorkspaceTableInfiniteCopy"
+import { useEffect, useRef } from "react"
 
 export type DataWorkspaceTableListInfinite = {
   world: DataWorkspaceTableInfiniteWorld
@@ -9,6 +9,25 @@ export type DataWorkspaceTableListInfinite = {
   isFetchingMore: boolean
   onLoadMore: () => void
   hasItems?: boolean
+}
+
+function loadedTableRowCount(data: unknown): number {
+  if (!data || typeof data !== "object") return 0
+  for (const value of Object.values(data as Record<string, unknown>)) {
+    if (
+      Array.isArray(value) &&
+      value.some(
+        (row) =>
+          row != null &&
+          typeof row === "object" &&
+          "id" in row &&
+          typeof (row as { id: unknown }).id === "string",
+      )
+    ) {
+      return value.length
+    }
+  }
+  return 0
 }
 
 export function tableListInfiniteFromQuery(
@@ -20,13 +39,19 @@ export function tableListInfiniteFromQuery(
   },
   world: DataWorkspaceTableInfiniteWorld,
 ): DataWorkspaceTableListInfinite {
+  const totalCount = query.data?.totalCount ?? 0
+  const loaded = loadedTableRowCount(query.data)
+  const hasItems = totalCount > 0 || loaded > 0
+  const loadedAll = totalCount > 0 && loaded >= totalCount
+  const hasMore = Boolean(query.hasNextPage) && !loadedAll
+
   return {
     world,
-    hasMore: Boolean(query.hasNextPage),
+    hasMore,
     isFetchingMore: query.isFetchingNextPage,
-    hasItems: (query.data?.totalCount ?? 0) > 0,
+    hasItems,
     onLoadMore: () => {
-      if (!query.hasNextPage || query.isFetchingNextPage) return
+      if (!hasMore || query.isFetchingNextPage) return
       void query.fetchNextPage()
     },
   }
@@ -34,7 +59,6 @@ export function tableListInfiniteFromQuery(
 
 export function DataWorkspaceTableInfiniteSentinel({
   hasMore,
-  isFetchingMore,
   onLoadMore,
   root,
 }: DataWorkspaceTableListInfinite & {
@@ -60,9 +84,5 @@ export function DataWorkspaceTableInfiniteSentinel({
     return () => observer.disconnect()
   }, [hasMore, root])
 
-  if (!hasMore && !isFetchingMore) return null
-
-  return (
-    <div ref={sentinelRef} className="h-px w-full shrink-0" aria-hidden />
-  )
+  return <div ref={sentinelRef} className="h-px w-full shrink-0" aria-hidden />
 }

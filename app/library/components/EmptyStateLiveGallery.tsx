@@ -8,33 +8,26 @@ import { HomeWorkspaceBackdrop } from "@/components/layouts/HomeWorkspaceBackdro
 import {
   RootsyEmptyState,
   ROOTSY_EMPTY_STATE_COPY,
-  ROOTSY_EMPTY_STATE_DEFAULT_IMAGE,
   ROOTSY_EMPTY_STATE_VOICE,
   type RootsyEmptyStateWorld,
 } from "@/components/rootsy-empty-state"
 import { LibraryGuidelineCards } from "@/app/library/libraryDocPrimitives"
 import { rootsyLayoutsEarthFloorSurfaceClass } from "@/app/library/layouts/rootsyLayoutsEarthFloor"
 import { cn } from "@/lib/utils"
+import { ListPlus, Package } from "lucide-react"
 import "@/app/library/mundos/mundosHerramientas.css"
 import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
-import { useState, type ReactNode } from "react"
+import type { ReactNode } from "react"
 
 const DEMO_TITLE = ROOTSY_EMPTY_STATE_COPY.catalog.idle.title
 const DEMO_DESCRIPTION = ROOTSY_EMPTY_STATE_COPY.catalog.idle.description
 
 const EMPTY_STATE_VARIANTS = [
-  { id: "title", label: "Imagen y título", description: undefined as string | undefined, presence: "portrait" as const },
+  { id: "title", label: "Ícono y título", description: undefined as string | undefined },
   {
     id: "title-description",
-    label: "Imagen, título y descripción",
+    label: "Ícono, título y descripción",
     description: DEMO_DESCRIPTION,
-    presence: "portrait" as const,
-  },
-  {
-    id: "continuing",
-    label: "Tres puntos — sigue en otro lado",
-    description: DEMO_DESCRIPTION,
-    presence: "elsewhere" as const,
   },
 ] as const
 
@@ -114,53 +107,6 @@ function EmptyStateStage({
   )
 }
 
-function PresenceSwapStage() {
-  const [presence, setPresence] = useState<"portrait" | "elsewhere">("portrait")
-  const showingPortrait = presence === "portrait"
-
-  return (
-    <div
-      className="overflow-hidden rounded-2xl border"
-      style={{ borderColor: CONCEPT_TOKENS.bruma200 }}
-    >
-      <MundosWorldStage label="Pedido · cambio suave" className="h-[22rem] sm:h-[24rem]">
-        <WorldCanvas world="bruma" />
-        <div className="relative z-10 flex h-full flex-col items-center justify-center gap-4 px-4">
-          <RootsyEmptyState
-            world="bruma"
-            imageSrc={ROOTSY_EMPTY_STATE_DEFAULT_IMAGE}
-            title={ROOTSY_EMPTY_STATE_COPY.ticket.order.title}
-            description={ROOTSY_EMPTY_STATE_COPY.ticket.order.description}
-            presence={presence}
-          />
-          <button
-            type="button"
-            onClick={() => setPresence(showingPortrait ? "elsewhere" : "portrait")}
-            className="relative z-10 rounded-full border px-3 py-1 font-canopy text-[11px] font-medium"
-            style={{
-              borderColor: CONCEPT_TOKENS.bruma200,
-              color: CONCEPT_TOKENS.bruma500,
-              backgroundColor: "color-mix(in srgb, white 72%, transparent)",
-            }}
-          >
-            {showingPortrait ? "Cambiar a tres puntos" : "Cambiar a retrato"}
-          </button>
-        </div>
-      </MundosWorldStage>
-      <p
-        className="border-t px-4 py-3 font-canopy text-[11px] leading-relaxed"
-        style={{
-          borderColor: CONCEPT_TOKENS.bruma200,
-          color: CONCEPT_TOKENS.bruma500,
-          backgroundColor: CONCEPT_TOKENS.bruma100,
-        }}
-      >
-        Pedido · el retrato se disuelve en tres puntos, y vuelve. El texto no se anima.
-      </p>
-    </div>
-  )
-}
-
 export function EmptyStateLiveGallery() {
   return (
     <div className="space-y-10">
@@ -190,10 +136,10 @@ export function EmptyStateLiveGallery() {
               dontText: "El mismo hallazgo dos veces: Acá no hay… / Acá no hay…",
             },
             {
-              id: "presence",
-              title: "Un solo Rootsy",
-              doText: ROOTSY_EMPTY_STATE_VOICE.presence,
-              dontText: "Tres retratos a la vez: toast, catálogo y pedido.",
+              id: "icon",
+              title: "Ícono",
+              doText: ROOTSY_EMPTY_STATE_VOICE.icon,
+              dontText: "La foto de Rootsy, ni un círculo recortado.",
             },
           ]}
         />
@@ -203,35 +149,31 @@ export function EmptyStateLiveGallery() {
       </section>
       <section className="space-y-4">
         <SectionHeading
-          title="Un solo retrato"
-          description="Si Rootsy ya está en el toast o en el catálogo, el pedido no lo vuelve a pintar. El copy sigue; el círculo muestra tres puntos: la conversación continúa."
+          title="Catálogo y pedido"
+          description="Mismo componente, glow del mundo e ícono de lo que falta. Rootsy no se pinta acá."
         />
         <div className="grid gap-4 lg:grid-cols-2">
           <EmptyStateStage
             world="sombra"
-            caption="Catálogo · retrato (gana sobre el pedido)"
+            caption="Catálogo · no hay productos"
           >
             <RootsyEmptyState
               world="sombra"
-              imageSrc={ROOTSY_EMPTY_STATE_DEFAULT_IMAGE}
+              icon={Package}
               title={ROOTSY_EMPTY_STATE_COPY.catalog.idle.title}
               description={ROOTSY_EMPTY_STATE_COPY.catalog.idle.description}
             />
           </EmptyStateStage>
           <EmptyStateStage
             world="bruma"
-            caption="Pedido · tres puntos (sigue en el catálogo)"
+            caption="Pedido · se insertan líneas"
           >
             <RootsyEmptyState
               world="bruma"
-              presence="elsewhere"
+              icon={ListPlus}
               title={ROOTSY_EMPTY_STATE_COPY.ticket.order.title}
-              description={ROOTSY_EMPTY_STATE_COPY.ticket.order.description}
             />
           </EmptyStateStage>
-          <div className="lg:col-span-2">
-            <PresenceSwapStage />
-          </div>
         </div>
       </section>
       {ROOTSY_PRODUCT_WORLDS.map((world) => (
@@ -240,7 +182,7 @@ export function EmptyStateLiveGallery() {
             title={world.name}
             description={`${world.usedIn} ${world.concept}`}
           />
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-2">
             {EMPTY_STATE_VARIANTS.map((variant) => (
               <EmptyStateStage
                 key={variant.id}
@@ -249,10 +191,8 @@ export function EmptyStateLiveGallery() {
               >
                 <RootsyEmptyState
                   world={world.id}
-                  imageSrc={ROOTSY_EMPTY_STATE_DEFAULT_IMAGE}
                   title={DEMO_TITLE}
                   description={variant.description}
-                  presence={variant.presence}
                 />
               </EmptyStateStage>
             ))}

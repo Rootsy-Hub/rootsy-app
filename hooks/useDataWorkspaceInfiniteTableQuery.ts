@@ -20,9 +20,13 @@ export type DataWorkspaceTablePage = {
 
 export function getDataWorkspaceTableNextPageParam<
   T extends DataWorkspaceTablePage,
->(lastPage: T) {
+>(lastPage: T, _allPages: T[], lastPageParam: number) {
   if (!lastPage.success) return undefined
-  return nextDataWorkspaceTablePage(lastPage.page, lastPage.totalCount)
+  const page =
+    Number.isFinite(lastPageParam) && lastPageParam > 0
+      ? lastPageParam
+      : lastPage.page
+  return nextDataWorkspaceTablePage(page, lastPage.totalCount)
 }
 
 export function flattenDataWorkspaceTablePages<T extends DataWorkspaceTablePage>(

@@ -2,40 +2,24 @@
 
 import { HomeWorkspaceBackdrop } from "@/components/layouts/HomeWorkspaceBackdrop"
 import {
-  ROOTSY_EMPTY_STATE_DEFAULT_IMAGE,
   ROOTSY_EMPTY_STATE_DEFAULT_WORLD,
+  ROOTSY_EMPTY_STATE_WORLD_ICONS,
   type RootsyEmptyStateWorld,
 } from "@/components/rootsy-empty-state/rootsyEmptyState"
-import {
-  ROOTSY_ELSEWHERE_LABEL,
-  useRootsyPortraitSlot,
-  type RootsyPortraitSlot,
-} from "@/components/rootsy-empty-state/rootsyPortraitPresence"
 import { cn } from "@/lib/utils"
+import type { LucideIcon } from "lucide-react"
 import { useEffect, useState, type ReactNode } from "react"
 import "@/components/rootsy-empty-state/rootsyEmptyState.css"
 
 export type RootsyEmptyStateProps = {
-  imageSrc?: string
-  /**
-   * Contenido del círculo. Gana sobre imageSrc.
-   * Si Rootsy está en otro lado, se ignora y se muestran los tres puntos.
-   */
-  image?: ReactNode
+  /** Ícono de la figura. Si no se pasa, usa el del mundo. */
+  icon?: LucideIcon
   /** Voz: ROOTSY_EMPTY_STATE_VOICE — nombra lo que falta, en primera persona. */
   title: string
   /** Voz: un paso concreto. Si no hace falta, omitilo. */
   description?: ReactNode
   world?: RootsyEmptyStateWorld
-  imageAlt?: string
   className?: string
-  /**
-   * Superficie de producto. Reclama el retrato según toast → catálogo → pedido.
-   * En la galería no se pasa: siempre se muestra el retrato.
-   */
-  slot?: RootsyPortraitSlot
-  /** Forzar retrato o continuación. Si no se pasa, lo decide `slot`. */
-  presence?: "portrait" | "elsewhere"
 }
 
 function EmptyStateWorldFill({ world }: { world: RootsyEmptyStateWorld }) {
@@ -61,27 +45,6 @@ function EmptyStateOrb() {
   )
 }
 
-/** Tres puntos quietos sobre un orb de luz — la conversación sigue en otro lado. */
-export function RootsyEmptyStateEllipsis({
-  label = "Rootsy está en otro lado",
-  withOrb = true,
-}: {
-  label?: string
-  /** El retrato ya pinta el orb; adentro del empty state se omite. */
-  withOrb?: boolean
-}) {
-  return (
-    <span className="rootsy-empty-state__ellipsis" title={label} aria-hidden>
-      {withOrb ? <EmptyStateOrb /> : null}
-      <span className="rootsy-empty-state__ellipsis-marks">
-        <span className="rootsy-empty-state__ellipsis-dot" />
-        <span className="rootsy-empty-state__ellipsis-dot" />
-        <span className="rootsy-empty-state__ellipsis-dot" />
-      </span>
-    </span>
-  )
-}
-
 function useEmptyStateFigureReady() {
   const [ready, setReady] = useState(false)
 
@@ -100,22 +63,13 @@ function useEmptyStateFigureReady() {
 }
 
 export function RootsyEmptyState({
-  imageSrc = ROOTSY_EMPTY_STATE_DEFAULT_IMAGE,
-  image,
+  icon,
   title,
   description,
   world = ROOTSY_EMPTY_STATE_DEFAULT_WORLD,
-  imageAlt = "",
   className,
-  slot,
-  presence,
 }: RootsyEmptyStateProps) {
-  const claimed = useRootsyPortraitSlot(slot)
-  const resolvedPresence =
-    presence ?? (slot ? (claimed.showPortrait ? "portrait" : "elsewhere") : "portrait")
-  const toward = claimed.elsewhereToward
-  const elsewhereLabel = toward ? ROOTSY_ELSEWHERE_LABEL[toward] : "Rootsy está en otro lado"
-  const showEllipsis = resolvedPresence === "elsewhere"
+  const Icon = icon ?? ROOTSY_EMPTY_STATE_WORLD_ICONS[world]
   const figureReady = useEmptyStateFigureReady()
 
   return (
@@ -123,8 +77,6 @@ export function RootsyEmptyState({
       role="status"
       aria-live="polite"
       data-world={world}
-      data-presence={resolvedPresence}
-      data-slot={slot}
       className={cn("rootsy-empty-state", className)}
     >
       <div className="rootsy-empty-state__portrait">
@@ -134,26 +86,11 @@ export function RootsyEmptyState({
           <span className="rootsy-empty-state__figure">
             <span
               className="rootsy-empty-state__figure-layer"
-              data-active={figureReady && !showEllipsis ? "true" : undefined}
-              aria-hidden={showEllipsis}
+              data-active={figureReady ? "true" : undefined}
             >
-              {image ? (
-                <span className="rootsy-empty-state__image-slot">{image}</span>
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={imageSrc}
-                  alt={imageAlt}
-                  className="rootsy-empty-state__image"
-                />
-              )}
-            </span>
-            <span
-              className="rootsy-empty-state__figure-layer"
-              data-active={figureReady && showEllipsis ? "true" : undefined}
-              aria-hidden={!showEllipsis}
-            >
-              <RootsyEmptyStateEllipsis label={elsewhereLabel} withOrb={false} />
+              <span className="rootsy-empty-state__image-slot">
+                <Icon className="rootsy-empty-state__mark" strokeWidth={1.5} aria-hidden />
+              </span>
             </span>
           </span>
         </span>

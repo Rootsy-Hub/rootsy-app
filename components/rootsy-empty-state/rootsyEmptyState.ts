@@ -1,4 +1,11 @@
-import { ROOTSY_MENSAJE_DEFAULT_PORTRAIT } from "@/components/rootsy-mensaje/rootsyMensaje"
+import {
+  ListPlus,
+  MessageCircle,
+  Package,
+  Sparkles,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react"
 
 export type RootsyEmptyStateWorld =
   | "eter"
@@ -6,8 +13,6 @@ export type RootsyEmptyStateWorld =
   | "suelo"
   | "sombra"
   | "herramientas"
-
-export const ROOTSY_EMPTY_STATE_DEFAULT_IMAGE = ROOTSY_MENSAJE_DEFAULT_PORTRAIT
 
 export const ROOTSY_EMPTY_STATE_DEFAULT_WORLD: RootsyEmptyStateWorld = "sombra"
 
@@ -22,6 +27,15 @@ export const ROOTSY_EMPTY_STATE_WORLDS: {
   { id: "sombra", label: "Sombra", usage: "Catálogo de productos en Operar." },
   { id: "herramientas", label: "Herramientas", usage: "Hilo de Rootsy en chat." },
 ]
+
+/** Ícono por mundo. La superficie puede pasar otro si nombra lo que falta. */
+export const ROOTSY_EMPTY_STATE_WORLD_ICONS: Record<RootsyEmptyStateWorld, LucideIcon> = {
+  eter: Sparkles,
+  bruma: ListPlus,
+  suelo: Wrench,
+  sombra: Package,
+  herramientas: MessageCircle,
+}
 
 export type RootsyEmptyStateCopy = {
   title: string
@@ -40,10 +54,9 @@ export type RootsyEmptyStateCopy = {
  * En Operar, catálogo (sombra) y pedido (bruma) son la misma conversación
  * leída de izquierda a derecha. No repetir el mismo hallazgo en los dos lados.
  *
- * Un solo retrato a la vez. Gana el toast, después el catálogo, después el pedido.
- * El copy sigue en cada lado; el que cede muestra tres puntos: la conversación sigue.
+ * La figura es un ícono suave sobre el glow del mundo. No el retrato de Rootsy.
  *
- * Sí, juntos: “No tenemos productos en Bebidas.” → “El pedido espera.”
+ * Sí, juntos: “No hay productos en Bebidas.” → “El pedido espera.”
  * No: dos veces “Acá no hay…” / “Pedido vacío.”
  */
 export const ROOTSY_EMPTY_STATE_VOICE = {
@@ -54,11 +67,10 @@ export const ROOTSY_EMPTY_STATE_VOICE = {
   description: "Un paso concreto. Rootsy hace, no instruye.",
   conversation:
     "Catálogo y pedido se leen como un solo turno: primero lo que falta, después dónde espera.",
-  presence:
-    "Un solo retrato. Toast, después catálogo, después pedido. El resto muestra tres puntos: sigo hablando en otro lado.",
+  icon: "Un ícono del mundo, suave sobre el glow. No el retrato de Rootsy.",
   examples: {
-    yes: "No tenemos productos en Bebidas. El pedido espera.",
-    no: "No tenemos productos. No hay nada en el pedido.",
+    yes: "No hay productos en Bebidas. El pedido espera.",
+    no: "No hay productos. No hay nada en el pedido.",
   },
 } as const
 
@@ -66,12 +78,12 @@ export function rootsyEmptyStateCatalogIdleCopy(categoryName?: string): RootsyEm
   const name = categoryName?.trim()
   if (!name) {
     return {
-      title: "No tenemos productos.",
+      title: "No hay productos.",
       description: "Activalos o agregalos en Artículos.",
     }
   }
   return {
-    title: `No tenemos productos en ${name}.`,
+    title: `No hay productos en ${name}.`,
     description: "Activalos o agregalos en Artículos.",
   }
 }
@@ -79,7 +91,7 @@ export function rootsyEmptyStateCatalogIdleCopy(categoryName?: string): RootsyEm
 export const ROOTSY_EMPTY_STATE_COPY = {
   catalog: {
     idle: {
-      title: "No tenemos productos.",
+      title: "No hay productos.",
       description: "Activalos o agregalos en Artículos.",
     },
     search: {

@@ -210,13 +210,13 @@ Qué: Promos del catálogo. No calcula impacto en ventas.
 ## Servicios
 Qué: Catálogo de servicios. statistics/services está vacío. Cargos: operations view=services.
 
-## RRHH
+## Personal
 Qué: Empleado = persona laboral (fichaje, sueldo). Miembro = acceso a Rootsy + rol. Rol = permiso del sistema.
 
 ## Cajas
 Qué: Turnos y arqueos. No es “cuánto hay en caja” (eso es tesorería o 1.1.1.01).
 
-## Tesorería
+## Dinero (Tesorería)
 Qué: Dinero operativo (caja, banco, plataformas). Distinto de caja-turno y de Caja contable 1.1.1.01.
 
 ## Inventario
@@ -243,7 +243,7 @@ Qué: Pedidos a proveedores, no compras ya registradas.
 ## Presupuestos
 Qué: Cotizaciones. No son ventas ni cuentan para el total vendido.
 
-## Producción
+## Fabricación (Producción)
 Qué: Corridas de fabricación.
 
 ## Totales operativos

@@ -377,7 +377,7 @@ export function layoutsOperarCatalogGridTemplate(columns: number): string {
   return `repeat(${columns}, minmax(0, 1fr))`
 }
 
-/** Empty catálogo — retrato centrado, mismo círculo que el toast, aire del dosel. */
+/** Empty catálogo — ícono centrado sobre el glow de sombra. */
 export const layoutsOperarCatalogEmptyCanvasClass =
   "relative flex h-full min-h-0 flex-col overflow-hidden p-0"
 

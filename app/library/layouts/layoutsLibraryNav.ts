@@ -53,7 +53,7 @@ export function getLayoutsPageMeta(sectionId: string): LayoutsPageMeta | undefin
 export const LAYOUTS_RELATED_LINKS = [
   { sectionId: "colors-new", label: "Color", hint: "Sombra · bruma · savia." },
   { sectionId: "mundos", label: "Mundos", hint: "Sombra, suelo y bruma habitados." },
-  { sectionId: "empty-state", label: "Empty state", hint: "Retrato cuando el listado no tiene ítems." },
+  { sectionId: "empty-state", label: "Empty state", hint: "Ícono cuando el listado no tiene ítems." },
   { sectionId: "elevation", label: "Elevación", hint: "Superficies del contenido." },
   { sectionId: "spacing", label: "Espaciado", hint: "Toolbar · filas · cards." },
   { sectionId: "layouts-module", label: "Módulo", hint: "Shell padre." },

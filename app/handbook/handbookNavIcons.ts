@@ -1,0 +1,51 @@
+import {
+  AlignLeft,
+  BookOpen,
+  Building2,
+  Compass,
+  Component,
+  Eye,
+  Globe,
+  Heart,
+  LayoutTemplate,
+  Library,
+  Map,
+  MessageCircle,
+  Newspaper,
+  Package,
+  Palette,
+  Scale,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Users,
+  Workflow,
+  type LucideIcon,
+} from "lucide-react"
+
+const HANDBOOK_NAV_ICONS: Record<string, LucideIcon> = {
+  overview: Compass,
+  vision: Eye,
+  estrategia: Target,
+  principios: Scale,
+  "plataforma-de-marca": Sparkles,
+  "voz-y-tono": MessageCircle,
+  "identidad-visual": Palette,
+  territorio: Map,
+  comunidad: Users,
+  ecosistema: Globe,
+  producto: Package,
+  experiencia: Heart,
+  "sistema-de-diseno": Component,
+  contenido: AlignLeft,
+  organizacion: Building2,
+  "forma-de-trabajo": Workflow,
+  impacto: TrendingUp,
+  biblioteca: Library,
+  plantillas: LayoutTemplate,
+  actualizaciones: Newspaper,
+}
+
+export function getHandbookNavIcon(sectionId: string): LucideIcon | null {
+  return HANDBOOK_NAV_ICONS[sectionId] ?? BookOpen
+}

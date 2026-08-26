@@ -73,11 +73,13 @@ export function PurchaseOperationTicketOrderPanel({
         role="region"
         aria-label="Pedido"
       >
-        <div className={layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL)}>
-          <div className="min-w-0">
-            <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
+        {hasTicketItems ? (
+          <div className={layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL)}>
+            <div className="min-w-0">
+              <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {ticketLineCount === 0 ? (
           <OperarTicketEmptyState

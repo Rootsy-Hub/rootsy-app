@@ -17,7 +17,7 @@ export function LayoutEmptyStateLibrarySection() {
       <LibrarySection
         id="empty-state"
         title="Empty state"
-        description="Retrato de Rootsy cuando no hay nada que mostrar. Un solo retrato a la vez: toast, catálogo, pedido. Si ya está en otro lado, el círculo muestra tres puntos. El texto habla como Rootsy: primera persona, corto y cálido."
+        description="Ícono suave sobre el glow del mundo cuando no hay nada que mostrar. Cada mundo pinta el ícono a su aire. El texto habla como Rootsy: primera persona, corto y cálido."
       >
         <EmptyStateLiveGallery />
       </LibrarySection>

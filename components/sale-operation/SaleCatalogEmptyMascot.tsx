@@ -6,7 +6,7 @@ import {
   rootsyEmptyStateCatalogIdleCopy,
 } from "@/components/rootsy-empty-state"
 import { cn } from "@/lib/utils"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUpRight, Package, PackageSearch } from "lucide-react"
 
 export function getSaleCatalogEmptyMascotCopy(
   hasSearch: boolean,
@@ -69,8 +69,8 @@ export function SaleCatalogEmptyMascot({
 
   return (
     <RootsyEmptyState
-      slot="catalog"
       world="sombra"
+      icon={hasSearch ? PackageSearch : Package}
       title={resolvedLine1}
       description={description}
       className={cn("h-full", className)}

@@ -1,13 +1,9 @@
 "use client"
 
-import "@/components/data-workspace/dataWorkspaceTableInfinite.css"
 import { RootsyThinkingHalo, useRootsyThinkingPresence } from "@/components/rootsy-thinking/RootsyThinkingHalo"
-import {
-  dataWorkspaceTableInfiniteCopy,
-  dataWorkspaceTableInfiniteEndCopy,
-} from "@/components/data-workspace/dataWorkspaceTableInfiniteCopy"
+import { dataWorkspaceTableInfiniteCopy } from "@/components/data-workspace/dataWorkspaceTableInfiniteCopy"
 import { cn } from "@/lib/utils"
-import { useEffect, useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import {
   dataWorkspaceShellCard,
   listTableChromeStackClass,
@@ -50,38 +46,7 @@ export function DataWorkspaceListTableShell({
   const useChromeStack = activeFiltersBar != null
   const bodySurfaceClass = isFlush ? workspaceTableSurfaceClass : dataWorkspaceShellCard
   const resolvedBodySurface = className ? undefined : bodySurfaceClass
-  const fetchingMore = Boolean(infinite?.isFetchingMore)
-  const floorHalo = useRootsyThinkingPresence(fetchingMore)
-  const [atScrollEnd, setAtScrollEnd] = useState(false)
-
-  useEffect(() => {
-    const node = scrollRoot
-    if (!node) return
-
-    const update = () => {
-      const gap = node.scrollHeight - node.scrollTop - node.clientHeight
-      setAtScrollEnd(gap <= 32)
-    }
-
-    update()
-    node.addEventListener("scroll", update, { passive: true })
-    const observer = new ResizeObserver(update)
-    observer.observe(node)
-    const inner = node.firstElementChild
-    if (inner) observer.observe(inner)
-    return () => {
-      node.removeEventListener("scroll", update)
-      observer.disconnect()
-    }
-  }, [scrollRoot, infinite?.hasMore, fetchingMore, infinite?.hasItems])
-
-  const endCopyActive =
-    Boolean(infinite?.hasItems) &&
-    !infinite?.hasMore &&
-    !fetchingMore &&
-    !floorHalo.visible &&
-    atScrollEnd
-  const endCopy = useRootsyThinkingPresence(endCopyActive)
+  const floorHalo = useRootsyThinkingPresence(Boolean(infinite?.isFetchingMore))
 
   return (
     <div
@@ -124,7 +89,7 @@ export function DataWorkspaceListTableShell({
               workspaceTableLayoutListBodyScopeClass,
             )}
           >
-            <div className="flex min-h-full min-w-0 flex-1 flex-col">
+            <div className="min-h-full min-w-0">
               {children}
               {infinite ? (
                 <DataWorkspaceTableInfiniteSentinel
@@ -142,19 +107,6 @@ export function DataWorkspaceListTableShell({
                 showDots={false}
                 exiting={floorHalo.exiting}
               />
-            </div>
-          ) : null}
-          {endCopy.visible && infinite ? (
-            <div
-              className="data-workspace-table-infinite__end"
-              data-exiting={endCopy.exiting ? "true" : undefined}
-            >
-              <p
-                className="data-workspace-table-infinite__end-copy font-canopy"
-                role="status"
-              >
-                {dataWorkspaceTableInfiniteEndCopy(infinite.world)}
-              </p>
             </div>
           ) : null}
           {overlay ? (

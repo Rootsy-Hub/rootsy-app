@@ -21,9 +21,7 @@ import {
   layoutsOperarCatalogSectionShellClass,
   layoutsOperarHeaderGridClass,
   layoutsOperarHeaderScopeClass,
-  layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryCartRowClass,
-  layoutsOperarSummaryHeaderRowClass,
   layoutsOperarSummaryTotalRowClass,
   layoutsOperarSummaryTotalsAmountClass,
   layoutsOperarSummaryTotalsLabelClass,
@@ -389,14 +387,6 @@ function LayoutsOperarCatalogColumn({
   )
 }
 
-function LayoutsOperarSummaryCartHeader() {
-  return (
-    <>
-      <h2 className={layoutsOperarSummaryCartTitleClass}>Pedido</h2>
-    </>
-  )
-}
-
 function LayoutsOperarSummaryEmptyOrder() {
   return <OperarTicketEmptyState kind="order" />
 }
@@ -436,10 +426,7 @@ function LayoutsOperarSummaryPanel({
       ) : null}
       {showDraftCart ? (
         <>
-          <div className={layoutsOperarSummaryHeaderRowClass}>
-            <LayoutsOperarSummaryCartHeader />
-          </div>
-          <div className={layoutsOperarSummaryCartRowClass}>
+          <div className={cn(layoutsOperarSummaryCartRowClass, "min-h-0 flex-1")}>
             <LayoutsOperarSummaryEmptyOrder />
           </div>
           <div className={layoutsOperarTicketProposalActionsClass(LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL)}>

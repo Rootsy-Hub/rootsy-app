@@ -5,6 +5,7 @@ import {
   ROOTSY_EMPTY_STATE_COPY,
 } from "@/components/rootsy-empty-state"
 import { cn } from "@/lib/utils"
+import { ListPlus } from "lucide-react"
 
 export type OperarTicketEmptyKind = "order" | "purchase" | "service"
 
@@ -15,7 +16,7 @@ type Props = {
   className?: string
 }
 
-/** Pedido vacío de Operar — mundo Bruma. Con el catálogo, es la misma conversación. */
+/** Pedido vacío de Operar — mundo Bruma. Ícono de insertar líneas. */
 export function OperarTicketEmptyState({
   kind = "order",
   title,
@@ -26,15 +27,14 @@ export function OperarTicketEmptyState({
 
   return (
     <div
-      className={cn("flex min-h-0 flex-1 flex-col", className)}
+      className={cn("layouts-operar-ticket-empty flex min-h-0 flex-1 flex-col", className)}
       data-ticket-empty="true"
     >
       <RootsyEmptyState
-        slot="ticket"
         world="bruma"
+        icon={ListPlus}
         title={title ?? copy.title}
         description={description ?? copy.description}
-        className="h-full"
       />
     </div>
   )
