@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { beforeEach, describe, it } from "node:test"
 import type { DomainEvent } from "../realtime/protocol"
+import { RealtimeHydrateSupersededError } from "../realtime/durableEventPipeline"
 import {
   beginCatalogArticleHydrate,
   bumpCatalogHydrateEpoch,
@@ -29,18 +30,18 @@ describe("catalog hydrate gate", () => {
     setCatalogArticleEventApplier(null)
   })
 
-  it("encola avisos durante el GET y los aplica al terminar", async () => {
+  it("aplica al toque y vuelve a aplicar al terminar el GET", async () => {
     const applied: string[] = []
     setCatalogArticleEventApplier((e) => {
       applied.push(e.id)
     })
     const epoch = beginCatalogArticleHydrate()
-    enqueueOrApplyCatalogArticleEvent(event("a"))
-    enqueueOrApplyCatalogArticleEvent(event("b"))
-    assert.deepEqual(applied, [])
+    await enqueueOrApplyCatalogArticleEvent(event("a"))
+    await enqueueOrApplyCatalogArticleEvent(event("b"))
+    assert.deepEqual(applied, ["a", "b"])
     endCatalogArticleHydrate(epoch)
     await waitCatalogArticleApplies()
-    assert.deepEqual(applied, ["a", "b"])
+    assert.deepEqual(applied, ["a", "b", "a", "b"])
   })
 
   it("no marca current si hubo resync a mitad", () => {
@@ -48,5 +49,18 @@ describe("catalog hydrate gate", () => {
     bumpCatalogHydrateEpoch()
     assert.equal(catalogHydrateEpochIsCurrent(started), false)
     assert.equal(endCatalogArticleHydrate(started), false)
+  })
+
+  it("descarta el replay si hay resync", async () => {
+    const applied: string[] = []
+    setCatalogArticleEventApplier((e) => {
+      applied.push(e.id)
+    })
+    beginCatalogArticleHydrate()
+    await enqueueOrApplyCatalogArticleEvent(event("a"))
+    assert.deepEqual(applied, ["a"])
+    bumpCatalogHydrateEpoch()
+    await waitCatalogArticleApplies()
+    assert.deepEqual(applied, ["a"])
   })
 })

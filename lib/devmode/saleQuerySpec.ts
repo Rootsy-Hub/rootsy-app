@@ -153,7 +153,7 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "WS domain:articles",
                 detail:
-                  "Parche en SQLite (upsert/delete) sin borrar la marca de hidratado. Después re-SELECT del board también si Vender no está montado. Si hay GET en curso, los avisos se encolan y se aplican al terminar. lastSeq vive en SQLite. Resync (gap) borra marcas y vuelve a hidratar.",
+                  "Parche en SQLite (upsert/delete) sin borrar la marca de hidratado. lastSeq solo se persiste cuando el parche ya está en OPFS, o tras rehidratar si el write falla. Si hay GET en curso, los avisos se encolan y el seq no avanza hasta aplicarlos. Resync (gap) borra marcas y vuelve a hidratar.",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],

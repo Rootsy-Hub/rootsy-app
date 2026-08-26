@@ -58,6 +58,7 @@ import {
   writeSavedSaleCatalogView,
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
+import { MenuSidebar } from "@/components/MenuSidebar"
 import {
   layoutsOperarCatalogCanvasBodyClass,
   layoutsOperarCatalogCanvasClass,
@@ -66,7 +67,6 @@ import {
   layoutsOperarCatalogEmptyCanvasClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
-  layoutsOperarCatalogSidebarInnerClass,
   layoutsOperarCatalogSidebarOpenClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
@@ -567,8 +567,11 @@ export function SaleCatalogBrowser({
 
   return (
     <div className={cn(layoutsOperarCatalogColumnClass, className)}>
-      <aside
+      <MenuSidebar
         id="data-workspace-sidebar"
+        collapseBelow={false}
+        padded={false}
+        fixedWidth={false}
         className={cn(
           "max-md:hidden",
           layoutsOperarCatalogSidebarClass,
@@ -577,22 +580,20 @@ export function SaleCatalogBrowser({
             : layoutsOperarCatalogSidebarClosedClass,
         )}
         aria-hidden={!sidebarOpen}
-        {...(!sidebarOpen ? { inert: true } : {})}
+        inert={!sidebarOpen}
         aria-label="Filtros del catálogo"
       >
-        <div className={layoutsOperarCatalogSidebarInnerClass}>
-          {railLoading && !boardError ? (
-            <SaleCatalogSidebarNavSkeleton />
-          ) : (
-            <SaleCatalogSidebarNav
-              categories={railCategories}
-              categorySections={railSections}
-              vistaCatalogo={vistaResuelta}
-              onVistaChange={persistVistaCatalogo}
-            />
-          )}
-        </div>
-      </aside>
+        {railLoading && !boardError ? (
+          <SaleCatalogSidebarNavSkeleton />
+        ) : (
+          <SaleCatalogSidebarNav
+            categories={railCategories}
+            categorySections={railSections}
+            vistaCatalogo={vistaResuelta}
+            onVistaChange={persistVistaCatalogo}
+          />
+        )}
+      </MenuSidebar>
 
       <section
         className={cn(

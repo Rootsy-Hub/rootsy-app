@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  clearPopLocalArticlesHydrateMarks,
   clearPopLocalCategoriesHydrateMark,
   deleteArticleById,
   deleteCategoryById,
@@ -23,6 +24,7 @@ import {
   popArticleCategoriesQueryRoot,
   popArticleQueryKey,
   popArticlesQueryRoot,
+  popLocalArticlesHydrateQueryRoot,
   popLocalCategoriesHydrateQueryKey,
   saleBoardArticlesQueryRoot,
   saleBoardCategoriesQueryRoot,
@@ -31,33 +33,21 @@ import type { DomainEvent } from "@/lib/realtime/protocol"
 import type { QueryClient } from "@tanstack/react-query"
 
 const REFETCH_ALL = { refetchType: "all" as const }
+const SQLITE_ATTEMPTS = 2
 
-export async function applyArticleRealtimeEvent(
-  queryClient: QueryClient,
-  popId: string,
-  event: DomainEvent,
-) {
-  const articleId =
-    (event.resource?.type === "article" && event.resource.id) ||
-    articleIdFromRealtimeEvent(event.payload)
-  if (!articleId) return
-
-  try {
-    const handle = await openPopLocalDb(popId)
-    if (event.type === "articles.deleted") {
-      deleteArticleById(handle.database, articleId)
-      handle.markDirty()
-    } else {
-      const snapshot = articleSnapshotFromRealtimePayload(event.payload.article)
-      if (snapshot) {
-        upsertArticleSnapshots(handle.database, [snapshot])
-        handle.markDirty()
-      }
+async function retrySqlite<T>(fn: () => Promise<T>): Promise<T> {
+  let last: unknown
+  for (let attempt = 0; attempt < SQLITE_ATTEMPTS; attempt += 1) {
+    try {
+      return await fn()
+    } catch (error) {
+      last = error
     }
-  } catch {
-    /* sqlite fallback: igual invalidamos HTTP */
   }
+  throw last
+}
 
+function invalidateSaleBoardArticles(queryClient: QueryClient, popId: string) {
   void queryClient.invalidateQueries({
     queryKey: saleBoardArticlesQueryRoot(popId),
     ...REFETCH_ALL,
@@ -66,10 +56,6 @@ export async function applyArticleRealtimeEvent(
     queryClient,
     popArticlesQueryRoot(popId),
   )
-  void queryClient.invalidateQueries({
-    queryKey: popArticleQueryKey(popId, articleId),
-    ...REFETCH_ALL,
-  })
 }
 
 function invalidateLocalCategories(queryClient: QueryClient, popId: string) {
@@ -81,6 +67,97 @@ function invalidateLocalCategories(queryClient: QueryClient, popId: string) {
     queryKey: popArticleCategoriesQueryRoot(popId),
     ...REFETCH_ALL,
   })
+}
+
+async function recoverArticlesCatalog(queryClient: QueryClient, popId: string) {
+  await clearPopLocalArticlesHydrateMarks(popId).catch(() => undefined)
+  void queryClient.invalidateQueries({
+    queryKey: popLocalArticlesHydrateQueryRoot(popId),
+    ...REFETCH_ALL,
+  })
+  invalidateSaleBoardArticles(queryClient, popId)
+}
+
+async function recoverCategoriesCatalog(queryClient: QueryClient, popId: string) {
+  await clearPopLocalCategoriesHydrateMark(popId).catch(() => undefined)
+  void queryClient.invalidateQueries({
+    queryKey: popLocalCategoriesHydrateQueryKey(popId),
+    ...REFETCH_ALL,
+  })
+  invalidateLocalCategories(queryClient, popId)
+}
+
+async function writeArticleEventToSqlite(popId: string, event: DomainEvent, articleId: string) {
+  const handle = await openPopLocalDb(popId)
+  if (event.type === "articles.deleted") {
+    deleteArticleById(handle.database, articleId)
+    handle.markDirty()
+    await handle.flush()
+    return "ok" as const
+  }
+  const snapshot = articleSnapshotFromRealtimePayload(event.payload.article)
+  if (!snapshot) return "needs-rehydrate" as const
+  upsertArticleSnapshots(handle.database, [snapshot])
+  handle.markDirty()
+  await handle.flush()
+  return "ok" as const
+}
+
+export async function applyArticleRealtimeEvent(
+  queryClient: QueryClient,
+  popId: string,
+  event: DomainEvent,
+) {
+  const articleId =
+    (event.resource?.type === "article" && event.resource.id) ||
+    articleIdFromRealtimeEvent(event.payload)
+  if (!articleId) return
+
+  let outcome: "ok" | "needs-rehydrate" = "needs-rehydrate"
+  try {
+    outcome = await retrySqlite(() =>
+      writeArticleEventToSqlite(popId, event, articleId),
+    )
+  } catch {
+    await recoverArticlesCatalog(queryClient, popId)
+    return
+  }
+
+  if (outcome === "needs-rehydrate") {
+    await recoverArticlesCatalog(queryClient, popId)
+    return
+  }
+
+  invalidateSaleBoardArticles(queryClient, popId)
+  void queryClient.invalidateQueries({
+    queryKey: popArticleQueryKey(popId, articleId),
+    ...REFETCH_ALL,
+  })
+}
+
+async function writeCategoryEventToSqlite(
+  popId: string,
+  event: DomainEvent,
+  patch: NonNullable<ReturnType<typeof categoryPatchFromRealtimePayload>>,
+) {
+  const handle = await openPopLocalDb(popId)
+  const type = event.type
+  if (type === "categories.deleted") {
+    deleteCategoryById(handle.database, patch.id)
+    handle.markDirty()
+    await handle.flush()
+    return { kind: "ok" as const, renamedArticles: false }
+  }
+  const existing = getCategoryById(handle.database, patch.id)
+  const snapshot = categorySnapshotFromPatch(patch, existing)
+  if (!snapshot) return { kind: "needs-rehydrate" as const, renamedArticles: false }
+  upsertCategorySnapshots(handle.database, [snapshot])
+  const renamedArticles =
+    type === "categories.updated" &&
+    renameArticlesCategory(handle.database, patch.id, snapshot.name)
+  handle.markDirty()
+  await handle.flush()
+  return { kind: "ok" as const, renamedArticles }
 }
 
 export async function applyCategoryRealtimeEvent(
@@ -102,54 +179,23 @@ export async function applyCategoryRealtimeEvent(
     return
   }
 
-  let needsRehydrate = false
-  let renamedArticles = false
+  let written: Awaited<ReturnType<typeof writeCategoryEventToSqlite>>
   try {
-    const handle = await openPopLocalDb(popId)
-    if (type === "categories.deleted") {
-      deleteCategoryById(handle.database, patch.id)
-      handle.markDirty()
-    } else {
-      const existing = getCategoryById(handle.database, patch.id)
-      const snapshot = categorySnapshotFromPatch(patch, existing)
-      if (!snapshot) {
-        needsRehydrate = true
-      } else {
-        upsertCategorySnapshots(handle.database, [snapshot])
-        if (
-          type === "categories.updated" &&
-          renameArticlesCategory(handle.database, patch.id, snapshot.name)
-        ) {
-          renamedArticles = true
-        }
-        handle.markDirty()
-      }
-    }
+    written = await retrySqlite(() =>
+      writeCategoryEventToSqlite(popId, event, patch),
+    )
   } catch {
-    /* sqlite fallback: refetch HTTP */
-  }
-
-  if (needsRehydrate) {
-    void clearPopLocalCategoriesHydrateMark(popId)
-      .catch(() => undefined)
-      .then(() =>
-        queryClient.invalidateQueries({
-          queryKey: popLocalCategoriesHydrateQueryKey(popId),
-          ...REFETCH_ALL,
-        }),
-      )
-      .then(() => {
-        invalidateLocalCategories(queryClient, popId)
-      })
+    await recoverCategoriesCatalog(queryClient, popId)
     return
   }
 
-  if (renamedArticles) {
-    void queryClient.invalidateQueries({
-      queryKey: saleBoardArticlesQueryRoot(popId),
-      ...REFETCH_ALL,
-    })
+  if (written.kind === "needs-rehydrate") {
+    await recoverCategoriesCatalog(queryClient, popId)
+    return
   }
 
+  if (written.renamedArticles) {
+    invalidateSaleBoardArticles(queryClient, popId)
+  }
   invalidateLocalCategories(queryClient, popId)
 }

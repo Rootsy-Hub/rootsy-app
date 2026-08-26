@@ -720,20 +720,28 @@ function UiCheckboxSpecimen() {
   return <Checkbox defaultChecked />
 }
 
+const SEGMENT_FILTER_OPTIONS = [
+  { value: "all", label: "Todos" },
+  { value: "operativo", label: "Operativo" },
+  { value: "fiscal", label: "Fiscal" },
+  { value: "gestion", label: "Gestión" },
+  { value: "control", label: "Control" },
+  { value: "config", label: "Configuración" },
+] as const
+
 function SegmentSpecimen() {
-  const [value, setValue] = useState("a")
+  const [value, setValue] = useState("all")
   return (
-    <Field>
-      <RootsFormSegmentField
-        label="Elección"
-        value={value}
-        onValueChange={setValue}
-        options={[
-          { value: "a", label: "A" },
-          { value: "b", label: "B" },
-        ]}
-      />
-    </Field>
+    <RootsFormSegmentField
+      label="Ver reportes"
+      aria-label="Filtrar reportes"
+      layout="inline"
+      className="[&>span:first-child]:sr-only"
+      groupClassName="border-0"
+      value={value}
+      onValueChange={setValue}
+      options={SEGMENT_FILTER_OPTIONS}
+    />
   )
 }
 

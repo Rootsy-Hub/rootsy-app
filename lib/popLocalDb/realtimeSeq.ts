@@ -10,6 +10,14 @@ export function parseRealtimeLastSeq(raw: string | null | undefined): number | n
   return Number.isFinite(seq) && seq >= 0 ? seq : null
 }
 
+export function nextPersistedRealtimeSeq(
+  current: number | null,
+  incoming: number,
+): number {
+  if (current != null && incoming <= current) return current
+  return incoming
+}
+
 export function readSessionRealtimeLastSeq(popId: string): number | null {
   if (typeof window === "undefined") return null
   return parseRealtimeLastSeq(sessionStorage.getItem(`${SESSION_PREFIX}${popId}`))
@@ -26,8 +34,6 @@ export async function loadRealtimeLastSeq(popId: string): Promise<number | null>
     const seq = parseRealtimeLastSeq(
       handle.database.getMeta(REALTIME_LAST_SEQ_META),
     )
-    const sessionSeq = readSessionRealtimeLastSeq(popId)
-    if (seq != null && sessionSeq != null) return Math.max(seq, sessionSeq)
     if (seq != null) return seq
   } catch {
     /* OPFS / sql.js fallback */
@@ -35,13 +41,21 @@ export async function loadRealtimeLastSeq(popId: string): Promise<number | null>
   return readSessionRealtimeLastSeq(popId)
 }
 
-export async function persistRealtimeLastSeq(popId: string, seq: number) {
-  writeSessionRealtimeLastSeq(popId, seq)
+export async function persistRealtimeLastSeq(popId: string, seq: number): Promise<number> {
   try {
     const handle = await openPopLocalDb(popId)
-    handle.database.setMeta(REALTIME_LAST_SEQ_META, String(seq))
+    const current = parseRealtimeLastSeq(
+      handle.database.getMeta(REALTIME_LAST_SEQ_META),
+    )
+    const next = nextPersistedRealtimeSeq(current, seq)
+    writeSessionRealtimeLastSeq(popId, next)
+    if (current != null && next === current) return next
+    handle.database.setMeta(REALTIME_LAST_SEQ_META, String(next))
     handle.markDirty()
+    await handle.flush()
+    return next
   } catch {
-    /* seq queda en sessionStorage */
+    writeSessionRealtimeLastSeq(popId, seq)
+    return seq
   }
 }

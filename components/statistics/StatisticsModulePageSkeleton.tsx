@@ -2,17 +2,11 @@
 
 import "@/components/statistics/statisticsNavRail.css"
 import type { StatisticsFilters } from "@/app/[siteId]/[popId]/statistics/actions"
-import {
-  BlocksModulePageSkeleton,
-  type PopModuleSkeletonLayout,
-} from "@/components/pop-workspace/popModuleSkeletonShell"
+import { BlocksModulePageSkeleton, type PopModuleSkeletonLayout } from "@/components/pop-workspace/popModuleSkeletonShell"
+import { MenuSidebar } from "@/components/MenuSidebar"
 import { StatisticsSectionNav } from "@/components/statistics/StatisticsSectionNav"
 import { StatisticsSectionPanel } from "@/components/statistics/StatisticsSectionPanel"
-import {
-  statisticsMainContentClass,
-  statisticsNavAsideClass,
-  statisticsNavScrollClass,
-} from "@/components/statistics/statisticsWorkspaceStyles"
+import { statisticsMainContentClass } from "@/components/statistics/statisticsWorkspaceStyles"
 import {
   STATISTICS_SECTIONS,
   statisticsSectionById,
@@ -53,17 +47,15 @@ export function StatisticsModulePageSkeleton(layout: PopModuleSkeletonLayout) {
       contentClassName={null}
     >
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:overflow-hidden">
-        <aside className={statisticsNavAsideClass}>
-          <div className={statisticsNavScrollClass}>
-            <StatisticsSectionNav
-              sections={STATISTICS_SECTIONS}
-              activeSectionId={sectionId}
-              getSectionHref={(id) =>
-                statisticsSectionHref(layout.siteId, layout.popId, id)
-              }
-            />
-          </div>
-        </aside>
+        <MenuSidebar layout="strip" aria-label="Secciones de estadísticas">
+          <StatisticsSectionNav
+            sections={STATISTICS_SECTIONS}
+            activeSectionId={sectionId}
+            getSectionHref={(id) =>
+              statisticsSectionHref(layout.siteId, layout.popId, id)
+            }
+          />
+        </MenuSidebar>
         <div className={statisticsMainContentClass}>
           <StatisticsSectionPanel
             section={section}

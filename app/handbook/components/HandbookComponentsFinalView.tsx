@@ -19,6 +19,7 @@ import {
 } from "@/components/ComponentView"
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import { MenuSidebar } from "@/components/MenuSidebar"
+import { RootsFormSegmentField } from "@/components/rootsy-form"
 import {
   libraryDocPageDescriptionClass,
   libraryDocPageTitleClass,
@@ -322,7 +323,101 @@ function MenuSidebarSpecimen({ variant }: { variant: string }) {
   )
 }
 
-function SidebarFinalSpecimen() {
+const TAB_FILTER_OPTIONS = [
+  { value: "all", label: "Todos" },
+  { value: "operativo", label: "Operativo" },
+  { value: "fiscal", label: "Fiscal" },
+  { value: "gestion", label: "Gestión" },
+  { value: "control", label: "Control" },
+  { value: "config", label: "Configuración" },
+] as const
+
+const TAB_FORM_OPTIONS = [
+  { value: "product", label: "Producto" },
+  { value: "service", label: "Servicio" },
+] as const
+
+function atmosphereChrome(worldId: ComponentViewRenderContext["worldId"]) {
+  switch (worldId) {
+    case "eter":
+    case "herramientas":
+      return { themeClass: "rootsy-theme-landing", tone: "dark" as const }
+    case "bruma-oscura":
+      return { themeClass: "rootsy-theme-bruma-oscura", tone: "dark" as const }
+    case "suelo":
+    case "sombra":
+      return { themeClass: "rootsy-theme-pos", tone: "dark" as const }
+    default:
+      return { themeClass: "rootsy-theme-workspace", tone: "light" as const }
+  }
+}
+
+function TabsSegmentLive({
+  variant,
+  extras,
+  worldId,
+}: {
+  variant: string
+  extras: readonly string[]
+  worldId: ComponentViewRenderContext["worldId"]
+}) {
+  const isFilter = variant !== "Formulario"
+  const options = isFilter ? TAB_FILTER_OPTIONS : TAB_FORM_OPTIONS
+  const [value, setValue] = useState(options[0].value)
+  const chrome = atmosphereChrome(worldId)
+
+  return (
+    <div
+      className={cn(isFilter ? "w-full" : "w-full max-w-sm", chrome.themeClass)}
+    >
+      <RootsFormSegmentField
+        label={isFilter ? "Ver reportes" : "Tipo"}
+        aria-label={isFilter ? "Filtrar reportes" : "Tipo"}
+        layout={isFilter ? "inline" : "grid"}
+        className={isFilter ? "[&>span:first-child]:sr-only" : undefined}
+        groupClassName={isFilter ? "border-0" : undefined}
+        value={value}
+        onValueChange={setValue}
+        options={options}
+        disabled={extras[0] === "deshabilitado"}
+        tone={chrome.tone}
+      />
+    </div>
+  )
+}
+
+function TabsFinalSpecimen() {
+  return (
+    <ComponentView
+      background={BRUMA}
+      componentName="RootsFormSegmentField"
+      componentProperties={[
+        { name: "label", values: ["string"] },
+        { name: "value", values: ["string"] },
+        { name: "onValueChange", values: ["(value: string) => void"] },
+        { name: "options", values: ["RootsFormSegmentOption[]"] },
+        { name: "layout", values: ["inline", "grid"] },
+        { name: "disabled", values: ["true", "false"] },
+        { name: "groupClassName", values: ["string"] },
+        { name: "className", values: ["string"] },
+        { name: "aria-label", values: ["string"] },
+        { name: "tone", values: ["light", "dark"] },
+      ]}
+      variants={[{ name: "Filtro" }, { name: "Formulario" }]}
+      extras={[{ items: [{ name: "idle" }, { name: "deshabilitado" }] }]}
+      render={(variant, extras, context) => (
+        <TabsSegmentLive
+          key={variant}
+          variant={variant}
+          extras={extras}
+          worldId={context.worldId}
+        />
+      )}
+    />
+  )
+}
+
+function MenusFinalSpecimen() {
   return (
     <ComponentView
       background={BRUMA}
@@ -363,8 +458,10 @@ export function HandbookComponentsFinalView({ pageId }: { pageId: string }) {
             <div className="mt-6">
               {pageId === "navegacion-final" && section.id === "header" ? (
                 <HeaderFinalSpecimen />
-              ) : pageId === "navegacion-final" && section.id === "sidebar" ? (
-                <SidebarFinalSpecimen />
+              ) : pageId === "navegacion-final" && section.id === "menus" ? (
+                <MenusFinalSpecimen />
+              ) : pageId === "navegacion-final" && section.id === "tabs" ? (
+                <TabsFinalSpecimen />
               ) : (
                 <p className={cn(libraryDocPageDescriptionClass, "max-w-md italic")}>
                   Esta parte todavía se está formando.

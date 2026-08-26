@@ -20,16 +20,16 @@ export type ComponentViewExtraRow = {
 
 const COMPONENT_VIEW_WORLDS = [
   {
+    id: "bruma",
+    name: "Bruma",
+    swatch: "var(--rootsy-white)",
+    canvas: "var(--rootsy-bruma-100)",
+  },
+  {
     id: "eter",
     name: "Éter",
     swatch: "var(--rootsy-eter-700)",
     canvas: "var(--rootsy-eter-950)",
-  },
-  {
-    id: "bruma",
-    name: "Bruma",
-    swatch: "var(--rootsy-bruma-100)",
-    canvas: "var(--rootsy-bruma-100)",
   },
   {
     id: "bruma-oscura",

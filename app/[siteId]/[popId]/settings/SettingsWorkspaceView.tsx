@@ -11,11 +11,8 @@ import {
 import { PopSettingsSectionNav } from "@/components/settings/PopSettingsSectionNav"
 import { PopSettingsSectionLoading } from "@/components/settings/PopSettingsSectionLoading"
 import { dataWorkspaceBlocksPageMainClass } from "@/components/data-workspace/dataWorkspaceListStyles"
-import {
-  statisticsMainContentClass,
-  statisticsNavAsideClass,
-  statisticsNavScrollClass,
-} from "@/components/statistics/statisticsWorkspaceStyles"
+import { MenuSidebar } from "@/components/MenuSidebar"
+import { statisticsMainContentClass } from "@/components/statistics/statisticsWorkspaceStyles"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -422,15 +419,13 @@ export function SettingsWorkspaceView() {
     >
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:overflow-hidden">
         {!error && !bootstrapError ? (
-          <aside className={statisticsNavAsideClass}>
-            <div className={statisticsNavScrollClass}>
-              <PopSettingsSectionNav
-                sections={visibleSections}
-                activeSectionId={activeSectionId}
-                onSectionSelect={handleSectionSelect}
-              />
-            </div>
-          </aside>
+          <MenuSidebar layout="strip" aria-label="Secciones de ajustes">
+            <PopSettingsSectionNav
+              sections={visibleSections}
+              activeSectionId={activeSectionId}
+              onSectionSelect={handleSectionSelect}
+            />
+          </MenuSidebar>
         ) : null}
 
         <div

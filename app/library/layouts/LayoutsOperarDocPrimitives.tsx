@@ -71,6 +71,7 @@ import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/r
 import { LayoutsModuleShellWithContent } from "@/app/library/layouts/LayoutsModuleDocPrimitives"
 import { ROOTSY_LAYOUTS_MODULE_HEADER } from "@/app/library/layouts/rootsyLayoutsModuleSystem"
 import { OperarTicketEmptyState } from "@/components/layouts-module/OperarTicketEmptyState"
+import { MenuSidebar } from "@/components/MenuSidebar"
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
 import {
@@ -352,8 +353,15 @@ function LayoutsOperarCatalogColumn({
 }) {
   return (
     <div className={inMainGrid ? layoutsOperarCatalogColumnClass : layoutsOperarCatalogColumnClass}>
-      <aside
-        className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass, wireframe && "relative")}
+      <MenuSidebar
+        collapseBelow={false}
+        padded={false}
+        fixedWidth={false}
+        className={cn(
+          layoutsOperarCatalogSidebarClass,
+          layoutsOperarCatalogSidebarOpenClass,
+          wireframe && "relative",
+        )}
         aria-label="Filtros del catálogo"
       >
         {wireframe ? (
@@ -361,7 +369,7 @@ function LayoutsOperarCatalogColumn({
         ) : composed ? (
           <LayoutsOperarCatalogRailProposal />
         ) : null}
-      </aside>
+      </MenuSidebar>
       <section className={cn(layoutsOperarCatalogCanvasClass, wireframe && "relative")}>
         {composed ? <LayoutsOperarCatalogToolbar /> : null}
         {wireframe ? (
@@ -729,9 +737,15 @@ export function LayoutsOperarCatalogSectionDemo() {
           className={cn("rootsy-theme-pos rootsy-radius-system", layoutsOperarCatalogSectionShellClass)}
         >
             <div className={cn(layoutsOperarCatalogColumnClass, "min-h-0 flex-1")}>
-              <aside className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass)}>
+              <MenuSidebar
+                collapseBelow={false}
+                padded={false}
+                fixedWidth={false}
+                className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass)}
+                aria-label="Filtros del catálogo"
+              >
                 <LayoutsOperarCatalogRailProposal />
-              </aside>
+              </MenuSidebar>
               <section className={layoutsOperarCatalogCanvasClass}>
                 <LayoutsOperarCatalogToolbar />
                 <LayoutsOperarProductCatalog />

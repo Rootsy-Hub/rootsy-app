@@ -29,8 +29,15 @@ import {
   rootsFormUiPrefixedDateTriggerClass,
   rootsFormUiPrefixedSelectTriggerClass,
   rootsFormUiSegmentGroupClass,
+  rootsFormUiSegmentGroupDarkClass,
+  rootsFormUiSegmentGroupInlineClass,
   rootsFormUiSegmentIndicatorClass,
   rootsFormUiSegmentOptionClass,
+  rootsFormUiSegmentOptionDarkClass,
+  rootsFormUiSegmentSelectedSurfaceClass,
+  rootsFormUiSegmentSelectedSurfaceDarkClass,
+  rootsFormUiSegmentSelectedSurfaceFilterLightClass,
+  rootsFormUiSegmentSelectedSurfaceLightClass,
   rootsFormUiSelectTriggerClass,
   rootsFormUiSwitchBoxClass,
   rootsFormUiSwitchTrackClass,
@@ -258,10 +265,53 @@ export const rootsFormCheckboxClass = rootsFormUiCheckboxClass
 /** Track del segment group — pill inset con gap, h-10 como inputs. */
 export const rootsFormSegmentGroupClass = rootsFormUiSegmentGroupClass
 
+export function rootsFormSegmentGroupClassForTone(
+  tone: RootsFormSelectTone = "light",
+  layout: "grid" | "inline" = "grid",
+) {
+  if (tone === "dark") return rootsFormUiSegmentGroupDarkClass
+  if (layout === "inline") return rootsFormUiSegmentGroupInlineClass
+  return rootsFormUiSegmentGroupClass
+}
+
+export function rootsFormSegmentSelectedSurfaceClassForTone(
+  tone: RootsFormSelectTone = "light",
+  layout: "grid" | "inline" = "grid",
+) {
+  if (tone === "dark") return rootsFormUiSegmentSelectedSurfaceDarkClass
+  if (layout === "inline") return rootsFormUiSegmentSelectedSurfaceFilterLightClass
+  return rootsFormUiSegmentSelectedSurfaceLightClass
+}
+
+export const rootsFormSegmentSelectedSurfaceClass =
+  rootsFormUiSegmentSelectedSurfaceLightClass
+
+export function rootsFormSegmentIndicatorClassForTone(
+  tone: RootsFormSelectTone = "light",
+) {
+  return cn(
+    "pointer-events-none absolute transition-transform duration-200 ease-out",
+    rootsFormSegmentSelectedSurfaceClassForTone(tone),
+  )
+}
+
 export const rootsFormSegmentIndicatorClass = rootsFormUiSegmentIndicatorClass
 
-export function rootsFormSegmentOptionClass(selected: boolean, disabled?: boolean) {
+export function rootsFormSegmentOptionClass(
+  selected: boolean,
+  disabled?: boolean,
+) {
   return rootsFormUiSegmentOptionClass(selected, disabled)
+}
+
+export function rootsFormSegmentOptionClassForTone(
+  selected: boolean,
+  disabled?: boolean,
+  tone: RootsFormSelectTone = "light",
+) {
+  return tone === "dark"
+    ? rootsFormUiSegmentOptionDarkClass(selected, disabled)
+    : rootsFormUiSegmentOptionClass(selected, disabled)
 }
 
 /** Prefijo dual %/$ — seleccionado = slot affix bruma; no seleccionado = blanco muted. */

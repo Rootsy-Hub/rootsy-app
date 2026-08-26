@@ -10,10 +10,8 @@ import {
   libraryNavItemNestedClass,
   libraryNavNestedListClass,
   libraryNavToggleClass,
-  libraryScrollDarkClass,
-  librarySidebarClass,
-  librarySidebarEyebrowClass,
 } from "@/app/library/libraryColorTheme"
+import { MenuSidebar } from "@/components/MenuSidebar"
 import { cn } from "@/lib/utils"
 import { ChevronRight } from "lucide-react"
 import Link from "next/link"
@@ -114,48 +112,35 @@ export function BackofficeSidebar() {
   const pathname = usePathname()
 
   return (
-    <aside
-      className={cn(
-        "hidden min-h-0 w-64 shrink-0 flex-col overflow-hidden border-r lg:flex",
-        librarySidebarClass,
-      )}
-    >
-      <div
-        className={cn(
-          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4",
-          libraryScrollDarkClass,
-        )}
-      >
-        <p className={cn("px-2", librarySidebarEyebrowClass)}>Plataforma</p>
-        <nav className="library-nav mt-4" aria-label="Backoffice">
-          <ul className="library-nav-list" role="list">
-            {BACKOFFICE_NAV.map((item) => {
-              if (item.children?.length) {
-                return (
-                  <NavAccordion
-                    key={item.id}
-                    item={item as BackofficeNavItem & { children: BackofficeNavItem[] }}
-                    pathname={pathname}
-                  />
-                )
-              }
-
+    <MenuSidebar eyebrow="Plataforma" aria-label="Backoffice">
+      <nav className="library-nav" aria-label="Backoffice">
+        <ul className="library-nav-list" role="list">
+          {BACKOFFICE_NAV.map((item) => {
+            if (item.children?.length) {
               return (
-                <li key={item.id}>
-                  <NavLink item={item} pathname={pathname} />
-                </li>
+                <NavAccordion
+                  key={item.id}
+                  item={item as BackofficeNavItem & { children: BackofficeNavItem[] }}
+                  pathname={pathname}
+                />
               )
-            })}
-          </ul>
-        </nav>
-        <p className={cn("mt-8 px-2", libraryNavGroupLabelClass)}>
-          Fundamentos Rootsy
-        </p>
-        <p className="mt-2 px-2 text-xs leading-relaxed text-[var(--library-nav-text)] opacity-80">
-          Superficie bruma, nave sombra y foco savia — mismo lenguaje que la
-          librería de diseño.
-        </p>
-      </div>
-    </aside>
+            }
+
+            return (
+              <li key={item.id}>
+                <NavLink item={item} pathname={pathname} />
+              </li>
+            )
+          })}
+        </ul>
+      </nav>
+      <p className={cn("mt-8 px-2", libraryNavGroupLabelClass)}>
+        Fundamentos Rootsy
+      </p>
+      <p className="mt-2 px-2 text-xs leading-relaxed text-[var(--library-nav-text)] opacity-80">
+        Superficie bruma, nave sombra y foco savia — mismo lenguaje que la
+        librería de diseño.
+      </p>
+    </MenuSidebar>
   )
 }

@@ -85,15 +85,6 @@ export const HANDBOOK_COMPONENT_CATALOG: readonly HandbookCatalogEntry[] = [
 
   // —— Sidebar
   {
-    id: "menu-sidebar",
-    sectionIds: ["sidebar"],
-    name: "MenuSidebar",
-    source: "components/MenuSidebar.tsx",
-    kind: "libreria",
-    usedIn: ["Handbook (sistema de diseño y overview)"],
-    note: "Rail oscuro de librería: Volver, eyebrow y grupos de páginas. No dispara GET/POST.",
-  },
-  {
     id: "data-workspace-sidebar",
     sectionIds: ["sidebar"],
     name: "DataWorkspaceSidebar",
@@ -115,6 +106,22 @@ export const HANDBOOK_COMPONENT_CATALOG: readonly HandbookCatalogEntry[] = [
   },
 
   // —— Menús
+  {
+    id: "menu-sidebar",
+    sectionIds: ["menus"],
+    name: "MenuSidebar",
+    source: "components/MenuSidebar.tsx",
+    kind: "libreria",
+    usedIn: [
+      "Handbook",
+      "Librería",
+      "Backoffice",
+      "Estadísticas",
+      "Ajustes",
+      "Operar (venta, compra, mesas, mostrador, servicios)",
+    ],
+    note: "Menú de secciones en rail oscuro. El children es la nav de cada pantalla. No dispara GET/POST.",
+  },
   {
     id: "section-menu",
     sectionIds: ["menus"],
@@ -152,13 +159,27 @@ export const HANDBOOK_COMPONENT_CATALOG: readonly HandbookCatalogEntry[] = [
 
   // —— Tabs
   {
+    id: "form-segment",
+    sectionIds: ["tabs", "radios"],
+    name: "RootsFormSegmentField",
+    source: "components/rootsy-form/RootsFormSegmentField.tsx",
+    kind: "libreria",
+    variants: ["inline", "grid"],
+    usedIn: [
+      "Hub de reportes",
+      "Inventario, cuentas, RRHH y arqueo",
+      "Formularios de módulo",
+    ],
+    note: "Filtro de categorías en línea. En formulario, 2–4 opciones en grilla. No hay RadioGroup de producto.",
+  },
+  {
     id: "ui-tabs",
     sectionIds: ["tabs"],
     name: "Tabs",
     source: "components/ui/tabs.tsx",
     kind: "shadcn",
     usedIn: ["Detalle de cuenta en tesorería"],
-    note: "Único tab bar de producto. El resto elige con rail o RootsFormSegmentField.",
+    note: "Único tab bar shadcn. El resto usa RootsFormSegmentField.",
   },
 
   // —— Paginación
@@ -470,21 +491,7 @@ export const HANDBOOK_COMPONENT_CATALOG: readonly HandbookCatalogEntry[] = [
     ],
   },
 
-  // —— Radios → segmento
-  {
-    id: "form-segment",
-    sectionIds: ["radios"],
-    name: "RootsFormSegmentField",
-    source: "components/rootsy-form/RootsFormSegmentField.tsx",
-    kind: "libreria",
-    usedIn: [
-      "Formularios de módulo",
-      "Descuento general en checkout",
-      "Reportes",
-      "Líneas de mostrador",
-    ],
-    note: "No hay RadioGroup de producto. Esta es la elección exclusiva visible.",
-  },
+  // —— Radios → el segmento vive en Tabs (mismo export, también listado acá)
 
   // —— Switches
   {

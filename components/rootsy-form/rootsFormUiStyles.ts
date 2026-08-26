@@ -189,23 +189,62 @@ export const rootsFormUiImageUploadShellEmptyClass = cn(
 export const rootsFormUiImageUploadThumbClass =
   "relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]"
 
-/** form.control.segment — pill inset h-10 · bruma track · indicador blanco. */
+/**
+ * form.control.segment — default claro = bruma + pastilla blanca.
+ * No usa --color-* en light: el html lleva .dark y esos tokens se vuelven sombra.
+ */
 export const rootsFormUiSegmentGroupClass = cn(
   "relative grid h-10 w-full gap-1 rounded-[12px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] p-1 shadow-none",
 )
 
-export const rootsFormUiSegmentIndicatorClass =
-  "pointer-events-none absolute bg-[var(--rootsy-white)] shadow-sm transition-transform duration-200 ease-out"
+export const rootsFormUiSegmentGroupDarkClass = cn(
+  "relative grid h-10 w-full gap-1 rounded-[12px] border border-[var(--color-borde)] bg-[var(--color-superficie)] p-1 shadow-none",
+)
+
+/** Filtro en línea — sin track; la pastilla activa es bruma 50. */
+export const rootsFormUiSegmentGroupInlineClass = cn(
+  "relative flex h-10 w-full gap-1 rounded-[12px] border-0 bg-transparent p-1 shadow-none",
+)
+
+/** Default claro — pastilla blanca (alias savia 50). */
+export const rootsFormUiSegmentSelectedSurfaceLightClass =
+  "bg-[var(--rootsy-white)] shadow-sm"
+
+/** Filtro inline — activo blanco sobre el aire bruma-50 de bloques. */
+export const rootsFormUiSegmentSelectedSurfaceFilterLightClass =
+  "bg-[var(--rootsy-white)] shadow-sm ring-1 ring-[var(--rootsy-bruma-200)]"
+
+/** Oscuro — foco sobre elevada de la atmósfera. */
+export const rootsFormUiSegmentSelectedSurfaceDarkClass =
+  "bg-[color-mix(in_srgb,var(--color-foco)_18%,var(--color-elevada))] shadow-sm"
+
+export const rootsFormUiSegmentSelectedSurfaceClass =
+  rootsFormUiSegmentSelectedSurfaceLightClass
+
+export const rootsFormUiSegmentIndicatorClass = cn(
+  "pointer-events-none absolute transition-transform duration-200 ease-out",
+  rootsFormUiSegmentSelectedSurfaceLightClass,
+)
 
 export function rootsFormUiSegmentOptionClass(selected: boolean, disabled?: boolean) {
   return cn(
-    rootsFormUiControlTypographyClass,
-    "relative z-[1] inline-flex h-full min-w-0 items-center justify-center gap-2 rounded-[8px] px-3 font-medium transition-colors duration-150",
+    "rootsy-text-body relative z-[1] inline-flex h-full min-w-0 items-center justify-center gap-2 rounded-[8px] px-3 font-medium transition-colors duration-150",
     "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
     disabled && "pointer-events-none opacity-50",
     selected
       ? "text-[var(--rootsy-bruma-900)]"
-      : "text-[var(--rootsy-bruma-400)] hover:text-[var(--rootsy-bruma-500)]",
+      : "text-[var(--rootsy-bruma-700)] hover:text-[var(--rootsy-bruma-900)]",
+  )
+}
+
+export function rootsFormUiSegmentOptionDarkClass(selected: boolean, disabled?: boolean) {
+  return cn(
+    "rootsy-text-body relative z-[1] inline-flex h-full min-w-0 items-center justify-center gap-2 rounded-[8px] px-3 font-medium transition-colors duration-150",
+    "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-foco)_45%,transparent)]",
+    disabled && "pointer-events-none opacity-50",
+    selected
+      ? "text-[var(--color-texto)]"
+      : "text-[var(--color-texto-muted)] hover:text-[var(--color-texto)]",
   )
 }
 

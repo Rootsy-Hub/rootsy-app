@@ -7,7 +7,7 @@ import {
 } from "@/lib/catalogRealtime/apply"
 import {
   bumpCatalogHydrateEpoch,
-  enqueueOrApplyCatalogArticleEvent,
+  scheduleCatalogArticleReplayIfHydrating,
   setCatalogArticleEventApplier,
 } from "@/lib/catalogRealtime/hydrateGate"
 import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
@@ -57,11 +57,11 @@ export function usePopCatalogRealtime(popId: string | undefined) {
     (event: DomainEvent) => {
       if (!popId || event.popId !== popId) return
       if (event.type.startsWith("articles.")) {
-        enqueueOrApplyCatalogArticleEvent(event)
-        return
+        scheduleCatalogArticleReplayIfHydrating(event)
+        return applyArticle(event)
       }
       if (event.type.startsWith("categories.")) {
-        applyCategoryRealtimeEvent(queryClient, popId, event)
+        return applyCategoryRealtimeEvent(queryClient, popId, event)
       }
     },
     [popId, queryClient],

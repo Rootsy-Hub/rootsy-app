@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { parseRealtimeLastSeq } from "./realtimeSeq"
+import { nextPersistedRealtimeSeq, parseRealtimeLastSeq } from "./realtimeSeq"
 
 describe("realtime lastSeq", () => {
   it("parsea seq válido", () => {
@@ -13,5 +13,12 @@ describe("realtime lastSeq", () => {
     assert.equal(parseRealtimeLastSeq(""), null)
     assert.equal(parseRealtimeLastSeq("-1"), null)
     assert.equal(parseRealtimeLastSeq("no"), null)
+  })
+
+  it("no deja bajar el seq durable", () => {
+    assert.equal(nextPersistedRealtimeSeq(null, 4), 4)
+    assert.equal(nextPersistedRealtimeSeq(10, 12), 12)
+    assert.equal(nextPersistedRealtimeSeq(10, 10), 10)
+    assert.equal(nextPersistedRealtimeSeq(10, 7), 10)
   })
 })

@@ -19,6 +19,7 @@ export {
   loadRealtimeLastSeq,
   persistRealtimeLastSeq,
   parseRealtimeLastSeq,
+  nextPersistedRealtimeSeq,
   REALTIME_LAST_SEQ_META,
   readSessionRealtimeLastSeq,
   writeSessionRealtimeLastSeq,

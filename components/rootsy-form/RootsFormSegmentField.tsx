@@ -2,14 +2,17 @@
 
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
+import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import { getFormSegmentIndicatorLayoutStyle } from "@/components/rootsy-form/rootsFormSpecRuntime"
 import {
-  rootsFormSegmentGroupClass,
-  rootsFormSegmentIndicatorClass,
-  rootsFormSegmentOptionClass,
+  rootsFormSegmentGroupClassForTone,
+  rootsFormSegmentIndicatorClassForTone,
+  rootsFormSegmentOptionClassForTone,
+  rootsFormSegmentSelectedSurfaceClassForTone,
 } from "@/components/rootsy-form/rootsFormStyles"
 import { cn } from "@/lib/utils"
 import type { CSSProperties, ReactNode } from "react"
+import type { RootsFormTone } from "@/app/library/ui-components/formsUiHardcodedSpec"
 
 export type RootsFormSegmentOption = {
   value: string
@@ -28,6 +31,7 @@ type Props = {
   className?: string
   groupClassName?: string
   style?: CSSProperties
+  tone?: RootsFormTone
   "aria-label"?: string
 } & RootsFormFieldAssistProps
 
@@ -54,6 +58,7 @@ export function RootsFormSegmentField({
   className,
   groupClassName,
   style,
+  tone,
   "aria-label": ariaLabel,
   hint,
   error,
@@ -66,12 +71,19 @@ export function RootsFormSegmentField({
     options.findIndex((option) => option.value === value),
   )
   const useInlineLayout = layout === "inline" || options.length > 4
+  const segmentLayout = useInlineLayout ? "inline" : "grid"
+  const resolvedTone = useRootsFormControlTone(tone)
+  const selectedSurfaceClass = rootsFormSegmentSelectedSurfaceClassForTone(
+    resolvedTone,
+    segmentLayout,
+  )
 
   return (
     <RootsFormField
       label={label}
       className={className}
       style={style}
+      tone={tone}
       hint={hint}
       error={error}
       warning={warning}
@@ -82,7 +94,7 @@ export function RootsFormSegmentField({
         role="group"
         aria-label={ariaLabel ?? label}
         className={cn(
-          rootsFormSegmentGroupClass,
+          rootsFormSegmentGroupClassForTone(resolvedTone, segmentLayout),
           useInlineLayout
             ? "flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             : segmentGridClass(options.length),
@@ -92,7 +104,7 @@ export function RootsFormSegmentField({
         {!useInlineLayout ? (
           <span
             aria-hidden
-            className={rootsFormSegmentIndicatorClass}
+            className={rootsFormSegmentIndicatorClassForTone(resolvedTone)}
             style={getFormSegmentIndicatorLayoutStyle(options.length, selectedIndex)}
           />
         ) : null}
@@ -107,12 +119,16 @@ export function RootsFormSegmentField({
               disabled={isDisabled}
               aria-pressed={isSelected}
               className={cn(
-                rootsFormSegmentOptionClass(isSelected, isDisabled),
+                rootsFormSegmentOptionClassForTone(
+                  isSelected,
+                  isDisabled,
+                  resolvedTone,
+                ),
                 useInlineLayout &&
                   "h-full shrink-0 whitespace-nowrap px-3.5",
                 useInlineLayout &&
                   isSelected &&
-                  "rounded-[8px] bg-[var(--rootsy-white)] shadow-sm",
+                  cn("rounded-[8px]", selectedSurfaceClass),
               )}
               onClick={() => onValueChange(option.value)}
             >
