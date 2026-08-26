@@ -12,7 +12,7 @@ import {
   type RootsyPortraitSlot,
 } from "@/components/rootsy-empty-state/rootsyPortraitPresence"
 import { cn } from "@/lib/utils"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import "@/components/rootsy-empty-state/rootsyEmptyState.css"
 
 export type RootsyEmptyStateProps = {
@@ -51,19 +51,28 @@ function EmptyStateWorldFill({ world }: { world: RootsyEmptyStateWorld }) {
   )
 }
 
+function EmptyStateOrb() {
+  return (
+    <span className="rootsy-empty-state__orb" aria-hidden>
+      <span className="rootsy-empty-state__orb-spin" />
+      <span className="rootsy-empty-state__orb-blob is-a" />
+      <span className="rootsy-empty-state__orb-blob is-b" />
+    </span>
+  )
+}
+
 /** Tres puntos quietos sobre un orb de luz — la conversación sigue en otro lado. */
 export function RootsyEmptyStateEllipsis({
   label = "Rootsy está en otro lado",
+  withOrb = true,
 }: {
   label?: string
+  /** El retrato ya pinta el orb; adentro del empty state se omite. */
+  withOrb?: boolean
 }) {
   return (
     <span className="rootsy-empty-state__ellipsis" title={label} aria-hidden>
-      <span className="rootsy-empty-state__orb">
-        <span className="rootsy-empty-state__orb-spin" />
-        <span className="rootsy-empty-state__orb-blob is-a" />
-        <span className="rootsy-empty-state__orb-blob is-b" />
-      </span>
+      {withOrb ? <EmptyStateOrb /> : null}
       <span className="rootsy-empty-state__ellipsis-marks">
         <span className="rootsy-empty-state__ellipsis-dot" />
         <span className="rootsy-empty-state__ellipsis-dot" />
@@ -71,6 +80,23 @@ export function RootsyEmptyStateEllipsis({
       </span>
     </span>
   )
+}
+
+function useEmptyStateFigureReady() {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    if (reduce) {
+      setReady(true)
+      return
+    }
+
+    const id = requestAnimationFrame(() => setReady(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
+  return ready
 }
 
 export function RootsyEmptyState({
@@ -90,6 +116,7 @@ export function RootsyEmptyState({
   const toward = claimed.elsewhereToward
   const elsewhereLabel = toward ? ROOTSY_ELSEWHERE_LABEL[toward] : "Rootsy está en otro lado"
   const showEllipsis = resolvedPresence === "elsewhere"
+  const figureReady = useEmptyStateFigureReady()
 
   return (
     <div
@@ -100,24 +127,38 @@ export function RootsyEmptyState({
       data-slot={slot}
       className={cn("rootsy-empty-state", className)}
     >
-      <div className="rootsy-empty-state__portrait rootsy-hero-rise">
+      <div className="rootsy-empty-state__portrait">
         <span className="rootsy-empty-state__frame">
           <EmptyStateWorldFill world={world} />
-          {showEllipsis ? (
-            <RootsyEmptyStateEllipsis label={elsewhereLabel} />
-          ) : image ? (
-            <span className="rootsy-empty-state__image-slot">{image}</span>
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={imageSrc}
-              alt={imageAlt}
-              className="rootsy-empty-state__image"
-            />
-          )}
+          <EmptyStateOrb />
+          <span className="rootsy-empty-state__figure">
+            <span
+              className="rootsy-empty-state__figure-layer"
+              data-active={figureReady && !showEllipsis ? "true" : undefined}
+              aria-hidden={showEllipsis}
+            >
+              {image ? (
+                <span className="rootsy-empty-state__image-slot">{image}</span>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imageSrc}
+                  alt={imageAlt}
+                  className="rootsy-empty-state__image"
+                />
+              )}
+            </span>
+            <span
+              className="rootsy-empty-state__figure-layer"
+              data-active={figureReady && showEllipsis ? "true" : undefined}
+              aria-hidden={!showEllipsis}
+            >
+              <RootsyEmptyStateEllipsis label={elsewhereLabel} withOrb={false} />
+            </span>
+          </span>
         </span>
       </div>
-      <div className="rootsy-empty-state__copy rootsy-hero-rise rootsy-hero-rise-d2">
+      <div className="rootsy-empty-state__copy">
         <p className="rootsy-empty-state__title font-canopy">{title}</p>
         {description ? (
           <p className="rootsy-empty-state__description font-canopy">{description}</p>

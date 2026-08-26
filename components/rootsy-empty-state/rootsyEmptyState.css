@@ -1,9 +1,12 @@
 /**
- * Empty state — retrato centrado, mismo círculo que el toast.
- * El aire del círculo y la tinta del copy siguen al mundo.
+ * Empty state — retrato que se funde con el mundo, mismo aire que los tres puntos.
+ * El contenedor no entra animado. La figura interior sí: fade + scale suave.
  */
 
 .rootsy-empty-state {
+  --empty-figure-duration: 0.6s;
+  --empty-figure-easing: cubic-bezier(0.4, 1, 0.6, 1);
+  --empty-world-opacity: 0.38;
   display: flex;
   width: 100%;
   flex-direction: column;
@@ -19,6 +22,18 @@
   width: 6.5rem;
   height: 6.5rem;
   flex-shrink: 0;
+  -webkit-mask-image: radial-gradient(
+    circle at 50% 48%,
+    #000 40%,
+    rgb(0 0 0 / 0.62) 64%,
+    transparent 82%
+  );
+  mask-image: radial-gradient(
+    circle at 50% 48%,
+    #000 40%,
+    rgb(0 0 0 / 0.62) 64%,
+    transparent 82%
+  );
 }
 
 .rootsy-empty-state__frame {
@@ -29,6 +44,7 @@
   height: 100%;
   overflow: hidden;
   border-radius: 999px;
+  background: transparent;
 }
 
 .rootsy-empty-state__world {
@@ -37,6 +53,8 @@
   inset: 0;
   overflow: hidden;
   border-radius: inherit;
+  opacity: var(--empty-world-opacity);
+  transition: opacity var(--empty-figure-duration) var(--empty-figure-easing);
 }
 
 .rootsy-empty-state__image,
@@ -53,6 +71,32 @@
 .rootsy-empty-state__image-slot {
   display: grid;
   place-items: center;
+}
+
+.rootsy-empty-state__figure {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.rootsy-empty-state__figure-layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+  transition:
+    opacity var(--empty-figure-duration) var(--empty-figure-easing),
+    transform var(--empty-figure-duration) var(--empty-figure-easing);
+}
+
+.rootsy-empty-state__figure-layer[data-active] {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .rootsy-empty-state__ellipsis {
@@ -74,6 +118,8 @@
   overflow: hidden;
   isolation: isolate;
   border-radius: inherit;
+  opacity: 0.48;
+  transition: opacity var(--empty-figure-duration) var(--empty-figure-easing);
 }
 
 .rootsy-empty-state__orb-spin {
@@ -132,6 +178,14 @@
   opacity: 0.82;
 }
 
+.rootsy-empty-state[data-presence="elsewhere"] {
+  --empty-world-opacity: 0.32;
+}
+
+.rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__orb {
+  opacity: 1;
+}
+
 .rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__world::before,
 .rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__world::after {
   opacity: 0.18;
@@ -156,13 +210,6 @@
 
 /* ——— Éter ——— */
 
-.rootsy-empty-state[data-world="eter"] .rootsy-empty-state__frame {
-  background: var(--rootsy-eter-950);
-  box-shadow:
-    0 0 0 1.5px color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent),
-    0 1px 2px rgb(15 23 20 / 0.28);
-}
-
 .rootsy-empty-state[data-world="eter"] .rootsy-empty-state__title {
   color: color-mix(in srgb, var(--rootsy-eter-100) 92%, transparent);
 }
@@ -176,26 +223,21 @@
   opacity: 0.78;
 }
 
-.rootsy-empty-state[data-world="eter"][data-presence="elsewhere"] {
+.rootsy-empty-state[data-world="eter"] {
   --orb-a: rgb(186 198 214 / 0.32);
   --orb-b: rgb(100 116 139 / 0.28);
   --orb-c: rgb(226 232 240 / 0.16);
-  --orb-spin-opacity: 0.24;
+  --orb-spin-opacity: 0.2;
 }
 
 .rootsy-empty-state__eter {
   z-index: 0;
   border-radius: inherit;
+  opacity: var(--empty-world-opacity);
+  transition: opacity var(--empty-figure-duration) var(--empty-figure-easing);
 }
 
 /* ——— Bruma ——— */
-
-.rootsy-empty-state[data-world="bruma"] .rootsy-empty-state__frame {
-  background: var(--rootsy-bruma-50);
-  box-shadow:
-    0 0 0 1.5px color-mix(in srgb, var(--rootsy-savia-500) 28%, transparent),
-    0 1px 2px rgb(15 23 20 / 0.08);
-}
 
 .rootsy-empty-state[data-world="bruma"] .rootsy-empty-state__title {
   color: var(--rootsy-bruma-900);
@@ -210,7 +252,7 @@
   opacity: 0.72;
 }
 
-.rootsy-empty-state[data-world="bruma"][data-presence="elsewhere"] {
+.rootsy-empty-state[data-world="bruma"] {
   --orb-a: rgb(148 163 184 / 0.28);
   --orb-b: rgb(203 213 225 / 0.4);
   --orb-c: rgb(241 245 249 / 0.5);
@@ -242,13 +284,6 @@
 
 /* ——— Suelo ——— */
 
-.rootsy-empty-state[data-world="suelo"] .rootsy-empty-state__frame {
-  background: var(--rootsy-sombra-950);
-  box-shadow:
-    0 0 0 1.5px color-mix(in srgb, var(--rootsy-suelo-400) 40%, transparent),
-    0 1px 2px rgb(15 23 20 / 0.28);
-}
-
 .rootsy-empty-state[data-world="suelo"] .rootsy-empty-state__title {
   color: color-mix(in srgb, var(--rootsy-suelo-50) 92%, transparent);
 }
@@ -262,11 +297,11 @@
   opacity: 0.78;
 }
 
-.rootsy-empty-state[data-world="suelo"][data-presence="elsewhere"] {
+.rootsy-empty-state[data-world="suelo"] {
   --orb-a: rgb(168 162 148 / 0.3);
   --orb-b: rgb(120 113 100 / 0.26);
   --orb-c: rgb(214 211 204 / 0.18);
-  --orb-spin-opacity: 0.22;
+  --orb-spin-opacity: 0.2;
 }
 
 .rootsy-empty-state__world--suelo {
@@ -311,13 +346,6 @@
 
 /* ——— Sombra ——— */
 
-.rootsy-empty-state[data-world="sombra"] .rootsy-empty-state__frame {
-  background: var(--rootsy-sombra-950);
-  box-shadow:
-    0 0 0 1.5px color-mix(in srgb, var(--rootsy-savia-400) 38%, transparent),
-    0 1px 2px rgb(15 23 20 / 0.28);
-}
-
 .rootsy-empty-state[data-world="sombra"] .rootsy-empty-state__title {
   color: color-mix(in srgb, var(--rootsy-bruma-50) 92%, transparent);
 }
@@ -331,11 +359,11 @@
   opacity: 0.84;
 }
 
-.rootsy-empty-state[data-world="sombra"][data-presence="elsewhere"] {
+.rootsy-empty-state[data-world="sombra"] {
   --orb-a: rgb(148 163 184 / 0.28);
   --orb-b: rgb(71 85 105 / 0.26);
   --orb-c: rgb(226 232 240 / 0.14);
-  --orb-spin-opacity: 0.22;
+  --orb-spin-opacity: 0.2;
 }
 
 .rootsy-empty-state__world--sombra {
@@ -384,13 +412,6 @@
 
 /* ——— Herramientas ——— */
 
-.rootsy-empty-state[data-world="herramientas"] .rootsy-empty-state__frame {
-  background: var(--rootsy-eter-900);
-  box-shadow:
-    0 0 0 1.5px rgb(224 255 255 / 0.42),
-    0 1px 2px rgb(0 11 21 / 0.28);
-}
-
 .rootsy-empty-state[data-world="herramientas"] .rootsy-empty-state__title {
   color: #e0feff;
 }
@@ -404,11 +425,11 @@
   opacity: 0.8;
 }
 
-.rootsy-empty-state[data-world="herramientas"][data-presence="elsewhere"] {
+.rootsy-empty-state[data-world="herramientas"] {
   --orb-a: rgb(196 212 216 / 0.28);
   --orb-b: rgb(148 163 184 / 0.22);
   --orb-c: rgb(226 232 240 / 0.14);
-  --orb-spin-opacity: 0.22;
+  --orb-spin-opacity: 0.2;
 }
 
 .rootsy-empty-state__world--herramientas {
@@ -419,32 +440,7 @@
   background-position: center 52%;
 }
 
-/* ——— Elsewhere: se funde con el mundo ——— */
-
-.rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__portrait {
-  -webkit-mask-image: radial-gradient(
-    circle at 50% 48%,
-    #000 36%,
-    rgb(0 0 0 / 0.55) 56%,
-    transparent 74%
-  );
-  mask-image: radial-gradient(
-    circle at 50% 48%,
-    #000 36%,
-    rgb(0 0 0 / 0.55) 56%,
-    transparent 74%
-  );
-}
-
-.rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__frame {
-  background: transparent;
-  box-shadow: none;
-}
-
-.rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__world,
-.rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__eter {
-  opacity: 0.32;
-}
+/* ——— Elsewhere: los puntos se funden un poco más ——— */
 
 .rootsy-empty-state[data-presence="elsewhere"] .rootsy-empty-state__ellipsis-dot {
   width: 0.3rem;
@@ -454,4 +450,17 @@
 
 .rootsy-empty-state[data-world="bruma"][data-presence="elsewhere"] .rootsy-empty-state__ellipsis-dot {
   opacity: 0.34;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rootsy-empty-state__figure-layer,
+  .rootsy-empty-state__world,
+  .rootsy-empty-state__eter,
+  .rootsy-empty-state__orb {
+    transition: none;
+  }
+
+  .rootsy-empty-state__figure-layer {
+    transform: none;
+  }
 }

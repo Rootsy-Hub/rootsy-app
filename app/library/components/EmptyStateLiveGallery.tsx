@@ -17,7 +17,7 @@ import { rootsyLayoutsEarthFloorSurfaceClass } from "@/app/library/layouts/roots
 import { cn } from "@/lib/utils"
 import "@/app/library/mundos/mundosHerramientas.css"
 import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
 const DEMO_TITLE = ROOTSY_EMPTY_STATE_COPY.catalog.idle.title
 const DEMO_DESCRIPTION = ROOTSY_EMPTY_STATE_COPY.catalog.idle.description
@@ -114,6 +114,53 @@ function EmptyStateStage({
   )
 }
 
+function PresenceSwapStage() {
+  const [presence, setPresence] = useState<"portrait" | "elsewhere">("portrait")
+  const showingPortrait = presence === "portrait"
+
+  return (
+    <div
+      className="overflow-hidden rounded-2xl border"
+      style={{ borderColor: CONCEPT_TOKENS.bruma200 }}
+    >
+      <MundosWorldStage label="Pedido · cambio suave" className="h-[22rem] sm:h-[24rem]">
+        <WorldCanvas world="bruma" />
+        <div className="relative z-10 flex h-full flex-col items-center justify-center gap-4 px-4">
+          <RootsyEmptyState
+            world="bruma"
+            imageSrc={ROOTSY_EMPTY_STATE_DEFAULT_IMAGE}
+            title={ROOTSY_EMPTY_STATE_COPY.ticket.order.title}
+            description={ROOTSY_EMPTY_STATE_COPY.ticket.order.description}
+            presence={presence}
+          />
+          <button
+            type="button"
+            onClick={() => setPresence(showingPortrait ? "elsewhere" : "portrait")}
+            className="relative z-10 rounded-full border px-3 py-1 font-canopy text-[11px] font-medium"
+            style={{
+              borderColor: CONCEPT_TOKENS.bruma200,
+              color: CONCEPT_TOKENS.bruma500,
+              backgroundColor: "color-mix(in srgb, white 72%, transparent)",
+            }}
+          >
+            {showingPortrait ? "Cambiar a tres puntos" : "Cambiar a retrato"}
+          </button>
+        </div>
+      </MundosWorldStage>
+      <p
+        className="border-t px-4 py-3 font-canopy text-[11px] leading-relaxed"
+        style={{
+          borderColor: CONCEPT_TOKENS.bruma200,
+          color: CONCEPT_TOKENS.bruma500,
+          backgroundColor: CONCEPT_TOKENS.bruma100,
+        }}
+      >
+        Pedido · el retrato se disuelve en tres puntos, y vuelve. El texto no se anima.
+      </p>
+    </div>
+  )
+}
+
 export function EmptyStateLiveGallery() {
   return (
     <div className="space-y-10">
@@ -182,6 +229,9 @@ export function EmptyStateLiveGallery() {
               description={ROOTSY_EMPTY_STATE_COPY.ticket.order.description}
             />
           </EmptyStateStage>
+          <div className="lg:col-span-2">
+            <PresenceSwapStage />
+          </div>
         </div>
       </section>
       {ROOTSY_PRODUCT_WORLDS.map((world) => (
