@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
+/** Incluye el grupo Componentes-final (páginas *-final). */
 export function HandbookDesignSystemNav({
   activePageId,
   onSelectPage,

@@ -265,6 +265,86 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
     ],
   },
   {
+    id: "componentes-final",
+    label: "Componentes-final",
+    // Catálogo canónico — las categorías están; el contenido se llena después.
+    items: [
+      {
+        id: "navegacion-final",
+        label: "Navegación-final",
+        topics: [
+          heading("Header"),
+          heading("Sidebar"),
+          heading("Menús"),
+          heading("Tabs"),
+          heading("Breadcrumbs"),
+          heading("Paginación"),
+        ],
+      },
+      {
+        id: "acciones-final",
+        label: "Acciones-final",
+        topics: [
+          heading("Botones"),
+          heading("Botones de icono"),
+          heading("Menús de acciones"),
+          heading("Tooltips"),
+        ],
+      },
+      {
+        id: "formularios-final",
+        label: "Formularios-final",
+        topics: [
+          heading("Inputs"),
+          heading("Selects"),
+          heading("Checkboxes"),
+          heading("Radios"),
+          heading("Switches"),
+          heading("Date pickers"),
+          heading("Validación"),
+        ],
+      },
+      {
+        id: "datos-final",
+        label: "Datos-final",
+        topics: [
+          heading("Tablas"),
+          heading("Cards"),
+          heading("Listas"),
+          heading("Badges"),
+          heading("Métricas"),
+          heading("Gráficos"),
+          heading("Estados de stock"),
+        ],
+      },
+      {
+        id: "feedback-final",
+        label: "Feedback-final",
+        topics: [
+          heading("Toasts"),
+          heading("Alertas"),
+          heading("Banners"),
+          heading("Modals"),
+          heading("Confirmaciones"),
+          heading("Errores"),
+          heading("Estados de carga"),
+          heading("Empty states"),
+        ],
+      },
+      {
+        id: "overlays-final",
+        label: "Overlays-final",
+        topics: [
+          heading("Dropdowns"),
+          heading("Popovers"),
+          heading("Drawers"),
+          heading("Dialogs"),
+          heading("Toolboxes"),
+        ],
+      },
+    ],
+  },
+  {
     id: "guia",
     label: "",
     items: [

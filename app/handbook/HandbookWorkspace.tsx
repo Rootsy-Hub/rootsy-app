@@ -1,6 +1,8 @@
 "use client"
 
 import { HandbookColorView } from "@/app/handbook/color/HandbookColorView"
+import { HandbookComponentsView } from "@/app/handbook/components/HandbookComponentsView"
+import { isHandbookComponentPageId } from "@/app/handbook/components/handbookComponentsSpec"
 import { HandbookTypographyView } from "@/app/handbook/typography/HandbookTypographyView"
 import { HandbookMobileNav } from "@/app/handbook/HandbookMobileNav"
 import { HandbookSectionView } from "@/app/handbook/HandbookSectionView"
@@ -177,6 +179,8 @@ export function HandbookWorkspace() {
             <HandbookColorView />
           ) : isDesignSystem && activeDesignSystemPageId === "tipografia" ? (
             <HandbookTypographyView />
+          ) : isDesignSystem && isHandbookComponentPageId(activeDesignSystemPageId) ? (
+            <HandbookComponentsView pageId={activeDesignSystemPageId} />
           ) : isDesignSystem ? (
             <HandbookSectionView meta={designSystemMeta} />
           ) : (
