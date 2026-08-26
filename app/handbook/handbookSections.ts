@@ -2,6 +2,7 @@
 export type HandbookBlock =
   | { type: "p"; text: string }
   | { type: "ul"; items: string[] }
+  | { type: "ol"; items: string[] }
   | { type: "h3"; text: string }
 
 export type HandbookTopic = {
@@ -30,15 +31,19 @@ function topic(title: string, blocks?: HandbookBlock[]): HandbookTopic {
   }
 }
 
-function p(text: string): HandbookBlock {
+export function p(text: string): HandbookBlock {
   return { type: "p", text }
 }
 
-function ul(items: string[]): HandbookBlock {
+export function ul(items: string[]): HandbookBlock {
   return { type: "ul", items }
 }
 
-function h3(text: string): HandbookBlock {
+export function ol(items: string[]): HandbookBlock {
+  return { type: "ol", items }
+}
+
+export function h3(text: string): HandbookBlock {
   return { type: "h3", text }
 }
 

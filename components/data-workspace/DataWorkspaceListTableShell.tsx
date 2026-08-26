@@ -146,7 +146,7 @@ export function DataWorkspaceListTableShell({
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <div
                 className={cn(
-                  "pointer-events-auto overflow-hidden rounded-xl shadow-[0_16px_40px_color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]",
+                  "pointer-events-auto",
                   footerFloatingCentered ? "w-auto" : "w-full",
                 )}
               >

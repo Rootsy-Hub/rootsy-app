@@ -1,5 +1,6 @@
 "use client"
 
+import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import { Select } from "@/components/ui/select"
 import {
   RootsFormSelectContent,
@@ -12,9 +13,9 @@ import {
   earthTableFooterSelectTriggerClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  rootsyLayoutsEarthFloorShadowClass,
-  rootsyLayoutsEarthFloorSurfaceClass,
-} from "@/app/library/layouts/rootsyLayoutsEarthFloor"
+  layoutsTablesFooterCountStrongClass,
+  layoutsTablesFooterCountTextClass,
+} from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import { cn } from "@/lib/utils"
 
 export function DataWorkspaceTableInfinitePageDock({
@@ -45,76 +46,78 @@ export function DataWorkspaceTableInfinitePageDock({
   const selectDisabled = listFetching || isEmpty || totalPages <= 1
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2.5 rounded-xl px-3 py-1.5",
-        rootsyLayoutsEarthFloorSurfaceClass,
-        rootsyLayoutsEarthFloorShadowClass,
-        "border border-[color-mix(in_srgb,var(--rootsy-suelo-700)_32%,transparent)]",
-      )}
-      role="navigation"
-      aria-label="Paginación del listado"
-      aria-busy={listFetching}
+    <MenuHeaderEntity
+      as="footer"
+      size="dialog"
+      className="w-auto overflow-hidden rounded-xl shadow-[0_16px_40px_color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]"
     >
-      <p className="whitespace-nowrap font-canopy text-xs font-medium tabular-nums text-[color-mix(in_srgb,var(--rootsy-suelo-50)_78%,var(--rootsy-suelo-400))]">
-        <span className="sr-only" aria-live="polite" aria-atomic="true">
-          {isEmpty
-            ? "Sin resultados"
-            : listFetching
-              ? "Cargando resultados"
-              : `Viendo ${loadedCount.toLocaleString("es-AR")} de ${totalCount.toLocaleString("es-AR")}`}
-        </span>
-        <span aria-hidden>
-          {isEmpty ? (
-            "Nada"
-          ) : (
-            <>
-              <strong className="font-semibold text-[var(--rootsy-suelo-50)]">
-                {listFetching ? "…" : loadedCount.toLocaleString("es-AR")}
-              </strong>
-              <span className="mx-1 text-[var(--rootsy-suelo-500)]">/</span>
-              {listFetching ? (
-                "…"
-              ) : (
-                totalCount.toLocaleString("es-AR")
-              )}
-            </>
-          )}
-        </span>
-      </p>
-      <Select
-        value={selectValue}
-        disabled={selectDisabled}
-        onValueChange={(value) => {
-          const page = Number(value)
-          if (!Number.isFinite(page) || loadedPages.has(page)) return
-          onPageJump(page)
-        }}
+      <div
+        className="flex items-center gap-2.5 px-3 py-1.5"
+        role="navigation"
+        aria-label="Paginación del listado"
+        aria-busy={listFetching}
       >
-        <RootsFormSelectTrigger
-          tone="dark"
-          aria-label="Ir a una página"
+        <p
           className={cn(
-            earthTableFooterSelectTriggerClass,
-            "!h-8 !min-h-8 !w-[3.75rem] min-w-[3.75rem] max-w-[3.75rem] !rounded-lg text-[11px]",
+            layoutsTablesFooterCountTextClass,
+            "block whitespace-nowrap text-xs font-medium tabular-nums md:justify-self-auto",
           )}
         >
-          <RootsFormSelectValue />
-        </RootsFormSelectTrigger>
-        <RootsFormSelectContent tone="dark" align="center" className="max-h-64">
-          {pageOptions.map((page) => (
-            <RootsFormSelectItem
-              key={page}
-              tone="dark"
-              value={String(page)}
-              disabled={loadedPages.has(page)}
-              className={earthTableFooterSelectItemClass}
-            >
-              {page.toLocaleString("es-AR")}
-            </RootsFormSelectItem>
-          ))}
-        </RootsFormSelectContent>
-      </Select>
-    </div>
+          <span className="sr-only" aria-live="polite" aria-atomic="true">
+            {isEmpty
+              ? "Sin resultados"
+              : listFetching
+                ? "Cargando resultados"
+                : `Viendo ${loadedCount.toLocaleString("es-AR")} de ${totalCount.toLocaleString("es-AR")}`}
+          </span>
+          <span aria-hidden>
+            {isEmpty ? (
+              "Nada"
+            ) : (
+              <>
+                <strong className={layoutsTablesFooterCountStrongClass}>
+                  {listFetching ? "…" : loadedCount.toLocaleString("es-AR")}
+                </strong>
+                <span className="mx-1 text-[var(--rootsy-suelo-400)]">/</span>
+                {listFetching ? "…" : totalCount.toLocaleString("es-AR")}
+              </>
+            )}
+          </span>
+        </p>
+        <Select
+          value={selectValue}
+          disabled={selectDisabled}
+          onValueChange={(value) => {
+            const page = Number(value)
+            if (!Number.isFinite(page) || loadedPages.has(page)) return
+            onPageJump(page)
+          }}
+        >
+          <RootsFormSelectTrigger
+            tone="dark"
+            aria-label="Ir a una página"
+            className={cn(
+              earthTableFooterSelectTriggerClass,
+              "!h-8 !min-h-8 !w-[3.75rem] min-w-[3.75rem] max-w-[3.75rem] !rounded-lg text-[11px]",
+            )}
+          >
+            <RootsFormSelectValue />
+          </RootsFormSelectTrigger>
+          <RootsFormSelectContent tone="light" align="center" className="max-h-64">
+            {pageOptions.map((page) => (
+              <RootsFormSelectItem
+                key={page}
+                tone="light"
+                value={String(page)}
+                disabled={loadedPages.has(page)}
+                className={earthTableFooterSelectItemClass}
+              >
+                {page.toLocaleString("es-AR")}
+              </RootsFormSelectItem>
+            ))}
+          </RootsFormSelectContent>
+        </Select>
+      </div>
+    </MenuHeaderEntity>
   )
 }

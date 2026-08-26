@@ -1,4 +1,11 @@
-import type { HandbookSectionMeta, HandbookTopic } from "@/app/handbook/handbookSections"
+import {
+  ol,
+  p,
+  ul,
+  type HandbookBlock,
+  type HandbookSectionMeta,
+  type HandbookTopic,
+} from "@/app/handbook/handbookSections"
 
 export const HANDBOOK_DESIGN_SYSTEM_ROOT = "/handbook/sistema-de-diseno"
 export const HANDBOOK_DESIGN_SYSTEM_BACK_HREF = "/handbook/producto"
@@ -13,11 +20,23 @@ function slug(title: string): string {
     .replace(/^-|-$/g, "")
 }
 
-function heading(title: string, nested?: HandbookTopic[]): HandbookTopic {
+function heading(
+  title: string,
+  nestedOrContent?: HandbookTopic[] | { blocks: HandbookBlock[]; topics?: HandbookTopic[] },
+): HandbookTopic {
+  if (Array.isArray(nestedOrContent) || nestedOrContent == null) {
+    return {
+      id: slug(title),
+      title,
+      topics: nestedOrContent,
+    }
+  }
+
   return {
     id: slug(title),
     title,
-    topics: nested,
+    blocks: nestedOrContent.blocks,
+    topics: nestedOrContent.topics,
   }
 }
 
@@ -42,9 +61,37 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
         id: "overview",
         label: "Overview",
         topics: [
-          heading("Propósito"),
-          heading("Principios"),
-          heading("Cómo usar el sistema"),
+          heading("Propósito", {
+            blocks: [
+              p("El sistema de diseño de Rootsy existe para convertir el mundo de Rootsy en una experiencia digital coherente, clara y escalable."),
+              p("Su función es asegurar que cada módulo, pantalla y plataforma se sienta parte del mismo sistema: simple de entender, veloz de usar y capaz de acompañar operaciones cada vez más complejas sin perder naturalidad."),
+            ],
+          }),
+          heading("Principios", {
+            blocks: [
+              ul([
+                "Naturalidad: cada elemento debe sentirse obvio y reconocible desde el primer contacto.",
+                "Simplicidad: priorizar jerarquías claras, pocos elementos y decisiones visuales con función.",
+                "Claridad: ayudar a entender qué está pasando, qué requiere atención y cuál es el próximo paso.",
+                "Profundidad progresiva: mostrar una superficie simple y habilitar complejidad solo cuando el negocio la necesita.",
+                "Movimiento funcional: usar transiciones y estados para explicar actividad, cambios y continuidad; nunca como adorno.",
+                "Presencia sutil de Rootsy: Rootsy se hace visible cuando aporta guía, contexto o confianza, sin invadir la operación cotidiana.",
+                "Coherencia del mundo: las atmósferas definen el contexto visual; los colores funcionales definen acciones, estados y prioridades.",
+              ]),
+            ],
+          }),
+          heading("Cómo usar el sistema", {
+            blocks: [
+              ol([
+                "Empezar por las foundations: color, tipografía, espaciado, layout, superficies y movimiento.",
+                "Usar componentes existentes antes de crear soluciones nuevas.",
+                "Aplicar patrones definidos para flujos repetidos, como tablas, formularios, operaciones, alertas y estados.",
+                "Mantener los mensajes funcionales claros y dejar que Rootsy hable cuando necesite orientar, explicar o recomendar.",
+                "Elegir la atmósfera adecuada para el contexto de la pantalla y usar colores funcionales para comunicar qué está ocurriendo.",
+                "Documentar, revisar y sumar al sistema cualquier componente o patrón nuevo antes de reutilizarlo.",
+              ]),
+            ],
+          }),
           heading("Changelog"),
         ],
       },

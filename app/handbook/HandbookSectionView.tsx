@@ -35,6 +35,16 @@ function HandbookTopicBlocks({ blocks }: { blocks: HandbookBlock[] }) {
           )
         }
 
+        if (block.type === "ol") {
+          return (
+            <ol key={index} className={cn(libraryDocBodyClass, "list-decimal space-y-1.5 pl-5")}>
+              {block.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ol>
+          )
+        }
+
         return (
           <ul key={index} className={cn(libraryDocBodyClass, "list-disc space-y-1.5 pl-5")}>
             {block.items.map((item) => (

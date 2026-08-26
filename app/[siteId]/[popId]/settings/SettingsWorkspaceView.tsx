@@ -58,6 +58,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from "react"
@@ -97,6 +98,22 @@ const EMPTY_FORM: SettingsFormState = {
   fiscalActividadSeleccionadaId: "",
   fiscalPadronSyncedAt: null,
   operationalDayCloseTime: DEFAULT_OPERATIONAL_DAY_CLOSE_TIME,
+}
+
+function formFromSettingsQuery(form: SettingsFormState): SettingsFormState {
+  return {
+    ...form,
+    country: resolveArgentinaCountryCode(form.country),
+    imageUrl: form.imageUrl ?? "",
+    invoiceLogoUrl: form.invoiceLogoUrl ?? "",
+    backgroundImageUrl: form.backgroundImageUrl ?? "",
+    fiscalCuit: form.fiscalCuit ?? "",
+    fiscalRazonSocial: form.fiscalRazonSocial ?? "",
+    fiscalInicioActividadesDate: form.fiscalInicioActividadesDate ?? "",
+    fiscalIngresosBrutosText: form.fiscalIngresosBrutosText ?? "",
+    fiscalPadronActividadesJson: form.fiscalPadronActividadesJson ?? "",
+    fiscalActividadSeleccionadaId: form.fiscalActividadSeleccionadaId ?? "",
+  }
 }
 
 export function SettingsWorkspaceView() {
@@ -154,6 +171,7 @@ export function SettingsWorkspaceView() {
     fiscal: null,
     images: null,
   })
+  const hydratedAtRef = useRef<number | null>(null)
   const [optimisticSectionId, setOptimisticSectionId] =
     useState<PopSettingsSectionId | null>(null)
   const [savingSection, setSavingSection] = useState<PopSettingsSectionId | null>(
@@ -163,28 +181,17 @@ export function SettingsWorkspaceView() {
     Partial<Record<PopSettingsSectionId, SectionBanner>>
   >({})
 
-  useEffect(() => {
-    if (!settingsQuery.data?.success) return
-    const nextForm: SettingsFormState = {
-      ...settingsQuery.data.form,
-      country: resolveArgentinaCountryCode(settingsQuery.data.form.country),
-      imageUrl: settingsQuery.data.form.imageUrl ?? "",
-      invoiceLogoUrl: settingsQuery.data.form.invoiceLogoUrl ?? "",
-      backgroundImageUrl: settingsQuery.data.form.backgroundImageUrl ?? "",
-      fiscalCuit: settingsQuery.data.form.fiscalCuit ?? "",
-      fiscalRazonSocial: settingsQuery.data.form.fiscalRazonSocial ?? "",
-      fiscalInicioActividadesDate:
-        settingsQuery.data.form.fiscalInicioActividadesDate ?? "",
-      fiscalIngresosBrutosText:
-        settingsQuery.data.form.fiscalIngresosBrutosText ?? "",
-      fiscalPadronActividadesJson:
-        settingsQuery.data.form.fiscalPadronActividadesJson ?? "",
-      fiscalActividadSeleccionadaId:
-        settingsQuery.data.form.fiscalActividadSeleccionadaId ?? "",
-    }
+  // Hidratar durante el render (no en useEffect): si no, `loading` pasa a false
+  // con el form todavía vacío y el efecto del padrón borra los datos fiscales.
+  if (
+    settingsQuery.data?.success &&
+    settingsQuery.dataUpdatedAt !== hydratedAtRef.current
+  ) {
+    hydratedAtRef.current = settingsQuery.dataUpdatedAt
+    const nextForm = formFromSettingsQuery(settingsQuery.data.form)
     setForm(nextForm)
     setSavedSnapshots(buildInitialSnapshots(nextForm))
-  }, [settingsQuery.dataUpdatedAt, settingsQuery.data])
+  }
 
   const loading =
     !popId || !siteId
@@ -296,18 +303,7 @@ export function SettingsWorkspaceView() {
   useEffect(() => {
     if (!canUpdate || loading) return
     if (padron.busy) return
-    const hasCuit = Boolean((form.fiscalCuit ?? "").trim())
-    if (!hasCuit) {
-      setForm((f) => ({
-        ...f,
-        fiscalRazonSocial: "",
-        fiscalPadronActividadesJson: "",
-        fiscalActividadSeleccionadaId: "",
-        fiscalInicioActividadesDate: "",
-        fiscalIngresosBrutosText: "",
-      }))
-      return
-    }
+    if (!(form.fiscalCuit ?? "").trim()) return
     if (!padron.razonSocial.trim()) return
     const acts = padron.fiscalActividadesPadron ?? []
     const json = acts.length ? JSON.stringify(acts) : ""
