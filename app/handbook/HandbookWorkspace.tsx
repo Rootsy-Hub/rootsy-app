@@ -1,5 +1,6 @@
 "use client"
 
+import { HandbookColorView } from "@/app/handbook/color/HandbookColorView"
 import { HandbookMobileNav } from "@/app/handbook/HandbookMobileNav"
 import { HandbookSectionView } from "@/app/handbook/HandbookSectionView"
 import { HandbookSidebar } from "@/app/handbook/HandbookSidebar"
@@ -172,7 +173,9 @@ export function HandbookWorkspace() {
             </p>
           ) : null}
 
-          {isDesignSystem ? (
+          {isDesignSystem && activeDesignSystemPageId === "color" ? (
+            <HandbookColorView />
+          ) : isDesignSystem ? (
             <HandbookSectionView meta={designSystemMeta} />
           ) : (
             <HandbookSectionView sectionId={sectionId} />

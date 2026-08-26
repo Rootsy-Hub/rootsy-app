@@ -180,3 +180,43 @@
     animation: none;
   }
 }
+
+/** Dock de páginas — suelo con cristal: un poco de transparencia + blur. */
+.data-workspace-table-page-dock .menu-header-entity-body--floor {
+  background: linear-gradient(
+    180deg,
+    color-mix(
+        in srgb,
+        color-mix(in srgb, var(--rootsy-suelo-900) 56%, var(--rootsy-sombra-900))
+          72%,
+        transparent
+      )
+      0%,
+    color-mix(
+        in srgb,
+        color-mix(in srgb, var(--rootsy-suelo-900) 28%, var(--rootsy-sombra-950))
+          66%,
+        transparent
+      )
+      52%,
+    color-mix(
+        in srgb,
+        color-mix(in srgb, var(--rootsy-savia-900) 22%, var(--rootsy-sombra-950))
+          62%,
+        transparent
+      )
+      100%
+  );
+  backdrop-filter: blur(18px) saturate(1.16);
+  -webkit-backdrop-filter: blur(18px) saturate(1.16);
+}
+
+.data-workspace-table-page-dock
+  .menu-header-entity-body--floor
+  .menu-header-entity-weight {
+  background: linear-gradient(
+    to bottom,
+    transparent 28%,
+    color-mix(in srgb, var(--rootsy-sombra-950) 38%, transparent) 100%
+  );
+}

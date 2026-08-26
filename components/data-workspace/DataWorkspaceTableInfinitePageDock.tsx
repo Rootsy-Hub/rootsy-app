@@ -1,6 +1,7 @@
 "use client"
 
 import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
+import "@/components/data-workspace/dataWorkspaceTableInfinite.css"
 import { Select } from "@/components/ui/select"
 import {
   RootsFormSelectContent,
@@ -43,16 +44,16 @@ export function DataWorkspaceTableInfinitePageDock({
   )
   const pageOptions = Array.from({ length: Math.max(1, totalPages) }, (_, i) => i + 1)
   const isEmpty = !listFetching && totalCount <= 0
-  const selectDisabled = listFetching || isEmpty || totalPages <= 1
+  const selectDisabled = listFetching || isEmpty
 
   return (
     <MenuHeaderEntity
       as="footer"
       size="dialog"
-      className="w-auto overflow-hidden rounded-xl shadow-[0_16px_40px_color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]"
+      className="data-workspace-table-page-dock isolate w-auto overflow-hidden rounded-xl shadow-[0_16px_40px_color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]"
     >
       <div
-        className="flex items-center gap-2.5 px-3 py-1.5"
+        className="flex items-center gap-2.5 py-1.5 pl-3 pr-1.5"
         role="navigation"
         aria-label="Paginación del listado"
         aria-busy={listFetching}

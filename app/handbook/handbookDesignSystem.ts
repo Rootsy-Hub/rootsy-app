@@ -106,16 +106,15 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
         label: "Color",
         topics: [
           heading("Atmósferas del mundo", [
+            heading("Éter"),
             heading("Bruma"),
-            heading("Cielo nocturno"),
-            heading("Suelo"),
-            heading("Alba"),
+            heading("Sombra"),
           ]),
           heading("Colores funcionales", [
             heading("Savia"),
-            heading("Cielo vivo"),
+            heading("Cielo de día"),
             heading("Sol"),
-            heading("Arcilla"),
+            heading("Lava"),
           ]),
           heading("Tokens de color"),
           heading("Contraste y legibilidad"),

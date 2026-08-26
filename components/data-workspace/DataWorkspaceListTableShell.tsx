@@ -143,7 +143,12 @@ export function DataWorkspaceListTableShell({
             </div>
           ) : null}
           {footer && footerFloating ? (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-end pb-[max(0.75rem,env(safe-area-inset-bottom))]",
+                footerFloatingCentered ? "pl-3 pr-6" : "px-3",
+              )}
+            >
               <div
                 className={cn(
                   "pointer-events-auto",
