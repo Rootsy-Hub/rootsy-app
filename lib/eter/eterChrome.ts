@@ -37,7 +37,7 @@ export function getEterSubtleSurface(
     case "focus":
       return {
         ...base,
-        boxShadow: "0 0 0 2px rgba(255,255,255,0.22)",
+        boxShadow: "0 0 0 2px color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent)",
       }
     case "disabled":
       return { ...base, opacity: 0.5 }
@@ -74,7 +74,7 @@ export function getEterPrimarySurface(
     case "focus":
       return {
         ...base,
-        boxShadow: "0 0 0 2px rgba(255,255,255,0.22)",
+        boxShadow: "0 0 0 2px color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent)",
       }
     case "disabled":
       return { ...base, opacity: 0.5 }
@@ -83,9 +83,9 @@ export function getEterPrimarySurface(
   }
 }
 
-const ETER_DANGER = "#DC2626"
-const ETER_DANGER_HOVER = "#EF4444"
-const ETER_DANGER_ACTIVE = "#B91C1C"
+const ETER_DANGER = "var(--rootsy-lava-600)"
+const ETER_DANGER_HOVER = "var(--rootsy-lava-500)"
+const ETER_DANGER_ACTIVE = "var(--rootsy-lava-700)"
 
 export function getEterDangerSurface(
   state: ButtonsUiInteractionState,
@@ -114,7 +114,7 @@ export function getEterDangerSurface(
     case "focus":
       return {
         ...base,
-        boxShadow: "0 0 0 2px rgba(255,255,255,0.22)",
+        boxShadow: "0 0 0 2px color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent)",
       }
     case "disabled":
       return { ...base, opacity: 0.5 }
@@ -145,7 +145,7 @@ export const eterHeaderHairlineClass =
   "ring-1 ring-[color-mix(in_srgb,var(--rootsy-eter-100)_16%,transparent)]"
 
 export const eterHeaderFocusRingClass =
-  "focus-visible:ring-2 focus-visible:ring-white/22"
+  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-eter-100)_22%,transparent)]"
 
 /** Overlay del header éter — mismo vacío y hairline, no el panel sombra. */
 export const eterHeaderDropdownSurfaceClass = cn(

@@ -32,6 +32,7 @@ import { useEffect, useRef, useState } from "react"
 const PERSON_PHOTO = "/rootsy/rootsy-alerta-amable.png"
 const POP_PHOTO = "/logos/pop/narciso/narciso-avatar.jpg"
 const BRUMA = "var(--rootsy-bruma-100)"
+const ETER = "var(--rootsy-eter-950)"
 const noop = () => {}
 
 const AVATAR_APPEARANCES = [
@@ -76,7 +77,7 @@ function HeaderFinalSpecimen() {
   return (
     <div className="flex flex-col gap-4">
       <ComponentView
-        background="black"
+        background={ETER}
         componentName="HomePageHeader"
         componentProperties={[
           { name: "loading", values: ["true", "false"] },
@@ -93,7 +94,7 @@ function HeaderFinalSpecimen() {
         )}
       />
       <ComponentView
-        background="black"
+        background={ETER}
         componentName="MenuPageHeader"
         componentProperties={[
           { name: "popLogoSrc", values: ["string"] },
@@ -127,7 +128,7 @@ function HeaderFinalSpecimen() {
         )}
       />
       <ComponentView
-        background="black"
+        background={ETER}
         componentName="ModuleWorkspaceHeader"
         componentProperties={[
           { name: "backHref", values: ["string", "undefined"] },

@@ -90,7 +90,7 @@ export function DataWorkspaceHeaderUserMenu({
             <span className={cn(menuGhostBarClass, "h-2.5 w-16")} />
           </div>
         ) : null}
-        <Avatar pending initials={initials} size={avatarSize} />
+        <Avatar pending initials={initials} size={avatarSize} tone={theme} />
       </div>
     )
   }
@@ -157,6 +157,7 @@ export function DataWorkspaceHeaderUserMenu({
               imageUrl={profileAvatarSrc}
               initials={initials}
               size={avatarSize}
+              tone={theme}
               isOnline={isOnline}
             />
           </span>

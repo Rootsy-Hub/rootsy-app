@@ -1,6 +1,7 @@
 "use client"
 
 import { HomeHeaderUserCluster } from "@/app/home/HomeHeaderUserCluster"
+import { eterHeaderFocusRingClass } from "@/lib/eter/eterChrome"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
@@ -19,7 +20,8 @@ export function HomePageHeader({ userId, loading }: HomePageHeaderProps) {
           aria-label="Rootsy — landing"
           className={cn(
             "inline-flex shrink-0 items-center rounded-md transition-opacity hover:opacity-90",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,255,255,0.22)]",
+            "focus-visible:outline-none",
+            eterHeaderFocusRingClass,
             "focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
           )}
         >

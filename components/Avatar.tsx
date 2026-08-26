@@ -127,15 +127,15 @@ export function Avatar({
 
   const fallbackClass =
     tone === "dark"
-      ? "bg-linear-to-br from-[var(--rootsy-savia-500)] to-[var(--rootsy-savia-700)] text-white"
+      ? "bg-linear-to-br from-[var(--rootsy-savia-500)] to-[var(--rootsy-savia-700)] text-[var(--rootsy-savia-50)]"
       : isCircle
-        ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,white)] text-[var(--rootsy-savia-800)]"
+        ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,var(--rootsy-bruma-50))] text-[var(--rootsy-savia-800)]"
         : "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-700)]"
 
   const statusRing =
     tone === "dark"
-      ? "ring-[var(--rootsy-sombra-950)]"
-      : "ring-[var(--rootsy-white)]"
+      ? "ring-[var(--rootsy-eter-950)]"
+      : "ring-[var(--rootsy-bruma-50)]"
 
   const face = showPhoto ? (
     // eslint-disable-next-line @next/next/no-img-element
@@ -185,8 +185,8 @@ export function Avatar({
         "group cursor-pointer",
         "focus-visible:outline-none focus-visible:ring-2",
         tone === "dark"
-          ? "focus-visible:ring-white/40"
-          : "focus-visible:ring-[var(--rootsy-savia-700)]/35",
+          ? "focus-visible:ring-[color-mix(in_srgb,var(--rootsy-eter-100)_40%,transparent)]"
+          : "focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-700)_35%,transparent)]",
       ),
     className,
   )
@@ -198,7 +198,12 @@ export function Avatar({
         {interactive ? (
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-black/10 opacity-0 transition-opacity group-hover:opacity-100"
+            className={cn(
+              "pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100",
+              tone === "dark"
+                ? "bg-[color-mix(in_srgb,var(--rootsy-eter-950)_22%,transparent)]"
+                : "bg-[color-mix(in_srgb,var(--rootsy-bruma-900)_10%,transparent)]",
+            )}
           />
         ) : null}
       </span>
