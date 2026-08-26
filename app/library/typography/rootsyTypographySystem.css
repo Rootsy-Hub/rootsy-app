@@ -2,11 +2,9 @@
  * Tipografía Rootsy — scoped a la librería hasta migración a globals.css.
  */
 .rootsy-typography-system {
-  --font-canopy: var(--font-nunito-sans), "Nunito Sans", sans-serif;
-  --font-stream: var(--font-source-sans), "Source Sans 3", "Source Sans Pro", sans-serif;
-  --font-ledger: var(--font-inter), "Inter", sans-serif;
-  --font-code: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
-
+  --font-canopy: var(--rootsy-font-ui);
+  --font-stream: var(--rootsy-font-reading);
+  --font-ledger: var(--rootsy-font-numeric);
   --typography-base-rem: 1rem;
 }
 
@@ -21,8 +19,4 @@
 .rootsy-typography-system .font-ledger {
   font-family: var(--font-ledger);
   font-variant-numeric: tabular-nums;
-}
-
-.rootsy-typography-system .font-code {
-  font-family: var(--font-code);
 }

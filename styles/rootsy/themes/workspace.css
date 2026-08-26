@@ -1,26 +1,13 @@
 /**
- * Tema Workspace — bruma + blanco + savia.
+ * Tema Workspace — atmósfera bruma clara.
+ * Fondo 100 · superficie 50 · texto 900 · muted 700.
  */
 
 .rootsy-theme-workspace {
-  --color-shell: var(--rootsy-bruma-100);
-  --color-surface: var(--rootsy-white);
-  --color-elevated: var(--rootsy-bruma-50);
-  --color-border: var(--rootsy-bruma-200);
-  --color-text-primary: var(--rootsy-bruma-900);
-  --color-text-secondary: var(--rootsy-bruma-500);
-  --color-action: var(--rootsy-savia-600);
-  --color-action-text: var(--rootsy-white);
-  --color-accent: var(--rootsy-savia-400);
-
-  --background: var(--color-shell);
-  --foreground: var(--color-text-primary);
-  --card: var(--color-surface);
-  --card-foreground: var(--color-text-primary);
-  --primary: var(--color-action);
-  --primary-foreground: var(--color-action-text);
-  --muted: var(--color-elevated);
-  --muted-foreground: var(--color-text-secondary);
-  --border: var(--color-border);
-  --ring: var(--rootsy-bruma-500);
+  --color-fondo: var(--rootsy-bruma-100);
+  --color-superficie: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-bruma-50);
+  --color-borde: var(--rootsy-bruma-200);
+  --color-texto: var(--rootsy-bruma-900);
+  --color-texto-muted: var(--rootsy-bruma-700);
 }

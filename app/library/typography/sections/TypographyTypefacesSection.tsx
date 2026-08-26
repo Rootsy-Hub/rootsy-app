@@ -23,7 +23,7 @@ export function TypographyTypefacesSection() {
         <TypographyDocSection
           id="typeface-families"
           title="Familias"
-          description="Nunito Sans, Source Sans 3 e Inter — roles fijos en producto."
+          description="Inter para la UI y los números. Nunito Sans para leer de corrido."
         >
           <TypographyTypefacesDetail />
         </TypographyDocSection>

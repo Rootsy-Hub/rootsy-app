@@ -256,7 +256,7 @@ export function ModuleWorkspaceHeader({
             {resolvedTitle ? (
               <h1
                 className={cn(
-                  "truncate text-xl tracking-tight",
+                  "rootsy-text-page-title truncate",
                   eterHeaderTitleClass,
                 )}
               >
@@ -338,14 +338,14 @@ function ModuleWorkspaceMobileTitle({
       {pending && !resolvedPopName ? (
         <span className={cn(menuGhostBarClass, "mb-0.5 block h-2.5 w-20")} aria-hidden />
       ) : resolvedPopName ? (
-        <p className={cn("truncate text-[11px] font-medium", eterHeaderMutedClass)}>
+        <p className={cn("rootsy-text-meta truncate font-medium", eterHeaderMutedClass)}>
           {resolvedPopName}
         </p>
       ) : null}
       {title ? (
         <h1
           className={cn(
-            "truncate text-base tracking-tight",
+            "rootsy-text-heading-small truncate",
             eterHeaderTitleClass,
           )}
         >

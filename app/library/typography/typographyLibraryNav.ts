@@ -28,7 +28,7 @@ export const TYPOGRAPHY_PAGE_META: Record<string, TypographyPageMeta> = {
     id: "typography",
     title: "Tipografía",
     description:
-      "Tres voces, una escala — texto que se lee natural, sin esfuerzo ni adornos.",
+      "Dos familias, tres voces — Inter en chrome y montos, Nunito Sans en la prosa.",
   },
   "typography-applying": {
     id: "typography-applying",

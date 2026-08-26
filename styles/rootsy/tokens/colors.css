@@ -1,25 +1,30 @@
 /**
- * Primitivos de color Rootsy — :root global.
+ * Primitivos y tokens de color Rootsy — :root global.
  * Fuente CSS espejo de lib/design-system/tokens/colors.ts
- * Tres familias: sombra · bruma · savia
- * Suelo = chrome de piso (no familia de marca)
- * Cielo / sol = climas complementarios (no familia de marca)
- * Éter = chrome del header (espacio fuera del planeta)
+ *
+ * Paleta: once pasos (50–950) × siete familias.
+ * Atmósferas: éter · bruma · sombra
+ * Funcionales: savia · cielo · sol · lava
+ *
+ * Tokens de propósito (--color-fondo, --color-accion, …) nombran el trabajo.
+ * El hex siempre sale de un paso de paleta.
  */
 
 :root {
-  /* Sombra — bajo el dosel */
-  --rootsy-sombra-950: #050807;
-  --rootsy-sombra-900: #080c0b;
-  --rootsy-sombra-800: #0e1311;
-  --rootsy-sombra-700: #151c19;
-  --rootsy-sombra-600: #1b2420;
-  --rootsy-sombra-500: #222b27;
-  --rootsy-sombra-400: #5a6b63;
-  --rootsy-sombra-300: #8fa396;
-  --rootsy-sombra-border: #2a3530;
+  /* Éter — el cielo del mundo */
+  --rootsy-eter-50: #f3f8fb;
+  --rootsy-eter-100: #e4f2f8;
+  --rootsy-eter-200: #c8dce8;
+  --rootsy-eter-300: #8fb4c8;
+  --rootsy-eter-400: #5a8aa4;
+  --rootsy-eter-500: #2f5a78;
+  --rootsy-eter-600: #163848;
+  --rootsy-eter-700: #0b1824;
+  --rootsy-eter-800: #040a0e;
+  --rootsy-eter-900: #02060a;
+  --rootsy-eter-950: #010306;
 
-  /* Bruma — neblina (clara de día, oscura de noche) */
+  /* Bruma — el aire para leer */
   --rootsy-bruma-50: #f4f6f9;
   --rootsy-bruma-100: #eef1f5;
   --rootsy-bruma-200: #dfe4ea;
@@ -32,66 +37,132 @@
   --rootsy-bruma-900: #121417;
   --rootsy-bruma-950: #0a0c0f;
 
-  /* Savia — vida y acción */
-  --rootsy-savia-990: #061009;
-  --rootsy-savia-975: #07120e;
-  --rootsy-savia-960: #0c1f17;
-  --rootsy-savia-950: #022c22;
-  --rootsy-savia-900: #064e3b;
-  --rootsy-savia-800: #065f46;
-  --rootsy-savia-700: #047857;
-  --rootsy-savia-600: #059669;
-  --rootsy-savia-500: #10b981;
-  --rootsy-savia-400: #34d399;
-  --rootsy-savia-300: #6ee7b7;
-  --rootsy-savia-200: #a7f3d0;
-  --rootsy-savia-100: #d1fae5;
+  /* Sombra — el dosel */
+  --rootsy-sombra-50: #f3f6f4;
+  --rootsy-sombra-100: #e5ece8;
+  --rootsy-sombra-200: #c5d0ca;
+  --rootsy-sombra-300: #8fa396;
+  --rootsy-sombra-400: #5a6b63;
+  --rootsy-sombra-500: #222b27;
+  --rootsy-sombra-600: #1b2420;
+  --rootsy-sombra-700: #151c19;
+  --rootsy-sombra-800: #0e1311;
+  --rootsy-sombra-900: #080c0b;
+  --rootsy-sombra-950: #050807;
+
+  /* Savia — vida que acciona */
   --rootsy-savia-50: #ecfdf5;
-  --rootsy-savia-teal: #14b8a6;
+  --rootsy-savia-100: #d1fae5;
+  --rootsy-savia-200: #a7f3d0;
+  --rootsy-savia-300: #6ee7b7;
+  --rootsy-savia-400: #34d399;
+  --rootsy-savia-500: #10b981;
+  --rootsy-savia-600: #059669;
+  --rootsy-savia-700: #047857;
+  --rootsy-savia-800: #065f46;
+  --rootsy-savia-900: #064e3b;
+  --rootsy-savia-950: #022c22;
 
-  /* Suelo — tierra mojada (footer + toolbox). Oliva húmeda, no stone Tailwind. */
-  --rootsy-suelo-950: #0a0c08;
-  --rootsy-suelo-900: #151810;
-  --rootsy-suelo-800: #24291e;
-  --rootsy-suelo-700: #353b2c;
-  --rootsy-suelo-600: #464d3a;
-  --rootsy-suelo-400: #8f9782;
-  --rootsy-suelo-300: #b6bda8;
-  --rootsy-suelo-50: #f1f2eb;
-
-  /* Cielo — azul de naturaleza vivo (comandas enviada). No Tailwind sky, no teal. */
-  --rootsy-cielo-800: #0a4574;
-  --rootsy-cielo-700: #0b5a98;
-  --rootsy-cielo-600: #0c72c2;
-  --rootsy-cielo-500: #1286e8;
-  --rootsy-cielo-400: #45a6f2;
-  --rootsy-cielo-200: #a8d6fa;
-  --rootsy-cielo-100: #d4ecfc;
+  /* Cielo de día — información */
   --rootsy-cielo-50: #eaf6fe;
+  --rootsy-cielo-100: #d4ecfc;
+  --rootsy-cielo-200: #a8d6fa;
+  --rootsy-cielo-300: #76bdf4;
+  --rootsy-cielo-400: #45a6f2;
+  --rootsy-cielo-500: #1286e8;
+  --rootsy-cielo-600: #0c72c2;
+  --rootsy-cielo-700: #0b5a98;
+  --rootsy-cielo-800: #0a4574;
+  --rootsy-cielo-900: #062e52;
+  --rootsy-cielo-950: #041a30;
 
-  /* Sol — amarillo sol (comandas preparando). No es warning ámbar. */
-  --rootsy-sol-800: #7a4e08;
-  --rootsy-sol-700: #9c640a;
-  --rootsy-sol-600: #c98c0d;
-  --rootsy-sol-500: #e8b10f;
-  --rootsy-sol-400: #f3c62e;
-  --rootsy-sol-200: #f8e17a;
-  --rootsy-sol-100: #fbf3c6;
+  /* Sol — atención */
   --rootsy-sol-50: #fdf8e8;
+  --rootsy-sol-100: #fbf3c6;
+  --rootsy-sol-200: #f8e17a;
+  --rootsy-sol-300: #f5d054;
+  --rootsy-sol-400: #f3c62e;
+  --rootsy-sol-500: #e8b10f;
+  --rootsy-sol-600: #c98c0d;
+  --rootsy-sol-700: #9c640a;
+  --rootsy-sol-800: #7a4e08;
+  --rootsy-sol-900: #523406;
+  --rootsy-sol-950: #2e1c04;
 
-  /* Éter — espacio fuera del planeta (header). No es cielo de día ni sombra. */
-  --rootsy-eter-950: #010306;
-  --rootsy-eter-900: #02060a;
-  --rootsy-eter-800: #040a0e;
-  --rootsy-eter-700: #0b1824;
-  --rootsy-eter-200: #c8dce8;
-  --rootsy-eter-100: #e4f2f8;
+  /* Lava — peligro */
+  --rootsy-lava-50: #fdf5f2;
+  --rootsy-lava-100: #f8e0d6;
+  --rootsy-lava-200: #f0b8a4;
+  --rootsy-lava-300: #e48868;
+  --rootsy-lava-400: #d45c38;
+  --rootsy-lava-500: #c43a18;
+  --rootsy-lava-600: #a82c12;
+  --rootsy-lava-700: #82220e;
+  --rootsy-lava-800: #58170a;
+  --rootsy-lava-900: #381008;
+  --rootsy-lava-950: #1c0805;
 
-  /* Atmósfera — auroras de marketing (blur only) */
-  --rootsy-atmosphere-neon: #25fe02;
-  --rootsy-atmosphere-neon-2: #02fe85;
+  /*
+   * Tokens de propósito — atmósfera por defecto: bruma clara.
+   * Los temas (--rootsy-theme-*) reasignan fondo / superficie / texto.
+   * Los funcionales no cambian con la atmósfera.
+   */
+  --color-fondo: var(--rootsy-bruma-100);
+  --color-superficie: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-bruma-50);
+  --color-borde: var(--rootsy-bruma-200);
+  --color-texto: var(--rootsy-bruma-900);
+  --color-texto-muted: var(--rootsy-bruma-700);
 
-  /* Alias deprecated — ceniza → sombra */
+  --color-accion: var(--rootsy-savia-600);
+  --color-accion-hover: var(--rootsy-savia-700);
+  --color-foco: var(--rootsy-savia-400);
+  --color-exito: var(--rootsy-savia-500);
+  --color-informacion: var(--rootsy-cielo-500);
+  --color-atencion: var(--rootsy-sol-500);
+  --color-peligro: var(--rootsy-lava-600);
+  --color-status-danger: var(--color-peligro);
+  --color-status-warning: var(--color-atencion);
+  --color-status-info: var(--color-informacion);
+
+  /* Alias de propósito (nombres anteriores) */
+  --color-shell: var(--color-fondo);
+  --color-surface: var(--color-superficie);
+  --color-elevated: var(--color-elevada);
+  --color-border: var(--color-borde);
+  --color-text-primary: var(--color-texto);
+  --color-text-secondary: var(--color-texto-muted);
+  --color-action: var(--color-accion);
+  --color-action-hover: var(--color-accion-hover);
+  --color-action-text: var(--rootsy-savia-50);
+  --color-accent: var(--color-foco);
+
+  /* Alias de primitivos fuera de paleta — apuntan a un paso handbook */
+  --rootsy-sombra-border: var(--rootsy-sombra-400);
+  --rootsy-white: var(--rootsy-savia-50);
+  --rootsy-savia-teal: var(--rootsy-savia-500);
+  --rootsy-savia-990: var(--rootsy-savia-950);
+  --rootsy-savia-975: var(--rootsy-savia-950);
+  --rootsy-savia-960: var(--rootsy-savia-950);
+
+  --rootsy-suelo-50: var(--rootsy-sombra-50);
+  --rootsy-suelo-300: var(--rootsy-sombra-300);
+  --rootsy-suelo-400: var(--rootsy-sombra-400);
+  --rootsy-suelo-600: var(--rootsy-sombra-600);
+  --rootsy-suelo-700: var(--rootsy-sombra-700);
+  --rootsy-suelo-800: var(--rootsy-sombra-800);
+  --rootsy-suelo-900: var(--rootsy-sombra-900);
+  --rootsy-suelo-950: var(--rootsy-sombra-950);
+
+  --rootsy-atmosphere-neon: var(--rootsy-savia-400);
+  --rootsy-atmosphere-neon-2: var(--rootsy-savia-500);
+
+  --rootsy-warning: var(--rootsy-sol-500);
+  --rootsy-warning-text: var(--rootsy-sol-900);
+  --rootsy-warning-soft: var(--rootsy-sol-50);
+  --rootsy-danger: var(--rootsy-lava-600);
+  --rootsy-danger-dark: var(--rootsy-lava-700);
+
   --rootsy-ceniza-950: var(--rootsy-sombra-950);
   --rootsy-ceniza-900: var(--rootsy-sombra-900);
   --rootsy-ceniza-800: var(--rootsy-sombra-800);
@@ -100,8 +171,8 @@
   --rootsy-ceniza-500: var(--rootsy-sombra-500);
   --rootsy-ceniza-400: var(--rootsy-sombra-400);
   --rootsy-ceniza-300: var(--rootsy-sombra-300);
+  --rootsy-ceniza-50: var(--rootsy-sombra-50);
 
-  /* Alias deprecated — landing → composición sombra/savia/atmosphere */
   --rootsy-landing-950: var(--rootsy-sombra-900);
   --rootsy-landing-900: var(--rootsy-sombra-950);
   --rootsy-landing-800: var(--rootsy-sombra-800);
@@ -109,16 +180,94 @@
   --rootsy-landing-400: var(--rootsy-savia-400);
   --rootsy-landing-300: var(--rootsy-savia-300);
   --rootsy-landing-200: var(--rootsy-savia-200);
-  --rootsy-landing-teal: var(--rootsy-savia-teal);
-  --rootsy-landing-neon: var(--rootsy-atmosphere-neon);
-  --rootsy-landing-neon-2: var(--rootsy-atmosphere-neon-2);
+  --rootsy-landing-teal: var(--rootsy-savia-500);
+  --rootsy-landing-neon: var(--rootsy-savia-400);
+  --rootsy-landing-neon-2: var(--rootsy-savia-500);
+}
 
-  --rootsy-white: #ffffff;
+/* Tailwind: toda la paleta disponible como bg-rootsy-savia-600, text-rootsy-lava-800, etc. */
+@theme inline {
+  --color-rootsy-eter-50: var(--rootsy-eter-50);
+  --color-rootsy-eter-100: var(--rootsy-eter-100);
+  --color-rootsy-eter-200: var(--rootsy-eter-200);
+  --color-rootsy-eter-300: var(--rootsy-eter-300);
+  --color-rootsy-eter-400: var(--rootsy-eter-400);
+  --color-rootsy-eter-500: var(--rootsy-eter-500);
+  --color-rootsy-eter-600: var(--rootsy-eter-600);
+  --color-rootsy-eter-700: var(--rootsy-eter-700);
+  --color-rootsy-eter-800: var(--rootsy-eter-800);
+  --color-rootsy-eter-900: var(--rootsy-eter-900);
+  --color-rootsy-eter-950: var(--rootsy-eter-950);
 
-  /* Funcionales UX — no son familia de marca ni clima */
-  --rootsy-warning: #d97706;
-  --rootsy-warning-text: #78350f;
-  --rootsy-warning-soft: #fef3c7;
-  --rootsy-danger: #dc2626;
-  --rootsy-danger-dark: #b91c1c;
+  --color-rootsy-bruma-50: var(--rootsy-bruma-50);
+  --color-rootsy-bruma-100: var(--rootsy-bruma-100);
+  --color-rootsy-bruma-200: var(--rootsy-bruma-200);
+  --color-rootsy-bruma-300: var(--rootsy-bruma-300);
+  --color-rootsy-bruma-400: var(--rootsy-bruma-400);
+  --color-rootsy-bruma-500: var(--rootsy-bruma-500);
+  --color-rootsy-bruma-600: var(--rootsy-bruma-600);
+  --color-rootsy-bruma-700: var(--rootsy-bruma-700);
+  --color-rootsy-bruma-800: var(--rootsy-bruma-800);
+  --color-rootsy-bruma-900: var(--rootsy-bruma-900);
+  --color-rootsy-bruma-950: var(--rootsy-bruma-950);
+
+  --color-rootsy-sombra-50: var(--rootsy-sombra-50);
+  --color-rootsy-sombra-100: var(--rootsy-sombra-100);
+  --color-rootsy-sombra-200: var(--rootsy-sombra-200);
+  --color-rootsy-sombra-300: var(--rootsy-sombra-300);
+  --color-rootsy-sombra-400: var(--rootsy-sombra-400);
+  --color-rootsy-sombra-500: var(--rootsy-sombra-500);
+  --color-rootsy-sombra-600: var(--rootsy-sombra-600);
+  --color-rootsy-sombra-700: var(--rootsy-sombra-700);
+  --color-rootsy-sombra-800: var(--rootsy-sombra-800);
+  --color-rootsy-sombra-900: var(--rootsy-sombra-900);
+  --color-rootsy-sombra-950: var(--rootsy-sombra-950);
+
+  --color-rootsy-savia-50: var(--rootsy-savia-50);
+  --color-rootsy-savia-100: var(--rootsy-savia-100);
+  --color-rootsy-savia-200: var(--rootsy-savia-200);
+  --color-rootsy-savia-300: var(--rootsy-savia-300);
+  --color-rootsy-savia-400: var(--rootsy-savia-400);
+  --color-rootsy-savia-500: var(--rootsy-savia-500);
+  --color-rootsy-savia-600: var(--rootsy-savia-600);
+  --color-rootsy-savia-700: var(--rootsy-savia-700);
+  --color-rootsy-savia-800: var(--rootsy-savia-800);
+  --color-rootsy-savia-900: var(--rootsy-savia-900);
+  --color-rootsy-savia-950: var(--rootsy-savia-950);
+
+  --color-rootsy-cielo-50: var(--rootsy-cielo-50);
+  --color-rootsy-cielo-100: var(--rootsy-cielo-100);
+  --color-rootsy-cielo-200: var(--rootsy-cielo-200);
+  --color-rootsy-cielo-300: var(--rootsy-cielo-300);
+  --color-rootsy-cielo-400: var(--rootsy-cielo-400);
+  --color-rootsy-cielo-500: var(--rootsy-cielo-500);
+  --color-rootsy-cielo-600: var(--rootsy-cielo-600);
+  --color-rootsy-cielo-700: var(--rootsy-cielo-700);
+  --color-rootsy-cielo-800: var(--rootsy-cielo-800);
+  --color-rootsy-cielo-900: var(--rootsy-cielo-900);
+  --color-rootsy-cielo-950: var(--rootsy-cielo-950);
+
+  --color-rootsy-sol-50: var(--rootsy-sol-50);
+  --color-rootsy-sol-100: var(--rootsy-sol-100);
+  --color-rootsy-sol-200: var(--rootsy-sol-200);
+  --color-rootsy-sol-300: var(--rootsy-sol-300);
+  --color-rootsy-sol-400: var(--rootsy-sol-400);
+  --color-rootsy-sol-500: var(--rootsy-sol-500);
+  --color-rootsy-sol-600: var(--rootsy-sol-600);
+  --color-rootsy-sol-700: var(--rootsy-sol-700);
+  --color-rootsy-sol-800: var(--rootsy-sol-800);
+  --color-rootsy-sol-900: var(--rootsy-sol-900);
+  --color-rootsy-sol-950: var(--rootsy-sol-950);
+
+  --color-rootsy-lava-50: var(--rootsy-lava-50);
+  --color-rootsy-lava-100: var(--rootsy-lava-100);
+  --color-rootsy-lava-200: var(--rootsy-lava-200);
+  --color-rootsy-lava-300: var(--rootsy-lava-300);
+  --color-rootsy-lava-400: var(--rootsy-lava-400);
+  --color-rootsy-lava-500: var(--rootsy-lava-500);
+  --color-rootsy-lava-600: var(--rootsy-lava-600);
+  --color-rootsy-lava-700: var(--rootsy-lava-700);
+  --color-rootsy-lava-800: var(--rootsy-lava-800);
+  --color-rootsy-lava-900: var(--rootsy-lava-900);
+  --color-rootsy-lava-950: var(--rootsy-lava-950);
 }

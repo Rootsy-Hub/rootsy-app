@@ -261,11 +261,11 @@ const HANDBOOK_SECTION_META: Record<string, HandbookSectionMeta> = {
         p("La semántica, las rampas y los temas viven en la librería. Acá vale una sola regla: savia donde hay acción; bruma donde se lee — de día o de noche; sombra donde se contiene."),
       ]),
       topic("Tipografía", [
-        p("La tipografía se lee sin esfuerzo. El texto guía; no compite con la interfaz. Hay tres voces y cada una hace una sola cosa."),
+        p("La tipografía se lee sin esfuerzo. El texto guía; no compite con la interfaz. Hay dos familias: Inter para la UI y los números, Nunito Sans para la prosa."),
         ul([
-          "UI — Nunito Sans: la voz del producto. Títulos, labels, botones y formularios.",
-          "Lectura — Source Sans 3: la voz de la prosa. Ayudas, artículos y bloques largos.",
-          "Números — Inter: la voz de los montos. Tabular, precisa, sin adorno.",
+          "UI — Inter: títulos, labels, botones, tablas y formularios.",
+          "Lectura — Nunito Sans: handbook, ayuda y bloques largos. 16px / 1.5 / 65ch.",
+          "Números — Inter tabular: montos, cantidades y KPIs. Precisa, sin adorno.",
         ]),
         p("La jerarquía es obvia: título, contexto, cuerpo, dato. La escala es corta y parte de 16px. Si hace falta más énfasis, se sube o se baja un nivel — no se inventa un tamaño suelto. Pesos con intención: regular para leer, semibold para decidir, bold solo cuando el dato tiene que quedar."),
         p("La escala, los tokens y los ejemplos de aplicación están en la librería."),

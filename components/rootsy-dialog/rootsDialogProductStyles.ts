@@ -91,15 +91,15 @@ export const rootsDialogHeaderWithDescriptionClass =
 /** Header solo título — pb space.300; el título ya no pide una banda alta. */
 export const rootsDialogHeaderCompactClass = "pb-[var(--rootsy-space-300)]"
 
-/** font.heading.small · semibold · bruma-900 — nombra el lugar, no lo grita. */
+/** heading.medium — título de modal. */
 export const rootsDialogTitleClass = cn(
-  "font-canopy text-base leading-5 font-semibold tracking-[-0.02em] text-[var(--rootsy-bruma-900)]",
+  "rootsy-text-section-title text-[var(--rootsy-bruma-900)]",
   "pr-[calc(var(--rootsy-space-400)+var(--rootsy-space-400)+var(--rootsy-space-100))]",
 )
 
-/** body.small · bruma-500 — orientación, no subtítulo de cartel. */
+/** body.small — orientación, no subtítulo de cartel. */
 export const rootsDialogDescriptionClass = cn(
-  "font-canopy text-xs leading-4 font-normal tracking-[0.01em] text-[var(--rootsy-bruma-500)]",
+  "rootsy-text-meta text-[var(--rootsy-bruma-500)]",
 )
 
 /** Valle — bruma viva entre dos claros. */

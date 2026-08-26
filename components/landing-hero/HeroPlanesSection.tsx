@@ -165,7 +165,7 @@ export function HeroPlanesSection() {
       aria-label="Planes"
     >
       <header className="mb-8 text-center sm:mb-10">
-        <h2 className="text-balance text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+        <h2 className="text-balance text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
           Elegí tu plan
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-pretty text-lg leading-relaxed text-white/80 sm:text-xl">
@@ -352,7 +352,7 @@ function HeroPricingCard({
                 </p>
               ) : null}
               <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
-                <span className="text-4xl font-extrabold tabular-nums tracking-tight text-white">
+                <span className="text-4xl font-bold font-numeric tabular-nums tracking-tight text-white">
                   {formatLandingPlanMoney(displayAmount)}
                 </span>
                 <span className="text-base font-medium text-white/50">

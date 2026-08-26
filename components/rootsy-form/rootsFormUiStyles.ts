@@ -17,11 +17,11 @@ export const rootsFormUiFieldStackClass = "flex w-full min-w-0 flex-col gap-2"
 
 /** form.field.label · font.body medium · bruma-700. */
 export const rootsFormUiLabelClass =
-  "font-canopy text-sm font-medium leading-5 text-[var(--rootsy-bruma-700)]"
+  "rootsy-text-body font-medium text-[var(--rootsy-bruma-700)]"
 
 /** Tipografía de control · font.body regular · bruma-900. */
 export const rootsFormUiControlTypographyClass =
-  "font-canopy text-sm font-normal leading-5 text-[var(--rootsy-bruma-900)]"
+  "rootsy-text-body text-[var(--rootsy-bruma-900)]"
 
 /** Hover reposo — bruma-300 · sin ring. Solo cuando el control no tiene foco. */
 const rootsFormUiControlHoverClass =
@@ -62,7 +62,7 @@ export const rootsFormUiAffixShellClass = cn(
 
 /** Slot leading — divider sincronizado: hover bruma-300 · focus savia-400. */
 export const rootsFormUiAffixPrefixSunkenClass = cn(
-  "inline-flex w-10 shrink-0 items-center justify-center self-stretch border-r border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] font-canopy text-sm font-medium leading-none text-[var(--rootsy-bruma-500)] transition-[border-color]",
+  "inline-flex w-10 shrink-0 items-center justify-center self-stretch border-r border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] rootsy-text-body font-medium leading-none text-[var(--rootsy-bruma-500)] transition-[border-color]",
   "group-hover:border-[var(--rootsy-bruma-300)]",
   "group-focus-within:border-[var(--rootsy-savia-400)]",
   "group-focus-within:group-hover:border-[var(--rootsy-savia-400)]",

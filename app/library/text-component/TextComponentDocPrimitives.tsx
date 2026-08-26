@@ -367,7 +367,7 @@ export function TextComponentMetricDemo() {
 
 export function TextComponentReadingDemo() {
   return (
-    <FoundationBrumaStage caption="font.secondary (Source Sans 3) — solo cuando hay prosa, no en botones ni labels.">
+    <FoundationBrumaStage caption="font.body.large — Nunito Sans a 16px / 1.5. Cambia la familia y el ritmo.">
       <FoundationSpecCard>
         <p
           className="font-stream text-base leading-relaxed"
@@ -378,7 +378,7 @@ export function TextComponentReadingDemo() {
           explicativo en onboarding. En pantallas de trabajo, la UI lleva casi todo.
         </p>
         <p className="mt-3 font-canopy text-xs text-[var(--rootsy-bruma-500)]">
-          font.body.large · Source Sans 3 · 16px / 1.5
+          font.body.large · Nunito Sans · 16px / 1.5
         </p>
       </FoundationSpecCard>
     </FoundationBrumaStage>
@@ -387,7 +387,7 @@ export function TextComponentReadingDemo() {
 
 export function TextComponentCodeDemo() {
   return (
-    <FoundationBrumaStage caption="font.code — documentación y snippets; no en UI general.">
+    <FoundationBrumaStage caption="Snippets técnicos. No es una voz de marca.">
       <FoundationSpecCard className="space-y-3">
         <pre
           className="overflow-x-auto rounded-lg border px-4 py-3 font-code text-xs leading-5"
@@ -401,7 +401,7 @@ export function TextComponentCodeDemo() {
 // → var(--rootsy-text-heading-large-size)`}
         </pre>
         <p className="font-mono text-[10px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
-          {ROOTSY_CODE_STYLE.token} · {ROOTSY_CODE_STYLE.fontSizePx}px · JetBrains Mono
+          {ROOTSY_CODE_STYLE.token} · {ROOTSY_CODE_STYLE.fontSizePx}px
         </p>
       </FoundationSpecCard>
     </FoundationBrumaStage>

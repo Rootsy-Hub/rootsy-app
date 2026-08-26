@@ -74,13 +74,13 @@ export const TEXT_COMPONENT_PAGE_META: Record<string, TextComponentPageMeta> = {
     id: "component-text-reading",
     title: "Lectura",
     description:
-      "Prosa larga con Source Sans 3 — artículos, ayuda extendida y descripciones.",
+      "Prosa larga en Nunito Sans — 16px / 1.5, artículos y ayuda extendida.",
   },
   "component-text-code": {
     id: "component-text-code",
     title: "Código",
     description:
-      "Snippets y tokens técnicos — JetBrains Mono solo en docs y referencias.",
+      "Snippets y tokens técnicos. No es una voz de marca.",
   },
 }
 

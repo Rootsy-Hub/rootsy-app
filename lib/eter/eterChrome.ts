@@ -126,7 +126,7 @@ export function getEterDangerSurface(
 export const eterHeaderTextShadow = "0 1px 2px rgba(0,0,0,0.38)"
 
 export const eterHeaderTitleClass = cn(
-  "font-semibold tracking-[0.02em] antialiased text-white/96",
+  "antialiased text-white/96",
   "drop-shadow-[0_1px_2px_rgba(0,0,0,0.38)]",
 )
 

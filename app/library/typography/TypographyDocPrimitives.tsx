@@ -79,8 +79,8 @@ function TypographyBrumaStage({
 }
 
 function typefaceFontClass(id: RootsyTypeface["id"]) {
-  if (id === "reading") return FONT_CLASS.reading
   if (id === "numeric") return FONT_CLASS.numeric
+  if (id === "reading") return FONT_CLASS.reading
   return FONT_CLASS.ui
 }
 
@@ -169,8 +169,8 @@ export function TypographyVoicesRow() {
             className={cn(
               typefaceFontClass(face.id),
               face.id === "numeric" && "text-2xl font-bold tabular-nums",
-              face.id === "reading" && "text-base leading-relaxed",
               face.id === "ui" && "text-lg font-semibold",
+              face.id === "reading" && "text-base font-normal leading-relaxed",
             )}
             style={{ color: CONCEPT_TOKENS.bruma900 }}
           >
@@ -518,6 +518,7 @@ export function TypographyTypefacesDetail() {
             className={cn(
               typefaceFontClass(face.id),
               face.id === "numeric" && "text-xl font-bold tabular-nums",
+              face.id === "reading" && "text-base leading-relaxed",
             )}
             style={{ color: CONCEPT_TOKENS.bruma900 }}
           >
@@ -606,7 +607,7 @@ export function TypographyReadingDemo() {
         campo o copy explicativo. En pantallas de trabajo, la UI lleva casi todo.
       </p>
       <p className="mt-3 text-xs" style={{ color: CONCEPT_TOKENS.bruma500 }}>
-        Source Sans 3 · solo en bloques de prosa, no en botones ni labels.
+        Nunito Sans · 16px / 1.5 · 65ch. Cambia la familia y el ritmo: no es chrome.
       </p>
     </TypographyWhiteCard>
   )

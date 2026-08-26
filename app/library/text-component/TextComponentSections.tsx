@@ -72,7 +72,7 @@ export function TextComponentHeadingsSection() {
         <TextComponentDocSection
           id="text-headings-tokens"
           title="Tokens"
-          description="font.heading.* — Nunito Sans bold."
+          description="font.heading.* — Inter bold."
         >
           <TextComponentHeadingsTokens />
         </TextComponentDocSection>
@@ -177,7 +177,7 @@ export function TextComponentReadingSection() {
       <TextComponentDocSection
         id="text-reading-demo"
         title="Prosa larga"
-        description="Source Sans 3 en bloques de lectura — no en controles."
+        description="Nunito Sans a 16px / 1.5 en bloques de lectura — no es chrome."
       >
         <TextComponentReadingDemo />
       </TextComponentDocSection>
@@ -193,7 +193,7 @@ export function TextComponentCodeSection() {
       <TextComponentDocSection
         id="text-code-demo"
         title="Snippets"
-        description="JetBrains Mono en docs y referencias técnicas."
+        description="Snippets técnicos. No es una voz de marca."
       >
         <TextComponentCodeDemo />
       </TextComponentDocSection>

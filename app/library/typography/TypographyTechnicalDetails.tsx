@@ -4,7 +4,6 @@ import { LibraryDocMetaLabel } from "@/app/library/libraryDocPrimitives"
 import { CONCEPT_TOKENS } from "@/app/library/concept/rootsyConceptSystem"
 import {
   ROOTSY_BODY_STYLES,
-  ROOTSY_CODE_STYLE,
   ROOTSY_FONT_WEIGHTS,
   ROOTSY_HEADING_STYLES,
   ROOTSY_METRIC_STYLES,
@@ -45,9 +44,8 @@ function TechnicalSubheading({ children }: { children: ReactNode }) {
 }
 
 function specFontClass(id: RootsyTypefaceSpec["id"]) {
-  if (id === "reading") return FONT_CLASS.reading
   if (id === "numeric") return FONT_CLASS.numeric
-  if (id === "code") return FONT_CLASS.code
+  if (id === "reading") return FONT_CLASS.reading
   return FONT_CLASS.ui
 }
 
@@ -142,6 +140,7 @@ function TypefaceSpecCard({ face }: { face: RootsyTypefaceSpec }) {
           "mt-3",
           specFontClass(face.id),
           face.id === "numeric" && "text-xl font-bold tabular-nums",
+          face.id === "reading" && "text-base leading-relaxed",
           face.id === "code" && "text-sm",
         )}
         style={{ color: CONCEPT_TOKENS.bruma900 }}
@@ -181,7 +180,7 @@ export function TypographyTechnicalDetails() {
     <div className="space-y-8 border-t pt-10" style={{ borderColor: CONCEPT_TOKENS.bruma200 }}>
       <div className="space-y-4">
         <TechnicalSubheading>Familias y variables CSS</TechnicalSubheading>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-3">
           {ROOTSY_TYPEFACE_SPECS.map((face) => (
             <TypefaceSpecCard key={face.id} face={face} />
           ))}
@@ -239,7 +238,6 @@ export function TypographyTechnicalDetails() {
           <TechnicalStylesTable title="Heading" styles={ROOTSY_HEADING_STYLES} />
           <TechnicalStylesTable title="Body" styles={ROOTSY_BODY_STYLES} />
           <TechnicalStylesTable title="Metric" styles={ROOTSY_METRIC_STYLES} />
-          <TechnicalStylesTable title="Code" styles={[ROOTSY_CODE_STYLE]} />
         </div>
       </div>
 
@@ -308,21 +306,6 @@ export function TypographyTechnicalDetails() {
         </TechnicalCard>
       </div>
 
-      <div className="space-y-4">
-        <TechnicalSubheading>font.code</TechnicalSubheading>
-        <pre
-          className="overflow-x-auto rounded-2xl border p-4 font-code text-xs leading-relaxed"
-          style={{
-            borderColor: CONCEPT_TOKENS.bruma200,
-            backgroundColor: CONCEPT_TOKENS.bruma50,
-            color: CONCEPT_TOKENS.bruma900,
-          }}
-        >
-          {`const token = "font.heading.large"
-// JetBrains Mono · 12px / 20px line-height
-font-family: var(--font-code);`}
-        </pre>
-      </div>
     </div>
   )
 }

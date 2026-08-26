@@ -1,46 +1,18 @@
 /**
- * Tema Librería — rail sombra + contenido bruma.
+ * Tema Librería — lectura en bruma; el rail usa sombra por tokens propios.
  */
 
 .rootsy-theme-library {
-  --color-shell: var(--rootsy-sombra-700);
-  --color-surface: var(--rootsy-bruma-100);
-  --color-elevated: var(--rootsy-white);
-  --color-border: var(--rootsy-bruma-200);
-  --color-text-primary: var(--rootsy-bruma-900);
-  --color-text-secondary: var(--rootsy-bruma-500);
-  --color-text-on-dark: var(--rootsy-bruma-50);
-  --color-action: var(--rootsy-savia-600);
-  --color-action-text: var(--rootsy-white);
-  --color-accent: var(--rootsy-savia-400);
+  --color-fondo: var(--rootsy-bruma-100);
+  --color-superficie: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-bruma-50);
+  --color-borde: var(--rootsy-bruma-200);
+  --color-texto: var(--rootsy-bruma-900);
+  --color-texto-muted: var(--rootsy-bruma-700);
 
+  --color-text-on-dark: var(--rootsy-sombra-50);
   --library-nav-text: var(--rootsy-sombra-300);
   --library-nav-text-hover: var(--color-text-on-dark);
   --library-nav-text-active: var(--color-text-on-dark);
   --library-nav-label: var(--rootsy-sombra-300);
-
-  --background: var(--color-surface);
-  --foreground: var(--color-text-primary);
-  --card: var(--color-elevated);
-  --card-foreground: var(--color-text-primary);
-  --popover: var(--color-elevated);
-  --popover-foreground: var(--color-text-primary);
-  --secondary: var(--rootsy-bruma-50);
-  --secondary-foreground: var(--color-text-primary);
-  --primary: var(--color-action);
-  --primary-foreground: var(--color-action-text);
-  --muted: var(--rootsy-bruma-50);
-  --muted-foreground: var(--color-text-secondary);
-  --accent: var(--rootsy-savia-100);
-  --accent-foreground: var(--rootsy-savia-900);
-  --destructive: #dc2626;
-  --destructive-foreground: var(--rootsy-white);
-  --border: var(--color-border);
-  --input: var(--rootsy-bruma-200);
-  --ring: var(--rootsy-savia-700);
-  --chart-1: var(--rootsy-savia-600);
-  --chart-2: var(--rootsy-savia-400);
-  --chart-3: var(--rootsy-savia-teal);
-  --chart-4: var(--rootsy-bruma-600);
-  --chart-5: var(--rootsy-savia-500);
 }

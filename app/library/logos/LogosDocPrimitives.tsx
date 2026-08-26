@@ -290,7 +290,7 @@ function PopAvatar({
       ) : (
         <span
           className={cn(
-            "font-black tracking-tight text-white drop-shadow",
+            "font-bold tracking-tight text-white drop-shadow",
             size === "xl" ? "text-[1.72rem]" : size === "md" ? "text-sm" : "text-[10px]",
           )}
         >

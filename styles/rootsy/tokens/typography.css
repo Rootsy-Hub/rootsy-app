@@ -1,14 +1,27 @@
 /**
  * Primitivos tipográficos Rootsy.
  * Fuente CSS espejo de lib/design-system/tokens/typography.ts
- * Las fuentes se cargan en app/layout.tsx (--font-nunito-sans, etc.)
+ * Las fuentes se cargan en app/layout.tsx sobre <html>
+ * (--font-nunito-sans, --font-inter).
+ *
+ * Inter = UI y números. Nunito Sans = lectura.
+ * El fallback va DENTRO de var(): si no, :root invalida todo el stack.
+ * 700 es el techo. ExtraBold y Black se resuelven a Bold.
  */
 
 :root {
-  --rootsy-font-ui: var(--font-nunito-sans), "Nunito Sans", sans-serif;
-  --rootsy-font-reading: var(--font-source-sans), "Source Sans 3", "Source Sans Pro", sans-serif;
-  --rootsy-font-numeric: var(--font-inter), "Inter", sans-serif;
-  --rootsy-font-code: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
+  --rootsy-font-ui: var(--font-inter, "Inter"), sans-serif;
+  --rootsy-font-reading: var(--font-nunito-sans, "Nunito Sans"), sans-serif;
+  --rootsy-font-numeric: var(--font-inter, "Inter"), sans-serif;
+
+  --rootsy-font-weight-regular: 400;
+  --rootsy-font-weight-medium: 500;
+  --rootsy-font-weight-semibold: 600;
+  --rootsy-font-weight-bold: 700;
+
+  --rootsy-text-heading-tracking: -0.02em;
+  --rootsy-text-label-tracking: 0.12em;
+  --rootsy-text-reading-measure: 65ch;
 
   /* Heading */
   --rootsy-text-heading-xxlarge-size: 2rem;
@@ -41,10 +54,29 @@
   --rootsy-text-metric-medium-lh: 1.75rem;
   --rootsy-text-metric-small-size: 1rem;
   --rootsy-text-metric-small-lh: 1.25rem;
+}
 
-  /* Code */
-  --rootsy-text-code-size: 0.75rem;
-  --rootsy-text-code-lh: 1.25rem;
+@theme inline {
+  --font-weight-extrabold: var(--rootsy-font-weight-bold);
+  --font-weight-black: var(--rootsy-font-weight-bold);
+
+  /* Puente Tailwind → escala Rootsy. text-lg 18→20, text-3xl 30→28, text-4xl 36→32. */
+  --text-xs: var(--rootsy-text-body-small-size);
+  --text-xs--line-height: var(--rootsy-text-body-small-lh);
+  --text-sm: var(--rootsy-text-body-size);
+  --text-sm--line-height: var(--rootsy-text-body-lh);
+  --text-base: var(--rootsy-text-body-large-size);
+  --text-base--line-height: var(--rootsy-text-body-large-lh);
+  --text-lg: var(--rootsy-text-heading-medium-size);
+  --text-lg--line-height: var(--rootsy-text-heading-medium-lh);
+  --text-xl: var(--rootsy-text-heading-medium-size);
+  --text-xl--line-height: var(--rootsy-text-heading-medium-lh);
+  --text-2xl: var(--rootsy-text-heading-large-size);
+  --text-2xl--line-height: var(--rootsy-text-heading-large-lh);
+  --text-3xl: var(--rootsy-text-heading-xlarge-size);
+  --text-3xl--line-height: var(--rootsy-text-heading-xlarge-lh);
+  --text-4xl: var(--rootsy-text-heading-xxlarge-size);
+  --text-4xl--line-height: var(--rootsy-text-heading-xxlarge-lh);
 }
 
 /* Alias de utilidad — compat con clases existentes en librería */
@@ -52,7 +84,8 @@
   font-family: var(--rootsy-font-ui);
 }
 
-.font-stream {
+.font-stream,
+.font-secondary {
   font-family: var(--rootsy-font-reading);
 }
 
@@ -61,11 +94,90 @@
   font-variant-numeric: tabular-nums;
 }
 
-.font-code {
-  font-family: var(--rootsy-font-code);
-}
-
 .font-numeric {
   font-family: var(--rootsy-font-numeric);
   font-variant-numeric: tabular-nums;
+}
+
+/* Roles del día a día — mismas voces y escala, listas para usar */
+.rootsy-text-page-title {
+  font-family: var(--rootsy-font-ui);
+  font-size: var(--rootsy-text-heading-large-size);
+  line-height: var(--rootsy-text-heading-large-lh);
+  font-weight: var(--rootsy-font-weight-bold);
+  letter-spacing: var(--rootsy-text-heading-tracking);
+}
+
+.rootsy-text-section-title {
+  font-family: var(--rootsy-font-ui);
+  font-size: var(--rootsy-text-heading-medium-size);
+  line-height: var(--rootsy-text-heading-medium-lh);
+  font-weight: var(--rootsy-font-weight-bold);
+  letter-spacing: var(--rootsy-text-heading-tracking);
+}
+
+.rootsy-text-body {
+  font-family: var(--rootsy-font-ui);
+  font-size: var(--rootsy-text-body-size);
+  line-height: var(--rootsy-text-body-lh);
+  font-weight: var(--rootsy-font-weight-regular);
+}
+
+.rootsy-text-meta {
+  font-family: var(--rootsy-font-ui);
+  font-size: var(--rootsy-text-body-small-size);
+  line-height: var(--rootsy-text-body-small-lh);
+  font-weight: var(--rootsy-font-weight-regular);
+}
+
+.rootsy-text-heading-small {
+  font-family: var(--rootsy-font-ui);
+  font-size: var(--rootsy-text-heading-small-size);
+  line-height: var(--rootsy-text-heading-small-lh);
+  font-weight: var(--rootsy-font-weight-bold);
+  letter-spacing: var(--rootsy-text-heading-tracking);
+}
+
+.rootsy-text-metric {
+  font-family: var(--rootsy-font-numeric);
+  font-size: var(--rootsy-text-metric-large-size);
+  line-height: var(--rootsy-text-metric-large-lh);
+  font-weight: var(--rootsy-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.rootsy-text-metric-medium {
+  font-family: var(--rootsy-font-numeric);
+  font-size: var(--rootsy-text-metric-medium-size);
+  line-height: var(--rootsy-text-metric-medium-lh);
+  font-weight: var(--rootsy-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.rootsy-text-metric-small {
+  font-family: var(--rootsy-font-numeric);
+  font-size: var(--rootsy-text-metric-small-size);
+  line-height: var(--rootsy-text-metric-small-lh);
+  font-weight: var(--rootsy-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.rootsy-text-reading {
+  font-family: var(--rootsy-font-reading);
+  font-size: var(--rootsy-text-body-large-size);
+  line-height: var(--rootsy-text-body-large-lh);
+  font-weight: var(--rootsy-font-weight-regular);
+  max-width: var(--rootsy-text-reading-measure);
+}
+
+.rootsy-text-label {
+  font-family: var(--rootsy-font-ui);
+  font-size: var(--rootsy-text-body-small-size);
+  line-height: var(--rootsy-text-body-small-lh);
+  font-weight: var(--rootsy-font-weight-semibold);
+  letter-spacing: var(--rootsy-text-label-tracking);
+  text-transform: uppercase;
 }

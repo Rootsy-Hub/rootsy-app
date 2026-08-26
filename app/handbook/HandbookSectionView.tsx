@@ -82,7 +82,7 @@ function HandbookTopicSection({
       id={topic.id}
       className={cn(
         "scroll-mt-24",
-        level === 2 && "border-t border-rootsy-bruma-200 py-10 first:border-t-0 first:pt-0",
+        level === 2 && "border-t border-[var(--color-borde)] py-10 first:border-t-0 first:pt-0",
         level === 3 && "mt-8",
       )}
     >

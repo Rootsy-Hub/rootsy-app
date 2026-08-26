@@ -22,12 +22,17 @@ import {
   libraryDocBodyClass,
   libraryDocBorderClass,
   libraryDocMetaLabelClass,
+  libraryDocMutedTextClass,
   libraryDocPageDescriptionClass,
   libraryDocPageTitleClass,
+  libraryDocPrimaryTextClass,
   libraryDocSectionTitleClass,
+  libraryDocSubheadingClass,
+  libraryDocSurfaceMutedClass,
   libraryDocTableHeaderClass,
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
+  libraryDocTokenAccentClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
@@ -62,12 +67,12 @@ function FamilyOverviewStrip({ families }: { families: HandbookColorFamily[] }) 
               />
             ))}
           </div>
-          <div className="flex items-center gap-3 bg-white px-3 py-3">
+          <div className={cn("flex items-center gap-3 px-3 py-3", libraryDocSurfaceMutedClass)}>
             <span
               className="size-7 shrink-0 rounded-full border"
               style={{
                 backgroundColor: identityHex(family),
-                borderColor: "var(--rootsy-bruma-200)",
+                borderColor: "var(--color-borde)",
               }}
             />
             <div className="min-w-0">
@@ -124,23 +129,38 @@ function FamilyRamp({ family }: { family: HandbookColorFamily }) {
                       className="size-5 shrink-0 rounded-md border"
                       style={{
                         backgroundColor: step.hex,
-                        borderColor: "var(--rootsy-bruma-200)",
+                        borderColor: "var(--color-borde)",
                       }}
                     />
-                    <span className="font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+                    <span className={cn("font-canopy text-sm font-semibold", libraryDocPrimaryTextClass)}>
                       {step.step}
                     </span>
                     {step.identity ? (
-                      <span className="font-canopy text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--rootsy-savia-600)]">
+                      <span
+                        className={cn(
+                          "font-canopy text-[10px] font-semibold uppercase tracking-[0.12em]",
+                          libraryDocTokenAccentClass,
+                        )}
+                      >
                         Identidad
                       </span>
                     ) : null}
                   </span>
                 </td>
-                <td className="px-3 py-2.5 font-numeric text-xs tabular-nums text-[var(--rootsy-bruma-700)]">
+                <td
+                  className={cn(
+                    "px-3 py-2.5 font-numeric text-xs tabular-nums",
+                    libraryDocMutedTextClass,
+                  )}
+                >
                   {step.hex.toUpperCase()}
                 </td>
-                <td className="px-3 py-2.5 font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-700)]">
+                <td
+                  className={cn(
+                    "px-3 py-2.5 font-canopy text-xs leading-relaxed",
+                    libraryDocMutedTextClass,
+                  )}
+                >
                   {step.usage}
                 </td>
               </tr>
@@ -156,7 +176,7 @@ function Swatch({ hex, className }: { hex: string; className?: string }) {
   return (
     <span
       className={cn("inline-block size-5 shrink-0 rounded-md border", className)}
-      style={{ backgroundColor: hex, borderColor: "var(--rootsy-bruma-200)" }}
+      style={{ backgroundColor: hex, borderColor: "var(--color-borde)" }}
     />
   )
 }
@@ -227,10 +247,12 @@ function AtmosphereTokensTable() {
           {HANDBOOK_ATMOSPHERE_TOKENS.map((token) => (
             <tr key={token.id} className={libraryDocTableRowClass}>
               <td className="px-3 py-2.5">
-                <p className="font-canopy text-sm font-semibold text-rootsy-bruma-900">
+                <p className={cn("font-canopy text-sm font-semibold", libraryDocPrimaryTextClass)}>
                   {token.label}
                 </p>
-                <p className="font-numeric text-[11px] text-rootsy-bruma-500">{token.token}</p>
+                <p className={cn("font-numeric text-[11px]", libraryDocMutedTextClass)}>
+                  {token.token}
+                </p>
               </td>
               {HANDBOOK_ATMOSPHERE_CONTEXTS.map((context) => {
                 const hex = atmosphereTokenHex(token, context.id)
@@ -238,14 +260,14 @@ function AtmosphereTokensTable() {
                   <td key={context.id} className="px-3 py-2.5">
                     <span className="inline-flex items-center gap-2">
                       <Swatch hex={hex} />
-                      <span className="font-canopy text-xs text-rootsy-bruma-700">
+                      <span className={cn("font-canopy text-xs", libraryDocMutedTextClass)}>
                         {token.steps[context.id]}
                       </span>
                     </span>
                   </td>
                 )
               })}
-              <td className="px-3 py-2.5 font-canopy text-xs leading-relaxed text-rootsy-bruma-700">
+              <td className={cn("px-3 py-2.5 font-canopy text-xs leading-relaxed", libraryDocMutedTextClass)}>
                 {token.purpose}
               </td>
             </tr>
@@ -274,23 +296,25 @@ function FunctionalTokensTable() {
             return (
               <tr key={token.id} className={libraryDocTableRowClass}>
                 <td className="px-3 py-2.5">
-                  <p className="font-canopy text-sm font-semibold text-rootsy-bruma-900">
+                  <p className={cn("font-canopy text-sm font-semibold", libraryDocPrimaryTextClass)}>
                     {token.label}
                   </p>
-                  <p className="font-numeric text-[11px] text-rootsy-bruma-500">{token.token}</p>
+                  <p className={cn("font-numeric text-[11px]", libraryDocMutedTextClass)}>
+                    {token.token}
+                  </p>
                 </td>
                 <td className="px-3 py-2.5">
                   <span className="inline-flex items-center gap-2">
                     <Swatch hex={hex} />
-                    <span className="font-canopy text-xs text-rootsy-bruma-700">
+                    <span className={cn("font-canopy text-xs", libraryDocMutedTextClass)}>
                       {token.familyName} · {token.step}
                     </span>
                   </span>
                 </td>
-                <td className="px-3 py-2.5 font-numeric text-xs tabular-nums text-rootsy-bruma-700">
+                <td className={cn("px-3 py-2.5 font-numeric text-xs tabular-nums", libraryDocMutedTextClass)}>
                   {hex.toUpperCase()}
                 </td>
-                <td className="px-3 py-2.5 font-canopy text-xs leading-relaxed text-rootsy-bruma-700">
+                <td className={cn("px-3 py-2.5 font-canopy text-xs leading-relaxed", libraryDocMutedTextClass)}>
                   {token.purpose}
                 </td>
               </tr>
@@ -303,10 +327,10 @@ function FunctionalTokensTable() {
 }
 
 const CONTRAST_LEVEL_CLASS: Record<HandbookContrastLevel, string> = {
-  AAA: "bg-[var(--rootsy-savia-50)] text-[var(--rootsy-savia-800)]",
-  AA: "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-700)]",
-  "AA grande": "bg-[#FDF8E8] text-[#523406]",
-  No: "bg-[#FDF5F2] text-[#58170A]",
+  AAA: "bg-rootsy-savia-50 text-rootsy-savia-800",
+  AA: "bg-rootsy-bruma-50 text-rootsy-bruma-700",
+  "AA grande": "bg-rootsy-sol-50 text-rootsy-sol-900",
+  No: "bg-rootsy-lava-50 text-rootsy-lava-800",
 }
 
 function ContrastPairsTable({ pairs }: { pairs: HandbookContrastPair[] }) {
@@ -333,27 +357,27 @@ function ContrastPairsTable({ pairs }: { pairs: HandbookContrastPair[] }) {
                       style={{
                         backgroundColor: background,
                         color: foreground,
-                        borderColor: "var(--rootsy-bruma-200)",
+                        borderColor: "var(--color-borde)",
                       }}
                     >
                       Aa
                     </span>
                     <div>
-                      <p className="font-canopy text-sm font-semibold text-rootsy-bruma-900">
+                      <p className={cn("font-canopy text-sm font-semibold", libraryDocPrimaryTextClass)}>
                         {pair.label}
                       </p>
-                      <p className="font-numeric text-[11px] tabular-nums text-rootsy-bruma-500">
+                      <p className={cn("font-numeric text-[11px] tabular-nums", libraryDocMutedTextClass)}>
                         {foreground.toUpperCase()} · {background.toUpperCase()}
                       </p>
                     </div>
                   </div>
                 </td>
-                <td className="px-3 py-2.5 font-canopy text-xs leading-relaxed text-rootsy-bruma-700">
+                <td className={cn("px-3 py-2.5 font-canopy text-xs leading-relaxed", libraryDocMutedTextClass)}>
                   {pair.context}
                 </td>
                 <td className="px-3 py-2.5">
                   <span className="flex flex-col items-start gap-1">
-                    <span className="font-numeric text-sm tabular-nums text-rootsy-bruma-900">
+                    <span className={cn("font-numeric text-sm tabular-nums", libraryDocPrimaryTextClass)}>
                       {pair.ratio}
                     </span>
                     <span
@@ -385,16 +409,16 @@ export function HandbookColorView() {
         atención o peligro.
       </p>
       <p className={cn(libraryDocBodyClass, "mt-3")}>
-        Esta paleta es la referencia para auditar el producto. Cada familia tiene once pasos,
+        Esta paleta es la que usa la aplicación. Cada familia tiene once pasos,
         de 50 a 950. El paso marcado es la identidad de la familia. Si un color en la aplicación
         no está acá, no entra.
       </p>
 
       <section
         id="atmosferas-del-mundo"
-        className="scroll-mt-24 border-t border-rootsy-bruma-200 py-10"
+        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
       >
-        <h2 className={cn(libraryDocSectionTitleClass, "text-base")}>Atmósferas del mundo</h2>
+        <h2 className={libraryDocSectionTitleClass}>Atmósferas del mundo</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Éter, bruma y sombra son el aire de cada pantalla. Se elige una atmósfera por contexto;
           no se mezclan como si fueran acentos.
@@ -409,9 +433,9 @@ export function HandbookColorView() {
 
       <section
         id="colores-funcionales"
-        className="scroll-mt-24 border-t border-rootsy-bruma-200 py-10"
+        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
       >
-        <h2 className={cn(libraryDocSectionTitleClass, "text-base")}>Colores funcionales</h2>
+        <h2 className={libraryDocSectionTitleClass}>Colores funcionales</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Savia, cielo de día, sol y lava comunican qué está pasando y cuál es el próximo
           movimiento. No pintan el mundo: marcan acción, estado y prioridad.
@@ -426,9 +450,9 @@ export function HandbookColorView() {
 
       <section
         id="tokens-de-color"
-        className="scroll-mt-24 border-t border-rootsy-bruma-200 py-10"
+        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
       >
-        <h2 className={cn(libraryDocSectionTitleClass, "text-base")}>Tokens de color</h2>
+        <h2 className={libraryDocSectionTitleClass}>Tokens de color</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Los tokens nombran propósito. El hex sale de la paleta. Un token, un trabajo: no se
           escribe un color suelto ni se reutiliza un paso porque “queda parecido”.
@@ -441,7 +465,7 @@ export function HandbookColorView() {
           La savia de acción es la misma en las tres atmósferas. Cambia el aire, no el verbo.
         </p>
 
-        <h3 className={cn(libraryDocSectionTitleClass, "mt-8 text-sm")}>
+        <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>
           Tokens de atmósfera
         </h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
@@ -458,7 +482,7 @@ export function HandbookColorView() {
           {HANDBOOK_BRUMA_NOCHE.muted}. No es una familia nueva.
         </p>
 
-        <h3 className={cn(libraryDocSectionTitleClass, "mt-8 text-sm")}>
+        <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>
           Tokens funcionales
         </h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
@@ -481,16 +505,16 @@ export function HandbookColorView() {
 
       <section
         id="contraste-y-legibilidad"
-        className="scroll-mt-24 border-t border-rootsy-bruma-200 py-10"
+        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
       >
-        <h2 className={cn(libraryDocSectionTitleClass, "text-base")}>Contraste y legibilidad</h2>
+        <h2 className={libraryDocSectionTitleClass}>Contraste y legibilidad</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Objetivo mínimo: WCAG 2.1 AA. Texto normal pide 4.5:1. Texto grande o botón semibold
           pide 3:1 (AA grande). Los pares marcados No o AA grande en anti-patrones no se usan
           como cuerpo.
         </p>
 
-        <h3 className={cn(libraryDocSectionTitleClass, "mt-8 text-sm")}>Pares que pasan</h3>
+        <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>Pares que pasan</h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
           Combinaciones de la paleta, medidas con luminancia relativa.
         </p>
@@ -498,7 +522,7 @@ export function HandbookColorView() {
           <ContrastPairsTable pairs={HANDBOOK_CONTRAST_PASS} />
         </div>
 
-        <h3 className={cn(libraryDocSectionTitleClass, "mt-8 text-sm")}>Anti-patrones</h3>
+        <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>Anti-patrones</h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
           Tentadoras, ilegibles o apenas suficientes para un botón grande. No son pares de
           lectura.
@@ -507,7 +531,7 @@ export function HandbookColorView() {
           <ContrastPairsTable pairs={HANDBOOK_CONTRAST_FAIL} />
         </div>
 
-        <h3 className={cn(libraryDocSectionTitleClass, "mt-8 text-sm")}>Reglas rápidas</h3>
+        <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>Reglas rápidas</h3>
         <ul className={cn(libraryDocBodyClass, "mt-4 list-disc space-y-1.5 pl-5")}>
           {HANDBOOK_CONTRAST_RULES.map((rule) => (
             <li key={rule}>{rule}</li>

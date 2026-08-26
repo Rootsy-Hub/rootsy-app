@@ -37,7 +37,7 @@ export const libraryShellMainClass = "rootsy-library-shell"
 export const libraryScrollDarkClass = "library-scroll library-scroll--dark"
 export const libraryScrollLightClass = "library-scroll library-scroll--light"
 
-/** Superficies de documentación — bruma/blanco, sin sombra (layout · bloques). */
+/** Superficies de documentación — bruma, sin sombra (layout · bloques). */
 export const librarySpecCardClass = "library-spec-card"
 export const libraryDocCardClass = "library-doc-card"
 export const libraryDocPanelClass = "library-doc-panel"
@@ -45,33 +45,34 @@ export const libraryDocTableShellClass = "library-doc-table-shell"
 export const libraryDoPanelClass = "library-doc-do-panel"
 export const libraryDontPanelClass = "library-doc-dont-panel"
 
-/** Tipografía de documentación — mismo contrato que módulos POP (dataWorkspaceListStyles). */
+/** Tipografía de documentación — títulos UI, prosa de lectura. */
 export const libraryDocSectionTitleClass =
-  "font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]"
+  "rootsy-text-section-title text-[var(--color-texto)]"
+export const libraryDocSubheadingClass =
+  "rootsy-text-heading-small text-[var(--color-texto)]"
 export const libraryDocSectionDescriptionClass =
-  "max-w-2xl font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]"
+  "max-w-2xl rootsy-text-meta leading-relaxed text-[var(--color-texto-muted)]"
 export const libraryDocBodyClass =
-  "max-w-3xl font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-700)]"
+  "rootsy-text-reading text-[var(--color-texto)]"
 export const libraryDocPageTitleClass =
-  "font-canopy text-lg font-semibold tracking-tight text-[var(--rootsy-bruma-900)]"
+  "rootsy-text-page-title text-[var(--color-texto)]"
 export const libraryDocPageDescriptionClass =
-  "font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]"
-/** Metadatos, eyebrows y subheadings técnicos — mismo bruma-500, énfasis en peso. */
+  "rootsy-text-meta leading-relaxed text-[var(--color-texto-muted)]"
+/** Metadatos, eyebrows y subheadings técnicos. Mínimo 12px. */
 export const libraryDocMetaLabelClass =
-  "font-canopy text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]"
-/** Bordes de documentación — bruma-200 (no border-border shadcn). */
-export const libraryDocBorderClass = "border-[var(--rootsy-bruma-200)]"
+  "rootsy-text-label text-[var(--color-texto-muted)]"
+export const libraryDocBorderClass = "border-[var(--color-borde)]"
 export const libraryRelatedLinksSectionClass =
-  "library-related-links space-y-3 border-t border-[var(--rootsy-bruma-200)] pt-8"
+  "library-related-links space-y-3 border-t border-[var(--color-borde)] pt-8"
 
 /** Tablas de documentación — header y filas con bruma. */
 export const libraryDocTableShellOverflowClass =
   "library-doc-table-shell overflow-hidden rounded-2xl"
 export const libraryDocTableHeaderClass =
-  "border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]"
+  "border-b border-[var(--color-borde)] bg-[var(--color-elevada)] text-xs font-bold uppercase tracking-[0.12em] text-[var(--color-texto-muted)]"
 export const libraryDocTableRowClass =
-  "border-b border-[var(--rootsy-bruma-200)] last:border-b-0"
-export const libraryDocMutedTextClass = "text-[var(--rootsy-bruma-500)]"
-export const libraryDocPrimaryTextClass = "text-[var(--rootsy-bruma-900)]"
-export const libraryDocTokenAccentClass = "text-[var(--rootsy-savia-600)]"
-export const libraryDocSurfaceMutedClass = "bg-[var(--rootsy-bruma-50)]"
+  "border-b border-[var(--color-borde)] last:border-b-0"
+export const libraryDocMutedTextClass = "text-[var(--color-texto-muted)]"
+export const libraryDocPrimaryTextClass = "text-[var(--color-texto)]"
+export const libraryDocTokenAccentClass = "text-[var(--color-accion)]"
+export const libraryDocSurfaceMutedClass = "bg-[var(--color-elevada)]"

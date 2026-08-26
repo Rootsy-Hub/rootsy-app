@@ -295,7 +295,7 @@ export const USER_PROFILE_ANATOMY = [
   {
     term: "Nombre",
     definition:
-      "profile.fullName · font.body (14 px, regular, Nunito Sans). En sombra: text-on-dark. Truncar. A la izquierda de la foto, alineado a la derecha.",
+      "profile.fullName · font.body (14 px, regular, Inter). En sombra: text-on-dark. Truncar. A la izquierda de la foto, alineado a la derecha.",
   },
   {
     term: "Rol",
@@ -320,7 +320,7 @@ export const USER_PROFILE_MEASURES = [
   { token: "radius.full", value: "círculo", note: "Avatares — manifiesto de radio" },
   { token: "space.150", value: "12 px", note: "Gap avatar ↔ contenido" },
   { token: "space.100", value: "8 px", note: "Punto de presencia — un tamaño, ambas densidades" },
-  { token: "font.body", value: "14 / 400", note: "Nombre · Nunito Sans" },
+  { token: "font.body", value: "14 / 400", note: "Nombre · Inter" },
   { token: "font.body.small", value: "12 / 400", note: "Rol · metadato, no versales" },
   { token: "color.text-on-dark", value: "blanco", note: "Nombre sobre chrome sombra" },
   { token: "bruma.400", value: "meta", note: "Rol — savia solo en acción o foco, no en identidad" },

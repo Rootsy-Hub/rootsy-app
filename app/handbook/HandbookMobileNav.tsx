@@ -31,18 +31,21 @@ export function HandbookMobileNav({
     <details className="lg:hidden">
       <summary
         className={cn(
-          "flex cursor-pointer list-none items-center justify-between rounded-xl border px-4 py-3",
-          "border-[var(--rootsy-bruma-200)] bg-white text-sm font-medium text-[var(--rootsy-bruma-900)]",
+          "handbook-mobile-trigger flex cursor-pointer list-none items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium",
         )}
       >
         Secciones
-        <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
+        <span
+          className={cn(
+            "handbook-mobile-trigger-meta text-xs font-semibold uppercase tracking-[0.12em]",
+          )}
+        >
           {isDesignSystem ? "Sistema de diseño" : "Handbook"}
         </span>
       </summary>
       <div
         className={cn(
-          "mt-3 overflow-hidden rounded-2xl border border-[var(--rootsy-sombra-border)]",
+          "handbook-rail mt-3 overflow-hidden rounded-2xl border",
           librarySidebarClass,
         )}
       >

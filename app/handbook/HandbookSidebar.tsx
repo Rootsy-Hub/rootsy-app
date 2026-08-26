@@ -31,7 +31,7 @@ export function HandbookSidebar({
   return (
     <aside
       className={cn(
-        "hidden min-h-0 w-64 shrink-0 flex-col overflow-hidden border-r lg:flex",
+        "handbook-rail hidden min-h-0 w-64 shrink-0 flex-col overflow-hidden border-r lg:flex",
         librarySidebarClass,
       )}
     >

@@ -177,31 +177,31 @@ export const dataWorkspaceBlocksSkeletonBreathTone = {
 
 /** Eyebrow / meta de tarjeta entidad. */
 export const dataWorkspaceEntityCardEyebrowClass =
-  "font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]"
+  "rootsy-text-label text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardTitleClass =
-  "font-canopy text-base font-semibold text-[var(--rootsy-bruma-900)]"
+  "rootsy-text-heading-small text-[var(--rootsy-bruma-900)]"
 
 export const dataWorkspaceEntityCardStatLabelClass =
-  "font-canopy text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--rootsy-bruma-500)]"
+  "rootsy-text-label text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardStatValueClass =
-  "block min-w-0 truncate font-numeric font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]"
+  "block min-w-0 truncate rootsy-text-metric-small text-[var(--rootsy-bruma-900)]"
 
 export const dataWorkspaceEntityCardStatValueLargeClass =
-  "block min-w-0 truncate font-numeric text-2xl font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]"
+  "block min-w-0 truncate rootsy-text-metric-medium text-[var(--rootsy-bruma-900)]"
 
 export const dataWorkspaceEntityCardBadgeClass =
-  "inline-flex items-center gap-1.5 rounded-lg border border-[var(--rootsy-bruma-200)] bg-white px-2.5 py-1.5 font-canopy text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)] shadow-xs [&_svg]:size-3.5 [&_svg]:text-[var(--rootsy-bruma-500)]"
+  "inline-flex items-center gap-1.5 rounded-lg border border-[var(--rootsy-bruma-200)] bg-white px-2.5 py-1.5 rootsy-text-label text-[var(--rootsy-bruma-500)] shadow-xs [&_svg]:size-3.5 [&_svg]:text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardStatusOpenClass =
-  "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] px-2.5 py-1 font-canopy text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--rootsy-savia-800)]"
+  "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] px-2.5 py-1 rootsy-text-label text-[var(--rootsy-savia-800)]"
 
 export const dataWorkspaceEntityCardStatusClosedClass =
-  "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-white px-2.5 py-1 font-canopy text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)]"
+  "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-white px-2.5 py-1 rootsy-text-label text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardStatusInactiveClass =
-  "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-2.5 py-1 font-canopy text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)]"
+  "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-2.5 py-1 rootsy-text-label text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardMenuTriggerClass = cn(
   "inline-flex size-8 items-center justify-center rounded-lg text-[var(--rootsy-bruma-500)] transition-colors outline-none",
@@ -647,7 +647,7 @@ export const listToolbarFilterTriggerActiveClass =
 
 /** Badge de cantidad en trigger «Filtros» — círculo fijo 20×20 · acento savia-400. */
 export const listToolbarFilterCountBadgeClass =
-  "inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,transparent)] text-[10px] font-semibold tabular-nums leading-none text-[var(--rootsy-savia-400)]"
+  "inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,transparent)] text-xs font-semibold tabular-nums leading-none text-[var(--rootsy-savia-400)]"
 
 /** Barra filtros activos — h-11 · una fila con chips (fondo lo aporta el stack). */
 export const listActiveFiltersBarClass = cn(

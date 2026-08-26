@@ -24,9 +24,8 @@ export function ColorNewSemanticSection() {
     >
       <div className="space-y-10">
         <ColorDocLead>
-          Los tokens nombran propósito, no familia decorativa. --color-action es savia 600 en
-          POS y workspace; en marketing el mismo token mapea a savia 500. Aviso y peligro usan
-          colores funcionales fuera de la paleta principal.
+          Los tokens nombran propósito, no familia decorativa. --color-accion es savia 600 en
+          cualquier atmósfera. Atención es sol; peligro es lava; información es cielo de día.
         </ColorDocLead>
 
         <ColorDocSection
@@ -54,8 +53,8 @@ export function ColorNewSemanticSection() {
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Un token, un hex — referenciá variables CSS de tema (--color-shell, --color-action)."
-          dontText="No uses savia en auroras blur ni atmósfera en formularios operativos."
+          doText="Nombrá el propósito y tomá el paso de la paleta. --color-accion es savia 600 en cualquier pantalla."
+          dontText="No pongas un hex a mano ni uses lava para atención, sol para error o savia para pintar un fondo entero."
         />
       </div>
     </LibrarySection>

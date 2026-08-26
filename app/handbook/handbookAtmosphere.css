@@ -1,0 +1,90 @@
+/**
+ * Atmósferas del handbook.
+ * Rail = sombra (dosel). Contenido = bruma (aire para leer).
+ * Los funcionales (savia) no pintan el mundo: solo foco y activo.
+ */
+
+.handbook-shell {
+  --color-fondo: var(--rootsy-bruma-100);
+  --color-superficie: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-bruma-50);
+  --color-borde: var(--rootsy-bruma-200);
+  --color-texto: var(--rootsy-bruma-900);
+  --color-texto-muted: var(--rootsy-bruma-700);
+
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+}
+
+.handbook-rail {
+  --color-fondo: var(--rootsy-sombra-700);
+  --color-superficie: var(--rootsy-sombra-600);
+  --color-elevada: var(--rootsy-sombra-500);
+  --color-borde: var(--rootsy-sombra-400);
+  --color-texto: var(--rootsy-sombra-50);
+  --color-texto-muted: var(--rootsy-sombra-300);
+
+  --library-nav-text: var(--color-texto-muted);
+  --library-nav-text-hover: var(--color-texto);
+  --library-nav-text-active: var(--color-texto);
+  --library-nav-label: var(--color-texto-muted);
+
+  background-color: var(--color-fondo) !important;
+  border-color: var(--color-borde) !important;
+  color: var(--color-texto);
+}
+
+.handbook-rail .library-nav-group--separated {
+  border-top-color: color-mix(in srgb, var(--color-texto) 8%, transparent);
+}
+
+.handbook-rail .library-nav-item {
+  border: 1px solid transparent;
+}
+
+.handbook-rail .library-nav-item:hover {
+  background-color: color-mix(in srgb, var(--color-texto) 6%, transparent);
+}
+
+.handbook-rail .library-nav-item:focus-visible {
+  outline: 2px solid var(--color-foco);
+  outline-offset: 1px;
+}
+
+.handbook-rail .library-nav-item--active {
+  font-weight: 600;
+  color: var(--color-texto);
+  background-color: color-mix(in srgb, var(--color-foco) 16%, var(--color-fondo));
+  border-color: color-mix(in srgb, var(--color-foco) 28%, var(--color-fondo));
+}
+
+.handbook-rail .library-nav-item--active:hover {
+  background-color: color-mix(in srgb, var(--color-foco) 22%, var(--color-fondo));
+}
+
+.handbook-rail .library-nav-item--active .library-nav-item-icon {
+  opacity: 1;
+  color: var(--color-foco);
+}
+
+.handbook-shell .handbook-content {
+  --color-fondo: var(--rootsy-bruma-100);
+  --color-superficie: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-bruma-50);
+  --color-borde: var(--rootsy-bruma-200);
+  --color-texto: var(--rootsy-bruma-900);
+  --color-texto-muted: var(--rootsy-bruma-700);
+
+  background-color: var(--color-fondo) !important;
+  color: var(--color-texto);
+}
+
+.handbook-mobile-trigger {
+  border-color: var(--color-borde);
+  background-color: var(--color-elevada);
+  color: var(--color-texto);
+}
+
+.handbook-mobile-trigger-meta {
+  color: var(--color-texto-muted);
+}

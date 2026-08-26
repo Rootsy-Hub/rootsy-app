@@ -936,7 +936,7 @@ export function InvoicesWorkspaceView() {
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/80">
                     Total factura
                   </p>
-                  <p className="mt-1 text-3xl font-black tabular-nums tracking-tight text-primary">
+                  <p className="mt-1 text-3xl font-bold font-numeric tabular-nums tracking-tight text-primary">
                     {invoiceMoneyFormatter.format(issuedHighlight.impTotal)}
                   </p>
                 </div>

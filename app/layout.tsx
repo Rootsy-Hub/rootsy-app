@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Nunito_Sans, Source_Sans_3 } from 'next/font/google'
+import { Inter, Nunito_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/context/AuthContextSupabase'
 import { QueryProvider } from '@/components/providers/QueryProvider'
@@ -8,23 +8,19 @@ import { ROOTSY_BRAND_TITLE } from '@/lib/rootsyBrand'
 import { RootsyToaster } from '@/components/rootsy-toast'
 import './globals.css'
 
-// Fuente principal del proyecto
-const nunitoSans = Nunito_Sans({
-  subsets: ["latin"],
-  variable: '--font-nunito-sans',
-  weight: ['400', '500', '600', '700', '800', '900']
-});
-// Fuente secundaria del proyecto
-const sourceSans = Source_Sans_3({
-  subsets: ["latin"],
-  variable: '--font-source-sans',
-  weight: ['400', '500', '600', '700']
-});
-/** Importes, totales y columnas numéricas */
+/** Chrome del producto y números: títulos, botones, labels, montos. */
 const inter = Inter({
   subsets: ["latin"],
   variable: '--font-inter',
   weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+/** Prosa: handbook, ayuda, bloques largos. */
+const nunitoSans = Nunito_Sans({
+  subsets: ["latin"],
+  variable: '--font-nunito-sans',
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
 });
 
 export const viewport: Viewport = {
@@ -70,11 +66,11 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
-      className="dark scroll-smooth"
+      className={`${inter.variable} ${nunitoSans.variable} dark scroll-smooth`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <body className={`${nunitoSans.variable} ${sourceSans.variable} ${inter.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <AuthProvider initialUser={initialUser}>
           <QueryProvider>
             {children}

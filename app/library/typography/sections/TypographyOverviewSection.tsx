@@ -30,7 +30,7 @@ export function TypographyOverviewSection() {
         <TypographyDocSection
           id="typography-voices"
           title="Tres voces"
-          description="UI, lectura y números — cada una con un rol claro."
+          description="Inter en chrome y montos. Nunito Sans en la prosa."
         >
           <TypographyVoicesRow />
         </TypographyDocSection>

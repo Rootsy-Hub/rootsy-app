@@ -388,7 +388,7 @@ export function ConceptTypeScaleDemo() {
         Total del día
       </p>
       <p className="font-canopy text-xs leading-relaxed" style={{ color: CONCEPT_TOKENS.bruma500 }}>
-        Título → contexto → cuerpo → monto → metadato. UI en Nunito, montos en Inter.
+        Título → contexto → cuerpo → monto → metadato. UI en Inter, montos en Inter tabular.
       </p>
     </ConceptWhiteCard>
   )

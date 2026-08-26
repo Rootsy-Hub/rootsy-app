@@ -1,19 +1,9 @@
 /**
- * Paletas de color del handbook — referencia para auditar el producto.
- * No alimenta la aplicación. Los hex que ya existen en tokens se reutilizan;
- * los pasos faltantes y lava se definen acá como destino.
+ * Paletas de color del handbook — la misma paleta que alimenta el producto.
+ * Los hex se resuelven desde lib/design-system. No se inventan colores sueltos.
  */
 
-import {
-  ROOTSY_CIELO,
-  ROOTSY_COLOR_RAMPS,
-  ROOTSY_ETER,
-  ROOTSY_SOL,
-} from "@/lib/design-system"
-
-const sombra = ROOTSY_COLOR_RAMPS.sombra
-const bruma = ROOTSY_COLOR_RAMPS.bruma
-const savia = ROOTSY_COLOR_RAMPS.savia
+import { ROOTSY_COLOR_RAMPS } from "@/lib/design-system"
 
 export const HANDBOOK_COLOR_STEPS = [
   "50",
@@ -80,19 +70,7 @@ export const HANDBOOK_ETER: HandbookColorFamily = family({
     "Noche profunda, estrellas y un horizonte de luz fría. Encabeza, contiene y abre espacio. Es el afuera del planeta: el vacío desde el que se mira el negocio.",
   not: "No es sombra (el bosque bajo el dosel) ni cielo de día.",
   identity: "900",
-  hexes: {
-    "50": "#F3F8FB",
-    "100": ROOTSY_ETER["100"],
-    "200": ROOTSY_ETER["200"],
-    "300": "#8FB4C8",
-    "400": "#5A8AA4",
-    "500": "#2F5A78",
-    "600": "#163848",
-    "700": ROOTSY_ETER["700"],
-    "800": ROOTSY_ETER["800"],
-    "900": ROOTSY_ETER["900"],
-    "950": ROOTSY_ETER["950"],
-  },
+  hexes: ROOTSY_COLOR_RAMPS.eter,
   usage: {
     "50": "Resplandor extremo del horizonte.",
     "100": "Luz fría — línea de horizonte y borde.",
@@ -117,19 +95,7 @@ export const HANDBOOK_BRUMA: HandbookColorFamily = family({
     "Neblina clara de día y la misma neblina invertida de noche. Workspaces, tablas, tickets y formularios. Es el aire: no decora, deja ver.",
   not: "No es gris slate de dashboard ni sombra. Bruma oscura usa estos mismos pasos, no una familia nueva.",
   identity: "100",
-  hexes: {
-    "50": bruma["50"],
-    "100": bruma["100"],
-    "200": bruma["200"],
-    "300": bruma["300"],
-    "400": bruma["400"],
-    "500": bruma["500"],
-    "600": bruma["600"],
-    "700": bruma["700"],
-    "800": bruma["800"],
-    "900": bruma["900"],
-    "950": bruma["950"],
-  },
+  hexes: ROOTSY_COLOR_RAMPS.bruma,
   usage: {
     "50": "Superficie de listado y filas zebra.",
     "100": "Panel de lectura — ticket, tablas, workspace.",
@@ -154,19 +120,7 @@ export const HANDBOOK_SOMBRA: HandbookColorFamily = family({
     "Carbón verdoso del bosque. Shells operativos, catálogos, rieles y cards bajo el dosel. Es el hábitat de la operación densa: contiene, no compite con la savia.",
   not: "No es éter (el espacio) ni bruma oscura (la neblina de noche).",
   identity: "600",
-  hexes: {
-    "50": "#F3F6F4",
-    "100": "#E5ECE8",
-    "200": "#C5D0CA",
-    "300": sombra["300"],
-    "400": sombra["400"],
-    "500": sombra["500"],
-    "600": sombra["600"],
-    "700": sombra["700"],
-    "800": sombra["800"],
-    "900": sombra["900"],
-    "950": sombra["950"],
-  },
+  hexes: ROOTSY_COLOR_RAMPS.sombra,
   usage: {
     "50": "Texto inverso suave sobre el dosel.",
     "100": "Velo claro — labels y glows livianos.",
@@ -191,19 +145,7 @@ export const HANDBOOK_SAVIA: HandbookColorFamily = family({
     "El único verde con intención. Confirma, enfoca y marca éxito. Aparece poco y solo donde hay que moverse.",
   not: "No pinta superficies enteras. No reemplaza éter, bruma ni sombra.",
   identity: "600",
-  hexes: {
-    "50": savia["50"],
-    "100": savia["100"],
-    "200": savia["200"],
-    "300": savia["300"],
-    "400": savia["400"],
-    "500": savia["500"],
-    "600": savia["600"],
-    "700": savia["700"],
-    "800": savia["800"],
-    "900": savia["900"],
-    "950": savia["950"],
-  },
+  hexes: ROOTSY_COLOR_RAMPS.savia,
   usage: {
     "50": "Filas pagadas y highlights suaves.",
     "100": "Badges suaves en ticket claro.",
@@ -228,19 +170,7 @@ export const HANDBOOK_CIELO_DE_DIA: HandbookColorFamily = family({
     "Cerúleo de siesta. Informa, abre y señala lo que está en curso. Es el cielo abierto del negocio, no el espacio.",
   not: "No es éter ni un azul de plantilla. No se usa como atmósfera de pantalla.",
   identity: "500",
-  hexes: {
-    "50": ROOTSY_CIELO["50"],
-    "100": ROOTSY_CIELO["100"],
-    "200": ROOTSY_CIELO["200"],
-    "300": "#76BDF4",
-    "400": ROOTSY_CIELO["400"],
-    "500": ROOTSY_CIELO["500"],
-    "600": ROOTSY_CIELO["600"],
-    "700": ROOTSY_CIELO["700"],
-    "800": ROOTSY_CIELO["800"],
-    "900": "#062E52",
-    "950": "#041A30",
-  },
+  hexes: ROOTSY_COLOR_RAMPS.cielo,
   usage: {
     "50": "Lavado más claro — fondos de estado.",
     "100": "Superficie de aviso informativo.",
@@ -265,19 +195,7 @@ export const HANDBOOK_SOL: HandbookColorFamily = family({
     "Amarillo sol a través del dosel. Llama la atención y marca lo que se está preparando. Calor vivo, no otoño ni plantilla de warning.",
   not: "No es lava. No es el ámbar genérico de aviso.",
   identity: "500",
-  hexes: {
-    "50": ROOTSY_SOL["50"],
-    "100": ROOTSY_SOL["100"],
-    "200": ROOTSY_SOL["200"],
-    "300": "#F5D054",
-    "400": ROOTSY_SOL["400"],
-    "500": ROOTSY_SOL["500"],
-    "600": ROOTSY_SOL["600"],
-    "700": ROOTSY_SOL["700"],
-    "800": ROOTSY_SOL["800"],
-    "900": "#523406",
-    "950": "#2E1C04",
-  },
+  hexes: ROOTSY_COLOR_RAMPS.sol,
   usage: {
     "50": "Lavado más claro — fondos de atención.",
     "100": "Superficie de estado cálido.",
@@ -302,19 +220,7 @@ export const HANDBOOK_LAVA: HandbookColorFamily = family({
     "Magma del mundo. Error, riesgo y acciones destructivas. Tiene calor de volcán, no el rojo de un dashboard.",
   not: "No es sol. No es un rojo de plantilla. No se usa para atención rutinaria.",
   identity: "600",
-  hexes: {
-    "50": "#FDF5F2",
-    "100": "#F8E0D6",
-    "200": "#F0B8A4",
-    "300": "#E48868",
-    "400": "#D45C38",
-    "500": "#C43A18",
-    "600": "#A82C12",
-    "700": "#82220E",
-    "800": "#58170A",
-    "900": "#381008",
-    "950": "#1C0805",
-  },
+  hexes: ROOTSY_COLOR_RAMPS.lava,
   usage: {
     "50": "Fondo de error suave.",
     "100": "Banner y fila de riesgo.",

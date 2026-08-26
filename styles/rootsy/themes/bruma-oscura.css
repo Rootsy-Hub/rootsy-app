@@ -1,27 +1,13 @@
 /**
- * Tema Bruma oscura — variante night de workspace.
- * Misma familia bruma, invertida. No es sombra (bosque) ni éter (espacio).
+ * Tema Bruma oscura — misma familia bruma, invertida.
+ * Fondo 950 · superficie 800 · elevada 700 · borde 700 · texto 50 · muted 400.
  */
 
 .rootsy-theme-bruma-oscura {
-  --color-shell: var(--rootsy-bruma-950);
-  --color-surface: var(--rootsy-bruma-800);
-  --color-elevated: var(--rootsy-bruma-700);
-  --color-border: color-mix(in srgb, var(--rootsy-bruma-600) 52%, var(--rootsy-bruma-800));
-  --color-text-primary: var(--rootsy-bruma-50);
-  --color-text-secondary: var(--rootsy-bruma-400);
-  --color-action: var(--rootsy-savia-600);
-  --color-action-text: var(--rootsy-white);
-  --color-accent: var(--rootsy-savia-400);
-
-  --background: var(--color-shell);
-  --foreground: var(--color-text-primary);
-  --card: var(--color-surface);
-  --card-foreground: var(--color-text-primary);
-  --primary: var(--color-action);
-  --primary-foreground: var(--color-action-text);
-  --muted: var(--color-elevated);
-  --muted-foreground: var(--color-text-secondary);
-  --border: var(--color-border);
-  --ring: var(--rootsy-bruma-400);
+  --color-fondo: var(--rootsy-bruma-950);
+  --color-superficie: var(--rootsy-bruma-800);
+  --color-elevada: var(--rootsy-bruma-700);
+  --color-borde: var(--rootsy-bruma-700);
+  --color-texto: var(--rootsy-bruma-50);
+  --color-texto-muted: var(--rootsy-bruma-400);
 }

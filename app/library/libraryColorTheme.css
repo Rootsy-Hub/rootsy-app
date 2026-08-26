@@ -7,30 +7,29 @@
  */
 
 .rootsy-library-shell {
-  background-color: var(--color-surface, var(--rootsy-bruma-100)) !important;
-  color: var(--color-text-primary, var(--rootsy-bruma-900));
+  background-color: var(--color-fondo) !important;
+  color: var(--color-texto);
   overflow: hidden !important;
 
-  /* Puente shadcn → bruma/savia (sin nature-palette legacy). */
-  --background: var(--color-surface, var(--rootsy-bruma-100));
-  --foreground: var(--rootsy-bruma-900);
-  --card: var(--color-elevated, var(--rootsy-white));
-  --card-foreground: var(--rootsy-bruma-900);
-  --popover: var(--color-elevated, var(--rootsy-white));
-  --popover-foreground: var(--rootsy-bruma-900);
-  --secondary: var(--rootsy-bruma-50);
-  --secondary-foreground: var(--rootsy-bruma-900);
-  --muted: var(--rootsy-bruma-50);
-  --muted-foreground: var(--rootsy-bruma-500);
+  --background: var(--color-fondo);
+  --foreground: var(--color-texto);
+  --card: var(--color-elevada);
+  --card-foreground: var(--color-texto);
+  --popover: var(--color-elevada);
+  --popover-foreground: var(--color-texto);
+  --secondary: var(--color-superficie);
+  --secondary-foreground: var(--color-texto);
+  --muted: var(--color-elevada);
+  --muted-foreground: var(--color-texto-muted);
   --accent: var(--rootsy-savia-100);
-  --accent-foreground: var(--rootsy-savia-900);
-  --primary: var(--color-action, var(--rootsy-savia-600));
-  --primary-foreground: var(--color-action-text, var(--rootsy-white));
-  --destructive: #dc2626;
-  --destructive-foreground: var(--rootsy-white);
-  --border: var(--color-border, var(--rootsy-bruma-200));
-  --input: var(--rootsy-bruma-200);
-  --ring: var(--rootsy-savia-700);
+  --accent-foreground: var(--rootsy-savia-800);
+  --primary: var(--color-accion);
+  --primary-foreground: var(--color-action-text);
+  --destructive: var(--color-peligro);
+  --destructive-foreground: var(--rootsy-savia-50);
+  --border: var(--color-borde);
+  --input: var(--color-borde);
+  --ring: var(--color-foco);
 }
 
 /* Fuerza bruma en utilidades shadcn — evita oklch Paradise Park residual. */
@@ -41,7 +40,7 @@
 
 .rootsy-theme-library.rootsy-app-light .text-muted-foreground,
 .rootsy-library-shell .text-muted-foreground {
-  color: var(--rootsy-bruma-500);
+  color: var(--rootsy-bruma-700);
 }
 
 .rootsy-library-shell > .relative.flex {
@@ -49,9 +48,9 @@
 }
 
 .library-sidebar {
-  /* Rail oscuro — tokens sombra + nav semántico del tema library */
-  background-color: var(--color-shell, var(--rootsy-sombra-700)) !important;
-  border-color: var(--rootsy-sombra-border);
+  /* Rail — atmósfera sombra. No hereda el fondo bruma del tema de lectura. */
+  background-color: var(--rootsy-sombra-700) !important;
+  border-color: var(--rootsy-sombra-400);
 }
 
 /* ── Sidebar header ── */
@@ -294,14 +293,14 @@
 }
 
 .library-content-area {
-  background-color: var(--color-surface, var(--rootsy-bruma-100)) !important;
+  background-color: var(--color-fondo, var(--rootsy-bruma-100)) !important;
 }
 
 .library-content-eyebrow {
-  color: var(--color-text-secondary, var(--rootsy-bruma-500));
-  font-size: 11px;
+  color: var(--color-texto-muted, var(--rootsy-bruma-700));
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -318,7 +317,7 @@
 
 .library-page-header-mono {
   background-color: var(--rootsy-bruma-50);
-  color: var(--color-text-secondary, var(--rootsy-bruma-500));
+  color: var(--color-texto-muted, var(--rootsy-bruma-700));
 }
 
 .rootsy-library-shell .library-doc-section {
@@ -354,15 +353,15 @@
 }
 
 .rootsy-library-shell .library-doc-do-panel {
-  border: 1px solid color-mix(in srgb, var(--rootsy-savia-600) 25%, var(--rootsy-bruma-200));
-  background-color: color-mix(in srgb, var(--rootsy-savia-600) 6%, white);
+  border: 1px solid var(--rootsy-savia-200);
+  background-color: var(--rootsy-savia-50);
   color: var(--rootsy-savia-800);
 }
 
 .rootsy-library-shell .library-doc-dont-panel {
-  border: 1px solid #fecaca;
-  background-color: #fef2f2;
-  color: #b91c1c;
+  border: 1px solid var(--rootsy-lava-200);
+  background-color: var(--rootsy-lava-50);
+  color: var(--rootsy-lava-800);
 }
 
 /* Scroll minimal — thumb pill, track invisible */

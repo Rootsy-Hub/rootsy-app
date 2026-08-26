@@ -471,14 +471,14 @@ export function layoutsOperarToolboxProposalIconWrapClass(
 
 export function layoutsOperarToolboxProposalSlotLabelClass(id: LayoutsOperarToolboxProposalId) {
   if (id === "bruma-ascendente") {
-    return "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-bruma-300)_72%,transparent)]"
+    return "mb-0.5 block rootsy-text-label text-[color-mix(in_srgb,var(--rootsy-bruma-300)_72%,transparent)]"
   }
   if (id === "cubiertas-sombra") {
-    return "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-sombra-400)_82%,transparent)]"
+    return "mb-0.5 block rootsy-text-label text-[color-mix(in_srgb,var(--rootsy-sombra-400)_82%,transparent)]"
   }
   return cn(
     rootsyLayoutsEarthFloorSlotLabelClass,
-    "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em]",
+    "mb-0.5 block rootsy-text-label",
   )
 }
 
@@ -951,14 +951,14 @@ export function layoutsOperarTicketProposalTotalsBreakdownLabelClass(
   id: LayoutsOperarTicketProposalId,
 ) {
   if (id === "bruma-plana") {
-    return "self-center text-[10px] font-medium uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-savia-200)_62%,transparent)]"
+    return "self-center rootsy-text-label text-[color-mix(in_srgb,var(--rootsy-savia-200)_62%,transparent)]"
   }
 
   if (id === "bruma-savia") {
     return "self-center text-sm font-normal text-[var(--rootsy-bruma-700)]"
   }
 
-  return "self-center text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--layouts-operar-light-totals-breakdown-label)]"
+  return "self-center rootsy-text-label text-[var(--layouts-operar-light-totals-breakdown-label)]"
 }
 
 export function layoutsOperarTicketProposalTotalsBreakdownAmountClass(
@@ -1002,7 +1002,7 @@ export function layoutsOperarTicketProposalTotalsMainLabelClass(id: LayoutsOpera
 
 export function layoutsOperarTicketProposalTotalsMainAmountClass(id: LayoutsOperarTicketProposalId) {
   if (id === "bruma-savia") {
-    return "m-0 self-center min-w-[6.5rem] text-right text-sm font-bold tabular-nums leading-none text-[var(--rootsy-bruma-900)]"
+    return "m-0 self-center min-w-[6.5rem] text-right rootsy-text-metric-medium text-[var(--rootsy-bruma-900)]"
   }
 
   return cn(

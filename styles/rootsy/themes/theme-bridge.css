@@ -1,0 +1,40 @@
+/**
+ * Puente de tema: tokens de propósito → alias legacy + tokens shadcn.
+ * Los temas solo asignan atmósfera; este bloque traduce a lo que ya consume la UI.
+ */
+
+.rootsy-theme-workspace,
+.rootsy-theme-pos,
+.rootsy-theme-bruma-oscura,
+.rootsy-theme-landing,
+.rootsy-theme-library {
+  --color-shell: var(--color-fondo);
+  --color-surface: var(--color-superficie);
+  --color-elevated: var(--color-elevada);
+  --color-border: var(--color-borde);
+  --color-text-primary: var(--color-texto);
+  --color-text-secondary: var(--color-texto-muted);
+  --color-action: var(--color-accion);
+  --color-action-hover: var(--color-accion-hover);
+  --color-accent: var(--color-foco);
+
+  --background: var(--color-fondo);
+  --foreground: var(--color-texto);
+  --card: var(--color-elevada);
+  --card-foreground: var(--color-texto);
+  --popover: var(--color-elevada);
+  --popover-foreground: var(--color-texto);
+  --primary: var(--color-accion);
+  --primary-foreground: var(--color-action-text);
+  --secondary: var(--color-elevada);
+  --secondary-foreground: var(--color-texto);
+  --muted: var(--color-elevada);
+  --muted-foreground: var(--color-texto-muted);
+  --accent: var(--color-foco);
+  --accent-foreground: var(--color-texto);
+  --destructive: var(--color-peligro);
+  --destructive-foreground: var(--rootsy-savia-50);
+  --border: var(--color-borde);
+  --input: var(--color-borde);
+  --ring: var(--color-foco);
+}

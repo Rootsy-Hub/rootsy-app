@@ -1,6 +1,7 @@
 "use client"
 
 import { HandbookColorView } from "@/app/handbook/color/HandbookColorView"
+import { HandbookTypographyView } from "@/app/handbook/typography/HandbookTypographyView"
 import { HandbookMobileNav } from "@/app/handbook/HandbookMobileNav"
 import { HandbookSectionView } from "@/app/handbook/HandbookSectionView"
 import { HandbookSidebar } from "@/app/handbook/HandbookSidebar"
@@ -23,7 +24,6 @@ import {
   libraryContentAreaClass,
   libraryContentEyebrowClass,
   libraryScrollLightClass,
-  libraryThemeClass,
 } from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 import { useParams, usePathname, useRouter } from "next/navigation"
@@ -137,7 +137,7 @@ export function HandbookWorkspace() {
     : undefined
 
   return (
-    <div className={cn(libraryThemeClass, "rootsy-app-light flex min-h-0 flex-1 overflow-hidden")}>
+    <div className="flex min-h-0 flex-1 overflow-hidden">
       <HandbookSidebar
         activeSectionId={sectionId}
         designSystemPageId={activeDesignSystemPageId}
@@ -149,7 +149,7 @@ export function HandbookWorkspace() {
       <div
         ref={contentRef}
         className={cn(
-          "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 sm:px-6 lg:px-10",
+          "handbook-content min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 sm:px-6 lg:px-10",
           libraryContentAreaClass,
           libraryScrollLightClass,
         )}
@@ -175,6 +175,8 @@ export function HandbookWorkspace() {
 
           {isDesignSystem && activeDesignSystemPageId === "color" ? (
             <HandbookColorView />
+          ) : isDesignSystem && activeDesignSystemPageId === "tipografia" ? (
+            <HandbookTypographyView />
           ) : isDesignSystem ? (
             <HandbookSectionView meta={designSystemMeta} />
           ) : (

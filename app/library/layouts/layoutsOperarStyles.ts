@@ -800,10 +800,10 @@ export const layoutsOperarSummaryEmptyTitleClass =
   "text-sm font-semibold text-[var(--layouts-operar-light-empty-title)]"
 
 export const layoutsOperarSummaryTotalsLabelClass =
-  "m-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--rootsy-bruma-500)]"
+  "m-0 rootsy-text-label text-[var(--rootsy-bruma-500)]"
 
 export const layoutsOperarSummaryTotalsAmountClass =
-  "m-0 text-xl font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)] sm:text-2xl"
+  "m-0 rootsy-text-metric-medium text-[var(--rootsy-bruma-900)]"
 
 /** Nav rail catálogo — library-nav (mismo activo que Library: texto, sin pastilla). */
 export const layoutsOperarCatalogRailNavClass = cn(
