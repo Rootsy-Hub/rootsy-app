@@ -72,6 +72,8 @@ export type DataWorkspaceListPaginationFooterProps = {
   onPageSizeChange: (pageSize: number) => void
   pageSizeLabelId: string
   variant?: "default" | "dark" | "earth" | "tables"
+  /** Dock redondeado — flota sobre la tabla. */
+  floating?: boolean
 }
 
 export function DataWorkspaceListPaginationFooter({
@@ -88,6 +90,7 @@ export function DataWorkspaceListPaginationFooter({
   onPageSizeChange,
   pageSizeLabelId,
   variant = "default",
+  floating = false,
 }: DataWorkspaceListPaginationFooterProps) {
   const popWorkspace = usePopWorkspaceOptional()
   const backgroundImageUrl =
@@ -245,7 +248,11 @@ export function DataWorkspaceListPaginationFooter({
       )
 
       return (
-        <MenuHeaderEntity as="footer" size="module">
+        <MenuHeaderEntity
+          as="footer"
+          size="module"
+          className={floating ? "overflow-hidden rounded-2xl" : undefined}
+        >
           <div
             className={layoutsTablesFooterSurfaceClass}
             role="navigation"

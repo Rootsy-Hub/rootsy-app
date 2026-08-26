@@ -4,6 +4,37 @@ import type { InfiniteData, QueryClient, QueryKey } from "@tanstack/react-query"
 /** Página fija de los listados tabla — scroll infinito, sin pie de paginación. */
 export const DATA_WORKSPACE_TABLE_PAGE_SIZE = 20
 
+export function dataWorkspaceTableStartPage(page: number) {
+  return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
+}
+
+export function dataWorkspaceTableLoadedPageSet(
+  startPage: number,
+  loadedCount: number,
+  pageSize = DATA_WORKSPACE_TABLE_PAGE_SIZE,
+) {
+  const pages = new Set<number>()
+  if (startPage < 1 || pageSize < 1 || loadedCount <= 0) return pages
+  const loadedPages = Math.ceil(loadedCount / pageSize)
+  for (let i = 0; i < loadedPages; i++) {
+    pages.add(startPage + i)
+  }
+  return pages
+}
+
+/** Última página del catálogo ya está en esta vista (tramo actual). */
+export function dataWorkspaceTableReachedLastPage(
+  startPage: number,
+  loadedCount: number,
+  totalCount: number,
+  pageSize = DATA_WORKSPACE_TABLE_PAGE_SIZE,
+) {
+  if (totalCount <= 0 || loadedCount <= 0 || pageSize < 1) return false
+  const totalPages = Math.ceil(totalCount / pageSize)
+  const loadedPages = Math.ceil(loadedCount / pageSize)
+  return startPage + loadedPages - 1 >= totalPages
+}
+
 export function nextDataWorkspaceTablePage(
   page: number,
   totalCount: number,

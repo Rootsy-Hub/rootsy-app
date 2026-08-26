@@ -63,7 +63,7 @@ import {
   DataWorkspaceTableListShell,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
-import { DataWorkspaceTableInfiniteEndRow } from "@/components/data-workspace/DataWorkspaceTableInfiniteEndRow"
+import { DataWorkspaceTableInfinitePageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -112,6 +112,9 @@ import { usePopArticlesTable } from "@/hooks/usePopArticlesTable"
 import { usePopPriceLists } from "@/hooks/usePopPriceLists"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
 import {
+  DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  dataWorkspaceTableLoadedPageSet,
+  dataWorkspaceTableStartPage,
   invalidateDataWorkspaceTableInfinite,
   uniqueTableRowsById,
 } from "@/lib/dataWorkspaceTableInfinite"
@@ -491,6 +494,14 @@ export function ArticlesWorkspaceView() {
 
   const articles = uniqueTableRowsById(articlesTableQuery.data?.articles ?? [])
   const totalCount = articlesTableQuery.data?.totalCount ?? 0
+  const pageSize = DATA_WORKSPACE_TABLE_PAGE_SIZE
+  const startPage = dataWorkspaceTableStartPage(workspaceParsed.page)
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const loadedPages = dataWorkspaceTableLoadedPageSet(
+    startPage,
+    articles.length,
+    pageSize,
+  )
   const articlePerm = useCallback(
     (perm: { resource: string; action: string }) =>
       afterHydration &&
@@ -1367,7 +1378,21 @@ export function ArticlesWorkspaceView() {
                   <DataWorkspaceTableEmptyMascot />
                 ) : null
               }
-            infinite={tableListInfiniteFromQuery(articlesTableQuery, "articles")}
+              footerFloating
+              footerFloatingCentered
+              scrollResetKey={startPage}
+              footer={
+                <DataWorkspaceTableInfinitePageDock
+                  listFetching={listFetching}
+                  loadedCount={articles.length}
+                  totalCount={totalCount}
+                  startPage={startPage}
+                  totalPages={totalPages}
+                  loadedPages={loadedPages}
+                  onPageJump={(page) => replaceWorkspaceQuery({ page })}
+                />
+              }
+              infinite={tableListInfiniteFromQuery(articlesTableQuery, "articles")}
             >
               <DataWorkspaceListTableFrame>
               <table
@@ -1634,14 +1659,6 @@ export function ArticlesWorkspaceView() {
                       </WorkspaceTableBodyRow>
                     )})
                   )}
-                  {!listFetching ? (
-                    <DataWorkspaceTableInfiniteEndRow
-                      world="articles"
-                      colSpan={8 + (canUpdate || canDelete ? 1 : 0)}
-                      loadedCount={pageRows.length}
-                      totalCount={totalCount}
-                    />
-                  ) : null}
                 </TableBody>
               </table>
               {!listFetching && totalCount === 0 ? (

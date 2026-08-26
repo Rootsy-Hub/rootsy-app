@@ -196,7 +196,14 @@ export type DataWorkspaceTableListPaginationFooterProps = Omit<
 /** Pie de paginación — `variant="tables"` por defecto (layout librería). */
 export function DataWorkspaceTableListPaginationFooter({
   variant = "tables",
+  floating = true,
   ...props
 }: DataWorkspaceTableListPaginationFooterProps) {
-  return <DataWorkspaceListPaginationFooter variant={variant} {...props} />
+  return (
+    <DataWorkspaceListPaginationFooter
+      variant={variant}
+      floating={floating}
+      {...props}
+    />
+  )
 }

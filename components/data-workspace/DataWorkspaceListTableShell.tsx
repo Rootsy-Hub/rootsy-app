@@ -3,7 +3,7 @@
 import { RootsyThinkingHalo, useRootsyThinkingPresence } from "@/components/rootsy-thinking/RootsyThinkingHalo"
 import { dataWorkspaceTableInfiniteCopy } from "@/components/data-workspace/dataWorkspaceTableInfiniteCopy"
 import { cn } from "@/lib/utils"
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import {
   dataWorkspaceShellCard,
   listTableChromeStackClass,
@@ -26,6 +26,12 @@ export type DataWorkspaceListTableShellProps = {
   variant?: "default" | "flush"
   /** Pie con cristal POP — cuerpo opaco; solo el footer deja ver el fondo de página. */
   glassFooter?: boolean
+  /** Pie suelo flotante sobre el listado, sin comer altura. */
+  footerFloating?: boolean
+  /** Dock compacto centrado (no estira a todo el ancho). */
+  footerFloatingCentered?: boolean
+  /** Al cambiar, el scroll del listado vuelve arriba. */
+  scrollResetKey?: string | number
   className?: string
   infinite?: DataWorkspaceTableListInfinite
 }
@@ -38,6 +44,9 @@ export function DataWorkspaceListTableShell({
   overlay,
   variant = "default",
   glassFooter = false,
+  footerFloating = false,
+  footerFloatingCentered = false,
+  scrollResetKey,
   className,
   infinite,
 }: DataWorkspaceListTableShellProps) {
@@ -47,6 +56,11 @@ export function DataWorkspaceListTableShell({
   const bodySurfaceClass = isFlush ? workspaceTableSurfaceClass : dataWorkspaceShellCard
   const resolvedBodySurface = className ? undefined : bodySurfaceClass
   const floorHalo = useRootsyThinkingPresence(Boolean(infinite?.isFetchingMore))
+
+  useEffect(() => {
+    if (!scrollRoot) return
+    scrollRoot.scrollTop = 0
+  }, [scrollRoot, scrollResetKey])
 
   return (
     <div
@@ -97,10 +111,17 @@ export function DataWorkspaceListTableShell({
                   root={scrollRoot}
                 />
               ) : null}
+              {footer &&
+              footerFloating &&
+              infinite &&
+              !infinite.hasMore &&
+              infinite.hasItems ? (
+                <div className="h-16 w-full shrink-0" aria-hidden />
+              ) : null}
             </div>
           </div>
           {floorHalo.visible && infinite ? (
-            <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+            <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
               <RootsyThinkingHalo
                 className="rootsy-thinking--floor"
                 label={dataWorkspaceTableInfiniteCopy(infinite.world)}
@@ -114,9 +135,21 @@ export function DataWorkspaceListTableShell({
               {overlay}
             </div>
           ) : null}
+          {footer && footerFloating ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <div
+                className={cn(
+                  "pointer-events-auto overflow-hidden rounded-xl shadow-[0_16px_40px_color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]",
+                  footerFloatingCentered ? "w-auto" : "w-full",
+                )}
+              >
+                {footer}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
-      {footer ? (
+      {footer && !footerFloating ? (
         <div className={cn("relative z-20 shrink-0", glassFooter && "bg-transparent")}>
           {footer}
         </div>

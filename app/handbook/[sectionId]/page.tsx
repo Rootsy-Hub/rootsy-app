@@ -1,15 +1,12 @@
 import { HandbookWorkspace } from "@/app/handbook/HandbookWorkspace"
 import {
   DEFAULT_HANDBOOK_SECTION,
-  HANDBOOK_SECTION_IDS,
   handbookSectionHref,
   isValidHandbookSection,
 } from "@/app/handbook/layoutHandbookShared"
 import { redirect } from "next/navigation"
 
-export function generateStaticParams() {
-  return HANDBOOK_SECTION_IDS.map((sectionId) => ({ sectionId }))
-}
+export const dynamic = "force-dynamic"
 
 export default async function HandbookSectionPage({
   params,
