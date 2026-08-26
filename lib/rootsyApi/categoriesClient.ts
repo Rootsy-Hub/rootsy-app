@@ -1,29 +1,13 @@
 import type { ArticleCategoryOption } from "@/app/[siteId]/[popId]/articles/actions"
 import type { ArticleItemKind } from "@/lib/articleItemKind"
-import { isArticleItemKind } from "@/lib/articleItemKind"
+import {
+  categorySnapshotToOption,
+  dtoToCategorySnapshot,
+  type CategoryDto,
+} from "@/lib/popLocalDb/mapCategory"
 
 type ApiOk<T> = { success: true; data: T }
 type ApiErr = { success: false; error?: string }
-
-type CategoryDto = {
-  id: string
-  name: string
-  itemKind: string
-  sortOrder: number
-  showInSale: boolean
-}
-
-function mapCategory(row: CategoryDto): ArticleCategoryOption {
-  return {
-    id: row.id,
-    name: row.name,
-    itemKind: isArticleItemKind(row.itemKind)
-      ? row.itemKind
-      : ("merchandise" as ArticleItemKind),
-    sortOrder: row.sortOrder,
-    showInSale: row.showInSale !== false,
-  }
-}
 
 type MutateResult = { success: true } | { success: false; error: string }
 
@@ -41,10 +25,10 @@ async function parseMutate(res: Response): Promise<MutateResult> {
   }
 }
 
-export async function fetchPopArticleCategories(
+export async function fetchPopCategoryDtos(
   popId: string,
   filters?: { itemKind?: ArticleItemKind; showInSale?: boolean },
-): Promise<ArticleCategoryOption[]> {
+): Promise<CategoryDto[]> {
   const params = new URLSearchParams()
   if (filters?.itemKind) params.set("itemKind", filters.itemKind)
   if (filters?.showInSale != null) {
@@ -63,7 +47,15 @@ export async function fetchPopArticleCategories(
     const error = json && "error" in json ? json.error : `HTTP ${res.status}`
     throw new Error(error || "No se pudieron cargar las categorías")
   }
-  return json.data.map(mapCategory)
+  return json.data
+}
+
+export async function fetchPopArticleCategories(
+  popId: string,
+  filters?: { itemKind?: ArticleItemKind; showInSale?: boolean },
+): Promise<ArticleCategoryOption[]> {
+  const rows = await fetchPopCategoryDtos(popId, filters)
+  return rows.map((row) => categorySnapshotToOption(dtoToCategorySnapshot(row)))
 }
 
 export async function createPopArticleCategory(

@@ -247,12 +247,26 @@ export function popArticleQueryKey(popId: string, articleId: string) {
   return ["pop-article", popId, articleId] as const
 }
 
-export function popArticleCategoriesQueryKey(popId: string) {
+export function popArticleCategoriesQueryRoot(popId: string) {
   return ["pop-article-categories", popId] as const
 }
 
-export function saleBoardCategoriesQueryKey(popId: string) {
+export function popArticleCategoriesQueryKey(
+  popId: string,
+  source: "local" | "http" = "local",
+) {
+  return [...popArticleCategoriesQueryRoot(popId), source] as const
+}
+
+export function saleBoardCategoriesQueryRoot(popId: string) {
   return ["categories", popId, "sale-board"] as const
+}
+
+export function saleBoardCategoriesQueryKey(
+  popId: string,
+  source: "local" | "http" = "local",
+) {
+  return [...saleBoardCategoriesQueryRoot(popId), source] as const
 }
 
 export function saleBoardArticlesQueryRoot(popId: string) {
@@ -286,6 +300,10 @@ export function popLocalArticlesHydrateQueryKey(
   categoryId: string,
 ) {
   return [...popLocalArticlesHydrateQueryRoot(popId), categoryId] as const
+}
+
+export function popLocalCategoriesHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "categories"] as const
 }
 
 export function popPriceListsQueryKey(popId: string) {

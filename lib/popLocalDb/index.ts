@@ -11,6 +11,7 @@ export {
   deleteMerchandiseNotIn,
   deleteMerchandiseNotInCategory,
   listSaleBoardArticles,
+  renameArticlesCategory,
   replaceMerchandiseArticles,
   upsertArticleSnapshots,
 } from "@/lib/popLocalDb/articlesRepo"
@@ -29,12 +30,29 @@ export {
   POP_LOCAL_ARTICLES_PAGE_SIZE,
 } from "@/lib/popLocalDb/hydrateArticles"
 export {
+  clearPopLocalCategoriesHydrateMark,
+  hydratePopCategoriesFromNetwork,
+} from "@/lib/popLocalDb/hydrateCategories"
+export {
+  deleteCategoryById,
+  getCategoryById,
+  listAllCategories,
+  listSaleBoardCategories,
+  replaceAllCategories,
+  upsertCategorySnapshots,
+} from "@/lib/popLocalDb/categoriesRepo"
+export {
   articleListItemToSnapshot,
   articleSnapshotBindValues,
   sqlArticleRowToSnapshot,
 } from "@/lib/popLocalDb/mapArticle"
+export {
+  categorySnapshotToOption,
+  dtoToCategorySnapshot,
+} from "@/lib/popLocalDb/mapCategory"
 export type {
   ArticleSnapshot,
+  CategorySnapshot,
   ListSaleBoardArticlesInput,
   ListSaleBoardArticlesResult,
 } from "@/lib/popLocalDb/types"

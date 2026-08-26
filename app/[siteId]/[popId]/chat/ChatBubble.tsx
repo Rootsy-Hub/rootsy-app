@@ -8,6 +8,7 @@ import {
   formatChatTime,
   type ChatThreadKind,
 } from "@/app/[siteId]/[popId]/chat/chatTypes"
+import { Avatar } from "@/components/Avatar"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -91,16 +92,13 @@ export function ChatBubble({
       <div className={cn("chat-bubble-row", mine && "chat-bubble-row--mine")}>
         {showAvatarSlot ? (
           showAvatar ? (
-            <span className="chat-bubble-avatar" aria-hidden>
-              {photo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={photo} alt="" />
-              ) : (
-                <span className="chat-bubble-avatar__initials font-canopy">
-                  {initials}
-                </span>
-              )}
-            </span>
+            <Avatar
+              imageUrl={photo}
+              initials={initials}
+              size="sm"
+              shape="circle"
+              tone="light"
+            />
           ) : (
             <span className="chat-bubble-avatar-slot" aria-hidden />
           )

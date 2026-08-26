@@ -42,6 +42,9 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import { DataWorkspaceSidebar } from "@/components/layouts/DataWorkspaceSidebar"
+import { MenuSidebar } from "@/components/MenuSidebar"
+import { HANDBOOK_DESIGN_SYSTEM_BACK_HREF } from "@/app/handbook/handbookDesignSystem"
+import { HandbookDesignSystemNav } from "@/app/handbook/HandbookDesignSystemNav"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { DataWorkspaceHeaderMoreMenu } from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
@@ -294,6 +297,25 @@ function AvatarSpecimen() {
     <Avatar>
       <AvatarFallback>PE</AvatarFallback>
     </Avatar>
+  )
+}
+
+function MenuSidebarSpecimen() {
+  const [activePageId, setActivePageId] = useState("navegacion-final")
+  return (
+    <div className="h-80 overflow-hidden rounded-xl">
+      <MenuSidebar
+        collapseBelowLg={false}
+        backHref={HANDBOOK_DESIGN_SYSTEM_BACK_HREF}
+        backLabel="Volver"
+        eyebrow="Sistema de diseño"
+      >
+        <HandbookDesignSystemNav
+          activePageId={activePageId}
+          onSelectPage={setActivePageId}
+        />
+      </MenuSidebar>
+    </div>
   )
 }
 
@@ -1392,6 +1414,7 @@ export const CATALOG_SPECIMEN_BY_ID: Record<string, ComponentType> = {
   "header-user-menu": HeaderUserMenuSpecimen,
   "header-more-menu": HeaderMoreMenuSpecimen,
   "ui-avatar": AvatarSpecimen,
+  "menu-sidebar": MenuSidebarSpecimen,
   "data-workspace-sidebar": SidebarSpecimen,
   "sale-catalog-sidebar-nav": SaleCatalogSidebarNavSpecimen,
   "section-menu": SectionMenuSpecimen,

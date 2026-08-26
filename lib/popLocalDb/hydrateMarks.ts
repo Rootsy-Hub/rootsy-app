@@ -40,3 +40,20 @@ export function markArticlesCategoryHydrated(
 export function clearArticlesHydratedMarks(db: PopLocalDatabase) {
   db.run("DELETE FROM meta WHERE key LIKE 'articles_hydrated:%'")
 }
+
+const CATEGORIES_HYDRATED_META = "categories_hydrated"
+
+export function isCategoriesHydrated(db: PopLocalDatabase): boolean {
+  return Boolean(db.getMeta(CATEGORIES_HYDRATED_META))
+}
+
+export function markCategoriesHydrated(
+  db: PopLocalDatabase,
+  at = new Date().toISOString(),
+) {
+  db.setMeta(CATEGORIES_HYDRATED_META, at)
+}
+
+export function clearCategoriesHydratedMark(db: PopLocalDatabase) {
+  db.run("DELETE FROM meta WHERE key = ?", [CATEGORIES_HYDRATED_META])
+}

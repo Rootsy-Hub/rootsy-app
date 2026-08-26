@@ -5,8 +5,11 @@ import { createPopLocalDatabase } from "./engine"
 import {
   backfillArticlesHydratedMarks,
   clearArticlesHydratedMarks,
+  clearCategoriesHydratedMark,
   isArticlesCategoryHydrated,
+  isCategoriesHydrated,
   markArticlesCategoryHydrated,
+  markCategoriesHydrated,
 } from "./hydrateMarks"
 import type { ArticleSnapshot } from "./types"
 
@@ -55,5 +58,14 @@ describe("hydrate marks", () => {
     assert.equal(isArticlesCategoryHydrated(db, "cat-1"), true)
     clearArticlesHydratedMarks(db)
     assert.equal(isArticlesCategoryHydrated(db, "cat-1"), false)
+  })
+
+  it("la marca de categorías es una sola por pop", async () => {
+    const db = await createPopLocalDatabase()
+    assert.equal(isCategoriesHydrated(db), false)
+    markCategoriesHydrated(db, "2026-01-01T00:00:00.000Z")
+    assert.equal(isCategoriesHydrated(db), true)
+    clearCategoriesHydratedMark(db)
+    assert.equal(isCategoriesHydrated(db), false)
   })
 })

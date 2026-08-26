@@ -13,7 +13,6 @@ import {
 } from "@/app/[siteId]/[popId]/sale/actions"
 import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
 import { useSaleCatalogLoader } from "@/hooks/useSaleCatalogLoader"
-import { usePopCatalogRealtime } from "@/hooks/usePopCatalogRealtime"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -221,7 +220,6 @@ export function SaleWorkspaceView() {
   const searchParams = useSearchParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
-  usePopCatalogRealtime(popId)
   const queryClient = useQueryClient()
   const quoteIdFromUrl = searchParams.get("quoteId")
   const fiscalBootstrap = usePopSaleComprobanteFiscalContext()

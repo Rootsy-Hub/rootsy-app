@@ -27,7 +27,6 @@ const SALE_BOARD_WHERE = `
   is_active = 1
   AND is_sellable = 1
   AND item_kind = 'merchandise'
-  AND stock_on_hand > 0
 `
 
 function saleBoardFilters(input: ListSaleBoardArticlesInput): {
@@ -140,6 +139,27 @@ export function listSaleBoardArticles(
 
 export function deleteArticleById(db: PopLocalDatabase, articleId: string) {
   db.run("DELETE FROM articles WHERE id = ?", [articleId])
+}
+
+/** Renombra la categoría denormalizada en artículos locales. Sin rehidratar. */
+export function renameArticlesCategory(
+  db: PopLocalDatabase,
+  categoryId: string,
+  name: string,
+): boolean {
+  const id = categoryId.trim()
+  const next = name.trim()
+  if (!id || !next) return false
+  const row = db.get<{ total: number }>(
+    `SELECT COUNT(*) AS total FROM articles WHERE category_id = ?`,
+    [id],
+  )
+  if (Number(row?.total ?? 0) === 0) return false
+  db.run(`UPDATE articles SET category_name = ? WHERE category_id = ?`, [
+    next,
+    id,
+  ])
+  return true
 }
 
 export function countLocalArticles(db: PopLocalDatabase): number {

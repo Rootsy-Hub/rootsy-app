@@ -1,29 +1,36 @@
 "use client"
 
-import type { ArticleCategoryOption } from "@/app/[siteId]/[popId]/articles/actions"
 import {
+  clearPopLocalCategoriesHydrateMark,
   deleteArticleById,
+  deleteCategoryById,
+  getCategoryById,
   openPopLocalDb,
+  renameArticlesCategory,
   upsertArticleSnapshots,
+  upsertCategorySnapshots,
 } from "@/lib/popLocalDb"
 import {
   articleIdFromRealtimeEvent,
   articleSnapshotFromRealtimePayload,
 } from "@/lib/catalogRealtime/articlePayload"
 import {
-  applyCategoryPatchToSaleBoard,
   categoryPatchFromRealtimePayload,
+  categorySnapshotFromPatch,
 } from "@/lib/catalogRealtime/categoryPayload"
 import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import {
-  popArticleCategoriesQueryKey,
+  popArticleCategoriesQueryRoot,
   popArticleQueryKey,
   popArticlesQueryRoot,
+  popLocalCategoriesHydrateQueryKey,
   saleBoardArticlesQueryRoot,
-  saleBoardCategoriesQueryKey,
+  saleBoardCategoriesQueryRoot,
 } from "@/lib/queryKeys"
 import type { DomainEvent } from "@/lib/realtime/protocol"
 import type { QueryClient } from "@tanstack/react-query"
+
+const REFETCH_ALL = { refetchType: "all" as const }
 
 export async function applyArticleRealtimeEvent(
   queryClient: QueryClient,
@@ -53,6 +60,7 @@ export async function applyArticleRealtimeEvent(
 
   void queryClient.invalidateQueries({
     queryKey: saleBoardArticlesQueryRoot(popId),
+    ...REFETCH_ALL,
   })
   void invalidateDataWorkspaceTableInfinite(
     queryClient,
@@ -60,10 +68,22 @@ export async function applyArticleRealtimeEvent(
   )
   void queryClient.invalidateQueries({
     queryKey: popArticleQueryKey(popId, articleId),
+    ...REFETCH_ALL,
   })
 }
 
-export function applyCategoryRealtimeEvent(
+function invalidateLocalCategories(queryClient: QueryClient, popId: string) {
+  void queryClient.invalidateQueries({
+    queryKey: saleBoardCategoriesQueryRoot(popId),
+    ...REFETCH_ALL,
+  })
+  void queryClient.invalidateQueries({
+    queryKey: popArticleCategoriesQueryRoot(popId),
+    ...REFETCH_ALL,
+  })
+}
+
+export async function applyCategoryRealtimeEvent(
   queryClient: QueryClient,
   popId: string,
   event: DomainEvent,
@@ -78,37 +98,58 @@ export function applyCategoryRealtimeEvent(
   }
   const patch = categoryPatchFromRealtimePayload(event.payload)
   if (!patch) {
-    void queryClient.invalidateQueries({
-      queryKey: saleBoardCategoriesQueryKey(popId),
-    })
-    void queryClient.invalidateQueries({
-      queryKey: popArticleCategoriesQueryKey(popId),
-    })
+    invalidateLocalCategories(queryClient, popId)
     return
   }
 
-  let invalidated = false
-  queryClient.setQueryData<ArticleCategoryOption[]>(
-    saleBoardCategoriesQueryKey(popId),
-    (current) => {
-      if (!current) {
-        invalidated = true
-        return current
+  let needsRehydrate = false
+  let renamedArticles = false
+  try {
+    const handle = await openPopLocalDb(popId)
+    if (type === "categories.deleted") {
+      deleteCategoryById(handle.database, patch.id)
+      handle.markDirty()
+    } else {
+      const existing = getCategoryById(handle.database, patch.id)
+      const snapshot = categorySnapshotFromPatch(patch, existing)
+      if (!snapshot) {
+        needsRehydrate = true
+      } else {
+        upsertCategorySnapshots(handle.database, [snapshot])
+        if (
+          type === "categories.updated" &&
+          renameArticlesCategory(handle.database, patch.id, snapshot.name)
+        ) {
+          renamedArticles = true
+        }
+        handle.markDirty()
       }
-      const next = applyCategoryPatchToSaleBoard(current, patch, type)
-      if (next === "invalidate") {
-        invalidated = true
-        return current
-      }
-      return next
-    },
-  )
-  if (invalidated) {
+    }
+  } catch {
+    /* sqlite fallback: refetch HTTP */
+  }
+
+  if (needsRehydrate) {
+    void clearPopLocalCategoriesHydrateMark(popId)
+      .catch(() => undefined)
+      .then(() =>
+        queryClient.invalidateQueries({
+          queryKey: popLocalCategoriesHydrateQueryKey(popId),
+          ...REFETCH_ALL,
+        }),
+      )
+      .then(() => {
+        invalidateLocalCategories(queryClient, popId)
+      })
+    return
+  }
+
+  if (renamedArticles) {
     void queryClient.invalidateQueries({
-      queryKey: saleBoardCategoriesQueryKey(popId),
+      queryKey: saleBoardArticlesQueryRoot(popId),
+      ...REFETCH_ALL,
     })
   }
-  void queryClient.invalidateQueries({
-    queryKey: popArticleCategoriesQueryKey(popId),
-  })
+
+  invalidateLocalCategories(queryClient, popId)
 }

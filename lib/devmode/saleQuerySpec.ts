@@ -21,7 +21,6 @@ export type SaleQuerySpecPlace = {
 
 const CACHE_TANSTACK_24H = "TanStack · 24 h"
 const CACHE_TANSTACK_24H_REFETCH_MOUNT = "TanStack · 24 h · refetch al montar"
-const CACHE_TANSTACK_SESSION_REFETCH = "TanStack · sesión · refetch al montar"
 const CACHE_TANSTACK_SESSION = "TanStack · sesión · staleTime ∞"
 const CACHE_SQLITE_OPFS = "SQLite · OPFS · por pop"
 const CACHE_NONE = "No"
@@ -80,11 +79,10 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             title: "Al entrar",
             calls: [
               {
-                endpoint:
-                  "GET /v1/pops/:popId/categories?itemKind=merchandise&showInSale=true",
+                endpoint: "GET /v1/pops/:popId/categories",
                 detail:
-                  "Rail de categorías de producto visibles en venta. En paralelo con payment-context, comprobantes y open-session. Si Vender ya tiene categoryId en localStorage, el GET de articles sale en paralelo; si no, articles espera este listado y usa la primera categoría.",
-                cache: CACHE_TANSTACK_SESSION_REFETCH,
+                  "Si las categorías ya están en SQLite (OPFS), solo SELECT local del rail (merchandise + show_in_sale). Si no hay marca de hidratación, un GET sin filtros. Fallback HTTP filtrado si SQLite no carga.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },
@@ -94,8 +92,8 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "WS domain:categories",
                 detail:
-                  "Parche del rail (nombre, orden, showInSale). Si el aviso no trae name y la categoría no está en cache, GET de categories. El reorder emite categories.updated, no un evento layout.",
-                cache: CACHE_TANSTACK_SESSION_REFETCH,
+                  "Upsert/delete en SQLite y re-SELECT del rail, también si Vender no está abierto. Rename actualiza category_name en artículos locales. Gap borra la marca y un GET.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },
@@ -109,9 +107,9 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             calls: [
               {
                 endpoint:
-                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&soloActivos=true&categoryId=:id&page=1&pageSize=100",
+                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&soloActivos=true&includeStock=false&categoryId=:id&page=1&pageSize=100",
                 detail:
-                  "Si esa categoría ya está en SQLite (OPFS), solo SELECT local: no hay GET. Si no está, GET con categoryId de localStorage o la primera del rail, hidrata y marca la categoría. Sin categoryId no hay GET. Fallback HTTP si SQLite no carga.",
+                  "Si esa categoría ya está en SQLite (OPFS), solo SELECT local: no hay GET. Si no está, GET con categoryId de localStorage o la primera del rail, hidrata y marca la categoría. Sin categoryId no hay GET. includeStock=false: no consulta inventory, ignora filtros de stock y no persiste stock. Fallback HTTP si SQLite no carga.",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],
@@ -155,7 +153,7 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "WS domain:articles",
                 detail:
-                  "Parche en SQLite (upsert/delete) sin borrar la marca de hidratado. Si hay GET en curso, los avisos se encolan y se aplican al terminar. lastSeq vive en SQLite. Resync (gap/empty) borra marcas y vuelve a hidratar.",
+                  "Parche en SQLite (upsert/delete) sin borrar la marca de hidratado. Después re-SELECT del board también si Vender no está montado. Si hay GET en curso, los avisos se encolan y se aplican al terminar. lastSeq vive en SQLite. Resync (gap) borra marcas y vuelve a hidratar.",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],

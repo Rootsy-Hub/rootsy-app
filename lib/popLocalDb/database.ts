@@ -75,7 +75,7 @@ export class PopLocalDatabase {
 export function applyPopLocalSchema(db: PopLocalDatabase) {
   db.exec(POP_LOCAL_SCHEMA_SQL)
   const current = Number(db.getMeta("schema_version") ?? 0)
-  if (current !== 0 && current !== POP_LOCAL_SCHEMA_VERSION) {
+  if (current > POP_LOCAL_SCHEMA_VERSION) {
     db.exec(POP_LOCAL_DROP_SQL)
     db.exec(POP_LOCAL_SCHEMA_SQL)
   }

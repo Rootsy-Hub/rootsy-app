@@ -6,6 +6,7 @@ import {
   deleteArticleById,
   deleteMerchandiseNotInCategory,
   listSaleBoardArticles,
+  renameArticlesCategory,
   replaceMerchandiseArticles,
   upsertArticleSnapshots,
 } from "./articlesRepo"
@@ -36,7 +37,7 @@ function snap(partial: Partial<ArticleSnapshot> & Pick<ArticleSnapshot, "id" | "
 }
 
 describe("pop local db articles", () => {
-  it("lista por categoría e ignora sin stock", async () => {
+  it("lista por categoría e incluye sin stock", async () => {
     const db = await createPopLocalDatabase()
     replaceMerchandiseArticles(db, [
       snap({ id: "a1", name: "Coca", categoryId: "cat-1", stockOnHand: 4 }),
@@ -51,9 +52,10 @@ describe("pop local db articles", () => {
     })
     assert.deepEqual(
       page.articles.map((row) => row.id),
-      ["a1"],
+      ["a1", "a2"],
     )
-    assert.equal(page.totalCount, 1)
+    assert.equal(page.totalCount, 2)
+    assert.equal(page.articles[0]?.stockOnHand, 0)
   })
 
   it("busca por nombre y barcode sin categoría", async () => {
@@ -184,6 +186,33 @@ describe("pop local db articles", () => {
     assert.deepEqual(page.articles.map((row) => row.id), ["a2"])
   })
 
+  it("renombra category_name en sqlite sin borrar filas", async () => {
+    const db = await createPopLocalDatabase()
+    upsertArticleSnapshots(db, [
+      snap({ id: "a1", name: "Coca", categoryId: "cat-1", categoryName: "Bebidas" }),
+      snap({
+        id: "a2",
+        name: "Agua",
+        categoryId: "cat-2",
+        categoryName: "Gaseosas",
+      }),
+    ])
+    assert.equal(renameArticlesCategory(db, "cat-1", "Bebidas frías"), true)
+    const cat1 = listSaleBoardArticles(db, {
+      categoryId: "cat-1",
+      page: 1,
+      pageSize: 50,
+    })
+    const cat2 = listSaleBoardArticles(db, {
+      categoryId: "cat-2",
+      page: 1,
+      pageSize: 50,
+    })
+    assert.equal(cat1.articles[0]?.categoryName, "Bebidas frías")
+    assert.equal(cat2.articles[0]?.categoryName, "Gaseosas")
+    assert.equal(renameArticlesCategory(db, "cat-missing", "X"), false)
+  })
+
   it("mapea un artículo de API al snapshot liviano", () => {
     const item = {
       id: "a1",
@@ -213,6 +242,7 @@ describe("pop local db articles", () => {
     } as Parameters<typeof articleListItemToSnapshot>[0]
     const mapped = articleListItemToSnapshot(item)
     assert.equal(mapped.sku, "SKU-1")
+    assert.equal(mapped.stockOnHand, 0)
     assert.deepEqual(mapped.listPrices, [{ listId: "lista-2", amount: 88 }])
     assert.equal(sqlArticleRowToSnapshot({
       id: mapped.id,

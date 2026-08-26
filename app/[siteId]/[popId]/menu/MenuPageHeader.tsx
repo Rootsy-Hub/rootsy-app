@@ -155,7 +155,7 @@ export function MenuPageHeader({
           <div className={cn("h-6 w-px", eterHeaderDividerClass)} />
 
           <div className="flex shrink-0 flex-col items-end">
-            <span className={cn("text-lg tabular-nums", eterHeaderTitleClass)}>
+            <span className={cn("text-lg tabular-nums", eterHeaderTitleClass, "font-semibold")}>
               {clockLabel}
             </span>
             <span className={cn("text-xs uppercase tracking-wide", eterHeaderMutedClass)}>

@@ -6,7 +6,7 @@ import {
   formatBackofficeDate,
   formatBackofficeMoney,
 } from "@/app/backoffice/components/BackofficeSection"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar } from "@/components/Avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -158,12 +158,13 @@ export function BackofficePopDetailView({
         </Button>
 
         <div className="flex flex-wrap items-start gap-4">
-          <Avatar className="size-16 rounded-2xl border border-border/80">
-            <AvatarImage src={detail.imageUrl ?? undefined} alt="" />
-            <AvatarFallback className="rounded-2xl bg-primary/10 text-lg font-semibold text-primary">
-              {initials(detail.name)}
-            </AvatarFallback>
-          </Avatar>
+          <Avatar
+            imageUrl={detail.imageUrl}
+            initials={initials(detail.name)}
+            size="2xl"
+            shape="square"
+            tone="light"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-2xl font-bold tracking-tight">{detail.name}</h2>
@@ -186,10 +187,13 @@ export function BackofficePopDetailView({
             Titular
           </div>
           <div className="flex items-center gap-3">
-            <Avatar className="size-11 border border-border/70">
-              <AvatarImage src={detail.owner.imageUrl ?? undefined} alt="" />
-              <AvatarFallback>{initials(detail.owner.name)}</AvatarFallback>
-            </Avatar>
+            <Avatar
+              imageUrl={detail.owner.imageUrl}
+              initials={initials(detail.owner.name)}
+              size="xl"
+              shape="circle"
+              tone="light"
+            />
             <div>
               <p className="font-medium">{detail.owner.name}</p>
               <p className="font-mono text-[10px] text-muted-foreground">

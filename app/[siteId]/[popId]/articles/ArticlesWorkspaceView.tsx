@@ -106,11 +106,9 @@ import {
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopArticleCategories } from "@/hooks/usePopArticleCategories"
-import { usePopCatalogRealtime } from "@/hooks/usePopCatalogRealtime"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { usePopArticlesTable } from "@/hooks/usePopArticlesTable"
 import { usePopPriceLists } from "@/hooks/usePopPriceLists"
-import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
 import {
   DATA_WORKSPACE_TABLE_PAGE_SIZE,
   dataWorkspaceTableLoadedPageSet,
@@ -308,7 +306,6 @@ export function ArticlesWorkspaceView() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
-  usePopCatalogRealtime(popId)
   const queryClient = useQueryClient()
 
   const { bootstrap, loading: bootstrapLoading, hasPermission } =
@@ -537,7 +534,6 @@ export function ArticlesWorkspaceView() {
 
   const refreshArticlesList = useCallback(async () => {
     if (!popId) return
-    invalidatePopOperateCatalogs(queryClient, popId)
     await invalidateDataWorkspaceTableInfinite(
       queryClient,
       popArticlesQueryRoot(popId),
@@ -768,7 +764,6 @@ export function ArticlesWorkspaceView() {
       }
       await refreshArticleCategories()
       setCategoriesBoardKey((k) => k + 1)
-      invalidatePopOperateCatalogs(queryClient, popId)
     } finally {
       setNewCategorySaving(false)
       setPendingCategoryCreate(null)
@@ -800,7 +795,6 @@ export function ArticlesWorkspaceView() {
     }
     cancelEditCategory()
     await refreshArticleCategories()
-    invalidatePopOperateCatalogs(queryClient, popId)
   }
 
   const saveCategoryLayout = async (updates: CategoryLayoutUpdate[]) => {
@@ -827,7 +821,6 @@ export function ArticlesWorkspaceView() {
       setCategoriesBoardKey((k) => k + 1)
       return
     }
-    invalidatePopOperateCatalogs(queryClient, popId)
   }
 
   const removeCategory = (id: string, label: string) => {
@@ -871,7 +864,6 @@ export function ArticlesWorkspaceView() {
       return
     }
     await refreshArticleCategories()
-    invalidatePopOperateCatalogs(queryClient, popId)
     setPendingCategoryDeleteId(null)
   }
 

@@ -21,6 +21,18 @@ export function isHandbookComponentPageId(
   return (HANDBOOK_COMPONENT_PAGE_IDS as readonly string[]).includes(id)
 }
 
+export function handbookComponentFinalBaseId(
+  id: string,
+): HandbookComponentPageId | null {
+  if (!id.endsWith("-final")) return null
+  const base = id.slice(0, -"-final".length)
+  return isHandbookComponentPageId(base) ? base : null
+}
+
+export function isHandbookComponentFinalPageId(id: string): boolean {
+  return handbookComponentFinalBaseId(id) != null
+}
+
 export const HANDBOOK_COMPONENT_PAGES: Record<
   HandbookComponentPageId,
   {
@@ -167,10 +179,10 @@ export const HANDBOOK_COMPONENT_SECTIONS: Record<
       id: "sidebar",
       title: "Sidebar",
       description:
-        "Rail del módulo: las vistas de la sección. Oscuro en operar; claro en workspaces de datos.",
-      token: "DataWorkspaceSidebar",
-      doText: "Las vistas del módulo viven en el rail. El activo se lee solo.",
-      dontText: "No dupliques esas vistas como tabs debajo del header.",
+        "Rail de navegación del handbook: Volver, eyebrow y grupos de páginas. Oscuro, a la izquierda.",
+      token: "MenuSidebar",
+      doText: "Un rail por contexto. El activo se lee solo.",
+      dontText: "No uses el rail de vistas de módulo como chrome de librería.",
       status: "live",
     },
     {

@@ -81,7 +81,7 @@ import {
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
 import { SALE_CATALOG_DEFAULT_PRICE_LIST_ID } from "@/components/sale-operation/saleCatalogPriceLists"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar } from "@/components/Avatar"
 import { cn } from "@/lib/utils"
 import {
   ArrowLeft,
@@ -210,8 +210,6 @@ function LayoutsOperarHeaderPopProfile() {
 }
 
 function LayoutsOperarHeaderUserProfile() {
-  const chromeButtonClass = useOperationsHeaderChromeButtonClass()
-
   return (
     <>
       <div className="hidden min-w-0 flex-col leading-tight sm:flex">
@@ -225,23 +223,12 @@ function LayoutsOperarHeaderUserProfile() {
           {DEMO_USER_ROLE}
         </span>
       </div>
-      <button
-        type="button"
-        className={cn(chromeButtonClass, "relative overflow-hidden p-0")}
-        tabIndex={-1}
-        aria-hidden
-      >
-        <Avatar className="size-full rounded-[inherit]">
-          <AvatarImage src={DEMO_USER_AVATAR} alt="" className="object-cover" />
-          <AvatarFallback className="rounded-[inherit] bg-[#1c2824] text-[11px] font-semibold text-emerald-200">
-            {DEMO_USER_INITIALS}
-          </AvatarFallback>
-        </Avatar>
-        <span
-          className="absolute bottom-1 right-1 size-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0c1210]"
-          aria-hidden
-        />
-      </button>
+      <Avatar
+        imageUrl={DEMO_USER_AVATAR}
+        initials={DEMO_USER_INITIALS}
+        size="lg"
+        isOnline
+      />
     </>
   )
 }

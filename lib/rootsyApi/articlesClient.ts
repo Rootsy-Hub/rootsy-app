@@ -79,15 +79,20 @@ export function buildArticlesListSearch(input: GetPopArticlesTableInput): string
     ["soloInactivos", input.soloInactivos],
     ["conDescuento", input.conDescuento],
     ["sinDescuento", input.sinDescuento],
-    ["conStock", input.conStock],
-    ["sinStock", input.sinStock],
-    ["stockNegativo", input.stockNegativo],
     ["ventaSinStock", input.ventaSinStock],
   ]
+  if (input.includeStock !== false) {
+    flags.push(
+      ["conStock", input.conStock],
+      ["sinStock", input.sinStock],
+      ["stockNegativo", input.stockNegativo],
+    )
+  }
   for (const [key, value] of flags) {
     const encoded = boolQuery(value)
     if (encoded) params.set(key, encoded)
   }
+  if (input.includeStock === false) params.set("includeStock", "false")
   if (input.categoryId.trim()) params.set("categoryId", input.categoryId.trim())
   if (input.itemKinds.length > 0) {
     params.set("itemKinds", input.itemKinds.join(","))

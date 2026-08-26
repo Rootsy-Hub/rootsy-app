@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import type { ArticleCategoryOption } from "../../app/[siteId]/[popId]/articles/actions"
-import { applyCategoryPatchToSaleBoard } from "./categoryPayload"
+import { applyCategoryPatchToSaleBoard, categorySnapshotFromPatch } from "./categoryPayload"
 
 const rail: ArticleCategoryOption[] = [
   {
@@ -51,5 +51,29 @@ describe("category realtime patch", () => {
       "categories.deleted",
     )
     assert.deepEqual(next, [])
+  })
+
+  it("arma snapshot con name de la fila local si el aviso no lo trae", () => {
+    const snap = categorySnapshotFromPatch(
+      { id: "cat-1", sortOrder: 9, showInSale: true },
+      {
+        id: "cat-1",
+        name: "Bebidas",
+        itemKind: "merchandise",
+        sortOrder: 1,
+        showInSale: true,
+        visible: true,
+        showInMenu: true,
+      },
+    )
+    assert.equal(snap?.name, "Bebidas")
+    assert.equal(snap?.sortOrder, 9)
+  })
+
+  it("no arma snapshot si es nueva y no trae name", () => {
+    assert.equal(
+      categorySnapshotFromPatch({ id: "cat-2", showInSale: true }, null),
+      null,
+    )
   })
 })

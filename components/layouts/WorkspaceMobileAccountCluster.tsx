@@ -2,7 +2,7 @@
 
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeHeaderAccountSheet } from "@/app/home/HomeHeaderAccountSheet"
-import { HomeHeaderAvatar } from "@/app/home/HomeHeaderUserCluster"
+import { Avatar } from "@/components/Avatar"
 import { HomeUserPhotoDialog } from "@/app/home/HomeUserPhotoDialog"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useRouter } from "next/navigation"
@@ -39,7 +39,7 @@ export function WorkspaceMobileAccountCluster({
 
   return (
     <>
-      <HomeHeaderAvatar
+      <Avatar
         pending={pending}
         imageUrl={userAvatarSrc}
         initials={initials}

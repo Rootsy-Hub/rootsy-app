@@ -85,6 +85,15 @@ export const HANDBOOK_COMPONENT_CATALOG: readonly HandbookCatalogEntry[] = [
 
   // —— Sidebar
   {
+    id: "menu-sidebar",
+    sectionIds: ["sidebar"],
+    name: "MenuSidebar",
+    source: "components/MenuSidebar.tsx",
+    kind: "libreria",
+    usedIn: ["Handbook (sistema de diseño y overview)"],
+    note: "Rail oscuro de librería: Volver, eyebrow y grupos de páginas. No dispara GET/POST.",
+  },
+  {
     id: "data-workspace-sidebar",
     sectionIds: ["sidebar"],
     name: "DataWorkspaceSidebar",

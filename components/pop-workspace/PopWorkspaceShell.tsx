@@ -9,6 +9,7 @@ import {
 } from "@/context/PopOptimisticNavContext"
 import { PopRealtimeProvider } from "@/context/PopRealtimeContext"
 import { PopWorkspaceProvider } from "@/context/PopWorkspaceContext"
+import { usePopCatalogRealtime } from "@/hooks/usePopCatalogRealtime"
 import { hasPopTableListSessionCache } from "@/lib/popTableListSessionCache"
 import {
   isPopMenuPathname,
@@ -36,6 +37,7 @@ export function PopWorkspaceShell({ children }: { children: ReactNode }) {
       accessEnabled={!isPopMenuPathname(pathname)}
     >
       <PopRealtimeProvider>
+        <PopCatalogRealtimeBridge popId={popId} />
         <PopOptimisticNavProvider>
           <PopModuleAccessGate>
             <PopOptimisticNavGate>{children}</PopOptimisticNavGate>
@@ -76,4 +78,9 @@ function PopOptimisticNavGate({ children }: { children: ReactNode }) {
   }
 
   return children
+}
+
+function PopCatalogRealtimeBridge({ popId }: { popId: string }) {
+  usePopCatalogRealtime(popId)
+  return null
 }

@@ -26,7 +26,7 @@ export function HandbookComponentPage({
   children: ReactNode
 }) {
   return (
-    <article className="max-w-5xl">
+    <article className="w-full">
       <h1 className={libraryDocPageTitleClass}>{title}</h1>
       <p className={cn(libraryDocBodyClass, "mt-4")}>{lead}</p>
       <div className="mt-6 grid gap-3 sm:grid-cols-3">

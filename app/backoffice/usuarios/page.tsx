@@ -14,7 +14,7 @@ import {
   BackofficeSection,
   formatBackofficeDate,
 } from "@/app/backoffice/components/BackofficeSection"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar } from "@/components/Avatar"
 import {
   Table,
   TableBody,
@@ -126,12 +126,14 @@ export default function BackofficeUsersPage() {
               >
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <Avatar className="size-9 border border-border/70">
-                      <AvatarImage src={row.imageUrl ?? undefined} alt="" />
-                      <AvatarFallback className="text-xs">
-                        {initials(row.fullName)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <Avatar
+                      imageUrl={row.imageUrl}
+                      initials={initials(row.fullName)}
+                      size="md"
+                      shape="circle"
+                      tone="light"
+                      className="size-9"
+                    />
                     <div>
                       <div className="font-medium">{row.fullName}</div>
                       <div className="font-mono text-[10px] text-muted-foreground">

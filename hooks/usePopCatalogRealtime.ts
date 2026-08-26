@@ -11,13 +11,17 @@ import {
   setCatalogArticleEventApplier,
 } from "@/lib/catalogRealtime/hydrateGate"
 import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
-import { clearPopLocalArticlesHydrateMarks } from "@/lib/popLocalDb"
 import {
-  popArticleCategoriesQueryKey,
+  clearPopLocalArticlesHydrateMarks,
+  clearPopLocalCategoriesHydrateMark,
+} from "@/lib/popLocalDb"
+import {
+  popArticleCategoriesQueryRoot,
   popArticlesQueryRoot,
   popLocalArticlesHydrateQueryRoot,
+  popLocalCategoriesHydrateQueryKey,
   saleBoardArticlesQueryRoot,
-  saleBoardCategoriesQueryKey,
+  saleBoardCategoriesQueryRoot,
 } from "@/lib/queryKeys"
 import type { DomainEvent } from "@/lib/realtime/protocol"
 import { useQueryClient } from "@tanstack/react-query"
@@ -81,19 +85,29 @@ export function usePopCatalogRealtime(popId: string | undefined) {
             refetchType: "all",
           })
         })
-      void queryClient.invalidateQueries({
-        queryKey: saleBoardCategoriesQueryKey(popId),
-        refetchType: "all",
-      })
+      void clearPopLocalCategoriesHydrateMark(popId)
+        .catch(() => undefined)
+        .then(() =>
+          queryClient.invalidateQueries({
+            queryKey: popLocalCategoriesHydrateQueryKey(popId),
+            refetchType: "all",
+          }),
+        )
+        .then(() => {
+          void queryClient.invalidateQueries({
+            queryKey: saleBoardCategoriesQueryRoot(popId),
+            refetchType: "all",
+          })
+          void queryClient.invalidateQueries({
+            queryKey: popArticleCategoriesQueryRoot(popId),
+            refetchType: "all",
+          })
+        })
       void invalidateDataWorkspaceTableInfinite(
         queryClient,
         popArticlesQueryRoot(popId),
         { refetchType: "all" },
       )
-      void queryClient.invalidateQueries({
-        queryKey: popArticleCategoriesQueryKey(popId),
-        refetchType: "all",
-      })
     },
     [popId, queryClient],
   )

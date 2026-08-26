@@ -26,6 +26,7 @@ import {
   FoundationBrumaStage,
   FoundationConceptHero,
 } from "@/app/library/libraryFoundationDocShared"
+import { Avatar } from "@/components/Avatar"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
@@ -255,52 +256,6 @@ function PopIdentityVariantCard({
   )
 }
 
-function PopAvatar({
-  imageUrl,
-  initials,
-  size = "xl",
-  shape = "circle",
-  className,
-}: {
-  imageUrl?: string | null
-  initials: string
-  size?: "xl" | "md" | "sm"
-  shape?: "circle" | "rounded-square"
-  className?: string
-}) {
-  const sizeClass =
-    size === "xl" ? "size-28" : size === "md" ? "size-12" : "size-8"
-  const radiusClass = shape === "circle" ? "rounded-full" : "rounded-lg"
-  const hasImage = Boolean(imageUrl?.trim())
-
-  return (
-    <div
-      className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden",
-        sizeClass,
-        radiusClass,
-        !hasImage && cn("bg-linear-to-br", POP_HOME_ACCENTS.accent),
-        shape === "rounded-square" && "ring-1 ring-border",
-        className,
-      )}
-    >
-      {hasImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl!} alt="" className="size-full object-cover" />
-      ) : (
-        <span
-          className={cn(
-            "font-bold tracking-tight text-white drop-shadow",
-            size === "xl" ? "text-[1.72rem]" : size === "md" ? "text-sm" : "text-[10px]",
-          )}
-        >
-          {initials}
-        </span>
-      )}
-    </div>
-  )
-}
-
 function PopHomePickerDemo({ variantId }: { variantId: PopIdentityVariantId }) {
   const specimen = POP_IDENTITY_SPECIMEN
   const showAddress = variantId === "home-picker-address"
@@ -316,10 +271,10 @@ function PopHomePickerDemo({ variantId }: { variantId: PopIdentityVariantId }) {
           )}
           aria-hidden
         />
-        <PopAvatar
+        <Avatar
           imageUrl={useInitials ? null : specimen.imageUrl}
           initials={specimen.initials}
-          size="xl"
+          size="hero"
           shape="circle"
           className="relative shadow-xl ring-2 ring-white/14"
         />
@@ -345,11 +300,12 @@ function PopIdentityInlineDemo({ variantId }: { variantId: PopIdentityVariantId 
   if (variantId === "header-compact") {
     return (
       <div className="logo-header-demo w-full max-w-sm">
-        <PopAvatar
+        <Avatar
           imageUrl={specimen.imageUrl}
           initials={specimen.initials}
-          size="sm"
-          shape="rounded-square"
+          size="md"
+          shape="square"
+          tone="light"
         />
         <span className="truncate text-sm font-semibold text-[var(--rootsy-bruma-900)]/90">
           {specimen.name}
@@ -361,11 +317,13 @@ function PopIdentityInlineDemo({ variantId }: { variantId: PopIdentityVariantId 
   if (variantId === "horizontal-address") {
     return (
       <div className="flex w-full max-w-md items-center gap-3">
-        <PopAvatar
+        <Avatar
           imageUrl={specimen.imageUrl}
           initials={specimen.initials}
-          size="md"
-          shape="rounded-square"
+          size="xl"
+          shape="square"
+          tone="light"
+          className="size-12"
         />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-[var(--rootsy-bruma-900)]">{specimen.name}</p>
@@ -393,10 +351,10 @@ export function PopHomeScreenDemo() {
           </li>
           <li className="basis-[9.1rem]">
             <div className="mx-auto flex w-full max-w-40 flex-col items-center opacity-85">
-              <PopAvatar
+              <Avatar
                 imageUrl={null}
                 initials="CF"
-                size="xl"
+                size="hero"
                 shape="circle"
                 className="shadow-xl ring-2 ring-white/14"
               />
@@ -407,10 +365,10 @@ export function PopHomeScreenDemo() {
           </li>
           <li className="basis-[9.1rem]">
             <div className="mx-auto flex w-full max-w-40 flex-col items-center">
-              <PopAvatar
+              <Avatar
                 imageUrl={specimen.imageUrl}
                 initials={specimen.initials}
-                size="xl"
+                size="hero"
                 shape="circle"
                 className="shadow-xl ring-2 ring-white/14"
               />
@@ -466,12 +424,12 @@ export function LogoClearanceDemo() {
         <p className="mt-1 text-xs text-[var(--rootsy-bruma-500)]">{LOGO_CLEARANCE.pop.ideal}</p>
         <div className="mt-4 flex justify-center rounded-xl bg-[#070a09] py-8">
           <div className="logo-clearance-demo rounded-full border-dashed p-3">
-            <PopAvatar
+            <Avatar
               imageUrl={POP_IDENTITY_SPECIMEN.imageUrl}
               initials={POP_IDENTITY_SPECIMEN.initials}
-              size="md"
+              size="xl"
               shape="circle"
-              className="ring-2 ring-white/14"
+              className="size-12 ring-2 ring-white/14"
             />
           </div>
         </div>
@@ -523,7 +481,6 @@ function UserProfileBlockDemo({
 }) {
   const specimen = USER_PROFILE_SPECIMEN
   const compact = variantId === "header-workspace"
-  const avatarSizeClass = compact ? "size-8" : "size-10"
 
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -535,21 +492,11 @@ function UserProfileBlockDemo({
           {specimen.roleLabel}
         </span>
       </div>
-      <span
-        className={cn(
-          "relative flex shrink-0 items-center justify-center overflow-hidden rounded-full",
-          "bg-linear-to-br from-[var(--rootsy-savia-500)] to-[var(--rootsy-savia-700)]",
-          avatarSizeClass,
-        )}
-      >
-        <span className="text-xs font-semibold tracking-tight text-white">
-          {specimen.initials}
-        </span>
-        <span
-          className="pointer-events-none absolute right-0 bottom-0 size-2 rounded-full bg-[var(--rootsy-savia-500)] ring-1 ring-[var(--rootsy-sombra-900)]"
-          aria-hidden
-        />
-      </span>
+      <Avatar
+        initials={specimen.initials}
+        size={compact ? "md" : "lg"}
+        isOnline={specimen.isOnline}
+      />
     </div>
   )
 }
@@ -732,11 +679,12 @@ export function LogoAttributionDemo() {
           +
         </span>
         <div className="flex items-center gap-2.5 rounded-xl border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-3 py-2">
-          <PopAvatar
+          <Avatar
             imageUrl={POP_IDENTITY_SPECIMEN.imageUrl}
             initials={POP_IDENTITY_SPECIMEN.initials}
-            size="sm"
-            shape="rounded-square"
+            size="md"
+            shape="square"
+            tone="light"
           />
           <span className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
             {POP_IDENTITY_SPECIMEN.name}

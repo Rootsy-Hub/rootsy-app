@@ -38,6 +38,7 @@ export function popLocalArticlesHydrateInput(
     sinStock: false,
     stockNegativo: false,
     ventaSinStock: false,
+    includeStock: false,
     categoryId,
     itemKinds: ["merchandise"],
     sort: "name",

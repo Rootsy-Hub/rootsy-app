@@ -6,10 +6,8 @@ import {
   homePopTileTitleClass,
   homePopTileTitleMutedClass,
 } from "@/app/home/HomeCreatePopTile"
-import {
-  HOME_POP_AVATAR_SIZE_CLASS,
-  HOME_POP_TILE_MAX_CLASS,
-} from "@/app/home/homePopTileLayout"
+import { HOME_POP_TILE_MAX_CLASS } from "@/app/home/homePopTileLayout"
+import { Avatar } from "@/components/Avatar"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
 
@@ -47,29 +45,21 @@ export function HomePopPlanetTile({
           />
         ) : null}
 
-        <div
+        <Avatar
+          imageUrl={imageUrl}
+          initials={initials}
+          size="hero"
+          shape="circle"
           className={cn(
-            "relative flex items-center justify-center overflow-hidden rounded-full",
-            HOME_POP_AVATAR_SIZE_CLASS,
-            "shadow-xl ring-2 ring-white/14 transition-[box-shadow,ring-color] duration-300",
+            "relative shadow-xl ring-2 ring-white/14 transition-[box-shadow,ring-color] duration-300",
             "group-hover:ring-white/28 group-hover:shadow-[0_12px_28px_-10px_rgba(0,0,0,0.45)]",
-            !hasImage && cn("bg-linear-to-br", POP_HOME_ACCENTS.accent),
           )}
-        >
-          {hasImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl!} alt="" className="size-full object-cover" />
-          ) : (
-            <span className="text-[1.35rem] font-bold tracking-tight text-white drop-shadow sm:text-[1.72rem]">
-              {initials}
-            </span>
-          )}
-          {loading ? (
-            <span className="absolute inset-0 flex items-center justify-center bg-black/45">
-              <RootsSpinner size="default" tone="dark" label={HOME_COPY.enteringPop} />
-            </span>
-          ) : null}
-        </div>
+        />
+        {loading ? (
+          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45">
+            <RootsSpinner size="default" tone="dark" label={HOME_COPY.enteringPop} />
+          </span>
+        ) : null}
 
         {trial ? (
           <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-200">

@@ -40,3 +40,13 @@ export type ListSaleBoardArticlesResult = {
   totalCount: number
   page: number
 }
+
+export type CategorySnapshot = {
+  id: string
+  name: string
+  itemKind: ArticleItemKind
+  sortOrder: number
+  showInSale: boolean
+  visible: boolean
+  showInMenu: boolean
+}

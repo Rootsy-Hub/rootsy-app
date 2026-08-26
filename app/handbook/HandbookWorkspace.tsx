@@ -1,8 +1,12 @@
 "use client"
 
 import { HandbookColorView } from "@/app/handbook/color/HandbookColorView"
+import { HandbookComponentsFinalView } from "@/app/handbook/components/HandbookComponentsFinalView"
 import { HandbookComponentsView } from "@/app/handbook/components/HandbookComponentsView"
-import { isHandbookComponentPageId } from "@/app/handbook/components/handbookComponentsSpec"
+import {
+  isHandbookComponentFinalPageId,
+  isHandbookComponentPageId,
+} from "@/app/handbook/components/handbookComponentsSpec"
 import { HandbookTypographyView } from "@/app/handbook/typography/HandbookTypographyView"
 import { HandbookMobileNav } from "@/app/handbook/HandbookMobileNav"
 import { HandbookSectionView } from "@/app/handbook/HandbookSectionView"
@@ -156,7 +160,7 @@ export function HandbookWorkspace() {
           libraryScrollLightClass,
         )}
       >
-        <div className="mx-auto max-w-5xl space-y-8">
+        <div className="w-full space-y-8">
           <HandbookMobileNav
             activeSectionId={sectionId}
             designSystemPageId={activeDesignSystemPageId}
@@ -181,6 +185,8 @@ export function HandbookWorkspace() {
             <HandbookTypographyView />
           ) : isDesignSystem && isHandbookComponentPageId(activeDesignSystemPageId) ? (
             <HandbookComponentsView pageId={activeDesignSystemPageId} />
+          ) : isDesignSystem && isHandbookComponentFinalPageId(activeDesignSystemPageId) ? (
+            <HandbookComponentsFinalView pageId={activeDesignSystemPageId} />
           ) : isDesignSystem ? (
             <HandbookSectionView meta={designSystemMeta} />
           ) : (
