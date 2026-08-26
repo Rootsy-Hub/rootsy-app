@@ -1,6 +1,6 @@
 "use client"
 
-import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
+import { LibraryDocSection, LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import {
   LayoutsTablesContentGridWireframeDemo,
   LayoutsTablesDocSubsection,
@@ -35,7 +35,7 @@ export function LayoutsTablesFoundationView({ sectionId }: Props) {
       </LibraryDocSection>
 
       <LibraryDocSection id="layouts-tables-grid" title="1 · Grid">
-        <LayoutsTablesDocSubsection title="1.1 · Toolbar · tabla · footer">
+        <LayoutsTablesDocSubsection title="1.1 · Toolbar · tabla · scroll">
           <LayoutsTablesContentGridWireframeDemo />
         </LayoutsTablesDocSubsection>
       </LibraryDocSection>
@@ -57,7 +57,10 @@ export function LayoutsTablesFoundationView({ sectionId }: Props) {
         <LayoutsTablesTableBodySectionDemo />
       </LibraryDocSection>
 
-      <LibraryDocSection id="layouts-tables-footer" title="5 · Footer">
+      <LibraryDocSection id="layouts-tables-footer" title="5 · Footer (archivo)">
+        <p className="mb-4 text-sm text-[var(--rootsy-bruma-600)]">
+          El producto ya no monta este pie: los listados tabla cargan de a 20 con scroll infinito. Lo dejamos acá para volver a usarlo.
+        </p>
         <LayoutsTablesTableFooterSectionDemo />
       </LibraryDocSection>
 

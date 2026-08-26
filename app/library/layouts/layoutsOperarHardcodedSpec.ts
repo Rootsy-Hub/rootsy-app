@@ -8,7 +8,6 @@ import {
   layoutsOperarProductCardListMediaClass,
   layoutsOperarProductCardMediaClass,
   layoutsOperarProductCardMediaEmptyStateClass,
-  layoutsOperarProductCardMediaEmptyStateGrainClass,
   layoutsOperarProductCardOfferClass,
   layoutsOperarProductCardPriceClass,
   layoutsOperarProductCardTitleClass,
@@ -590,7 +589,7 @@ export function layoutsOperarProductCardProposalMediaStyle(
   }
 
   return {
-    backgroundColor: toolboxHx("sombra", "950"),
+    backgroundColor: toolboxHx("sombra", "600"),
     boxShadow: `inset 0 0 0 1px ${getLayoutsOperarBorderCss("darkHairline")}`,
   }
 }
@@ -640,65 +639,6 @@ export function layoutsOperarProductCardProposalPriceClass(id: LayoutsOperarProd
   }
 
   return "text-lg font-bold tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]"
-}
-
-function hashLayoutsOperarPhotoEmptySeed(seed: string) {
-  let hash = 0
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) | 0
-  }
-  return Math.abs(hash)
-}
-
-/** Capas foto ausente — luz de estudio + pools de color · variación por producto. */
-export function getLayoutsOperarProductCardMediaEmptyPhotoLayers(seed = "product") {
-  const hash = hashLayoutsOperarPhotoEmptySeed(seed)
-  const poolAX = 42 + (hash % 30)
-  const poolAY = 48 + ((hash >> 4) % 26)
-  const poolBX = 58 + ((hash >> 8) % 24)
-  const poolBY = 32 + ((hash >> 12) % 22)
-  const saviaA = 4 + (hash % 5)
-  const saviaB = 3 + ((hash >> 6) % 4)
-  const brumaKey = 8 + ((hash >> 10) % 7)
-
-  return {
-    base: {
-      position: "absolute" as const,
-      inset: 0,
-      background: `linear-gradient(152deg,
-        color-mix(in srgb, var(--rootsy-sombra-800) 90%, var(--rootsy-bruma-100) 10%) 0%,
-        var(--rootsy-sombra-900) 46%,
-        color-mix(in srgb, var(--rootsy-sombra-950) 94%, var(--rootsy-savia-975) 6%) 100%)`,
-    },
-    keyLight: {
-      position: "absolute" as const,
-      inset: 0,
-      background: `radial-gradient(ellipse 92% 72% at 16% 10%, color-mix(in srgb, var(--rootsy-bruma-100) ${brumaKey}%, transparent) 0%, transparent 70%)`,
-    },
-    colorPoolA: {
-      position: "absolute" as const,
-      inset: "-8%",
-      background: `radial-gradient(ellipse 68% 52% at ${poolAX}% ${poolAY}%, color-mix(in srgb, var(--rootsy-savia-600) ${saviaA}%, transparent) 0%, transparent 74%)`,
-      filter: "blur(10px)",
-    },
-    colorPoolB: {
-      position: "absolute" as const,
-      inset: "-6%",
-      background: `radial-gradient(ellipse 58% 44% at ${poolBX}% ${poolBY}%, color-mix(in srgb, var(--rootsy-savia-500) ${saviaB}%, transparent) 0%, transparent 72%)`,
-      filter: "blur(14px)",
-    },
-    depth: {
-      position: "absolute" as const,
-      inset: 0,
-      background: `radial-gradient(ellipse 88% 62% at 50% 108%, color-mix(in srgb, var(--rootsy-sombra-950) 42%, transparent) 0%, transparent 68%)`,
-    },
-    vignette: {
-      position: "absolute" as const,
-      inset: 0,
-      background: `radial-gradient(ellipse 108% 96% at 50% 46%, transparent 38%, color-mix(in srgb, var(--rootsy-sombra-950) 72%, transparent) 100%)`,
-      opacity: 0.9,
-    },
-  }
 }
 
 export function layoutsOperarProductCardMediaEmptyStateShellClass(

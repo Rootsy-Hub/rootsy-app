@@ -32,12 +32,10 @@ import {
   currentAccountTableTermColumnClass,
 } from "@/app/[siteId]/[popId]/current-accounts/currentAccountsTableLayout"
 import {
-  CURRENT_ACCOUNT_TABLE_PAGE_SIZES,
   mergeCurrentAccountsWorkspaceUrl,
   parseCurrentAccountsWorkspaceUrl,
   type CurrentAccountTableSortKey,
 } from "@/app/[siteId]/[popId]/current-accounts/workspaceUrl"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import { DataWorkspaceListSearchField } from "@/components/data-workspace/DataWorkspaceListFilterFields"
@@ -45,7 +43,7 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
@@ -71,7 +69,10 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { currentAccountsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
   DataWorkspaceModuleLayout,
@@ -89,6 +90,7 @@ import {
   currentAccountDirectionLabel,
   type CurrentAccountDirection,
 } from "@/lib/currentAccounts"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import {
   popCurrentAccountLedgerQueryKey,
   popCurrentAccountLedgerQueryRoot,
@@ -141,7 +143,6 @@ export function CurrentAccountsWorkspaceView() {
     [workspaceParams],
   )
   const searchInputId = useId()
-  const pageSizeLabelId = useId()
 
   const [searchInput, setSearchInput] = useState(ws.q)
   const [enrollOpen, setEnrollOpen] = useState(false)
@@ -278,15 +279,7 @@ export function CurrentAccountsWorkspaceView() {
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / ws.pageSize))
-  const rangeStart = totalCount === 0 ? 0 : (ws.page - 1) * ws.pageSize + 1
-  const rangeEnd = Math.min(ws.page * ws.pageSize, totalCount)
-  const skeletonRowCount = Math.min(12, Math.max(5, ws.pageSize))
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, ws.page),
-    [totalPages, ws.page],
-  )
-
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
   const hasSearchChip = ws.q.trim() !== ""
   const hasAgingChip = ws.aging !== "all"
   const hasFilterChips = hasSearchChip || hasAgingChip
@@ -330,9 +323,10 @@ export function CurrentAccountsWorkspaceView() {
   const refreshParties = useCallback(async () => {
     if (!popId) return
     await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: popCurrentAccountPartiesQueryRoot(popId),
-      }),
+      invalidateDataWorkspaceTableInfinite(
+        queryClient,
+        popCurrentAccountPartiesQueryRoot(popId),
+      ),
       queryClient.invalidateQueries({
         queryKey: popCurrentAccountLedgerQueryRoot(popId),
       }),
@@ -541,28 +535,7 @@ export function CurrentAccountsWorkspaceView() {
           overlay={
             !loading && totalCount === 0 ? <DataWorkspaceTableEmptyMascot /> : null
           }
-          footer={
-            <DataWorkspaceTableListPaginationFooter
-              listFetching={loading}
-              totalCount={totalCount}
-              rangeStart={rangeStart}
-              rangeEnd={rangeEnd}
-              currentPage={ws.page}
-              totalPages={totalPages}
-              pageSize={ws.pageSize}
-              pageSizeOptions={[...CURRENT_ACCOUNT_TABLE_PAGE_SIZES]}
-              paginationItems={paginationItems}
-              onPageChange={(page) => pushWs({ page })}
-              onPageSizeChange={(pageSize) =>
-                pushWs({
-                  pageSize:
-                    pageSize as (typeof CURRENT_ACCOUNT_TABLE_PAGE_SIZES)[number],
-                  page: 1,
-                })
-              }
-              pageSizeLabelId={pageSizeLabelId}
-            />
-          }
+            infinite={tableListInfiniteFromQuery(partiesQuery, "current-accounts")}
         >
           <DataWorkspaceListTableFrame>
             <table
@@ -704,9 +677,10 @@ export function CurrentAccountsWorkspaceView() {
       popId={popId}
       direction={enrollDirection}
       onEnrolled={(partyId) => {
-        void queryClient.invalidateQueries({
-          queryKey: popCurrentAccountPartiesQueryRoot(popId),
-        })
+        void invalidateDataWorkspaceTableInfinite(
+          queryClient,
+          popCurrentAccountPartiesQueryRoot(popId),
+        )
         openParty(partyId, enrollDirection)
       }}
     />

@@ -30,6 +30,9 @@ import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 import type { DataWorkspaceHeaderVariant } from "@/components/layouts/dataWorkspaceHeaderStyles"
 
+export type { DataWorkspaceTableListInfinite } from "@/components/data-workspace/DataWorkspaceTableInfiniteSentinel"
+export { tableListInfiniteFromQuery } from "@/components/data-workspace/DataWorkspaceTableInfiniteSentinel"
+
 /** Variante de header para listados tabla — mismo universo que el menú. */
 export const dataWorkspaceTableListHeaderVariant =
   dataWorkspaceModuleHeaderVariant satisfies DataWorkspaceHeaderVariant
@@ -160,7 +163,7 @@ export type DataWorkspaceTableListShellProps = Omit<
   DataWorkspaceListTableShellProps,
   "variant"
 > & {
-  /** Por defecto `tables` (pie tierra húmeda · layout librería). */
+  /** @deprecated El pie de tablas vive archivado en /library · layouts-tables. */
   footerVariant?: DataWorkspaceListPaginationFooterProps["variant"]
 }
 

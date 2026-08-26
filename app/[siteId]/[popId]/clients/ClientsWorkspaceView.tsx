@@ -17,7 +17,6 @@ import {
   defaultClientsModalFilters,
   type ClientsModalFilters,
 } from "@/app/[siteId]/[popId]/clients/ClientsFiltersDialog"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
@@ -30,7 +29,7 @@ import {
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListShell,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
@@ -39,7 +38,10 @@ import {
   DataWorkspaceTableIconAction,
   WorkspaceTableStatusBadge,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { clientsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
   selectColumnInnerClass,
@@ -75,7 +77,6 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import {
-  CLIENT_TABLE_PAGE_SIZES,
   mergeClientsWorkspaceUrl,
   parseClientsWorkspaceUrl,
   type ClientTableSortKey,
@@ -91,6 +92,7 @@ import { usePopClientsTable } from "@/hooks/usePopClientsTable"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import { popClientsQueryRoot } from "@/lib/queryKeys"
 import { formatMoneyInputForField } from "@/lib/moneyInput"
 import {
@@ -297,9 +299,10 @@ export function ClientsWorkspaceView() {
 
   const refreshClientList = useCallback(async () => {
     if (!popId) return
-    await queryClient.invalidateQueries({
-      queryKey: popClientsQueryRoot(popId),
-    })
+    await invalidateDataWorkspaceTableInfinite(
+      queryClient,
+      popClientsQueryRoot(popId),
+    )
   }, [popId, queryClient])
 
   const [searchInput, setSearchInput] = useState(workspaceParsed.q)
@@ -327,7 +330,6 @@ export function ClientsWorkspaceView() {
     defaultClientsFilters,
   )
 
-  const pageSizeLabelId = useId()
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
 
   const createOpenEffective = createOpen && canCreate
@@ -381,13 +383,6 @@ export function ClientsWorkspaceView() {
     }, 1200)
     return () => window.clearTimeout(t)
   }, [clientsTableQuery.data])
-
-  useEffect(() => {
-    if (clientsTableQuery.data?.success !== true) return
-    if (clientsTableQuery.data.page !== workspaceParsed.page) {
-      replaceWorkspaceQuery({ page: clientsTableQuery.data.page })
-    }
-  }, [clientsTableQuery.data, workspaceParsed.page, replaceWorkspaceQuery])
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -611,7 +606,7 @@ export function ClientsWorkspaceView() {
     setDeleteOpen(true)
   }
 
-  const skeletonRowCount = Math.min(12, Math.max(5, workspaceParsed.pageSize))
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
   const hasFilterChips =
     workspaceParsed.q.trim() !== "" ||
@@ -657,17 +652,6 @@ export function ClientsWorkspaceView() {
     searchInputRef.current?.focus()
   }, [replaceWorkspaceQuery])
 
-  const totalPages = useMemo(
-    () =>
-      Math.max(
-        1,
-        Math.ceil(totalCount / Math.max(1, workspaceParsed.pageSize)),
-      ),
-    [totalCount, workspaceParsed.pageSize],
-  )
-
-  const currentPage = workspaceParsed.page
-
   const pageRows = rows
 
   const visibleIds = useMemo(() => pageRows.map((r) => r.id), [pageRows])
@@ -675,19 +659,6 @@ export function ClientsWorkspaceView() {
   const allVisibleSelected =
     visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
   const someVisibleSelected = visibleIds.some((id) => selected.has(id))
-
-  const rangeLabel = useMemo(() => {
-    if (totalCount === 0) return { start: 0, end: 0 }
-    const ps = workspaceParsed.pageSize
-    const start = (currentPage - 1) * ps + 1
-    const end = Math.min(currentPage * ps, totalCount)
-    return { start, end }
-  }, [currentPage, workspaceParsed.pageSize, totalCount])
-
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, currentPage),
-    [totalPages, currentPage],
-  )
 
   if (!popId || !siteId) {
     return (
@@ -853,24 +824,7 @@ export function ClientsWorkspaceView() {
                 <DataWorkspaceTableEmptyMascot />
               ) : null
             }
-          footer={
-            <DataWorkspaceTableListPaginationFooter
-              listFetching={listFetching}
-                  totalCount={totalCount}
-                  rangeStart={rangeLabel.start}
-                  rangeEnd={rangeLabel.end}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  pageSize={workspaceParsed.pageSize}
-                  pageSizeOptions={CLIENT_TABLE_PAGE_SIZES}
-                  paginationItems={paginationItems}
-                  onPageChange={(p) => replaceWorkspaceQuery({ page: p })}
-                  onPageSizeChange={(ps) =>
-                    replaceWorkspaceQuery({ pageSize: ps, page: 1 })
-                  }
-              pageSizeLabelId={pageSizeLabelId}
-            />
-          }
+            infinite={tableListInfiniteFromQuery(clientsTableQuery, "clients")}
         >
           <DataWorkspaceListTableFrame>
               <table

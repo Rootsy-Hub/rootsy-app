@@ -100,9 +100,9 @@ export function useSaleBoardArticles(
       (options?.hydrate ?? options?.enabled ?? true),
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true,
+    refetchOnReconnect: false,
     retry: 1,
   })
 

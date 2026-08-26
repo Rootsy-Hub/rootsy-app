@@ -1,4 +1,7 @@
-import type { WorkspaceTableSkeletonColumn } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  type WorkspaceTableSkeletonColumn,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import {
   articlesSkeletonColumns,
   auditSkeletonColumns,
@@ -37,7 +40,7 @@ export type PopTableListSkeletonConfig = {
   rowCount?: number
 }
 
-const DEFAULT_ROW_COUNT = 10
+const DEFAULT_ROW_COUNT = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
 function clientsConfig(): PopTableListSkeletonConfig {
   return {

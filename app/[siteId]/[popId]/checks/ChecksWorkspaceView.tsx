@@ -34,12 +34,10 @@ import {
   checkTableStatusColumnClass,
 } from "@/app/[siteId]/[popId]/checks/checksTableLayout"
 import {
-  CHECK_TABLE_PAGE_SIZES,
   mergeChecksWorkspaceUrl,
   parseChecksWorkspaceUrl,
   type CheckTableSortKey,
 } from "@/app/[siteId]/[popId]/checks/workspaceUrl"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import { DataWorkspaceListSearchField } from "@/components/data-workspace/DataWorkspaceListFilterFields"
@@ -47,7 +45,7 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
@@ -69,7 +67,10 @@ import {
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { checksSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { TableBody } from "@/components/ui/table"
@@ -79,6 +80,7 @@ import { usePopChecksTable } from "@/hooks/usePopChecksTable"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import { popChecksQueryRoot } from "@/lib/queryKeys"
 import {
   clearPopCheck,
@@ -141,7 +143,6 @@ export function ChecksWorkspaceView() {
     [workspaceParams],
   )
   const searchInputId = useId()
-  const pageSizeLabelId = useId()
 
   const [searchInput, setSearchInput] = useState(ws.q)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -245,9 +246,10 @@ export function ChecksWorkspaceView() {
 
   const refreshChecksList = useCallback(async () => {
     if (!popId) return
-    await queryClient.invalidateQueries({
-      queryKey: popChecksQueryRoot(popId),
-    })
+    await invalidateDataWorkspaceTableInfinite(
+      queryClient,
+      popChecksQueryRoot(popId),
+    )
   }, [popId, queryClient])
 
   const depositAccountsQuery = useQuery({
@@ -295,15 +297,7 @@ export function ChecksWorkspaceView() {
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / ws.pageSize))
-  const rangeStart = totalCount === 0 ? 0 : (ws.page - 1) * ws.pageSize + 1
-  const rangeEnd = Math.min(ws.page * ws.pageSize, totalCount)
-  const skeletonRowCount = Math.min(12, Math.max(5, ws.pageSize))
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, ws.page),
-    [totalPages, ws.page],
-  )
-
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
   const hasFilterChips =
     ws.q.trim() !== "" || ws.direction !== "" || ws.status !== ""
   const activeFilterCount = [ws.q.trim(), ws.direction, ws.status].filter(
@@ -502,24 +496,7 @@ export function ChecksWorkspaceView() {
           overlay={
             !loading && totalCount === 0 ? <DataWorkspaceTableEmptyMascot /> : null
           }
-          footer={
-            <DataWorkspaceTableListPaginationFooter
-              listFetching={loading}
-              totalCount={totalCount}
-              rangeStart={rangeStart}
-              rangeEnd={rangeEnd}
-              currentPage={ws.page}
-              totalPages={totalPages}
-              pageSize={ws.pageSize}
-              pageSizeOptions={[...CHECK_TABLE_PAGE_SIZES]}
-              paginationItems={paginationItems}
-              onPageChange={(page) => pushWs({ page })}
-              onPageSizeChange={(pageSize) =>
-                pushWs({ pageSize: pageSize as (typeof CHECK_TABLE_PAGE_SIZES)[number], page: 1 })
-              }
-              pageSizeLabelId={pageSizeLabelId}
-            />
-          }
+            infinite={tableListInfiniteFromQuery(checksQuery, "checks")}
         >
           <DataWorkspaceListTableFrame>
             <table

@@ -288,10 +288,15 @@ export function ChatWorkspaceView() {
     [popId, queryClient],
   )
 
-  const onRealtimeResync = useCallback(() => {
-    if (!popId) return
-    invalidatePopChat(queryClient, popId)
-  }, [popId, queryClient])
+  const onRealtimeResync = useCallback(
+    (channels: string[], reason: "gap" | "empty") => {
+      if (!popId) return
+      if (reason !== "gap") return
+      if (!channels.some((channel) => channel === "domain:chat")) return
+      invalidatePopChat(queryClient, popId)
+    },
+    [popId, queryClient],
+  )
 
   usePopRealtime({
     channels: ["domain:chat"],

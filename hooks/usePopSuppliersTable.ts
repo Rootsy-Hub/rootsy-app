@@ -2,12 +2,18 @@
 
 import type { GetPopSuppliersTableInput } from "@/app/[siteId]/[popId]/suppliers/actions"
 import {
+  concatTableRowKey,
+  useDataWorkspaceInfiniteTableQuery,
+} from "@/hooks/useDataWorkspaceInfiniteTableQuery"
+import {
+  DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  pinDataWorkspaceTableInfiniteParams,
+} from "@/lib/dataWorkspaceTableInfinite"
+import {
   popSuppliersQueryKey,
   type PopSuppliersQueryParams,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
-import { fetchPopSuppliersTable } from "@/lib/rootsyApi/suppliersClient"
-import { useQuery } from "@tanstack/react-query"
+import { fetchPopSuppliersTable, type PopSuppliersTableResult } from "@/lib/rootsyApi/suppliersClient"
 
 type UsePopSuppliersTableOptions = {
   enabled?: boolean
@@ -19,9 +25,10 @@ export function usePopSuppliersTable(
   options?: UsePopSuppliersTableOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
+  const infiniteParams = pinDataWorkspaceTableInfiniteParams(params)
   const queryParams: GetPopSuppliersTableInput = {
-    page: params.page,
-    pageSize: params.pageSize,
+    page: infiniteParams.page,
+    pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
     search: params.search,
     soloActivos: params.soloActivos,
     withEmail: params.withEmail,
@@ -30,10 +37,11 @@ export function usePopSuppliersTable(
     ord: params.ord,
   }
 
-  return useQuery({
-    queryKey: popSuppliersQueryKey(popId ?? "", params),
-    queryFn: () => fetchPopSuppliersTable(popId!, queryParams),
+  return useDataWorkspaceInfiniteTableQuery<PopSuppliersTableResult>({
+    queryKey: popSuppliersQueryKey(popId ?? "", infiniteParams),
     enabled,
-    ...sessionListQueryOptions,
+    queryFn: (page) =>
+      fetchPopSuppliersTable(popId!, { ...queryParams, page }),
+    concat: concatTableRowKey<PopSuppliersTableResult, "suppliers">("suppliers"),
   })
 }

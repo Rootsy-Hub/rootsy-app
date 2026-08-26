@@ -13,7 +13,6 @@ import {
   defaultSuppliersModalFilters,
   type SuppliersModalFilters,
 } from "@/app/[siteId]/[popId]/suppliers/SuppliersFiltersDialog"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
@@ -26,7 +25,7 @@ import {
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListShell,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
@@ -35,7 +34,10 @@ import {
   DataWorkspaceTableIconAction,
   WorkspaceTableStatusBadge,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { suppliersSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
   workspaceTableLayoutClassName,
@@ -73,6 +75,7 @@ import { usePopSuppliersTable } from "@/hooks/usePopSuppliersTable"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import { popSuppliersQueryRoot } from "@/lib/queryKeys"
 import {
   createPopSupplier,
@@ -87,7 +90,6 @@ import {
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
 import {
-  SUPPLIER_TABLE_PAGE_SIZES,
   mergeSuppliersWorkspaceUrl,
   parseSuppliersWorkspaceUrl,
   type SupplierTableSortKey,
@@ -247,7 +249,6 @@ export function SuppliersWorkspaceView() {
   const [searchInput, setSearchInput] = useState(workspaceParsed.q)
   const searchInputId = useId()
   const filtersButtonId = useId()
-  const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const createTaxInputRef = useRef<HTMLInputElement>(null)
 
@@ -285,9 +286,10 @@ export function SuppliersWorkspaceView() {
 
   const refreshSuppliersList = useCallback(async () => {
     if (!popId) return
-    await queryClient.invalidateQueries({
-      queryKey: popSuppliersQueryRoot(popId),
-    })
+    await invalidateDataWorkspaceTableInfinite(
+      queryClient,
+      popSuppliersQueryRoot(popId),
+    )
   }, [popId, queryClient])
 
   useEffect(() => {
@@ -303,13 +305,6 @@ export function SuppliersWorkspaceView() {
     }, 1200)
     return () => window.clearTimeout(timeout)
   }, [suppliersQuery.data])
-
-  useEffect(() => {
-    if (suppliersQuery.data?.success !== true) return
-    if (suppliersQuery.data.page !== workspaceParsed.page) {
-      replaceWorkspaceQuery({ page: suppliersQuery.data.page })
-    }
-  }, [suppliersQuery.data, workspaceParsed.page, replaceWorkspaceQuery])
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -541,28 +536,10 @@ export function SuppliersWorkspaceView() {
   }
 
   const pageRows = rows
-  const totalPages = Math.max(
-    1,
-    Math.ceil(totalCount / Math.max(1, workspaceParsed.pageSize)),
-  )
-  const currentPage = Math.min(Math.max(1, workspaceParsed.page), totalPages)
-
   const visibleIds = useMemo(() => pageRows.map((r) => r.id), [pageRows])
   const allVisibleSelected =
     visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
   const someVisibleSelected = visibleIds.some((id) => selected.has(id))
-
-  const rangeLabel = useMemo(() => {
-    if (totalCount === 0) return { start: 0, end: 0 }
-    const start = (currentPage - 1) * workspaceParsed.pageSize + 1
-    const end = Math.min(currentPage * workspaceParsed.pageSize, totalCount)
-    return { start, end }
-  }, [currentPage, workspaceParsed.pageSize, totalCount])
-
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, currentPage),
-    [totalPages, currentPage],
-  )
 
   const modalFiltersActiveCount = useMemo(() => {
     let count = 0
@@ -608,7 +585,7 @@ export function SuppliersWorkspaceView() {
     searchInputRef.current?.focus()
   }, [replaceWorkspaceQuery])
 
-  const skeletonRowCount = Math.min(12, Math.max(5, workspaceParsed.pageSize))
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
   if (!popId || !siteId) {
     return (
@@ -779,24 +756,7 @@ export function SuppliersWorkspaceView() {
               />
             ) : null
           }
-          footer={
-            <DataWorkspaceTableListPaginationFooter
-              listFetching={listFetching}
-                totalCount={totalCount}
-                rangeStart={rangeLabel.start}
-                rangeEnd={rangeLabel.end}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                pageSize={workspaceParsed.pageSize}
-                pageSizeOptions={SUPPLIER_TABLE_PAGE_SIZES}
-                paginationItems={paginationItems}
-                onPageChange={(p) => replaceWorkspaceQuery({ page: p })}
-                onPageSizeChange={(ps) => {
-                  replaceWorkspaceQuery({ pageSize: ps, page: 1 })
-                }}
-              pageSizeLabelId={pageSizeLabelId}
-            />
-          }
+            infinite={tableListInfiniteFromQuery(suppliersQuery, "suppliers")}
         >
           <DataWorkspaceListTableFrame>
             <table

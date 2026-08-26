@@ -4,7 +4,6 @@ import "@/app/library/layouts/layoutsOperarTheme.css"
 import "@/app/library/radius/rootsyRadiusSystem.css"
 import {
   getLayoutsOperarGridCssVariables,
-  getLayoutsOperarProductCardMediaEmptyPhotoLayers,
   layoutsOperarProductCardProposalAddClass,
   layoutsOperarProductCardProposalBodyClass,
   layoutsOperarProductCardProposalDescClass,
@@ -20,13 +19,13 @@ import {
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import {
   layoutsOperarCatalogArticleDemoScopeClass,
-  layoutsOperarProductCardMediaEmptyStateGrainClass,
+  layoutsOperarProductCardMediaEmptyStateIconClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { SaleCatalogProductOfferOverlay } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
-import { Plus } from "lucide-react"
+import { Image as ImageIcon, Plus } from "lucide-react"
 import { useState } from "react"
 
 export type LayoutsOperarDemoProduct = {
@@ -69,31 +68,30 @@ function formatDemoPrice(amount: number) {
   return saleOpFmt.format(amount)
 }
 
-/** Superficie foto ausente — sin icono ni copy; luz de estudio + grano como imagen real. */
+/** Superficie foto ausente — mismo fondo que la card e icono savia al centro. */
 export function LayoutsOperarProductCardMediaEmptyState({
   proposalId = LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL,
-  seed = "product",
+  decorative = false,
   className,
 }: {
   proposalId?: LayoutsOperarProductCardProposalId
-  seed?: string
+  decorative?: boolean
   className?: string
 }) {
-  const layers = getLayoutsOperarProductCardMediaEmptyPhotoLayers(seed)
-
   return (
     <div
       className={cn(layoutsOperarProductCardMediaEmptyStateShellClass(proposalId), className)}
-      role="img"
-      aria-label="Producto sin fotografía"
+      role={decorative ? undefined : "img"}
+      aria-hidden={decorative ? true : undefined}
+      aria-label={decorative ? undefined : "Producto sin fotografía"}
     >
-      <div style={layers.base} aria-hidden />
-      <div style={layers.keyLight} aria-hidden />
-      <div style={layers.colorPoolA} aria-hidden />
-      <div style={layers.colorPoolB} aria-hidden />
-      <div style={layers.depth} aria-hidden />
-      <div style={layers.vignette} aria-hidden />
-      <div className={layoutsOperarProductCardMediaEmptyStateGrainClass} aria-hidden />
+      {decorative ? null : (
+        <ImageIcon
+          className={layoutsOperarProductCardMediaEmptyStateIconClass}
+          strokeWidth={1.6}
+          aria-hidden
+        />
+      )}
     </div>
   )
 }
@@ -135,7 +133,7 @@ function LayoutsOperarProductCardProposalMedia({
       style={mediaStyle}
     >
       {showEmptyState ? (
-        <LayoutsOperarProductCardMediaEmptyState proposalId={proposalId} seed={product.id} />
+        <LayoutsOperarProductCardMediaEmptyState proposalId={proposalId} />
       ) : (
         <img
           src={product.image ?? undefined}

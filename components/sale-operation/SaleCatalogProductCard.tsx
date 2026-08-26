@@ -13,18 +13,15 @@ import {
   layoutsOperarProductCardProposalTitleClass,
   type LayoutsOperarProductCardProposalId,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
-import { LayoutsOperarProductCardMediaEmptyState } from "@/app/library/layouts/LayoutsOperarProductCardProposalPrimitives"
 import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
+import { CatalogProductCardMediaPhoto } from "@/components/sale-operation/CatalogProductCardMediaPhoto"
 import {
   SaleCatalogProductOfferOverlay,
 } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
-import { isCatalogProductPhotoUrl } from "@/lib/catalogProductImageCache"
 import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
-import Image from "next/image"
-import { useState } from "react"
 
 type Props = {
   product: SaleCatalogProduct
@@ -41,14 +38,11 @@ export function SaleCatalogProductCard({
   onClick,
   proposalId = LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL,
 }: Props) {
-  const [imageFailed, setImageFailed] = useState(false)
   const isList = variant === "lista"
   const layoutVariant = isList ? "list" : "grid"
   const promoTrim = product.promo?.trim() ?? ""
   const showOfferOverlay =
     product.precioOriginal != null && product.precioOriginal > product.precio
-  const imagenTrim = product.imagen?.trim() ?? ""
-  const showEmptyState = !isCatalogProductPhotoUrl(imagenTrim) || imageFailed
   const mediaStyle = layoutsOperarProductCardProposalMediaStyle(proposalId)
 
   return (
@@ -68,24 +62,11 @@ export function SaleCatalogProductCard({
         className={layoutsOperarProductCardProposalMediaClass(proposalId, layoutVariant)}
         style={mediaStyle}
       >
-        {showEmptyState ? (
-          <LayoutsOperarProductCardMediaEmptyState
-            proposalId={proposalId}
-            seed={product.id}
-          />
-        ) : (
-          <Image
-            src={product.imagen}
-            alt=""
-            fill
-            loading="eager"
-            decoding="async"
-            onError={() => setImageFailed(true)}
-            className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-            unoptimized
-            sizes={isList ? "80px" : "33vw"}
-          />
-        )}
+        <CatalogProductCardMediaPhoto
+          src={product.imagen}
+          proposalId={proposalId}
+          sizes={isList ? "80px" : "33vw"}
+        />
         {showOfferOverlay ? (
           <SaleCatalogProductOfferOverlay
             precioOriginal={product.precioOriginal}

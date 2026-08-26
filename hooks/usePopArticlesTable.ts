@@ -2,12 +2,18 @@
 
 import type { GetPopArticlesTableInput } from "@/app/[siteId]/[popId]/articles/actions"
 import {
+  concatTableRowKey,
+  useDataWorkspaceInfiniteTableQuery,
+} from "@/hooks/useDataWorkspaceInfiniteTableQuery"
+import {
+  DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  pinDataWorkspaceTableInfiniteParams,
+} from "@/lib/dataWorkspaceTableInfinite"
+import {
   popArticlesQueryKey,
   type PopArticlesQueryParams,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
-import { fetchPopArticlesTable } from "@/lib/rootsyApi/articlesClient"
-import { useQuery } from "@tanstack/react-query"
+import { fetchPopArticlesTable, type PopArticlesTableResult } from "@/lib/rootsyApi/articlesClient"
 
 type UsePopArticlesTableOptions = {
   enabled?: boolean
@@ -19,28 +25,29 @@ export function usePopArticlesTable(
   options?: UsePopArticlesTableOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
-  const queryParams: GetPopArticlesTableInput = {
-    page: params.page,
-    pageSize: params.pageSize,
-    search: params.search,
-    soloActivos: params.soloActivos,
-    soloInactivos: params.soloInactivos,
-    conDescuento: params.conDescuento,
-    sinDescuento: params.sinDescuento,
-    conStock: params.conStock,
-    sinStock: params.sinStock,
-    stockNegativo: params.stockNegativo,
-    ventaSinStock: params.ventaSinStock,
-    categoryId: params.categoryId,
-    itemKinds: params.itemKinds as GetPopArticlesTableInput["itemKinds"],
-    sort: params.sort,
-    ord: params.ord,
-  }
+  const infiniteParams = pinDataWorkspaceTableInfiniteParams(params)
 
-  return useQuery({
-    queryKey: popArticlesQueryKey(popId ?? "", params),
-    queryFn: () => fetchPopArticlesTable(popId!, queryParams),
+  return useDataWorkspaceInfiniteTableQuery<PopArticlesTableResult>({
+    queryKey: popArticlesQueryKey(popId ?? "", infiniteParams),
     enabled,
-    ...sessionListQueryOptions,
+    queryFn: (page) =>
+      fetchPopArticlesTable(popId!, {
+        page,
+        pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
+        search: params.search,
+        soloActivos: params.soloActivos,
+        soloInactivos: params.soloInactivos,
+        conDescuento: params.conDescuento,
+        sinDescuento: params.sinDescuento,
+        conStock: params.conStock,
+        sinStock: params.sinStock,
+        stockNegativo: params.stockNegativo,
+        ventaSinStock: params.ventaSinStock,
+        categoryId: params.categoryId,
+        itemKinds: params.itemKinds as GetPopArticlesTableInput["itemKinds"],
+        sort: params.sort,
+        ord: params.ord,
+      }),
+    concat: concatTableRowKey<PopArticlesTableResult, "articles">("articles"),
   })
 }

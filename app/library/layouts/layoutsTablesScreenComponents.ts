@@ -82,7 +82,7 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Toolbar",
     component: "Barra filtros",
-    token: "alba · blur 14 · mundo a través",
+    token: "alba opaca · bruma",
     source: "rootsyLayoutsTablesSystem · FormUiToolbarListFilters",
   },
   {
@@ -105,8 +105,8 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   },
   {
     layer: "Tabla",
-    component: "Lienzo · planeta",
-    token: "rootsyplanet · 16% · blur 24 · respira",
+    component: "Lienzo",
+    token: "bruma-50 · sin planeta bajo la hoja",
     source: "ROOTSY_LAYOUTS_TABLES_ATMOSPHERE",
   },
   {

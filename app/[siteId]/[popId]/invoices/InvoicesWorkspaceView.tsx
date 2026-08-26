@@ -43,12 +43,10 @@ import {
 } from "@/app/[siteId]/[popId]/invoices/invoicesTableLayout"
 import {
   INVOICE_RECIBO_X_FILTER,
-  INVOICE_TABLE_PAGE_SIZES,
   mergeInvoicesWorkspaceUrl,
   parseInvoicesWorkspaceUrl,
   type InvoiceTableSortKey,
 } from "@/app/[siteId]/[popId]/invoices/workspaceUrl"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import {
@@ -59,7 +57,7 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
@@ -84,7 +82,10 @@ import {
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { invoicesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Button } from "@/components/ui/button"
@@ -109,6 +110,7 @@ import { SALE_COMPROBANTE_RECIBO_X_LABEL } from "@/lib/saleComprobantePicker"
 import { findSaleInvoiceTypeByArcaCbteTipo } from "@/lib/saleInvoiceTypes"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import { popInvoicesFormContextQueryKey, popInvoicesQueryRoot } from "@/lib/queryKeys"
 import {
   createArcaInvoiceWithOpenCashRegister,
@@ -159,7 +161,6 @@ export function InvoicesWorkspaceView() {
   const filtersButtonId = useId()
   const dateFilterLabelId = useId()
   const dateFilterTriggerId = useId()
-  const pageSizeLabelId = useId()
 
   const { bootstrap, loading: bootstrapLoading, hasPermission } =
     usePopWorkspace()
@@ -322,9 +323,10 @@ export function InvoicesWorkspaceView() {
 
   const refreshInvoicesList = useCallback(async () => {
     if (!popId) return
-    await queryClient.invalidateQueries({
-      queryKey: popInvoicesQueryRoot(popId),
-    })
+    await invalidateDataWorkspaceTableInfinite(
+      queryClient,
+      popInvoicesQueryRoot(popId),
+    )
   }, [popId, queryClient])
 
   useEffect(() => {
@@ -366,15 +368,7 @@ export function InvoicesWorkspaceView() {
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / ws.pageSize))
-  const rangeStart =
-    totalCount === 0 ? 0 : (ws.page - 1) * ws.pageSize + 1
-  const rangeEnd = Math.min(ws.page * ws.pageSize, totalCount)
-  const skeletonRowCount = Math.min(12, Math.max(5, ws.pageSize))
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, ws.page),
-    [totalPages, ws.page],
-  )
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
   const modalFiltersActiveCount = ws.status ? 1 : 0
   const hasFilterChips =
@@ -659,27 +653,7 @@ export function InvoicesWorkspaceView() {
                   <DataWorkspaceTableEmptyMascot />
                 ) : null
               }
-              footer={
-                <DataWorkspaceTableListPaginationFooter
-                  listFetching={loading}
-                  totalCount={totalCount}
-                  rangeStart={rangeStart}
-                  rangeEnd={rangeEnd}
-                  currentPage={ws.page}
-                  totalPages={totalPages}
-                  pageSize={ws.pageSize}
-                  pageSizeOptions={INVOICE_TABLE_PAGE_SIZES}
-                  paginationItems={paginationItems}
-                  onPageChange={(p) => pushWs({ page: p })}
-                  onPageSizeChange={(ps) =>
-                    pushWs({
-                      pageSize: ps as typeof ws.pageSize,
-                      page: 1,
-                    })
-                  }
-                  pageSizeLabelId={pageSizeLabelId}
-                />
-              }
+            infinite={tableListInfiniteFromQuery(invoicesQuery, "invoices")}
             >
               <DataWorkspaceListTableFrame>
                 <table

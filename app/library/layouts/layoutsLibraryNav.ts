@@ -32,7 +32,7 @@ export const LAYOUTS_PAGE_META: Record<string, LayoutsPageMeta> = {
   "layouts-tables": {
     id: "layouts-tables",
     title: "Tablas",
-    description: "Contenido — filtros · tabla · paginador.",
+    description: "Contenido — filtros · tabla · scroll infinito.",
   },
   "layouts-blocks": {
     id: "layouts-blocks",

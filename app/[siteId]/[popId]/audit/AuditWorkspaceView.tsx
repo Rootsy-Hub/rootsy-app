@@ -7,7 +7,6 @@ import {
   defaultAuditModalFilters,
   type AuditModalFilters,
 } from "@/app/[siteId]/[popId]/audit/AuditFiltersDialog"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import {
@@ -19,15 +18,18 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
   DataWorkspaceTableListShell,
+  tableListInfiniteFromQuery,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
   WorkspaceTableStatusBadge,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { auditSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
   workspaceTableLayoutClassName,
@@ -69,13 +71,13 @@ import {
   fetchPopAuditEvents,
   type AuditEventRow,
 } from "@/lib/rootsyApi/auditClient"
+import { DATA_WORKSPACE_TABLE_PAGE_SIZE, nextDataWorkspaceTablePage } from "@/lib/dataWorkspaceTableInfinite"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { cn } from "@/lib/utils"
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import { useParams } from "next/navigation"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import type { DateRange } from "react-day-picker"
-
-const PAGE_SIZES = [10, 25, 50] as const
 
 function sourceBadgeStatus(
   source: string,
@@ -120,8 +122,6 @@ export function AuditWorkspaceView() {
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>()
   const [searchInput, setSearchInput] = useState("")
   const [debouncedQ, setDebouncedQ] = useState("")
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(25)
   const [appliedFilters, setAppliedFilters] = useState<AuditModalFilters>(
     defaultAuditModalFilters,
   )
@@ -139,10 +139,7 @@ export function AuditWorkspaceView() {
   useEffect(() => {
     const next = searchInput.trim()
     const timer = window.setTimeout(() => {
-      setDebouncedQ((prev) => {
-        if (prev !== next) setPage(1)
-        return next
-      })
+      setDebouncedQ(next)
     }, 300)
     return () => window.clearTimeout(timer)
   }, [searchInput])
@@ -151,23 +148,24 @@ export function AuditWorkspaceView() {
   const dateFilterLabelId = useId()
   const dateFilterTriggerId = useId()
   const filtersButtonId = useId()
-  const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  const query = useQuery({
+  const query = useInfiniteQuery({
     queryKey: popAuditQueryKey(popId, {
-      page,
-      pageSize,
+      page: 1,
+      pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
       q: debouncedQ,
       from: dateBounds.from,
       to: dateBounds.to,
       action: appliedFilters.actions.slice().sort().join(","),
       source: appliedFilters.sources.slice().sort().join(","),
     }),
-    queryFn: async () => {
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const page = typeof pageParam === "number" ? pageParam : 1
       const res = await fetchPopAuditEvents(popId, {
         page,
-        pageSize,
+        pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
         q: debouncedQ || undefined,
         from: dateBounds.from,
         to: dateBounds.to,
@@ -177,7 +175,22 @@ export function AuditWorkspaceView() {
       if (!res.success) throw new Error(res.error)
       return res
     },
+    getNextPageParam: (lastPage) =>
+      nextDataWorkspaceTablePage(
+        lastPage.page,
+        lastPage.total,
+        lastPage.pageSize,
+      ),
+    select: (data) => {
+      const first = data.pages[0]
+      if (!first) return first
+      return {
+        ...first,
+        events: data.pages.flatMap((page) => page.events),
+      }
+    },
     enabled: Boolean(popId && siteId && canRead),
+    ...sessionListQueryOptions,
   })
 
   const events = query.data?.events ?? []
@@ -200,25 +213,7 @@ export function AuditWorkspaceView() {
       : null
   const error = bootstrapError ?? permissionError ?? tableError
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / Math.max(1, pageSize)))
-  const currentPage = Math.min(Math.max(1, page), totalPages)
-
-  useEffect(() => {
-    if (page !== currentPage) setPage(currentPage)
-  }, [currentPage, page])
-
-  const rangeLabel = useMemo(() => {
-    if (totalCount === 0) return { start: 0, end: 0 }
-    const start = (currentPage - 1) * pageSize + 1
-    const end = Math.min(currentPage * pageSize, totalCount)
-    return { start, end }
-  }, [currentPage, pageSize, totalCount])
-
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, currentPage),
-    [currentPage, totalPages],
-  )
-  const skeletonRowCount = Math.min(12, Math.max(5, pageSize))
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
   const dateFilterActive = datePreset !== "this_month"
   const dateFilterSummary = useMemo(
@@ -266,7 +261,6 @@ export function AuditWorkspaceView() {
 
   const applyFilters = () => {
     setAppliedFilters(draftFilters)
-    setPage(1)
     setFiltersModalOpen(false)
   }
 
@@ -277,7 +271,6 @@ export function AuditWorkspaceView() {
     setCustomDateRange(undefined)
     setAppliedFilters(defaultAuditModalFilters())
     setDraftFilters(defaultAuditModalFilters())
-    setPage(1)
     searchInputRef.current?.focus()
   }
 
@@ -315,11 +308,9 @@ export function AuditWorkspaceView() {
                   customRange={customDateRange}
                   onPresetChange={(preset) => {
                     setDatePreset(preset)
-                    setPage(1)
                   }}
                   onCustomRangeChange={(range) => {
                     setCustomDateRange(range)
-                    setPage(1)
                   }}
                   bounds={dateBounds}
                   showActiveState={false}
@@ -348,7 +339,6 @@ export function AuditWorkspaceView() {
                   onClear={() => {
                     setSearchInput("")
                     setDebouncedQ("")
-                    setPage(1)
                     searchInputRef.current?.focus()
                   }}
                   placeholder="Qué pasó o sobre qué… ( / )"
@@ -372,7 +362,6 @@ export function AuditWorkspaceView() {
                       onRemove={() => {
                         setDatePreset("this_month")
                         setCustomDateRange(undefined)
-                        setPage(1)
                       }}
                       removeAriaLabel="Quitar filtro de fecha"
                     />
@@ -386,7 +375,6 @@ export function AuditWorkspaceView() {
                           ...current,
                           actions: current.actions.filter((item) => item !== action),
                         }))
-                        setPage(1)
                       }}
                       removeAriaLabel={`Quitar filtro ${AUDIT_ACTION_FILTER_LABEL[action] ?? action}`}
                     />
@@ -400,7 +388,6 @@ export function AuditWorkspaceView() {
                           ...current,
                           sources: current.sources.filter((item) => item !== source),
                         }))
-                        setPage(1)
                       }}
                       removeAriaLabel={`Quitar filtro ${AUDIT_SOURCE_FILTER_LABEL[source] ?? source}`}
                     />
@@ -411,7 +398,6 @@ export function AuditWorkspaceView() {
                       onRemove={() => {
                         setSearchInput("")
                         setDebouncedQ("")
-                        setPage(1)
                       }}
                       removeAriaLabel="Quitar búsqueda"
                     />
@@ -424,25 +410,7 @@ export function AuditWorkspaceView() {
                 <DataWorkspaceTableEmptyMascot />
               ) : null
             }
-            footer={
-              <DataWorkspaceTableListPaginationFooter
-                listFetching={listFetching}
-                totalCount={totalCount}
-                rangeStart={rangeLabel.start}
-                rangeEnd={rangeLabel.end}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                pageSizeOptions={[...PAGE_SIZES]}
-                paginationItems={paginationItems}
-                onPageChange={setPage}
-                onPageSizeChange={(next) => {
-                  setPageSize(next as (typeof PAGE_SIZES)[number])
-                  setPage(1)
-                }}
-                pageSizeLabelId={pageSizeLabelId}
-              />
-            }
+            infinite={tableListInfiniteFromQuery(query, "audit")}
           >
             <DataWorkspaceListTableFrame>
               <Table

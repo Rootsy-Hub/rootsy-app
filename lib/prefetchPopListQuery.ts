@@ -9,6 +9,11 @@ export type PrefetchPopListQueryInput = {
   queryFn: () => Promise<unknown>
 }
 
+export type PrefetchPopInfiniteListQueryInput = {
+  queryKey: readonly unknown[]
+  queryFn: (page: number) => Promise<unknown>
+}
+
 export async function prefetchPopListQueries(
   queries: readonly PrefetchPopListQueryInput[],
 ): Promise<DehydratedState | null> {
@@ -38,4 +43,26 @@ export async function prefetchPopListQuery(
   query: PrefetchPopListQueryInput,
 ): Promise<DehydratedState | null> {
   return prefetchPopListQueries([query])
+}
+
+export async function prefetchPopInfiniteListQuery(
+  query: PrefetchPopInfiniteListQueryInput,
+): Promise<DehydratedState | null> {
+  const user = await getInitialAuthUser()
+  if (!user) return null
+
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: sessionListQueryOptions,
+    },
+  })
+
+  await queryClient.prefetchInfiniteQuery({
+    queryKey: query.queryKey,
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => query.queryFn(Number(pageParam) || 1),
+    ...sessionListQueryOptions,
+  })
+
+  return dehydrate(queryClient)
 }

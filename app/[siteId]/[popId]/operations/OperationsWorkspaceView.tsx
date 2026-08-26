@@ -21,9 +21,7 @@ import {
   mergeOperationsWorkspaceUrl,
   operationsCustomDateRange,
   parseOperationsWorkspaceUrl,
-  OPERATIONS_PAGE_SIZES,
 } from "@/app/[siteId]/[popId]/operations/workspaceUrl"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
@@ -35,12 +33,13 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { DataWorkspaceViewFilter } from "@/components/data-workspace/DataWorkspaceViewFilter"
+import { DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import {
   dataWorkspaceListFiltersGridFourClass,
   dataWorkspaceListFiltersPanelClass,
@@ -157,7 +156,6 @@ export function OperationsWorkspaceView() {
   const dateFilterLabelId = useId()
   const dateFilterTriggerId = useId()
   const filtersButtonId = useId()
-  const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hydratedViewPopRef = useRef<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
@@ -350,29 +348,7 @@ export function OperationsWorkspaceView() {
   const pagePurchases = purchases
   const pageExpenses = expenseLedger
   const pageServices = serviceCharges
-
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(totalCount / Math.max(1, pageSize))),
-    [totalCount, pageSize],
-  )
-  const currentPage = Math.min(Math.max(1, page), totalPages)
-
-  const rangeLabel = useMemo(() => {
-    if (totalCount === 0) return { start: 0, end: 0 }
-    const start = (currentPage - 1) * pageSize + 1
-    const end = Math.min(currentPage * pageSize, totalCount)
-    return { start, end }
-  }, [currentPage, pageSize, totalCount])
-
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, currentPage),
-    [totalPages, currentPage],
-  )
-
-  const skeletonRowCount = useMemo(
-    () => Math.min(12, Math.max(5, pageSize)),
-    [pageSize],
-  )
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
   const resultsSummary = useMemo(() => {
     if (listFetching && totalCount === 0) return "…"
@@ -655,24 +631,7 @@ export function OperationsWorkspaceView() {
                 <DataWorkspaceTableEmptyMascot />
               ) : null
             }
-            footer={
-              <DataWorkspaceTableListPaginationFooter
-                listFetching={listFetching}
-                totalCount={totalCount}
-                rangeStart={rangeLabel.start}
-                rangeEnd={rangeLabel.end}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                pageSizeOptions={OPERATIONS_PAGE_SIZES}
-                paginationItems={paginationItems}
-                onPageChange={(nextPage) => pushWs({ page: nextPage })}
-                onPageSizeChange={(ps) => {
-                  pushWs({ pageSize: ps as (typeof OPERATIONS_PAGE_SIZES)[number], page: 1 })
-                }}
-                pageSizeLabelId={pageSizeLabelId}
-              />
-            }
+            infinite={tableListInfiniteFromQuery(operationsQuery, "operations")}
           >
             {activeView === "sales" || activeView === "tables" || activeView === "counter" ? (
               <OperationsSalesTable

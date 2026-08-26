@@ -10,13 +10,14 @@ import {
   libraryShellMainClass,
   libraryThemeClass,
 } from "@/app/library/libraryColorTheme"
+import { getBackofficeAccessForSession } from "@/app/backoffice/backofficeAuth"
 import { DataWorkspaceModuleLayout } from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { Spinner } from "@/components/ui/spinner"
 import { useAuth } from "@/context/AuthContextSupabase"
-import { isBackofficeAllowedEmail } from "@/lib/backofficeAccess"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 
 type BackofficeShellProps = {
   children: ReactNode
@@ -78,10 +79,41 @@ function BackofficeShell({ children }: BackofficeShellProps) {
 
 function BackofficeShellWithAuth({ children }: BackofficeShellProps) {
   const { user } = useAuth()
+  const [allowed, setAllowed] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    if (!user) {
+      setAllowed(null)
+      return
+    }
+
+    let cancelled = false
+    void getBackofficeAccessForSession().then((access) => {
+      if (!cancelled) setAllowed(access.allowed)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   if (!user) return null
 
-  if (!isBackofficeAllowedEmail(user.email)) {
+  if (allowed === null) {
+    return (
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-foreground"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <Spinner className="size-8 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Cargando sesión…</span>
+      </div>
+    )
+  }
+
+  if (!allowed) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
         <h1 className="text-lg font-medium text-foreground">No autorizado</h1>

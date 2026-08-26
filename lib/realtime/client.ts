@@ -21,6 +21,7 @@ export function connectPopRealtimeSocket(
   let closed = false
   let ws: WebSocket | null = null
   let attempt = 0
+  let openGeneration = 0
   let outbound: string[] = []
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
   let pingTimer: ReturnType<typeof setInterval> | null = null
@@ -67,19 +68,22 @@ export function connectPopRealtimeSocket(
 
   async function open() {
     if (closed) return
+    const generation = ++openGeneration
     clearTimers()
     handlers.onStatus("connecting")
 
     const url = await resolveUrl()
-    if (closed) return
+    if (closed || generation !== openGeneration) return
     if (!url) {
       handlers.onStatus("disconnected")
       scheduleReconnect()
       return
     }
 
+    const previous = ws
     const socket = new WebSocket(url)
     ws = socket
+    if (previous && previous !== socket) previous.close()
 
     socket.onopen = () => {
       if (ws !== socket) return
@@ -126,6 +130,7 @@ export function connectPopRealtimeSocket(
     },
     close() {
       closed = true
+      openGeneration += 1
       outbound = []
       clearTimers()
       const socket = ws

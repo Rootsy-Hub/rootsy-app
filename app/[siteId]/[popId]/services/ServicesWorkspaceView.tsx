@@ -19,10 +19,8 @@ import {
 import {
   mergeServicesWorkspaceUrl,
   parseServicesWorkspaceUrl,
-  SERVICE_TABLE_PAGE_SIZES,
   type ServiceTableSortKey,
 } from "@/app/[siteId]/[popId]/services/workspaceUrl"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
@@ -34,7 +32,7 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
@@ -44,7 +42,10 @@ import {
   DataWorkspaceTableIconAction,
   DataWorkspaceTableThumbnail,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { servicesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
   workspaceTableLayoutClassName,
@@ -78,6 +79,7 @@ import { usePopServiceCategories } from "@/hooks/usePopServiceCategories"
 import { usePopServicesTable } from "@/hooks/usePopServicesTable"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { emptyServiceDetailsGrid } from "@/lib/serviceCatalogTypes"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
 import {
@@ -153,7 +155,6 @@ export function ServicesWorkspaceView() {
   const [searchInput, setSearchInput] = useState(ws.q)
   const searchInputId = useId()
   const filtersButtonId = useId()
-  const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
   const [draftFilters, setDraftFilters] = useState<ServicesAppliedFilters>(
@@ -286,9 +287,10 @@ export function ServicesWorkspaceView() {
 
   const refreshServicesList = useCallback(async () => {
     if (!popId) return
-    await queryClient.invalidateQueries({
-      queryKey: popServicesQueryRoot(popId),
-    })
+    await invalidateDataWorkspaceTableInfinite(
+      queryClient,
+      popServicesQueryRoot(popId),
+    )
   }, [popId, queryClient])
 
   const refreshCategories = useCallback(async () => {
@@ -345,15 +347,6 @@ export function ServicesWorkspaceView() {
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / ws.pageSize))
-  const rangeStart =
-    totalCount === 0 ? 0 : (ws.page - 1) * ws.pageSize + 1
-  const rangeEnd = Math.min(ws.page * ws.pageSize, totalCount)
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, ws.page),
-    [totalPages, ws.page],
-  )
-
   const modalFiltersActiveCount = useMemo(() => {
     let count = 0
     if (ws.soloActivos) count++
@@ -384,7 +377,7 @@ export function ServicesWorkspaceView() {
     return `${totalCount.toLocaleString("es-AR")} ${noun}`
   }, [loading, totalCount])
 
-  const skeletonRowCount = Math.min(12, Math.max(5, ws.pageSize))
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
   const visibleIds = useMemo(() => services.map((row) => row.id), [services])
   const allVisibleSelected =
     visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
@@ -746,24 +739,7 @@ export function ServicesWorkspaceView() {
               <DataWorkspaceTableEmptyMascot />
             ) : null
           }
-          footer={
-            <DataWorkspaceTableListPaginationFooter
-              listFetching={loading}
-              totalCount={totalCount}
-              rangeStart={rangeStart}
-              rangeEnd={rangeEnd}
-              currentPage={ws.page}
-              totalPages={totalPages}
-              pageSize={ws.pageSize}
-              pageSizeOptions={SERVICE_TABLE_PAGE_SIZES}
-              paginationItems={paginationItems}
-              onPageChange={(p) => pushWs({ page: p })}
-              onPageSizeChange={(ps) =>
-                pushWs({ pageSize: ps as typeof ws.pageSize, page: 1 })
-              }
-              pageSizeLabelId={pageSizeLabelId}
-            />
-          }
+            infinite={tableListInfiniteFromQuery(servicesQuery, "services")}
         >
           <DataWorkspaceListTableFrame>
             <table

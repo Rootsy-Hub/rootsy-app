@@ -55,6 +55,7 @@ import {
   exportCurrentAccountStatementPdf,
   printCurrentAccountStatementPdf,
 } from "@/lib/currentAccountStatementPdfExport"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import {
   popCurrentAccountLedgerQueryRoot,
   popCurrentAccountPartiesQueryRoot,
@@ -140,9 +141,10 @@ export function CurrentAccountDetailView({
       queryClient.invalidateQueries({
         queryKey: popCurrentAccountLedgerQueryRoot(popId),
       }),
-      queryClient.invalidateQueries({
-        queryKey: popCurrentAccountPartiesQueryRoot(popId),
-      }),
+      invalidateDataWorkspaceTableInfinite(
+        queryClient,
+        popCurrentAccountPartiesQueryRoot(popId),
+      ),
     ])
   }, [popId, queryClient])
 

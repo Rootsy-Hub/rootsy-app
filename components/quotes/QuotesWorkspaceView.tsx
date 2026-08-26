@@ -1,12 +1,10 @@
 "use client"
 
-import { QUOTE_TABLE_PAGE_SIZES } from "@/app/[siteId]/[popId]/quotes/quoteConstants"
 import {
   mergeQuotesWorkspaceUrl,
   parseQuotesWorkspaceUrl,
 } from "@/app/[siteId]/[popId]/quotes/workspaceUrl"
 import { emptyTableSessionCheckout } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { SaleQuoteViewDialog } from "@/components/quotes/SaleQuoteViewDialog"
 import { SaleQuoteDeleteDialog } from "@/components/quotes/SaleQuoteDeleteDialog"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
@@ -16,7 +14,7 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
@@ -25,7 +23,10 @@ import {
   DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { quotesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
   workspaceTableLayoutClassName,
@@ -56,6 +57,7 @@ import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { useSaleQuoteDetail } from "@/hooks/useSaleQuoteDetail"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import { popQuotesQueryRoot } from "@/lib/queryKeys"
 import {
   deleteSaleQuote,
@@ -162,7 +164,6 @@ export function QuotesWorkspaceView() {
   const searchInputId = useId()
   const dateFilterLabelId = useId()
   const dateFilterTriggerId = useId()
-  const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const [viewQuoteId, setViewQuoteId] = useState<string | null>(null)
@@ -249,9 +250,10 @@ export function QuotesWorkspaceView() {
 
   const refreshQuotesList = useCallback(async () => {
     if (!popId) return
-    await queryClient.invalidateQueries({
-      queryKey: popQuotesQueryRoot(popId),
-    })
+    await invalidateDataWorkspaceTableInfinite(
+      queryClient,
+      popQuotesQueryRoot(popId),
+    )
   }, [popId, queryClient])
 
   useEffect(() => {
@@ -414,29 +416,7 @@ export function QuotesWorkspaceView() {
   const hasFilterChips = hasSearchChip || dateFilterActive
   const activeFilterCount =
     (hasSearchChip ? 1 : 0) + (dateFilterActive ? 1 : 0)
-
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(totalCount / Math.max(1, ws.pageSize))),
-    [totalCount, ws.pageSize],
-  )
-  const currentPage = Math.min(Math.max(1, ws.page), totalPages)
-
-  const rangeLabel = useMemo(() => {
-    if (totalCount === 0) return { start: 0, end: 0 }
-    const start = (currentPage - 1) * ws.pageSize + 1
-    const end = Math.min(currentPage * ws.pageSize, totalCount)
-    return { start, end }
-  }, [currentPage, totalCount, ws.pageSize])
-
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, currentPage),
-    [totalPages, currentPage],
-  )
-
-  const skeletonRowCount = useMemo(
-    () => Math.min(12, Math.max(5, ws.pageSize)),
-    [ws.pageSize],
-  )
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
   const resultsSummary = useMemo(() => {
     if (listFetching && totalCount === 0) return "…"
@@ -539,27 +519,7 @@ export function QuotesWorkspaceView() {
                 <DataWorkspaceTableEmptyMascot />
               ) : null
             }
-            footer={
-              <DataWorkspaceTableListPaginationFooter
-                listFetching={listFetching}
-                totalCount={totalCount}
-                rangeStart={rangeLabel.start}
-                rangeEnd={rangeLabel.end}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                pageSize={ws.pageSize}
-                pageSizeOptions={QUOTE_TABLE_PAGE_SIZES}
-                paginationItems={paginationItems}
-                onPageChange={(p) => pushWs({ page: p })}
-                onPageSizeChange={(ps) => {
-                  pushWs({
-                    pageSize: ps as typeof ws.pageSize,
-                    page: 1,
-                  })
-                }}
-                pageSizeLabelId={pageSizeLabelId}
-              />
-            }
+            infinite={tableListInfiniteFromQuery(quotesQuery, "quotes")}
           >
             <DataWorkspaceListTableFrame>
               <Table

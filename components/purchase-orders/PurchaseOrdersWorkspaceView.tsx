@@ -1,11 +1,9 @@
 "use client"
 
-import { PURCHASE_ORDER_TABLE_PAGE_SIZES } from "@/app/[siteId]/[popId]/purchase-orders/orderConstants"
 import {
   mergePurchaseOrdersWorkspaceUrl,
   parsePurchaseOrdersWorkspaceUrl,
 } from "@/app/[siteId]/[popId]/purchase-orders/workspaceUrl"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { PurchaseOrderViewDialog } from "@/components/purchase-orders/PurchaseOrderViewDialog"
 import { PurchaseOrderDeleteDialog } from "@/components/purchase-orders/PurchaseOrderDeleteDialog"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
@@ -15,7 +13,7 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
@@ -24,7 +22,10 @@ import {
   DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { purchaseOrdersSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
   workspaceTableLayoutClassName,
@@ -55,6 +56,7 @@ import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { usePurchaseOrderDetail } from "@/hooks/usePurchaseOrderDetail"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import { popPurchaseOrdersQueryRoot } from "@/lib/queryKeys"
 import {
   deletePurchaseOrder,
@@ -179,7 +181,6 @@ export function PurchaseOrdersWorkspaceView() {
   const searchInputId = useId()
   const dateFilterLabelId = useId()
   const dateFilterTriggerId = useId()
-  const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const [viewOrderId, setViewOrderId] = useState<string | null>(null)
@@ -270,9 +271,10 @@ export function PurchaseOrdersWorkspaceView() {
 
   const refreshPurchaseOrdersList = useCallback(async () => {
     if (!popId) return
-    await queryClient.invalidateQueries({
-      queryKey: popPurchaseOrdersQueryRoot(popId),
-    })
+    await invalidateDataWorkspaceTableInfinite(
+      queryClient,
+      popPurchaseOrdersQueryRoot(popId),
+    )
   }, [popId, queryClient])
 
   useEffect(() => {
@@ -435,29 +437,7 @@ export function PurchaseOrdersWorkspaceView() {
   const hasFilterChips = hasSearchChip || dateFilterActive
   const activeFilterCount =
     (hasSearchChip ? 1 : 0) + (dateFilterActive ? 1 : 0)
-
-  const totalPages = useMemo(
-    () => Math.max(1, Math.ceil(totalCount / Math.max(1, ws.pageSize))),
-    [totalCount, ws.pageSize],
-  )
-  const currentPage = Math.min(Math.max(1, ws.page), totalPages)
-
-  const rangeLabel = useMemo(() => {
-    if (totalCount === 0) return { start: 0, end: 0 }
-    const start = (currentPage - 1) * ws.pageSize + 1
-    const end = Math.min(currentPage * ws.pageSize, totalCount)
-    return { start, end }
-  }, [currentPage, totalCount, ws.pageSize])
-
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, currentPage),
-    [totalPages, currentPage],
-  )
-
-  const skeletonRowCount = useMemo(
-    () => Math.min(12, Math.max(5, ws.pageSize)),
-    [ws.pageSize],
-  )
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
   const resultsSummary = useMemo(() => {
     if (listFetching && totalCount === 0) return "…"
@@ -560,27 +540,7 @@ export function PurchaseOrdersWorkspaceView() {
                 <DataWorkspaceTableEmptyMascot />
               ) : null
             }
-            footer={
-              <DataWorkspaceTableListPaginationFooter
-                listFetching={listFetching}
-                totalCount={totalCount}
-                rangeStart={rangeLabel.start}
-                rangeEnd={rangeLabel.end}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                pageSize={ws.pageSize}
-                pageSizeOptions={PURCHASE_ORDER_TABLE_PAGE_SIZES}
-                paginationItems={paginationItems}
-                onPageChange={(p) => pushWs({ page: p })}
-                onPageSizeChange={(ps) => {
-                  pushWs({
-                    pageSize: ps as typeof ws.pageSize,
-                    page: 1,
-                  })
-                }}
-                pageSizeLabelId={pageSizeLabelId}
-              />
-            }
+            infinite={tableListInfiniteFromQuery(ordersQuery, "purchase-orders")}
           >
             <DataWorkspaceListTableFrame>
               <Table

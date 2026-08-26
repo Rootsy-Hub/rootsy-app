@@ -38,24 +38,24 @@ function semanticHex(id: string): string {
 export type LayoutsTablesStatusId = "activo" | "inactivo" | "pendiente" | "vencido"
 
 export const ROOTSY_LAYOUTS_TABLES_MANIFESTO =
-  "Listado workspace — header éter, toolbar alba, tabla flush al suelo, footer tierra mojada. Sin paleta Nature en las celdas: bruma · savia · sombra · funcional. El pie ancla el mundo: suelo-900 · savia en el umbral."
+  "Listado workspace — header éter, toolbar alba, tabla flush al suelo. Scroll infinito de a 20. El pie de paginación quedó archivado en esta librería."
 
 export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   {
-    title: "Éter y suelo",
-    detail: "Header éter · h-17. Footer tierra mojada — humus oliva bajo sombra. El listado vive entre el espacio y el piso.",
+    title: "Éter y claro",
+    detail: "Header éter · h-17. El listado vive en bruma, sin pie de paginación en producto.",
   },
   {
     title: "Toolbar alba",
-    detail: "Bruma a todo el ancho · el mundo se ve a través · form.control.shell.inline-icon · umbral entre noche y claro.",
+    detail: "Bruma a todo el ancho · alba opaca · form.control.shell.inline-icon · umbral entre noche y claro.",
   },
   {
     title: "Tabla bruma",
     detail: "Head space.500 · filas space.600+100 · alternancia bruma-50/white · selección savia-100.",
   },
   {
-    title: "Mundo en el lienzo",
-    detail: "Planeta en el gutter de filtros — la tabla ocupa el claro, de lado a lado hasta el pie.",
+    title: "Claro opaco",
+    detail: "Lienzo bruma-50. La hoja es blanca: no se pinta planeta debajo.",
   },
   {
     title: "Acciones por capa",
@@ -98,15 +98,15 @@ export const ROOTSY_LAYOUTS_TABLES_CHROME = {
 export const ROOTSY_LAYOUTS_TABLES_TOOLBAR = {
   backgroundColor: `linear-gradient(180deg, color-mix(in srgb, ${hx("sombra", "800")} 10%, transparent) 0%, color-mix(in srgb, ${hx("bruma", "100")} 46%, transparent) 42%, color-mix(in srgb, ${elevationHex("elevation.surface.overlay")} 56%, transparent) 100%)`,
   borderBottom: `1px solid color-mix(in srgb, ${hx("savia", "400")} 22%, ${hx("bruma", "200")})`,
-  chromeToken: "alba · blur 14 · mundo a través",
+  chromeToken: "alba opaca · bruma",
 } as const
 
-/** Lienzo detrás de la hoja — planeta más callado que en bloques. */
+/** Lienzo detrás de la hoja — bruma, sin planeta oculto bajo la tabla. */
 export const ROOTSY_LAYOUTS_TABLES_ATMOSPHERE = {
-  mistToken: "bruma-100 radial · cielo",
-  planetToken: "rootsyplanet · 16% · blur 24 · respira 14s",
-  veilToken: "máscara a bruma · el valle no se lee",
-  horizonToken: "savia/bruma · 1px · glow 11s",
+  mistToken: "bruma-50 · cielo del listado",
+  planetToken: "sin planeta — la hoja es opaca",
+  veilToken: "toolbar alba opaca",
+  horizonToken: "archivo · footer tierra mojada en esta librería",
   productClass: "data-workspace-tables-atmosphere",
 } as const
 

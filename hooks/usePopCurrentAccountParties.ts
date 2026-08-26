@@ -6,12 +6,18 @@ import type {
   CurrentAccountDirection,
 } from "@/lib/currentAccounts"
 import {
+  concatTableRowKey,
+  useDataWorkspaceInfiniteTableQuery,
+} from "@/hooks/useDataWorkspaceInfiniteTableQuery"
+import {
+  DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  pinDataWorkspaceTableInfiniteParams,
+} from "@/lib/dataWorkspaceTableInfinite"
+import {
   popCurrentAccountPartiesQueryKey,
   type PopCurrentAccountPartiesQueryParams,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
-import { fetchPopCurrentAccountParties } from "@/lib/rootsyApi/currentAccountsClient"
-import { useQuery } from "@tanstack/react-query"
+import { fetchPopCurrentAccountParties, type PopCurrentAccountPartiesResult } from "@/lib/rootsyApi/currentAccountsClient"
 
 type UsePopCurrentAccountPartiesOptions = {
   enabled?: boolean
@@ -23,20 +29,22 @@ export function usePopCurrentAccountParties(
   options?: UsePopCurrentAccountPartiesOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
+  const infiniteParams = pinDataWorkspaceTableInfiniteParams(params)
   const queryParams: GetPopCurrentAccountPartiesInput = {
     q: params.q,
-    page: params.page,
-    pageSize: params.pageSize,
+    page: infiniteParams.page,
+    pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
     direction: params.direction as CurrentAccountDirection | "",
     aging: params.aging as CurrentAccountAgingFilter | "",
     sort: params.sort,
     ord: params.ord,
   }
 
-  return useQuery({
-    queryKey: popCurrentAccountPartiesQueryKey(popId ?? "", params),
-    queryFn: () => fetchPopCurrentAccountParties(popId!, queryParams),
+  return useDataWorkspaceInfiniteTableQuery<PopCurrentAccountPartiesResult>({
+    queryKey: popCurrentAccountPartiesQueryKey(popId ?? "", infiniteParams),
     enabled,
-    ...sessionListQueryOptions,
+    queryFn: (page) =>
+      fetchPopCurrentAccountParties(popId!, { ...queryParams, page }),
+    concat: concatTableRowKey<PopCurrentAccountPartiesResult, "parties">("parties"),
   })
 }

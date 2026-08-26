@@ -2,12 +2,18 @@
 
 import type { GetPurchaseOrdersTableInput } from "@/app/[siteId]/[popId]/purchase-orders/actions"
 import {
+  concatTableRowKey,
+  useDataWorkspaceInfiniteTableQuery,
+} from "@/hooks/useDataWorkspaceInfiniteTableQuery"
+import {
+  DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  pinDataWorkspaceTableInfiniteParams,
+} from "@/lib/dataWorkspaceTableInfinite"
+import {
   popPurchaseOrdersQueryKey,
   type PopPurchaseOrdersQueryParams,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
-import { fetchPopPurchaseOrdersTable } from "@/lib/rootsyApi/purchaseOrdersClient"
-import { useQuery } from "@tanstack/react-query"
+import { fetchPopPurchaseOrdersTable, type PopPurchaseOrdersTableResult } from "@/lib/rootsyApi/purchaseOrdersClient"
 
 type UsePopPurchaseOrdersTableOptions = {
   enabled?: boolean
@@ -19,18 +25,20 @@ export function usePopPurchaseOrdersTable(
   options?: UsePopPurchaseOrdersTableOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
+  const infiniteParams = pinDataWorkspaceTableInfiniteParams(params)
   const queryParams: GetPurchaseOrdersTableInput = {
-    page: params.page,
-    pageSize: params.pageSize,
+    page: infiniteParams.page,
+    pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
     q: params.q,
     dateFrom: params.dateFrom,
     dateTo: params.dateTo,
   }
 
-  return useQuery({
-    queryKey: popPurchaseOrdersQueryKey(popId ?? "", params),
-    queryFn: () => fetchPopPurchaseOrdersTable(popId!, queryParams),
+  return useDataWorkspaceInfiniteTableQuery<PopPurchaseOrdersTableResult>({
+    queryKey: popPurchaseOrdersQueryKey(popId ?? "", infiniteParams),
     enabled,
-    ...sessionListQueryOptions,
+    queryFn: (page) =>
+      fetchPopPurchaseOrdersTable(popId!, { ...queryParams, page }),
+    concat: concatTableRowKey<PopPurchaseOrdersTableResult, "rows">("rows"),
   })
 }

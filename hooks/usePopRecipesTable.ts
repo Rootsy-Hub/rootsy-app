@@ -2,12 +2,18 @@
 
 import type { GetPopRecipesTableInput } from "@/app/[siteId]/[popId]/recipes/actions"
 import {
+  concatTableRowKey,
+  useDataWorkspaceInfiniteTableQuery,
+} from "@/hooks/useDataWorkspaceInfiniteTableQuery"
+import {
+  DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  pinDataWorkspaceTableInfiniteParams,
+} from "@/lib/dataWorkspaceTableInfinite"
+import {
   popRecipesQueryKey,
   type PopRecipesQueryParams,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
-import { fetchPopRecipesTable } from "@/lib/rootsyApi/recipesClient"
-import { useQuery } from "@tanstack/react-query"
+import { fetchPopRecipesTable, type PopRecipesTableResult } from "@/lib/rootsyApi/recipesClient"
 
 type UsePopRecipesTableOptions = {
   enabled?: boolean
@@ -19,20 +25,22 @@ export function usePopRecipesTable(
   options?: UsePopRecipesTableOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
+  const infiniteParams = pinDataWorkspaceTableInfiniteParams(params)
   const queryParams: GetPopRecipesTableInput = {
     q: params.q,
-    page: params.page,
-    pageSize: params.pageSize,
+    page: infiniteParams.page,
+    pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
     soloActivos: params.soloActivos,
     categoryId: params.categoryId,
     sort: params.sort,
     ord: params.ord,
   }
 
-  return useQuery({
-    queryKey: popRecipesQueryKey(popId ?? "", params),
-    queryFn: () => fetchPopRecipesTable(popId!, queryParams),
+  return useDataWorkspaceInfiniteTableQuery<PopRecipesTableResult>({
+    queryKey: popRecipesQueryKey(popId ?? "", infiniteParams),
     enabled,
-    ...sessionListQueryOptions,
+    queryFn: (page) =>
+      fetchPopRecipesTable(popId!, { ...queryParams, page }),
+    concat: concatTableRowKey<PopRecipesTableResult, "recipes">("recipes"),
   })
 }

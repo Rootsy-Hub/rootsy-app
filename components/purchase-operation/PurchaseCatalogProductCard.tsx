@@ -11,17 +11,14 @@ import {
   layoutsOperarProductCardProposalPriceClass,
   layoutsOperarProductCardProposalTitleClass,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
-import { LayoutsOperarProductCardMediaEmptyState } from "@/app/library/layouts/LayoutsOperarProductCardProposalPrimitives"
 import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
+import { CatalogProductCardMediaPhoto } from "@/components/sale-operation/CatalogProductCardMediaPhoto"
 import {
   purchaseCatalogCostHint,
   type PurchaseCatalogProduct,
 } from "@/components/purchase-operation/purchaseCatalogTypes"
-import { isCatalogProductPhotoUrl } from "@/lib/catalogProductImageCache"
 import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
-import Image from "next/image"
-import { useState } from "react"
 
 type Props = {
   product: PurchaseCatalogProduct
@@ -36,12 +33,9 @@ export function PurchaseCatalogProductCard({
   disabled = false,
   onClick,
 }: Props) {
-  const [imageFailed, setImageFailed] = useState(false)
   const isList = variant === "lista"
   const layoutVariant = isList ? "list" : "grid"
   const proposalId = LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL
-  const imagenTrim = product.imagen?.trim() ?? ""
-  const showEmptyState = !isCatalogProductPhotoUrl(imagenTrim) || imageFailed
   const mediaStyle = layoutsOperarProductCardProposalMediaStyle(proposalId)
 
   return (
@@ -61,24 +55,11 @@ export function PurchaseCatalogProductCard({
         className={layoutsOperarProductCardProposalMediaClass(proposalId, layoutVariant)}
         style={mediaStyle}
       >
-        {showEmptyState ? (
-          <LayoutsOperarProductCardMediaEmptyState
-            proposalId={proposalId}
-            seed={product.id}
-          />
-        ) : (
-          <Image
-            src={product.imagen}
-            alt=""
-            fill
-            loading="eager"
-            decoding="async"
-            onError={() => setImageFailed(true)}
-            className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-            unoptimized
-            sizes={isList ? "80px" : "33vw"}
-          />
-        )}
+        <CatalogProductCardMediaPhoto
+          src={product.imagen}
+          proposalId={proposalId}
+          sizes={isList ? "80px" : "33vw"}
+        />
         {!disabled ? (
           <span className={layoutsOperarProductCardProposalAddClass(proposalId)} aria-hidden>
             <Plus className="size-4" strokeWidth={2.5} aria-hidden />

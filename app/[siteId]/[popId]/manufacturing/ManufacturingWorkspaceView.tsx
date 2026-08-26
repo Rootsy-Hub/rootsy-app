@@ -5,7 +5,6 @@ import {
   formatInventoryMoney,
   formatInventoryQtyWithUnit,
 } from "@/app/[siteId]/[popId]/inventory/inventoryFormat"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import { DataWorkspaceListSearchField } from "@/components/data-workspace/DataWorkspaceListFilterFields"
@@ -14,7 +13,6 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
   DataWorkspaceTableListShell,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
@@ -22,7 +20,10 @@ import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { manufacturingSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
   workspaceTableLayoutClassName,
@@ -63,14 +64,13 @@ import {
   fetchManufacturingWorkspace,
 } from "@/lib/rootsyApi/manufacturingClient"
 import { cn } from "@/lib/utils"
+import { useDataWorkspaceClientInfiniteSlice } from "@/hooks/useDataWorkspaceClientInfiniteSlice"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useParams } from "next/navigation"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import type { DateRange } from "react-day-picker"
-
-const PAGE_SIZES = [10, 25, 50, 100] as const
 
 export function ManufacturingWorkspaceView() {
   const params = useParams()
@@ -85,8 +85,6 @@ export function ManufacturingWorkspaceView() {
     useState<DataWorkspaceDatePreset>("this_month")
   const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>()
   const [searchInput, setSearchInput] = useState("")
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(25)
 
   const dateBounds = useMemo(
     () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
@@ -100,7 +98,6 @@ export function ManufacturingWorkspaceView() {
   const searchInputId = useId()
   const dateFilterLabelId = useId()
   const dateFilterTriggerId = useId()
-  const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const canCreate = hasPermission(
@@ -140,25 +137,10 @@ export function ManufacturingWorkspaceView() {
   }, [runs, searchTrim])
 
   const totalCount = filteredRuns.length
-  const totalPages = Math.max(1, Math.ceil(totalCount / Math.max(1, pageSize)))
-  const currentPage = Math.min(Math.max(1, page), totalPages)
-  const pageRows = useMemo(() => {
-    const from = (currentPage - 1) * pageSize
-    return filteredRuns.slice(from, from + pageSize)
-  }, [currentPage, filteredRuns, pageSize])
-
-  const rangeLabel = useMemo(() => {
-    if (totalCount === 0) return { start: 0, end: 0 }
-    const start = (currentPage - 1) * pageSize + 1
-    const end = Math.min(currentPage * pageSize, totalCount)
-    return { start, end }
-  }, [currentPage, pageSize, totalCount])
-
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, currentPage),
-    [currentPage, totalPages],
-  )
-  const skeletonRowCount = Math.min(12, Math.max(5, pageSize))
+  const sliceResetKey = `${dateBounds.from}:${dateBounds.to}:${searchTrim}`
+  const slice = useDataWorkspaceClientInfiniteSlice(filteredRuns, sliceResetKey)
+  const pageRows = slice.visible
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
   const dateFilterActive = datePreset !== "this_month"
   const dateFilterSummary = useMemo(
@@ -175,10 +157,6 @@ export function ManufacturingWorkspaceView() {
     const noun = totalCount === 1 ? "producción" : "producciones"
     return `${totalCount.toLocaleString("es-AR")} ${noun}`
   }, [listFetching, totalCount])
-
-  useEffect(() => {
-    if (page !== currentPage) setPage(currentPage)
-  }, [currentPage, page])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -278,11 +256,9 @@ export function ManufacturingWorkspaceView() {
                   customRange={customDateRange}
                   onPresetChange={(preset) => {
                     setDatePreset(preset)
-                    setPage(1)
                   }}
                   onCustomRangeChange={(range) => {
                     setCustomDateRange(range)
-                    setPage(1)
                   }}
                   bounds={dateBounds}
                   showActiveState={false}
@@ -297,11 +273,9 @@ export function ManufacturingWorkspaceView() {
                   value={searchInput}
                   onChange={(event) => {
                     setSearchInput(event.target.value)
-                    setPage(1)
                   }}
                   onClear={() => {
                     setSearchInput("")
-                    setPage(1)
                     searchInputRef.current?.focus()
                   }}
                   placeholder="Artículo, receta o quién… ( / )"
@@ -321,7 +295,6 @@ export function ManufacturingWorkspaceView() {
                     setSearchInput("")
                     setDatePreset("this_month")
                     setCustomDateRange(undefined)
-                    setPage(1)
                     searchInputRef.current?.focus()
                   }}
                 >
@@ -331,7 +304,6 @@ export function ManufacturingWorkspaceView() {
                       onRemove={() => {
                         setDatePreset("this_month")
                         setCustomDateRange(undefined)
-                        setPage(1)
                       }}
                       removeAriaLabel="Quitar filtro de fecha"
                     />
@@ -341,7 +313,6 @@ export function ManufacturingWorkspaceView() {
                       label={`Buscar: «${searchInput.trim()}»`}
                       onRemove={() => {
                         setSearchInput("")
-                        setPage(1)
                       }}
                       removeAriaLabel="Quitar búsqueda"
                     />
@@ -354,25 +325,12 @@ export function ManufacturingWorkspaceView() {
                 <DataWorkspaceTableEmptyMascot />
               ) : null
             }
-            footer={
-              <DataWorkspaceTableListPaginationFooter
-                listFetching={listFetching}
-                totalCount={totalCount}
-                rangeStart={rangeLabel.start}
-                rangeEnd={rangeLabel.end}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                pageSizeOptions={[...PAGE_SIZES]}
-                paginationItems={paginationItems}
-                onPageChange={setPage}
-                onPageSizeChange={(next) => {
-                  setPageSize(next as (typeof PAGE_SIZES)[number])
-                  setPage(1)
-                }}
-                pageSizeLabelId={pageSizeLabelId}
-              />
-            }
+            infinite={{
+              world: "manufacturing",
+              hasMore: slice.hasMore,
+              isFetchingMore: false,
+              onLoadMore: slice.loadMore,
+            }}
           >
             <DataWorkspaceListTableFrame>
               <Table

@@ -10,7 +10,6 @@ import {
   type PromotionFormState,
 } from "@/app/[siteId]/[popId]/promotions/promotionFormState"
 import {
-  PROMOTION_TABLE_PAGE_SIZES,
   promotionDialogBodyClass,
   promotionDialogFooterClass,
   promotionDialogHeaderClass,
@@ -46,7 +45,6 @@ import {
   parsePromotionsWorkspaceUrl,
   type PromotionTableSortKey,
 } from "@/app/[siteId]/[popId]/promotions/workspaceUrl"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import {
@@ -57,7 +55,7 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
@@ -85,7 +83,10 @@ import {
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { promotionsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Button } from "@/components/ui/button"
@@ -106,6 +107,7 @@ import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { usePopPromotionCatalog } from "@/hooks/usePopPromotionCatalog"
 import { usePopPromotionsTable } from "@/hooks/usePopPromotionsTable"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
@@ -174,7 +176,6 @@ export function PromotionsWorkspaceView() {
   )
   const searchInputId = useId()
   const filtersButtonId = useId()
-  const pageSizeLabelId = useId()
 
   const { bootstrap, loading: bootstrapLoading, hasPermission } =
     usePopWorkspace()
@@ -300,9 +301,10 @@ export function PromotionsWorkspaceView() {
 
   const refreshPromotionsList = useCallback(async () => {
     if (!popId) return
-    await queryClient.invalidateQueries({
-      queryKey: popPromotionsQueryRoot(popId),
-    })
+    await invalidateDataWorkspaceTableInfinite(
+      queryClient,
+      popPromotionsQueryRoot(popId),
+    )
   }, [popId, queryClient])
 
   useEffect(() => {
@@ -360,16 +362,7 @@ export function PromotionsWorkspaceView() {
     return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / ws.pageSize))
-  const rangeStart =
-    totalCount === 0 ? 0 : (ws.page - 1) * ws.pageSize + 1
-  const rangeEnd = Math.min(ws.page * ws.pageSize, totalCount)
-
-  const skeletonRowCount = Math.min(12, Math.max(5, ws.pageSize))
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, ws.page),
-    [totalPages, ws.page],
-  )
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
   const visibleIds = useMemo(() => promotions.map((row) => row.id), [promotions])
   const allVisibleSelected =
@@ -625,27 +618,7 @@ export function PromotionsWorkspaceView() {
               <DataWorkspaceTableEmptyMascot />
             ) : null
           }
-          footer={
-            <DataWorkspaceTableListPaginationFooter
-              listFetching={loading}
-              totalCount={totalCount}
-              rangeStart={rangeStart}
-              rangeEnd={rangeEnd}
-              currentPage={ws.page}
-              totalPages={totalPages}
-              pageSize={ws.pageSize}
-              pageSizeOptions={PROMOTION_TABLE_PAGE_SIZES}
-              paginationItems={paginationItems}
-              onPageChange={(p) => pushWs({ page: p })}
-              onPageSizeChange={(ps) =>
-                pushWs({
-                  pageSize: ps as typeof ws.pageSize,
-                  page: 1,
-                })
-              }
-              pageSizeLabelId={pageSizeLabelId}
-            />
-          }
+            infinite={tableListInfiniteFromQuery(promotionsQuery, "promotions")}
         >
           <DataWorkspaceListTableFrame>
             <table

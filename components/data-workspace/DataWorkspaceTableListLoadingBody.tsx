@@ -4,7 +4,6 @@ import "@/app/library/color/rootsyNaturePalette.css"
 import { DataWorkspaceListTableFrame } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   DataWorkspaceTableListFiltersBar,
-  DataWorkspaceTableListPaginationFooter,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
@@ -12,7 +11,10 @@ import {
   type PopTableListFilterLayout,
   type PopTableListSkeletonHeaderCell,
 } from "@/components/data-workspace/popTableListSkeletonConfig"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import {
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
@@ -28,9 +30,7 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { cn } from "@/lib/utils"
 import { TableBody } from "@/components/ui/table"
-import { useId, useMemo } from "react"
-
-const LOADING_PAGE_SIZES = [10, 25, 50, 100] as const
+import { useMemo } from "react"
 
 const filterSkeletonLabelClass =
   "h-3 w-10 animate-pulse rounded-sm bg-rootsy-bruma-200"
@@ -129,7 +129,6 @@ export function DataWorkspaceTableListLoadingBody({
   moduleKey: string
   title?: string
 }) {
-  const pageSizeLabelId = useId()
   const config = useMemo(
     () => getPopTableListSkeletonConfig(moduleKey),
     [moduleKey],
@@ -138,25 +137,7 @@ export function DataWorkspaceTableListLoadingBody({
   return (
     <>
       <TableListFiltersSkeleton layout={config.filterLayout} />
-      <DataWorkspaceTableListShell
-        footer={
-          <DataWorkspaceTableListPaginationFooter
-            listFetching
-            totalCount={0}
-            rangeStart={0}
-            rangeEnd={0}
-            currentPage={1}
-            totalPages={1}
-            pageSize={LOADING_PAGE_SIZES[1]}
-            pageSizeOptions={LOADING_PAGE_SIZES}
-            paginationItems={[1]}
-            onPageChange={() => {}}
-            onPageSizeChange={() => {}}
-            pageSizeLabelId={pageSizeLabelId}
-            variant="tables"
-          />
-        }
-      >
+      <DataWorkspaceTableListShell>
         <DataWorkspaceListTableFrame>
           <table
             className={cn(
@@ -168,7 +149,7 @@ export function DataWorkspaceTableListLoadingBody({
             <TableListHeaderSkeleton headers={config.headers} />
             <TableBody>
               <WorkspaceTableSkeletonRows
-                rowCount={config.rowCount ?? 10}
+                rowCount={config.rowCount ?? DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT}
                 rowKeyPrefix={`${moduleKey || "list"}-segment-sk`}
                 columns={config.columns}
                 tone="nature"

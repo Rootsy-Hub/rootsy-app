@@ -1,0 +1,121 @@
+.data-workspace-table-infinite {
+  display: flex;
+  justify-content: center;
+}
+
+.data-workspace-table-infinite__stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem 1.25rem;
+}
+
+.data-workspace-table-infinite__copy {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin: 0;
+  max-width: 28rem;
+  font-family: var(--rootsy-font-ui);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--rootsy-bruma-700);
+}
+
+.data-workspace-table-infinite__phrase {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  text-align: center;
+  animation: data-workspace-table-infinite-ink 2.8s
+    cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.data-workspace-table-infinite__phrase::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: var(--rootsy-bruma-500);
+  pointer-events: none;
+  animation: data-workspace-table-infinite-lit 2.8s
+    cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.data-workspace-table-infinite__dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+  margin-left: 0.28em;
+  transform: translateY(-0.06em);
+}
+
+.data-workspace-table-infinite__dots span {
+  display: block;
+  width: 0.22em;
+  height: 0.22em;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.22;
+  animation: data-workspace-table-infinite-dot 1.4s
+    cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.data-workspace-table-infinite__dots span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.data-workspace-table-infinite__dots span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes data-workspace-table-infinite-ink {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes data-workspace-table-infinite-lit {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes data-workspace-table-infinite-dot {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-workspace-table-infinite__phrase,
+  .data-workspace-table-infinite__phrase::after,
+  .data-workspace-table-infinite__dots span {
+    animation: none;
+  }
+
+  .data-workspace-table-infinite__phrase {
+    opacity: 1;
+  }
+
+  .data-workspace-table-infinite__phrase::after {
+    content: none;
+  }
+
+  .data-workspace-table-infinite__dots span {
+    opacity: 0.45;
+  }
+}

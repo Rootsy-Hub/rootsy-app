@@ -2,12 +2,18 @@
 
 import type { GetPopServicesTableInput } from "@/app/[siteId]/[popId]/services/actions"
 import {
+  concatTableRowKey,
+  useDataWorkspaceInfiniteTableQuery,
+} from "@/hooks/useDataWorkspaceInfiniteTableQuery"
+import {
+  DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  pinDataWorkspaceTableInfiniteParams,
+} from "@/lib/dataWorkspaceTableInfinite"
+import {
   popServicesQueryKey,
   type PopServicesQueryParams,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
-import { fetchPopServicesTable } from "@/lib/rootsyApi/servicesClient"
-import { useQuery } from "@tanstack/react-query"
+import { fetchPopServicesTable, type PopServicesTableResult } from "@/lib/rootsyApi/servicesClient"
 
 type UsePopServicesTableOptions = {
   enabled?: boolean
@@ -19,20 +25,22 @@ export function usePopServicesTable(
   options?: UsePopServicesTableOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
+  const infiniteParams = pinDataWorkspaceTableInfiniteParams(params)
   const queryParams: GetPopServicesTableInput = {
     q: params.q,
-    page: params.page,
-    pageSize: params.pageSize,
+    page: infiniteParams.page,
+    pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
     soloActivos: params.soloActivos,
     categoryId: params.categoryId,
     sort: params.sort,
     ord: params.ord,
   }
 
-  return useQuery({
-    queryKey: popServicesQueryKey(popId ?? "", params),
-    queryFn: () => fetchPopServicesTable(popId!, queryParams),
+  return useDataWorkspaceInfiniteTableQuery<PopServicesTableResult>({
+    queryKey: popServicesQueryKey(popId ?? "", infiniteParams),
     enabled,
-    ...sessionListQueryOptions,
+    queryFn: (page) =>
+      fetchPopServicesTable(popId!, { ...queryParams, page }),
+    concat: concatTableRowKey<PopServicesTableResult, "services">("services"),
   })
 }

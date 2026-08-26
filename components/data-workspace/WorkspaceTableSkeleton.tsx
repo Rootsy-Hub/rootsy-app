@@ -14,6 +14,9 @@ import {
 import { cn } from "@/lib/utils"
 import { TableCell, TableRow } from "@/components/ui/table"
 
+/** Filas de skeleton en la shell de tablas — llena el viewport y coincide con el loading del módulo. */
+export const DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT = 14
+
 function skeletonToneFor(tone: WorkspaceTableTone = "default") {
   return tone === "nature" || tone === "earth"
     ? workspaceTableNatureSkeletonTone

@@ -460,14 +460,14 @@ export const layoutsOperarCatalogArticleDemoScopeClass = cn(
 export const layoutsOperarProductCardMediaClass =
   "relative overflow-hidden bg-[var(--layouts-operar-product-card-media-bg)]"
 
-/** Superficie foto ausente — sin icono ni copy; paridad object-cover + hover de imagen real. */
+/** Superficie foto ausente — mismo fondo que la card, icono savia al centro. */
 export const layoutsOperarProductCardMediaEmptyStateClass = cn(
-  "relative size-full overflow-hidden",
-  "transition-transform duration-300 ease-out group-hover:scale-[1.03]",
+  "relative flex size-full items-center justify-center overflow-hidden",
+  "bg-[var(--rootsy-sombra-600)]",
 )
 
-export const layoutsOperarProductCardMediaEmptyStateGrainClass =
-  "layouts-operar-product-card-media-empty-grain pointer-events-none absolute inset-0"
+export const layoutsOperarProductCardMediaEmptyStateIconClass =
+  "size-7 text-[color-mix(in_srgb,var(--rootsy-savia-400)_40%,var(--rootsy-sombra-400))]"
 
 export const layoutsOperarProductCardBodyClass =
   "flex min-h-0 flex-col justify-between gap-2 p-4"

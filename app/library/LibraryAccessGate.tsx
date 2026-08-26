@@ -1,11 +1,11 @@
 "use client"
 
+import { getLibraryAccessForSession } from "@/app/library/libraryAuth"
 import { Spinner } from "@/components/ui/spinner"
 import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
-import { isBackofficeAllowedEmail } from "@/lib/backofficeAccess"
 import Link from "next/link"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 
 type LibraryAccessGateProps = {
   children: ReactNode
@@ -13,8 +13,25 @@ type LibraryAccessGateProps = {
 
 function LibraryAccessGateInner({ children }: LibraryAccessGateProps) {
   const { loading, user } = useAuth()
+  const [allowed, setAllowed] = useState<boolean | null>(null)
 
-  if (loading) {
+  useEffect(() => {
+    if (!user) {
+      setAllowed(null)
+      return
+    }
+
+    let cancelled = false
+    void getLibraryAccessForSession().then((access) => {
+      if (!cancelled) setAllowed(access.allowed)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+
+  if (loading || (user && allowed === null)) {
     return (
       <div
         className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-[var(--rootsy-bruma-900)]"
@@ -30,7 +47,7 @@ function LibraryAccessGateInner({ children }: LibraryAccessGateProps) {
 
   if (!user) return null
 
-  if (!isBackofficeAllowedEmail(user.email)) {
+  if (!allowed) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
         <h1 className="text-lg font-medium text-[var(--rootsy-bruma-900)]">No autorizado</h1>

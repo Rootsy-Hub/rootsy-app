@@ -32,7 +32,10 @@ import {
 } from "react"
 
 export type RealtimeEventHandler = (event: DomainEvent) => void
-export type RealtimeResyncHandler = (channels: string[], reason: "gap" | "empty") => void
+export type RealtimeResyncHandler = (
+  channels: string[],
+  reason: "gap" | "empty",
+) => void
 export type RealtimePresenceHandler = (members: PresenceMember[]) => void
 
 export type PopRealtimeContextValue = {
@@ -54,9 +57,24 @@ const SEQ_PERSIST_MS = 300
 
 export function PopRealtimeProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
+  const queryClientRef = useRef(queryClient)
+  queryClientRef.current = queryClient
   const { user } = useAuth()
-  const { popId, popAccess, loading, error } = usePopWorkspace()
-  const enabled = Boolean(user && popId && popAccess && !loading && !error)
+  const { popId, popAccess, error } = usePopWorkspace()
+  const userId = user?.id ?? null
+  const allowedPopRef = useRef<string | null>(null)
+  if (popId && popAccess && !error) {
+    allowedPopRef.current = popId
+  } else if (!popId || allowedPopRef.current !== popId) {
+    allowedPopRef.current = null
+  }
+  const canConnect = Boolean(
+    userId &&
+      popId &&
+      allowedPopRef.current === popId &&
+      !error &&
+      popRealtimeBaseUrl(),
+  )
 
   const [status, setStatus] = useState<RealtimeConnectionStatus>("idle")
   const [lastSeq, setLastSeq] = useState<number | null>(null)
@@ -68,57 +86,70 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
   const refsRef = useRef(new Map<string, number>())
   const lastSeqRef = useRef<number | null>(null)
   const helloSeqRef = useRef<number | null>(null)
+  const popIdRef = useRef(popId)
+  popIdRef.current = popId
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const eventHandlersRef = useRef(new Set<RealtimeEventHandler>())
   const resyncHandlersRef = useRef(new Set<RealtimeResyncHandler>())
   const presenceHandlersRef = useRef(new Set<RealtimePresenceHandler>())
 
-  const rememberSeq = useCallback(
-    (seq: number) => {
-      if (lastSeqRef.current != null && seq <= lastSeqRef.current) return
-      lastSeqRef.current = seq
-      setLastSeq(seq)
-      if (!popId) return
-      writeSessionRealtimeLastSeq(popId, seq)
-      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
-      persistTimerRef.current = setTimeout(() => {
-        persistTimerRef.current = null
-        void persistRealtimeLastSeq(popId, seq)
-      }, SEQ_PERSIST_MS)
-    },
-    [popId],
-  )
+  const rememberSeq = useCallback((seq: number) => {
+    if (lastSeqRef.current != null && seq <= lastSeqRef.current) return
+    lastSeqRef.current = seq
+    setLastSeq(seq)
+    const id = popIdRef.current
+    if (!id) return
+    writeSessionRealtimeLastSeq(id, seq)
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+    persistTimerRef.current = setTimeout(() => {
+      persistTimerRef.current = null
+      void persistRealtimeLastSeq(id, seq)
+    }, SEQ_PERSIST_MS)
+  }, [])
 
-  const dispatchEvent = useCallback(
-    (event: DomainEvent) => {
-      rememberSeq(event.seq)
-      applyRealtimeEventToQuery(queryClient, event)
-      for (const handler of eventHandlersRef.current) handler(event)
+  const subscribeSeq = useCallback(() => {
+    return lastSeqRef.current ?? helloSeqRef.current ?? 0
+  }, [])
+
+  const flushSubscribe = useCallback(
+    (channels: string[]) => {
+      if (!channels.length || helloSeqRef.current == null) return
+      socketRef.current?.send({
+        type: "subscribe",
+        channels,
+        lastSeq: subscribeSeq(),
+      })
     },
-    [queryClient, rememberSeq],
+    [subscribeSeq],
   )
 
   const handleMessage = useCallback(
     (message: ServerMessage) => {
       if (message.type === "hello") {
         helloSeqRef.current = message.seq
-        const stored = lastSeqRef.current
+        if (lastSeqRef.current == null) rememberSeq(message.seq)
         const channels = [...refsRef.current.keys()]
         if (channels.length) {
           socketRef.current?.send({
             type: "subscribe",
             channels,
-            lastSeq: stored ?? undefined,
+            lastSeq: subscribeSeq(),
           })
         }
         return
       }
       if (message.type === "event") {
-        dispatchEvent(message.event)
+        rememberSeq(message.event.seq)
+        applyRealtimeEventToQuery(queryClientRef.current, message.event)
+        for (const handler of eventHandlersRef.current) handler(message.event)
         return
       }
       if (message.type === "replay") {
-        for (const event of message.events) dispatchEvent(event)
+        for (const event of message.events) {
+          rememberSeq(event.seq)
+          applyRealtimeEventToQuery(queryClientRef.current, event)
+          for (const handler of eventHandlersRef.current) handler(event)
+        }
         return
       }
       if (message.type === "resync") {
@@ -135,17 +166,10 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [dispatchEvent, rememberSeq],
+    [rememberSeq, subscribeSeq],
   )
-
-  const flushSubscribe = useCallback((channels: string[]) => {
-    if (!channels.length) return
-    socketRef.current?.send({
-      type: "subscribe",
-      channels,
-      lastSeq: lastSeqRef.current ?? undefined,
-    })
-  }, [])
+  const handleMessageRef = useRef(handleMessage)
+  handleMessageRef.current = handleMessage
 
   const subscribe = useCallback(
     (channels: readonly string[]) => {
@@ -203,6 +227,7 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    helloSeqRef.current = null
     lastSeqRef.current = popId ? readSessionRealtimeLastSeq(popId) : null
     setLastSeq(lastSeqRef.current)
     setSeqReady(false)
@@ -222,26 +247,19 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     void loadRealtimeLastSeq(popId).then((seq) => {
       if (cancelled) return
-      lastSeqRef.current = seq
-      setLastSeq(seq)
+      if (seq != null) rememberSeq(seq)
       setSeqReady(true)
     })
     return () => {
       cancelled = true
     }
-  }, [popId, wantsSocket])
+  }, [popId, rememberSeq, wantsSocket])
 
   useEffect(() => {
-    if (
-      !enabled ||
-      !wantsSocket ||
-      !seqReady ||
-      !user ||
-      !popId ||
-      !popRealtimeBaseUrl()
-    ) {
+    if (!canConnect || !wantsSocket || !seqReady || !userId || !popId) {
       socketRef.current?.close()
       socketRef.current = null
+      helloSeqRef.current = null
       setStatus("idle")
       setMembers([])
       return
@@ -256,7 +274,7 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
       },
       {
         onStatus: setStatus,
-        onMessage: handleMessage,
+        onMessage: (message) => handleMessageRef.current(message),
       },
     )
     socketRef.current = socket
@@ -264,8 +282,9 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
     return () => {
       socket.close()
       if (socketRef.current === socket) socketRef.current = null
+      helloSeqRef.current = null
     }
-  }, [enabled, handleMessage, popId, seqReady, user, wantsSocket])
+  }, [canConnect, popId, seqReady, userId, wantsSocket])
 
   const value = useMemo(
     (): PopRealtimeContextValue => ({
@@ -308,4 +327,3 @@ export function usePopRealtimeContext(): PopRealtimeContextValue {
 export function usePopRealtimeContextOptional(): PopRealtimeContextValue | null {
   return useContext(PopRealtimeContext) ?? null
 }
-

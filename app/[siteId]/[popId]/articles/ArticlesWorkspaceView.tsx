@@ -40,7 +40,6 @@ import {
   articleTableDetailColumnClass,
 } from "@/app/[siteId]/[popId]/articles/articlesTableCells"
 import {
-  ARTICLE_TABLE_PAGE_SIZES,
   articlesModalFiltersFromWorkspace,
   defaultArticlesModalFilters,
   mergeArticlesWorkspaceUrl,
@@ -48,7 +47,6 @@ import {
   type ArticleTableSortKey,
   type ArticlesModalFilters,
 } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
-import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
@@ -60,7 +58,7 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
-  DataWorkspaceTableListPaginationFooter,
+  tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
   dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
@@ -93,7 +91,10 @@ import {
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
-import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import {
+  DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT,
+  WorkspaceTableSkeletonRows,
+} from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
@@ -108,6 +109,10 @@ import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { usePopArticlesTable } from "@/hooks/usePopArticlesTable"
 import { usePopPriceLists } from "@/hooks/usePopPriceLists"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
+import {
+  invalidateDataWorkspaceTableInfinite,
+  uniqueTableRowsById,
+} from "@/lib/dataWorkspaceTableInfinite"
 import {
   popArticleCategoriesQueryKey,
   popArticleQueryKey,
@@ -367,7 +372,6 @@ export function ArticlesWorkspaceView() {
   const [searchInput, setSearchInput] = useState(workspaceParsed.q)
   const searchInputId = useId()
   const filtersButtonId = useId()
-  const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
@@ -485,7 +489,7 @@ export function ArticlesWorkspaceView() {
   })
   const priceLists = priceListsQuery.data ?? []
 
-  const articles = articlesTableQuery.data?.articles ?? []
+  const articles = uniqueTableRowsById(articlesTableQuery.data?.articles ?? [])
   const totalCount = articlesTableQuery.data?.totalCount ?? 0
   const articlePerm = useCallback(
     (perm: { resource: string; action: string }) =>
@@ -523,9 +527,10 @@ export function ArticlesWorkspaceView() {
   const refreshArticlesList = useCallback(async () => {
     if (!popId) return
     invalidatePopOperateCatalogs(queryClient, popId)
-    await queryClient.invalidateQueries({
-      queryKey: popArticlesQueryRoot(popId),
-    })
+    await invalidateDataWorkspaceTableInfinite(
+      queryClient,
+      popArticlesQueryRoot(popId),
+    )
   }, [popId, queryClient])
 
   useEffect(() => {
@@ -537,14 +542,6 @@ export function ArticlesWorkspaceView() {
     }, 1200)
     return () => window.clearTimeout(timeout)
   }, [articlesTableQuery.data])
-
-  useEffect(() => {
-    const res = articlesTableQuery.data
-    if (!res?.success) return
-    if (res.page !== articlesListParams.page) {
-      replaceWorkspaceQuery({ page: res.page })
-    }
-  }, [articlesTableQuery.data, articlesListParams.page, replaceWorkspaceQuery])
 
   useEffect(() => {
     setSearchInput(workspaceParsed.q)
@@ -950,16 +947,6 @@ export function ArticlesWorkspaceView() {
     await refreshArticlesList()
   }
 
-  const totalPages = useMemo(
-    () =>
-      Math.max(
-        1,
-        Math.ceil(totalCount / Math.max(1, workspaceParsed.pageSize)),
-      ),
-    [totalCount, workspaceParsed.pageSize],
-  )
-
-  const currentPage = workspaceParsed.page
   const pageRows = articles
   const visibleIds = useMemo(() => pageRows.map((a) => a.id), [pageRows])
   const allVisibleSelected =
@@ -968,19 +955,6 @@ export function ArticlesWorkspaceView() {
   const activeItemKindFilterId = useMemo(
     () => resolveArticleItemKindFilterId(workspaceParsed.itemKinds),
     [workspaceParsed.itemKinds],
-  )
-
-  const rangeLabel = useMemo(() => {
-    if (totalCount === 0) return { start: 0, end: 0 }
-    const ps = workspaceParsed.pageSize
-    const start = (currentPage - 1) * ps + 1
-    const end = Math.min(currentPage * ps, totalCount)
-    return { start, end }
-  }, [currentPage, workspaceParsed.pageSize, totalCount])
-
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, currentPage),
-    [totalPages, currentPage],
   )
 
   const hasFilterChips =
@@ -996,10 +970,7 @@ export function ArticlesWorkspaceView() {
     workspaceParsed.categoryId.trim() !== "" ||
     activeItemKindFilterId !== "all"
 
-  const skeletonRowCount = Math.min(
-    12,
-    Math.max(5, workspaceParsed.pageSize),
-  )
+  const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
   const categoryLabelForChip = useMemo(() => {
     const id = workspaceParsed.categoryId.trim()
@@ -1335,24 +1306,7 @@ export function ArticlesWorkspaceView() {
                   <DataWorkspaceTableEmptyMascot />
                 ) : null
               }
-              footer={
-                <DataWorkspaceTableListPaginationFooter
-                  listFetching={listFetching}
-                  totalCount={totalCount}
-                  rangeStart={rangeLabel.start}
-                  rangeEnd={rangeLabel.end}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  pageSize={workspaceParsed.pageSize}
-                  pageSizeOptions={ARTICLE_TABLE_PAGE_SIZES}
-                  paginationItems={paginationItems}
-                  onPageChange={(p) => replaceWorkspaceQuery({ page: p })}
-                  onPageSizeChange={(ps) =>
-                    replaceWorkspaceQuery({ pageSize: ps, page: 1 })
-                  }
-                  pageSizeLabelId={pageSizeLabelId}
-                />
-              }
+            infinite={tableListInfiniteFromQuery(articlesTableQuery, "articles")}
             >
               <DataWorkspaceListTableFrame>
               <table

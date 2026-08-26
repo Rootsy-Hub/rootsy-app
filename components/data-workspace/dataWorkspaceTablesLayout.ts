@@ -196,7 +196,7 @@ export const dataWorkspaceListFiltersBarClass = cn(
   "relative z-1 shrink-0",
 )
 
-/** Fila principal de filtros — alba; el mundo se ve a través. */
+/** Fila principal de filtros — alba opaca. */
 export const dataWorkspaceListFiltersBarRowClass = cn(
   "data-workspace-tables-filters-dawn",
 )

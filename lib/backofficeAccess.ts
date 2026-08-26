@@ -1,13 +1,17 @@
-export const BACKOFFICE_ALLOWED_EMAILS = [
-  "arianfernandez@gmail.com",
-] as const
-
-const ALLOWED_SET = new Set(
-  BACKOFFICE_ALLOWED_EMAILS.map((email) => email.trim().toLowerCase()),
-)
+import "server-only"
 
 export function normalizeEmail(email: string | null | undefined): string {
   return email?.trim().toLowerCase() ?? ""
+}
+
+function allowedEmailsFromEnv(): Set<string> {
+  const raw = process.env.BACKOFFICE_ALLOWED_EMAILS ?? ""
+  return new Set(
+    raw
+      .split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean),
+  )
 }
 
 export function isBackofficeAllowedEmail(
@@ -15,5 +19,5 @@ export function isBackofficeAllowedEmail(
 ): boolean {
   const normalized = normalizeEmail(email)
   if (!normalized) return false
-  return ALLOWED_SET.has(normalized)
+  return allowedEmailsFromEnv().has(normalized)
 }

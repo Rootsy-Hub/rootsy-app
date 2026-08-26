@@ -9,7 +9,11 @@ import {
   workspaceTableSurfaceClass,
 } from "./dataWorkspaceListStyles"
 import { workspaceTableLayoutListBodyScopeClass } from "./dataWorkspaceTablesLayout"
-import type { ReactNode } from "react"
+import {
+  DataWorkspaceTableInfiniteSentinel,
+  type DataWorkspaceTableListInfinite,
+} from "./DataWorkspaceTableInfiniteSentinel"
+import { useState, type ReactNode } from "react"
 
 export type DataWorkspaceListTableShellProps = {
   children: ReactNode
@@ -21,6 +25,7 @@ export type DataWorkspaceListTableShellProps = {
   /** Pie con cristal POP — cuerpo opaco; solo el footer deja ver el fondo de página. */
   glassFooter?: boolean
   className?: string
+  infinite?: DataWorkspaceTableListInfinite
 }
 
 export function DataWorkspaceListTableShell({
@@ -32,7 +37,9 @@ export function DataWorkspaceListTableShell({
   variant = "default",
   glassFooter = false,
   className,
+  infinite,
 }: DataWorkspaceListTableShellProps) {
+  const [scrollRoot, setScrollRoot] = useState<HTMLDivElement | null>(null)
   const isFlush = variant === "flush"
   const useChromeStack = activeFiltersBar != null
   const bodySurfaceClass = isFlush ? workspaceTableSurfaceClass : dataWorkspaceShellCard
@@ -72,6 +79,7 @@ export function DataWorkspaceListTableShell({
         )}
         <div className="relative min-h-0 flex-1">
           <div
+            ref={setScrollRoot}
             className={cn(
               "rootsy-scroll-minimal absolute inset-0 overflow-auto",
               workspaceTableListBodyScopeClass,
@@ -80,6 +88,12 @@ export function DataWorkspaceListTableShell({
           >
             <div className="flex min-h-full min-w-0 flex-1 flex-col">
               {children}
+              {infinite ? (
+                <DataWorkspaceTableInfiniteSentinel
+                  {...infinite}
+                  root={scrollRoot}
+                />
+              ) : null}
             </div>
           </div>
           {overlay ? (

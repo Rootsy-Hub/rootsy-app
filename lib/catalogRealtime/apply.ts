@@ -14,6 +14,7 @@ import {
   applyCategoryPatchToSaleBoard,
   categoryPatchFromRealtimePayload,
 } from "@/lib/catalogRealtime/categoryPayload"
+import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import {
   popArticleCategoriesQueryKey,
   popArticleQueryKey,
@@ -53,9 +54,10 @@ export async function applyArticleRealtimeEvent(
   void queryClient.invalidateQueries({
     queryKey: saleBoardArticlesQueryRoot(popId),
   })
-  void queryClient.invalidateQueries({
-    queryKey: popArticlesQueryRoot(popId),
-  })
+  void invalidateDataWorkspaceTableInfinite(
+    queryClient,
+    popArticlesQueryRoot(popId),
+  )
   void queryClient.invalidateQueries({
     queryKey: popArticleQueryKey(popId, articleId),
   })

@@ -3,12 +3,18 @@
 import type { GetPopChecksTableInput } from "@/app/[siteId]/[popId]/checks/actions"
 import type { CheckDirection, CheckStatus } from "@/lib/checkDocuments"
 import {
+  concatTableRowKey,
+  useDataWorkspaceInfiniteTableQuery,
+} from "@/hooks/useDataWorkspaceInfiniteTableQuery"
+import {
+  DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  pinDataWorkspaceTableInfiniteParams,
+} from "@/lib/dataWorkspaceTableInfinite"
+import {
   popChecksQueryKey,
   type PopChecksQueryParams,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
-import { fetchPopChecksTable } from "@/lib/rootsyApi/checksClient"
-import { useQuery } from "@tanstack/react-query"
+import { fetchPopChecksTable, type PopChecksTableResult } from "@/lib/rootsyApi/checksClient"
 
 type UsePopChecksTableOptions = {
   enabled?: boolean
@@ -20,20 +26,22 @@ export function usePopChecksTable(
   options?: UsePopChecksTableOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
+  const infiniteParams = pinDataWorkspaceTableInfiniteParams(params)
   const queryParams: GetPopChecksTableInput = {
     q: params.q,
-    page: params.page,
-    pageSize: params.pageSize,
+    page: infiniteParams.page,
+    pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
     direction: params.direction as CheckDirection | "",
     status: params.status as CheckStatus | "",
     sort: params.sort,
     ord: params.ord,
   }
 
-  return useQuery({
-    queryKey: popChecksQueryKey(popId ?? "", params),
-    queryFn: () => fetchPopChecksTable(popId!, queryParams),
+  return useDataWorkspaceInfiniteTableQuery<PopChecksTableResult>({
+    queryKey: popChecksQueryKey(popId ?? "", infiniteParams),
     enabled,
-    ...sessionListQueryOptions,
+    queryFn: (page) =>
+      fetchPopChecksTable(popId!, { ...queryParams, page }),
+    concat: concatTableRowKey<PopChecksTableResult, "checks">("checks"),
   })
 }
