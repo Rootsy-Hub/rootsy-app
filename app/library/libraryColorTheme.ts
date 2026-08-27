@@ -80,5 +80,5 @@ export const libraryDocTableRowClass =
   "border-b border-[var(--color-borde)] last:border-b-0"
 export const libraryDocMutedTextClass = "text-[var(--color-texto-muted)]"
 export const libraryDocPrimaryTextClass = "text-[var(--color-texto)]"
-export const libraryDocTokenAccentClass = "text-[var(--color-accion)]"
+export const libraryDocTokenAccentClass = "text-[var(--color-accion-profundo)]"
 export const libraryDocSurfaceMutedClass = "bg-[var(--color-elevada)]"

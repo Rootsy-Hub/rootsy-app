@@ -302,8 +302,8 @@ export const HANDBOOK_FUNCTIONAL_RECIPES: HandbookFunctionalRecipe[] = [
 
 export const HANDBOOK_FUNCTIONAL_APPLICATION_RULES = [
   "Vivo 500 pinta el relleno. El texto sobre el vivo es 950 de la misma familia.",
-  "En Luz filtrada, texto, links y contorno usan el profundo 700. En Sombra, usan el vivo.",
-  "Tint: isla 50, borde 200 y texto 700. No rellenes un estado con 800 en oscuro.",
+  "El vivo no va sobre blanco ni sobre el papel de Luz filtrada. El verde de texto, link y contorno en claro es el profundo 700.",
+  "En Sombra, texto, links y contorno usan el vivo. Tint: isla 50, borde 200 y texto 700.",
   "Nunca texto 50 sobre un vivo. El primario de Savia es el mismo en las dos luces.",
 ] as const
 
@@ -371,6 +371,15 @@ export const HANDBOOK_CONTRAST_PASS: HandbookContrastPair[] = [
     background: { familyId: "blanco", step: "blanco" },
     ratio: "18.7:1",
     level: "AAA",
+  },
+  {
+    id: "savia-profundo-blanco",
+    label: "Savia 700 sobre blanco",
+    context: "Texto, link y etiqueta Identidad sobre el papel. El vivo no entra acá.",
+    foreground: { familyId: "savia", step: "700" },
+    background: { familyId: "blanco", step: "blanco" },
+    ratio: "6.1:1",
+    level: "AA",
   },
   {
     id: "bruma-muted",
@@ -475,6 +484,15 @@ export const HANDBOOK_CONTRAST_PASS: HandbookContrastPair[] = [
 
 export const HANDBOOK_CONTRAST_FAIL: HandbookContrastPair[] = [
   {
+    id: "savia-vivo-blanco",
+    label: "Savia vivo sobre blanco",
+    context: "El vivo no es texto sobre papel. Usar el profundo 700.",
+    foreground: { familyId: "savia", step: "500" },
+    background: { familyId: "blanco", step: "blanco" },
+    ratio: "1.4:1",
+    level: "No",
+  },
+  {
     id: "bruma-400-claro",
     label: "Bruma 400 sobre 100",
     context: "Metadatos ilegibles en ticket y tablas.",
@@ -523,6 +541,7 @@ export const HANDBOOK_CONTRAST_FAIL: HandbookContrastPair[] = [
 
 export const HANDBOOK_CONTRAST_RULES = [
   "Texto normal: 4.5:1 o más. Muted en Luz filtrada es Tronco 700, no 400 ni 500.",
+  "Savia vivo no es texto sobre blanco ni sobre Luz filtrada. El verde sobre claro es el profundo 700.",
   "Sobre un vivo 500 el texto es el 950 de la misma familia.",
   "Sobre tint: fondo 50 y profundo 700. En Luz filtrada el ink es 700; en Sombra, el vivo.",
   "Nunca texto claro sobre sol o cielo 500. Nunca luz 400 como cuerpo en claro.",

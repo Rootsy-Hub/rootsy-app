@@ -918,8 +918,9 @@ export function HandbookColorView() {
           Funcionales en atmósferas
         </h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
-          El vivo no cambia con la atmósfera. Cambia el ink: profundo sobre Luz filtrada,
-          vivo sobre Sombra. El primario de Savia es el mismo en las dos luces.
+          El vivo no cambia con la atmósfera y no va sobre blanco. Cambia el ink: profundo
+          sobre Luz filtrada, vivo sobre Sombra. El primario de Savia es el mismo en las
+          dos luces.
         </p>
         <div className="mt-4">
           <FunctionalApplicationPreview />
@@ -936,8 +937,8 @@ export function HandbookColorView() {
         </ul>
         <div className="mt-6">
           <LibraryDoDontPair
-            doText="CTA vivo 500 + 950. Secundario y link: profundo en Luz filtrada, vivo en Sombra."
-            dontText="No uses texto 50 sobre un vivo, ni profundo como relleno de botón, ni Savia para pintar un fondo entero."
+            doText="CTA vivo 500 + 950. Texto y link sobre claro: profundo 700. Sobre Sombra: vivo."
+            dontText="No pongas Savia vivo sobre blanco, ni texto 50 sobre un vivo, ni Savia para pintar un fondo entero."
           />
         </div>
 
@@ -986,8 +987,8 @@ export function HandbookColorView() {
 
         <div className="mt-8">
           <LibraryDoDontPair
-            doText="Medí el par en el contexto real: bruma 700 para muted claro, savia 700 si el CTA es chico, lava 600 para destructivo."
-            dontText="No uses bruma 400 como cuerpo, ni blanco sobre sol 500, ni savia-50 como papel de Luz filtrada."
+            doText="Medí el par en el contexto real: bruma 700 para muted claro, savia 700 sobre blanco, lava 500 + 950 para destructivo."
+            dontText="No uses bruma 400 como cuerpo, ni Savia vivo sobre blanco, ni savia-50 como papel de Luz filtrada."
           />
         </div>
       </section>

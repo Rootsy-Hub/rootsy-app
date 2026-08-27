@@ -143,7 +143,7 @@ export const HANDBOOK_SAVIA: HandbookColorFamily = family({
   tagline: "Acción, foco y progreso",
   description:
     "Acción principal, foco, selección, check y progreso. Rayo 500, igual de prendido en Luz filtrada y en Sombra.",
-  not: "No pinta superficies enteras. No reemplaza éter ni las dos luces de Sotobosque. Sobre el vivo, el texto es Savia 950.",
+  not: "No pinta superficies enteras. El vivo no es texto sobre blanco ni sobre Luz filtrada: ahí va el profundo 700. Sobre el vivo, el texto es Savia 950.",
   identity: "500",
   hexes: ROOTSY_COLOR_RAMPS.savia,
   usage: {
@@ -152,7 +152,7 @@ export const HANDBOOK_SAVIA: HandbookColorFamily = family({
     "200": "Borde del tint.",
     "300": "Glow de cards y descuentos.",
     "400": "Foco y rail activo.",
-    "500": "Vivo — relleno de acción y progreso.",
+    "500": "Vivo — relleno de acción y progreso. No es texto sobre blanco.",
     "600": "Hover del vivo.",
     "700": "Profundo — texto y links sobre Luz filtrada.",
     "800": "Texto profundo sobre tint si el 700 no alcanza.",
