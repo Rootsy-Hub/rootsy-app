@@ -51,6 +51,7 @@ import { ReportHubCard } from "@/components/reports/ReportHubCard"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { RootsBanner } from "@/components/rootsy-banner"
 import {
+  RootsButtonAtmosphereProvider,
   RootsDangerButton,
   RootsDangerSubtleButton,
   RootsDefaultButton,
@@ -144,6 +145,7 @@ import type { SaleCatalogViewPersisted } from "@/lib/saleCatalogPreference"
 import { STATISTICS_SECTIONS } from "@/lib/statisticsCatalog"
 import { cn } from "@/lib/utils"
 import {
+  ArrowRight,
   BarChart3,
   MoreHorizontal,
   Package,
@@ -225,11 +227,7 @@ function FieldShell({ children }: { children: ReactNode }) {
 function atmosphereTheme(worldId: ComponentViewRenderContext["worldId"]) {
   switch (worldId) {
     case "eter":
-    case "herramientas":
       return "rootsy-theme-landing"
-    case "bruma-oscura":
-      return "rootsy-theme-bruma-oscura"
-    case "suelo":
     case "sombra":
       return "rootsy-theme-pos"
     default:
@@ -482,9 +480,12 @@ function ButtonsFinalSpecimen() {
       componentProperties={[
         { name: "semantic", values: ["primary", "default", "subtle", "danger", "dangerSubtle", "link"] },
         { name: "size", values: ["compact", "default", "large"] },
+        { name: "shape", values: ["default", "pill"] },
+        { name: "atmosphere", values: ["bruma", "sombra", "eter"] },
+        { name: "icon", values: ["LucideIcon"] },
+        { name: "iconPosition", values: ["left", "right"] },
         { name: "loading", values: ["true", "false"] },
         { name: "disabled", values: ["true", "false"] },
-        { name: "theme", values: ["workspace", "pos"] },
       ]}
       variants={[
         { name: "Primary" },
@@ -498,21 +499,45 @@ function ButtonsFinalSpecimen() {
       extras={[
         { items: [{ name: "idle" }, { name: "deshabilitado" }, { name: "cargando" }] },
         { items: [{ name: "default" }, { name: "compact" }, { name: "large" }], initial: "default" },
+        { items: [{ name: "default" }, { name: "pill" }], initial: "default" },
+        { items: [{ name: "sin ícono" }, { name: "ícono izq." }, { name: "ícono der." }], initial: "sin ícono" },
       ]}
       render={(variant, extras, context) => (
         <div className={atmosphereTheme(context.worldId)}>
-          <ButtonLive variant={variant} extras={extras} />
+          <RootsButtonAtmosphereProvider
+            atmosphere={buttonAtmosphereFromWorld(context.worldId)}
+          >
+            <ButtonLive variant={variant} extras={extras} />
+          </RootsButtonAtmosphereProvider>
         </div>
       )}
     />
   )
 }
 
+function buttonAtmosphereFromWorld(
+  worldId: ComponentViewRenderContext["worldId"],
+) {
+  if (worldId === "sombra" || worldId === "eter") return worldId
+  return "bruma" as const
+}
+
 function ButtonLive({ variant, extras }: { variant: string; extras: readonly string[] }) {
   const disabled = extras[0] === "deshabilitado"
   const loading = extras[0] === "cargando"
   const size = (extras[1] ?? "default") as "compact" | "default" | "large"
-  const props = { size, disabled, loading, children: variant }
+  const shape = extras[2] === "pill" ? "pill" : "default"
+  const iconSlot = extras[3] ?? "sin ícono"
+  const icon =
+    iconSlot === "sin ícono"
+      ? undefined
+      : variant === "Danger" || variant === "Danger subtle"
+        ? Trash2
+        : iconSlot === "ícono der."
+          ? ArrowRight
+          : Plus
+  const iconPosition = iconSlot === "ícono der." ? "right" : "left"
+  const props = { size, shape, icon, iconPosition, disabled, loading, children: variant }
   switch (variant) {
     case "Default":
       return <RootsDefaultButton {...props} />

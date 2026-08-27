@@ -399,11 +399,7 @@ const TAB_FORM_OPTIONS = [
 function atmosphereChrome(worldId: ComponentViewRenderContext["worldId"]) {
   switch (worldId) {
     case "eter":
-    case "herramientas":
       return { themeClass: "rootsy-theme-landing", tone: "dark" as const }
-    case "bruma-oscura":
-      return { themeClass: "rootsy-theme-bruma-oscura", tone: "dark" as const }
-    case "suelo":
     case "sombra":
       return { themeClass: "rootsy-theme-pos", tone: "dark" as const }
     default:

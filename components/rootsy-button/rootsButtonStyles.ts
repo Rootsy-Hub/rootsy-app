@@ -18,8 +18,8 @@ const rootsButtonFocusRingDestructive =
 export type RootsButtonSize = "default" | "large"
 
 const rootsButtonPrimarySkin = cn(
-  "font-semibold text-white shadow-sm",
-  "bg-[var(--rootsy-savia-600)] hover:bg-[var(--rootsy-savia-500)] active:bg-[var(--rootsy-savia-700)]",
+  "font-semibold text-[var(--rootsy-savia-950)] shadow-none",
+  "bg-[var(--rootsy-savia-500)] hover:bg-[var(--rootsy-savia-400)] active:bg-[var(--rootsy-savia-600)]",
   rootsButtonFocusRingPrimary,
 )
 
@@ -42,15 +42,13 @@ export const rootsButtonPrimaryClass = cn(
 const rootsButtonNeutralHoverClass =
   "hover:bg-muted/50 hover:text-foreground dark:hover:bg-muted/40"
 
-/** Un paso más de muted + sombra inset — feedback táctil sin bloque gris duro. */
 const rootsButtonNeutralPressedClass =
-  "active:bg-muted active:text-foreground active:shadow-[inset_0_1px_2px_rgba(41,37,36,0.07)] dark:active:bg-muted/70"
+  "active:bg-muted active:text-foreground dark:active:bg-muted/70"
 
 export const rootsButtonSecondaryClass = cn(
-  "h-10 rounded-lg",
-  rootsButtonNeutralHoverClass,
-  rootsButtonNeutralPressedClass,
-  "active:border-border",
+  "h-10 rounded-lg border border-[var(--rootsy-savia-700)] bg-transparent font-semibold text-[var(--rootsy-savia-700)] shadow-none",
+  "hover:bg-[var(--rootsy-savia-50)]",
+  "active:bg-[var(--rootsy-savia-100)]",
 )
 
 export const rootsButtonTertiaryClass = cn(
@@ -61,13 +59,13 @@ export const rootsButtonTertiaryClass = cn(
 
 export const rootsButtonLinkClass = cn(
   "h-10 rounded-lg px-3 font-medium",
-  "text-[var(--rootsy-savia-700)] hover:text-[var(--rootsy-savia-600)] hover:underline",
+  "text-[var(--rootsy-savia-700)] hover:text-[var(--rootsy-savia-800)] hover:underline",
   "active:text-[var(--rootsy-savia-800)] active:underline active:decoration-2",
 )
 
 export const rootsButtonDestructiveClass = cn(
-  "h-10 rounded-lg font-semibold text-white shadow-sm",
-  "bg-[#dc2626] hover:!bg-[#ef4444] active:!bg-[#b91c1c]",
+  "h-10 rounded-lg font-semibold text-[var(--rootsy-lava-950)] shadow-none",
+  "bg-[var(--rootsy-lava-500)] hover:!bg-[var(--rootsy-lava-600)] active:!bg-[var(--rootsy-lava-700)]",
   rootsButtonFocusRingDestructive,
 )
 

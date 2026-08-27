@@ -1,5 +1,6 @@
 "use client"
 
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { ChevronDown } from "lucide-react"
 import { useState, type CSSProperties, type ReactNode } from "react"
@@ -21,39 +22,21 @@ export type ComponentViewExtraRow = {
 const COMPONENT_VIEW_WORLDS = [
   {
     id: "bruma",
-    name: "Luz filtrada",
+    name: "Sotobosque · Luz filtrada",
     swatch: "var(--rootsy-bruma-50)",
     canvas: "var(--rootsy-bruma-100)",
+  },
+  {
+    id: "sombra",
+    name: "Sotobosque · Sombra",
+    swatch: "var(--rootsy-sombra-800)",
+    canvas: "var(--rootsy-sombra-950)",
   },
   {
     id: "eter",
     name: "Éter",
     swatch: "var(--rootsy-eter-700)",
     canvas: "var(--rootsy-eter-950)",
-  },
-  {
-    id: "bruma-oscura",
-    name: "Bruma oscura",
-    swatch: "var(--rootsy-bruma-800)",
-    canvas: "var(--rootsy-bruma-950)",
-  },
-  {
-    id: "suelo",
-    name: "Suelo",
-    swatch: "var(--rootsy-sombra-500)",
-    canvas: "var(--rootsy-sombra-950)",
-  },
-  {
-    id: "sombra",
-    name: "Sombra",
-    swatch: "var(--rootsy-sombra-800)",
-    canvas: "var(--rootsy-sombra-800)",
-  },
-  {
-    id: "herramientas",
-    name: "Herramientas",
-    swatch: "var(--rootsy-cielo-800)",
-    canvas: "var(--rootsy-eter-900)",
   },
 ] as const
 
@@ -197,26 +180,29 @@ export function ComponentView({
               <div
               className="absolute top-3 right-3 z-10 flex gap-1.5"
               role="group"
-              aria-label="Mundo de fondo"
+              aria-label="Atmósfera de fondo"
             >
               {COMPONENT_VIEW_WORLDS.map((world) => {
                 const selected = world.id === worldId
                 return (
-                  <button
-                    key={world.id}
-                    type="button"
-                    aria-label={world.name}
-                    aria-pressed={selected}
-                    title={world.name}
-                    onClick={() => setWorldId(world.id)}
-                    className={cn(
-                      "size-3.5 rounded-full ring-1",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accion)]",
-                      lightCanvas ? "ring-black/12" : "ring-white/35",
-                      selected && "ring-2 ring-[var(--color-accion)]",
-                    )}
-                    style={{ background: world.swatch } satisfies CSSProperties}
-                  />
+                  <Tooltip key={world.id}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={world.name}
+                        aria-pressed={selected}
+                        onClick={() => setWorldId(world.id)}
+                        className={cn(
+                          "size-3.5 rounded-full ring-1",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accion)]",
+                          lightCanvas ? "ring-black/12" : "ring-white/35",
+                          selected && "ring-2 ring-[var(--color-accion)]",
+                        )}
+                        style={{ background: world.swatch } satisfies CSSProperties}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">{world.name}</TooltipContent>
+                  </Tooltip>
                 )
               })}
             </div>

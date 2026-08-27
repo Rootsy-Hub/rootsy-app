@@ -3,8 +3,14 @@
 import {
   getButtonAppearanceStyle,
   resolveSemanticAppearance,
+  type RootsButtonSpecShape,
   type RootsButtonSpecSize,
 } from "@/components/rootsy-button/rootsButtonSpecRuntime"
+import {
+  resolveRootsButtonAtmosphere,
+  type RootsButtonAtmosphere,
+} from "@/components/rootsy-button/rootsButtonAtmosphere"
+import { useRootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphereContext"
 import type { RootsButtonSemanticVariant } from "@/components/rootsy-button/rootsButtonStyles"
 import { useRootsButtonInteraction } from "@/components/rootsy-button/useRootsButtonInteraction"
 import {
@@ -12,16 +18,25 @@ import {
   type IconButtonThemeId,
 } from "@/app/library/ui-components/buttonsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
-import { Loader2 } from "lucide-react"
+import { Loader2, type LucideIcon } from "lucide-react"
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react"
+
+export type RootsButtonIconPosition = "left" | "right"
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   semantic?: RootsButtonSemanticVariant
   size?: RootsButtonSpecSize
-  /** workspace = claro · pos = header nocturno. */
+  /** default = radius.large · pill = radius.full (cápsula). */
+  shape?: RootsButtonSpecShape
+  /** Luz del handbook. Si no viene, hereda del provider o de `theme`. */
+  atmosphere?: RootsButtonAtmosphere
+  /** @deprecated Preferí `atmosphere`. workspace = bruma · pos = sombra. */
   theme?: IconButtonThemeId
   loading?: boolean
   loadingLabel?: string
+  icon?: LucideIcon
+  iconPosition?: RootsButtonIconPosition
+  /** @deprecated Preferí `icon`. Reserva el gap si el ícono viene en children. */
   withIcon?: boolean
   children: ReactNode
 }
@@ -30,9 +45,13 @@ export const RootsSemanticButton = forwardRef<HTMLButtonElement, Props>(function
   {
     semantic = "primary",
     size = "default",
+    shape = "default",
+    atmosphere,
     theme = "workspace",
     loading = false,
     loadingLabel,
+    icon: Icon,
+    iconPosition = "left",
     withIcon = false,
     disabled,
     className,
@@ -54,15 +73,28 @@ export const RootsSemanticButton = forwardRef<HTMLButtonElement, Props>(function
   ref,
 ) {
   const appearance = resolveSemanticAppearance(semantic)
+  const inheritedAtmosphere = useRootsButtonAtmosphere(atmosphere)
+  const resolvedAtmosphere = resolveRootsButtonAtmosphere({
+    atmosphere: inheritedAtmosphere,
+    theme,
+  })
   const { state, interactionHandlers } = useRootsButtonInteraction({
     disabled,
     loading,
   })
+  const showIcon = Boolean(Icon) && !loading
   const buttonStyle = getButtonAppearanceStyle(appearance, state, size, {
-    withIcon: withIcon || loading,
+    withIcon: withIcon || showIcon || loading,
     theme,
+    shape,
+    atmosphere: resolvedAtmosphere,
   })
-  const surface = getButtonsUiAppearanceSurface(appearance, state, theme)
+  const surface = getButtonsUiAppearanceSurface(
+    appearance,
+    state,
+    theme,
+    resolvedAtmosphere,
+  )
 
   return (
     <button
@@ -70,6 +102,7 @@ export const RootsSemanticButton = forwardRef<HTMLButtonElement, Props>(function
       type="button"
       disabled={disabled || loading}
       data-rootsy-appearance={appearance}
+      data-rootsy-atmosphere={resolvedAtmosphere}
       className={cn(
         "font-canopy shrink-0 appearance-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
@@ -119,7 +152,15 @@ export const RootsSemanticButton = forwardRef<HTMLButtonElement, Props>(function
           {loadingLabel ?? surface.loadingLabel ?? children}
         </>
       ) : (
-        children
+        <>
+          {Icon && showIcon && iconPosition === "left" ? (
+            <Icon className="size-4" aria-hidden />
+          ) : null}
+          {children}
+          {Icon && showIcon && iconPosition === "right" ? (
+            <Icon className="size-4" aria-hidden />
+          ) : null}
+        </>
       )}
     </button>
   )

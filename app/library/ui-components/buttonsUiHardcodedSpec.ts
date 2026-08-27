@@ -20,7 +20,6 @@ import {
   type IconButtonThemeId,
 } from "@/app/library/button/rootsyButtonSystem"
 import {
-  ROOTSY_ELEVATION_SHADOW_TOKENS,
   ROOTSY_ELEVATION_SURFACES_DARK,
   ROOTSY_ELEVATION_SURFACES_LIGHT,
 } from "@/app/library/elevation/rootsyElevationSystem"
@@ -32,6 +31,11 @@ import {
   rootsySpacePx,
 } from "@/lib/design-system"
 import { ROOTSY_FONT_WEIGHTS, ROOTSY_TEXT_STYLES } from "@/lib/design-system/tokens/typography"
+import {
+  isRootsButtonAtmosphereDark,
+  resolveRootsButtonAtmosphere,
+  type RootsButtonAtmosphere,
+} from "@/components/rootsy-button/rootsButtonAtmosphere"
 
 const hx = rootsyColorHex
 const workspace = getRootsyTheme("workspace")
@@ -48,7 +52,7 @@ function elevationSurfaceDark(token: string): string {
   return ROOTSY_ELEVATION_SURFACES_DARK.find((item) => item.token === token)!.value
 }
 
-function radiusPx(tokenId: "medium" | "large"): number {
+function radiusPx(tokenId: "medium" | "large" | "full"): number {
   return Number.parseInt(ROOTSY_RADIUS_TOKENS.find((item) => item.id === tokenId)!.value, 10)
 }
 
@@ -81,6 +85,7 @@ export type ButtonsUiAppearanceId =
   | "danger-subtle"
   | "link"
 export type ButtonsUiSizeId = "compact" | "default" | "large"
+export type ButtonsUiShapeId = "default" | "pill"
 
 export const BUTTONS_UI_APPEARANCE_LABELS: Record<ButtonsUiAppearanceId, string> = {
   primary: "Guardar",
@@ -143,6 +148,16 @@ export const BUTTONS_UI_SIZE_SPECS: Record<
   },
 }
 
+export const BUTTONS_UI_PILL_RADIUS_PX = radiusPx("full")
+
+export function getButtonsUiRadiusPx(
+  sizeId: ButtonsUiSizeId,
+  shape: ButtonsUiShapeId = "default",
+): number {
+  if (shape === "pill") return BUTTONS_UI_PILL_RADIUS_PX
+  return BUTTONS_UI_SIZE_SPECS[sizeId].radiusPx
+}
+
 export type HardcodedButtonSurface = {
   backgroundColor: string
   color: string
@@ -184,17 +199,12 @@ function mergeShadow(base: string | undefined, ring: string): string {
 }
 
 function getButtonsUiDefaultSurface(appearance: ButtonsUiAppearanceId): HardcodedButtonSurface {
-  const raisedShadow = ROOTSY_ELEVATION_SHADOW_TOKENS.find(
-    (item) => item.token === "elevation.shadow.raised",
-  )!.value
-
   switch (appearance) {
     case "primary":
       return {
         backgroundColor: colorTokenHex("primary", "Fondo"),
         color: colorTokenHex("primary", "Texto"),
         border: "1px solid transparent",
-        boxShadow: raisedShadow,
         fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
       }
     case "default":
@@ -214,15 +224,14 @@ function getButtonsUiDefaultSurface(appearance: ButtonsUiAppearanceId): Hardcode
     case "danger":
       return {
         backgroundColor: colorTokenHex("danger", "Fondo"),
-        color: WHITE,
+        color: colorTokenHex("danger", "Texto"),
         border: "1px solid transparent",
-        boxShadow: raisedShadow,
         fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
       }
     case "danger-subtle":
       return {
         backgroundColor: "transparent",
-        color: colorTokenHex("danger", "Fondo"),
+        color: hx("lava", "700"),
         border: "1px solid transparent",
         fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
       }
@@ -241,34 +250,47 @@ export const BUTTONS_UI_POS_TEXT_APPEARANCES = [
   "default",
   "subtle",
   "link",
+  "danger-subtle",
 ] as const satisfies readonly ButtonsUiAppearanceId[]
 
-/** Mismos appearances que light · tokens POS (sombra + savia en enlace). */
-function getButtonsUiPosTextBase(
+function darkInkMuted(atmosphere: Exclude<RootsButtonAtmosphere, "bruma">) {
+  return atmosphere === "eter" ? hx("eter", "300") : hx("sombra", "300")
+}
+
+/** Contorno, link y subtle sobre Sombra o Éter — ink vivo. El primario no cambia. */
+function getButtonsUiDarkTextBase(
   appearance: (typeof BUTTONS_UI_POS_TEXT_APPEARANCES)[number],
+  atmosphere: Exclude<RootsButtonAtmosphere, "bruma">,
 ): HardcodedButtonSurface {
   switch (appearance) {
     case "default":
       return {
-        backgroundColor: pos.surface,
-        color: TEXT_ON_DARK,
-        border: `1px solid ${pos.border}`,
+        backgroundColor: "transparent",
+        color: hx("savia", "500"),
+        border: `1px solid ${hx("savia", "500")}`,
         fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
       }
     case "subtle":
       return {
         backgroundColor: "transparent",
-        color: pos.textSecondary,
+        color: darkInkMuted(atmosphere),
         border: "1px solid transparent",
         fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
       }
     case "link":
       return {
         backgroundColor: "transparent",
-        color: pos.accent,
+        color: hx("savia", "500"),
         border: "1px solid transparent",
         fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
         textDecoration: "underline",
+      }
+    case "danger-subtle":
+      return {
+        backgroundColor: "transparent",
+        color: hx("lava", "500"),
+        border: "1px solid transparent",
+        fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
       }
   }
 }
@@ -277,12 +299,17 @@ export function getButtonsUiAppearanceSurface(
   appearance: ButtonsUiAppearanceId,
   state: ButtonsUiInteractionState = "default",
   theme: IconButtonThemeId = "workspace",
+  atmosphere?: RootsButtonAtmosphere,
 ): HardcodedButtonSurface {
-  const posText =
-    theme === "pos" &&
+  const resolvedAtmosphere = resolveRootsButtonAtmosphere({ atmosphere, theme })
+  const darkInk =
+    isRootsButtonAtmosphereDark(resolvedAtmosphere) &&
     (BUTTONS_UI_POS_TEXT_APPEARANCES as readonly string[]).includes(appearance)
-  const base = posText
-    ? getButtonsUiPosTextBase(appearance as (typeof BUTTONS_UI_POS_TEXT_APPEARANCES)[number])
+  const base = darkInk
+    ? getButtonsUiDarkTextBase(
+        appearance as (typeof BUTTONS_UI_POS_TEXT_APPEARANCES)[number],
+        resolvedAtmosphere as Exclude<RootsButtonAtmosphere, "bruma">,
+      )
     : getButtonsUiDefaultSurface(appearance)
 
   switch (state) {
@@ -293,25 +320,33 @@ export function getButtonsUiAppearanceSurface(
         case "primary":
           return { ...base, backgroundColor: colorTokenHex("primary", "Hover") }
         case "default":
+          return {
+            ...base,
+            backgroundColor: darkInk
+              ? `color-mix(in srgb, ${hx("savia", "500")} 16%, transparent)`
+              : colorTokenHex("default", "Hover"),
+          }
         case "subtle":
           return {
             ...base,
-            backgroundColor: posText
+            backgroundColor: darkInk
               ? elevationSurfaceDark("elevation.surface.raised")
-              : colorTokenHex("default", "Hover"),
+              : colorTokenHex("subtle", "Hover"),
           }
         case "danger":
           return { ...base, backgroundColor: colorTokenHex("danger", "Hover") }
         case "danger-subtle":
           return {
             ...base,
-            backgroundColor: `color-mix(in srgb, ${colorTokenHex("danger", "Fondo")} 10%, transparent)`,
-            color: colorTokenHex("danger", "Hover"),
+            backgroundColor: darkInk
+              ? `color-mix(in srgb, ${hx("lava", "500")} 16%, transparent)`
+              : hx("lava", "50"),
+            color: darkInk ? hx("lava", "500") : hx("lava", "700"),
           }
         case "link":
           return {
             ...base,
-            color: posText ? hx("savia", "300") : colorTokenHex("link", "Hover"),
+            color: darkInk ? hx("savia", "300") : colorTokenHex("link", "Hover"),
             textDecoration: "underline",
           }
       }
@@ -320,26 +355,33 @@ export function getButtonsUiAppearanceSurface(
         case "primary":
           return { ...base, backgroundColor: colorTokenHex("primary", "Active") }
         case "default":
+          return {
+            ...base,
+            backgroundColor: darkInk
+              ? `color-mix(in srgb, ${hx("savia", "500")} 22%, transparent)`
+              : hx("savia", "100"),
+          }
         case "subtle":
           return {
             ...base,
-            backgroundColor: posText
+            backgroundColor: darkInk
               ? elevationSurfaceDark("elevation.surface.sunken")
               : hx("bruma", "100"),
-            border: `1px solid ${posText ? pos.border : colorTokenHex("default", "Borde")}`,
           }
         case "danger":
           return { ...base, backgroundColor: colorTokenHex("danger", "Active") }
         case "danger-subtle":
           return {
             ...base,
-            backgroundColor: `color-mix(in srgb, ${colorTokenHex("danger", "Fondo")} 15%, transparent)`,
-            color: colorTokenHex("danger", "Active"),
+            backgroundColor: darkInk
+              ? `color-mix(in srgb, ${hx("lava", "500")} 22%, transparent)`
+              : hx("lava", "100"),
+            color: darkInk ? hx("lava", "400") : hx("lava", "800"),
           }
         case "link":
           return {
             ...base,
-            color: posText ? hx("savia", "500") : colorTokenHex("link", "Active"),
+            color: darkInk ? hx("savia", "500") : colorTokenHex("link", "Active"),
             textDecoration: "underline",
           }
       }
@@ -349,13 +391,13 @@ export function getButtonsUiAppearanceSurface(
           return { ...base, boxShadow: mergeShadow(base.boxShadow, FOCUS_RING_SAVIA) }
         case "default":
         case "subtle":
-          return { ...base, boxShadow: posText ? FOCUS_RING_DARK : FOCUS_RING_NEUTRAL }
+          return { ...base, boxShadow: darkInk ? FOCUS_RING_DARK : FOCUS_RING_NEUTRAL }
         case "danger":
           return { ...base, boxShadow: mergeShadow(base.boxShadow, FOCUS_RING_DANGER) }
         case "danger-subtle":
           return { ...base, boxShadow: FOCUS_RING_DANGER }
         case "link":
-          return { ...base, boxShadow: posText ? FOCUS_RING_DARK : FOCUS_RING_NEUTRAL }
+          return { ...base, boxShadow: darkInk ? FOCUS_RING_DARK : FOCUS_RING_NEUTRAL }
       }
     case "disabled":
       return { ...base, opacity: 0.5 }

@@ -7,6 +7,18 @@ export {
   rootsIconButtonNightGhostClass,
 } from "@/components/rootsy-button/rootsIconButtonNightStyles"
 export {
+  ROOTSY_BUTTON_ATMOSPHERE_LABELS,
+  ROOTSY_BUTTON_ATMOSPHERES,
+  isRootsButtonAtmosphere,
+  isRootsButtonAtmosphereDark,
+  resolveRootsButtonAtmosphere,
+  type RootsButtonAtmosphere,
+} from "@/components/rootsy-button/rootsButtonAtmosphere"
+export {
+  RootsButtonAtmosphereProvider,
+  useRootsButtonAtmosphere,
+} from "@/components/rootsy-button/rootsButtonAtmosphereContext"
+export {
   RootsDangerButton,
   RootsDangerSubtleButton,
   RootsDefaultButton,
@@ -14,6 +26,7 @@ export {
   RootsPrimaryButton,
   RootsSemanticButton,
   RootsSubtleButton,
+  type RootsButtonIconPosition,
 } from "@/components/rootsy-button/RootsSemanticButton"
 export {
   rootsButtonClassForVariant,

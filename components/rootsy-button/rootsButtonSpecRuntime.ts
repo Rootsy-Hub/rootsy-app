@@ -7,17 +7,20 @@ import {
   BUTTONS_WITH_ICON_FONT_WEIGHT,
   BUTTONS_WITH_ICON_SPECS,
   getButtonsUiAppearanceSurface,
+  getButtonsUiRadiusPx,
   getIconButtonUiRowSurface,
   getIconButtonUiSurface,
   iconButtonSize,
   type ButtonsUiAppearanceId,
   type ButtonsUiInteractionState,
+  type ButtonsUiShapeId,
   type ButtonsUiSizeId,
   type IconButtonEmphasisId,
   type IconButtonRowIntentId,
   type IconButtonSizeId,
   type IconButtonThemeId,
 } from "@/app/library/ui-components/buttonsUiHardcodedSpec"
+import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
 import type { CSSProperties } from "react"
 import type {
   RootsButtonSemanticVariant,
@@ -27,6 +30,7 @@ import type {
 } from "@/components/rootsy-button/rootsButtonStyles"
 
 export type RootsButtonSpecSize = ButtonsUiSizeId
+export type RootsButtonSpecShape = ButtonsUiShapeId
 
 export type RootsButtonInteractionFlags = {
   disabled?: boolean
@@ -71,13 +75,19 @@ export function getButtonAppearanceStyle(
   appearance: ButtonsUiAppearanceId,
   state: ButtonsUiInteractionState,
   sizeId: ButtonsUiSizeId = "default",
-  options?: { withIcon?: boolean; theme?: IconButtonThemeId },
+  options?: {
+    withIcon?: boolean
+    theme?: IconButtonThemeId
+    shape?: ButtonsUiShapeId
+    atmosphere?: RootsButtonAtmosphere
+  },
 ): CSSProperties {
   const size = BUTTONS_UI_SIZE_SPECS[sizeId] ?? BUTTONS_UI_SIZE_SPECS.compact
   const surface = getButtonsUiAppearanceSurface(
     appearance,
     state,
     options?.theme ?? "workspace",
+    options?.atmosphere,
   )
 
   return {
@@ -88,7 +98,7 @@ export function getButtonAppearanceStyle(
     height: size.heightPx,
     paddingLeft: size.paddingXPx,
     paddingRight: size.paddingXPx,
-    borderRadius: size.radiusPx,
+    borderRadius: getButtonsUiRadiusPx(sizeId, options?.shape ?? "default"),
     fontFamily: "var(--rootsy-font-ui)",
     fontSize: size.fontSize,
     lineHeight: size.lineHeight,
