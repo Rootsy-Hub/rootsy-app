@@ -13,6 +13,9 @@ import {
   HANDBOOK_ATMOSPHERE_CONTEXTS,
   HANDBOOK_ATMOSPHERE_TOKENS,
   HANDBOOK_BRUMA_NOCHE,
+  HANDBOOK_SOTOBOSQUE,
+  HANDBOOK_WORLD_ATMOSPHERES,
+  worldAtmosphereHex,
   HANDBOOK_CONTRAST_FAIL,
   HANDBOOK_CONTRAST_PASS,
   HANDBOOK_CONTRAST_RULES,
@@ -180,6 +183,87 @@ function FamilyRamp({ family }: { family: HandbookColorFamily }) {
   )
 }
 
+function SotobosqueCallout() {
+  const layers = [
+    { id: "fondo", label: "Fondo", mix: "sombra 950 + savia 400 · 7%" },
+    { id: "superficie", label: "Superficie", mix: "sombra 800 + savia 400 · 10%" },
+    { id: "elevada", label: "Elevada", mix: "sombra 600 + savia 400 · 14%" },
+  ] as const
+
+  return (
+    <section id="sotobosque" className="mt-8 scroll-mt-24 space-y-4">
+      <div className="max-w-3xl space-y-2">
+        <h3 className={cn(libraryDocSectionTitleClass, "text-sm")}>Sotobosque</h3>
+        <p className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}>
+          El piso del bosque
+        </p>
+        <p className={libraryDocBodyClass}>
+          Oscuro como sombra, con la savia 400 prendida. Es el aire bajo el dosel cuando
+          la vida se enciende: no apaga el carbón, lo tiñe.
+        </p>
+        <p className={libraryDocPageDescriptionClass}>
+          No es una rampa nueva. Compone sombra + savia 400. Clase .rootsy-theme-sotobosque.
+          No reemplaza sombra (el dosel que contiene) ni éter (el cielo).
+        </p>
+      </div>
+
+      <div
+        className="overflow-hidden rounded-2xl p-4"
+        style={{ background: HANDBOOK_SOTOBOSQUE.fondo }}
+      >
+        <div
+          className="rounded-xl p-3"
+          style={{ background: HANDBOOK_SOTOBOSQUE.superficie }}
+        >
+          <div
+            className="flex items-center gap-4 rounded-lg px-4 py-4"
+            style={{ background: HANDBOOK_SOTOBOSQUE.elevada }}
+          >
+            <span
+              className="size-10 shrink-0 rounded-full"
+              style={{ background: "var(--rootsy-savia-400)" }}
+            />
+            <div className="min-w-0">
+              <p
+                className="font-canopy text-sm font-semibold"
+                style={{ color: HANDBOOK_SOTOBOSQUE.texto }}
+              >
+                Identidad: savia 400
+              </p>
+              <p
+                className="mt-1 font-stream text-xs"
+                style={{ color: HANDBOOK_SOTOBOSQUE["texto-muted"] }}
+              >
+                El verde vive en el aire, no solo en el CTA.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ul className="max-w-3xl space-y-1.5">
+        {layers.map((layer) => (
+          <li key={layer.id} className="flex items-center gap-3">
+            <span
+              className="size-5 shrink-0 rounded-md border"
+              style={{
+                background: HANDBOOK_SOTOBOSQUE[layer.id],
+                borderColor: "var(--color-borde)",
+              }}
+            />
+            <span className={cn("font-canopy text-sm font-semibold", libraryDocPrimaryTextClass)}>
+              {layer.label}
+            </span>
+            <span className={cn("font-canopy text-xs", libraryDocMutedTextClass)}>
+              {layer.mix}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 function BlancoCallout() {
   return (
     <section id="blanco" className="mt-8 scroll-mt-24 space-y-3">
@@ -256,7 +340,7 @@ const FUNCTIONAL_SIGNAL_RECIPES = HANDBOOK_FUNCTIONAL_RECIPES.filter(
 
 function FunctionalApplicationPreview() {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {HANDBOOK_APPLICATION_ATMOSPHERES.map((atmosphere) => (
         <div
           key={atmosphere.id}
@@ -402,38 +486,33 @@ function FunctionalRecipeLegend() {
 }
 
 function AtmosphereContextPreview() {
-  const fondo = HANDBOOK_ATMOSPHERE_TOKENS.find((token) => token.id === "fondo")!
-  const superficie = HANDBOOK_ATMOSPHERE_TOKENS.find((token) => token.id === "superficie")!
-  const elevada = HANDBOOK_ATMOSPHERE_TOKENS.find((token) => token.id === "elevada")!
-  const texto = HANDBOOK_ATMOSPHERE_TOKENS.find((token) => token.id === "texto")!
-  const muted = HANDBOOK_ATMOSPHERE_TOKENS.find((token) => token.id === "texto-muted")!
   const accion = HANDBOOK_FUNCTIONAL_TOKENS.find((token) => token.id === "accion")!
 
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {HANDBOOK_ATMOSPHERE_CONTEXTS.map((context) => (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {HANDBOOK_WORLD_ATMOSPHERES.map((context) => (
         <div
           key={context.id}
           className="overflow-hidden rounded-2xl p-4"
-          style={{ backgroundColor: atmosphereTokenHex(fondo, context.id) }}
+          style={{ backgroundColor: worldAtmosphereHex("fondo", context.id) }}
         >
           <p
             className="font-canopy text-[11px] font-semibold uppercase tracking-[0.12em]"
-            style={{ color: atmosphereTokenHex(muted, context.id) }}
+            style={{ color: worldAtmosphereHex("texto-muted", context.id) }}
           >
             {context.name}
           </p>
           <div
             className="mt-3 space-y-3 rounded-xl p-3"
-            style={{ backgroundColor: atmosphereTokenHex(superficie, context.id) }}
+            style={{ backgroundColor: worldAtmosphereHex("superficie", context.id) }}
           >
             <div
               className="space-y-3 rounded-lg p-3"
-              style={{ backgroundColor: atmosphereTokenHex(elevada, context.id) }}
+              style={{ backgroundColor: worldAtmosphereHex("elevada", context.id) }}
             >
               <p
                 className="font-canopy text-sm font-semibold"
-                style={{ color: atmosphereTokenHex(texto, context.id) }}
+                style={{ color: worldAtmosphereHex("texto", context.id) }}
               >
                 {context.sample}
               </p>
@@ -647,7 +726,8 @@ export function HandbookColorView() {
       >
         <h2 className={libraryDocSectionTitleClass}>Atmósferas del mundo</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
-          Éter, bruma y sombra son el aire de cada pantalla. Se elige una atmósfera por contexto;
+          Éter, bruma y sombra son el aire de cada pantalla. Sotobosque es el cuarto:
+          oscuros de sombra con savia 400 prendida. Se elige una atmósfera por contexto;
           no se mezclan como si fueran acentos.
         </p>
         <div className="mt-6">
@@ -659,6 +739,7 @@ export function HandbookColorView() {
             {family.id === "bruma" ? <BlancoCallout /> : null}
           </div>
         ))}
+        <SotobosqueCallout />
       </section>
 
       <section
@@ -693,15 +774,15 @@ export function HandbookColorView() {
           <AtmosphereContextPreview />
         </div>
         <p className={cn(libraryDocPageDescriptionClass, "mt-3")}>
-          La savia de acción es la misma en las tres atmósferas. Cambia el aire, no el verbo.
+          La savia de acción es la misma en cada atmósfera. Cambia el aire, no el verbo.
         </p>
 
         <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>
           Tokens de atmósfera
         </h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
-          Resuelven según el contexto de la pantalla. Éter, bruma o sombra eligen el aire;
-          estos tokens eligen el rol dentro de ese aire.
+          Resuelven según el contexto de la pantalla. Éter, bruma, sombra o sotobosque
+          eligen el aire; estos tokens eligen el rol dentro de ese aire.
         </p>
         <div className="mt-4">
           <AtmosphereTokensTable />
@@ -710,8 +791,9 @@ export function HandbookColorView() {
           Bruma de noche usa los mismos tokens, invertidos: fondo {HANDBOOK_BRUMA_NOCHE.fondo},
           superficie {HANDBOOK_BRUMA_NOCHE.superficie}, elevada {HANDBOOK_BRUMA_NOCHE.elevada},
           borde {HANDBOOK_BRUMA_NOCHE.borde}, texto {HANDBOOK_BRUMA_NOCHE.texto}, muted{" "}
-          {HANDBOOK_BRUMA_NOCHE.muted}. No es una familia nueva. En Bruma clara la elevada
-          es blanco, no un paso de la rampa.
+          {HANDBOOK_BRUMA_NOCHE.muted}. Sotobosque tampoco es familia: sombra + savia 400,
+          clase .rootsy-theme-sotobosque. En Bruma clara la elevada es blanco, no un paso
+          de la rampa.
         </p>
 
         <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>
@@ -735,7 +817,7 @@ export function HandbookColorView() {
         </h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
           Los pasos no cambian con la atmósfera. Cambia el aire debajo: sólido, tint y señal
-          usan la misma receta en éter, bruma, sombra y bruma noche.
+          usan la misma receta en éter, bruma, sombra, sotobosque y bruma noche.
         </p>
         <div className="mt-4">
           <FunctionalApplicationPreview />
@@ -752,7 +834,7 @@ export function HandbookColorView() {
         </ul>
         <div className="mt-6">
           <LibraryDoDontPair
-            doText="Tint 50 sobre éter y sombra: una isla clara. CTA savia 700 + texto 50 en las cuatro atmósferas."
+            doText="Tint 50 sobre éter, sombra y sotobosque: una isla clara. CTA savia 700 + texto 50 en cada atmósfera."
             dontText="No rellenes un estado con 800 en oscuro, ni uses sol 500 con texto 50, ni pintes cuerpo con 400 en Bruma clara."
           />
         </div>

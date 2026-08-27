@@ -37,7 +37,6 @@ import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspac
 import { DataWorkspaceHeaderMoreMenu } from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
-import { DataWorkspaceSidebar } from "@/components/layouts/DataWorkspaceSidebar"
 import {
   OperarMobileToolboxIcons,
   OperarMobileToolboxProvider,
@@ -233,6 +232,8 @@ function atmosphereTheme(worldId: ComponentViewRenderContext["worldId"]) {
     case "suelo":
     case "sombra":
       return "rootsy-theme-pos"
+    case "sotobosque":
+      return "rootsy-theme-sotobosque"
     default:
       return "rootsy-theme-workspace"
   }
@@ -243,7 +244,7 @@ function Stack({ children }: { children: ReactNode }) {
 }
 
 function LiveView(props: ComponentViewProps) {
-  return <ComponentView defaultOpen {...props} />
+  return <ComponentView {...props} />
 }
 
 /* —— Navegación · Sidebar / paginación / piezas de header —— */
@@ -251,20 +252,6 @@ function LiveView(props: ComponentViewProps) {
 function SidebarFinalSpecimen() {
   return (
     <Stack>
-      <LiveView
-        background={BRUMA}
-        componentName="DataWorkspaceSidebar"
-        componentProperties={[
-          { name: "viewItems", values: ["DataWorkspaceSidebarViewItem[]"] },
-          { name: "activeId", values: ["string"] },
-          { name: "onSelect", values: ["(id: string) => void"] },
-          { name: "variant", values: ["default", "dark"] },
-          { name: "creationItems", values: ["opcional"] },
-        ]}
-        variants={[{ name: "default" }, { name: "dark" }]}
-        extras={[{ items: [{ name: "vistas" }, { name: "con creación" }] }]}
-        render={(variant, extras) => <SidebarLive variant={variant} extras={extras} />}
-      />
       <LiveView
         background={SOMBRA}
         componentName="SaleCatalogSidebarNav"
@@ -316,29 +303,6 @@ function SidebarFinalSpecimen() {
         render={() => <PopSettingsNavLive />}
       />
     </Stack>
-  )
-}
-
-function SidebarLive({ variant, extras }: { variant: string; extras: readonly string[] }) {
-  const [activeId, setActiveId] = useState("a")
-  const dark = variant === "dark"
-  return (
-    <div className={cn("h-56 overflow-hidden rounded-xl", dark && "bg-[var(--rootsy-sombra-800)]")}>
-      <DataWorkspaceSidebar
-        variant={dark ? "dark" : "default"}
-        activeId={activeId}
-        onSelect={setActiveId}
-        creationItems={
-          extras[0] === "con creación"
-            ? [{ id: "new", label: "Nuevo", icon: Plus }]
-            : undefined
-        }
-        viewItems={[
-          { id: "a", label: "Artículos", icon: Package },
-          { id: "b", label: "Personas", icon: Users },
-        ]}
-      />
-    </div>
   )
 }
 

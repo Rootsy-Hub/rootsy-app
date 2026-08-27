@@ -1,6 +1,6 @@
 import {
-  atmosphereTokenHex,
-  type HandbookAtmosphereId,
+  worldAtmosphereHex,
+  type HandbookWorldAtmosphereId,
 } from "@/app/handbook/color/handbookColorSpec"
 import {
   HANDBOOK_BLOCKS_ATMOSPHERE_LAYERS,
@@ -43,32 +43,28 @@ function Token({ children }: { children: string }) {
   )
 }
 
-function FondoStack({ atmosphereId }: { atmosphereId: HandbookAtmosphereId }) {
+function FondoStack({ atmosphereId }: { atmosphereId: HandbookWorldAtmosphereId }) {
   const atmosphere = HANDBOOK_SURFACE_ATMOSPHERES.find((item) => item.id === atmosphereId)
   return (
     <article className={cn("overflow-hidden rounded-2xl border", libraryDocBorderClass)}>
-      <div className="space-y-2 p-4" style={{ background: atmosphereTokenHex(HANDBOOK_SURFACE_TOKENS[0]!, atmosphereId) }}>
+      <div className="space-y-2 p-4" style={{ background: worldAtmosphereHex("fondo", atmosphereId) }}>
         <div
           className="rounded-xl p-3"
-          style={{ background: atmosphereTokenHex(HANDBOOK_SURFACE_TOKENS[1]!, atmosphereId) }}
+          style={{ background: worldAtmosphereHex("superficie", atmosphereId) }}
         >
           <div
             className="rounded-lg px-3 py-4"
-            style={{ background: atmosphereTokenHex(HANDBOOK_SURFACE_TOKENS[2]!, atmosphereId) }}
+            style={{ background: worldAtmosphereHex("elevada", atmosphereId) }}
           >
             <p
               className="font-canopy text-sm font-semibold"
-              style={{
-                color: atmosphereId === "bruma" ? "var(--rootsy-bruma-900)" : "var(--rootsy-eter-50)",
-              }}
+              style={{ color: worldAtmosphereHex("texto", atmosphereId) }}
             >
               {atmosphere?.name}
             </p>
             <p
               className="mt-1 font-stream text-xs"
-              style={{
-                color: atmosphereId === "bruma" ? "var(--rootsy-bruma-600)" : "var(--rootsy-eter-300)",
-              }}
+              style={{ color: worldAtmosphereHex("texto-muted", atmosphereId) }}
             >
               {atmosphere?.sample}
             </p>
@@ -197,11 +193,12 @@ export function HandbookSurfacesView() {
       <section id="fondos" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Fondos</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
-          Éter, bruma y sombra son el lienzo. Se elige una atmósfera por contexto. Encima
-          viven superficie y elevada. En Bruma clara la elevada es blanco; en éter y sombra
-          sube un paso de la rampa.
+          Éter, bruma, sombra y sotobosque son el lienzo. Se elige una atmósfera por
+          contexto. Encima viven superficie y elevada. En Bruma clara la elevada es
+          blanco; en éter y sombra sube un paso de la rampa. Sotobosque tiñe los
+          oscuros con savia 400.
         </p>
-        <div className="mt-6 grid gap-3 lg:grid-cols-3">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {HANDBOOK_SURFACE_ATMOSPHERES.map((atmosphere) => (
             <FondoStack key={atmosphere.id} atmosphereId={atmosphere.id} />
           ))}

@@ -1,6 +1,6 @@
 "use client"
 
-import type { DataWorkspaceSidebarViewItem } from "@/components/layouts/DataWorkspaceSidebar"
+import type { DataWorkspaceSidebarViewItem } from "@/components/layouts/dataWorkspaceNavItems"
 import { lightToolbarPanelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {

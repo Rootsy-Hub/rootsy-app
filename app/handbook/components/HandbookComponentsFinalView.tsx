@@ -26,7 +26,7 @@ import { HANDBOOK_FINAL_SECTION_SPECIMENS } from "@/app/handbook/components/Hand
 import {
   HANDBOOK_COMPONENT_PAGES,
   HANDBOOK_COMPONENT_SECTIONS,
-  handbookComponentFinalBaseId,
+  isHandbookComponentPageId,
 } from "@/app/handbook/components/handbookComponentsSpec"
 import { HANDBOOK_DESIGN_SYSTEM_BACK_HREF } from "@/app/handbook/handbookDesignSystem"
 import { HandbookNav } from "@/app/handbook/layoutHandbookShared"
@@ -117,7 +117,7 @@ function renderAvatar(
 function HeaderFinalSpecimen() {
   return (
     <div className="flex flex-col gap-4">
-      <ComponentView defaultOpen
+      <ComponentView
         background={ETER}
         componentName="HomePageHeader"
         componentProperties={[
@@ -134,7 +134,7 @@ function HeaderFinalSpecimen() {
           <HomePageHeader loading={extras[0] === "loading"} />
         )}
       />
-      <ComponentView defaultOpen
+      <ComponentView
         background={ETER}
         componentName="MenuPageHeader"
         componentProperties={[
@@ -168,7 +168,7 @@ function HeaderFinalSpecimen() {
           />
         )}
       />
-      <ComponentView defaultOpen
+      <ComponentView
         background={ETER}
         componentName="ModuleWorkspaceHeader"
         componentProperties={[
@@ -306,7 +306,7 @@ function ModuleWorkspaceHeaderSpecimen({
 
 function AvatarFinalSpecimen() {
   return (
-    <ComponentView defaultOpen
+    <ComponentView
       background={BRUMA}
       componentName="Avatar"
       componentProperties={[
@@ -336,7 +336,7 @@ function AvatarFinalSpecimen() {
 }
 
 function MenuSidebarSpecimen({ variant }: { variant: string }) {
-  const [activePageId, setActivePageId] = useState("navegacion-final")
+  const [activePageId, setActivePageId] = useState("navegacion")
   const isDesignSystem = variant !== "Handbook"
 
   return (
@@ -406,6 +406,8 @@ function atmosphereChrome(worldId: ComponentViewRenderContext["worldId"]) {
     case "suelo":
     case "sombra":
       return { themeClass: "rootsy-theme-pos", tone: "dark" as const }
+    case "sotobosque":
+      return { themeClass: "rootsy-theme-sotobosque", tone: "dark" as const }
     default:
       return { themeClass: "rootsy-theme-workspace", tone: "light" as const }
   }
@@ -447,7 +449,7 @@ function TabsSegmentLive({
 
 function TabsFinalSpecimen() {
   return (
-    <ComponentView defaultOpen
+    <ComponentView
       background={BRUMA}
       componentName="RootsFormSegmentField"
       componentProperties={[
@@ -670,7 +672,7 @@ function MenuDockSpecimen({
 function MenusFinalSpecimen() {
   return (
     <div className="flex flex-col gap-4">
-      <ComponentView defaultOpen
+      <ComponentView
         background={ETER}
         componentName="MenuSectionNavigator"
         componentProperties={[
@@ -685,7 +687,7 @@ function MenusFinalSpecimen() {
           <MenuSectionNavigatorSpecimen loading={extras[0] === "loading"} />
         )}
       />
-      <ComponentView defaultOpen
+      <ComponentView
         background={ETER}
         componentName="MenuGridItemButton"
         componentProperties={[
@@ -707,7 +709,7 @@ function MenusFinalSpecimen() {
           />
         )}
       />
-      <ComponentView defaultOpen
+      <ComponentView
         background={ETER}
         componentName="MenuDock"
         componentProperties={[
@@ -728,7 +730,7 @@ function MenusFinalSpecimen() {
           />
         )}
       />
-      <ComponentView defaultOpen
+      <ComponentView
         background={BRUMA}
         componentName="MenuSidebar"
         componentProperties={[
@@ -748,15 +750,14 @@ function MenusFinalSpecimen() {
 }
 
 export function HandbookComponentsFinalView({ pageId }: { pageId: string }) {
-  const baseId = handbookComponentFinalBaseId(pageId)
-  if (!baseId) return null
+  if (!isHandbookComponentPageId(pageId)) return null
 
-  const page = HANDBOOK_COMPONENT_PAGES[baseId]
-  const sections = HANDBOOK_COMPONENT_SECTIONS[baseId]
+  const page = HANDBOOK_COMPONENT_PAGES[pageId]
+  const sections = HANDBOOK_COMPONENT_SECTIONS[pageId]
 
   return (
     <article className="w-full">
-      <h1 className={cn(libraryDocPageTitleClass, "text-2xl")}>{page.title}-final</h1>
+      <h1 className={cn(libraryDocPageTitleClass, "text-2xl")}>{page.title}</h1>
       <div className="mt-10">
         {sections.map((section) => (
           <section
@@ -770,11 +771,11 @@ export function HandbookComponentsFinalView({ pageId }: { pageId: string }) {
                 <p className={cn(libraryDocPageDescriptionClass, "max-w-md italic")}>
                   {section.absentNote}
                 </p>
-              ) : pageId === "navegacion-final" && section.id === "header" ? (
+              ) : pageId === "navegacion" && section.id === "header" ? (
                 <HeaderFinalSpecimen />
-              ) : pageId === "navegacion-final" && section.id === "menus" ? (
+              ) : pageId === "navegacion" && section.id === "menus" ? (
                 <MenusFinalSpecimen />
-              ) : pageId === "navegacion-final" && section.id === "tabs" ? (
+              ) : pageId === "navegacion" && section.id === "tabs" ? (
                 <TabsFinalSpecimen />
               ) : HANDBOOK_FINAL_SECTION_SPECIMENS[section.id] ? (
                 HANDBOOK_FINAL_SECTION_SPECIMENS[section.id]()

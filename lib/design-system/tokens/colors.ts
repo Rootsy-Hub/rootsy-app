@@ -5,7 +5,7 @@
  * Once pasos (50–950) en siete familias, más --rootsy-blanco fuera de rampa.
  * Si un hex no está acá, no entra.
  *
- * Atmósferas: éter · bruma · sombra
+ * Atmósferas: éter · bruma · sombra · sotobosque (compuesta: sombra + savia 400)
  * Funcionales: savia · cielo · sol · lava
  */
 

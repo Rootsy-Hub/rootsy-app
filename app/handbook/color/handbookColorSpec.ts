@@ -10,6 +10,7 @@ import {
 } from "@/app/handbook/color/handbookColorPalettes"
 
 export type HandbookAtmosphereId = "eter" | "bruma" | "sombra"
+export type HandbookWorldAtmosphereId = HandbookAtmosphereId | "sotobosque"
 
 export const HANDBOOK_ATMOSPHERE_CONTEXTS: {
   id: HandbookAtmosphereId
@@ -20,6 +21,28 @@ export const HANDBOOK_ATMOSPHERE_CONTEXTS: {
   { id: "bruma", name: "Bruma", sample: "Workspace, tablas, ticket." },
   { id: "sombra", name: "Sombra", sample: "Mostrador, catálogo, rail." },
 ]
+
+export const HANDBOOK_SOTOBOSQUE_CONTEXT = {
+  id: "sotobosque" as const,
+  name: "Sotobosque",
+  sample: "Oscuro con savia prendida.",
+}
+
+export const HANDBOOK_WORLD_ATMOSPHERES: {
+  id: HandbookWorldAtmosphereId
+  name: string
+  sample: string
+}[] = [...HANDBOOK_ATMOSPHERE_CONTEXTS, HANDBOOK_SOTOBOSQUE_CONTEXT]
+
+/** Sotobosque no tiene rampa. Oscuros de sombra + savia 400. */
+export const HANDBOOK_SOTOBOSQUE = {
+  fondo: "var(--rootsy-sotobosque-fondo)",
+  superficie: "var(--rootsy-sotobosque-superficie)",
+  elevada: "var(--rootsy-sotobosque-elevada)",
+  borde: "var(--rootsy-sotobosque-borde)",
+  texto: "var(--rootsy-sotobosque-texto)",
+  "texto-muted": "var(--rootsy-sotobosque-texto-muted)",
+} as const
 
 export type HandbookAtmosphereToken = {
   id: string
@@ -162,7 +185,10 @@ export const HANDBOOK_BRUMA_NOCHE = {
   muted: "400" as HandbookColorStepId,
 }
 
-export type HandbookApplicationAtmosphereId = HandbookAtmosphereId | "bruma-noche"
+export type HandbookApplicationAtmosphereId =
+  | HandbookAtmosphereId
+  | "bruma-noche"
+  | "sotobosque"
 
 export const HANDBOOK_APPLICATION_ATMOSPHERES: {
   id: HandbookApplicationAtmosphereId
@@ -173,6 +199,7 @@ export const HANDBOOK_APPLICATION_ATMOSPHERES: {
   { id: "eter", name: "Éter", sample: "Header, menú, vacío.", dark: true },
   { id: "bruma", name: "Bruma", sample: "Workspace, tablas, ticket.", dark: false },
   { id: "sombra", name: "Sombra", sample: "Mostrador, catálogo, rail.", dark: true },
+  { id: "sotobosque", name: "Sotobosque", sample: "Oscuro con savia prendida.", dark: true },
   { id: "bruma-noche", name: "Bruma noche", sample: "Losetas invertidas.", dark: true },
 ]
 
@@ -289,14 +316,25 @@ export const HANDBOOK_FUNCTIONAL_APPLICATION_RULES = [
   "Los pasos no cambian con la atmósfera. Cambia el aire debajo.",
   "Sólido: identidad (savia 700 si el texto es chico, lava 600) y texto 50.",
   "Tint: fondo 50, borde 200 y texto 800 de la misma familia. Sol usa 900.",
-  "Sobre éter, sombra y bruma noche el tint sigue en 50: una isla clara, no un 800 de relleno.",
+  "Sobre éter, sombra, sotobosque y bruma noche el tint sigue en 50: una isla clara, no un 800 de relleno.",
   "Señal sobre oscuro: paso 400 para foco, links e iconos. En Bruma clara no es cuerpo.",
 ] as const
+
+export function worldAtmosphereHex(
+  tokenId: "fondo" | "superficie" | "elevada" | "texto" | "texto-muted" | "borde",
+  atmosphereId: HandbookWorldAtmosphereId,
+): string {
+  if (atmosphereId === "sotobosque") return HANDBOOK_SOTOBOSQUE[tokenId]
+  const token = HANDBOOK_ATMOSPHERE_TOKENS.find((item) => item.id === tokenId)
+  if (!token) throw new Error(`Unknown atmosphere token: ${tokenId}`)
+  return atmosphereTokenHex(token, atmosphereId)
+}
 
 export function applicationAtmosphereHex(
   tokenId: "fondo" | "superficie" | "elevada" | "texto" | "texto-muted" | "borde",
   atmosphereId: HandbookApplicationAtmosphereId,
 ): string {
+  if (atmosphereId === "sotobosque") return HANDBOOK_SOTOBOSQUE[tokenId]
   if (atmosphereId === "bruma-noche") {
     const step = tokenId === "texto-muted" ? HANDBOOK_BRUMA_NOCHE.muted : HANDBOOK_BRUMA_NOCHE[tokenId]
     return handbookColorHex("bruma", step)

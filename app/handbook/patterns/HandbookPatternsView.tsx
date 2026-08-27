@@ -551,7 +551,6 @@ export function HandbookPatternsView() {
                   <div className="mt-6">
                     <ComponentView
                       background={BRUMA}
-                      defaultOpen
                       componentName="DataWorkspaceTableListLayout"
                       componentProperties={[
                         {
@@ -620,7 +619,6 @@ export function HandbookPatternsView() {
                   <div className="mt-6">
                     <ComponentView
                       background={BRUMA_50}
-                      defaultOpen
                       componentName="DataWorkspaceBlocksLayout"
                       componentProperties={[
                         {

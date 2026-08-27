@@ -149,6 +149,21 @@ export const ROOTSY_COLOR_WORLDS: RootsyColorWorld[] = [
     ],
   },
   {
+    id: "sotobosque",
+    name: "Sotobosque",
+    kind: "composicion",
+    concept: "El piso del bosque: oscuros de sombra con savia 400 prendida.",
+    usedIn: "Atmósfera de producto cuando el aire es oscuro y el verde vive en el lienzo. .rootsy-theme-sotobosque.",
+    not: "No es sombra (el dosel que contiene) ni una rampa sotobosque-*. No inventes hexes.",
+    token: "sombra + savia 400 — .rootsy-theme-sotobosque",
+    hexes: [
+      { label: "sombra 950", hex: hx("sombra", "950") },
+      { label: "sombra 800", hex: hx("sombra", "800") },
+      { label: "savia 400", hex: hx("savia", "400") },
+      { label: "sombra 50", hex: hx("sombra", "50") },
+    ],
+  },
+  {
     id: "alba",
     name: "Alba",
     kind: "composicion",
@@ -170,4 +185,5 @@ export const ROOTSY_COLOR_WORLD_DONT = [
   "Suelo ≠ earth de forms. Pills y avisos van a bruma.",
   "Sombra ≠ éter. El dosel es bosque; el header es afuera del planeta.",
   "Bruma oscura ≠ sombra. La noche de leer es neblina invertida, no el catálogo bajo el dosel.",
+  "Sotobosque ≠ sombra. El piso prende savia 400; el dosel contiene y no compite.",
 ] as const

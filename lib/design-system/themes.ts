@@ -6,7 +6,13 @@
 
 import { ROOTSY_BLANCO, rootsyColorHex } from "@/lib/design-system/tokens/colors"
 
-export type RootsyThemeId = "pos" | "workspace" | "bruma-oscura" | "marketing" | "library"
+export type RootsyThemeId =
+  | "pos"
+  | "workspace"
+  | "bruma-oscura"
+  | "sotobosque"
+  | "marketing"
+  | "library"
 
 /** @deprecated Usar "marketing" */
 export type LegacyRootsyThemeId = RootsyThemeId | "landing"
@@ -97,6 +103,44 @@ function themeTokens(spec: {
   }
 }
 
+/** Sotobosque no tiene rampa: sombra + savia 400. Los valores son los mismos tokens CSS. */
+function sotobosqueTheme(): RootsyThemeTokens {
+  const fondo = "var(--rootsy-sotobosque-fondo)"
+  const superficie = "var(--rootsy-sotobosque-superficie)"
+  const elevada = "var(--rootsy-sotobosque-elevada)"
+  const borde = "var(--rootsy-sotobosque-borde)"
+  const texto = "var(--rootsy-sotobosque-texto)"
+  const textoMuted = "var(--rootsy-sotobosque-texto-muted)"
+  const accion = rootsyColorHex("savia", "600")
+  const accionHover = rootsyColorHex("savia", "700")
+  const foco = rootsyColorHex("savia", "400")
+  const actionText = rootsyColorHex("savia", "50")
+
+  return {
+    id: "sotobosque",
+    label: "Sotobosque",
+    className: "rootsy-theme-sotobosque",
+    fondo,
+    superficie,
+    elevada,
+    borde,
+    texto,
+    textoMuted,
+    accion,
+    accionHover,
+    foco,
+    shell: fondo,
+    surface: superficie,
+    elevated: elevada,
+    border: borde,
+    textPrimary: texto,
+    textSecondary: textoMuted,
+    action: accion,
+    actionText,
+    accent: foco,
+  }
+}
+
 export const ROOTSY_THEMES: RootsyThemeTokens[] = [
   themeTokens({
     id: "pos",
@@ -116,6 +160,7 @@ export const ROOTSY_THEMES: RootsyThemeTokens[] = [
     className: "rootsy-theme-bruma-oscura",
     atmosphere: "bruma-noche",
   }),
+  sotobosqueTheme(),
   themeTokens({
     id: "marketing",
     label: "Marketing · hero",

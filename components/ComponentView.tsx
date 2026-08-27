@@ -50,6 +50,12 @@ const COMPONENT_VIEW_WORLDS = [
     canvas: "var(--rootsy-sombra-800)",
   },
   {
+    id: "sotobosque",
+    name: "Sotobosque",
+    swatch: "var(--rootsy-savia-400)",
+    canvas: "var(--rootsy-sotobosque-fondo)",
+  },
+  {
     id: "herramientas",
     name: "Herramientas",
     swatch: "var(--rootsy-cielo-800)",

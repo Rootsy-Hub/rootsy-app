@@ -3,11 +3,7 @@
 import { HandbookBorderView } from "@/app/handbook/border/HandbookBorderView"
 import { HandbookColorView } from "@/app/handbook/color/HandbookColorView"
 import { HandbookComponentsFinalView } from "@/app/handbook/components/HandbookComponentsFinalView"
-import { HandbookComponentsView } from "@/app/handbook/components/HandbookComponentsView"
-import {
-  isHandbookComponentFinalPageId,
-  isHandbookComponentPageId,
-} from "@/app/handbook/components/handbookComponentsSpec"
+import { isHandbookComponentPageId } from "@/app/handbook/components/handbookComponentsSpec"
 import { HandbookElevationView } from "@/app/handbook/elevation/HandbookElevationView"
 import { HandbookIconographyView } from "@/app/handbook/iconography/HandbookIconographyView"
 import { HandbookLayoutView } from "@/app/handbook/layout/HandbookLayoutView"
@@ -26,6 +22,7 @@ import {
   HANDBOOK_DESIGN_SYSTEM_ROOT,
   getHandbookDesignSystemNavGroup,
   getHandbookDesignSystemPageMeta,
+  handbookDesignSystemHref,
   handbookDesignSystemPageFromPath,
   isHandbookDesignSystemPageId,
   isHandbookDesignSystemPath,
@@ -97,10 +94,16 @@ export function HandbookWorkspace() {
 
   useEffect(() => {
     if (mode !== "design-system") return
+    const rest = pathname.slice(HANDBOOK_DESIGN_SYSTEM_ROOT.length).replace(/^\//, "")
+    const raw = rest.split("/")[0] ?? ""
+    if (raw.endsWith("-final") && isHandbookDesignSystemPageId(urlDesignSystemPageId)) {
+      router.replace(handbookDesignSystemHref(urlDesignSystemPageId))
+      return
+    }
     if (!isHandbookDesignSystemPageId(designSystemPageId)) {
       router.replace(HANDBOOK_DESIGN_SYSTEM_ROOT)
     }
-  }, [designSystemPageId, mode, router])
+  }, [designSystemPageId, mode, pathname, router, urlDesignSystemPageId])
 
   useEffect(() => {
     const hash = typeof window !== "undefined" ? window.location.hash.slice(1) : ""
@@ -212,8 +215,6 @@ export function HandbookWorkspace() {
           ) : isDesignSystem && activeDesignSystemPageId === "movimiento" ? (
             <HandbookMotionView />
           ) : isDesignSystem && isHandbookComponentPageId(activeDesignSystemPageId) ? (
-            <HandbookComponentsView pageId={activeDesignSystemPageId} />
-          ) : isDesignSystem && isHandbookComponentFinalPageId(activeDesignSystemPageId) ? (
             <HandbookComponentsFinalView pageId={activeDesignSystemPageId} />
           ) : isDesignSystem && activeDesignSystemPageId === "patrones" ? (
             <HandbookPatternsView />

@@ -118,7 +118,7 @@ export const HANDBOOK_SOMBRA: HandbookColorFamily = family({
   tagline: "El dosel",
   description:
     "Carbón verdoso del bosque. Shells operativos, catálogos, rieles y cards bajo el dosel. Es el hábitat de la operación densa: contiene, no compite con la savia.",
-  not: "No es éter (el espacio) ni bruma oscura (la neblina de noche).",
+  not: "No es éter (el espacio), bruma oscura (la neblina de noche) ni sotobosque (el piso con savia prendida).",
   identity: "600",
   hexes: ROOTSY_COLOR_RAMPS.sombra,
   usage: {
@@ -143,7 +143,7 @@ export const HANDBOOK_SAVIA: HandbookColorFamily = family({
   tagline: "Vida que acciona",
   description:
     "El único verde con intención. Confirma, enfoca y marca éxito. Aparece poco y solo donde hay que moverse.",
-  not: "No pinta superficies enteras. No reemplaza éter, bruma ni sombra.",
+  not: "No pinta superficies enteras. No reemplaza éter, bruma, sombra ni sotobosque.",
   identity: "600",
   hexes: ROOTSY_COLOR_RAMPS.savia,
   usage: {

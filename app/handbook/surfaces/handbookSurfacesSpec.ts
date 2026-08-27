@@ -6,11 +6,11 @@
 
 import { ROOTSY_ELEVATION_Z_INDEX } from "@/app/library/elevation/rootsyElevationSystem"
 import {
-  HANDBOOK_ATMOSPHERE_CONTEXTS,
   HANDBOOK_ATMOSPHERE_TOKENS,
+  HANDBOOK_WORLD_ATMOSPHERES,
 } from "@/app/handbook/color/handbookColorSpec"
 
-export const HANDBOOK_SURFACE_ATMOSPHERES = HANDBOOK_ATMOSPHERE_CONTEXTS
+export const HANDBOOK_SURFACE_ATMOSPHERES = HANDBOOK_WORLD_ATMOSPHERES
 export const HANDBOOK_SURFACE_TOKENS = HANDBOOK_ATMOSPHERE_TOKENS.filter((token) =>
   ["fondo", "superficie", "elevada"].includes(token.id),
 )
@@ -20,7 +20,7 @@ export const HANDBOOK_SURFACE_PRINCIPLES = [
   {
     title: "El aire primero",
     detail:
-      "Éter, bruma o sombra pintan el lienzo. Encima, superficie y elevada. En Bruma clara la elevada es blanco.",
+      "Éter, bruma, sombra o sotobosque pintan el lienzo. Encima, superficie y elevada. En Bruma clara la elevada es blanco.",
   },
   {
     title: "Una atmósfera por pantalla",

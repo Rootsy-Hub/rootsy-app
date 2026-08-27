@@ -66,7 +66,7 @@ export type DataWorkspaceLayoutProps = {
   hideSidebarToggleOnMobile?: boolean
   /** Fila opcional bajo el header (filtros, período, búsqueda). */
   toolbar?: ReactNode
-  /** Barra lateral opcional (p. ej. `DataWorkspaceSidebar`) para varias vistas en la misma sección. */
+  /** Barra lateral opcional para varias vistas en la misma sección. */
   sidebar?: ReactNode
   /** Permite colapsar la barra lateral (persiste por POP en `localStorage`). */
   sidebarCollapsible?: boolean

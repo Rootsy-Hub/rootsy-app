@@ -110,6 +110,7 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
             heading("Bruma"),
             heading("Blanco"),
             heading("Sombra"),
+            heading("Sotobosque"),
           ]),
           heading("Colores funcionales", [
             heading("Savia"),
@@ -307,86 +308,6 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
     ],
   },
   {
-    id: "componentes-final",
-    label: "Componentes-final",
-    // Catálogo canónico — las categorías están; el contenido se llena después.
-    items: [
-      {
-        id: "navegacion-final",
-        label: "Navegación-final",
-        topics: [
-          heading("Header"),
-          heading("Sidebar"),
-          heading("Menús"),
-          heading("Tabs"),
-          heading("Breadcrumbs"),
-          heading("Paginación"),
-        ],
-      },
-      {
-        id: "acciones-final",
-        label: "Acciones-final",
-        topics: [
-          heading("Botones"),
-          heading("Botones de icono"),
-          heading("Menús de acciones"),
-          heading("Tooltips"),
-        ],
-      },
-      {
-        id: "formularios-final",
-        label: "Formularios-final",
-        topics: [
-          heading("Inputs"),
-          heading("Selects"),
-          heading("Checkboxes"),
-          heading("Radios"),
-          heading("Switches"),
-          heading("Date pickers"),
-          heading("Validación"),
-        ],
-      },
-      {
-        id: "datos-final",
-        label: "Datos-final",
-        topics: [
-          heading("Tablas"),
-          heading("Cards"),
-          heading("Listas"),
-          heading("Badges"),
-          heading("Métricas"),
-          heading("Gráficos"),
-          heading("Estados de stock"),
-        ],
-      },
-      {
-        id: "feedback-final",
-        label: "Feedback-final",
-        topics: [
-          heading("Toasts"),
-          heading("Alertas"),
-          heading("Banners"),
-          heading("Modals"),
-          heading("Confirmaciones"),
-          heading("Errores"),
-          heading("Estados de carga"),
-          heading("Empty states"),
-        ],
-      },
-      {
-        id: "overlays-final",
-        label: "Overlays-final",
-        topics: [
-          heading("Dropdowns"),
-          heading("Popovers"),
-          heading("Drawers"),
-          heading("Dialogs"),
-          heading("Toolboxes"),
-        ],
-      },
-    ],
-  },
-  {
     id: "guia",
     label: "",
     items: [
@@ -483,7 +404,15 @@ export function handbookDesignSystemPageFromPath(pathname: string): string {
   }
   const rest = pathname.slice(HANDBOOK_DESIGN_SYSTEM_ROOT.length).replace(/^\//, "")
   if (!rest) return DEFAULT_HANDBOOK_DESIGN_SYSTEM_PAGE
-  return rest.split("/")[0] ?? DEFAULT_HANDBOOK_DESIGN_SYSTEM_PAGE
+  const raw = rest.split("/")[0] ?? DEFAULT_HANDBOOK_DESIGN_SYSTEM_PAGE
+  return handbookDesignSystemCanonicalPageId(raw)
+}
+
+/** Las URLs `*-final` de Componentes redirigen al id canónico. */
+export function handbookDesignSystemCanonicalPageId(pageId: string): string {
+  if (!pageId.endsWith("-final")) return pageId
+  const base = pageId.slice(0, -"-final".length)
+  return isHandbookDesignSystemPageId(base) ? base : pageId
 }
 
 export function handbookDesignSystemHref(pageId: string): string {

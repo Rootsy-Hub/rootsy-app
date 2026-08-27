@@ -95,9 +95,5 @@ export function getHandbookNavIcon(sectionId: string): LucideIcon | null {
 }
 
 export function getHandbookDesignSystemNavIcon(pageId: string): LucideIcon | null {
-  return (
-    HANDBOOK_DESIGN_SYSTEM_NAV_ICONS[pageId] ??
-    HANDBOOK_DESIGN_SYSTEM_NAV_ICONS[pageId.replace(/-final$/, "")] ??
-    null
-  )
+  return HANDBOOK_DESIGN_SYSTEM_NAV_ICONS[pageId] ?? null
 }
