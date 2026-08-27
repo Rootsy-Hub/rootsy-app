@@ -154,6 +154,7 @@ export function HandbookWorkspace() {
   const designSystemMeta = isDesignSystem
     ? getHandbookDesignSystemPageMeta(activeDesignSystemPageId)
     : undefined
+  const isPatternsPage = isDesignSystem && activeDesignSystemPageId === "patrones"
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -173,7 +174,12 @@ export function HandbookWorkspace() {
           libraryScrollLightClass,
         )}
       >
-        <div className="mx-auto max-w-5xl space-y-8">
+        <div
+          className={cn(
+            "mx-auto w-full space-y-8",
+            isPatternsPage ? "max-w-none" : "max-w-5xl",
+          )}
+        >
           <HandbookMobileNav
             activeSectionId={sectionId}
             designSystemPageId={activeDesignSystemPageId}

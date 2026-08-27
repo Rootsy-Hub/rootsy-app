@@ -40,6 +40,12 @@ function saleBoardFilters(input: ListSaleBoardArticlesInput): {
     const like = `%${search.replace(/[%_]/g, "")}%`
     clauses.push("(name LIKE ? COLLATE NOCASE OR IFNULL(barcode, '') LIKE ? OR IFNULL(sku, '') LIKE ?)")
     params.push(like, like, like)
+    if (input.categoryIds && input.categoryIds.length > 0) {
+      clauses.push(
+        `category_id IN (${input.categoryIds.map(() => "?").join(",")})`,
+      )
+      params.push(...input.categoryIds)
+    }
   } else if (input.categoryId) {
     clauses.push("category_id = ?")
     params.push(input.categoryId)

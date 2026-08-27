@@ -75,7 +75,7 @@ export function SaleCatalogVirtualGrid<T>({
               isFooter
                 ? undefined
                 : modoVista === "grid"
-                  ? "grid gap-4"
+                  ? "grid gap-[var(--layouts-operar-grid-gap,1rem)]"
                   : "flex flex-col"
             }
             style={{

@@ -4,15 +4,24 @@ import {
   clearPopLocalArticlesHydrateMarks,
   clearPopLocalCategoriesHydrateMark,
   clearPopLocalPromotionsHydrateMark,
+  clearPopLocalRecipeCategoriesHydrateMark,
+  clearPopLocalRecipesHydrateMark,
   deleteArticleById,
   deleteCategoryById,
   deletePromotionById,
+  deleteRecipeById,
+  deleteRecipeCategoryById,
   getCategoryById,
+  getRecipeCategoryById,
   openPopLocalDb,
   renameArticlesCategory,
+  renameRecipesCategory,
+  updateRecipesStationForCategory,
   upsertArticleSnapshots,
   upsertCategorySnapshots,
   upsertPromotionSnapshots,
+  upsertRecipeCategorySnapshots,
+  upsertRecipeSnapshots,
 } from "@/lib/popLocalDb"
 import {
   articleIdFromRealtimeEvent,
@@ -26,6 +35,14 @@ import {
   promotionIdFromRealtimeEvent,
   promotionSnapshotFromRealtimePayload,
 } from "@/lib/catalogRealtime/promotionPayload"
+import {
+  recipeIdFromRealtimeEvent,
+  recipeSnapshotFromRealtimePayload,
+} from "@/lib/catalogRealtime/recipePayload"
+import {
+  recipeCategoryIdFromRealtimeEvent,
+  recipeCategorySnapshotFromRealtimePayload,
+} from "@/lib/catalogRealtime/recipeCategoryPayload"
 import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import {
   popArticleCategoriesQueryRoot,
@@ -34,7 +51,14 @@ import {
   popLocalArticlesHydrateQueryRoot,
   popLocalCategoriesHydrateQueryKey,
   popLocalPromotionsHydrateQueryKey,
+  popLocalRecipeCategoriesHydrateQueryKey,
+  popLocalRecipesHydrateQueryKey,
+  menuBoardItemsQueryRoot,
+  menuCatalogSectionsQueryRoot,
   popPromotionsQueryRoot,
+  popRecipeCategoriesQueryKey,
+  popRecipeQueryKey,
+  popRecipesQueryRoot,
   saleBoardArticlesQueryRoot,
   saleBoardCategoriesQueryRoot,
   saleBoardPromotionsQueryRoot,
@@ -57,6 +81,13 @@ async function retrySqlite<T>(fn: () => Promise<T>): Promise<T> {
   throw last
 }
 
+function invalidateMenuBoardItems(queryClient: QueryClient, popId: string) {
+  void queryClient.invalidateQueries({
+    queryKey: menuBoardItemsQueryRoot(popId),
+    ...REFETCH_ALL,
+  })
+}
+
 function invalidateSaleBoardArticles(queryClient: QueryClient, popId: string) {
   void queryClient.invalidateQueries({
     queryKey: saleBoardArticlesQueryRoot(popId),
@@ -66,6 +97,14 @@ function invalidateSaleBoardArticles(queryClient: QueryClient, popId: string) {
     queryClient,
     popArticlesQueryRoot(popId),
   )
+  invalidateMenuBoardItems(queryClient, popId)
+}
+
+function invalidateMenuCatalogSections(queryClient: QueryClient, popId: string) {
+  void queryClient.invalidateQueries({
+    queryKey: menuCatalogSectionsQueryRoot(popId),
+    ...REFETCH_ALL,
+  })
 }
 
 function invalidateLocalCategories(queryClient: QueryClient, popId: string) {
@@ -77,6 +116,7 @@ function invalidateLocalCategories(queryClient: QueryClient, popId: string) {
     queryKey: popArticleCategoriesQueryRoot(popId),
     ...REFETCH_ALL,
   })
+  invalidateMenuCatalogSections(queryClient, popId)
 }
 
 async function recoverArticlesCatalog(queryClient: QueryClient, popId: string) {
@@ -219,6 +259,8 @@ function invalidateSaleBoardPromotions(queryClient: QueryClient, popId: string) 
     queryClient,
     popPromotionsQueryRoot(popId),
   )
+  invalidateMenuCatalogSections(queryClient, popId)
+  invalidateMenuBoardItems(queryClient, popId)
 }
 
 async function recoverPromotionsCatalog(queryClient: QueryClient, popId: string) {
@@ -284,4 +326,183 @@ export async function applyPromotionRealtimeEvent(
   }
 
   invalidateSaleBoardPromotions(queryClient, popId)
+}
+
+function invalidateLocalRecipes(queryClient: QueryClient, popId: string) {
+  void invalidateDataWorkspaceTableInfinite(
+    queryClient,
+    popRecipesQueryRoot(popId),
+  )
+  invalidateMenuBoardItems(queryClient, popId)
+}
+
+function invalidateLocalRecipeCategories(queryClient: QueryClient, popId: string) {
+  void queryClient.invalidateQueries({
+    queryKey: popRecipeCategoriesQueryKey(popId),
+    ...REFETCH_ALL,
+  })
+  invalidateMenuCatalogSections(queryClient, popId)
+}
+
+async function recoverRecipesCatalog(queryClient: QueryClient, popId: string) {
+  await clearPopLocalRecipesHydrateMark(popId).catch(() => undefined)
+  void queryClient.invalidateQueries({
+    queryKey: popLocalRecipesHydrateQueryKey(popId),
+    ...REFETCH_ALL,
+  })
+  invalidateLocalRecipes(queryClient, popId)
+}
+
+async function recoverRecipeCategoriesCatalog(
+  queryClient: QueryClient,
+  popId: string,
+) {
+  await clearPopLocalRecipeCategoriesHydrateMark(popId).catch(() => undefined)
+  void queryClient.invalidateQueries({
+    queryKey: popLocalRecipeCategoriesHydrateQueryKey(popId),
+    ...REFETCH_ALL,
+  })
+  invalidateLocalRecipeCategories(queryClient, popId)
+}
+
+async function writeRecipeEventToSqlite(
+  popId: string,
+  event: DomainEvent,
+  recipeId: string,
+) {
+  const handle = await openPopLocalDb(popId)
+  if (event.type === "recipes.deleted") {
+    deleteRecipeById(handle.database, recipeId)
+    handle.markDirty()
+    await handle.flush()
+    return "ok" as const
+  }
+  const snapshot = recipeSnapshotFromRealtimePayload(event.payload.recipe)
+  if (!snapshot) return "needs-rehydrate" as const
+  if (!snapshot.stationId && snapshot.categoryId) {
+    snapshot.stationId =
+      getRecipeCategoryById(handle.database, snapshot.categoryId)?.stationId ??
+      null
+  }
+  upsertRecipeSnapshots(handle.database, [snapshot])
+  handle.markDirty()
+  await handle.flush()
+  return "ok" as const
+}
+
+export async function applyRecipeRealtimeEvent(
+  queryClient: QueryClient,
+  popId: string,
+  event: DomainEvent,
+) {
+  const type = event.type
+  if (
+    type !== "recipes.created" &&
+    type !== "recipes.updated" &&
+    type !== "recipes.deleted"
+  ) {
+    return
+  }
+  const recipeId =
+    (event.resource?.type === "recipe" && event.resource.id) ||
+    recipeIdFromRealtimeEvent(event.payload)
+  if (!recipeId) return
+
+  let outcome: "ok" | "needs-rehydrate" = "needs-rehydrate"
+  try {
+    outcome = await retrySqlite(() =>
+      writeRecipeEventToSqlite(popId, event, recipeId),
+    )
+  } catch {
+    await recoverRecipesCatalog(queryClient, popId)
+    return
+  }
+
+  if (outcome === "needs-rehydrate") {
+    await recoverRecipesCatalog(queryClient, popId)
+    return
+  }
+
+  invalidateLocalRecipes(queryClient, popId)
+  void queryClient.invalidateQueries({
+    queryKey: popRecipeQueryKey(popId, recipeId),
+    ...REFETCH_ALL,
+  })
+}
+
+async function writeRecipeCategoryEventToSqlite(
+  popId: string,
+  event: DomainEvent,
+  categoryId: string,
+) {
+  const handle = await openPopLocalDb(popId)
+  if (event.type === "recipecategories.deleted") {
+    deleteRecipeCategoryById(handle.database, categoryId)
+    handle.markDirty()
+    await handle.flush()
+    return { kind: "ok" as const, recipesChanged: false }
+  }
+  const snapshot = recipeCategorySnapshotFromRealtimePayload(
+    event.payload.category,
+  )
+  if (!snapshot) return { kind: "needs-rehydrate" as const, recipesChanged: false }
+  const previous = getRecipeCategoryById(handle.database, snapshot.id)
+  upsertRecipeCategorySnapshots(handle.database, [snapshot])
+  const renamed =
+    event.type === "recipecategories.updated" &&
+    renameRecipesCategory(handle.database, snapshot.id, snapshot.name)
+  const stationChanged =
+    event.type === "recipecategories.updated" &&
+    previous?.stationId !== snapshot.stationId &&
+    updateRecipesStationForCategory(
+      handle.database,
+      snapshot.id,
+      snapshot.stationId,
+    )
+  handle.markDirty()
+  await handle.flush()
+  return { kind: "ok" as const, recipesChanged: renamed || stationChanged }
+}
+
+export async function applyRecipeCategoryRealtimeEvent(
+  queryClient: QueryClient,
+  popId: string,
+  event: DomainEvent,
+) {
+  const type = event.type
+  if (type === "recipecategories.layout") {
+    await recoverRecipeCategoriesCatalog(queryClient, popId)
+    return
+  }
+  if (
+    type !== "recipecategories.created" &&
+    type !== "recipecategories.updated" &&
+    type !== "recipecategories.deleted"
+  ) {
+    return
+  }
+  const categoryId =
+    (event.resource?.type === "recipecategory" && event.resource.id) ||
+    recipeCategoryIdFromRealtimeEvent(event.payload)
+  if (!categoryId) return
+
+  let written: Awaited<ReturnType<typeof writeRecipeCategoryEventToSqlite>>
+  try {
+    written = await retrySqlite(() =>
+      writeRecipeCategoryEventToSqlite(popId, event, categoryId),
+    )
+  } catch {
+    await recoverRecipeCategoriesCatalog(queryClient, popId)
+    return
+  }
+
+  if (written.kind === "needs-rehydrate") {
+    await recoverRecipeCategoriesCatalog(queryClient, popId)
+    return
+  }
+
+  if (written.recipesChanged) {
+    invalidateLocalRecipes(queryClient, popId)
+  }
+  invalidateLocalRecipeCategories(queryClient, popId)
 }

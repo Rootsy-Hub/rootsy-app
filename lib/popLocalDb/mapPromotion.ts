@@ -313,3 +313,33 @@ export function splitLocalPromotionsForSale(
     .map(promotionSnapshotToMenuCatalog)
   return { combos, quantityDeals }
 }
+
+export function splitLocalPromotionsForMenu(
+  rows: PromotionSnapshot[],
+  at = new Date(),
+): {
+  combos: MenuCatalogPromotion[]
+  quantityDeals: MenuCatalogPromotion[]
+} {
+  const visible = rows.filter(
+    (row) =>
+      row.isActive &&
+      isPromotionScheduleActiveNow(
+        {
+          validFrom: row.validFrom,
+          validUntil: row.validUntil,
+          validTimeStart: row.validTimeStart,
+          validTimeEnd: row.validTimeEnd,
+          scheduleDays: row.scheduleDays,
+        },
+        at,
+      ),
+  )
+  const combos = visible
+    .filter((row) => row.promotionType === "combo" && row.showInMenu)
+    .map(promotionSnapshotToMenuCatalog)
+  const quantityDeals = visible
+    .filter((row) => row.promotionType === "quantity_deal" && row.autoApply)
+    .map(promotionSnapshotToMenuCatalog)
+  return { combos, quantityDeals }
+}

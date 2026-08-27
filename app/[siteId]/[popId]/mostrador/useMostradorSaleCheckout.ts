@@ -11,7 +11,9 @@ import {
   healCartLinesAlreadySent,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
+import { applyMostradorCheckoutToOrderCache } from "@/app/[siteId]/[popId]/mostrador/mostradorQueryCache"
 import { saveCounterOrderCheckoutApi, closeCounterOrderCheckoutApi } from "@/lib/rootsyApi/mostradorClient"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   emptyTableSessionCheckout,
   type MesasCartItem,
@@ -243,6 +245,7 @@ export function useMostradorSaleCheckout(
     comprobantesLoaded || fiscalBootstrap.bootstrapLoaded
 
   const { bootstrap } = usePopWorkspace()
+  const queryClient = useQueryClient()
   const canCreateClient = useMemo(
     () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canCreate,
     [bootstrap?.permissionKeys],
@@ -323,6 +326,7 @@ export function useMostradorSaleCheckout(
   const skipNextPersistRef = useRef(false)
   const lastSavedUpdatedAtRef = useRef<string | null>(null)
   const lastAppliedRemoteUpdatedAtRef = useRef<string | null>(null)
+  const checkoutDirtyRef = useRef(false)
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saleIdempotencyKeyRef = useRef(crypto.randomUUID())
 
@@ -407,9 +411,17 @@ export function useMostradorSaleCheckout(
       if (res.success) {
         lastSavedUpdatedAtRef.current = res.updatedAt
         lastAppliedRemoteUpdatedAtRef.current = res.updatedAt
+        checkoutDirtyRef.current = false
+        applyMostradorCheckoutToOrderCache(
+          queryClient,
+          popId,
+          sessionId,
+          res.updatedAt,
+          snap,
+        )
       }
     },
-    [popId],
+    [popId, queryClient],
   )
 
   useEffect(() => {
@@ -428,6 +440,7 @@ export function useMostradorSaleCheckout(
     loadedSessionIdRef.current = counterOrderId
     lastSavedUpdatedAtRef.current = null
     lastAppliedRemoteUpdatedAtRef.current = null
+    checkoutDirtyRef.current = false
     comprobanteInitRef.current = false
 
     if (counterOrderId && remoteOrder) {
@@ -461,6 +474,24 @@ export function useMostradorSaleCheckout(
     if (updatedAt === lastSavedUpdatedAtRef.current) return
     if (updatedAt === lastAppliedRemoteUpdatedAtRef.current) return
 
+    if (checkoutDirtyRef.current) {
+      if (checkout?.carrito?.length) {
+        skipNextPersistRef.current = true
+        setCarrito((prev) =>
+          prev.map((item) => {
+            const remote = checkout.carrito.find(
+              (row) => resolveCartLineId(row) === resolveCartLineId(item),
+            )
+            if (!remote?.comandaStatus || remote.comandaStatus === item.comandaStatus) {
+              return item
+            }
+            return { ...item, comandaStatus: remote.comandaStatus }
+          }),
+        )
+      }
+      return
+    }
+
     const snap =
       checkout ??
       emptyTableSessionCheckout(defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit))
@@ -486,6 +517,7 @@ export function useMostradorSaleCheckout(
       clearTimeout(persistTimerRef.current)
     }
 
+    checkoutDirtyRef.current = true
     persistTimerRef.current = setTimeout(() => {
       persistTimerRef.current = null
       void flushCheckoutPersist(counterOrderId, checkoutStateRef.current)

@@ -117,7 +117,16 @@ export function PopRealtimeProvider({ children }: { children: ReactNode }) {
       persistSeq: (seq) => persistDurableSeqRef.current(seq),
       onApplyFailure: async (_event, _error) => {
         for (const handler of resyncHandlersRef.current) {
-          handler(["domain:articles", "domain:categories"], "gap")
+          handler(
+            [
+              "domain:articles",
+              "domain:categories",
+              "domain:promotions",
+              "domain:recipes",
+              "domain:recipecategories",
+            ],
+            "gap",
+          )
         }
       },
     })

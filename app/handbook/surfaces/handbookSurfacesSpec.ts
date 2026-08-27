@@ -28,6 +28,11 @@ export const HANDBOOK_SURFACE_PRINCIPLES = [
       "Fondo, superficie y elevada del mismo aire. No se mezcla éter con sombra.",
   },
   {
+    title: "El fondo es el piso",
+    detail:
+      "En Sombra el lienzo es 950, el paso más oscuro. No se aclara el fondo para separar zonas: se eleva lo que se toca.",
+  },
+  {
     title: "Un z por rol",
     detail:
       "El contenido vive abajo. El modal, arriba del backdrop. El toast, encima del modal.",

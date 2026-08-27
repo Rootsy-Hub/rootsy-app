@@ -1,192 +1,174 @@
 "use client"
 
+import { canMoveComandaTo } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import {
+  overlayComandasInFlight,
+  replaceComandaTicketCache,
+} from "@/app/[siteId]/[popId]/comandas/comandasQueryCache"
+import type {
+  ComandaStatus,
+  ComandaTicket,
+} from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import {
   fetchComandaStations,
   fetchComandas,
   moveComandaStatusApi,
 } from "@/lib/rootsyApi/comandasClient"
-import { canMoveComandaTo } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
-import type {
-  ComandaStation,
-  ComandaStatus,
-  ComandaTicket,
-} from "@/app/[siteId]/[popId]/comandas/comandasTypes"
+import {
+  popComandasStationsQueryKey,
+  popComandasTicketsQueryKey,
+} from "@/lib/queryKeys"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+function applyStatusTimestamps(
+  ticket: ComandaTicket,
+  status: ComandaStatus,
+  now: string,
+): ComandaTicket {
+  return {
+    ...ticket,
+    status,
+    statusChangedAt: now,
+    sentAt: status === "sent" ? ticket.sentAt ?? now : ticket.sentAt,
+    preparingAt:
+      status === "preparing" ? ticket.preparingAt ?? now : ticket.preparingAt,
+    readyAt: status === "ready" ? ticket.readyAt ?? now : ticket.readyAt,
+    deliveredAt:
+      status === "delivered" ? ticket.deliveredAt ?? now : ticket.deliveredAt,
+  }
+}
+
 export function useComandasState(popId: string, _siteId: string) {
-  const [stations, setStations] = useState<ComandaStation[]>([])
+  const queryClient = useQueryClient()
+  const enabled = Boolean(popId)
   const [stationId, setStationId] = useState<string | null>(null)
-  const [tickets, setTickets] = useState<ComandaTicket[]>([])
-  const [loading, setLoading] = useState(true)
-  const [stationsLoading, setStationsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const inFlightMovesRef = useRef(new Map<string, ComandaTicket>())
-  const stationIdRef = useRef<string | null>(null)
+
+  const stationsQuery = useQuery({
+    queryKey: popComandasStationsQueryKey(popId),
+    queryFn: async () => {
+      const res = await fetchComandaStations(popId)
+      if (!res.success) throw new Error(res.error)
+      return res.stations
+    },
+    enabled,
+    ...sessionListQueryOptions,
+  })
+
+  const stations = stationsQuery.data ?? []
 
   useEffect(() => {
-    stationIdRef.current = stationId
-  }, [stationId])
-
-  const applyServerTickets = useCallback((serverTickets: ComandaTicket[]) => {
-    const visible = serverTickets.filter(
-      (ticket) => ticket.status !== "pending" && ticket.status !== "voided",
-    )
-    const inFlight = inFlightMovesRef.current
-    if (inFlight.size === 0) {
-      setTickets(visible)
-      return
-    }
-    setTickets(
-      visible.map((serverTicket) => {
-        const optimistic = inFlight.get(serverTicket.id)
-        return optimistic
-          ? { ...serverTicket, status: optimistic.status }
-          : serverTicket
-      }),
-    )
-  }, [])
-
-  const upsertTicket = useCallback((ticket: ComandaTicket) => {
-    setTickets((prev) => {
-      if (ticket.status === "pending" || ticket.status === "voided") {
-        return prev.filter((row) => row.id !== ticket.id)
-      }
-      if (stationIdRef.current && ticket.stationId !== stationIdRef.current) {
-        return prev.filter((row) => row.id !== ticket.id)
-      }
-      const index = prev.findIndex((row) => row.id === ticket.id)
-      if (index < 0) return [...prev, ticket]
-      const next = [...prev]
-      next[index] = ticket
-      return next
-    })
-  }, [])
-
-  const reloadStations = useCallback(async () => {
-    if (!popId) return
-    const res = await fetchComandaStations(popId)
-    if (!res.success) {
-      setError(res.error)
-      setStations([])
-      return
-    }
-    setStations(res.stations)
     setStationId((current) => {
-      if (current && res.stations.some((station) => station.id === current)) {
+      if (current && stations.some((station) => station.id === current)) {
         return current
       }
-      return res.stations[0]?.id ?? null
+      return stations[0]?.id ?? null
     })
-  }, [popId])
+  }, [stations])
+
+  const ticketsQuery = useQuery({
+    queryKey: popComandasTicketsQueryKey(popId, stationId ?? ""),
+    queryFn: async () => {
+      if (!stationId) return [] as ComandaTicket[]
+      const res = await fetchComandas(popId, stationId)
+      if (!res.success) throw new Error(res.error)
+      const visible = res.tickets.filter(
+        (ticket) => ticket.status !== "pending" && ticket.status !== "voided",
+      )
+      return overlayComandasInFlight(visible, inFlightMovesRef.current)
+    },
+    enabled: enabled && Boolean(stationId),
+    ...sessionListQueryOptions,
+  })
+
+  const tickets = ticketsQuery.data ?? []
 
   const reloadTickets = useCallback(async () => {
-    if (!popId || !stationId) {
-      setTickets([])
-      return
-    }
-    const res = await fetchComandas(popId, stationId)
-    if (!res.success) {
-      setError(res.error)
-      setTickets([])
-      return
-    }
-    setError(null)
-    applyServerTickets(res.tickets)
-  }, [popId, stationId, applyServerTickets])
-
-  useEffect(() => {
-    setStationsLoading(true)
-    void reloadStations().finally(() => setStationsLoading(false))
-  }, [reloadStations])
-
-  useEffect(() => {
-    if (!stationId) {
-      setTickets([])
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    void reloadTickets().finally(() => setLoading(false))
-  }, [stationId, reloadTickets])
-
-  const applyOptimisticStatus = useCallback(
-    (ticketId: string, status: ComandaStatus) => {
-      let previous: ComandaTicket | undefined
-      let skipped = false
-      setTickets((prev) => {
-        previous = prev.find((ticket) => ticket.id === ticketId)
-        if (!previous || previous.status === status) {
-          skipped = true
-          return prev
-        }
-        const now = new Date().toISOString()
-        const optimistic: ComandaTicket = {
-          ...previous,
-          status,
-          statusChangedAt: now,
-          sentAt: status === "sent" ? previous.sentAt ?? now : previous.sentAt,
-          preparingAt:
-            status === "preparing"
-              ? previous.preparingAt ?? now
-              : previous.preparingAt,
-          readyAt: status === "ready" ? previous.readyAt ?? now : previous.readyAt,
-          deliveredAt:
-            status === "delivered"
-              ? previous.deliveredAt ?? now
-              : previous.deliveredAt,
-        }
-        inFlightMovesRef.current.set(ticketId, optimistic)
-        const sendId = previous.sendId
-        return prev.map((ticket) =>
-          ticket.id === ticketId || (sendId != null && ticket.sendId === sendId)
-            ? {
-                ...ticket,
-                status,
-                statusChangedAt: now,
-                sentAt: optimistic.sentAt,
-                preparingAt: optimistic.preparingAt,
-                readyAt: optimistic.readyAt,
-                deliveredAt: optimistic.deliveredAt,
-              }
-            : ticket,
-        )
-      })
-      return { previous, skipped }
-    },
-    [],
-  )
+    if (!popId || !stationId) return
+    await queryClient.invalidateQueries({
+      queryKey: popComandasTicketsQueryKey(popId, stationId),
+      refetchType: "all",
+    })
+  }, [popId, queryClient, stationId])
 
   const moveTicket = useCallback(
     async (ticketId: string, status: ComandaStatus) => {
       if (!popId) return false
-      const current = tickets.find((ticket) => ticket.id === ticketId)
+      const current = (
+        queryClient.getQueryData<ComandaTicket[]>(
+          popComandasTicketsQueryKey(popId, stationId ?? ""),
+        ) ?? tickets
+      ).find((ticket) => ticket.id === ticketId)
       if (!current) return false
       if (!canMoveComandaTo(current.status, status)) return false
+      if (current.status === status) return true
 
-      const { previous, skipped } = applyOptimisticStatus(ticketId, status)
-      if (skipped || !previous) return true
+      const now = new Date().toISOString()
+      const optimistic = applyStatusTimestamps(current, status, now)
+      const sendId = current.sendId
+      const group =
+        sendId == null
+          ? [current]
+          : (
+              queryClient.getQueryData<ComandaTicket[]>(
+                popComandasTicketsQueryKey(popId, current.stationId),
+              ) ?? tickets
+            ).filter((ticket) => ticket.sendId === sendId)
+
+      for (const ticket of group) {
+        const next = applyStatusTimestamps(ticket, status, now)
+        inFlightMovesRef.current.set(ticket.id, next)
+        replaceComandaTicketCache(
+          queryClient,
+          popId,
+          next,
+          inFlightMovesRef.current,
+        )
+      }
 
       const res = await moveComandaStatusApi(popId, ticketId, status)
       if (!res.success) {
-        inFlightMovesRef.current.delete(ticketId)
-        const sendId = previous.sendId
-        setTickets((prev) =>
-          prev.map((ticket) =>
-            ticket.id === ticketId || (sendId != null && ticket.sendId === sendId)
-              ? previous.id === ticket.id
-                ? previous
-                : { ...ticket, status: previous.status, statusChangedAt: previous.statusChangedAt }
-              : ticket,
-          ),
-        )
+        for (const ticket of group) {
+          inFlightMovesRef.current.delete(ticket.id)
+          replaceComandaTicketCache(queryClient, popId, ticket)
+        }
         setError(res.error)
         return false
       }
+
       inFlightMovesRef.current.delete(ticketId)
-      upsertTicket(res.ticket)
+      for (const ticket of group) {
+        inFlightMovesRef.current.delete(ticket.id)
+      }
+      replaceComandaTicketCache(queryClient, popId, res.ticket)
+      if (res.ticket.sendId) {
+        const siblings = (
+          queryClient.getQueryData<ComandaTicket[]>(
+            popComandasTicketsQueryKey(popId, res.ticket.stationId),
+          ) ?? []
+        ).filter(
+          (ticket) =>
+            ticket.id !== res.ticket.id && ticket.sendId === res.ticket.sendId,
+        )
+        for (const sibling of siblings) {
+          replaceComandaTicketCache(
+            queryClient,
+            popId,
+            applyStatusTimestamps(
+              sibling,
+              res.ticket.status,
+              res.ticket.statusChangedAt,
+            ),
+          )
+        }
+      }
+      setError(null)
       return true
     },
-    [popId, tickets, applyOptimisticStatus, upsertTicket],
+    [popId, queryClient, stationId, tickets],
   )
 
   return {
@@ -194,8 +176,12 @@ export function useComandasState(popId: string, _siteId: string) {
     stationId,
     setStationId,
     tickets,
-    loading: loading || stationsLoading,
-    error,
+    loading: stationsQuery.isLoading || ticketsQuery.isLoading,
+    error:
+      error ??
+      stationsQuery.error?.message ??
+      ticketsQuery.error?.message ??
+      null,
     moveTicket,
     reloadTickets,
   }

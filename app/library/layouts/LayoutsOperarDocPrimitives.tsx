@@ -373,7 +373,7 @@ function LayoutsOperarCatalogColumn({
       <section className={cn(layoutsOperarCatalogCanvasClass, wireframe && "relative")}>
         {composed ? <LayoutsOperarCatalogToolbar /> : null}
         {wireframe ? (
-          <LayoutHeightBadge label="canvas · sombra-800 · scroll" onDark />
+          <LayoutHeightBadge label="canvas · sombra-950 · scroll" onDark />
         ) : composed ? (
           <LayoutsOperarProductCatalog />
         ) : null}
@@ -832,7 +832,7 @@ export function LayoutsOperarToolboxSectionDemo() {
       >
           <LayoutsOperarToolboxProposalStrip
             proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
-            canvasLabel="canvas · sombra-800 · referencia dosel denso"
+            canvasLabel="canvas · sombra-950 · referencia dosel denso"
             measureBadge={
               <LayoutHeightBadge
                 label={`${LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx}px · dosel continuo`}

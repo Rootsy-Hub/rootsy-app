@@ -42,6 +42,8 @@ import {
   MesasTablePickerListSkeleton,
 } from "@/components/sale-operation/OperarChannelCanvasSkeletons"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
+import { useMesasRealtime } from "@/hooks/useMesasRealtime"
+import { useOperateCatalogHydrate } from "@/hooks/useOperateCatalogHydrate"
 import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
 import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -75,6 +77,8 @@ export function MesasWorkspace({
   onRegisterReload,
   onRegisterLayoutData,
 }: Props) {
+  useOperateCatalogHydrate(popId)
+  useMesasRealtime(popId)
   const { bootstrap } = usePopWorkspace()
   const clientsAccess = useMemo(
     () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []),

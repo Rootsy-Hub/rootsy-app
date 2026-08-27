@@ -259,7 +259,7 @@ export function PurchaseCatalogBrowser({
           <div
             className={cn(
               "absolute z-30 overflow-hidden md:hidden",
-              "bg-[var(--rootsy-sombra-800)]",
+              "bg-[var(--rootsy-sombra-950)]",
               "[&_button]:min-h-12 [&_button]:px-3 [&_button]:text-base",
               usesMobileStage
                 ? "inset-0"

@@ -1,6 +1,6 @@
 "use client"
 
-import { EterIconButton } from "@/components/eter/EterIconButton"
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   Sheet,
   SheetContent,
@@ -26,12 +26,14 @@ export function SaleDevtoolsPanel() {
 
   return (
     <>
-      <EterIconButton
+      <RootsIconButton
         label="Devmode"
+        semantic="tertiary"
+        atmosphere="eter"
         onClick={() => setOpen(true)}
       >
         <Bug aria-hidden />
-      </EterIconButton>
+      </RootsIconButton>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="right"

@@ -1,6 +1,7 @@
 "use client"
 
 import type { RecipeTableRow } from "@/app/[siteId]/[popId]/recipes/actions"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { ingredientLinesFromDetail } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientEditor"
 import { RecipeCategoryDeleteDialog } from "@/app/[siteId]/[popId]/recipes/RecipeCategoryDeleteDialog"
 import { RecipeCategoriesDialog } from "@/app/[siteId]/[popId]/recipes/RecipeCategoriesDialog"
@@ -60,7 +61,6 @@ import {
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
-  DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   workspaceTableLayoutClassName,
@@ -1069,19 +1069,28 @@ export function RecipesWorkspaceView() {
                           >
                             <div className="flex items-center justify-end gap-0.5">
                               {canUpdate ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label={`Editar ${row.name}`}
-                                  icon={Pencil}
+                                  tone="action"
+                                  intent="edit"
+                                  size="compact"
                                   onClick={() => void openEdit(row)}
-                                />
+                                >
+                                  <Pencil />
+                                </RootsIconButton>
                               ) : null}
                               {canDelete ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label={`Eliminar ${row.name}`}
-                                  icon={Trash2}
-                                  variant="destructive"
+                                  tone="action"
+                                  intent="destructive"
+                                  size="compact"
                                   onClick={() => openDelete(row)}
-                                />
+                                >
+                                  <Trash2 />
+                                </RootsIconButton>
                               ) : null}
                             </div>
                           </TableCell>

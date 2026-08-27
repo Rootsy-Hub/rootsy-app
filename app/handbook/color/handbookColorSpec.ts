@@ -37,7 +37,7 @@ export const HANDBOOK_ATMOSPHERE_CONTEXTS: {
     id: "sombra",
     name: "Sotobosque · Sombra",
     sample: "Mostrador, catálogo, rail.",
-    body: "Módulos operativos, concentración y densidad.",
+    body: "Módulos operativos, concentración y densidad. El fondo es la raíz: siempre el paso más oscuro.",
     cta: "Acción activa",
   },
 ]
@@ -57,7 +57,7 @@ export const HANDBOOK_ATMOSPHERE_TOKENS: HandbookAtmosphereToken[] = [
     id: "fondo",
     token: "--color-fondo",
     label: "Fondo",
-    purpose: "Lienzo de la pantalla.",
+    purpose: "Lienzo de la pantalla. En Sombra es siempre el paso más oscuro (950).",
     steps: { eter: "950", bruma: "100", sombra: "950" },
   },
   {

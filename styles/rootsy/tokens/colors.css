@@ -37,7 +37,7 @@
   --rootsy-bruma-900: #1c231e;
   --rootsy-bruma-950: #0a0f0c;
 
-  /* Sotobosque · Sombra — el dosel para operar (tokens: sombra) */
+  /* Sotobosque · Sombra — el dosel para operar. Fondo siempre 950. */
   --rootsy-sombra-50: #e8f4ec;
   --rootsy-sombra-100: #c8dfd2;
   --rootsy-sombra-200: #9dc4b0;

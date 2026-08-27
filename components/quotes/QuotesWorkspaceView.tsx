@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   mergeQuotesWorkspaceUrl,
   parseQuotesWorkspaceUrl,
@@ -20,7 +21,6 @@ import {
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
-  DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import {
@@ -599,46 +599,66 @@ export function QuotesWorkspaceView() {
                             )}
                           >
                             <div className="flex justify-end gap-1">
-                              <DataWorkspaceTableIconAction
+                              <RootsIconButton
+                                type="button"
                                 label="Ver"
+                                tone="action"
+                                intent="neutral"
+                                size="compact"
                                 disabled={busy}
-                                icon={Eye}
-                                variant="neutral"
                                 onClick={() => openView(row)}
-                              />
-                              <DataWorkspaceTableIconAction
+                              >
+                                <Eye />
+                              </RootsIconButton>
+                              <RootsIconButton
+                                type="button"
                                 label="Descargar PDF"
+                                tone="action"
+                                intent="neutral"
+                                size="compact"
                                 disabled={busy}
-                                icon={Download}
-                                variant="neutral"
                                 onClick={() => void runPdfAction(row.id, "download")}
-                              />
-                              <DataWorkspaceTableIconAction
+                              >
+                                <Download />
+                              </RootsIconButton>
+                              <RootsIconButton
+                                type="button"
                                 label="Imprimir"
+                                tone="action"
+                                intent="neutral"
+                                size="compact"
                                 disabled={busy}
-                                icon={Printer}
-                                variant="neutral"
                                 onClick={() => void runPdfAction(row.id, "print")}
-                              />
-                              <DataWorkspaceTableIconAction
+                              >
+                                <Printer />
+                              </RootsIconButton>
+                              <RootsIconButton
+                                type="button"
                                 label="Vender"
+                                tone="action"
+                                intent="edit"
+                                size="compact"
                                 disabled={busy}
-                                icon={ShoppingCart}
-                                variant="edit"
                                 onClick={() => {
                                   router.push(
                                     `${popScopedHref(siteId, popId, "sale")}?quoteId=${row.id}`,
                                   )
                                 }}
-                              />
+                              >
+                                <ShoppingCart />
+                              </RootsIconButton>
                               {canDelete ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label="Eliminar"
+                                  tone="action"
+                                  intent="destructive"
+                                  size="compact"
                                   disabled={busy}
-                                  icon={Trash2}
-                                  variant="destructive"
                                   onClick={() => setDeleteTarget(row)}
-                                />
+                                >
+                                  <Trash2 />
+                                </RootsIconButton>
                               ) : null}
                             </div>
                           </TableCell>

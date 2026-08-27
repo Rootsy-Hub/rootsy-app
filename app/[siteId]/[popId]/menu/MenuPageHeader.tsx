@@ -3,7 +3,7 @@
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { WorkspaceMobileAccountCluster } from "@/components/layouts/WorkspaceMobileAccountCluster"
 import { PopLogoLightboxButton } from "@/components/pop-identity/PopLogoLightboxButton"
-import { EterIconButton } from "@/components/eter/EterIconButton"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { menuHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
   menuSearchClearButtonClass,
@@ -88,9 +88,15 @@ export function MenuPageHeader({
           />
         ) : (
           <>
-            <EterIconButton href="/home" size="default" label="Ir al inicio">
+            <RootsIconButton
+              href="/home"
+              size="default"
+              label="Ir al inicio"
+              semantic="tertiary"
+              atmosphere="eter"
+            >
               <Home aria-hidden />
-            </EterIconButton>
+            </RootsIconButton>
 
             <MenuPopIdentity
               logoSrc={popLogoSrc}
@@ -101,13 +107,15 @@ export function MenuPageHeader({
 
             <div className="ml-auto flex shrink-0 items-center gap-1">
               <MenuNotificationsButton />
-              <EterIconButton
+              <RootsIconButton
                 size="default"
                 label="Buscar en el menú"
+                semantic="tertiary"
+                atmosphere="eter"
                 onClick={onOpenSearch}
               >
                 <Search aria-hidden />
-              </EterIconButton>
+              </RootsIconButton>
               <WorkspaceMobileAccountCluster
                 userName={userName}
                 userAvatarSrc={userAvatarSrc}
@@ -121,9 +129,15 @@ export function MenuPageHeader({
 
       <div className={cn(menuHeaderRowClass, "hidden md:grid")}>
         <div className="flex min-w-0 items-center gap-6">
-          <EterIconButton href="/home" size="large" label="Ir al inicio">
+          <RootsIconButton
+            href="/home"
+            size="large"
+            label="Ir al inicio"
+            semantic="tertiary"
+            atmosphere="eter"
+          >
             <Home aria-hidden />
-          </EterIconButton>
+          </RootsIconButton>
 
           <MenuPopIdentity
             logoSrc={popLogoSrc}

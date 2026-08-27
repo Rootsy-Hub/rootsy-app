@@ -231,7 +231,7 @@ export function ServiceOperateCatalogBrowser({
                 <div
                   className={cn(
                     "absolute z-30 overflow-hidden md:hidden",
-                    "bg-[var(--rootsy-sombra-800)]",
+                    "bg-[var(--rootsy-sombra-950)]",
                     usesMobileStage
                       ? "inset-0"
                       : "inset-x-0 bottom-0 top-[var(--layouts-operar-catalog-toolbar-h)] max-md:col-start-1 max-md:row-start-1",

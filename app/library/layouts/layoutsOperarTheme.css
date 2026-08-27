@@ -11,7 +11,7 @@
 
 /* Rail categorías — mismo --color-shell que library-sidebar (Estadísticas / Ajustes). */
 .rootsy-theme-pos .library-sidebar {
-  --color-shell: var(--rootsy-sombra-700);
+  --color-shell: var(--rootsy-sombra-950);
 }
 
 .rootsy-theme-pos.layouts-operar-body,
@@ -22,13 +22,9 @@
     var(--rootsy-sombra-400) 88%,
     var(--rootsy-savia-400)
   );
-  --layouts-operar-rail-item-text: color-mix(
-    in srgb,
-    var(--rootsy-bruma-100) 84%,
-    var(--rootsy-sombra-300)
-  );
-  --layouts-operar-rail-item-text-hover: color-mix(in srgb, var(--rootsy-bruma-50) 96%, white);
-  --layouts-operar-rail-item-text-selected: #f4f8f6;
+  --layouts-operar-rail-item-text: var(--rootsy-sombra-300);
+  --layouts-operar-rail-item-text-hover: var(--rootsy-sombra-50);
+  --layouts-operar-rail-item-text-selected: var(--rootsy-sombra-50);
   --layouts-operar-rail-item-hover: color-mix(in srgb, var(--rootsy-sombra-900) 48%, transparent);
   --layouts-operar-rail-item-selected: color-mix(in srgb, var(--rootsy-sombra-800) 52%, transparent);
   --layouts-operar-rail-item-border: color-mix(in srgb, var(--rootsy-sombra-border) 68%, transparent);
@@ -39,18 +35,18 @@
     var(--rootsy-savia-600) 18%,
     var(--rootsy-sombra-900)
   );
-  --layouts-operar-rail-promo-text: color-mix(in srgb, var(--rootsy-savia-200) 92%, white);
+  --layouts-operar-rail-promo-text: var(--rootsy-savia-400);
   --layouts-operar-rail-promo-accent: var(--rootsy-savia-400);
   --layouts-operar-rail-discount-selected: color-mix(
     in srgb,
-    #f59e0b 16%,
+    var(--rootsy-savia-500) 16%,
     var(--rootsy-sombra-900)
   );
-  --layouts-operar-rail-discount-text: color-mix(in srgb, #fde68a 90%, white);
-  --layouts-operar-rail-discount-accent: #fbbf24;
+  --layouts-operar-rail-discount-text: var(--rootsy-savia-400);
+  --layouts-operar-rail-discount-accent: var(--rootsy-savia-400);
 
-  /* Toolbox slots — tierra en relieve · savia brote (rootsyLayoutsEarthFloor.css) */
-  --layouts-operar-footer-slot-hover: color-mix(in srgb, var(--rootsy-suelo-700) 22%, transparent);
+  /* Toolbox slots — sombra en relieve · savia brote (rootsyLayoutsEarthFloor.css) */
+  --layouts-operar-footer-slot-hover: color-mix(in srgb, var(--rootsy-sombra-500) 22%, transparent);
   --layouts-operar-footer-slot-configured: color-mix(
     in srgb,
     var(--rootsy-savia-500) 44%,
@@ -67,7 +63,7 @@
     color-mix(in srgb, var(--rootsy-savia-950) 36%, transparent);
   --layouts-operar-footer-slot-pressed-bg: color-mix(
     in srgb,
-    var(--rootsy-suelo-800) 42%,
+    var(--rootsy-sombra-800) 42%,
     var(--rootsy-sombra-950)
   );
   --layouts-operar-footer-slot-configured-pressed-bg: color-mix(
@@ -76,27 +72,25 @@
     var(--rootsy-sombra-950)
   );
   --layouts-operar-footer-slot-highlight: color-mix(in srgb, var(--rootsy-savia-200) 36%, transparent);
-  --layouts-operar-footer-icon-bg: color-mix(in srgb, var(--rootsy-suelo-900) 58%, var(--rootsy-sombra-950));
-  --layouts-operar-footer-icon-text: color-mix(in srgb, var(--rootsy-suelo-400) 72%, transparent);
+  --layouts-operar-footer-icon-bg: color-mix(in srgb, var(--rootsy-sombra-900) 58%, var(--rootsy-sombra-950));
+  --layouts-operar-footer-icon-text: var(--rootsy-sombra-300);
   --layouts-operar-footer-icon-configured-bg: color-mix(in srgb, var(--rootsy-savia-500) 72%, var(--rootsy-savia-700));
-  --layouts-operar-footer-icon-configured-text: var(--rootsy-savia-50);
+  --layouts-operar-footer-icon-configured-text: var(--rootsy-savia-950);
 
-  /* Product cards — sombra-600 sobre canvas sombra-800 */
+  /* Product cards — elevada 500 sobre fondo 950 */
   --layouts-operar-product-card-shadow:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 7%, transparent),
-    0 6px 16px color-mix(in srgb, var(--rootsy-sombra-950) 28%, transparent);
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-sombra-50) 8%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--rootsy-sombra-400) 28%, transparent);
   --layouts-operar-product-card-shadow-hover:
-    inset 0 1px 0 color-mix(in srgb, #ffffff 9%, transparent),
-    0 8px 22px color-mix(in srgb, var(--rootsy-sombra-950) 36%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--rootsy-savia-400) 18%, transparent);
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-300) 16%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--rootsy-savia-500) 42%, transparent);
   --layouts-operar-product-card-shadow-selected:
-    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-300) 14%, transparent),
-    0 8px 22px color-mix(in srgb, var(--rootsy-sombra-950) 36%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--rootsy-savia-400) 24%, transparent);
-  --layouts-operar-product-card-title: #f4f8f6;
-  --layouts-operar-product-card-desc: color-mix(in srgb, var(--rootsy-sombra-300) 72%, transparent);
-  --layouts-operar-product-card-price: color-mix(in srgb, var(--rootsy-savia-300) 88%, #ffffff);
-  --layouts-operar-product-card-media-bg: var(--rootsy-sombra-600);
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-300) 18%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--rootsy-savia-500) 55%, transparent);
+  --layouts-operar-product-card-title: var(--rootsy-sombra-50);
+  --layouts-operar-product-card-desc: var(--rootsy-sombra-300);
+  --layouts-operar-product-card-price: var(--rootsy-savia-500);
+  --layouts-operar-product-card-media-bg: var(--rootsy-sombra-500);
 
   /* Form controls dark — paridad catalog-toolbar-control */
   --layouts-operar-form-dark-surface: color-mix(in srgb, var(--rootsy-sombra-950) 55%, transparent);
@@ -105,9 +99,9 @@
   --layouts-operar-form-dark-border-hover: color-mix(in srgb, var(--rootsy-sombra-border) 65%, transparent);
   --layouts-operar-form-dark-border-focus: color-mix(in srgb, var(--rootsy-savia-400) 45%, transparent);
   --layouts-operar-form-dark-focus-ring: 0 0 0 2px color-mix(in srgb, var(--rootsy-savia-400) 22%, transparent);
-  --layouts-operar-form-dark-text: #f4f8f6;
-  --layouts-operar-form-dark-text-muted: color-mix(in srgb, var(--rootsy-sombra-300) 55%, transparent);
-  --layouts-operar-form-dark-label: color-mix(in srgb, var(--rootsy-bruma-100) 84%, var(--rootsy-sombra-300));
+  --layouts-operar-form-dark-text: var(--rootsy-sombra-50);
+  --layouts-operar-form-dark-text-muted: var(--rootsy-sombra-300);
+  --layouts-operar-form-dark-label: var(--rootsy-sombra-400);
   --layouts-operar-form-dark-icon: color-mix(in srgb, var(--rootsy-sombra-300) 70%, transparent);
   --layouts-operar-form-dark-table-row: color-mix(in srgb, var(--rootsy-sombra-950) 34%, transparent);
 
@@ -194,7 +188,7 @@
 .rootsy-theme-pos .layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control:hover,
 .rootsy-theme-pos.layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control[data-state="open"],
 .rootsy-theme-pos .layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control[data-state="open"] {
-  background-color: color-mix(in srgb, var(--rootsy-white) 6%, transparent);
+  background-color: color-mix(in srgb, var(--rootsy-sombra-800) 72%, transparent);
   border-color: var(--layouts-operar-border-dark-default);
 }
 
@@ -203,9 +197,9 @@
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-toolbar-control:focus-visible,
 .rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-toolbar-control:focus-visible {
   outline: none;
-  border-color: var(--layouts-operar-border-dark-default);
-  background-color: color-mix(in srgb, var(--rootsy-white) 6%, transparent);
-  color: var(--rootsy-bruma-50);
+  border-color: color-mix(in srgb, var(--rootsy-savia-400) 55%, transparent);
+  background-color: color-mix(in srgb, var(--rootsy-sombra-800) 72%, transparent);
+  color: var(--rootsy-sombra-50);
   box-shadow: none;
 }
 
@@ -214,9 +208,9 @@
 .rootsy-theme-pos.layouts-operar-body input.layouts-operar-catalog-toolbar-scan-input:focus-visible,
 .rootsy-theme-pos .layouts-operar-body input.layouts-operar-catalog-toolbar-scan-input:focus-visible {
   outline: none;
-  border-color: var(--layouts-operar-border-dark-default);
-  background-color: color-mix(in srgb, var(--rootsy-white) 6%, transparent);
-  color: var(--rootsy-bruma-50);
+  border-color: color-mix(in srgb, var(--rootsy-savia-400) 55%, transparent);
+  background-color: color-mix(in srgb, var(--rootsy-sombra-800) 72%, transparent);
+  color: var(--rootsy-sombra-50);
   font-weight: 500;
   box-shadow: none;
 }
@@ -229,7 +223,7 @@
     var(--rootsy-sombra-900) 100%
   );
   border-bottom: 1px solid color-mix(in srgb, var(--rootsy-sombra-border) 80%, transparent);
-  color: #f4f8f6;
+  color: var(--rootsy-sombra-50);
 }
 
 /* Total del pedido — mismo piso bruma-50 que cuentas/cajas. */
@@ -316,8 +310,9 @@
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:not([data-proposal]) {
   border-radius: var(--radius-xlarge);
   box-shadow: var(--layouts-operar-product-card-shadow);
-  background: var(--rootsy-sombra-600);
+  background: var(--rootsy-sombra-500);
   border-color: var(--layouts-operar-border-dark-card);
+  transform: none;
 }
 
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"]:hover,
@@ -329,8 +324,8 @@
 
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-selected],
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card[data-selected] {
-  border-color: color-mix(in srgb, var(--rootsy-savia-400) 45%, transparent);
-  background: color-mix(in srgb, var(--rootsy-savia-400) 10%, var(--rootsy-sombra-600));
+  border-color: color-mix(in srgb, var(--rootsy-savia-500) 45%, transparent);
+  background: color-mix(in srgb, var(--rootsy-savia-500) 10%, var(--rootsy-sombra-500));
   box-shadow: var(--layouts-operar-product-card-shadow-selected);
 }
 

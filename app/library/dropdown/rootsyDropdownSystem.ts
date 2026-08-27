@@ -10,6 +10,10 @@ import {
   ROOTSY_ELEVATION_SURFACES_LIGHT,
 } from "@/app/library/elevation/rootsyElevationSystem"
 import { ROOTSY_RADIUS_TOKENS } from "@/app/library/radius/rootsyRadiusSystem"
+import {
+  resolveRootsButtonAtmosphere,
+  type RootsButtonAtmosphere,
+} from "@/components/rootsy-button/rootsButtonAtmosphere"
 import { rootsyColorHex, rootsySpacePx } from "@/lib/design-system"
 
 const hx = rootsyColorHex
@@ -231,16 +235,42 @@ export const ROOTSY_DROPDOWN_ANATOMY = {
   destructiveTintPercent: 8,
 } as const
 
-export function getDropdownPanelBackground(theme: DropdownThemeId): string {
-  return theme === "light"
-    ? elevationHexLight("elevation.surface.overlay")
-    : hx("sombra", "950")
+export function resolveDropdownAtmosphere(
+  theme: DropdownThemeId = "light",
+  atmosphere?: RootsButtonAtmosphere,
+): RootsButtonAtmosphere {
+  return resolveRootsButtonAtmosphere({
+    atmosphere,
+    theme: theme === "dark" ? "pos" : "workspace",
+  })
 }
 
-export function getDropdownPanelBorder(theme: DropdownThemeId): string {
-  return theme === "light"
-    ? `1px solid ${borderHex("color.border")}`
-    : `1px solid ${hx("sombra", "400")}`
+export function getDropdownPanelBackground(
+  theme: DropdownThemeId = "light",
+  atmosphere?: RootsButtonAtmosphere,
+): string {
+  switch (resolveDropdownAtmosphere(theme, atmosphere)) {
+    case "sombra":
+      return hx("sombra", "950")
+    case "eter":
+      return hx("eter", "950")
+    default:
+      return elevationHexLight("elevation.surface.overlay")
+  }
+}
+
+export function getDropdownPanelBorder(
+  theme: DropdownThemeId = "light",
+  atmosphere?: RootsButtonAtmosphere,
+): string {
+  switch (resolveDropdownAtmosphere(theme, atmosphere)) {
+    case "sombra":
+      return `1px solid ${hx("sombra", "400")}`
+    case "eter":
+      return `1px solid ${hx("eter", "700")}`
+    default:
+      return `1px solid ${borderHex("color.border")}`
+  }
 }
 
 export function getDropdownPanelShadow(): string {
@@ -251,45 +281,83 @@ export function getDropdownDensitySpec(density: DropdownDensityId) {
   return ROOTSY_DROPDOWN_DENSITIES.find((item) => item.id === density)!
 }
 
-export function getDropdownItemLabelHex(theme: DropdownThemeId, state: DropdownItemStateId): string {
+export function getDropdownItemLabelHex(
+  theme: DropdownThemeId,
+  state: DropdownItemStateId,
+  atmosphere?: RootsButtonAtmosphere,
+): string {
+  const resolved = resolveDropdownAtmosphere(theme, atmosphere)
   if (state === "disabled") {
-    return theme === "light" ? hx("bruma", "400") : hx("sombra", "300")
+    if (resolved === "sombra") return hx("sombra", "300")
+    if (resolved === "eter") return hx("eter", "300")
+    return hx("bruma", "400")
   }
   if (state === "destructive" || state === "destructive-hover") {
-    return theme === "light" ? semanticHex("status-danger") : hx("lava", "500")
+    return resolved === "bruma" ? semanticHex("status-danger") : hx("lava", "500")
   }
-  return theme === "light" ? hx("bruma", "900") : hx("sombra", "50")
+  if (resolved === "sombra") return hx("sombra", "50")
+  if (resolved === "eter") return hx("eter", "50")
+  return hx("bruma", "900")
 }
 
 export function getDropdownItemBackground(
   theme: DropdownThemeId,
   state: DropdownItemStateId,
+  atmosphere?: RootsButtonAtmosphere,
 ): string {
+  const resolved = resolveDropdownAtmosphere(theme, atmosphere)
   if (state === "hover") {
-    return theme === "light" ? hx("bruma", "50") : hx("sombra", "800")
+    if (resolved === "sombra") return hx("sombra", "800")
+    if (resolved === "eter") return hx("eter", "800")
+    return hx("bruma", "50")
   }
   if (state === "selected") {
-    return theme === "light"
-      ? hx("savia", "100")
-      : `color-mix(in srgb, ${hx("savia", "500")} 16%, ${hx("sombra", "950")})`
+    if (resolved === "bruma") return hx("savia", "100")
+    const base = resolved === "eter" ? hx("eter", "950") : hx("sombra", "950")
+    return `color-mix(in srgb, ${hx("savia", "500")} 16%, ${base})`
   }
   if (state === "destructive-hover") {
-    const danger = theme === "light" ? semanticHex("status-danger") : hx("lava", "500")
-    const tint = theme === "light" ? ROOTSY_DROPDOWN_ANATOMY.destructiveTintPercent : 16
-    const base = getDropdownPanelBackground(theme)
+    const danger = resolved === "bruma" ? semanticHex("status-danger") : hx("lava", "500")
+    const tint = resolved === "bruma" ? ROOTSY_DROPDOWN_ANATOMY.destructiveTintPercent : 16
+    const base = getDropdownPanelBackground(theme, atmosphere)
     return `color-mix(in srgb, ${danger} ${tint}%, ${base})`
   }
   return "transparent"
 }
 
-export function getDropdownLabelHex(theme: DropdownThemeId): string {
-  return theme === "light" ? hx("bruma", "500") : hx("sombra", "300")
+export function getDropdownLabelHex(
+  theme: DropdownThemeId,
+  atmosphere?: RootsButtonAtmosphere,
+): string {
+  switch (resolveDropdownAtmosphere(theme, atmosphere)) {
+    case "sombra":
+      return hx("sombra", "300")
+    case "eter":
+      return hx("eter", "300")
+    default:
+      return hx("bruma", "500")
+  }
 }
 
-export function getDropdownSeparatorColor(theme: DropdownThemeId): string {
-  return theme === "light" ? borderHex("color.border") : hx("sombra", "400")
+export function getDropdownSeparatorColor(
+  theme: DropdownThemeId,
+  atmosphere?: RootsButtonAtmosphere,
+): string {
+  switch (resolveDropdownAtmosphere(theme, atmosphere)) {
+    case "sombra":
+      return hx("sombra", "400")
+    case "eter":
+      return hx("eter", "700")
+    default:
+      return borderHex("color.border")
+  }
 }
 
-export function getDropdownCheckHex(theme: DropdownThemeId): string {
-  return theme === "light" ? hx("savia", "600") : hx("savia", "500")
+export function getDropdownCheckHex(
+  theme: DropdownThemeId,
+  atmosphere?: RootsButtonAtmosphere,
+): string {
+  return resolveDropdownAtmosphere(theme, atmosphere) === "bruma"
+    ? hx("savia", "600")
+    : hx("savia", "500")
 }

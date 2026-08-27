@@ -1,6 +1,7 @@
 "use client"
 
 import type { PromotionTableRow } from "@/app/[siteId]/[popId]/promotions/actions"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { PromotionDeleteDialog } from "@/app/[siteId]/[popId]/promotions/PromotionDeleteDialog"
 import { PromotionUpsertDialog } from "@/app/[siteId]/[popId]/promotions/PromotionUpsertDialog"
 import {
@@ -62,7 +63,6 @@ import {
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
-  DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   workspaceTableLayoutClassName,
@@ -784,19 +784,28 @@ export function PromotionsWorkspaceView() {
                         <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
                           <div className="flex items-center justify-end gap-0.5">
                             {canUpdate ? (
-                              <DataWorkspaceTableIconAction
+                              <RootsIconButton
+                                type="button"
                                 label={`Editar ${row.name}`}
-                                icon={Pencil}
+                                tone="action"
+                                intent="edit"
+                                size="compact"
                                 onClick={() => void openEdit(row)}
-                              />
+                              >
+                                <Pencil />
+                              </RootsIconButton>
                             ) : null}
                             {canDelete ? (
-                              <DataWorkspaceTableIconAction
+                              <RootsIconButton
+                                type="button"
                                 label={`Eliminar ${row.name}`}
-                                variant="destructive"
-                                icon={Trash2}
-                              onClick={() => openDelete(row)}
-                              />
+                                tone="action"
+                                intent="destructive"
+                                size="compact"
+                                onClick={() => openDelete(row)}
+                              >
+                                <Trash2 />
+                              </RootsIconButton>
                             ) : null}
                           </div>
                         </TableCell>

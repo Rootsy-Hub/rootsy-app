@@ -1,7 +1,7 @@
 "use client"
 
 import type { PopRoleRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { dataWorkspaceEntityCardLosetaSurfaceClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import { Pencil, Trash2, UserRound } from "lucide-react"
@@ -87,19 +87,28 @@ export function HrRolesOperativeCard({
                 </div>
                 {canEditRole ? (
                   <div className="flex shrink-0 items-center gap-0.5">
-                    <DataWorkspaceTableIconAction
+                    <RootsIconButton
+                      type="button"
                       label={`Editar ${item.role.displayName}`}
-                      icon={Pencil}
+                      tone="action"
+                      intent="edit"
+                      size="compact"
                       disabled={editBusy}
                       onClick={() => onEdit?.(item.role)}
-                    />
-                    <DataWorkspaceTableIconAction
+                    >
+                      <Pencil />
+                    </RootsIconButton>
+                    <RootsIconButton
+                      type="button"
                       label={`Eliminar ${item.role.displayName}`}
-                      icon={Trash2}
-                      variant="destructive"
+                      tone="action"
+                      intent="destructive"
+                      size="compact"
                       disabled={deleteBusy || editBusy}
                       onClick={() => onDelete?.(item.role)}
-                    />
+                    >
+                      <Trash2 />
+                    </RootsIconButton>
                   </div>
                 ) : null}
               </li>

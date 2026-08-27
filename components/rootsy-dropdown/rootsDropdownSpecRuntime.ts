@@ -14,6 +14,7 @@ import {
   type DropdownThemeId,
 } from "@/app/library/ui-components/dropdownUiHardcodedSpec"
 import { ROOTSY_DROPDOWN_ANATOMY } from "@/app/library/dropdown/rootsyDropdownSystem"
+import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
 import type { CSSProperties } from "react"
 
 export type {
@@ -33,8 +34,9 @@ export { ROOTSY_DROPDOWN_ANATOMY }
 export function getDropdownContentStyle(
   theme: DropdownThemeId = "light",
   density: DropdownDensityId = "default",
+  atmosphere?: RootsButtonAtmosphere,
 ): CSSProperties {
-  return getDropdownPanelShellUiStyle(theme, density)
+  return getDropdownPanelShellUiStyle(theme, density, { atmosphere })
 }
 
 export function getDropdownItemLayoutStyle(
@@ -60,22 +62,32 @@ export function getDropdownItemStyle(
     selected?: boolean
     destructive?: boolean
     highlighted?: boolean
+    atmosphere?: RootsButtonAtmosphere
   },
 ): CSSProperties {
   const state = resolveDropdownItemState(options)
-  return getDropdownItemShellUiStyle(theme, state, density)
+  return getDropdownItemShellUiStyle(theme, state, density, options?.atmosphere)
 }
 
-export function getDropdownLabelStyle(theme: DropdownThemeId = "light"): CSSProperties {
-  return getDropdownLabelUiStyle(theme)
+export function getDropdownLabelStyle(
+  theme: DropdownThemeId = "light",
+  atmosphere?: RootsButtonAtmosphere,
+): CSSProperties {
+  return getDropdownLabelUiStyle(theme, atmosphere)
 }
 
-export function getDropdownSeparatorStyle(theme: DropdownThemeId = "light"): CSSProperties {
-  return getDropdownSeparatorUiStyle(theme)
+export function getDropdownSeparatorStyle(
+  theme: DropdownThemeId = "light",
+  atmosphere?: RootsButtonAtmosphere,
+): CSSProperties {
+  return getDropdownSeparatorUiStyle(theme, atmosphere)
 }
 
-export function getDropdownCheckStyle(theme: DropdownThemeId = "light"): CSSProperties {
-  return getDropdownCheckUiStyle(theme)
+export function getDropdownCheckStyle(
+  theme: DropdownThemeId = "light",
+  atmosphere?: RootsButtonAtmosphere,
+): CSSProperties {
+  return getDropdownCheckUiStyle(theme, atmosphere)
 }
 
 export function resolveDropdownItemState(options?: {

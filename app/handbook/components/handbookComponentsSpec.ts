@@ -239,7 +239,7 @@ export const HANDBOOK_COMPONENT_SECTIONS: Record<
       id: "menus-de-acciones",
       title: "Menús de acciones",
       description:
-        "El ⋯ y las acciones de fila. Mismo panel claro u oscuro según el chrome.",
+        "El ⋯ y las acciones de fila. El panel sigue la atmósfera: bruma, sombra o éter.",
       token: "RootsDropdownMenu",
       doText: "Agrupá editar, duplicar y eliminar en un menú de fila.",
       dontText: "No alinees cinco icon buttons por fila.",

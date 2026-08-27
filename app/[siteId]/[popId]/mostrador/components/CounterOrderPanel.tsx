@@ -6,7 +6,7 @@ import type {
   CreateCounterOrderInput,
   UpdateCounterOrderInput,
 } from "@/app/[siteId]/[popId]/mostrador/mostradorTypes"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   ChannelDataEmptyState,
   ChannelDataErrorBanner,
@@ -207,12 +207,16 @@ export function CounterOrderPanel({
             }
             actions={
               canEdit ? (
-                <DataWorkspaceTableIconAction
+                <RootsIconButton
+                  type="button"
                   label="Editar pedido"
-                  icon={Pencil}
-                  variant="edit"
+                  tone="action"
+                  intent="edit"
+                  size="compact"
                   onClick={() => setEditing(true)}
-                />
+                >
+                  <Pencil />
+                </RootsIconButton>
               ) : null
             }
           />

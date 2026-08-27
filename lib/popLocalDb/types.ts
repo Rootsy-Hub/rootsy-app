@@ -30,6 +30,15 @@ export type ArticleSnapshot = {
 
 export type ListSaleBoardArticlesInput = {
   categoryId?: string | null
+  categoryIds?: string[]
+  search?: string
+  page: number
+  pageSize: number
+}
+
+export type ListMenuRecipesInput = {
+  categoryId?: string | null
+  categoryIds?: string[]
   search?: string
   page: number
   pageSize: number
@@ -92,4 +101,34 @@ export type PromotionSnapshot = {
   validTimeEnd: string | null
   scheduleDays: number[]
   slots: PromotionSlotSnap[]
+}
+
+export type RecipeSnapshot = {
+  id: string
+  name: string
+  description: string
+  imageUrl: string | null
+  categoryId: string
+  categoryName: string
+  salePrice: number
+  iva: number
+  isActive: boolean
+  allowNegativeStock: boolean
+  stationId: string | null
+  listPrices: ArticleListPriceSnap[]
+}
+
+export type ListMenuRecipesResult = {
+  recipes: RecipeSnapshot[]
+  totalCount: number
+  page: number
+}
+
+export type RecipeCategorySnapshot = {
+  id: string
+  name: string
+  sortOrder: number
+  showInMenu: boolean
+  isActive: boolean
+  stationId: string | null
 }

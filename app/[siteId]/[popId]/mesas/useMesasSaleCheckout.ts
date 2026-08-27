@@ -11,7 +11,9 @@ import {
   healCartLinesAlreadySent,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
+import { applyMesasCheckoutToSessionCache } from "@/app/[siteId]/[popId]/mesas/mesasQueryCache"
 import { saveTableSessionCheckoutApi, closeTableSessionCheckoutApi } from "@/lib/rootsyApi/mesasClient"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   emptyTableSessionCheckout,
   type MesasCartItem,
@@ -241,6 +243,7 @@ export function useMesasSaleCheckout(
     comprobantesLoaded || fiscalBootstrap.bootstrapLoaded
 
   const { bootstrap } = usePopWorkspace()
+  const queryClient = useQueryClient()
   const canCreateClient = useMemo(
     () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canCreate,
     [bootstrap?.permissionKeys],
@@ -321,6 +324,7 @@ export function useMesasSaleCheckout(
   const skipNextPersistRef = useRef(false)
   const lastSavedUpdatedAtRef = useRef<string | null>(null)
   const lastAppliedRemoteUpdatedAtRef = useRef<string | null>(null)
+  const checkoutDirtyRef = useRef(false)
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const saleIdempotencyKeyRef = useRef(crypto.randomUUID())
 
@@ -405,9 +409,17 @@ export function useMesasSaleCheckout(
       if (res.success) {
         lastSavedUpdatedAtRef.current = res.updatedAt
         lastAppliedRemoteUpdatedAtRef.current = res.updatedAt
+        checkoutDirtyRef.current = false
+        applyMesasCheckoutToSessionCache(
+          queryClient,
+          popId,
+          sessionId,
+          res.updatedAt,
+          snap,
+        )
       }
     },
-    [popId, siteId],
+    [popId, queryClient, siteId],
   )
 
   useEffect(() => {
@@ -426,6 +438,7 @@ export function useMesasSaleCheckout(
     loadedSessionIdRef.current = tableSessionId
     lastSavedUpdatedAtRef.current = null
     lastAppliedRemoteUpdatedAtRef.current = null
+    checkoutDirtyRef.current = false
     comprobanteInitRef.current = false
 
     if (tableSessionId && remoteSession) {
@@ -459,6 +472,24 @@ export function useMesasSaleCheckout(
     if (updatedAt === lastSavedUpdatedAtRef.current) return
     if (updatedAt === lastAppliedRemoteUpdatedAtRef.current) return
 
+    if (checkoutDirtyRef.current) {
+      if (checkout?.carrito?.length) {
+        skipNextPersistRef.current = true
+        setCarrito((prev) =>
+          prev.map((item) => {
+            const remote = checkout.carrito.find(
+              (row) => resolveCartLineId(row) === resolveCartLineId(item),
+            )
+            if (!remote?.comandaStatus || remote.comandaStatus === item.comandaStatus) {
+              return item
+            }
+            return { ...item, comandaStatus: remote.comandaStatus }
+          }),
+        )
+      }
+      return
+    }
+
     const snap =
       checkout ??
       emptyTableSessionCheckout(defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit))
@@ -484,6 +515,7 @@ export function useMesasSaleCheckout(
       clearTimeout(persistTimerRef.current)
     }
 
+    checkoutDirtyRef.current = true
     persistTimerRef.current = setTimeout(() => {
       persistTimerRef.current = null
       void flushCheckoutPersist(tableSessionId, checkoutStateRef.current)

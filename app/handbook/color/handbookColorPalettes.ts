@@ -117,7 +117,7 @@ export const HANDBOOK_SOMBRA: HandbookColorFamily = family({
   kind: "atmosfera",
   tagline: "El dosel para operar",
   description:
-    "Sombra profunda del mismo bosque. Módulos operativos, concentración y densidad. Contiene; la savia se prende encima.",
+    "Sombra profunda del mismo bosque. Módulos operativos, concentración y densidad. El lienzo es siempre 950 — el paso más oscuro. Superficie y elevada se prenden encima; el fondo no se aclara para separar zonas.",
   not: "No es éter (el espacio) ni Luz filtrada (el claro para leer).",
   identity: "900",
   hexes: ROOTSY_COLOR_RAMPS.sombra,
@@ -127,12 +127,12 @@ export const HANDBOOK_SOMBRA: HandbookColorFamily = family({
     "200": "Bordes claros sobre sombra profunda.",
     "300": "Texto inactivo en rail y catálogo.",
     "400": "Labels de sección.",
-    "500": "Superficie de card.",
-    "600": "Follaje — canvas del catálogo.",
+    "500": "Elevada — card y slot sobre el lienzo.",
+    "600": "Superficie — panel sobre el fondo. No es el canvas.",
     "700": "Humedad — capas internas del dosel.",
     "800": "Musgo — hover del item activo.",
-    "900": "Sombra — item activo, toolbox y bandas.",
-    "950": "Raíz — shell y rail.",
+    "900": "Sombra — item activo y velos.",
+    "950": "Raíz — el fondo. Siempre el paso más oscuro. Shell, rail y canvas.",
   },
 })
 

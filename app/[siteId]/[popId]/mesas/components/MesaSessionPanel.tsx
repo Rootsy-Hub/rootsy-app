@@ -36,7 +36,7 @@ import {
 import { ChannelDataFormSegmentField } from "@/components/sale-operation/ChannelDataFormFields"
 import { saleOpChannelStatusBadge } from "@/components/sale-operation/saleOperationStyles"
 import type { ChannelCloseMode } from "@/lib/channelCheckoutClose"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { ChevronRight, Clock, Pencil, UtensilsCrossed } from "lucide-react"
@@ -218,12 +218,16 @@ export function MesaSessionPanel({
                   </ChannelDataStatusBadge>
                 }
                 actions={
-                  <DataWorkspaceTableIconAction
+                  <RootsIconButton
+                    type="button"
                     label="Editar mesa"
-                    icon={Pencil}
-                    variant="edit"
+                    tone="action"
+                    intent="edit"
+                    size="compact"
                     onClick={() => setEditing(true)}
-                  />
+                  >
+                    <Pencil />
+                  </RootsIconButton>
                 }
               />
 
@@ -344,12 +348,16 @@ export function MesaSessionPanel({
                 }
                 actions={
                   isReserved && floorReservation && onOpenReservationDetail ? (
-                    <DataWorkspaceTableIconAction
+                    <RootsIconButton
+                      type="button"
                       label="Ver reserva"
-                      icon={ChevronRight}
-                      variant="neutral"
+                      tone="action"
+                      intent="neutral"
+                      size="compact"
                       onClick={() => onOpenReservationDetail(floorReservation)}
-                    />
+                    >
+                      <ChevronRight />
+                    </RootsIconButton>
                   ) : undefined
                 }
               />

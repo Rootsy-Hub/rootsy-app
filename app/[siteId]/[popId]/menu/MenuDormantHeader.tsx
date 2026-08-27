@@ -12,7 +12,7 @@ import {
   menuSearchShortcutClass,
   menuSearchShellClass,
 } from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
-import { EterIconButton } from "@/components/eter/EterIconButton"
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   eterHeaderDividerClass,
   eterHeaderMutedClass,
@@ -97,24 +97,42 @@ export function MenuDormantHeader() {
   return (
     <>
       <div className="flex h-full min-w-0 items-center gap-2 px-3 md:hidden">
-        <EterIconButton href="/home" size="default" label="Ir al inicio">
+        <RootsIconButton
+          href="/home"
+          size="default"
+          label="Ir al inicio"
+          semantic="tertiary"
+          atmosphere="eter"
+        >
           <Home aria-hidden />
-        </EterIconButton>
+        </RootsIconButton>
         <div className={cn("size-9 shrink-0 rounded-lg", menuGhostTileClass)} />
         <span className={cn(menuGhostBarClass, "h-3.5 w-24")} />
         <div className="ml-auto flex items-center gap-2">
-          <EterIconButton size="default" label="Notificaciones" disabled>
+          <RootsIconButton
+            size="default"
+            label="Notificaciones"
+            semantic="tertiary"
+            atmosphere="eter"
+            disabled
+          >
             <Bell aria-hidden />
-          </EterIconButton>
+          </RootsIconButton>
           <span className={cn("size-10 rounded-full", menuGhostCircleClass)} />
         </div>
       </div>
 
       <div className={cn(menuHeaderRowClass, "hidden md:grid")}>
         <div className="flex min-w-0 items-center gap-6">
-          <EterIconButton href="/home" size="large" label="Ir al inicio">
+          <RootsIconButton
+            href="/home"
+            size="large"
+            label="Ir al inicio"
+            semantic="tertiary"
+            atmosphere="eter"
+          >
             <Home aria-hidden />
-          </EterIconButton>
+          </RootsIconButton>
 
           <div className="flex min-w-0 items-center gap-3">
             <div className={cn("size-12 shrink-0 rounded-lg", menuGhostTileClass)} />
@@ -130,9 +148,15 @@ export function MenuDormantHeader() {
         </div>
 
         <div className="flex min-w-0 items-center justify-end gap-6">
-          <EterIconButton size="default" label="Notificaciones" disabled>
+          <RootsIconButton
+            size="default"
+            label="Notificaciones"
+            semantic="tertiary"
+            atmosphere="eter"
+            disabled
+          >
             <Bell aria-hidden />
-          </EterIconButton>
+          </RootsIconButton>
           <span className={cn("h-6 w-px", eterHeaderDividerClass)} />
           <div className="flex shrink-0 flex-col items-end">
             <span className={cn("text-lg tabular-nums", eterHeaderTitleClass, "font-semibold")}>

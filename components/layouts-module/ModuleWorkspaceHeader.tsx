@@ -2,17 +2,20 @@
 
 import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import { menuModuleHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
-import {
-  DataWorkspaceHeaderMoreMenu,
-  type DataWorkspaceHeaderMoreAction,
-} from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { WorkspaceMobileAccountCluster } from "@/components/layouts/WorkspaceMobileAccountCluster"
 import {
   dataWorkspaceHeaderToolbarClass,
+  isDarkChromeHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { EterIconButton } from "@/components/eter/EterIconButton"
+import { RootsIconButton } from "@/components/rootsy-button"
+import {
+  RootsDropdownContent,
+  RootsDropdownItem,
+  RootsDropdownMenu,
+  RootsDropdownTrigger,
+} from "@/components/rootsy-dropdown"
 import { PopIdentityHeaderCompact } from "@/components/pop-identity/PopIdentityHeaderCompact"
 import {
   menuGhostBarClass,
@@ -25,12 +28,20 @@ import {
 import { cn } from "@/lib/utils"
 import {
   ArrowLeft,
+  EllipsisVertical,
   Maximize2,
   Minimize2,
   PanelLeftClose,
   PanelLeftOpen,
+  type LucideIcon,
 } from "lucide-react"
 import type { ReactNode } from "react"
+
+export type DataWorkspaceHeaderMoreAction = {
+  label: string
+  onClick: () => void
+  icon: LucideIcon
+}
 
 export type ModuleWorkspaceHeaderProps = {
   backHref?: string
@@ -122,12 +133,61 @@ export function ModuleWorkspaceHeader({
     const actions =
       presentation === "menu" ? mobileMoreActions : desktopMoreActions
     if (actions.length === 0) return null
+    const dark = isDarkChromeHeader(headerVariant)
+    const iconProps = dark
+      ? ({ semantic: "tertiary", atmosphere: "eter", size: "default" } as const)
+      : ({ theme: "workspace", emphasis: "ghost", size: "default" } as const)
+    const dropdownAtmosphere = dark ? "eter" : "bruma"
+
+    if (presentation === "menu") {
+      return (
+        <RootsDropdownMenu>
+          <RootsDropdownTrigger asChild>
+            <RootsIconButton label="Más acciones" {...iconProps}>
+              <EllipsisVertical aria-hidden />
+            </RootsIconButton>
+          </RootsDropdownTrigger>
+          <RootsDropdownContent
+            atmosphere={dropdownAtmosphere}
+            align="end"
+            side="bottom"
+            sideOffset={8}
+          >
+            {actions.map((action) => {
+              const Icon = action.icon
+              return (
+                <RootsDropdownItem
+                  key={action.label}
+                  atmosphere={dropdownAtmosphere}
+                  className="gap-2"
+                  onSelect={action.onClick}
+                >
+                  <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate">{action.label}</span>
+                </RootsDropdownItem>
+              )
+            })}
+          </RootsDropdownContent>
+        </RootsDropdownMenu>
+      )
+    }
+
     return (
-      <DataWorkspaceHeaderMoreMenu
-        actions={actions}
-        headerVariant={headerVariant}
-        presentation={presentation}
-      />
+      <div className="flex items-center gap-1">
+        {actions.map((action) => {
+          const Icon = action.icon
+          return (
+            <RootsIconButton
+              key={action.label}
+              label={action.label}
+              onClick={action.onClick}
+              {...iconProps}
+            >
+              <Icon aria-hidden />
+            </RootsIconButton>
+          )
+        })}
+      </div>
     )
   }
 
@@ -136,19 +196,22 @@ export function ModuleWorkspaceHeader({
       <MenuHeaderEntity size="module">
         <div className="flex h-full min-w-0 items-center gap-1.5 px-2 md:hidden">
           {showBack ? (
-            <EterIconButton
+            <RootsIconButton
               size="default"
               href={backHref}
               label="Volver al menú"
+              semantic="tertiary"
+              atmosphere="eter"
             >
               <ArrowLeft aria-hidden />
-            </EterIconButton>
+            </RootsIconButton>
           ) : null}
 
           {showSidebarToggle && !hideSidebarToggleOnMobile ? (
-            <EterIconButton
+            <RootsIconButton
               size="default"
-              intent={sidebarOpen ? "subtle" : "danger"}
+              semantic={sidebarOpen ? "tertiary" : "destructive"}
+              atmosphere="eter"
               onClick={onToggleSidebar}
               aria-expanded={sidebarOpen}
               aria-controls="data-workspace-sidebar"
@@ -163,7 +226,7 @@ export function ModuleWorkspaceHeader({
               ) : (
                 <PanelLeftOpen aria-hidden />
               )}
-            </EterIconButton>
+            </RootsIconButton>
           ) : null}
 
           <ModuleWorkspaceMobileTitle
@@ -193,17 +256,21 @@ export function ModuleWorkspaceHeader({
             {showBack || showFullscreenButton || showSidebarToggle ? (
               <div className="flex items-center gap-0.5">
                 {showBack ? (
-                  <EterIconButton
+                  <RootsIconButton
                     size="default"
                     href={backHref}
                     label="Volver al menú"
+                    semantic="tertiary"
+                    atmosphere="eter"
                   >
                     <ArrowLeft aria-hidden />
-                  </EterIconButton>
+                  </RootsIconButton>
                 ) : null}
                 {showFullscreenButton ? (
-                  <EterIconButton
+                  <RootsIconButton
                     size="default"
+                    semantic="tertiary"
+                    atmosphere="eter"
                     label={
                       isFullscreen
                         ? "Salir de pantalla completa"
@@ -216,12 +283,13 @@ export function ModuleWorkspaceHeader({
                     ) : (
                       <Maximize2 aria-hidden />
                     )}
-                  </EterIconButton>
+                  </RootsIconButton>
                 ) : null}
                 {showSidebarToggle ? (
-                  <EterIconButton
+                  <RootsIconButton
                     size="default"
-                    intent={sidebarOpen ? "subtle" : "danger"}
+                    semantic={sidebarOpen ? "tertiary" : "destructive"}
+                    atmosphere="eter"
                     onClick={onToggleSidebar}
                     aria-expanded={sidebarOpen}
                     aria-controls="data-workspace-sidebar"
@@ -236,7 +304,7 @@ export function ModuleWorkspaceHeader({
                     ) : (
                       <PanelLeftOpen aria-hidden />
                     )}
-                  </EterIconButton>
+                  </RootsIconButton>
                 ) : null}
               </div>
             ) : null}

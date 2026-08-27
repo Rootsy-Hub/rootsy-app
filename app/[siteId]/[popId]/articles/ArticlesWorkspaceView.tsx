@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   defaultArticleCatalogExtraFormState,
   type ArticleCatalogExtraFormState,
@@ -67,7 +68,6 @@ import { DataWorkspaceTableInfinitePageDock } from "@/components/data-workspace/
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
-  DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   workspaceTableLayoutClassName,
@@ -1632,19 +1632,28 @@ export function ArticlesWorkspaceView() {
                           <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
                             <div className="flex items-center justify-end gap-0.5">
                               {canUpdate ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label={`Editar ${a.name || "artículo"}`}
-                                  icon={Pencil}
+                                  tone="action"
+                                  intent="edit"
+                                  size="compact"
                                   onClick={() => void openEdit(a)}
-                                />
+                                >
+                                  <Pencil />
+                                </RootsIconButton>
                               ) : null}
                               {canDelete ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label={`Eliminar ${a.name || "artículo"}`}
-                                  icon={Trash2}
-                                  destructive
+                                  tone="action"
+                                  intent="destructive"
+                                  size="compact"
                                   onClick={() => openDelete(a)}
-                                />
+                                >
+                                  <Trash2 />
+                                </RootsIconButton>
                               ) : null}
                             </div>
                           </TableCell>

@@ -12,13 +12,13 @@ const CARD_RADIUS_PX = 16
 const cardSurfaceStyle = {
   overflow: "hidden" as const,
   borderRadius: CARD_RADIUS_PX,
-  background: "var(--rootsy-sombra-700)",
+  background: "var(--rootsy-sombra-500)",
   borderColor: "var(--layouts-operar-border-dark-card)",
 }
 
 const ghostStyle = {
   background:
-    "color-mix(in srgb, var(--rootsy-sombra-800) 70%, var(--rootsy-sombra-700))",
+    "color-mix(in srgb, var(--rootsy-sombra-700) 70%, var(--rootsy-sombra-500))",
 }
 
 function SaleCatalogSkeletonBody() {

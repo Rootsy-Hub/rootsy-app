@@ -73,6 +73,7 @@ export function getLayoutsOperarGridCssVariables(): CSSProperties {
     ["--layouts-operar-catalog-sidebar-w" as string]: `${a.catalogSidebarWidthPx}px`,
     ["--layouts-operar-catalog-card-min" as string]: `${a.catalogCardMinWidthPx}px`,
     ["--layouts-operar-catalog-card-max" as string]: `${a.catalogCardMaxWidthPx}px`,
+    ["--layouts-operar-grid-gap" as string]: `${a.catalogGridGapPx}px`,
     ["--layouts-operar-catalog-grid-gap" as string]: `${a.catalogGridGapPx}px`,
     ["--layouts-operar-toolbox-min-h" as string]: `${a.toolboxRowMinHeightPx}px`,
     ["--layouts-operar-toolbox-min-h-sm" as string]: `${a.toolboxRowMinHeightSmPx}px`,
@@ -293,7 +294,7 @@ export function getLayoutsOperarToolboxProposalBandStyle(
       return {
         background: getLayoutsOperarDoselContinuoToolboxBandBackground(),
         borderTop: ROOTSY_LAYOUTS_EARTH_FLOOR.borderTop,
-        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.mutedColor} 14%, transparent), inset 0 18px 36px color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.moistureColor} 18%, transparent)`,
+        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.mutedColor} 22%, transparent)`,
       }
     case "cubiertas-sombra":
       return {
@@ -387,7 +388,7 @@ export function getLayoutsOperarToolboxProposalBarGridClass(
   return cn(
     layoutsOperarToolboxProposalBarGridBaseClass,
     "h-full min-h-0",
-    "gap-2 p-[var(--layouts-operar-toolbox-band-py)] sm:gap-2.5 sm:p-[var(--layouts-operar-toolbox-band-py-sm)]",
+    "gap-[var(--layouts-operar-grid-gap,1rem)] p-[var(--layouts-operar-grid-gap,1rem)]",
   )
 }
 
@@ -411,7 +412,7 @@ export function layoutsOperarToolboxProposalSlotClass(
       focusRing,
       !isLast && "border-r border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)]",
       configured
-        ? "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_52%,transparent)] text-[#f4f8f6] shadow-[inset_3px_0_0_0_var(--rootsy-savia-400)]"
+        ? "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_52%,transparent)] text-[var(--rootsy-sombra-50)] shadow-[inset_3px_0_0_0_var(--rootsy-savia-400)]"
         : "bg-transparent text-[color-mix(in_srgb,var(--rootsy-sombra-300)_78%,transparent)] hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_38%,transparent)]",
     )
   }
@@ -497,7 +498,7 @@ export function layoutsOperarToolboxProposalSlotValueClass(
   if (id === "cubiertas-sombra") {
     return cn(
       "block truncate text-sm font-semibold leading-snug",
-      configured ? "text-[#f4f8f6]" : "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]",
+      configured ? "text-[var(--rootsy-sombra-50)]" : "text-[var(--rootsy-sombra-300)]",
     )
   }
   return cn(
@@ -529,12 +530,12 @@ export function layoutsOperarProductCardProposalGridShellClass(id: LayoutsOperar
 
   return cn(
     "layouts-operar-product-card group relative grid h-[256px] w-full grid-rows-[120px_1fr] overflow-hidden rounded-2xl text-left",
-    "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_65%,transparent)] bg-[var(--rootsy-sombra-600)]",
-    "shadow-[inset_0_1px_0_color-mix(in_srgb,#ffffff_6%,transparent)]",
+    "border border-[color-mix(in_srgb,var(--rootsy-sombra-400)_45%,transparent)] bg-[var(--rootsy-sombra-500)]",
+    "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_28%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
     "transition-[box-shadow,transform,ring-color] duration-200 ease-out hover:-translate-y-0.5",
     "hover:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_32%,transparent)]",
-    "hover:shadow-[inset_0_1px_0_color-mix(in_srgb,#ffffff_9%,transparent),0_8px_22px_color-mix(in_srgb,var(--rootsy-sombra-950)_36%,transparent)]",
+    "hover:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-400)_40%,transparent)]",
   )
 }
 
@@ -551,8 +552,8 @@ export function layoutsOperarProductCardProposalListShellClass(id: LayoutsOperar
 
   return cn(
     "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-2xl text-left",
-    "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_65%,transparent)] bg-[var(--rootsy-sombra-600)]",
-    "shadow-[inset_0_1px_0_color-mix(in_srgb,#ffffff_6%,transparent)]",
+    "border border-[color-mix(in_srgb,var(--rootsy-sombra-400)_45%,transparent)] bg-[var(--rootsy-sombra-500)]",
+    "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_28%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
     "transition-[box-shadow,transform,ring-color] duration-200 ease-out hover:-translate-y-0.5",
     "hover:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_32%,transparent)]",
@@ -589,7 +590,7 @@ export function layoutsOperarProductCardProposalMediaStyle(
   }
 
   return {
-    backgroundColor: toolboxHx("sombra", "600"),
+    backgroundColor: toolboxHx("sombra", "500"),
     boxShadow: `inset 0 0 0 1px ${getLayoutsOperarBorderCss("darkHairline")}`,
   }
 }
@@ -615,30 +616,30 @@ export function layoutsOperarProductCardProposalTitleClass(id: LayoutsOperarProd
   if (id === "plano-dosel") return layoutsOperarProductCardTitleClass
 
   if (id === "losa-sombra") {
-    return "line-clamp-2 text-sm font-semibold leading-tight text-[#f4f8f6]"
+    return "line-clamp-2 text-sm font-semibold leading-tight text-[var(--rootsy-sombra-50)]"
   }
 
-  return "line-clamp-2 text-sm font-bold leading-tight text-[color-mix(in_srgb,var(--rootsy-bruma-100)_94%,white)]"
+  return "line-clamp-2 text-sm font-bold leading-tight text-[var(--rootsy-sombra-50)]"
 }
 
 export function layoutsOperarProductCardProposalDescClass(id: LayoutsOperarProductCardProposalId) {
   if (id === "plano-dosel") return layoutsOperarProductCardDescClass
 
   if (id === "losa-sombra") {
-    return "line-clamp-2 text-xs leading-relaxed text-[color-mix(in_srgb,var(--rootsy-sombra-400)_82%,transparent)]"
+    return "line-clamp-2 text-xs leading-relaxed text-[var(--rootsy-sombra-300)]"
   }
 
-  return "line-clamp-2 text-xs leading-relaxed text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]"
+  return "line-clamp-2 text-xs leading-relaxed text-[var(--rootsy-sombra-300)]"
 }
 
 export function layoutsOperarProductCardProposalPriceClass(id: LayoutsOperarProductCardProposalId) {
   if (id === "plano-dosel") return layoutsOperarProductCardPriceClass
 
   if (id === "losa-sombra") {
-    return "text-lg font-semibold tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-300)_88%,white)]"
+    return "text-lg font-semibold tabular-nums text-[var(--rootsy-savia-500)]"
   }
 
-  return "text-lg font-bold tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]"
+  return "text-lg font-bold tabular-nums text-[var(--rootsy-savia-500)]"
 }
 
 export function layoutsOperarProductCardMediaEmptyStateShellClass(

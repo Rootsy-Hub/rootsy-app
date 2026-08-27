@@ -178,7 +178,7 @@ function priceListHelpButtonClass(variant: ToolbarVariant) {
     return cn(
       "inline-flex size-8 shrink-0 items-center justify-center rounded-md transition-colors",
       layoutsOperarCatalogToolbarIconMutedClass,
-      "hover:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)] hover:text-[var(--rootsy-bruma-50)]",
+      "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_55%,transparent)] hover:text-[var(--rootsy-sombra-50)]",
       "focus-visible:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[color-mix(in_srgb,var(--rootsy-savia-500)_45%,transparent)]",
     )
   }
@@ -357,7 +357,7 @@ export function SaleCatalogToolbar({
               variant === "operar"
                 ? cn(
                     layoutsOperarCatalogToolbarIconMutedClass,
-                    "hover:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)] hover:text-[var(--rootsy-bruma-50)]",
+                    "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_55%,transparent)] hover:text-[var(--rootsy-sombra-50)]",
                   )
                 : "text-white/50 hover:bg-white/[0.07] hover:text-white/90 focus-visible:ring-emerald-300/70",
             )}

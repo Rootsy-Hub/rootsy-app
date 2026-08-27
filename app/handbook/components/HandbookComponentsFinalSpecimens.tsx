@@ -14,7 +14,6 @@ import {
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import {
-  DataWorkspaceTableIconAction,
   DataWorkspaceTableMoney,
   WorkspaceTableStatusBadge,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
@@ -34,7 +33,6 @@ import {
   workspaceTableNatureStockWarningClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { DataWorkspaceHeaderMoreMenu } from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import {
@@ -116,7 +114,6 @@ import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationT
 import { ServiceOperateServiceCard } from "@/components/service-operation/ServiceOperateServiceCard"
 import { PopSettingsSectionNav } from "@/components/settings/PopSettingsSectionNav"
 import { StatisticsSectionNav } from "@/components/statistics/StatisticsSectionNav"
-import { EterIconButton } from "@/components/eter/EterIconButton"
 import { AlertDialog } from "@/components/ui/alert-dialog"
 import {
   ChartContainer,
@@ -449,20 +446,24 @@ function HeaderPiecesFinalSpecimen() {
         )}
       />
       <LiveView
-        background={SOMBRA}
-        componentName="DataWorkspaceHeaderMoreMenu"
+        background={ETER}
+        componentName="RootsIconButton"
         componentProperties={[
-          { name: "presentation", values: ["icons", "menu"] },
-          { name: "headerVariant", values: ["dark"] },
+          { name: "semantic", values: ["tertiary"] },
+          { name: "atmosphere", values: ["eter"] },
         ]}
-        variants={[{ name: "icons" }, { name: "menu" }]}
+        variants={[{ name: "ícono" }, { name: "más" }]}
         render={(variant) => (
           <div className="rounded-xl p-3">
-            <DataWorkspaceHeaderMoreMenu
-              headerVariant="dark"
-              presentation={variant === "menu" ? "menu" : "icons"}
-              actions={[{ label: "Editar", icon: Pencil, onClick: noop }]}
-            />
+            <RootsIconButton
+              label={variant === "más" ? "Más acciones" : "Editar"}
+              semantic="tertiary"
+              atmosphere="eter"
+              size="default"
+              onClick={noop}
+            >
+              {variant === "más" ? <MoreHorizontal /> : <Pencil />}
+            </RootsIconButton>
           </div>
         )}
       />
@@ -630,44 +631,6 @@ function IconButtonsFinalSpecimen() {
           </div>
         )}
       />
-      <LiveView
-        background={SOMBRA}
-        componentName="EterIconButton"
-        componentProperties={[
-          { name: "label", values: ["string"] },
-          { name: "intent", values: ["subtle", "primary", "danger"] },
-        ]}
-        variants={[{ name: "subtle" }, { name: "primary" }, { name: "danger" }]}
-        extras={IDLE_DISABLED}
-        render={(variant, extras) => (
-          <EterIconButton
-            label={variant}
-            intent={variant as "subtle" | "primary" | "danger"}
-            disabled={extras[0] === "deshabilitado"}
-          >
-            {variant === "danger" ? <Trash2 /> : <Plus />}
-          </EterIconButton>
-        )}
-      />
-      <LiveView
-        background={BRUMA}
-        componentName="DataWorkspaceTableIconAction"
-        componentProperties={[
-          { name: "label", values: ["string"] },
-          { name: "variant", values: ["neutral", "edit", "destructive"] },
-        ]}
-        variants={[{ name: "neutral" }, { name: "edit" }, { name: "destructive" }]}
-        extras={IDLE_DISABLED}
-        render={(variant, extras) => (
-          <DataWorkspaceTableIconAction
-            label={variant}
-            icon={variant === "edit" ? Pencil : variant === "destructive" ? Trash2 : Package}
-            variant={variant as "neutral" | "edit" | "destructive"}
-            onClick={noop}
-            disabled={extras[0] === "deshabilitado"}
-          />
-        )}
-      />
     </Stack>
   )
 }
@@ -678,37 +641,36 @@ function DropdownFinalSpecimen() {
       background={BRUMA}
       componentName="RootsDropdownMenu"
       componentProperties={[
-        { name: "theme", values: ["light", "dark"] },
+        { name: "atmosphere", values: ["bruma", "sombra", "eter"] },
         { name: "variant", values: ["default", "destructive"] },
       ]}
-      variants={[{ name: "claro" }, { name: "oscuro" }]}
+      variants={[{ name: "Menú" }]}
       extras={[{ items: [{ name: "con destructivo" }, { name: "sin destructivo" }] }]}
-      render={(variant, extras) => {
-        const theme = variant === "oscuro" ? "dark" : "light"
-        return (
-          <div className={cn("rounded-xl p-3", theme === "dark" && "bg-[var(--rootsy-sombra-950)]")}>
+      render={(_variant, extras, context) => (
+        <div className={atmosphereTheme(context.worldId)}>
+          <RootsButtonAtmosphereProvider
+            atmosphere={buttonAtmosphereFromWorld(context.worldId)}
+          >
             <RootsDropdownMenu>
               <RootsDropdownTrigger asChild>
-                <RootsIconButton label="Menú" surface={theme === "dark" ? "dark" : "light"}>
+                <RootsIconButton label="Menú">
                   <MoreHorizontal />
                 </RootsIconButton>
               </RootsDropdownTrigger>
-              <RootsDropdownContent theme={theme}>
-                <RootsDropdownItem theme={theme}>Editar</RootsDropdownItem>
-                <RootsDropdownItem theme={theme}>Duplicar</RootsDropdownItem>
+              <RootsDropdownContent>
+                <RootsDropdownItem>Editar</RootsDropdownItem>
+                <RootsDropdownItem>Duplicar</RootsDropdownItem>
                 {extras[0] === "con destructivo" ? (
                   <>
-                    <RootsDropdownSeparator theme={theme} />
-                    <RootsDropdownItem theme={theme} variant="destructive">
-                      Eliminar
-                    </RootsDropdownItem>
+                    <RootsDropdownSeparator />
+                    <RootsDropdownItem variant="destructive">Eliminar</RootsDropdownItem>
                   </>
                 ) : null}
               </RootsDropdownContent>
             </RootsDropdownMenu>
-          </div>
-        )
-      }}
+          </RootsButtonAtmosphereProvider>
+        </div>
+      )}
     />
   )
 }
@@ -720,21 +682,38 @@ function TooltipFinalSpecimen() {
       componentName="Tooltip"
       componentProperties={[
         { name: "children", values: ["trigger + content"] },
+        { name: "atmosphere", values: ["bruma", "sombra", "eter"] },
       ]}
       variants={[{ name: "Icon button" }]}
       extras={[{ items: [{ name: "con tooltip" }, { name: "sin tooltip" }] }]}
-      render={(_variant, extras) => {
+      render={(_variant, extras, context) => {
         const button = (
           <RootsIconButton label="Editar">
             <Pencil />
           </RootsIconButton>
         )
-        if (extras[0] === "sin tooltip") return button
+        if (extras[0] === "sin tooltip") {
+          return (
+            <div className={atmosphereTheme(context.worldId)}>
+              <RootsButtonAtmosphereProvider
+                atmosphere={buttonAtmosphereFromWorld(context.worldId)}
+              >
+                {button}
+              </RootsButtonAtmosphereProvider>
+            </div>
+          )
+        }
         return (
-          <Tooltip>
-            <TooltipTrigger asChild>{button}</TooltipTrigger>
-            <TooltipContent>Editar</TooltipContent>
-          </Tooltip>
+          <div className={atmosphereTheme(context.worldId)}>
+            <RootsButtonAtmosphereProvider
+              atmosphere={buttonAtmosphereFromWorld(context.worldId)}
+            >
+              <Tooltip>
+                <TooltipTrigger asChild>{button}</TooltipTrigger>
+                <TooltipContent>Editar</TooltipContent>
+              </Tooltip>
+            </RootsButtonAtmosphereProvider>
+          </div>
         )
       }}
     />

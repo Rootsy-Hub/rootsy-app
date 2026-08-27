@@ -28,7 +28,7 @@ import type {
   MesaTable,
   MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import {
   ChannelDataEmptyState,
@@ -427,12 +427,16 @@ export function MesaAgendaPanel({
               }
               actions={
                 editable ? (
-                  <DataWorkspaceTableIconAction
+                  <RootsIconButton
+                    type="button"
                     label="Editar reserva"
-                    icon={Pencil}
-                    variant="edit"
+                    tone="action"
+                    intent="edit"
+                    size="compact"
                     onClick={() => setView("edit")}
-                  />
+                  >
+                    <Pencil />
+                  </RootsIconButton>
                 ) : undefined
               }
             />

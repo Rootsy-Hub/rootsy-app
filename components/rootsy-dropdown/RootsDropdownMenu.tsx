@@ -1,6 +1,11 @@
 "use client"
 
 import {
+  resolveRootsButtonAtmosphere,
+  type RootsButtonAtmosphere,
+} from "@/components/rootsy-button/rootsButtonAtmosphere"
+import { useRootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphereContext"
+import {
   getDropdownContentStyle,
   getDropdownItemLayoutStyle,
   getDropdownLabelStyle,
@@ -10,13 +15,12 @@ import {
   type DropdownThemeId,
 } from "@/components/rootsy-dropdown/rootsDropdownSpecRuntime"
 import {
-  rootsDropdownCheckIconClassForTheme,
-  rootsDropdownContentClassForTheme,
-  rootsDropdownDestructiveItemClass,
-  rootsDropdownDestructiveItemDarkClass,
-  rootsDropdownItemClassForTheme,
-  rootsDropdownLabelClassForTheme,
-  rootsDropdownSeparatorClassForTheme,
+  rootsDropdownCheckIconClassForAtmosphere,
+  rootsDropdownContentClassForAtmosphere,
+  rootsDropdownDestructiveItemClassForAtmosphere,
+  rootsDropdownItemClassForAtmosphere,
+  rootsDropdownLabelClassForAtmosphere,
+  rootsDropdownSeparatorClassForAtmosphere,
 } from "@/components/rootsy-dropdown/rootsDropdownStyles"
 import {
   DropdownMenu,
@@ -38,26 +42,43 @@ import { CheckIcon } from "lucide-react"
 import type { ComponentProps, CSSProperties } from "react"
 
 type ThemeProps = {
+  /** Luz del handbook. Si no viene, hereda del provider o de `theme`. */
+  atmosphere?: RootsButtonAtmosphere
+  /** @deprecated Preferí `atmosphere`. light = bruma · dark = sombra. */
   theme?: DropdownThemeId
   density?: DropdownDensityId
+}
+
+function useResolvedDropdownAtmosphere(
+  atmosphere?: RootsButtonAtmosphere,
+  theme?: DropdownThemeId,
+) {
+  const inherited = useRootsButtonAtmosphere(atmosphere)
+  return resolveRootsButtonAtmosphere({
+    atmosphere: inherited,
+    theme: theme === "dark" ? "pos" : "workspace",
+  })
 }
 
 type RootsDropdownContentProps = ComponentProps<typeof DropdownMenuContent> & ThemeProps
 
 export function RootsDropdownContent({
-  theme = "light",
+  atmosphere,
+  theme,
   density = "default",
   className,
   style,
   sideOffset = ROOTSY_DROPDOWN_CONTENT_SIDE_OFFSET,
   ...props
 }: RootsDropdownContentProps) {
-  const panelStyle = getDropdownContentStyle(theme, density)
+  const resolvedAtmosphere = useResolvedDropdownAtmosphere(atmosphere, theme)
+  const panelStyle = getDropdownContentStyle(theme, density, resolvedAtmosphere)
 
   return (
     <DropdownMenuContent
+      data-rootsy-atmosphere={resolvedAtmosphere}
       sideOffset={sideOffset}
-      className={cn(rootsDropdownContentClassForTheme(theme), className)}
+      className={cn(rootsDropdownContentClassForAtmosphere(resolvedAtmosphere), className)}
       style={{ ...panelStyle, ...style }}
       {...props}
     />
@@ -73,7 +94,8 @@ type RootsDropdownItemProps = ComponentProps<typeof DropdownMenuItem> &
   }
 
 export function RootsDropdownItem({
-  theme = "light",
+  atmosphere,
+  theme,
   density = "default",
   selected = false,
   showCheck,
@@ -85,6 +107,7 @@ export function RootsDropdownItem({
   children,
   ...props
 }: RootsDropdownItemProps) {
+  const resolvedAtmosphere = useResolvedDropdownAtmosphere(atmosphere, theme)
   const destructive = variant === "destructive"
   const shouldShowCheck = !asChild && (showCheck ?? selected)
 
@@ -92,12 +115,10 @@ export function RootsDropdownItem({
     <DropdownMenuItem
       asChild={asChild}
       variant={variant}
+      data-rootsy-atmosphere={resolvedAtmosphere}
       className={cn(
-        rootsDropdownItemClassForTheme(theme, density, { selected }),
-        destructive &&
-          (theme === "dark"
-            ? rootsDropdownDestructiveItemDarkClass
-            : rootsDropdownDestructiveItemClass),
+        rootsDropdownItemClassForAtmosphere(resolvedAtmosphere, density, { selected }),
+        destructive && rootsDropdownDestructiveItemClassForAtmosphere(resolvedAtmosphere),
         className,
       )}
       style={{
@@ -113,7 +134,10 @@ export function RootsDropdownItem({
         <>
           {children}
           {shouldShowCheck ? (
-            <CheckIcon className={rootsDropdownCheckIconClassForTheme(theme)} aria-hidden />
+            <CheckIcon
+              className={rootsDropdownCheckIconClassForAtmosphere(resolvedAtmosphere)}
+              aria-hidden
+            />
           ) : null}
         </>
       )}
@@ -124,15 +148,18 @@ export function RootsDropdownItem({
 type RootsDropdownLabelProps = ComponentProps<typeof DropdownMenuLabel> & ThemeProps
 
 export function RootsDropdownLabel({
-  theme = "light",
+  atmosphere,
+  theme,
   className,
   style,
   ...props
 }: RootsDropdownLabelProps) {
+  const resolvedAtmosphere = useResolvedDropdownAtmosphere(atmosphere, theme)
   return (
     <DropdownMenuLabel
-      className={cn(rootsDropdownLabelClassForTheme(theme), className)}
-      style={{ ...getDropdownLabelStyle(theme), ...style }}
+      data-rootsy-atmosphere={resolvedAtmosphere}
+      className={cn(rootsDropdownLabelClassForAtmosphere(resolvedAtmosphere), className)}
+      style={{ ...getDropdownLabelStyle(theme, resolvedAtmosphere), ...style }}
       {...props}
     />
   )
@@ -141,15 +168,18 @@ export function RootsDropdownLabel({
 type RootsDropdownSeparatorProps = ComponentProps<typeof DropdownMenuSeparator> & ThemeProps
 
 export function RootsDropdownSeparator({
-  theme = "light",
+  atmosphere,
+  theme,
   className,
   style,
   ...props
 }: RootsDropdownSeparatorProps) {
+  const resolvedAtmosphere = useResolvedDropdownAtmosphere(atmosphere, theme)
   return (
     <DropdownMenuSeparator
-      className={cn(rootsDropdownSeparatorClassForTheme(theme), className)}
-      style={{ ...getDropdownSeparatorStyle(theme), ...style }}
+      data-rootsy-atmosphere={resolvedAtmosphere}
+      className={cn(rootsDropdownSeparatorClassForAtmosphere(resolvedAtmosphere), className)}
+      style={{ ...getDropdownSeparatorStyle(theme, resolvedAtmosphere), ...style }}
       {...props}
     />
   )
@@ -158,18 +188,23 @@ export function RootsDropdownSeparator({
 type RootsDropdownCheckboxItemProps = ComponentProps<typeof DropdownMenuCheckboxItem> & ThemeProps
 
 export function RootsDropdownCheckboxItem({
-  theme = "light",
+  atmosphere,
+  theme,
   density = "default",
   className,
   children,
   checked,
   ...props
 }: RootsDropdownCheckboxItemProps) {
+  const resolvedAtmosphere = useResolvedDropdownAtmosphere(atmosphere, theme)
   return (
     <DropdownMenuCheckboxItem
       checked={checked}
+      data-rootsy-atmosphere={resolvedAtmosphere}
       className={cn(
-        rootsDropdownItemClassForTheme(theme, density, { selected: Boolean(checked) }),
+        rootsDropdownItemClassForAtmosphere(resolvedAtmosphere, density, {
+          selected: Boolean(checked),
+        }),
         "pr-3 pl-3 [&>span:first-child]:hidden",
         className,
       )}
@@ -179,7 +214,10 @@ export function RootsDropdownCheckboxItem({
       <span className="flex w-full items-center gap-3">
         <span className="min-w-0 flex-1">{children}</span>
         {checked ? (
-          <CheckIcon className={rootsDropdownCheckIconClassForTheme(theme)} aria-hidden />
+          <CheckIcon
+            className={rootsDropdownCheckIconClassForAtmosphere(resolvedAtmosphere)}
+            aria-hidden
+          />
         ) : null}
       </span>
     </DropdownMenuCheckboxItem>

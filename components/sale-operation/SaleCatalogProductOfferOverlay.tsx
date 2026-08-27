@@ -30,7 +30,7 @@ export function SaleCatalogProductOfferOverlay({
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 top-0 z-15 bg-linear-to-b from-black/55 via-black/20 to-transparent p-2.5 pb-6"
+      className="pointer-events-none absolute inset-x-0 top-0 z-15 bg-linear-to-b from-[color-mix(in_srgb,var(--rootsy-sombra-950)_72%,transparent)] via-[color-mix(in_srgb,var(--rootsy-sombra-950)_28%,transparent)] to-transparent p-2.5 pb-6"
       aria-hidden
     >
       {descuentoPct != null ? (
@@ -38,7 +38,7 @@ export function SaleCatalogProductOfferOverlay({
           <span
             className={cn(
               saleOpImporteBaseClass,
-              "inline-flex h-6 items-center justify-center rounded-md border border-emerald-400/45 bg-emerald-950/90 px-2 text-[10px] leading-none font-bold tracking-wider text-emerald-100 uppercase shadow-sm backdrop-blur-sm",
+              "inline-flex h-6 items-center justify-center rounded-md bg-[var(--rootsy-sombra-900)] px-2 text-[10px] leading-none font-bold tracking-wider text-[var(--rootsy-savia-500)] uppercase shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-500)_45%,transparent)]",
             )}
           >
             −{descuentoPct}%
@@ -47,7 +47,7 @@ export function SaleCatalogProductOfferOverlay({
             <span
               className={cn(
                 saleOpImporteBaseClass,
-                "rounded-md border border-white/10 bg-black/50 px-1.5 py-0.5 text-xs font-semibold text-white/65 line-through backdrop-blur-sm",
+                "rounded-md bg-[var(--rootsy-sombra-800)] px-1.5 py-0.5 text-xs font-semibold text-[var(--rootsy-sombra-300)] line-through shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_40%,transparent)]",
               )}
             >
               {saleOpFmt.format(precioOriginal)}
@@ -55,7 +55,7 @@ export function SaleCatalogProductOfferOverlay({
           ) : null}
         </div>
       ) : (
-        <Badge className="w-fit border border-emerald-400/40 bg-emerald-950/85 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-100 shadow-sm backdrop-blur-sm">
+        <Badge className="w-fit bg-[var(--rootsy-sombra-900)] px-2 py-0.5 text-[10px] font-bold tracking-wider text-[var(--rootsy-savia-500)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-500)_45%,transparent)]">
           OFERTA
         </Badge>
       )}

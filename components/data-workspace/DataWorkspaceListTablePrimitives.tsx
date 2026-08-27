@@ -14,12 +14,9 @@ import {
   workspaceTableFrameSelectableScopeClass,
   workspaceTableNatureStatusBadgeClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { RootsIconButton } from "@/components/rootsy-button"
-import type { RootsIconButtonActionIntent } from "@/components/rootsy-button/rootsButtonStyles"
 import { cn } from "@/lib/utils"
 import { ImagePlus } from "lucide-react"
 import Image from "next/image"
-import type { LucideIcon } from "lucide-react"
 import { useState } from "react"
 import type { ReactNode } from "react"
 
@@ -172,39 +169,3 @@ export function DataWorkspaceTableThumbnail({
   )
 }
 
-/** Acciones de fila (ver / editar / eliminar). Reposo bruma; hover según intent. */
-export function DataWorkspaceTableIconAction({
-  label,
-  onClick,
-  icon: Icon,
-  destructive,
-  variant,
-  disabled,
-}: {
-  label: string
-  onClick: () => void
-  icon: LucideIcon
-  /** @deprecated Preferí `variant="destructive"`. */
-  destructive?: boolean
-  /** neutral = ver/abrir; edit = modificar; destructive = eliminar. */
-  variant?: RootsIconButtonActionIntent
-  disabled?: boolean
-}) {
-  const intent: RootsIconButtonActionIntent = destructive
-    ? "destructive"
-    : (variant ?? "edit")
-
-  return (
-    <RootsIconButton
-      type="button"
-      label={label}
-      tone="action"
-      intent={intent}
-      size="compact"
-      disabled={disabled}
-      onClick={onClick}
-    >
-      <Icon />
-    </RootsIconButton>
-  )
-}

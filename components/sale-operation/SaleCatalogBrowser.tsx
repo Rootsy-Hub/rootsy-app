@@ -37,12 +37,12 @@ import {
 } from "@/lib/salePriceListSession"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
+import { useMenuCatalogSections } from "@/hooks/useMenuCatalogSections"
 import { useSaleBoardArticles } from "@/hooks/useSaleBoardArticles"
 import { useSaleBoardCategories } from "@/hooks/useSaleBoardCategories"
 import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
-import {
-  useMenuCatalogItems,
-} from "@/hooks/useOperateCatalogItems"
+import { useMenuCatalogBoardItems } from "@/hooks/useMenuCatalogBoardItems"
+import { menuPromotionToProduct } from "@/lib/menuCheckoutPromotions"
 import { findCatalogProductByScanQuery } from "@/lib/saleCatalogScan"
 import {
   OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
@@ -119,10 +119,9 @@ export function SaleCatalogBrowser({
   siteId,
   popId,
   categories,
-  categorySections,
   products,
-  loading,
-  error,
+  loading: _catalogLoading,
+  error: _catalogError,
   onAddProduct,
   addDisabled = false,
   catalogSidebarOpen: catalogSidebarOpenProp,
@@ -148,6 +147,9 @@ export function SaleCatalogBrowser({
   const salePromotionsQuery = useSaleBoardPromotions(popId, {
     enabled: isSaleBoard && itemsEnabled && Boolean(popId),
     hydrate: Boolean(popId) && isSaleBoard,
+  })
+  const menuSectionsQuery = useMenuCatalogSections(popId, {
+    enabled: !isSaleBoard && Boolean(popId),
   })
   const saleBoardCategories = useMemo(() => {
     const rows = saleCategoriesQuery.data
@@ -176,14 +178,17 @@ export function SaleCatalogBrowser({
     return sections
   }, [saleBoardCategories, salePromotionsQuery.combos.length])
   const railCategories = isSaleBoard ? saleBoardCategories : categories
-  const railSections = isSaleBoard ? saleBoardSections : categorySections
-  const railLoading = isSaleBoard ? saleCategoriesQuery.isLoading : loading
+  const railSections = isSaleBoard ? saleBoardSections : menuSectionsQuery.data
+  const railLoading = isSaleBoard
+    ? saleCategoriesQuery.isLoading
+    : menuSectionsQuery.isLoading
   const saleCategoriesError =
     saleCategoriesQuery.error instanceof Error
       ? saleCategoriesQuery.error.message
       : saleCategoriesQuery.error
         ? String(saleCategoriesQuery.error)
         : null
+  const menuSectionsError = menuSectionsQuery.error
   const scanFocus = useSaleScanInputFocus()
   const internalSidebar = useDataWorkspaceSidebar(
     siteId,
@@ -312,11 +317,10 @@ export function SaleCatalogBrowser({
     ? isSearch ||
       itemsFilter.section === "promotions" ||
       Boolean(saleBoardCategoryId)
-    : isSearch
-      ? !loading
-      : itemsFilter.section === "promotions"
-        ? !loading
-        : itemsFilter.section === "discounts" || Boolean(itemsFilter.categoryId)
+    : isSearch ||
+      itemsFilter.section === "promotions" ||
+      itemsFilter.section === "discounts" ||
+      Boolean(itemsFilter.categoryId)
 
   useEffect(() => {
     if (railLoading) return
@@ -390,15 +394,10 @@ export function SaleCatalogBrowser({
     search: isSearch ? itemsFilter.search : "",
     priceListId,
   })
-  const menuItems = useMenuCatalogItems(
-    popId,
-    itemsFilter,
-    Boolean(popId) &&
-      !error &&
-      source === "menu" &&
-      itemsEnabled &&
-      itemsQueryReady,
-  )
+  const menuItems = useMenuCatalogBoardItems(popId, itemsFilter, {
+    enabled:
+      Boolean(popId) && source === "menu" && itemsEnabled && itemsQueryReady,
+  })
   const paged = source === "sale" ? saleBoardItems : menuItems
   const pagedRecipes = source === "menu" ? menuItems.recipes : []
 
@@ -420,10 +419,14 @@ export function SaleCatalogBrowser({
     [popId, refocusScan],
   )
 
-  const promotionProducts = useMemo(
-    () => products.filter((product) => isMenuProduct(product) && product.kind === "promotion"),
-    [products],
-  )
+  const promotionProducts = useMemo(() => {
+    if (source === "menu") {
+      return menuItems.promotions.map(menuPromotionToProduct)
+    }
+    return products.filter(
+      (product) => isMenuProduct(product) && product.kind === "promotion",
+    )
+  }, [menuItems.promotions, products, source])
 
   const pagedProducts = useMemo((): SaleCatalogProduct[] => {
     const articles = paged.articles.map(menuArticleToProduct)
@@ -590,7 +593,7 @@ export function SaleCatalogBrowser({
   }, [keepScanFocused, railLoading, refocusScan])
 
   const itemsError = paged.error
-  const boardError = isSaleBoard ? saleCategoriesError : error
+  const boardError = isSaleBoard ? saleCategoriesError : menuSectionsError
   const showGridSkeleton =
     !boardError &&
     (paged.isLoading || (railLoading && !itemsQueryReady)) &&
@@ -651,7 +654,7 @@ export function SaleCatalogBrowser({
           <div
             className={cn(
               "absolute z-30 overflow-hidden md:hidden",
-              "bg-[var(--rootsy-sombra-800)]",
+              "bg-[var(--rootsy-sombra-950)]",
               usesMobileStage
                 ? "inset-0"
                 : cn(

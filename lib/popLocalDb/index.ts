@@ -45,6 +45,17 @@ export {
   POP_LOCAL_PROMOTIONS_PAGE_SIZE,
 } from "@/lib/popLocalDb/hydratePromotions"
 export {
+  clearPopLocalRecipesHydrateMark,
+  fetchOperateRecipePages,
+  hydratePopRecipesFromNetwork,
+  popLocalRecipesHydrateInput,
+  POP_LOCAL_RECIPES_PAGE_SIZE,
+} from "@/lib/popLocalDb/hydrateRecipes"
+export {
+  clearPopLocalRecipeCategoriesHydrateMark,
+  hydratePopRecipeCategoriesFromNetwork,
+} from "@/lib/popLocalDb/hydrateRecipeCategories"
+export {
   deleteCategoryById,
   getCategoryById,
   listAllCategories,
@@ -58,6 +69,24 @@ export {
   listAllPromotions,
   upsertPromotionSnapshots,
 } from "@/lib/popLocalDb/promotionsRepo"
+export {
+  deleteRecipeById,
+  deleteRecipesNotIn,
+  getRecipeById,
+  listAllRecipes,
+  listMenuRecipes,
+  renameRecipesCategory,
+  updateRecipesStationForCategory,
+  upsertRecipeSnapshots,
+} from "@/lib/popLocalDb/recipesRepo"
+export {
+  deleteRecipeCategoryById,
+  getRecipeCategoryById,
+  listAllRecipeCategories,
+  listMenuRecipeCategories,
+  replaceAllRecipeCategories,
+  upsertRecipeCategorySnapshots,
+} from "@/lib/popLocalDb/recipeCategoriesRepo"
 export {
   articleListItemToSnapshot,
   articleSnapshotBindValues,
@@ -75,6 +104,7 @@ export type { SaleCartSnapshot } from "@/lib/popLocalDb/saleCartRepo"
 export {
   promotionDumpRowToSnapshot,
   promotionSnapshotToMenuCatalog,
+  splitLocalPromotionsForMenu,
   splitLocalPromotionsForSale,
 } from "@/lib/popLocalDb/mapPromotion"
 export type {
@@ -83,4 +113,6 @@ export type {
   ListSaleBoardArticlesInput,
   ListSaleBoardArticlesResult,
   PromotionSnapshot,
+  RecipeCategorySnapshot,
+  RecipeSnapshot,
 } from "@/lib/popLocalDb/types"

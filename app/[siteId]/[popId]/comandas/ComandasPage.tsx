@@ -4,6 +4,7 @@ import { comandasBrisaPageMainClass } from "@/app/[siteId]/[popId]/comandas/coma
 import { ComandasStationMenu } from "@/app/[siteId]/[popId]/comandas/components/ComandasStationMenu"
 import { ComandasWorkspace } from "@/app/[siteId]/[popId]/comandas/components/ComandasWorkspace"
 import { useComandasState } from "@/app/[siteId]/[popId]/comandas/useComandasState"
+import { useComandasRealtime } from "@/hooks/useComandasRealtime"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -27,6 +28,7 @@ function ComandasPage() {
     () => comandasAccessFromKeys(bootstrap?.permissionKeys ?? []),
     [bootstrap?.permissionKeys],
   )
+  useComandasRealtime(popId)
   const comandas = useComandasState(popId ?? "", siteId)
 
   useEffect(() => {

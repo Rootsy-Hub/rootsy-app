@@ -23,6 +23,8 @@ import {
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
+import { useMostradorRealtime } from "@/hooks/useMostradorRealtime"
+import { useOperateCatalogHydrate } from "@/hooks/useOperateCatalogHydrate"
 import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback } from "react"
@@ -42,6 +44,8 @@ export function MostradorWorkspace({
   onCatalogSidebarOpenChange,
   onRegisterStartCreateOrder,
 }: Props) {
+  useOperateCatalogHydrate(popId)
+  useMostradorRealtime(popId)
   const {
     orders,
     loading,

@@ -1,6 +1,8 @@
 "use client"
 
 import { CashRegistersGridSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegistersGridSkeleton"
+import { LayoutsOperarBody } from "@/app/library/layouts/LayoutsOperarDocPrimitives"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { getHandbookDesignSystemPage } from "@/app/handbook/handbookDesignSystem"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import {
@@ -20,7 +22,6 @@ import {
 } from "@/components/data-workspace/DataWorkspaceListFilterFields"
 import {
   DataWorkspaceListTableFrame,
-  DataWorkspaceTableIconAction,
   DataWorkspaceTableMoney,
   WorkspaceTableStatusBadge,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
@@ -83,6 +84,7 @@ import { useId, useMemo, useState } from "react"
 
 const BRUMA = "var(--rootsy-bruma-100)"
 const BRUMA_50 = "var(--rootsy-bruma-50)"
+const SOMBRA = "var(--rootsy-sombra-950)"
 const noop = () => {}
 
 const PATTERN_ROWS = [
@@ -380,11 +382,16 @@ function TablesPatternSpecimen({ extra }: { extra: string }) {
                         )}
                       >
                         <div className="flex items-center justify-end">
-                          <DataWorkspaceTableIconAction
+                          <RootsIconButton
+                            type="button"
                             label={`Editar ${row.name}`}
-                            icon={Pencil}
+                            tone="action"
+                            intent="edit"
+                            size="compact"
                             onClick={noop}
-                          />
+                          >
+                            <Pencil />
+                          </RootsIconButton>
                         </div>
                       </TableCell>
                     </WorkspaceTableBodyRow>
@@ -509,11 +516,67 @@ function BlocksPatternSpecimen({ extra }: { extra: string }) {
   )
 }
 
+function OperarPatternSpecimen() {
+  return (
+    <div className="flex h-[32rem] w-full min-w-0 flex-col overflow-hidden rounded-xl">
+      <LayoutsOperarBody composed />
+    </div>
+  )
+}
+
 function HandbookFormingNote() {
   return (
     <p className={cn(libraryDocPageDescriptionClass, "mt-3 max-w-md italic")}>
       Esta parte todavía se está formando.
     </p>
+  )
+}
+
+function OperarPatternCopy() {
+  return (
+    <>
+      <p className={cn(libraryDocBodyClass, "mt-4 max-w-3xl")}>
+        El canvas de operar: catálogo en Sombra, ticket en bruma. El fondo
+        es 950 — el paso más oscuro. Cards y slots se elevan encima. El mismo
+        shell cubre vender, mesas, mostrador y compras.
+      </p>
+      <div className="mt-6">
+        <ComponentView
+          background={SOMBRA}
+          componentName="DataWorkspaceOperationsLayout"
+          componentProperties={[
+            {
+              name: "ModuleLayout",
+              values: ["header éter", "contentFlush"],
+            },
+            {
+              name: "OperationsModuleBody",
+              values: ["rootsy-theme-pos", "sombra-950"],
+            },
+            {
+              name: "Catálogo",
+              values: ["rail", "toolbar", "canvas sombra-950", "cards sombra-500"],
+            },
+            {
+              name: "Toolbox",
+              values: ["Cliente", "Comprobante", "Pago", "Descuento"],
+            },
+            {
+              name: "Ticket",
+              values: ["bruma", "row-span-2"],
+            },
+          ]}
+          variants={[{ name: "Operación" }]}
+          render={() => <OperarPatternSpecimen />}
+        />
+      </div>
+      <div className="mt-8">
+        <LibraryDoDontPair
+          doText="Un solo shell de operar. Fondo 950. Se eleva lo que se toca, no se aclara el lienzo."
+          dontText="Inventar otro POS por módulo o pintar el canvas con 800, suelo o savia."
+        />
+      </div>
+    </>
   )
 }
 
@@ -533,6 +596,9 @@ export function HandbookPatternsView() {
         {page.topics.map((topic) => {
           const isTables = topic.id === "tablas-y-filtros"
           const isBlocks = topic.id === "gestion-de-datos"
+          const isOperar = topic.id === "estructura-de-modulo"
+          const isSaleFlow = topic.id === "flujos-de-venta"
+          const isPurchaseFlow = topic.id === "flujos-de-compra"
 
           return (
             <section
@@ -541,7 +607,32 @@ export function HandbookPatternsView() {
               className={cn(handbookDocChapterClass, "first:border-t-0 first:pt-0")}
             >
               <h2 className={libraryDocSectionTitleClass}>{topic.title}</h2>
-              {isTables ? (
+              {isOperar ? (
+                <OperarPatternCopy />
+              ) : isSaleFlow ? (
+                <p className={cn(libraryDocBodyClass, "mt-4 max-w-3xl")}>
+                  Vender, mesas y mostrador se arman con el mismo{" "}
+                  <a
+                    href="#estructura-de-modulo"
+                    className="underline underline-offset-2"
+                  >
+                    shell de operar
+                  </a>
+                  . El flujo cambia; el layout no.
+                </p>
+              ) : isPurchaseFlow ? (
+                <p className={cn(libraryDocBodyClass, "mt-4 max-w-3xl")}>
+                  Compras usa el mismo{" "}
+                  <a
+                    href="#estructura-de-modulo"
+                    className="underline underline-offset-2"
+                  >
+                    shell de operar
+                  </a>{" "}
+                  que vender. El ticket y el toolbox se adaptan; el canvas no se
+                  inventa de nuevo.
+                </p>
+              ) : isTables ? (
                 <>
                   <p className={cn(libraryDocBodyClass, "mt-4 max-w-3xl")}>
                     Filtros y tabla en bruma. Pie en sombra. El mismo shell cubre

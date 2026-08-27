@@ -800,7 +800,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <LayoutsOperarMainGrid
             catalog={
-              <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--rootsy-sombra-800)]">
+              <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--rootsy-sombra-950)]">
                 <ServiceOperateCatalogBrowser
                   items={catalogItems}
                   categories={catalogCategories}

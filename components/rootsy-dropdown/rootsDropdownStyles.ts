@@ -1,9 +1,10 @@
 /**
  * Estilos RootsDropdown — radius.xlarge panel (16px).
  * Hover inset · radius.large (12px).
- * Claro: bruma-50 · savia-100. Sombra: fondo 950 · hover 800 · savia/lava 500.
+ * Bruma: overlay claro. Sombra / Éter: fondo 950 de cada familia.
  */
 
+import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
 import { cn } from "@/lib/utils"
 
 /** radius.xlarge — 16px (ROOTSY_DROPDOWN_ANATOMY.panelRadiusPx). */
@@ -23,8 +24,18 @@ export const rootsDropdownItemMotionClass =
 export const rootsDropdownCheckIconLightClass = "size-4 shrink-0 text-[var(--rootsy-savia-600)]"
 export const rootsDropdownCheckIconDarkClass = "size-4 shrink-0 text-[var(--rootsy-savia-500)]"
 
+export const rootsDropdownCheckIconEterClass = "size-4 shrink-0 text-[var(--rootsy-savia-500)]"
+
+export function rootsDropdownCheckIconClassForAtmosphere(
+  atmosphere: RootsButtonAtmosphere = "bruma",
+) {
+  if (atmosphere === "sombra") return rootsDropdownCheckIconDarkClass
+  if (atmosphere === "eter") return rootsDropdownCheckIconEterClass
+  return rootsDropdownCheckIconLightClass
+}
+
 export function rootsDropdownCheckIconClassForTheme(theme: "light" | "dark" = "light") {
-  return theme === "dark" ? rootsDropdownCheckIconDarkClass : rootsDropdownCheckIconLightClass
+  return rootsDropdownCheckIconClassForAtmosphere(theme === "dark" ? "sombra" : "bruma")
 }
 
 /** Reset shadcn dropdown content — spec inline aplica bg/border/shadow/radius/padding. */
@@ -70,6 +81,20 @@ export const rootsDropdownContentDarkClass = cn(
   rootsDropdownContentSurfaceDarkClass,
   rootsDropdownContentListClass,
   "text-[var(--rootsy-sombra-50)]",
+)
+
+export const rootsDropdownContentSurfaceEterClass = cn(
+  rootsDropdownPanelRadiusClass,
+  "border border-[var(--rootsy-eter-700)] bg-[var(--rootsy-eter-950)]",
+  "shadow-[0_24px_80px_-16px_oklch(0_0_0/0.65)]",
+)
+
+export const rootsDropdownContentEterClass = cn(
+  rootsDropdownContentResetClass,
+  rootsDropdownContentMotionClass,
+  rootsDropdownContentSurfaceEterClass,
+  rootsDropdownContentListClass,
+  "text-[var(--rootsy-eter-50)]",
 )
 
 const dropdownItemResetClass = cn(
@@ -153,17 +178,55 @@ export const rootsDropdownItemDarkSelectedCompactClass = cn(
   "min-h-8",
 )
 
+const dropdownItemEterHoverClass = cn(
+  "focus:bg-[var(--rootsy-eter-800)] focus:text-[var(--rootsy-eter-50)]",
+  "data-[highlighted]:bg-[var(--rootsy-eter-800)] data-[highlighted]:text-[var(--rootsy-eter-50)]",
+)
+
+const dropdownItemEterSelectedSurfaceClass = cn(
+  "bg-[color-mix(in_srgb,var(--rootsy-savia-500)_16%,var(--rootsy-eter-950))] font-medium text-[var(--rootsy-eter-50)]",
+  "focus:bg-[color-mix(in_srgb,var(--rootsy-savia-500)_16%,var(--rootsy-eter-950))] focus:text-[var(--rootsy-eter-50)]",
+  "data-[highlighted]:bg-[color-mix(in_srgb,var(--rootsy-savia-500)_16%,var(--rootsy-eter-950))] data-[highlighted]:text-[var(--rootsy-eter-50)]",
+)
+
+export const rootsDropdownItemEterClass = cn(
+  dropdownItemBaseClass,
+  "min-h-10 text-[var(--rootsy-eter-50)]",
+  "[&_svg:not([class*='text-'])]:text-[var(--rootsy-eter-300)]",
+  dropdownItemEterHoverClass,
+)
+
+export const rootsDropdownItemEterCompactClass = cn(rootsDropdownItemEterClass, "min-h-8")
+
+export const rootsDropdownItemEterSelectedClass = cn(
+  dropdownItemBaseClass,
+  "min-h-10 text-[var(--rootsy-eter-50)]",
+  "[&_svg:not([class*='text-'])]:text-[var(--rootsy-eter-300)]",
+  dropdownItemEterSelectedSurfaceClass,
+)
+
+export const rootsDropdownItemEterSelectedCompactClass = cn(
+  rootsDropdownItemEterSelectedClass,
+  "min-h-8",
+)
+
 export const rootsDropdownLabelLightClass =
   "px-3 pb-1 pt-2 font-canopy text-xs font-medium leading-4 text-[var(--rootsy-bruma-500)]"
 
 export const rootsDropdownLabelDarkClass =
   "px-3 pb-1 pt-2 font-canopy text-xs font-medium leading-4 text-[var(--rootsy-sombra-300)]"
 
+export const rootsDropdownLabelEterClass =
+  "px-3 pb-1 pt-2 font-canopy text-xs font-medium leading-4 text-[var(--rootsy-eter-300)]"
+
 export const rootsDropdownSeparatorLightClass =
   "mx-0 my-1 h-px shrink-0 bg-[var(--rootsy-bruma-200)]"
 
 export const rootsDropdownSeparatorDarkClass =
   "mx-0 my-1 h-px shrink-0 bg-[var(--rootsy-sombra-400)]"
+
+export const rootsDropdownSeparatorEterClass =
+  "mx-0 my-1 h-px shrink-0 bg-[var(--rootsy-eter-700)]"
 
 export const rootsDropdownDestructiveItemClass = cn(
   "text-[var(--color-status-danger,#dc2626)]",
@@ -181,24 +244,49 @@ export const rootsDropdownDestructiveItemDarkClass = cn(
   "[&_svg]:!text-[var(--rootsy-lava-500)]",
 )
 
-export function rootsDropdownContentClassForTheme(theme: "light" | "dark" = "light") {
-  return theme === "dark" ? rootsDropdownContentDarkClass : rootsDropdownContentLightClass
+export const rootsDropdownDestructiveItemEterClass = cn(
+  "text-[var(--rootsy-lava-500)]",
+  "focus:bg-[color-mix(in_srgb,var(--rootsy-lava-500)_16%,var(--rootsy-eter-950))]",
+  "data-[highlighted]:bg-[color-mix(in_srgb,var(--rootsy-lava-500)_16%,var(--rootsy-eter-950))]",
+  "focus:text-[var(--rootsy-lava-500)] data-[highlighted]:text-[var(--rootsy-lava-500)]",
+  "[&_svg]:!text-[var(--rootsy-lava-500)]",
+)
+
+export function rootsDropdownContentClassForAtmosphere(
+  atmosphere: RootsButtonAtmosphere = "bruma",
+) {
+  if (atmosphere === "sombra") return rootsDropdownContentDarkClass
+  if (atmosphere === "eter") return rootsDropdownContentEterClass
+  return rootsDropdownContentLightClass
 }
 
-export function rootsDropdownItemClassForTheme(
-  theme: "light" | "dark" = "light",
+export function rootsDropdownContentClassForTheme(theme: "light" | "dark" = "light") {
+  return rootsDropdownContentClassForAtmosphere(theme === "dark" ? "sombra" : "bruma")
+}
+
+export function rootsDropdownItemClassForAtmosphere(
+  atmosphere: RootsButtonAtmosphere = "bruma",
   density: "default" | "compact" = "default",
   options?: { selected?: boolean },
 ) {
   const selected = options?.selected ?? false
 
-  if (theme === "dark") {
+  if (atmosphere === "sombra") {
     if (selected) {
       return density === "compact"
         ? rootsDropdownItemDarkSelectedCompactClass
         : rootsDropdownItemDarkSelectedClass
     }
     return density === "compact" ? rootsDropdownItemDarkCompactClass : rootsDropdownItemDarkClass
+  }
+
+  if (atmosphere === "eter") {
+    if (selected) {
+      return density === "compact"
+        ? rootsDropdownItemEterSelectedCompactClass
+        : rootsDropdownItemEterSelectedClass
+    }
+    return density === "compact" ? rootsDropdownItemEterCompactClass : rootsDropdownItemEterClass
   }
 
   if (selected) {
@@ -209,10 +297,46 @@ export function rootsDropdownItemClassForTheme(
   return density === "compact" ? rootsDropdownItemLightCompactClass : rootsDropdownItemLightClass
 }
 
+export function rootsDropdownItemClassForTheme(
+  theme: "light" | "dark" = "light",
+  density: "default" | "compact" = "default",
+  options?: { selected?: boolean },
+) {
+  return rootsDropdownItemClassForAtmosphere(
+    theme === "dark" ? "sombra" : "bruma",
+    density,
+    options,
+  )
+}
+
+export function rootsDropdownLabelClassForAtmosphere(
+  atmosphere: RootsButtonAtmosphere = "bruma",
+) {
+  if (atmosphere === "sombra") return rootsDropdownLabelDarkClass
+  if (atmosphere === "eter") return rootsDropdownLabelEterClass
+  return rootsDropdownLabelLightClass
+}
+
 export function rootsDropdownLabelClassForTheme(theme: "light" | "dark" = "light") {
-  return theme === "dark" ? rootsDropdownLabelDarkClass : rootsDropdownLabelLightClass
+  return rootsDropdownLabelClassForAtmosphere(theme === "dark" ? "sombra" : "bruma")
+}
+
+export function rootsDropdownSeparatorClassForAtmosphere(
+  atmosphere: RootsButtonAtmosphere = "bruma",
+) {
+  if (atmosphere === "sombra") return rootsDropdownSeparatorDarkClass
+  if (atmosphere === "eter") return rootsDropdownSeparatorEterClass
+  return rootsDropdownSeparatorLightClass
 }
 
 export function rootsDropdownSeparatorClassForTheme(theme: "light" | "dark" = "light") {
-  return theme === "dark" ? rootsDropdownSeparatorDarkClass : rootsDropdownSeparatorLightClass
+  return rootsDropdownSeparatorClassForAtmosphere(theme === "dark" ? "sombra" : "bruma")
+}
+
+export function rootsDropdownDestructiveItemClassForAtmosphere(
+  atmosphere: RootsButtonAtmosphere = "bruma",
+) {
+  if (atmosphere === "sombra") return rootsDropdownDestructiveItemDarkClass
+  if (atmosphere === "eter") return rootsDropdownDestructiveItemEterClass
+  return rootsDropdownDestructiveItemClass
 }

@@ -4,7 +4,6 @@ import {
   isDarkChromeHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { EterIconButton } from "@/components/eter/EterIconButton"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react"
 
@@ -26,10 +25,11 @@ export const DataWorkspaceHeaderIconButton = forwardRef<
 ) {
   if (isDarkChromeHeader(headerVariant)) {
     return (
-      <EterIconButton
+      <RootsIconButton
         ref={ref}
         label={label}
-        intent={primary ? "primary" : "subtle"}
+        semantic={primary ? "primary" : "tertiary"}
+        atmosphere="eter"
         size="default"
         {...rest}
       />

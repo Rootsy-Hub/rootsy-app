@@ -22,9 +22,9 @@ const hx = rootsyColorHex
 
 const POS_TOTALS_GRADIENT = COLOR_NEW_GRADIENTS.find((g) => g.id === "pos-totals")!
 
-/** Toolbox + totales — slot space.1000 · padding vertical space.150 (base) / space.200 (sm). */
+/** Toolbox + totales — slot space.1000 · inset space.200, el mismo gap que el catálogo. */
 const OPERAR_FOOTER_SLOT_MIN_PX = rootsySpacePx("1000")
-const OPERAR_FOOTER_BAND_PAD_Y_PX = rootsySpacePx("150")
+const OPERAR_FOOTER_BAND_PAD_Y_PX = rootsySpacePx("200")
 const OPERAR_FOOTER_SLOT_MIN_SM_PX = rootsySpacePx("1000") + rootsySpacePx("050")
 const OPERAR_FOOTER_BAND_PAD_Y_SM_PX = rootsySpacePx("200")
 const OPERAR_FOOTER_BAND_MIN_PX = OPERAR_FOOTER_SLOT_MIN_PX + OPERAR_FOOTER_BAND_PAD_Y_PX * 2
@@ -47,7 +47,7 @@ export const ROOTSY_LAYOUTS_OPERAR_PRINCIPLES = [
   {
     title: "Catálogo · dosel denso",
     detail:
-      "Sidebar w-64 (256px) · library-sidebar + library-nav (paridad Library / Estadísticas / Ajustes) · canvas sombra-800 · cards sombra-600 · toolbox tierra empapada · hairline sombra-border · pairing pos-core.",
+      "Sidebar w-64 (256px) · library-sidebar + library-nav · canvas sombra-950 · cards sombra-500 · toolbox banda 950 · pairing pos-core.",
   },
   {
     title: "Ticket · bruma-50",
@@ -77,12 +77,12 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
   toolboxSlotMinHeightSmToken: "space.1000 + space.050",
   toolboxBandPaddingYPx: OPERAR_FOOTER_BAND_PAD_Y_PX,
   toolboxBandPaddingYSmPx: OPERAR_FOOTER_BAND_PAD_Y_SM_PX,
-  toolboxBandPaddingYToken: "space.150",
+  toolboxBandPaddingYToken: "space.200",
   toolboxBandPaddingYSmToken: "space.200",
   /** Banda toolbox fila 2 — alineada con barra de totales del ticket. */
   toolboxRowMinHeightPx: OPERAR_FOOTER_BAND_MIN_PX,
   toolboxRowMinHeightSmPx: OPERAR_FOOTER_BAND_MIN_SM_PX,
-  toolboxRowMinHeightToken: "space.1000 + 2× space.150",
+  toolboxRowMinHeightToken: "space.1000 + 2× space.200",
   toolboxRowMinHeightSmToken: "space.1000 + space.050 + 2× space.200",
   toolboxMinHeightClass: `min-h-[${OPERAR_FOOTER_BAND_MIN_PX}px] sm:min-h-[${OPERAR_FOOTER_BAND_MIN_SM_PX}px]`,
   toolboxMinHeightSmClass: `sm:min-h-[${OPERAR_FOOTER_BAND_MIN_SM_PX}px]`,
@@ -109,9 +109,9 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
 export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
   shell: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
   header: { token: "sombra-950→900", css: "linear-gradient chrome" },
-  rail: { token: "sombra-700 · library-sidebar", css: "var(--rootsy-sombra-700)" },
-  canvas: { token: "sombra-800", css: "var(--rootsy-sombra-800)" },
-  productCard: { token: "sombra-600", css: "var(--rootsy-sombra-600)" },
+  rail: { token: "sombra-950 · library-sidebar", css: "var(--rootsy-sombra-950)" },
+  canvas: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
+  productCard: { token: "sombra-500", css: "var(--rootsy-sombra-500)" },
   footer: {
     token: ROOTSY_LAYOUTS_EARTH_FLOOR.chromeToken,
     css: ROOTSY_LAYOUTS_EARTH_FLOOR.background,
@@ -137,7 +137,7 @@ export const ROOTSY_LAYOUTS_OPERAR_BORDERS = {
     token: "sombra-border / 80%",
     css: `color-mix(in srgb, ${hx("sombra", "border")} 80%, transparent)`,
   },
-  /** Contorno card sombra-600 sobre canvas */
+  /** Contorno card sombra-500 sobre canvas 600 */
   darkCard: {
     token: "sombra-border",
     css: hx("sombra", "border"),
@@ -183,7 +183,7 @@ export function getLayoutsOperarWireframeHeaderStyle() {
   } as const
 }
 
-/** Toolbox — mismo suelo empapado que el footer de tablas. */
+/** Toolbox — banda sombra-950. */
 export function getLayoutsOperarDoselContinuoToolboxBandBackground() {
   return ROOTSY_LAYOUTS_EARTH_FLOOR.background
 }
@@ -300,7 +300,7 @@ export const ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS: LayoutsOperarProductC
     pairingId: "pos-core",
     pairingLabel: "Sombra 600 + 900 + Savia 500",
     summary:
-      "Cuerpo sombra-600 · void foto sombra-900 · precio savia · botón + hover · sombra inset (actual producción).",
+      "Cuerpo sombra-500 · canvas 950 · precio savia-500 · chip oferta 900+savia-500.",
     uxNote:
       "Tarjeta plana bajo el canvas — lectura rápida en grilla densa. Alineada al dosel denso del grid.",
     recommended: true,

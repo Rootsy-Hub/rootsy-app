@@ -1,7 +1,7 @@
 "use client"
 
 import { MenuNotificationBadge } from "@/app/[siteId]/[popId]/menu/MenuNotificationBadge"
-import { EterIconButton } from "@/components/eter/EterIconButton"
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   RootsDropdownContent,
   RootsDropdownLabel,
@@ -25,9 +25,14 @@ export function MenuNotificationsButton({ size = "default" }: Props) {
     <RootsDropdownMenu>
       <RootsDropdownTrigger asChild>
         <span className="relative inline-flex">
-          <EterIconButton size={size} label="Notificaciones">
+          <RootsIconButton
+            size={size}
+            label="Notificaciones"
+            semantic="tertiary"
+            atmosphere="eter"
+          >
             <Bell aria-hidden />
-          </EterIconButton>
+          </RootsIconButton>
           <MenuNotificationBadge count={total} size="sm" />
         </span>
       </RootsDropdownTrigger>

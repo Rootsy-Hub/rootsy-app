@@ -165,7 +165,7 @@ export function SaleOperationToolbox({
               {clienteLabel}
             </span>
             {clienteIvaLabel ? (
-              <span className="mt-0.5 block truncate text-[11px] font-medium text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]">
+              <span className="mt-0.5 block truncate text-[11px] font-medium text-[var(--rootsy-sombra-300)]">
                 {clienteIvaLabel}
               </span>
             ) : null}
@@ -232,7 +232,7 @@ export function SaleOperationToolbox({
               {pagoLabel}
             </span>
             {pagoSubLabel ? (
-              <span className="mt-0.5 block truncate text-[11px] font-medium text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]">
+              <span className="mt-0.5 block truncate text-[11px] font-medium text-[var(--rootsy-sombra-300)]">
                 {pagoSubLabel}
               </span>
             ) : null}

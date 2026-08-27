@@ -183,9 +183,9 @@ export const ROOTSY_ELEVATION_SURFACES_LIGHT = [
 ] as const
 
 export const ROOTSY_ELEVATION_SURFACES_DARK = [
-  { token: "elevation.surface.sunken", value: hx("sombra", "700"), note: "Rail · header" },
-  { token: "elevation.surface", value: hx("sombra", "600"), note: "Canvas catálogo" },
-  { token: "elevation.surface.raised", value: hx("sombra", "500"), note: "Card producto" },
+  { token: "elevation.surface.sunken", value: hx("sombra", "950"), note: "Fondo — rail, canvas, toolbox" },
+  { token: "elevation.surface", value: hx("sombra", "600"), note: "Panel sobre el lienzo" },
+  { token: "elevation.surface.raised", value: hx("sombra", "500"), note: "Card y slot" },
   { token: "elevation.surface.overlay", value: hx("sombra", "500"), note: "Dropdown · modal oscuro" },
 ] as const
 

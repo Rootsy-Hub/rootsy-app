@@ -150,7 +150,7 @@ export function LayoutsOperarToolboxProposalGridCell({
 export function LayoutsOperarToolboxProposalStrip({
   proposalId,
   measureBadge,
-  canvasLabel = "canvas · sombra-800 · junta toolbox",
+  canvasLabel = "canvas · sombra-950 · junta toolbox",
 }: {
   proposalId: LayoutsOperarToolboxProposalId
   measureBadge?: ReactNode

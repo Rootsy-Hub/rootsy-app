@@ -34,7 +34,7 @@ import {
 } from "@/app/[siteId]/[popId]/inventory/inventoryFormat"
 import "@/app/[siteId]/[popId]/inventory/inventoryPrint.css"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
@@ -1431,12 +1431,16 @@ function InventoryMovementsTable({
               </TableCell>
               {canDelete ? (
                 <TableCell className="text-right">
-                  <DataWorkspaceTableIconAction
+                  <RootsIconButton
+                    type="button"
                     label="Eliminar movimiento"
-                    icon={Trash2}
-                    variant="destructive"
+                    tone="action"
+                    intent="destructive"
+                    size="compact"
                     onClick={() => onDelete(movement)}
-                  />
+                  >
+                    <Trash2 />
+                  </RootsIconButton>
                 </TableCell>
               ) : null}
             </TableRow>

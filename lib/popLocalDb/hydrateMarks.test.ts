@@ -6,12 +6,18 @@ import {
   clearArticlesHydratedMarks,
   clearCategoriesHydratedMark,
   clearPromotionsHydratedMark,
+  clearRecipeCategoriesHydratedMark,
+  clearRecipesHydratedMark,
   isArticlesHydrated,
   isCategoriesHydrated,
   isPromotionsHydrated,
+  isRecipeCategoriesHydrated,
+  isRecipesHydrated,
   markArticlesHydrated,
   markCategoriesHydrated,
   markPromotionsHydrated,
+  markRecipeCategoriesHydrated,
+  markRecipesHydrated,
 } from "./hydrateMarks"
 import type { ArticleSnapshot } from "./types"
 
@@ -76,5 +82,23 @@ describe("hydrate marks", () => {
     assert.equal(isPromotionsHydrated(db), true)
     clearPromotionsHydratedMark(db)
     assert.equal(isPromotionsHydrated(db), false)
+  })
+
+  it("la marca de recetas es una sola por pop", async () => {
+    const db = await createPopLocalDatabase()
+    assert.equal(isRecipesHydrated(db), false)
+    markRecipesHydrated(db, "2026-01-01T00:00:00.000Z")
+    assert.equal(isRecipesHydrated(db), true)
+    clearRecipesHydratedMark(db)
+    assert.equal(isRecipesHydrated(db), false)
+  })
+
+  it("la marca de categorías de receta es una sola por pop", async () => {
+    const db = await createPopLocalDatabase()
+    assert.equal(isRecipeCategoriesHydrated(db), false)
+    markRecipeCategoriesHydrated(db, "2026-01-01T00:00:00.000Z")
+    assert.equal(isRecipeCategoriesHydrated(db), true)
+    clearRecipeCategoriesHydratedMark(db)
+    assert.equal(isRecipeCategoriesHydrated(db), false)
   })
 })

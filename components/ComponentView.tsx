@@ -201,7 +201,9 @@ export function ComponentView({
                         style={{ background: world.swatch } satisfies CSSProperties}
                       />
                     </TooltipTrigger>
-                    <TooltipContent side="bottom">{world.name}</TooltipContent>
+                    <TooltipContent side="bottom" atmosphere={world.id}>
+                      {world.name}
+                    </TooltipContent>
                   </Tooltip>
                 )
               })}
