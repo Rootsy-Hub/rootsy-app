@@ -8,6 +8,7 @@ import {
   BUTTONS_WITH_ICON_SPECS,
   getButtonsUiAppearanceSurface,
   getButtonsUiRadiusPx,
+  getIconButtonSemanticSurface,
   getIconButtonUiRowSurface,
   getIconButtonUiSurface,
   iconButtonSize,
@@ -122,27 +123,43 @@ export function getButtonAppearanceStyle(
   }
 }
 
-export function getIconButtonSpecStyle(
-  options:
-    | {
-        theme: IconButtonThemeId
-        emphasis: IconButtonEmphasisId
-        sizeId?: IconButtonSizeId
-        state?: ButtonsUiInteractionState
-      }
-    | {
-        rowIntent: IconButtonRowIntentId
-        sizeId?: IconButtonSizeId
-        state?: ButtonsUiInteractionState
-      },
-): CSSProperties {
+type IconButtonSpecOptions = {
+  sizeId?: IconButtonSizeId
+  state?: ButtonsUiInteractionState
+  shape?: ButtonsUiShapeId
+  atmosphere?: RootsButtonAtmosphere
+  theme?: IconButtonThemeId
+} & (
+  | { appearance: ButtonsUiAppearanceId }
+  | { theme: IconButtonThemeId; emphasis: IconButtonEmphasisId }
+  | { rowIntent: IconButtonRowIntentId }
+)
+
+export function getIconButtonSpecStyle(options: IconButtonSpecOptions): CSSProperties {
   const sizeId = options.sizeId ?? "default"
   const state = options.state ?? "default"
   const size = iconButtonSize(sizeId)
+  const extras = {
+    atmosphere: options.atmosphere,
+    sizeId,
+    shape: options.shape ?? "default",
+  }
   const surface =
-    "rowIntent" in options
-      ? getIconButtonUiRowSurface(options.rowIntent, state)
-      : getIconButtonUiSurface(options.theme, options.emphasis, state)
+    "appearance" in options
+      ? getIconButtonSemanticSurface(
+          options.appearance,
+          state,
+          options.theme ?? "workspace",
+          extras.atmosphere,
+          extras.sizeId,
+          extras.shape,
+        )
+      : "rowIntent" in options
+        ? getIconButtonUiRowSurface(options.rowIntent, state, {
+            ...extras,
+            theme: options.theme,
+          })
+        : getIconButtonUiSurface(options.theme, options.emphasis, state, extras)
 
   return {
     display: "inline-flex",

@@ -556,6 +556,43 @@ function ButtonLive({ variant, extras }: { variant: string; extras: readonly str
   }
 }
 
+function iconButtonSemantic(variant: string) {
+  switch (variant) {
+    case "Default":
+      return "secondary" as const
+    case "Subtle":
+      return "tertiary" as const
+    case "Danger":
+      return "destructive" as const
+    case "Danger subtle":
+      return "destructiveSubtle" as const
+    default:
+      return "primary" as const
+  }
+}
+
+function IconButtonLive({ variant, extras }: { variant: string; extras: readonly string[] }) {
+  const disabled = extras[0] === "deshabilitado"
+  const loading = extras[0] === "cargando"
+  const size = (extras[1] ?? "default") as "compact" | "default" | "large"
+  const shape = extras[2] === "pill" ? "pill" : "default"
+  const icon =
+    variant === "Danger" || variant === "Danger subtle" ? <Trash2 /> : <Plus />
+
+  return (
+    <RootsIconButton
+      label={variant}
+      semantic={iconButtonSemantic(variant)}
+      size={size}
+      shape={shape}
+      disabled={disabled}
+      loading={loading}
+    >
+      {icon}
+    </RootsIconButton>
+  )
+}
+
 function IconButtonsFinalSpecimen() {
   return (
     <Stack>
@@ -564,34 +601,34 @@ function IconButtonsFinalSpecimen() {
         componentName="RootsIconButton"
         componentProperties={[
           { name: "label", values: ["string"] },
-          { name: "intent", values: ["neutral", "edit", "destructive"] },
+          { name: "semantic", values: ["primary", "default", "subtle", "danger", "dangerSubtle"] },
           { name: "size", values: ["compact", "default", "large"] },
-          { name: "surface", values: ["light", "dark"] },
-          { name: "disabled", values: ["true", "false"] },
+          { name: "shape", values: ["default", "pill"] },
+          { name: "atmosphere", values: ["bruma", "sombra", "eter"] },
           { name: "loading", values: ["true", "false"] },
+          { name: "disabled", values: ["true", "false"] },
         ]}
-        variants={[{ name: "neutral" }, { name: "edit" }, { name: "destructive" }]}
+        variants={[
+          { name: "Primary" },
+          { name: "Default" },
+          { name: "Subtle" },
+          { name: "Danger" },
+          { name: "Danger subtle" },
+        ]}
         extras={[
           { items: [{ name: "idle" }, { name: "deshabilitado" }, { name: "cargando" }] },
           { items: [{ name: "default" }, { name: "compact" }, { name: "large" }], initial: "default" },
+          { items: [{ name: "default" }, { name: "pill" }], initial: "default" },
         ]}
-        render={(variant, extras, context) => {
-          const dark = context.worldId !== "bruma" && context.worldId !== null
-          return (
-            <div className={atmosphereTheme(context.worldId)}>
-              <RootsIconButton
-                label={variant}
-                intent={variant as "neutral" | "edit" | "destructive"}
-                size={(extras[1] ?? "default") as "compact" | "default" | "large"}
-                surface={dark ? "dark" : "light"}
-                disabled={extras[0] === "deshabilitado"}
-                loading={extras[0] === "cargando"}
-              >
-                {variant === "edit" ? <Pencil /> : variant === "destructive" ? <Trash2 /> : <Plus />}
-              </RootsIconButton>
-            </div>
-          )
-        }}
+        render={(variant, extras, context) => (
+          <div className={atmosphereTheme(context.worldId)}>
+            <RootsButtonAtmosphereProvider
+              atmosphere={buttonAtmosphereFromWorld(context.worldId)}
+            >
+              <IconButtonLive variant={variant} extras={extras} />
+            </RootsButtonAtmosphereProvider>
+          </div>
+        )}
       />
       <LiveView
         background={SOMBRA}
@@ -649,7 +686,7 @@ function DropdownFinalSpecimen() {
       render={(variant, extras) => {
         const theme = variant === "oscuro" ? "dark" : "light"
         return (
-          <div className={cn("rounded-xl p-3", theme === "dark" && "bg-[var(--rootsy-sombra-800)]")}>
+          <div className={cn("rounded-xl p-3", theme === "dark" && "bg-[var(--rootsy-sombra-950)]")}>
             <RootsDropdownMenu>
               <RootsDropdownTrigger asChild>
                 <RootsIconButton label="Menú" surface={theme === "dark" ? "dark" : "light"}>

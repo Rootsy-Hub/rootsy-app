@@ -14,6 +14,7 @@ import {
   getDropdownItemLabelHex,
   getDropdownLabelHex,
   getDropdownPanelBackground,
+  getDropdownPanelBorder,
   getDropdownPanelShadow,
   getDropdownSeparatorColor,
   type DropdownDensityId,
@@ -85,7 +86,7 @@ export function getDropdownPanelUiSurface(
 
   return {
     backgroundColor: getDropdownPanelBackground(theme),
-    border: ROOTSY_DROPDOWN_ANATOMY.panelBorder,
+    border: getDropdownPanelBorder(theme),
     boxShadow: getDropdownPanelShadow(),
     borderRadiusPx: ROOTSY_DROPDOWN_ANATOMY.panelRadiusPx,
     minWidthPx: densitySpec.minWidthPx,
@@ -155,7 +156,7 @@ export function getDropdownItemUiStyle(
     paddingLeft: ROOTSY_DROPDOWN_ANATOMY.itemPaddingXPx,
     paddingRight: ROOTSY_DROPDOWN_ANATOMY.itemPaddingXPx,
     opacity: state === "disabled" ? 0.55 : undefined,
-    borderRadiusPx: 0,
+    borderRadiusPx: ROOTSY_DROPDOWN_ANATOMY.itemRadiusPx,
   }
 }
 
@@ -169,6 +170,7 @@ export function getDropdownItemInteractiveLayoutStyle(
     minHeight: style.minHeightPx,
     paddingLeft: style.paddingLeft,
     paddingRight: style.paddingRight,
+    borderRadius: `${style.borderRadiusPx}px`,
     display: "flex" as const,
     alignItems: "center" as const,
     boxSizing: "border-box" as const,
@@ -178,7 +180,7 @@ export function getDropdownItemInteractiveLayoutStyle(
   }
 }
 
-/** Ítem CSS — hover rectangular a todo el ancho del panel. */
+/** Ítem CSS — hover inset · radius.large a juego con el panel xlarge. */
 export function getDropdownItemShellUiStyle(
   theme: DropdownThemeId = "light",
   state: DropdownItemStateId = "default",

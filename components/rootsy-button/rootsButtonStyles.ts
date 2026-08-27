@@ -19,7 +19,7 @@ export type RootsButtonSize = "default" | "large"
 
 const rootsButtonPrimarySkin = cn(
   "font-semibold text-[var(--rootsy-savia-950)] shadow-none",
-  "bg-[var(--rootsy-savia-500)] hover:bg-[var(--rootsy-savia-400)] active:bg-[var(--rootsy-savia-600)]",
+  "bg-[var(--rootsy-savia-500)] hover:bg-[var(--rootsy-savia-600)] active:bg-[var(--rootsy-savia-600)]",
   rootsButtonFocusRingPrimary,
 )
 

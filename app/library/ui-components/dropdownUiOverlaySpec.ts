@@ -25,7 +25,7 @@ export const DROPDOWN_UI_PANEL_SPEC = {
   surfaceLightToken: "elevation.surface.overlay",
   surfaceLightValue: elevationHex("elevation.surface.overlay"),
   surfaceDarkToken: "elevation.surface.overlay",
-  surfaceDarkValue: hx("sombra", "500"),
+  surfaceDarkValue: hx("sombra", "950"),
   borderToken: "color.border",
   borderCss: ROOTSY_DROPDOWN_ANATOMY.panelBorder,
   shadowToken: ROOTSY_DROPDOWN_ANATOMY.shadowToken,
@@ -43,7 +43,7 @@ export function getDropdownUiPanelSpecRows(theme: "light" | "dark" = "light"): O
       role: "Panel · superficie",
       token: DROPDOWN_UI_PANEL_SPEC.surfaceLightToken,
       value: theme === "light" ? DROPDOWN_UI_PANEL_SPEC.surfaceLightValue : DROPDOWN_UI_PANEL_SPEC.surfaceDarkValue,
-      product: theme === "light" ? "bg-white" : "bg sombra-500",
+      product: theme === "light" ? "bg-white" : "bg sombra-950",
     },
     {
       role: "Panel · borde",

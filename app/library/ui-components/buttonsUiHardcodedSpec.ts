@@ -19,10 +19,7 @@ import {
   type IconButtonSizeId,
   type IconButtonThemeId,
 } from "@/app/library/button/rootsyButtonSystem"
-import {
-  ROOTSY_ELEVATION_SURFACES_DARK,
-  ROOTSY_ELEVATION_SURFACES_LIGHT,
-} from "@/app/library/elevation/rootsyElevationSystem"
+import { ROOTSY_ELEVATION_SURFACES_DARK } from "@/app/library/elevation/rootsyElevationSystem"
 import { ROOTSY_RADIUS_TOKENS } from "@/app/library/radius/rootsyRadiusSystem"
 import {
   ROOTSY_COLOR_SEMANTIC,
@@ -38,15 +35,10 @@ import {
 } from "@/components/rootsy-button/rootsButtonAtmosphere"
 
 const hx = rootsyColorHex
-const workspace = getRootsyTheme("workspace")
 const pos = getRootsyTheme("pos")
 
 const WHITE = ROOTSY_COLOR_SEMANTIC.white
 const TEXT_ON_DARK = ROOTSY_COLOR_SEMANTIC.textOnDark
-
-function elevationSurfaceLight(token: string): string {
-  return ROOTSY_ELEVATION_SURFACES_LIGHT.find((item) => item.token === token)!.value
-}
 
 function elevationSurfaceDark(token: string): string {
   return ROOTSY_ELEVATION_SURFACES_DARK.find((item) => item.token === token)!.value
@@ -318,7 +310,12 @@ export function getButtonsUiAppearanceSurface(
     case "hover":
       switch (appearance) {
         case "primary":
-          return { ...base, backgroundColor: colorTokenHex("primary", "Hover") }
+          return {
+            ...base,
+            backgroundColor: isRootsButtonAtmosphereDark(resolvedAtmosphere)
+              ? colorTokenHex("primary", "Hover oscuro")
+              : colorTokenHex("primary", "Hover"),
+          }
         case "default":
           return {
             ...base,
@@ -499,71 +496,36 @@ export type IconButtonUiInteractionState = ButtonsUiInteractionState
 
 export const ICON_BUTTON_UI_INTERACTION_STATES = BUTTONS_UI_INTERACTION_STATES
 
-function getIconButtonDefaultSurface(
-  theme: IconButtonThemeId,
+function mapIconButtonEmphasisToAppearance(
   emphasis: IconButtonEmphasisId,
-): IconButtonUiSurface {
-  const borderRadiusPx = ICON_BUTTON_UI_RADIUS_PX
-
-  if (theme === "workspace") {
-    switch (emphasis) {
-      case "outlined":
-        return {
-          backgroundColor: workspace.surface,
-          iconColor: workspace.textSecondary,
-          border: `1px solid ${workspace.border}`,
-          borderRadiusPx,
-        }
-      case "filled":
-        return {
-          backgroundColor: elevationSurfaceLight("elevation.surface.sunken"),
-          iconColor: workspace.textPrimary,
-          border: `1px solid ${workspace.border}`,
-          borderRadiusPx,
-        }
-      case "ghost":
-        return {
-          backgroundColor: "transparent",
-          iconColor: colorTokenHex("subtle", "Texto"),
-          border: "1px solid transparent",
-          borderRadiusPx,
-        }
-      case "primary":
-        throw new Error("icon-button emphasis primary is POS-only")
-    }
-  }
-
+): ButtonsUiAppearanceId {
   switch (emphasis) {
     case "primary":
-      return {
-        backgroundColor: hx("savia", "600"),
-        iconColor: WHITE,
-        border: `1px solid ${hx("savia", "700")}`,
-        borderRadiusPx,
-      }
-    case "outlined":
-      return {
-        backgroundColor: elevationSurfaceDark("elevation.surface"),
-        iconColor: pos.textSecondary,
-        border: `1px solid ${pos.border}`,
-        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${TEXT_ON_DARK} 8%, transparent)`,
-        borderRadiusPx,
-      }
-    case "filled":
-      return {
-        backgroundColor: elevationSurfaceDark("elevation.surface.raised"),
-        iconColor: pos.textSecondary,
-        border: `1px solid ${pos.border}`,
-        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${TEXT_ON_DARK} 8%, transparent)`,
-        borderRadiusPx,
-      }
+      return "primary"
     case "ghost":
-      return {
-        backgroundColor: "transparent",
-        iconColor: hx("sombra", "400"),
-        border: "1px solid transparent",
-        borderRadiusPx,
-      }
+      return "subtle"
+    case "outlined":
+    case "filled":
+      return "default"
+  }
+}
+
+export function getIconButtonSemanticSurface(
+  appearance: ButtonsUiAppearanceId,
+  state: IconButtonUiInteractionState = "default",
+  theme: IconButtonThemeId = "workspace",
+  atmosphere?: RootsButtonAtmosphere,
+  sizeId: IconButtonSizeId = "default",
+  shape: ButtonsUiShapeId = "default",
+): IconButtonUiSurface {
+  const text = getButtonsUiAppearanceSurface(appearance, state, theme, atmosphere)
+  return {
+    backgroundColor: text.backgroundColor,
+    iconColor: text.color,
+    border: text.border,
+    boxShadow: text.boxShadow,
+    borderRadiusPx: getButtonsUiRadiusPx(sizeId, shape),
+    opacity: text.opacity,
   }
 }
 
@@ -571,164 +533,99 @@ export function getIconButtonUiSurface(
   theme: IconButtonThemeId,
   emphasis: IconButtonEmphasisId,
   state: IconButtonUiInteractionState = "default",
+  extras?: {
+    atmosphere?: RootsButtonAtmosphere
+    sizeId?: IconButtonSizeId
+    shape?: ButtonsUiShapeId
+  },
 ): IconButtonUiSurface {
-  const base = getIconButtonDefaultSurface(theme, emphasis)
-
-  switch (state) {
-    case "default":
-      return base
-    case "hover":
-      if (emphasis === "primary") {
-        return {
-          ...base,
-          backgroundColor: hx("savia", "500"),
-          iconColor: WHITE,
-          border: `1px solid color-mix(in srgb, ${WHITE} 14%, ${hx("savia", "500")})`,
-        }
-      }
-      if (theme === "workspace") {
-        if (emphasis === "ghost") {
-          return {
-            ...base,
-            backgroundColor: colorTokenHex("default", "Hover"),
-            iconColor: workspace.textPrimary,
-          }
-        }
-        return {
-          ...base,
-          backgroundColor: colorTokenHex("default", "Hover"),
-          iconColor: workspace.textPrimary,
-        }
-      }
-      if (emphasis === "ghost") {
-        return {
-          ...base,
-          backgroundColor: `color-mix(in srgb, ${elevationSurfaceDark("elevation.surface.sunken")} 48%, transparent)`,
-          iconColor: TEXT_ON_DARK,
-        }
-      }
-      return {
-        ...base,
-        backgroundColor: elevationSurfaceDark("elevation.surface.raised"),
-        iconColor: TEXT_ON_DARK,
-        border: `1px solid color-mix(in srgb, ${TEXT_ON_DARK} 12%, ${pos.border} 88%)`,
-      }
-    case "active":
-      if (emphasis === "primary") {
-        return {
-          ...base,
-          backgroundColor: hx("savia", "700"),
-          iconColor: WHITE,
-          border: `1px solid ${hx("savia", "800")}`,
-        }
-      }
-      if (theme === "workspace") {
-        return {
-          ...base,
-          backgroundColor: hx("bruma", "100"),
-          iconColor: workspace.textPrimary,
-          border:
-            emphasis === "ghost"
-              ? "1px solid transparent"
-              : `1px solid ${colorTokenHex("default", "Borde")}`,
-        }
-      }
-      if (emphasis === "ghost") {
-        return {
-          ...base,
-          backgroundColor: `color-mix(in srgb, ${pos.shell} 65%, transparent)`,
-          iconColor: WHITE,
-        }
-      }
-      return {
-        ...base,
-        backgroundColor: elevationSurfaceDark("elevation.surface.sunken"),
-        iconColor: WHITE,
-        border: `1px solid ${pos.border}`,
-      }
-    case "focus":
-      return {
-        ...base,
-        boxShadow: mergeShadow(
-          base.boxShadow,
-          emphasis === "primary"
-            ? FOCUS_RING_SAVIA
-            : theme === "workspace"
-              ? FOCUS_RING_NEUTRAL
-              : FOCUS_RING_DARK,
-        ),
-      }
-    case "disabled":
-      return { ...base, opacity: 0.5 }
-    case "loading":
-      return { ...base, opacity: 0.92 }
-  }
-}
-
-function getIconButtonRowDefaultSurface(
-  _intent: IconButtonRowIntentId,
-): IconButtonUiSurface {
-  return {
-    backgroundColor: "transparent",
-    iconColor: workspace.textSecondary,
-    border: "1px solid transparent",
-    borderRadiusPx: ICON_BUTTON_UI_RADIUS_PX,
-  }
+  return getIconButtonSemanticSurface(
+    mapIconButtonEmphasisToAppearance(emphasis),
+    state,
+    theme,
+    extras?.atmosphere,
+    extras?.sizeId ?? "default",
+    extras?.shape ?? "default",
+  )
 }
 
 export function getIconButtonUiRowSurface(
   intent: IconButtonRowIntentId,
   state: IconButtonUiInteractionState = "default",
+  extras?: {
+    atmosphere?: RootsButtonAtmosphere
+    theme?: IconButtonThemeId
+    sizeId?: IconButtonSizeId
+    shape?: ButtonsUiShapeId
+  },
 ): IconButtonUiSurface {
-  const base = getIconButtonRowDefaultSurface(intent)
+  const theme = extras?.theme ?? "workspace"
+  const atmosphere = extras?.atmosphere
+  const sizeId = extras?.sizeId ?? "compact"
+  const shape = extras?.shape ?? "default"
+
+  if (intent === "destructive") {
+    return getIconButtonSemanticSurface(
+      "danger-subtle",
+      state,
+      theme,
+      atmosphere,
+      sizeId,
+      shape,
+    )
+  }
+
+  if (intent === "neutral") {
+    return getIconButtonSemanticSurface(
+      "subtle",
+      state,
+      theme,
+      atmosphere,
+      sizeId,
+      shape,
+    )
+  }
+
+  const base = getIconButtonSemanticSurface(
+    "subtle",
+    "default",
+    theme,
+    atmosphere,
+    sizeId,
+    shape,
+  )
+  const dark = isRootsButtonAtmosphereDark(
+    resolveRootsButtonAtmosphere({ atmosphere, theme }),
+  )
 
   switch (state) {
     case "default":
       return base
     case "hover":
-      switch (intent) {
-        case "neutral":
-          return {
-            ...base,
-            backgroundColor: colorTokenHex("default", "Hover"),
-            iconColor: workspace.textPrimary,
-          }
-        case "edit":
-          return {
-            ...base,
-            backgroundColor: hx("savia", "50"),
-            iconColor: hx("savia", "700"),
-          }
-        case "destructive":
-          return {
-            ...base,
-            backgroundColor: `color-mix(in srgb, ${colorTokenHex("danger", "Fondo")} 10%, transparent)`,
-            iconColor: colorTokenHex("danger", "Fondo"),
-          }
+      return {
+        ...base,
+        backgroundColor: dark
+          ? `color-mix(in srgb, ${hx("savia", "500")} 16%, transparent)`
+          : hx("savia", "50"),
+        iconColor: dark ? hx("savia", "500") : hx("savia", "700"),
       }
     case "active":
-      switch (intent) {
-        case "neutral":
-          return {
-            ...base,
-            backgroundColor: hx("bruma", "100"),
-            iconColor: workspace.textPrimary,
-          }
-        case "edit":
-          return {
-            ...base,
-            backgroundColor: hx("savia", "100"),
-            iconColor: hx("savia", "800"),
-          }
-        case "destructive":
-          return {
-            ...base,
-            backgroundColor: `color-mix(in srgb, ${colorTokenHex("danger", "Fondo")} 15%, transparent)`,
-            iconColor: colorTokenHex("danger", "Active"),
-          }
+      return {
+        ...base,
+        backgroundColor: dark
+          ? `color-mix(in srgb, ${hx("savia", "500")} 22%, transparent)`
+          : hx("savia", "100"),
+        iconColor: dark ? hx("savia", "400") : hx("savia", "800"),
       }
     case "focus":
-      return { ...base, boxShadow: FOCUS_RING_NEUTRAL }
+      return getIconButtonSemanticSurface(
+        "subtle",
+        "focus",
+        theme,
+        atmosphere,
+        sizeId,
+        shape,
+      )
     case "disabled":
       return { ...base, opacity: 0.5 }
     case "loading":

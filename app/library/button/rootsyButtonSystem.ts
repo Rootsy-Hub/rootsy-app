@@ -82,7 +82,8 @@ export const ROOTSY_BUTTON_COLOR_TOKENS: ButtonColorToken[] = [
     role: "Acción principal — savia vivo + 950",
     tokens: [
       { label: "Fondo", token: "savia-500", hex: hx("savia", "500") },
-      { label: "Hover", token: "savia-400", hex: hx("savia", "400") },
+      { label: "Hover", token: "savia-600", hex: hx("savia", "600") },
+      { label: "Hover oscuro", token: "savia-400", hex: hx("savia", "400") },
       { label: "Active", token: "savia-600", hex: hx("savia", "600") },
       { label: "Texto", token: "savia-950", hex: hx("savia", "950") },
     ],
@@ -134,7 +135,7 @@ export const ROOTSY_BUTTON_APPEARANCES: ButtonAppearance[] = [
     appearance: "primary",
     natureName: "Savia",
     rootsyVariant: "default",
-    rootsyClass: "bg savia-500 · texto savia-950 · hover savia-400 · active savia-600",
+    rootsyClass: "bg savia-500 · texto savia-950 · hover 600 claro / 400 oscuro · active 600",
     usage: "Submit de formulario, guardar, confirmar — una sola vez por área.",
     atlassianRule: "Máximo uno por sección o footer de modal.",
   },
