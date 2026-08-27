@@ -187,20 +187,18 @@ export const layoutsOperarCatalogToolbarViewToggleShellClass =
   "relative flex items-center gap-0.5"
 
 export const layoutsOperarCatalogToolbarViewToggleButtonClass = cn(
-  "relative flex h-8 w-10 items-center justify-center rounded-lg",
-  layoutsOperarCatalogToolbarControlFocusClass,
+  "relative flex h-8 w-10 items-center justify-center rounded-lg bg-transparent",
+  "outline-none",
+  "focus-visible:text-[var(--rootsy-savia-500)]",
+  "focus-visible:ring-0 focus-visible:ring-offset-0",
 )
 
-export const layoutsOperarCatalogToolbarViewToggleButtonActiveClass = cn(
-  "font-medium text-[var(--rootsy-savia-500)]",
-  "bg-[var(--rootsy-sombra-900)]",
-  "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-500)_45%,transparent)]",
-)
+export const layoutsOperarCatalogToolbarViewToggleButtonActiveClass =
+  "font-medium text-[var(--rootsy-savia-500)]"
 
 export const layoutsOperarCatalogToolbarViewToggleButtonIdleClass = cn(
   "text-[var(--rootsy-sombra-300)]",
-  "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_55%,transparent)]",
-  "hover:text-[var(--rootsy-sombra-50)]",
+  "hover:bg-transparent hover:text-[var(--rootsy-sombra-50)]",
 )
 
 export const layoutsOperarCatalogToolbarScanInputClass = cn(

@@ -117,7 +117,7 @@ export const HANDBOOK_SOMBRA: HandbookColorFamily = family({
   kind: "atmosfera",
   tagline: "El dosel para operar",
   description:
-    "Sombra profunda del mismo bosque. Módulos operativos, concentración y densidad. El lienzo es siempre 950 — el paso más oscuro. Superficie y elevada se prenden encima; el fondo no se aclara para separar zonas.",
+    "Sombra profunda del mismo bosque. Módulos operativos, concentración y densidad. El lienzo es siempre 950 (#080c0b) — el paso más oscuro. Superficie y elevada se prenden encima; el fondo no se aclara para separar zonas.",
   not: "No es éter (el espacio) ni Luz filtrada (el claro para leer).",
   identity: "900",
   hexes: ROOTSY_COLOR_RAMPS.sombra,

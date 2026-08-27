@@ -37,18 +37,18 @@
   --rootsy-bruma-900: #1c231e;
   --rootsy-bruma-950: #0a0f0c;
 
-  /* Sotobosque · Sombra — el dosel para operar. Fondo siempre 950. */
+  /* Sotobosque · Sombra — el dosel para operar. 950 #080c0b es siempre el más oscuro. */
   --rootsy-sombra-50: #e8f4ec;
   --rootsy-sombra-100: #c8dfd2;
   --rootsy-sombra-200: #9dc4b0;
   --rootsy-sombra-300: #6f9a86;
   --rootsy-sombra-400: #4a7d62;
-  --rootsy-sombra-500: #336b50;
-  --rootsy-sombra-600: #285742;
-  --rootsy-sombra-700: #193827;
-  --rootsy-sombra-800: #11251a;
-  --rootsy-sombra-900: #0b1811;
-  --rootsy-sombra-950: #07100c;
+  --rootsy-sombra-500: #2e5446;
+  --rootsy-sombra-600: #243f36;
+  --rootsy-sombra-700: #1b2e28;
+  --rootsy-sombra-800: #131e1a;
+  --rootsy-sombra-900: #0d1513;
+  --rootsy-sombra-950: #080c0b;
 
   /* Savia — vivo #02FE85 · profundo #05713F · on #07120C */
   --rootsy-savia-50: #e8fff3;
