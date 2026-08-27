@@ -7,6 +7,11 @@ import {
   isHandbookComponentFinalPageId,
   isHandbookComponentPageId,
 } from "@/app/handbook/components/handbookComponentsSpec"
+import { HandbookIconographyView } from "@/app/handbook/iconography/HandbookIconographyView"
+import { HandbookLayoutView } from "@/app/handbook/layout/HandbookLayoutView"
+import { HandbookMotionView } from "@/app/handbook/motion/HandbookMotionView"
+import { HandbookSpacingView } from "@/app/handbook/spacing/HandbookSpacingView"
+import { HandbookSurfacesView } from "@/app/handbook/surfaces/HandbookSurfacesView"
 import { HandbookTypographyView } from "@/app/handbook/typography/HandbookTypographyView"
 import { HandbookMobileNav } from "@/app/handbook/HandbookMobileNav"
 import { HandbookSectionView } from "@/app/handbook/HandbookSectionView"
@@ -183,6 +188,16 @@ export function HandbookWorkspace() {
             <HandbookColorView />
           ) : isDesignSystem && activeDesignSystemPageId === "tipografia" ? (
             <HandbookTypographyView />
+          ) : isDesignSystem && activeDesignSystemPageId === "espaciado-y-proporciones" ? (
+            <HandbookSpacingView />
+          ) : isDesignSystem && activeDesignSystemPageId === "layout" ? (
+            <HandbookLayoutView />
+          ) : isDesignSystem && activeDesignSystemPageId === "superficies-y-profundidad" ? (
+            <HandbookSurfacesView />
+          ) : isDesignSystem && activeDesignSystemPageId === "iconografia" ? (
+            <HandbookIconographyView />
+          ) : isDesignSystem && activeDesignSystemPageId === "movimiento" ? (
+            <HandbookMotionView />
           ) : isDesignSystem && isHandbookComponentPageId(activeDesignSystemPageId) ? (
             <HandbookComponentsView pageId={activeDesignSystemPageId} />
           ) : isDesignSystem && isHandbookComponentFinalPageId(activeDesignSystemPageId) ? (

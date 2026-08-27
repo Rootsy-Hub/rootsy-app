@@ -13,16 +13,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import {
-  isOptimisticNavTarget,
-  usePopOptimisticNav,
-} from "@/context/PopOptimisticNavContext"
-import { RootsSpinner } from "@/components/rootsy-spinner"
 import { useIsMobile } from "@/hooks/use-mobile"
 import type { MenuRootsySuggestionDetail } from "@/lib/menu/menuRootsySuggestionCatalogTypes"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import { useEffect, useState } from "react"
 
 type Props = {
@@ -45,8 +40,6 @@ export function MenuRootsySuggestionSheet({
   sectionTitle,
 }: Props) {
   const isMobile = useIsMobile()
-  const { pending: navPending, start: startOptimisticNav } =
-    usePopOptimisticNav()
   const [detail, setDetail] = useState<MenuRootsySuggestionDetail | null>(null)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -125,43 +118,11 @@ export function MenuRootsySuggestionSheet({
               {detail.cta ? (
                 <Link
                   href={detail.cta.href}
-                  onClick={(event) => {
-                    if (
-                      event.metaKey ||
-                      event.ctrlKey ||
-                      event.shiftKey ||
-                      event.altKey
-                    ) {
-                      return
-                    }
-                    if (
-                      navPending &&
-                      !isOptimisticNavTarget(detail.cta!.href, navPending)
-                    ) {
-                      event.preventDefault()
-                      return
-                    }
-                    startOptimisticNav({
-                      href: detail.cta!.href,
-                      title: detail.cta!.label,
-                    })
-                  }}
-                  aria-busy={
-                    isOptimisticNavTarget(detail.cta.href, navPending) ||
-                    undefined
-                  }
                   className={cn(
                     menuRootsyPresenceVoiceLinkClass,
                     "inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(228,242,248,0.14)] bg-[rgba(255,255,255,0.06)] px-4 py-2.5 no-underline",
                   )}
                 >
-                  {isOptimisticNavTarget(detail.cta.href, navPending) ? (
-                    <RootsSpinner
-                      size="sm"
-                      tone="dark"
-                      label={`Abriendo ${detail.cta.label}`}
-                    />
-                  ) : null}
                   Ir a {detail.cta.label}
                 </Link>
               ) : null}

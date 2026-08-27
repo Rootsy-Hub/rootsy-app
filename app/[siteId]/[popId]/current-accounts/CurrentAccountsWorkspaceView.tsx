@@ -111,7 +111,7 @@ import {
   nextWorkspaceTableSortState,
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "@/lib/pop-spa/navigation"
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 
 export function CurrentAccountsWorkspaceView() {

@@ -5,7 +5,7 @@ import { HomeHeaderAccountSheet } from "@/app/home/HomeHeaderAccountSheet"
 import { Avatar } from "@/components/Avatar"
 import { HomeUserPhotoDialog } from "@/app/home/HomeUserPhotoDialog"
 import { useAuth } from "@/context/AuthContextSupabase"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/lib/pop-spa/navigation"
 import { useState } from "react"
 
 type WorkspaceMobileAccountClusterProps = {

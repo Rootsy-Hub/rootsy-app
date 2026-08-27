@@ -72,7 +72,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useQueryClient } from "@tanstack/react-query"
 import { MessageSquare, Plus, Send, Trash2, Users } from "lucide-react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter } from "@/lib/pop-spa/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 export function ChatWorkspaceView() {

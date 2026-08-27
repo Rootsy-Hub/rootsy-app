@@ -22,7 +22,7 @@ import {
 } from "@/components/rootsy-banner/rootsBannerStyles"
 import { cn } from "@/lib/utils"
 import { rootsySpacePx } from "@/lib/design-system"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import type { CSSProperties, ReactNode } from "react"
 
 export type RootsBannerProps = {

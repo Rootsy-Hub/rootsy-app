@@ -1,6 +1,9 @@
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { AuthGate } from "@/components/auth/AuthGate"
 import { PopWorkspaceShell } from "@/components/pop-workspace/PopWorkspaceShell"
-import type { ReactNode } from "react"
+import { PopRouterProvider } from "@/lib/pop-spa/PopRouter"
+import "@/app/library/color/rootsyNaturePalette.css"
+import { Suspense, type ReactNode } from "react"
 
 export default function PopWorkspaceLayout({
   children,
@@ -8,8 +11,12 @@ export default function PopWorkspaceLayout({
   children: ReactNode
 }) {
   return (
-    <AuthGate>
-      <PopWorkspaceShell>{children}</PopWorkspaceShell>
-    </AuthGate>
+    <Suspense fallback={<PopModuleLoading />}>
+      <PopRouterProvider>
+        <AuthGate>
+          <PopWorkspaceShell>{children}</PopWorkspaceShell>
+        </AuthGate>
+      </PopRouterProvider>
+    </Suspense>
   )
 }

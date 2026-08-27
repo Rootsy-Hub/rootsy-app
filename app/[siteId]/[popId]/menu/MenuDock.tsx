@@ -20,10 +20,6 @@ import {
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
 import { shouldShowMenuApiReadyBadge } from "@/lib/menuApiReady"
-import {
-  isOptimisticNavTarget,
-  usePopOptimisticNav,
-} from "@/context/PopOptimisticNavContext"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { menuDockEditBadgeClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
@@ -31,7 +27,7 @@ import { menuRealmDividerClass } from "@/lib/menu/menuHoloStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
 import { Check, Minus, Pencil } from "lucide-react"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import { useEffect, useRef } from "react"
 
 type Props = {
@@ -106,8 +102,6 @@ function DockSlotItem({
   href: string | null
   onRemove: () => void
 }) {
-  const { pending, start: startOptimisticNav } = usePopOptimisticNav()
-  const isLeaving = isOptimisticNavTarget(href, pending)
   const {
     attributes,
     listeners,
@@ -187,33 +181,15 @@ function DockSlotItem({
                   if (skipClickAfterDrag.current) {
                     event.preventDefault()
                     skipClickAfterDrag.current = false
-                    return
                   }
-                  if (
-                    href === "/home" ||
-                    event.metaKey ||
-                    event.ctrlKey ||
-                    event.shiftKey ||
-                    event.altKey
-                  ) {
-                    return
-                  }
-                  if (pending && !isLeaving) {
-                    event.preventDefault()
-                    return
-                  }
-                  startOptimisticNav({ href, title: item.name })
                 }}
                 className="relative block transition-transform duration-200 hover:scale-110 active:scale-95"
                 aria-label={item.name}
-                aria-busy={isLeaving || undefined}
               >
                 <DockIconVisual
                   icon={item.icon}
                   sectionKey={item.sectionKey}
                   apiReady={shouldShowMenuApiReadyBadge(item.id)}
-                  busy={isLeaving}
-                  busyLabel={`Abriendo ${item.name}`}
                 />
               </Link>
             ) : (

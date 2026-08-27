@@ -81,7 +81,7 @@ import {
   ShoppingCart,
   Trash2,
 } from "lucide-react"
-import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useRouter, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,

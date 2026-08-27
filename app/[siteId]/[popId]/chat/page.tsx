@@ -1,5 +1,4 @@
-import { ChatWorkspaceView } from "@/app/[siteId]/[popId]/chat/ChatWorkspaceView"
-
+import { ChatWorkspaceView } from "./ChatWorkspaceView"
 export default function ChatPage() {
   return <ChatWorkspaceView />
 }

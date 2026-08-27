@@ -81,7 +81,7 @@ import type {
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { Download, Eye, Printer, Trash2, Truck } from "lucide-react"
-import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useRouter, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,

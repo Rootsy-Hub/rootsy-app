@@ -35,7 +35,7 @@ export function DataWorkspaceListTableFrame({
     <div
       className={cn(
         "relative inline-flex min-h-full min-w-full flex-col",
-        "bg-[var(--rootsy-bruma-50)]",
+        "bg-[var(--wt-surface-stripe)]",
         workspaceTableFrameSelectableScopeClass,
         className,
       )}
@@ -153,7 +153,7 @@ export function DataWorkspaceTableThumbnail({
           onOpenChange={setOpen}
           src={trimmed}
           title={alt}
-          frameClassName="rounded-lg bg-white"
+          frameClassName="rounded-lg bg-[var(--color-superficie)]"
           imageClassName="object-contain"
         />
       </>

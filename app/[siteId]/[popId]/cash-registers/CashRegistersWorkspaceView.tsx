@@ -58,7 +58,7 @@ import {
   type CashRegisterOpenTotals,
 } from "@/lib/rootsyApi/cashRegistersClient"
 import { Plus } from "lucide-react"
-import { useParams } from "next/navigation"
+import { useParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,

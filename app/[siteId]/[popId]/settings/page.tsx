@@ -1,5 +1,4 @@
-import { SettingsWorkspaceView } from "@/app/[siteId]/[popId]/settings/SettingsWorkspaceView"
-
+import { SettingsWorkspaceView } from "./SettingsWorkspaceView"
 export default function SettingsPage() {
   return <SettingsWorkspaceView />
 }

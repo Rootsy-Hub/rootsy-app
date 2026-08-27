@@ -18,7 +18,7 @@
   font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1.45;
-  color: var(--rootsy-bruma-700);
+  color: var(--color-texto-muted);
 }
 
 .data-workspace-table-infinite__phrase {
@@ -34,7 +34,7 @@
   content: attr(data-text);
   position: absolute;
   inset: 0;
-  color: var(--rootsy-bruma-500);
+  color: var(--rootsy-bruma-600);
   pointer-events: none;
   animation: data-workspace-table-infinite-lit 2.8s
     cubic-bezier(0.4, 0, 0.2, 1) infinite;
@@ -128,8 +128,8 @@
   padding: 2.25rem 1.5rem 1.35rem;
   background: linear-gradient(
     to top,
-    var(--rootsy-bruma-50) 0%,
-    color-mix(in srgb, var(--rootsy-bruma-50) 88%, transparent) 38%,
+    var(--color-fondo) 0%,
+    color-mix(in srgb, var(--color-fondo) 88%, transparent) 38%,
     transparent 100%
   );
 }
@@ -146,7 +146,7 @@
   font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1.45;
-  color: var(--rootsy-bruma-700);
+  color: var(--color-texto-muted);
   animation: data-workspace-table-infinite-end-enter 560ms
     cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -181,34 +181,16 @@
   }
 }
 
-/** Dock de páginas — suelo con cristal: un poco de transparencia + blur. */
+/** Dock de páginas — atmósfera sombra (superficie 600 · elevada 500). */
 .data-workspace-table-page-dock .menu-header-entity-body--floor {
   background: linear-gradient(
     180deg,
-    color-mix(
-        in srgb,
-        color-mix(in srgb, var(--rootsy-suelo-900) 56%, var(--rootsy-sombra-900))
-          72%,
-        transparent
-      )
-      0%,
-    color-mix(
-        in srgb,
-        color-mix(in srgb, var(--rootsy-suelo-900) 28%, var(--rootsy-sombra-950))
-          66%,
-        transparent
-      )
-      52%,
-    color-mix(
-        in srgb,
-        color-mix(in srgb, var(--rootsy-savia-900) 22%, var(--rootsy-sombra-950))
-          62%,
-        transparent
-      )
-      100%
+    var(--rootsy-sombra-600) 0%,
+    var(--rootsy-sombra-700) 100%
   );
-  backdrop-filter: blur(18px) saturate(1.16);
-  -webkit-backdrop-filter: blur(18px) saturate(1.16);
+  border-color: color-mix(in srgb, var(--rootsy-sombra-400) 55%, transparent);
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
 }
 
 .data-workspace-table-page-dock

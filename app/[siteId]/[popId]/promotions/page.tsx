@@ -1,5 +1,4 @@
-import { PromotionsWorkspaceView } from "@/app/[siteId]/[popId]/promotions/PromotionsWorkspaceView"
-
+import { PromotionsWorkspaceView } from "./PromotionsWorkspaceView"
 export default function PromotionsPage() {
   return <PromotionsWorkspaceView />
 }

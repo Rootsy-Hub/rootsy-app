@@ -8,7 +8,7 @@ import {
   menuLinkFromPopPath,
 } from "@/lib/menuPopAccess"
 import { popMenuHref, popModuleKeyFromPath } from "@/lib/popRoutes"
-import { useParams, usePathname, useRouter } from "next/navigation"
+import { useParams, usePathname, useRouter } from "@/lib/pop-spa/navigation"
 import { useEffect, useRef, type ReactNode } from "react"
 
 export function PopModuleAccessGate({ children }: { children: ReactNode }) {

@@ -68,7 +68,7 @@ import { useDataWorkspaceClientInfiniteSlice } from "@/hooks/useDataWorkspaceCli
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useParams } from "next/navigation"
+import { useParams } from "@/lib/pop-spa/navigation"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import type { DateRange } from "react-day-picker"
 

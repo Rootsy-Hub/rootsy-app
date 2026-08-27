@@ -50,7 +50,7 @@ import {
 } from "@/lib/rootsyApi/printersClient"
 import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
-import { useParams } from "next/navigation"
+import { useParams } from "@/lib/pop-spa/navigation"
 import { useCallback, useEffect, useState } from "react"
 
 export function PrintersWorkspaceView() {

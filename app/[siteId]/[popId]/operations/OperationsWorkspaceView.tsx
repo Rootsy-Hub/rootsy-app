@@ -72,7 +72,7 @@ import {
   UtensilsCrossed,
   Wallet,
 } from "lucide-react"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,

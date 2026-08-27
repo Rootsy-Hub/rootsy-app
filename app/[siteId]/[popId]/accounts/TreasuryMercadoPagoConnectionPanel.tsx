@@ -19,7 +19,7 @@ import {
   type PopMercadoPagoConnectionPublic,
 } from "@/lib/popMercadoPago"
 import { cn } from "@/lib/utils"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "@/lib/pop-spa/navigation"
 import { useEffect, useState } from "react"
 
 function connectionCopy(

@@ -10,7 +10,7 @@ import {
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
-import { useParams } from "next/navigation"
+import { useParams } from "@/lib/pop-spa/navigation"
 
 export function ComingSoonModuleView({
   title,

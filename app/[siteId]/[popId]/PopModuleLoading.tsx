@@ -13,10 +13,8 @@ import { usePopAccessData } from "@/hooks/usePopAccessData"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { buildPopRoleLabel } from "@/lib/popWorkspaceFromAccess"
-import { hasPopTableListSessionCache } from "@/lib/popTableListSessionCache"
 import { popModuleKeyFromPath } from "@/lib/popRoutes"
-import { useQueryClient } from "@tanstack/react-query"
-import { useParams, usePathname } from "next/navigation"
+import { useParams, usePathname } from "@/lib/pop-spa/navigation"
 
 const MODULE_TITLES: Record<string, string> = {
   clients: "Clientes",
@@ -61,12 +59,11 @@ export function PopModuleLoading({
   moduleKey: moduleKeyProp,
 }: {
   title?: string
-  /** Destino real al navegar optimista (pathname puede seguir en /menu). */
+  /** Destino mientras baja el chunk (p. ej. primer salto SPA, outlet aún null). */
   moduleKey?: string
 }) {
   const params = useParams()
   const pathname = usePathname()
-  const queryClient = useQueryClient()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
   const workspace = usePopWorkspaceOptional()
@@ -120,12 +117,6 @@ export function PopModuleLoading({
     )
   }
 
-  const hasTableCache = hasPopTableListSessionCache(
-    queryClient,
-    popId,
-    moduleKey,
-  )
-
   return (
     <DataWorkspaceTableListPage
       layout={{
@@ -140,7 +131,7 @@ export function PopModuleLoading({
       }}
     >
       <DataWorkspaceTableListNatureShell>
-        {hasTableCache ? null : isPopTableListModule(moduleKey) ? (
+        {isPopTableListModule(moduleKey) ? (
           <DataWorkspaceTableListLoadingBody moduleKey={moduleKey} title={title} />
         ) : (
           <div

@@ -61,7 +61,7 @@ import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { cn } from "@/lib/utils"
 import { KeyRound, Plus } from "lucide-react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter } from "@/lib/pop-spa/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 type PeopleFilter = "negocio" | "local" | "acceso" | "invitadas" | "baja"

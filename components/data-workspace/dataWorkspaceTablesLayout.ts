@@ -122,12 +122,12 @@ export const workspaceTableLayoutThumbnailSmClass = "size-10"
 export const workspaceTableLayoutThumbnailLgClass = "size-20"
 
 export const workspaceTableLayoutThumbnailClass = cn(
-  "relative shrink-0 overflow-hidden rounded-lg border border-[var(--rootsy-bruma-300)] bg-[var(--rootsy-white)]",
+  "relative shrink-0 overflow-hidden rounded-lg border border-[var(--color-borde)] bg-[var(--color-superficie)]",
 )
 
 export const workspaceTableLayoutThumbnailPlaceholderClass = cn(
   workspaceTableLayoutThumbnailClass,
-  "flex items-center justify-center bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-500)]",
+  "flex items-center justify-center bg-[var(--color-superficie)] text-[var(--color-texto-muted)]",
 )
 
 export const workspaceTableLayoutThumbnailInteractiveClass =
@@ -143,8 +143,8 @@ export const workspaceTableLayoutCellPrimaryTextClass =
 export const workspaceTableLayoutCellSecondaryTextClass =
   "truncate text-xs leading-4"
 
-/** Superficie listado layout — canvas bruma. */
-export const workspaceTableLayoutListSurfaceClass = "bg-[var(--rootsy-bruma-50)]"
+/** Superficie listado layout — canvas bruma (fondo 100). */
+export const workspaceTableLayoutListSurfaceClass = "bg-[var(--color-fondo)]"
 
 /** Footer scroll infinito — estado cargando. */
 export const workspaceTableLayoutListLoadingMoreClass = cn(
@@ -212,7 +212,7 @@ export const dataWorkspaceListFiltersGridFourClass =
 
 export const dataWorkspaceListFiltersPanelClass = cn(
   "flex min-h-12 min-w-0 items-center px-2.5 py-2",
-  "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-300)_42%,transparent)] last:border-b-0",
+  "border-b border-[var(--color-borde)] last:border-b-0",
   "md:h-full md:border-b-0 md:border-r md:px-4 md:py-0 md:last:border-r-0",
 )
 

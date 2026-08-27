@@ -103,7 +103,7 @@ import {
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,

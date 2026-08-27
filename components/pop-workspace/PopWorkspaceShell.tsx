@@ -1,23 +1,12 @@
 "use client"
 
-import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { PopModuleAccessGate } from "@/components/pop-workspace/PopModuleAccessGate"
-import {
-  PopOptimisticNavProvider,
-  navigationArrived,
-  usePopOptimisticNav,
-} from "@/context/PopOptimisticNavContext"
 import { PopRealtimeProvider } from "@/context/PopRealtimeContext"
 import { PopWorkspaceProvider } from "@/context/PopWorkspaceContext"
 import { usePopCatalogRealtime } from "@/hooks/usePopCatalogRealtime"
-import { hasPopTableListSessionCache } from "@/lib/popTableListSessionCache"
-import {
-  isPopMenuPathname,
-  popModuleKeyFromPath,
-  popPathFromHref,
-} from "@/lib/popRoutes"
-import { useQueryClient } from "@tanstack/react-query"
-import { useParams, usePathname } from "next/navigation"
+import { isPopMenuPathname } from "@/lib/popRoutes"
+import { PopSpaGate } from "@/lib/pop-spa/PopSpaGate"
+import { useParams, usePathname } from "@/lib/pop-spa/navigation"
 import type { ReactNode } from "react"
 
 export function PopWorkspaceShell({ children }: { children: ReactNode }) {
@@ -38,46 +27,12 @@ export function PopWorkspaceShell({ children }: { children: ReactNode }) {
     >
       <PopRealtimeProvider>
         <PopCatalogRealtimeBridge popId={popId} />
-        <PopOptimisticNavProvider>
-          <PopModuleAccessGate>
-            <PopOptimisticNavGate>{children}</PopOptimisticNavGate>
-          </PopModuleAccessGate>
-        </PopOptimisticNavProvider>
+        <PopModuleAccessGate>
+          <PopSpaGate>{children}</PopSpaGate>
+        </PopModuleAccessGate>
       </PopRealtimeProvider>
     </PopWorkspaceProvider>
   )
-}
-
-function PopOptimisticNavGate({ children }: { children: ReactNode }) {
-  const pathname = usePathname()
-  const params = useParams()
-  const queryClient = useQueryClient()
-  const popId = typeof params?.popId === "string" ? params.popId : ""
-  const { pending } = usePopOptimisticNav()
-  const showOptimistic =
-    pending != null && !navigationArrived(pathname, pending.href)
-
-  if (showOptimistic && pending) {
-    const targetPath = popPathFromHref(pending.href)
-    const moduleKey = popModuleKeyFromPath(targetPath)
-
-    if (
-      isPopMenuPathname(pathname) ||
-      moduleKey === "articles" ||
-      hasPopTableListSessionCache(queryClient, popId, moduleKey)
-    ) {
-      return children
-    }
-
-    return (
-      <PopModuleLoading
-        title={pending.title}
-        moduleKey={moduleKey}
-      />
-    )
-  }
-
-  return children
 }
 
 function PopCatalogRealtimeBridge({ popId }: { popId: string }) {

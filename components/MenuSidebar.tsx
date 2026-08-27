@@ -15,7 +15,7 @@ import {
 } from "@/components/statistics/statisticsWorkspaceStyles"
 import { cn } from "@/lib/utils"
 import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import type { ReactNode } from "react"
 
 export type MenuSidebarCollapseBelow = "lg" | "md" | false

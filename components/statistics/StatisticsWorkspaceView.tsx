@@ -40,7 +40,7 @@ import {
   mergeStatisticsSectionData,
 } from "@/lib/rootsyApi/statisticsClient"
 import { cn } from "@/lib/utils"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "@/lib/pop-spa/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { DateRange } from "react-day-picker"
 

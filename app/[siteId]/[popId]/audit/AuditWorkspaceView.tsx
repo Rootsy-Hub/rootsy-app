@@ -75,7 +75,7 @@ import { DATA_WORKSPACE_TABLE_PAGE_SIZE, nextDataWorkspaceTablePage } from "@/li
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { cn } from "@/lib/utils"
 import { useInfiniteQuery } from "@tanstack/react-query"
-import { useParams } from "next/navigation"
+import { useParams } from "@/lib/pop-spa/navigation"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import type { DateRange } from "react-day-picker"
 

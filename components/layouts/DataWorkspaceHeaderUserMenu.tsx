@@ -31,8 +31,8 @@ import { ApprovalCodeDialog } from "@/components/pop-workspace/ApprovalCodeDialo
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import { ImageIcon, KeyRound, LogOut, UserCog } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
+import { useRouter } from "@/lib/pop-spa/navigation"
 import { useState } from "react"
 
 export type DataWorkspaceHeaderUserMenuProps = {

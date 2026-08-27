@@ -17,7 +17,7 @@ import {
   operationsTableMoneyColumnClass,
 } from "@/app/[siteId]/[popId]/operations/operationsTableLayout"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import type { ReactNode } from "react"
 import { TableCell } from "@/components/ui/table"
 

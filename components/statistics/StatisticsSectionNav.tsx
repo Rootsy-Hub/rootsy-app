@@ -20,7 +20,7 @@ import {
   libraryNavItemLabelClass,
 } from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import { useEffect, useRef } from "react"
 
 export function StatisticsSectionNav({

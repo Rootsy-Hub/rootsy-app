@@ -76,7 +76,7 @@ export const dataWorkspaceEntityCardsGridColumnMaxClass = "max-w-[22rem]"
 
 /** Superficie del listado flush (tablas layout workspace). */
 export const workspaceTableSurfaceClass =
-  "bg-white dark:bg-white"
+  "bg-[var(--wt-surface)]"
 
 /** Marco del listado — la tabla ocupa el claro, de lado a lado hasta el suelo. */
 export const dataWorkspaceTablesSheetFrameClass =
@@ -401,7 +401,7 @@ export function workspaceTableNatureBodyRowClassNames(
   },
 ): string {
   const isEven = index % 2 === 0
-  /** Par con spec layout · tablas — even blanco · odd bruma-50. */
+  /** Par handbook — even superficie 50 · odd fondo 100. */
   const rowSurface = isEven
     ? "bg-[var(--wt-surface)]"
     : "bg-[var(--wt-surface-stripe)]"
@@ -453,7 +453,7 @@ export const listBulkToolbarBarClass =
 
 /** Contenedor único — filtros activos + selección antes de la tabla. */
 export const listTableChromeStackClass =
-  "shrink-0 overflow-hidden border-b border-[var(--wt-border)] bg-white"
+  "shrink-0 overflow-hidden border-b border-[var(--wt-border)] bg-[var(--wt-surface)]"
 
 /** Separador interno suave entre filas del stack. */
 export const listTableChromeStackFollowRowClass =
@@ -462,7 +462,7 @@ export const listTableChromeStackFollowRowClass =
 /** Superficie compartida — barras contexto h-11 (filtros activos · selección). */
 export const listTableChromeBarSurfaceClass = cn(
   listBulkToolbarBarClass,
-  "bg-white",
+  "bg-[var(--wt-surface)]",
 )
 
 /** Fila dentro del stack — sin fondo propio ni borde inferior. */
@@ -500,30 +500,30 @@ export const workspaceTableNatureStatusBadgeClass: Record<
   string
 > = {
   activo:
-    "border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] text-[var(--rootsy-savia-800)]",
+    "border-[var(--rootsy-savia-200)] bg-[var(--rootsy-savia-50)] text-[var(--rootsy-savia-800)]",
   inactivo:
-    "border-[var(--rootsy-bruma-300)] bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-700)]",
+    "border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-700)]",
   pendiente:
-    "border-[color-mix(in_srgb,#f59e0b_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#f59e0b_10%,white)] text-[#78350f]",
+    "border-[var(--rootsy-sol-200)] bg-[var(--rootsy-sol-50)] text-[var(--rootsy-sol-900)]",
   vencido:
-    "border-[color-mix(in_srgb,#ef4444_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#ef4444_10%,white)] text-[#dc2626]",
+    "border-[var(--rootsy-lava-200)] bg-[var(--rootsy-lava-50)] text-[var(--rootsy-lava-800)]",
   info:
-    "border-[color-mix(in_srgb,var(--rootsy-cielo-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-cielo-500)_10%,white)] text-[var(--rootsy-cielo-800)]",
+    "border-[var(--rootsy-cielo-200)] bg-[var(--rootsy-cielo-50)] text-[var(--rootsy-cielo-800)]",
 }
 
 /** Fila con señal de importancia — aviso / peligro (stock, vencido). */
 export const workspaceTableNatureBodyRowSignalWarningClass =
-  "!bg-[color-mix(in_srgb,#f59e0b_7%,var(--wt-surface))] shadow-[inset_3px_0_0_#f59e0b]"
+  "!bg-[color-mix(in_srgb,var(--rootsy-sol-50)_88%,var(--wt-surface))] shadow-[inset_3px_0_0_var(--rootsy-sol-500)]"
 
 export const workspaceTableNatureBodyRowSignalDangerClass =
-  "!bg-[color-mix(in_srgb,#ef4444_8%,var(--wt-surface))] shadow-[inset_3px_0_0_#ef4444]"
+  "!bg-[color-mix(in_srgb,var(--rootsy-lava-50)_88%,var(--wt-surface))] shadow-[inset_3px_0_0_var(--rootsy-lava-600)]"
 
 export const workspaceTableNatureStockOkClass =
   "text-[var(--rootsy-savia-800)]"
 
-export const workspaceTableNatureStockWarningClass = "text-[#78350f]"
+export const workspaceTableNatureStockWarningClass = "text-[var(--rootsy-sol-900)]"
 
-export const workspaceTableNatureStockDangerClass = "text-[#dc2626]"
+export const workspaceTableNatureStockDangerClass = "text-[var(--rootsy-lava-800)]"
 
 export const workspaceTableNatureSkeletonTone = {
   bar: "animate-pulse rounded-sm bg-[var(--wt-skeleton)]",
@@ -535,12 +535,12 @@ export const workspaceTableNatureSkeletonTone = {
 /** Checkbox — borde bruma, marca savia al marcar. Aísla estilos del shell Nature (.dark). */
 export const workspaceTableNatureCheckboxClass = cn(
   "relative z-[1] shrink-0 cursor-pointer select-auto pointer-events-auto",
-  "size-4 rounded border bg-white shadow-none",
+  "size-4 rounded border bg-[var(--wt-surface)] shadow-none",
   "[&_[data-slot=checkbox-indicator]_svg]:size-3.5",
   "border-[var(--rootsy-bruma-300)]",
-  "data-[state=checked]:border-[var(--rootsy-savia-600)] data-[state=checked]:bg-[var(--rootsy-savia-600)] data-[state=checked]:text-white",
-  "data-[state=indeterminate]:border-[color-mix(in_srgb,var(--rootsy-savia-600)_50%,var(--rootsy-bruma-300))] data-[state=indeterminate]:bg-[var(--rootsy-savia-100)] data-[state=indeterminate]:text-[var(--rootsy-savia-700)]",
-  "dark:bg-white dark:data-[state=checked]:border-[var(--rootsy-savia-600)] dark:data-[state=checked]:bg-[var(--rootsy-savia-600)] dark:data-[state=checked]:text-white",
+  "data-[state=checked]:border-[var(--rootsy-savia-600)] data-[state=checked]:bg-[var(--rootsy-savia-600)] data-[state=checked]:text-[var(--rootsy-savia-50)]",
+  "data-[state=indeterminate]:border-[color-mix(in_srgb,var(--rootsy-savia-600)_50%,var(--rootsy-bruma-200))] data-[state=indeterminate]:bg-[var(--rootsy-savia-100)] data-[state=indeterminate]:text-[var(--rootsy-savia-700)]",
+  "dark:bg-[var(--wt-surface)] dark:data-[state=checked]:border-[var(--rootsy-savia-600)] dark:data-[state=checked]:bg-[var(--rootsy-savia-600)] dark:data-[state=checked]:text-[var(--rootsy-savia-50)]",
 )
 
 /** @deprecated Usar workspaceTableNatureCheckboxClass */
@@ -663,12 +663,12 @@ export const listActiveFiltersCountBadgeClass = cn(
 
 /** Chip de filtro activo — pill bruma · botón × circular concéntrico. */
 export const listActiveFilterChipClass = cn(
-  "inline-flex h-7 max-w-full shrink-0 items-center gap-1 rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] py-0 pl-2.5 pr-1 text-xs text-[var(--rootsy-bruma-900)]",
+  "inline-flex h-7 max-w-full shrink-0 items-center gap-1 rounded-full border border-[var(--color-borde)] bg-[var(--color-superficie)] py-0 pl-2.5 pr-1 text-xs text-[var(--color-texto)]",
 )
 
 export const listActiveFilterChipDismissClass = cn(
-  "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[var(--rootsy-bruma-500)] transition-colors",
-  "hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
+  "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[var(--color-texto-muted)] transition-colors",
+  "hover:bg-[var(--color-fondo)] hover:text-[var(--color-texto)]",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,transparent)]",
 )
 
@@ -726,21 +726,21 @@ export const darkTableFooterTotalLabelClass = cn(
   nightForestMutedTextClass,
 )
 
-/** Pie compacto layout — tierra mojada (suelo, no bosque nocturno). */
+/** Pie compacto layout — atmósfera sombra (superficie 600). */
 export const earthTableFooterClass = cn(
-  "border-t border-[color-mix(in_srgb,var(--rootsy-suelo-600)_38%,transparent)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-suelo-800)_92%,var(--rootsy-suelo-900))]",
+  "border-t border-[color-mix(in_srgb,var(--rootsy-sombra-400)_45%,transparent)]",
+  "bg-[var(--rootsy-sombra-600)]",
 )
 
 export const earthTableFooterNavIconButtonClass = cn(
   "inline-flex size-10 shrink-0 items-center justify-center rounded-xl border outline-none transition-all",
-  "border-[color-mix(in_srgb,var(--rootsy-suelo-600)_50%,transparent)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-suelo-700)_72%,var(--rootsy-suelo-800))]",
-  "text-[var(--rootsy-suelo-400)]",
-  "hover:border-[color-mix(in_srgb,var(--rootsy-suelo-400)_55%,transparent)]",
-  "hover:bg-[color-mix(in_srgb,var(--rootsy-suelo-600)_55%,var(--rootsy-suelo-700))]",
-  "hover:text-[var(--rootsy-suelo-300)]",
-  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-suelo-400)_35%,transparent)] focus-visible:ring-offset-0",
+  "border-[color-mix(in_srgb,var(--rootsy-sombra-400)_50%,transparent)]",
+  "bg-[var(--rootsy-sombra-500)]",
+  "text-[var(--rootsy-sombra-50)]",
+  "hover:border-[var(--rootsy-sombra-400)]",
+  "hover:bg-[var(--rootsy-sombra-500)]",
+  "hover:text-[var(--rootsy-sombra-50)]",
+  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-sombra-300)_45%,transparent)] focus-visible:ring-offset-0",
   "disabled:pointer-events-none disabled:opacity-40",
   "[&_svg]:size-5",
 )
@@ -751,20 +751,20 @@ export const earthTableFooterCenterClass =
 /** Trigger compacto — tierra oscura (dropdown aparte en estilo light). */
 export const earthTableFooterSelectTriggerClass = cn(
   "!h-10 !min-h-10 !w-[4.25rem] min-w-[4.25rem] max-w-[4.25rem] justify-between gap-1 !rounded-md px-2 text-xs font-medium",
-  "!border-[color-mix(in_srgb,var(--rootsy-suelo-600)_50%,transparent)]",
-  "!bg-[color-mix(in_srgb,var(--rootsy-suelo-700)_72%,var(--rootsy-suelo-800))]",
-  "!text-[var(--rootsy-suelo-400)]",
+  "!border-[color-mix(in_srgb,var(--rootsy-sombra-400)_55%,transparent)]",
+  "!bg-[var(--rootsy-sombra-500)]",
+  "!text-[var(--rootsy-sombra-50)]",
   "shadow-none outline-none transition-all",
-  "hover:!border-[color-mix(in_srgb,var(--rootsy-suelo-400)_55%,transparent)]",
-  "hover:!bg-[color-mix(in_srgb,var(--rootsy-suelo-600)_55%,var(--rootsy-suelo-700))]",
-  "hover:!text-[var(--rootsy-suelo-300)]",
-  "data-[state=open]:!border-[color-mix(in_srgb,var(--rootsy-suelo-400)_55%,transparent)]",
-  "data-[state=closed]:focus:!border-[color-mix(in_srgb,var(--rootsy-suelo-600)_50%,transparent)] data-[state=closed]:focus:!ring-0",
-  "focus-visible:!ring-2 focus-visible:!ring-[color-mix(in_srgb,var(--rootsy-suelo-400)_35%,transparent)] focus-visible:!ring-offset-0",
+  "hover:!border-[var(--rootsy-sombra-400)]",
+  "hover:!bg-[var(--rootsy-sombra-500)]",
+  "hover:!text-[var(--rootsy-sombra-50)]",
+  "data-[state=open]:!border-[var(--rootsy-sombra-400)]",
+  "data-[state=closed]:focus:!border-[color-mix(in_srgb,var(--rootsy-sombra-400)_55%,transparent)] data-[state=closed]:focus:!ring-0",
+  "focus-visible:!ring-2 focus-visible:!ring-[color-mix(in_srgb,var(--rootsy-sombra-300)_45%,transparent)] focus-visible:!ring-offset-0",
   "disabled:pointer-events-none disabled:opacity-40",
   "[&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:truncate [&_[data-slot=select-value]]:text-left",
-  "[&_[data-slot=select-value][data-placeholder]]:!text-[var(--rootsy-suelo-400)]",
-  "[&_svg]:!size-3.5 [&_svg]:!text-[var(--rootsy-suelo-400)]",
+  "[&_[data-slot=select-value][data-placeholder]]:!text-[var(--rootsy-sombra-300)]",
+  "[&_svg]:!size-3.5 [&_svg]:!text-[var(--rootsy-sombra-300)]",
 )
 
 export const earthTableFooterSelectItemClass = "py-1.5 text-xs"
@@ -772,10 +772,10 @@ export const earthTableFooterSelectItemClass = "py-1.5 text-xs"
 export const earthTableFooterTotalLabelClass = cn(
   workspaceTableLayoutMetaLabelClass,
   "font-bold",
-  "text-[var(--rootsy-suelo-400)]",
+  "text-[var(--rootsy-sombra-300)]",
 )
 
-export const earthTableFooterDotClass = "text-[var(--rootsy-suelo-600)]"
+export const earthTableFooterDotClass = "text-[var(--rootsy-sombra-400)]"
 
 /** @deprecated Usar darkTableFooterTotalLabelClass */
 export const darkTableFooterCenterMutedClass = darkTableFooterTotalLabelClass

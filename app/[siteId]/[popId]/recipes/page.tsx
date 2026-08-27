@@ -1,5 +1,4 @@
-import { RecipesWorkspaceView } from "@/app/[siteId]/[popId]/recipes/RecipesWorkspaceView"
-
+import { RecipesWorkspaceView } from "./RecipesWorkspaceView"
 export default function RecipesPage() {
   return <RecipesWorkspaceView />
 }

@@ -42,7 +42,7 @@ import {
 } from "lucide-react"
 import { formatArcaPtoVta } from "@/lib/arcaPtoVta"
 import { formatLocaleDateTime } from "@/lib/popTimezone"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import { cashRegisterEntityEyebrowLabel } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
 
 const fmt = new Intl.NumberFormat("es-AR", {

@@ -16,7 +16,7 @@ import {
   STATISTICS_SECTION_QUERY_PARAM,
   statisticsSectionHref,
 } from "@/lib/statisticsUrl"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams } from "@/lib/pop-spa/navigation"
 
 const EMPTY_FILTERS: StatisticsFilters = {
   channel: null,

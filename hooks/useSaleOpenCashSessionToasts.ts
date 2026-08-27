@@ -4,7 +4,7 @@ import { showRootsyMensajeToast } from "@/components/rootsy-mensaje"
 import { ROOTSY_MENSAJE_DEFAULT_PORTRAIT } from "@/components/rootsy-mensaje/rootsyMensaje"
 import { useOpenCashSession } from "@/hooks/useOpenCashSession"
 import { popScopedHref } from "@/lib/popRoutes"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/lib/pop-spa/navigation"
 import { useEffect, useRef } from "react"
 
 const DAY_MS = 24 * 60 * 60 * 1000

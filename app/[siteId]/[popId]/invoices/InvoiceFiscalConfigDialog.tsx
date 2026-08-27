@@ -56,7 +56,7 @@ import {
   Loader2,
   Plus,
 } from "lucide-react"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import { useEffect, useId, useMemo, useState } from "react"
 
 function formatUploadedLabel(iso: string | null | undefined): string | null {

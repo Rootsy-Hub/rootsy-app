@@ -20,7 +20,7 @@ import type {
 import { useRootsButtonInteraction } from "@/components/rootsy-button/useRootsButtonInteraction"
 import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import {
   Children,
   cloneElement,

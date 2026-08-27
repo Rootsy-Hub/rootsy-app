@@ -79,7 +79,7 @@ export function DataWorkspaceTableInfinitePageDock({
                 <strong className={layoutsTablesFooterCountStrongClass}>
                   {listFetching ? "…" : loadedCount.toLocaleString("es-AR")}
                 </strong>
-                <span className="mx-1 text-[var(--rootsy-suelo-400)]">/</span>
+                <span className="mx-1 text-[var(--rootsy-sombra-400)]">/</span>
                 {listFetching ? "…" : totalCount.toLocaleString("es-AR")}
               </>
             )}

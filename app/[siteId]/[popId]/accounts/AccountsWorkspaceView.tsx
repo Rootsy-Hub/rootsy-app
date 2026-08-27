@@ -51,7 +51,7 @@ import {
 } from "@/lib/rootsyApi/treasuryClient"
 import { type TreasuryAccountMenuActionId } from "@/lib/treasuryAccountMenuActions"
 import { Plus } from "lucide-react"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,

@@ -11,7 +11,7 @@ import {
 } from "@/lib/eter/eterChrome"
 import { iconButtonSize, type IconButtonSizeId } from "@/app/library/ui-components/buttonsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import {
   Children,
   cloneElement,

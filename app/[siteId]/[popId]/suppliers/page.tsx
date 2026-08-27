@@ -1,5 +1,4 @@
-import { SuppliersWorkspaceView } from "@/app/[siteId]/[popId]/suppliers/SuppliersWorkspaceView"
-
+import { SuppliersWorkspaceView } from "./SuppliersWorkspaceView"
 export default function SuppliersPage() {
   return <SuppliersWorkspaceView />
 }

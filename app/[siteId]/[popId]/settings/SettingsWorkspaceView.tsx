@@ -50,7 +50,7 @@ import {
   updatePopSettingsImages,
 } from "@/lib/rootsyApi/settingsClient"
 import { useQueryClient } from "@tanstack/react-query"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,

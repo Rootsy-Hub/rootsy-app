@@ -1,5 +1,4 @@
-import { CashRegistersWorkspaceView } from "@/app/[siteId]/[popId]/cash-registers/CashRegistersWorkspaceView"
-
+import { CashRegistersWorkspaceView } from "./CashRegistersWorkspaceView"
 export default function CashRegistersPage() {
   return <CashRegistersWorkspaceView />
 }

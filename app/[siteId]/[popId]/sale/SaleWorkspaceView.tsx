@@ -91,7 +91,7 @@ import type {
 } from "@/lib/operationPartyPicker"
 import { buildOperationPartyManualSelection } from "@/lib/operationPartyPicker"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,

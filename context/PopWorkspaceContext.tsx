@@ -11,7 +11,7 @@ import { popAccessQueryKey, userProfileQueryKey } from "@/lib/queryKeys"
 import { USER_PROFILE_UPDATED_EVENT } from "@/lib/userProfileEvents"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/lib/pop-spa/navigation"
 import {
   createContext,
   useCallback,

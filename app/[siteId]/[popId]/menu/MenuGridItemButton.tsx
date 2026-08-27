@@ -27,16 +27,11 @@ import {
 } from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
 import { MenuApiReadyBadge } from "@/app/[siteId]/[popId]/menu/MenuApiReadyBadge"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
-import {
-  isOptimisticNavTarget,
-  usePopOptimisticNav,
-} from "@/context/PopOptimisticNavContext"
-import { RootsSpinner } from "@/components/rootsy-spinner"
 import { shouldShowMenuApiReadyBadge } from "@/lib/menuApiReady"
 import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 
 function MenuPlanetTileLabel({
@@ -99,8 +94,6 @@ export function MenuGridItemButton({
   href,
   onActivate,
 }: Props) {
-  const { pending, start: startOptimisticNav } = usePopOptimisticNav()
-  const isLeaving = isOptimisticNavTarget(href, pending)
   const {
     editing,
     canDragMenuItem,
@@ -139,10 +132,7 @@ export function MenuGridItemButton({
   const shellVariant = showDockPlacedStyle || isDragGhost ? "placed" : "default"
 
   const Icon = item.icon
-  const tileClassName = cn(
-    menuPlanetTileClass,
-    !editing && menuHoloTileMotionClass,
-  )
+  const tileClassName = menuPlanetTileClass
 
   const tileInner = (
     <>
@@ -159,26 +149,28 @@ export function MenuGridItemButton({
             menuHoloIconShellForSection(sectionKey, shellVariant),
             !isDragGhost &&
               menuHoloRealmWorldRimClass(sectionKey, showDockPlacedStyle),
-            !showDockPlacedStyle &&
+            editing && draggable && "animate-dock-wiggle",
+            !editing &&
+              !showDockPlacedStyle &&
               !isDragGhost &&
-              cn(menuHoloFloatLiftClass, menuHoloIconHoverForSection(sectionKey)),
+              cn(
+                menuHoloFloatLiftClass,
+                menuHoloTileMotionClass,
+                menuHoloIconHoverForSection(sectionKey),
+              ),
           )}
+          style={
+            editing && draggable
+              ? { animationDelay: `${(item.name.length % 5) * 45}ms` }
+              : undefined
+          }
         >
           {!isDragGhost ? (
             <MenuIconChrome sectionKey={sectionKey} alive={isAlive} />
           ) : null}
-          {isLeaving ? (
-            <RootsSpinner
-              size="default"
-              tone="dark"
-              className={menuPlanetIconGlyphClass}
-              label={`Abriendo ${item.name}`}
-            />
-          ) : (
-            <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
-          )}
+          <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
         </div>
-        {!isDragGhost && !isLeaving && shouldShowMenuApiReadyBadge(item.link) ? (
+        {!isDragGhost && shouldShowMenuApiReadyBadge(item.link) ? (
           <MenuApiReadyBadge />
         ) : null}
       </div>
@@ -203,12 +195,6 @@ export function MenuGridItemButton({
       ref={setNodeRef}
       {...(draggable ? listeners : {})}
       {...(draggable ? attributes : {})}
-      style={{
-        animationDelay:
-          editing && draggable
-            ? `${(item.name.length % 5) * 45}ms`
-            : undefined,
-      }}
       onContextMenu={(event) => {
         if (draggable) event.preventDefault()
       }}
@@ -216,7 +202,6 @@ export function MenuGridItemButton({
         "justify-self-center transition-[opacity,transform] duration-200",
         draggable && "select-none [-webkit-touch-callout:none]",
         (editing || isDragging) && draggable && "touch-none",
-        editing && draggable && "animate-dock-wiggle",
         showDockPlacedStyle && "scale-[0.985]",
         isDragGhost && "scale-[0.96] opacity-55",
         editing && draggable && "cursor-grab active:cursor-grabbing",
@@ -233,23 +218,8 @@ export function MenuGridItemButton({
             if (skipClickAfterDrag.current) {
               event.preventDefault()
               skipClickAfterDrag.current = false
-              return
             }
-            if (
-              event.metaKey ||
-              event.ctrlKey ||
-              event.shiftKey ||
-              event.altKey
-            ) {
-              return
-            }
-            if (pending && !isLeaving) {
-              event.preventDefault()
-              return
-            }
-            startOptimisticNav({ href, title: item.name })
           }}
-          aria-busy={isLeaving || undefined}
           className={cn(tileClassName, menuHoloFocusRingForSection(sectionKey))}
         >
           {tileInner}
