@@ -17,7 +17,7 @@
 }
 
 .handbook-rail {
-  --color-fondo: var(--rootsy-sombra-700);
+  --color-fondo: var(--rootsy-sombra-950);
   --color-superficie: var(--rootsy-sombra-600);
   --color-elevada: var(--rootsy-sombra-500);
   --color-borde: var(--rootsy-sombra-400);
@@ -43,7 +43,7 @@
 }
 
 .handbook-rail .library-nav-item:hover {
-  background-color: color-mix(in srgb, var(--color-texto) 6%, transparent);
+  background-color: var(--rootsy-sombra-900);
 }
 
 .handbook-rail .library-nav-item:focus-visible {
@@ -54,12 +54,12 @@
 .handbook-rail .library-nav-item--active {
   font-weight: 600;
   color: var(--color-texto);
-  background-color: color-mix(in srgb, var(--color-foco) 16%, var(--color-fondo));
-  border-color: color-mix(in srgb, var(--color-foco) 28%, var(--color-fondo));
+  background-color: var(--rootsy-sombra-900);
+  border-color: var(--color-foco);
 }
 
 .handbook-rail .library-nav-item--active:hover {
-  background-color: color-mix(in srgb, var(--color-foco) 22%, var(--color-fondo));
+  background-color: var(--rootsy-sombra-800);
 }
 
 .handbook-rail .library-nav-item--active .library-nav-item-icon {

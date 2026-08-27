@@ -12,8 +12,6 @@ import {
   HANDBOOK_APPLICATION_ATMOSPHERES,
   HANDBOOK_ATMOSPHERE_CONTEXTS,
   HANDBOOK_ATMOSPHERE_TOKENS,
-  HANDBOOK_BRUMA_NOCHE,
-  HANDBOOK_SOTOBOSQUE,
   HANDBOOK_WORLD_ATMOSPHERES,
   worldAtmosphereHex,
   HANDBOOK_CONTRAST_FAIL,
@@ -21,11 +19,13 @@ import {
   HANDBOOK_CONTRAST_RULES,
   HANDBOOK_FUNCTIONAL_APPLICATION_RULES,
   HANDBOOK_FUNCTIONAL_RECIPES,
+  functionalInkHex,
+  functionalRecipeHex,
   HANDBOOK_FUNCTIONAL_TOKENS,
   HANDBOOK_STATUS_TINT_RULE,
+  type HandbookAtmosphereId,
   type HandbookContrastLevel,
   type HandbookContrastPair,
-  type HandbookFunctionalRecipe,
 } from "@/app/handbook/color/handbookColorSpec"
 import {
   libraryDocBodyClass,
@@ -47,6 +47,16 @@ import {
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
+import {
+  AlertOctagon,
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  ChevronRight,
+  Info,
+  Leaf,
+  X,
+} from "lucide-react"
 
 function identityHex(family: HandbookColorFamily) {
   return family.steps.find((step) => step.identity)?.hex ?? family.steps[5]?.hex
@@ -63,7 +73,7 @@ function FamilyOverviewStrip({ families }: { families: HandbookColorFamily[] }) 
       {families.map((family) => (
         <a
           key={family.id}
-          href={`#${family.id}`}
+          href={`#${family.id === "bruma" ? "luz-filtrada" : family.id}`}
           className={cn(
             "overflow-hidden rounded-2xl border no-underline transition-opacity hover:opacity-90",
             libraryDocBorderClass,
@@ -99,7 +109,10 @@ function FamilyOverviewStrip({ families }: { families: HandbookColorFamily[] }) 
 
 function FamilyRamp({ family }: { family: HandbookColorFamily }) {
   return (
-    <section id={family.id} className="mt-8 scroll-mt-24 space-y-4">
+    <section
+      id={family.id === "bruma" ? "luz-filtrada" : family.id}
+      className="mt-8 scroll-mt-24 space-y-4"
+    >
       <div className="max-w-3xl space-y-2">
         <h3 className={cn(libraryDocSectionTitleClass, "text-sm")}>{family.name}</h3>
         <p className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}>
@@ -183,87 +196,6 @@ function FamilyRamp({ family }: { family: HandbookColorFamily }) {
   )
 }
 
-function SotobosqueCallout() {
-  const layers = [
-    { id: "fondo", label: "Fondo", mix: "sombra 950 + savia 400 · 7%" },
-    { id: "superficie", label: "Superficie", mix: "sombra 800 + savia 400 · 10%" },
-    { id: "elevada", label: "Elevada", mix: "sombra 600 + savia 400 · 14%" },
-  ] as const
-
-  return (
-    <section id="sotobosque" className="mt-8 scroll-mt-24 space-y-4">
-      <div className="max-w-3xl space-y-2">
-        <h3 className={cn(libraryDocSectionTitleClass, "text-sm")}>Sotobosque</h3>
-        <p className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}>
-          El piso del bosque
-        </p>
-        <p className={libraryDocBodyClass}>
-          Oscuro como sombra, con la savia 400 prendida. Es el aire bajo el dosel cuando
-          la vida se enciende: no apaga el carbón, lo tiñe.
-        </p>
-        <p className={libraryDocPageDescriptionClass}>
-          No es una rampa nueva. Compone sombra + savia 400. Clase .rootsy-theme-sotobosque.
-          No reemplaza sombra (el dosel que contiene) ni éter (el cielo).
-        </p>
-      </div>
-
-      <div
-        className="overflow-hidden rounded-2xl p-4"
-        style={{ background: HANDBOOK_SOTOBOSQUE.fondo }}
-      >
-        <div
-          className="rounded-xl p-3"
-          style={{ background: HANDBOOK_SOTOBOSQUE.superficie }}
-        >
-          <div
-            className="flex items-center gap-4 rounded-lg px-4 py-4"
-            style={{ background: HANDBOOK_SOTOBOSQUE.elevada }}
-          >
-            <span
-              className="size-10 shrink-0 rounded-full"
-              style={{ background: "var(--rootsy-savia-400)" }}
-            />
-            <div className="min-w-0">
-              <p
-                className="font-canopy text-sm font-semibold"
-                style={{ color: HANDBOOK_SOTOBOSQUE.texto }}
-              >
-                Identidad: savia 400
-              </p>
-              <p
-                className="mt-1 font-stream text-xs"
-                style={{ color: HANDBOOK_SOTOBOSQUE["texto-muted"] }}
-              >
-                El verde vive en el aire, no solo en el CTA.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ul className="max-w-3xl space-y-1.5">
-        {layers.map((layer) => (
-          <li key={layer.id} className="flex items-center gap-3">
-            <span
-              className="size-5 shrink-0 rounded-md border"
-              style={{
-                background: HANDBOOK_SOTOBOSQUE[layer.id],
-                borderColor: "var(--color-borde)",
-              }}
-            />
-            <span className={cn("font-canopy text-sm font-semibold", libraryDocPrimaryTextClass)}>
-              {layer.label}
-            </span>
-            <span className={cn("font-canopy text-xs", libraryDocMutedTextClass)}>
-              {layer.mix}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )
-}
-
 function BlancoCallout() {
   return (
     <section id="blanco" className="mt-8 scroll-mt-24 space-y-3">
@@ -327,205 +259,374 @@ function FunctionalChip({
   )
 }
 
-function functionalRecipeHex(
-  recipe: HandbookFunctionalRecipe,
-  step: "solidFill" | "solidText" | "tintFill" | "tintBorder" | "tintText" | "signal",
-) {
-  return handbookColorHex(recipe.familyId, recipe[step])
-}
-
-const FUNCTIONAL_SIGNAL_RECIPES = HANDBOOK_FUNCTIONAL_RECIPES.filter(
-  (recipe, index, list) => list.findIndex((item) => item.familyId === recipe.familyId) === index,
-)
-
 function FunctionalApplicationPreview() {
+  const sotobosque = HANDBOOK_APPLICATION_ATMOSPHERES.filter((item) => item.id === "sombra" || item.id === "bruma")
+    .sort((a, b) => (a.id === "sombra" ? -1 : b.id === "sombra" ? 1 : 0))
+  const accion = HANDBOOK_FUNCTIONAL_RECIPES.find((recipe) => recipe.id === "accion")!
+  const accents = [
+    { id: "informacion", label: "Información", familyId: "cielo-de-dia", Icon: Info },
+    { id: "atencion", label: "Atención", familyId: "sol", Icon: AlertTriangle },
+    { id: "critico", label: "Crítico", familyId: "lava", Icon: AlertOctagon },
+  ] as const
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {HANDBOOK_APPLICATION_ATMOSPHERES.map((atmosphere) => (
-        <div
-          key={atmosphere.id}
-          className="overflow-hidden rounded-2xl p-4"
-          style={{ backgroundColor: applicationAtmosphereHex("fondo", atmosphere.id) }}
-        >
-          <p
-            className="font-canopy text-[11px] font-semibold uppercase tracking-[0.12em]"
-            style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
-          >
-            {atmosphere.name}
-          </p>
-          <p
-            className="mt-1 font-canopy text-[11px]"
-            style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
-          >
-            {atmosphere.sample}
-          </p>
+    <div className="grid gap-3 lg:grid-cols-2">
+      {sotobosque.map((atmosphere) => {
+        const ink = functionalInkHex("savia", atmosphere.dark)
+        const disabledFill = atmosphere.dark
+          ? handbookColorHex("sombra", "800")
+          : handbookColorHex("bruma", "200")
+        const disabledText = atmosphere.dark
+          ? handbookColorHex("sombra", "400")
+          : handbookColorHex("bruma", "500")
+        const chipFill = atmosphere.dark
+          ? handbookColorHex("sombra", "800")
+          : functionalRecipeHex(accion, "tintFill")
+        const chipInk = atmosphere.dark ? ink : functionalRecipeHex(accion, "tintText")
+        const chipBorder = atmosphere.dark ? ink : functionalRecipeHex(accion, "tintBorder")
+
+        return (
           <div
-            className="mt-3 rounded-xl p-3"
-            style={{ backgroundColor: applicationAtmosphereHex("superficie", atmosphere.id) }}
+            key={atmosphere.id}
+            className="space-y-5 overflow-hidden rounded-2xl p-5"
+            style={{
+              backgroundColor: applicationAtmosphereHex("fondo", atmosphere.id),
+              boxShadow: `inset 0 0 0 1px ${applicationAtmosphereHex("borde", atmosphere.id)}`,
+            }}
           >
-            <div
-              className="space-y-3 rounded-lg p-3"
-              style={{ backgroundColor: applicationAtmosphereHex("elevada", atmosphere.id) }}
+            <p
+              className="font-canopy text-[11px] font-semibold uppercase tracking-[0.12em]"
+              style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
             >
+              {atmosphere.name}
+            </p>
+
+            <div>
+              <p
+                className="mb-2 font-canopy text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
+              >
+                Primario
+              </p>
+              <span
+                className="inline-flex rounded-full px-5 py-2 font-canopy text-sm font-semibold"
+                style={{
+                  backgroundColor: functionalRecipeHex(accion, "solidFill"),
+                  color: functionalRecipeHex(accion, "solidText"),
+                }}
+              >
+                Acción
+              </span>
+            </div>
+
+            <div>
+              <p
+                className="mb-2 font-canopy text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
+              >
+                Secundario
+              </p>
+              <span
+                className="inline-flex rounded-full px-5 py-2 font-canopy text-sm font-semibold"
+                style={{
+                  color: ink,
+                  boxShadow: `inset 0 0 0 1.5px ${ink}`,
+                }}
+              >
+                Secundario
+              </span>
+            </div>
+
+            <div>
+              <p
+                className="mb-2 font-canopy text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
+              >
+                Enlace
+              </p>
+              <span
+                className="inline-flex items-center gap-1 font-canopy text-sm font-semibold"
+                style={{ color: ink }}
+              >
+                Ver detalle
+                <ArrowRight className="size-3.5" strokeWidth={2} />
+              </span>
+            </div>
+
+            <div>
+              <p
+                className="mb-2 font-canopy text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
+              >
+                Chip seleccionado
+              </p>
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-canopy text-[11px] font-semibold"
+                style={{
+                  backgroundColor: chipFill,
+                  color: chipInk,
+                  boxShadow: `inset 0 0 0 1px ${chipBorder}`,
+                }}
+              >
+                <span
+                  className="flex size-4 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: ink,
+                    color: atmosphere.dark
+                      ? functionalRecipeHex(accion, "solidText")
+                      : HANDBOOK_BLANCO,
+                  }}
+                >
+                  <Check className="size-2.5" strokeWidth={2.5} />
+                </span>
+                Seleccionado
+                <X className="size-3 opacity-70" strokeWidth={2} />
+              </span>
+            </div>
+
+            <div>
+              <p
+                className="mb-2 font-canopy text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
+              >
+                Desactivado
+              </p>
+              <span
+                className="inline-flex rounded-full px-5 py-2 font-canopy text-sm font-semibold"
+                style={{ backgroundColor: disabledFill, color: disabledText }}
+              >
+                Desactivado
+              </span>
+            </div>
+
+            <div>
+              <p
+                className="mb-2 font-canopy text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
+              >
+                Acentos funcionales
+              </p>
               <div className="flex flex-wrap gap-2">
-                {HANDBOOK_FUNCTIONAL_RECIPES.filter((recipe) => recipe.hasSolid).map((recipe) => (
-                  <FunctionalChip
-                    key={`${atmosphere.id}-${recipe.id}-solid`}
-                    fill={functionalRecipeHex(recipe, "solidFill")}
-                    text={functionalRecipeHex(recipe, "solidText")}
-                  >
-                    {recipe.sampleSolid}
-                  </FunctionalChip>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {HANDBOOK_FUNCTIONAL_RECIPES.filter((recipe) => recipe.hasTint).map((recipe) => (
-                  <FunctionalChip
-                    key={`${atmosphere.id}-${recipe.id}-tint`}
-                    fill={functionalRecipeHex(recipe, "tintFill")}
-                    text={functionalRecipeHex(recipe, "tintText")}
-                    border={functionalRecipeHex(recipe, "tintBorder")}
-                  >
-                    {recipe.sampleTint}
-                  </FunctionalChip>
-                ))}
-              </div>
-              {atmosphere.dark ? (
-                <div className="flex flex-wrap gap-3">
-                  {FUNCTIONAL_SIGNAL_RECIPES.map((recipe) => (
+                {accents.map((accent) => {
+                  const accentInk = functionalInkHex(accent.familyId, atmosphere.dark)
+                  return (
                     <span
-                      key={`${atmosphere.id}-${recipe.id}-signal`}
-                      className="inline-flex items-center gap-1.5 font-canopy text-[11px] font-semibold"
-                      style={{ color: functionalRecipeHex(recipe, "signal") }}
+                      key={accent.id}
+                      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-canopy text-[11px] font-semibold"
+                      style={{
+                        color: accentInk,
+                        boxShadow: `inset 0 0 0 1px ${accentInk}`,
+                      }}
                     >
-                      <span
-                        className="size-1.5 rounded-full"
-                        style={{ backgroundColor: functionalRecipeHex(recipe, "signal") }}
-                      />
-                      {recipe.familyName} 400
+                      <accent.Icon className="size-3" strokeWidth={2} />
+                      {accent.label}
                     </span>
-                  ))}
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p
+                className="mb-2 font-canopy text-[10px] font-semibold uppercase tracking-[0.14em]"
+                style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
+              >
+                Superficie / tarjeta
+              </p>
+              <div
+                className="flex items-center gap-3 rounded-2xl px-3 py-3"
+                style={{
+                  backgroundColor: atmosphere.dark
+                    ? handbookColorHex("sombra", "900")
+                    : applicationAtmosphereHex("elevada", atmosphere.id),
+                  boxShadow: `inset 0 0 0 1px ${
+                    atmosphere.dark
+                      ? handbookColorHex("sombra", "800")
+                      : applicationAtmosphereHex("borde", atmosphere.id)
+                  }`,
+                }}
+              >
+                <span
+                  className="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                  style={{
+                    backgroundColor: atmosphere.dark
+                      ? handbookColorHex("sombra", "950")
+                      : functionalRecipeHex(accion, "tintFill"),
+                    color: ink,
+                    boxShadow: `inset 0 0 0 1.5px ${ink}`,
+                  }}
+                >
+                  <Leaf className="size-4" strokeWidth={1.75} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="font-canopy text-sm font-semibold"
+                    style={{ color: applicationAtmosphereHex("texto", atmosphere.id) }}
+                  >
+                    Título de la tarjeta
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span
+                      className="rounded-full px-2 py-0.5 font-canopy text-[10px] font-semibold"
+                      style={{
+                        backgroundColor: atmosphere.dark
+                          ? handbookColorHex("sombra", "950")
+                          : functionalRecipeHex(accion, "tintFill"),
+                        color: chipInk,
+                      }}
+                    >
+                      Etiqueta
+                    </span>
+                    <span
+                      className="font-stream text-[11px]"
+                      style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
+                    >
+                      · Dato secundario
+                    </span>
+                  </div>
                 </div>
-              ) : null}
+                <ChevronRight
+                  className="size-4 shrink-0"
+                  strokeWidth={1.75}
+                  style={{ color: applicationAtmosphereHex("texto", atmosphere.id) }}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
 
 function FunctionalRecipeLegend() {
   const accion = HANDBOOK_FUNCTIONAL_RECIPES.find((recipe) => recipe.id === "accion")!
-  const exito = HANDBOOK_FUNCTIONAL_RECIPES.find((recipe) => recipe.id === "exito")!
-  const atencion = HANDBOOK_FUNCTIONAL_RECIPES.find((recipe) => recipe.id === "atencion")!
+  const informacion = HANDBOOK_FUNCTIONAL_RECIPES.find((recipe) => recipe.id === "informacion")!
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       <div className={cn("rounded-xl border p-3", libraryDocBorderClass, libraryDocSurfaceMutedClass)}>
-        <p className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}>Sólido</p>
+        <p className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}>Vivo</p>
         <div className="mt-2">
           <FunctionalChip
             fill={functionalRecipeHex(accion, "solidFill")}
             text={functionalRecipeHex(accion, "solidText")}
           >
-            {accion.sampleSolid}
+            Acción
           </FunctionalChip>
         </div>
         <p className={cn(libraryDocPageDescriptionClass, "mt-2")}>
-          Identidad + texto 50. CTA chico sube a savia 700.
+          500 + 950 de la misma familia. El mismo relleno en las dos luces.
         </p>
       </div>
       <div className={cn("rounded-xl border p-3", libraryDocBorderClass, libraryDocSurfaceMutedClass)}>
-        <p className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}>Tint</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <FunctionalChip
-            fill={functionalRecipeHex(exito, "tintFill")}
-            text={functionalRecipeHex(exito, "tintText")}
-            border={functionalRecipeHex(exito, "tintBorder")}
+        <p className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}>Profundo</p>
+        <div className="mt-2">
+          <span
+            className="inline-flex rounded-full px-3 py-1 font-canopy text-[11px] font-semibold"
+            style={{
+              color: functionalRecipeHex(accion, "tintText"),
+              boxShadow: `inset 0 0 0 1px ${functionalRecipeHex(accion, "tintText")}`,
+            }}
           >
-            {exito.sampleTint}
-          </FunctionalChip>
-          <FunctionalChip
-            fill={functionalRecipeHex(atencion, "tintFill")}
-            text={functionalRecipeHex(atencion, "tintText")}
-            border={functionalRecipeHex(atencion, "tintBorder")}
-          >
-            {atencion.sampleTint}
-          </FunctionalChip>
+            Secundario
+          </span>
         </div>
         <p className={cn(libraryDocPageDescriptionClass, "mt-2")}>
-          Isla 50, borde 200, texto 800. Sol usa 900.
+          700. Texto, links y contorno sobre Luz filtrada.
         </p>
       </div>
       <div
         className="rounded-xl p-3"
-        style={{ backgroundColor: applicationAtmosphereHex("elevada", "eter") }}
+        style={{ backgroundColor: applicationAtmosphereHex("fondo", "sombra") }}
       >
         <p
           className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}
-          style={{ color: applicationAtmosphereHex("texto-muted", "eter") }}
+          style={{ color: applicationAtmosphereHex("texto-muted", "sombra") }}
         >
-          Señal
+          Sobre Sombra
         </p>
         <p
           className="mt-2 font-canopy text-[11px] font-semibold"
-          style={{ color: functionalRecipeHex(accion, "signal") }}
+          style={{ color: functionalInkHex(informacion.familyId, true) }}
         >
-          Savia 400
+          Cielo vivo
         </p>
         <p
           className="mt-2 font-canopy text-xs leading-relaxed"
-          style={{ color: applicationAtmosphereHex("texto-muted", "eter") }}
+          style={{ color: applicationAtmosphereHex("texto-muted", "sombra") }}
         >
-          Foco, link e icono sobre oscuro. No es cuerpo en Bruma clara.
+          En el dosel el ink es el vivo, no el profundo.
         </p>
       </div>
     </div>
   )
 }
 
-function AtmosphereContextPreview() {
-  const accion = HANDBOOK_FUNCTIONAL_TOKENS.find((token) => token.id === "accion")!
+function AtmosphereChart({ familyId }: { familyId: HandbookAtmosphereId }) {
+  const quietSteps = familyId === "bruma" ? (["200", "300", "200"] as const) : (["800", "700", "600"] as const)
+  const heights = ["42%", "60%", "76%"] as const
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="mt-6 flex h-18 items-end gap-1.5" aria-hidden>
+      {quietSteps.map((step, index) => (
+        <span
+          key={`${familyId}-${step}-${index}`}
+          className="min-w-0 flex-1 rounded-sm"
+          style={{
+            height: heights[index],
+            backgroundColor: handbookColorHex(familyId, step),
+          }}
+        />
+      ))}
+      <span
+        className="min-w-0 flex-1 rounded-sm"
+        style={{
+          height: "100%",
+          backgroundColor: handbookColorHex("savia", "500"),
+        }}
+      />
+    </div>
+  )
+}
+
+function AtmosphereContextPreview() {
+  const accion = HANDBOOK_FUNCTIONAL_RECIPES.find((recipe) => recipe.id === "accion")!
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {HANDBOOK_WORLD_ATMOSPHERES.map((context) => (
         <div
           key={context.id}
-          className="overflow-hidden rounded-2xl p-4"
-          style={{ backgroundColor: worldAtmosphereHex("fondo", context.id) }}
+          className="flex min-h-72 flex-col rounded-2xl p-5"
+          style={{
+            backgroundColor: worldAtmosphereHex("fondo", context.id),
+            boxShadow: `inset 0 0 0 1px ${worldAtmosphereHex("borde", context.id)}`,
+          }}
         >
           <p
-            className="font-canopy text-[11px] font-semibold uppercase tracking-[0.12em]"
-            style={{ color: worldAtmosphereHex("texto-muted", context.id) }}
+            className="font-canopy text-base font-semibold"
+            style={{ color: worldAtmosphereHex("texto", context.id) }}
           >
             {context.name}
           </p>
-          <div
-            className="mt-3 space-y-3 rounded-xl p-3"
-            style={{ backgroundColor: worldAtmosphereHex("superficie", context.id) }}
+          <p
+            className="mt-2 font-stream text-sm leading-relaxed"
+            style={{ color: worldAtmosphereHex("texto-muted", context.id) }}
           >
-            <div
-              className="space-y-3 rounded-lg p-3"
-              style={{ backgroundColor: worldAtmosphereHex("elevada", context.id) }}
-            >
-              <p
-                className="font-canopy text-sm font-semibold"
-                style={{ color: worldAtmosphereHex("texto", context.id) }}
-              >
-                {context.sample}
-              </p>
-              <span
-                className="inline-flex rounded-lg px-2.5 py-1 font-canopy text-[11px] font-semibold"
-                style={{
-                  backgroundColor: functionalTokenHex(accion),
-                  color: handbookColorHex("savia", "50"),
-                }}
-              >
-                Acción
-              </span>
-            </div>
+            {context.body}
+          </p>
+          <span
+            className="mt-5 inline-flex w-fit rounded-lg px-3 py-1.5 font-canopy text-xs font-semibold"
+            style={{
+              backgroundColor: functionalRecipeHex(accion, "solidFill"),
+              color: functionalRecipeHex(accion, "solidText"),
+            }}
+          >
+            {context.cta}
+          </span>
+          <div className="mt-auto">
+            <AtmosphereChart familyId={context.id} />
           </div>
         </div>
       ))}
@@ -715,7 +816,7 @@ export function HandbookColorView() {
       </p>
       <p className={cn(libraryDocBodyClass, "mt-3", handbookDocIntroAfterClass)}>
         Esta paleta es la que usa la aplicación. Cada familia tiene once pasos,
-        de 50 a 950. El paso marcado es la identidad de la familia. Bruma clara suma un
+        de 50 a 950. El paso marcado es la identidad de la familia. Luz filtrada suma un
         blanco fuera de rampa: la luz del papel. Si un color en la aplicación no está
         acá, no entra.
       </p>
@@ -726,9 +827,16 @@ export function HandbookColorView() {
       >
         <h2 className={libraryDocSectionTitleClass}>Atmósferas del mundo</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
-          Éter, bruma y sombra son el aire de cada pantalla. Sotobosque es el cuarto:
-          oscuros de sombra con savia 400 prendida. Se elige una atmósfera por contexto;
-          no se mezclan como si fueran acentos.
+          Éter es el cielo. Sotobosque es un solo lugar con dos luces: Sombra para
+          operar y Luz filtrada para leer. Se elige una atmósfera por contexto; no se
+          mezclan como si fueran acentos.
+        </p>
+        <div className="mt-6">
+          <AtmosphereContextPreview />
+        </div>
+        <p className={cn(libraryDocPageDescriptionClass, "mt-3")}>
+          El aire pinta el lienzo. El rayo de acción es el mismo en cada luz: Savia 500
+          con Raíz 950. Cambia el bosque, no el verbo.
         </p>
         <div className="mt-6">
           <FamilyOverviewStrip families={HANDBOOK_ATMOSPHERES} />
@@ -739,7 +847,6 @@ export function HandbookColorView() {
             {family.id === "bruma" ? <BlancoCallout /> : null}
           </div>
         ))}
-        <SotobosqueCallout />
       </section>
 
       <section
@@ -748,7 +855,7 @@ export function HandbookColorView() {
       >
         <h2 className={libraryDocSectionTitleClass}>Colores funcionales</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
-          Savia, cielo de día, sol y lava comunican qué está pasando y cuál es el próximo
+          Savia, cielo, sol y lava comunican qué está pasando y cuál es el próximo
           movimiento. No pintan el mundo: marcan acción, estado y prioridad.
         </p>
         <div className="mt-6">
@@ -765,35 +872,30 @@ export function HandbookColorView() {
       >
         <h2 className={libraryDocSectionTitleClass}>Tokens de color</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
-          Los tokens nombran propósito. El hex sale de la paleta, salvo el papel de Bruma:
-          --rootsy-blanco. Un token, un trabajo: no se escribe un color suelto ni se
-          reutiliza un paso porque “queda parecido”.
+          Los tokens nombran propósito. El hex sale de la paleta, salvo el papel de Luz
+          filtrada: --rootsy-blanco. Un token, un trabajo: no se escribe un color suelto
+          ni se reutiliza un paso porque “queda parecido”.
         </p>
 
         <div className="mt-6">
           <AtmosphereContextPreview />
         </div>
         <p className={cn(libraryDocPageDescriptionClass, "mt-3")}>
-          La savia de acción es la misma en cada atmósfera. Cambia el aire, no el verbo.
+          El rayo de acción es el mismo en cada atmósfera. Cambia el aire, no el verbo.
         </p>
 
         <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>
           Tokens de atmósfera
         </h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
-          Resuelven según el contexto de la pantalla. Éter, bruma, sombra o sotobosque
+          Resuelven según el contexto de la pantalla. Éter, Luz filtrada o Sombra
           eligen el aire; estos tokens eligen el rol dentro de ese aire.
         </p>
         <div className="mt-4">
           <AtmosphereTokensTable />
         </div>
         <p className={cn(libraryDocPageDescriptionClass, "mt-4")}>
-          Bruma de noche usa los mismos tokens, invertidos: fondo {HANDBOOK_BRUMA_NOCHE.fondo},
-          superficie {HANDBOOK_BRUMA_NOCHE.superficie}, elevada {HANDBOOK_BRUMA_NOCHE.elevada},
-          borde {HANDBOOK_BRUMA_NOCHE.borde}, texto {HANDBOOK_BRUMA_NOCHE.texto}, muted{" "}
-          {HANDBOOK_BRUMA_NOCHE.muted}. Sotobosque tampoco es familia: sombra + savia 400,
-          clase .rootsy-theme-sotobosque. En Bruma clara la elevada es blanco, no un paso
-          de la rampa.
+          En Luz filtrada la elevada es blanco, no un paso de la rampa.
         </p>
 
         <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>
@@ -816,8 +918,8 @@ export function HandbookColorView() {
           Funcionales en atmósferas
         </h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
-          Los pasos no cambian con la atmósfera. Cambia el aire debajo: sólido, tint y señal
-          usan la misma receta en éter, bruma, sombra, sotobosque y bruma noche.
+          El vivo no cambia con la atmósfera. Cambia el ink: profundo sobre Luz filtrada,
+          vivo sobre Sombra. El primario de Savia es el mismo en las dos luces.
         </p>
         <div className="mt-4">
           <FunctionalApplicationPreview />
@@ -834,14 +936,14 @@ export function HandbookColorView() {
         </ul>
         <div className="mt-6">
           <LibraryDoDontPair
-            doText="Tint 50 sobre éter, sombra y sotobosque: una isla clara. CTA savia 700 + texto 50 en cada atmósfera."
-            dontText="No rellenes un estado con 800 en oscuro, ni uses sol 500 con texto 50, ni pintes cuerpo con 400 en Bruma clara."
+            doText="CTA vivo 500 + 950. Secundario y link: profundo en Luz filtrada, vivo en Sombra."
+            dontText="No uses texto 50 sobre un vivo, ni profundo como relleno de botón, ni Savia para pintar un fondo entero."
           />
         </div>
 
         <div className="mt-8">
           <LibraryDoDontPair
-            doText="Nombrá el propósito y tomá el paso de la paleta. --color-accion es savia 600. --color-elevada en Bruma clara es blanco."
+            doText="Nombrá el propósito y tomá el paso de la paleta. --color-accion es savia 500. --color-elevada en Luz filtrada es blanco."
             dontText="No pongas un hex a mano ni uses savia-50 como papel, lava para atención o savia para pintar un fondo entero."
           />
         </div>
@@ -885,7 +987,7 @@ export function HandbookColorView() {
         <div className="mt-8">
           <LibraryDoDontPair
             doText="Medí el par en el contexto real: bruma 700 para muted claro, savia 700 si el CTA es chico, lava 600 para destructivo."
-            dontText="No uses bruma 400 como cuerpo, ni blanco sobre sol 500, ni savia-50 como papel de Bruma."
+            dontText="No uses bruma 400 como cuerpo, ni blanco sobre sol 500, ni savia-50 como papel de Luz filtrada."
           />
         </div>
       </section>

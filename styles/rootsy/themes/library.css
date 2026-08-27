@@ -1,5 +1,5 @@
 /**
- * Tema Librería — lectura en bruma; el rail usa sombra por tokens propios.
+ * Tema Librería — Sotobosque · Luz filtrada; el rail usa Sotobosque · Sombra.
  */
 
 .rootsy-theme-library {
@@ -7,7 +7,7 @@
   --color-superficie: var(--rootsy-bruma-50);
   --color-elevada: var(--rootsy-blanco);
   --color-borde: var(--rootsy-bruma-200);
-  --color-texto: var(--rootsy-bruma-900);
+  --color-texto: var(--rootsy-bruma-950);
   --color-texto-muted: var(--rootsy-bruma-700);
 
   --color-text-on-dark: var(--rootsy-sombra-50);

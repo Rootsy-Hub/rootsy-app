@@ -25,7 +25,7 @@ export function ColorNewSemanticSection() {
       <div className="space-y-10">
         <ColorDocLead>
           Los tokens nombran propósito, no familia decorativa. --color-accion es savia 600 en
-          cualquier atmósfera. Atención es sol; peligro es lava; información es cielo de día.
+          cualquier atmósfera. Atención es sol; peligro es lava; información es cielo.
         </ColorDocLead>
 
         <ColorDocSection

@@ -232,8 +232,6 @@ function atmosphereTheme(worldId: ComponentViewRenderContext["worldId"]) {
     case "suelo":
     case "sombra":
       return "rootsy-theme-pos"
-    case "sotobosque":
-      return "rootsy-theme-sotobosque"
     default:
       return "rootsy-theme-workspace"
   }

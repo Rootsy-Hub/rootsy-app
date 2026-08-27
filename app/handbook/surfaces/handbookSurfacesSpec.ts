@@ -20,7 +20,7 @@ export const HANDBOOK_SURFACE_PRINCIPLES = [
   {
     title: "El aire primero",
     detail:
-      "Éter, bruma, sombra o sotobosque pintan el lienzo. Encima, superficie y elevada. En Bruma clara la elevada es blanco.",
+      "Éter, Luz filtrada o Sombra pintan el lienzo. Encima, superficie y elevada. En Luz filtrada la elevada es blanco.",
   },
   {
     title: "Una atmósfera por pantalla",
@@ -34,7 +34,7 @@ export const HANDBOOK_SURFACE_PRINCIPLES = [
   },
 ] as const
 
-/** Dos lienzos de bruma. El plano es tablas. El de bloques es cajas, cuentas, personas. */
+/** Dos lienzos de Luz filtrada. El plano es tablas. El de bloques es cajas, cuentas, personas. */
 export const HANDBOOK_SURFACE_LIENZOS = [
   {
     id: "lienzo-plano",
@@ -50,13 +50,6 @@ export const HANDBOOK_SURFACE_LIENZOS = [
     product: "data-workspace-blocks-atmosphere",
     use: "Cajas, cuentas, personas, reportes",
   },
-  {
-    id: "lienzo-de-bloques-noche",
-    name: "Lienzo de bloques · noche",
-    token: "bruma-950",
-    product: "data-workspace-blocks-atmosphere-bruma-oscura",
-    use: "Losetas en bruma oscura",
-  },
 ] as const
 
 export const HANDBOOK_BLOCKS_ATMOSPHERE_LAYERS = [
@@ -68,11 +61,6 @@ export const HANDBOOK_BLOCKS_ATMOSPHERE_LAYERS = [
   {
     role: "Loseta",
     value: "--color-elevada · blanco",
-    detail: "El papel de cada card. En Bruma clara no es savia-50.",
-  },
-  {
-    role: "Noche",
-    value: "bruma-950",
-    detail: "El mismo valle, invertido. Sin foto ni planeta.",
+    detail: "El papel de cada card. En Luz filtrada no es savia-50.",
   },
 ] as const

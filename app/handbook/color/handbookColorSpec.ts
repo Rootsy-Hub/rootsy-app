@@ -10,39 +10,39 @@ import {
 } from "@/app/handbook/color/handbookColorPalettes"
 
 export type HandbookAtmosphereId = "eter" | "bruma" | "sombra"
-export type HandbookWorldAtmosphereId = HandbookAtmosphereId | "sotobosque"
+export type HandbookWorldAtmosphereId = HandbookAtmosphereId
 
 export const HANDBOOK_ATMOSPHERE_CONTEXTS: {
   id: HandbookAtmosphereId
   name: string
   sample: string
+  body: string
+  cta: string
 }[] = [
-  { id: "eter", name: "Éter", sample: "Header, menú, vacío." },
-  { id: "bruma", name: "Bruma", sample: "Workspace, tablas, ticket." },
-  { id: "sombra", name: "Sombra", sample: "Mostrador, catálogo, rail." },
+  {
+    id: "eter",
+    name: "Éter",
+    sample: "Header, menú, vacío.",
+    body: "El cielo del mundo. Encabeza, contiene y abre espacio.",
+    cta: "Entrar",
+  },
+  {
+    id: "bruma",
+    name: "Sotobosque · Luz filtrada",
+    sample: "Workspace, tablas, ticket.",
+    body: "Lectura, elección y onboarding. El claro para entrar y elegir.",
+    cta: "Continuar",
+  },
+  {
+    id: "sombra",
+    name: "Sotobosque · Sombra",
+    sample: "Mostrador, catálogo, rail.",
+    body: "Módulos operativos, concentración y densidad.",
+    cta: "Acción activa",
+  },
 ]
 
-export const HANDBOOK_SOTOBOSQUE_CONTEXT = {
-  id: "sotobosque" as const,
-  name: "Sotobosque",
-  sample: "Oscuro con savia prendida.",
-}
-
-export const HANDBOOK_WORLD_ATMOSPHERES: {
-  id: HandbookWorldAtmosphereId
-  name: string
-  sample: string
-}[] = [...HANDBOOK_ATMOSPHERE_CONTEXTS, HANDBOOK_SOTOBOSQUE_CONTEXT]
-
-/** Sotobosque no tiene rampa. Oscuros de sombra + savia 400. */
-export const HANDBOOK_SOTOBOSQUE = {
-  fondo: "var(--rootsy-sotobosque-fondo)",
-  superficie: "var(--rootsy-sotobosque-superficie)",
-  elevada: "var(--rootsy-sotobosque-elevada)",
-  borde: "var(--rootsy-sotobosque-borde)",
-  texto: "var(--rootsy-sotobosque-texto)",
-  "texto-muted": "var(--rootsy-sotobosque-texto-muted)",
-} as const
+export const HANDBOOK_WORLD_ATMOSPHERES = HANDBOOK_ATMOSPHERE_CONTEXTS
 
 export type HandbookAtmosphereToken = {
   id: string
@@ -71,7 +71,7 @@ export const HANDBOOK_ATMOSPHERE_TOKENS: HandbookAtmosphereToken[] = [
     id: "elevada",
     token: "--color-elevada",
     label: "Elevada",
-    purpose: "Card sobre la superficie. En Bruma clara es blanco.",
+    purpose: "Card sobre la superficie. En Luz filtrada es blanco.",
     steps: { eter: "700", bruma: "blanco", sombra: "500" },
   },
   {
@@ -86,7 +86,7 @@ export const HANDBOOK_ATMOSPHERE_TOKENS: HandbookAtmosphereToken[] = [
     token: "--color-texto",
     label: "Texto",
     purpose: "Lectura principal.",
-    steps: { eter: "50", bruma: "900", sombra: "50" },
+    steps: { eter: "50", bruma: "950", sombra: "50" },
   },
   {
     id: "texto-muted",
@@ -112,25 +112,25 @@ export const HANDBOOK_FUNCTIONAL_TOKENS: HandbookFunctionalToken[] = [
     id: "accion",
     token: "--color-accion",
     label: "Acción",
-    purpose: "CTA principal — vender, guardar, confirmar.",
+    purpose: "Acción principal — vender, guardar, confirmar.",
     familyId: "savia",
     familyName: "Savia",
-    step: "600",
+    step: "500",
   },
   {
     id: "accion-hover",
     token: "--color-accion-hover",
     label: "Acción hover",
-    purpose: "Pressed y hover fuerte del CTA. También el relleno si el texto del botón es chico.",
+    purpose: "Hover del rayo. Sobre el CTA, el texto es Raíz 950.",
     familyId: "savia",
     familyName: "Savia",
-    step: "700",
+    step: "600",
   },
   {
     id: "foco",
     token: "--color-foco",
     label: "Foco",
-    purpose: "Ring, rail activo y selección. No compite con el CTA.",
+    purpose: "Foco, selección y rail activo. No compite con el CTA.",
     familyId: "savia",
     familyName: "Savia",
     step: "400",
@@ -139,7 +139,7 @@ export const HANDBOOK_FUNCTIONAL_TOKENS: HandbookFunctionalToken[] = [
     id: "exito",
     token: "--color-exito",
     label: "Éxito",
-    purpose: "Pagado, activo, listo.",
+    purpose: "Check, listo y progreso.",
     familyId: "savia",
     familyName: "Savia",
     step: "500",
@@ -148,16 +148,16 @@ export const HANDBOOK_FUNCTIONAL_TOKENS: HandbookFunctionalToken[] = [
     id: "informacion",
     token: "--color-informacion",
     label: "Información",
-    purpose: "En curso, enviado, contexto.",
+    purpose: "Información, orientación y contexto.",
     familyId: "cielo-de-dia",
-    familyName: "Cielo de día",
+    familyName: "Cielo",
     step: "500",
   },
   {
     id: "atencion",
     token: "--color-atencion",
     label: "Atención",
-    purpose: "Preparando, pendiente con calor. No es peligro.",
+    purpose: "Atención, aviso y algo que requiere mirada.",
     familyId: "sol",
     familyName: "Sol",
     step: "500",
@@ -166,29 +166,17 @@ export const HANDBOOK_FUNCTIONAL_TOKENS: HandbookFunctionalToken[] = [
     id: "peligro",
     token: "--color-peligro",
     label: "Peligro",
-    purpose: "Error y acciones que no se deshacen.",
+    purpose: "Riesgo, error, bloqueo y acción destructiva.",
     familyId: "lava",
     familyName: "Lava",
-    step: "600",
+    step: "500",
   },
 ]
 
 export const HANDBOOK_STATUS_TINT_RULE =
-  "Sobre un tint, el fondo es el paso 50 de la misma familia y el texto es el paso 800. Sol usa 900 si el 800 no alcanza."
+  "Sobre un tint, el fondo es el 50 y el texto es el profundo (700) de la misma familia."
 
-export const HANDBOOK_BRUMA_NOCHE = {
-  fondo: "950" as HandbookColorStepId,
-  superficie: "800" as HandbookColorStepId,
-  elevada: "700" as HandbookColorStepId,
-  borde: "700" as HandbookColorStepId,
-  texto: "50" as HandbookColorStepId,
-  muted: "400" as HandbookColorStepId,
-}
-
-export type HandbookApplicationAtmosphereId =
-  | HandbookAtmosphereId
-  | "bruma-noche"
-  | "sotobosque"
+export type HandbookApplicationAtmosphereId = HandbookAtmosphereId
 
 export const HANDBOOK_APPLICATION_ATMOSPHERES: {
   id: HandbookApplicationAtmosphereId
@@ -197,10 +185,8 @@ export const HANDBOOK_APPLICATION_ATMOSPHERES: {
   dark: boolean
 }[] = [
   { id: "eter", name: "Éter", sample: "Header, menú, vacío.", dark: true },
-  { id: "bruma", name: "Bruma", sample: "Workspace, tablas, ticket.", dark: false },
-  { id: "sombra", name: "Sombra", sample: "Mostrador, catálogo, rail.", dark: true },
-  { id: "sotobosque", name: "Sotobosque", sample: "Oscuro con savia prendida.", dark: true },
-  { id: "bruma-noche", name: "Bruma noche", sample: "Losetas invertidas.", dark: true },
+  { id: "bruma", name: "Sotobosque · Luz filtrada", sample: "Workspace, tablas, ticket.", dark: false },
+  { id: "sombra", name: "Sotobosque · Sombra", sample: "Mostrador, catálogo, rail.", dark: true },
 ]
 
 export type HandbookFunctionalRecipe = {
@@ -209,14 +195,16 @@ export type HandbookFunctionalRecipe = {
   familyId: string
   familyName: string
   purpose: string
-  /** Relleno de CTA o destructivo. Texto chico: savia 700. */
+  /** Relleno de CTA o destructivo. */
   solidFill: HandbookColorStepId
   solidText: HandbookColorStepId
-  /** Estado suave: 50 + borde 200 + texto 800. Sol usa 900. */
+  /** Texto sobre el vivo: 950 de la misma familia. */
+  solidTextFamilyId?: string
+  /** Tint: 50 + borde 200 + profundo 700. */
   tintFill: HandbookColorStepId
   tintBorder: HandbookColorStepId
   tintText: HandbookColorStepId
-  /** Foco, link e icono sobre oscuro. No es cuerpo en Bruma clara. */
+  /** Vivo sobre oscuro. En Luz filtrada el ink es profundo. */
   signal: HandbookColorStepId
   sampleSolid: string
   sampleTint: string
@@ -230,13 +218,13 @@ export const HANDBOOK_FUNCTIONAL_RECIPES: HandbookFunctionalRecipe[] = [
     label: "Acción",
     familyId: "savia",
     familyName: "Savia",
-    purpose: "CTA. El texto chico sube a 700.",
-    solidFill: "700",
-    solidText: "50",
+    purpose: "CTA. Vivo 500; el texto es Savia 950.",
+    solidFill: "500",
+    solidText: "950",
     tintFill: "50",
     tintBorder: "200",
-    tintText: "800",
-    signal: "400",
+    tintText: "700",
+    signal: "500",
     sampleSolid: "Guardar",
     sampleTint: "Listo",
     hasSolid: true,
@@ -252,8 +240,8 @@ export const HANDBOOK_FUNCTIONAL_RECIPES: HandbookFunctionalRecipe[] = [
     solidText: "50",
     tintFill: "50",
     tintBorder: "200",
-    tintText: "800",
-    signal: "400",
+    tintText: "700",
+    signal: "500",
     sampleSolid: "Activo",
     sampleTint: "Pagado",
     hasSolid: false,
@@ -264,13 +252,13 @@ export const HANDBOOK_FUNCTIONAL_RECIPES: HandbookFunctionalRecipe[] = [
     label: "Información",
     familyId: "cielo-de-dia",
     familyName: "Cielo",
-    purpose: "En curso, enviado, contexto.",
-    solidFill: "600",
-    solidText: "50",
+    purpose: "Información, orientación y contexto.",
+    solidFill: "500",
+    solidText: "950",
     tintFill: "50",
     tintBorder: "200",
-    tintText: "800",
-    signal: "400",
+    tintText: "700",
+    signal: "500",
     sampleSolid: "Enviar",
     sampleTint: "En curso",
     hasSolid: false,
@@ -281,13 +269,13 @@ export const HANDBOOK_FUNCTIONAL_RECIPES: HandbookFunctionalRecipe[] = [
     label: "Atención",
     familyId: "sol",
     familyName: "Sol",
-    purpose: "Preparando, pendiente. Nunca texto 50 sobre 500.",
-    solidFill: "700",
-    solidText: "50",
+    purpose: "Atención, aviso y algo que requiere mirada. Nunca texto 50 sobre 500.",
+    solidFill: "500",
+    solidText: "950",
     tintFill: "50",
     tintBorder: "200",
-    tintText: "900",
-    signal: "400",
+    tintText: "700",
+    signal: "500",
     sampleSolid: "Aviso",
     sampleTint: "Pendiente",
     hasSolid: false,
@@ -298,13 +286,13 @@ export const HANDBOOK_FUNCTIONAL_RECIPES: HandbookFunctionalRecipe[] = [
     label: "Peligro",
     familyId: "lava",
     familyName: "Lava",
-    purpose: "Error y lo que no se deshace.",
-    solidFill: "600",
-    solidText: "50",
+    purpose: "Riesgo, error, bloqueo y acción destructiva.",
+    solidFill: "500",
+    solidText: "950",
     tintFill: "50",
     tintBorder: "200",
-    tintText: "800",
-    signal: "400",
+    tintText: "700",
+    signal: "500",
     sampleSolid: "Eliminar",
     sampleTint: "Error",
     hasSolid: true,
@@ -313,18 +301,16 @@ export const HANDBOOK_FUNCTIONAL_RECIPES: HandbookFunctionalRecipe[] = [
 ]
 
 export const HANDBOOK_FUNCTIONAL_APPLICATION_RULES = [
-  "Los pasos no cambian con la atmósfera. Cambia el aire debajo.",
-  "Sólido: identidad (savia 700 si el texto es chico, lava 600) y texto 50.",
-  "Tint: fondo 50, borde 200 y texto 800 de la misma familia. Sol usa 900.",
-  "Sobre éter, sombra, sotobosque y bruma noche el tint sigue en 50: una isla clara, no un 800 de relleno.",
-  "Señal sobre oscuro: paso 400 para foco, links e iconos. En Bruma clara no es cuerpo.",
+  "Vivo 500 pinta el relleno. El texto sobre el vivo es 950 de la misma familia.",
+  "En Luz filtrada, texto, links y contorno usan el profundo 700. En Sombra, usan el vivo.",
+  "Tint: isla 50, borde 200 y texto 700. No rellenes un estado con 800 en oscuro.",
+  "Nunca texto 50 sobre un vivo. El primario de Savia es el mismo en las dos luces.",
 ] as const
 
 export function worldAtmosphereHex(
   tokenId: "fondo" | "superficie" | "elevada" | "texto" | "texto-muted" | "borde",
   atmosphereId: HandbookWorldAtmosphereId,
 ): string {
-  if (atmosphereId === "sotobosque") return HANDBOOK_SOTOBOSQUE[tokenId]
   const token = HANDBOOK_ATMOSPHERE_TOKENS.find((item) => item.id === tokenId)
   if (!token) throw new Error(`Unknown atmosphere token: ${tokenId}`)
   return atmosphereTokenHex(token, atmosphereId)
@@ -334,14 +320,7 @@ export function applicationAtmosphereHex(
   tokenId: "fondo" | "superficie" | "elevada" | "texto" | "texto-muted" | "borde",
   atmosphereId: HandbookApplicationAtmosphereId,
 ): string {
-  if (atmosphereId === "sotobosque") return HANDBOOK_SOTOBOSQUE[tokenId]
-  if (atmosphereId === "bruma-noche") {
-    const step = tokenId === "texto-muted" ? HANDBOOK_BRUMA_NOCHE.muted : HANDBOOK_BRUMA_NOCHE[tokenId]
-    return handbookColorHex("bruma", step)
-  }
-  const token = HANDBOOK_ATMOSPHERE_TOKENS.find((item) => item.id === tokenId)
-  if (!token) throw new Error(`Unknown atmosphere token: ${tokenId}`)
-  return atmosphereTokenHex(token, atmosphereId)
+  return worldAtmosphereHex(tokenId, atmosphereId)
 }
 
 export type HandbookContrastLevel = "AAA" | "AA" | "AA grande" | "No"
@@ -377,18 +356,18 @@ export const HANDBOOK_CONTRAST_PASS: HandbookContrastPair[] = [
   },
   {
     id: "bruma-texto",
-    label: "Bruma 900 sobre 100",
+    label: "Raíz 950 sobre Luz 100",
     context: "Cuerpo en workspace, tablas y ticket.",
-    foreground: { familyId: "bruma", step: "900" },
+    foreground: { familyId: "bruma", step: "950" },
     background: { familyId: "bruma", step: "100" },
     ratio: "16.3:1",
     level: "AAA",
   },
   {
     id: "bruma-texto-blanco",
-    label: "Bruma 900 sobre blanco",
-    context: "Cuerpo sobre papel, loseta y formulario en Bruma clara.",
-    foreground: { familyId: "bruma", step: "900" },
+    label: "Raíz 950 sobre blanco",
+    context: "Cuerpo sobre papel, loseta y formulario en Luz filtrada.",
+    foreground: { familyId: "bruma", step: "950" },
     background: { familyId: "blanco", step: "blanco" },
     ratio: "18.7:1",
     level: "AAA",
@@ -400,24 +379,6 @@ export const HANDBOOK_CONTRAST_PASS: HandbookContrastPair[] = [
     foreground: { familyId: "bruma", step: "700" },
     background: { familyId: "bruma", step: "100" },
     ratio: "9.1:1",
-    level: "AAA",
-  },
-  {
-    id: "bruma-noche-texto",
-    label: "Bruma 50 sobre 950",
-    context: "Cuerpo en bruma de noche.",
-    foreground: { familyId: "bruma", step: "50" },
-    background: { familyId: "bruma", step: "950" },
-    ratio: "18.1:1",
-    level: "AAA",
-  },
-  {
-    id: "bruma-noche-muted",
-    label: "Bruma 400 sobre 950",
-    context: "Metadatos en bruma de noche.",
-    foreground: { familyId: "bruma", step: "400" },
-    background: { familyId: "bruma", step: "950" },
-    ratio: "7.6:1",
     level: "AAA",
   },
   {
@@ -440,12 +401,12 @@ export const HANDBOOK_CONTRAST_PASS: HandbookContrastPair[] = [
   },
   {
     id: "savia-cta",
-    label: "Savia 50 sobre 700",
-    context: "CTA con texto chico. Preferir 700 al 600.",
-    foreground: { familyId: "savia", step: "50" },
-    background: { familyId: "savia", step: "700" },
-    ratio: "5.2:1",
-    level: "AA",
+    label: "Raíz 950 sobre Rayo 500",
+    context: "CTA prendido. El texto sobre el rayo es Raíz, no blanco.",
+    foreground: { familyId: "sombra", step: "950" },
+    background: { familyId: "savia", step: "500" },
+    ratio: "8.4:1",
+    level: "AAA",
   },
   {
     id: "savia-tint",
@@ -453,7 +414,7 @@ export const HANDBOOK_CONTRAST_PASS: HandbookContrastPair[] = [
     context: "Texto sobre tint de éxito.",
     foreground: { familyId: "savia", step: "800" },
     background: { familyId: "savia", step: "50" },
-    ratio: "7.3:1",
+    ratio: "10.1:1",
     level: "AAA",
   },
   {
@@ -466,40 +427,49 @@ export const HANDBOOK_CONTRAST_PASS: HandbookContrastPair[] = [
     level: "AAA",
   },
   {
-    id: "cielo-tint",
-    label: "Cielo 800 sobre 50",
-    context: "Texto sobre tint de información.",
-    foreground: { familyId: "cielo-de-dia", step: "800" },
-    background: { familyId: "cielo-de-dia", step: "50" },
-    ratio: "9.0:1",
+    id: "savia-on",
+    label: "Savia 950 sobre vivo 500",
+    context: "Texto del CTA. El mismo par en las dos luces.",
+    foreground: { familyId: "savia", step: "950" },
+    background: { familyId: "savia", step: "500" },
+    ratio: "14.1:1",
     level: "AAA",
+  },
+  {
+    id: "cielo-tint",
+    label: "Cielo 700 sobre 50",
+    context: "Profundo sobre tint de información.",
+    foreground: { familyId: "cielo-de-dia", step: "700" },
+    background: { familyId: "cielo-de-dia", step: "50" },
+    ratio: "4.9:1",
+    level: "AA",
   },
   {
     id: "sol-tint",
-    label: "Sol 900 sobre 50",
-    context: "Texto sobre tint de atención. El 800 también pasa; el 900 es más seguro.",
-    foreground: { familyId: "sol", step: "900" },
+    label: "Sol 700 sobre 50",
+    context: "Profundo sobre tint de atención.",
+    foreground: { familyId: "sol", step: "700" },
     background: { familyId: "sol", step: "50" },
-    ratio: "10.7:1",
-    level: "AAA",
+    ratio: "4.7:1",
+    level: "AA",
   },
   {
     id: "lava-cta",
-    label: "Lava 50 sobre 600",
-    context: "Botón destructivo.",
-    foreground: { familyId: "lava", step: "50" },
-    background: { familyId: "lava", step: "600" },
-    ratio: "6.4:1",
+    label: "Lava 950 sobre vivo 500",
+    context: "Texto sobre Lava vivo.",
+    foreground: { familyId: "lava", step: "950" },
+    background: { familyId: "lava", step: "500" },
+    ratio: "5.5:1",
     level: "AA",
   },
   {
     id: "lava-tint",
-    label: "Lava 800 sobre 50",
-    context: "Texto sobre tint de error.",
-    foreground: { familyId: "lava", step: "800" },
+    label: "Lava 700 sobre 50",
+    context: "Profundo sobre tint de error.",
+    foreground: { familyId: "lava", step: "700" },
     background: { familyId: "lava", step: "50" },
-    ratio: "12.7:1",
-    level: "AAA",
+    ratio: "5.0:1",
+    level: "AA",
   },
 ]
 
@@ -523,13 +493,13 @@ export const HANDBOOK_CONTRAST_FAIL: HandbookContrastPair[] = [
     level: "AA grande",
   },
   {
-    id: "savia-600-chico",
-    label: "Savia 50 sobre 600",
-    context: "CTA con texto chico. Subir a savia 700.",
+    id: "savia-50-rayo",
+    label: "Savia 50 sobre Rayo 500",
+    context: "Blanco sobre el vivo. Usar Savia 950.",
     foreground: { familyId: "savia", step: "50" },
-    background: { familyId: "savia", step: "600" },
-    ratio: "3.6:1",
-    level: "AA grande",
+    background: { familyId: "savia", step: "500" },
+    ratio: "1.4:1",
+    level: "No",
   },
   {
     id: "sol-500-inverso",
@@ -537,27 +507,26 @@ export const HANDBOOK_CONTRAST_FAIL: HandbookContrastPair[] = [
     context: "Nunca texto claro sobre sol 500.",
     foreground: { familyId: "sol", step: "50" },
     background: { familyId: "sol", step: "500" },
-    ratio: "2.0:1",
+    ratio: "1.5:1",
     level: "No",
   },
   {
     id: "cielo-500-chico",
     label: "Cielo 50 sobre 500",
-    context: "Texto chico sobre cielo 500. Usar 600 o tint 50 + 800.",
+    context: "No es un botón con texto claro. Usar Cielo 950 sobre el vivo, o 700 sobre 50.",
     foreground: { familyId: "cielo-de-dia", step: "50" },
     background: { familyId: "cielo-de-dia", step: "500" },
-    ratio: "3.4:1",
-    level: "AA grande",
+    ratio: "2.2:1",
+    level: "No",
   },
 ]
 
 export const HANDBOOK_CONTRAST_RULES = [
-  "Texto normal: 4.5:1 o más. Muted en bruma clara es 700, no 400 ni 500.",
-  "Texto grande o botón semibold: 3:1 alcanza. Savia 600 sirve acá; si el texto es chico, usar 700.",
-  "Sobre tint funcional: fondo 50 y texto 800 de la misma familia. Sol usa 900.",
-  "Nunca texto claro sobre sol 500. Nunca bruma 400 como cuerpo en claro.",
-  "Bruma de noche no toma muted de sombra: el mute del dosel no es el mute de la neblina.",
-  "En Bruma clara el papel es --rootsy-blanco, no savia-50 ni bruma-50. Savia-50 es el inverso del CTA.",
+  "Texto normal: 4.5:1 o más. Muted en Luz filtrada es Tronco 700, no 400 ni 500.",
+  "Sobre un vivo 500 el texto es el 950 de la misma familia.",
+  "Sobre tint: fondo 50 y profundo 700. En Luz filtrada el ink es 700; en Sombra, el vivo.",
+  "Nunca texto claro sobre sol o cielo 500. Nunca luz 400 como cuerpo en claro.",
+  "En Luz filtrada el papel es --rootsy-blanco. Savia-50 no es el texto del CTA.",
 ] as const
 
 export function atmosphereTokenHex(
@@ -571,4 +540,19 @@ export function atmosphereTokenHex(
 
 export function functionalTokenHex(token: HandbookFunctionalToken): string {
   return handbookColorHex(token.familyId, token.step)
+}
+
+export function functionalInkHex(familyId: string, dark: boolean) {
+  return handbookColorHex(familyId, dark ? "500" : "700")
+}
+
+export function functionalRecipeHex(
+  recipe: HandbookFunctionalRecipe,
+  step: "solidFill" | "solidText" | "tintFill" | "tintBorder" | "tintText" | "signal",
+) {
+  const familyId =
+    step === "solidText" && recipe.solidTextFamilyId
+      ? recipe.solidTextFamilyId
+      : recipe.familyId
+  return handbookColorHex(familyId, recipe[step])
 }

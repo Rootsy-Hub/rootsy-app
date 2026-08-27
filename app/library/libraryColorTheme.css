@@ -48,8 +48,8 @@
 }
 
 .library-sidebar {
-  /* Rail — atmósfera sombra. No hereda el fondo bruma del tema de lectura. */
-  background-color: var(--rootsy-sombra-700) !important;
+  /* Rail — Sotobosque · Sombra. No hereda el fondo de Luz filtrada. */
+  background-color: var(--rootsy-sombra-950) !important;
   border-color: var(--rootsy-sombra-400);
 }
 
@@ -124,7 +124,7 @@
 }
 
 .library-nav-item:hover {
-  color: var(--library-nav-text-hover, var(--rootsy-bruma-50));
+  color: var(--library-nav-text-hover, var(--rootsy-sombra-50));
 }
 
 .library-nav-item:focus {
@@ -137,7 +137,7 @@
 }
 
 .library-nav-item--active {
-  color: var(--library-nav-text-active, var(--rootsy-bruma-50));
+  color: var(--library-nav-text-active, var(--rootsy-sombra-50));
   font-weight: 500;
 }
 
@@ -175,12 +175,12 @@
 }
 
 .library-nav-item--nested:hover {
-  color: var(--library-nav-text-hover, var(--rootsy-bruma-50));
+  color: var(--library-nav-text-hover, var(--rootsy-sombra-50));
   background: transparent;
 }
 
 .library-nav-item--nested.library-nav-item--active {
-  color: var(--library-nav-text-active, var(--rootsy-bruma-50));
+  color: var(--library-nav-text-active, var(--rootsy-sombra-50));
   font-weight: 500;
 }
 
@@ -223,8 +223,8 @@
 /* ── Nav en superficie sombra (Estadísticas · rail library) ── */
 .library-nav-surface-dark {
   --library-nav-text: var(--rootsy-sombra-300);
-  --library-nav-text-hover: var(--rootsy-bruma-50);
-  --library-nav-text-active: var(--rootsy-bruma-50);
+  --library-nav-text-hover: var(--rootsy-sombra-50);
+  --library-nav-text-active: var(--rootsy-sombra-50);
 }
 
 .library-nav-surface-dark .library-nav-item {
@@ -233,21 +233,17 @@
 }
 
 .library-nav-surface-dark .library-nav-item:hover {
-  background-color: color-mix(in srgb, var(--rootsy-white) 6%, transparent);
+  background-color: var(--rootsy-sombra-900);
 }
 
 .library-nav-surface-dark .library-nav-item--active {
   font-weight: 600;
-  background-color: color-mix(in srgb, var(--rootsy-savia-600) 18%, var(--rootsy-sombra-700));
-  border-color: color-mix(in srgb, var(--rootsy-savia-600) 30%, var(--rootsy-sombra-border));
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--rootsy-savia-600) 20%, transparent),
-    0 2px 8px rgb(5 8 7 / 0.2);
+  background-color: var(--rootsy-sombra-900);
+  border-color: var(--rootsy-savia-400);
 }
 
 .library-nav-surface-dark .library-nav-item--active:hover {
-  background-color: color-mix(in srgb, var(--rootsy-savia-600) 22%, var(--rootsy-sombra-700));
-  border-color: color-mix(in srgb, var(--rootsy-savia-600) 36%, var(--rootsy-sombra-border));
+  background-color: var(--rootsy-sombra-800);
 }
 
 .library-nav-surface-dark .library-nav-item--active .library-nav-item-icon {
@@ -272,7 +268,7 @@
 }
 
 .library-nav-toggle:hover {
-  color: var(--library-nav-text-hover, var(--rootsy-bruma-50));
+  color: var(--library-nav-text-hover, var(--rootsy-sombra-50));
 }
 
 .library-nav-toggle:focus {

@@ -406,8 +406,6 @@ function atmosphereChrome(worldId: ComponentViewRenderContext["worldId"]) {
     case "suelo":
     case "sombra":
       return { themeClass: "rootsy-theme-pos", tone: "dark" as const }
-    case "sotobosque":
-      return { themeClass: "rootsy-theme-sotobosque", tone: "dark" as const }
     default:
       return { themeClass: "rootsy-theme-workspace", tone: "light" as const }
   }

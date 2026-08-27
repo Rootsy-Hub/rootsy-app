@@ -1,6 +1,6 @@
 .rootsy-elevation-system {
   --elevation-surface-sunken: var(--rootsy-bruma-50, #f4f6f9);
-  --elevation-surface: var(--rootsy-bruma-100, #eef1f5);
+  --elevation-surface: var(--rootsy-bruma-100, #f3f5ef);
   --elevation-surface-raised: var(--rootsy-blanco);
   --elevation-surface-overlay: var(--rootsy-blanco);
   --elevation-surface-hovered: var(--rootsy-bruma-50, #f4f6f9);

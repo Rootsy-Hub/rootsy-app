@@ -6,13 +6,7 @@
 
 import { ROOTSY_BLANCO, rootsyColorHex } from "@/lib/design-system/tokens/colors"
 
-export type RootsyThemeId =
-  | "pos"
-  | "workspace"
-  | "bruma-oscura"
-  | "sotobosque"
-  | "marketing"
-  | "library"
+export type RootsyThemeId = "pos" | "workspace" | "bruma-oscura" | "marketing" | "library"
 
 /** @deprecated Usar "marketing" */
 export type LegacyRootsyThemeId = RootsyThemeId | "landing"
@@ -62,7 +56,7 @@ function themeTokens(spec: {
         ? { fondo: "950", superficie: "600", elevada: "500", borde: "400", texto: "50", muted: "300", family: "sombra" as const }
         : spec.atmosphere === "bruma-noche"
           ? { fondo: "950", superficie: "800", elevada: "700", borde: "700", texto: "50", muted: "400", family: "bruma" as const }
-          : { fondo: "100", superficie: "50", elevada: "50", borde: "200", texto: "900", muted: "700", family: "bruma" as const }
+          : { fondo: "100", superficie: "50", elevada: "50", borde: "200", texto: "950", muted: "700", family: "bruma" as const }
 
   const fondo = rootsyColorHex(steps.family, steps.fondo)
   const superficie = rootsyColorHex(steps.family, steps.superficie)
@@ -73,53 +67,15 @@ function themeTokens(spec: {
   const borde = rootsyColorHex(steps.family, steps.borde)
   const texto = rootsyColorHex(steps.family, steps.texto)
   const textoMuted = rootsyColorHex(steps.family, steps.muted)
-  const accion = rootsyColorHex("savia", "600")
-  const accionHover = rootsyColorHex("savia", "700")
+  const accion = rootsyColorHex("savia", "500")
+  const accionHover = rootsyColorHex("savia", "600")
   const foco = rootsyColorHex("savia", "400")
-  const actionText = rootsyColorHex("savia", "50")
+  const actionText = rootsyColorHex("sombra", "950")
 
   return {
     id: spec.id,
     label: spec.label,
     className: spec.className,
-    fondo,
-    superficie,
-    elevada,
-    borde,
-    texto,
-    textoMuted,
-    accion,
-    accionHover,
-    foco,
-    shell: fondo,
-    surface: superficie,
-    elevated: elevada,
-    border: borde,
-    textPrimary: texto,
-    textSecondary: textoMuted,
-    action: accion,
-    actionText,
-    accent: foco,
-  }
-}
-
-/** Sotobosque no tiene rampa: sombra + savia 400. Los valores son los mismos tokens CSS. */
-function sotobosqueTheme(): RootsyThemeTokens {
-  const fondo = "var(--rootsy-sotobosque-fondo)"
-  const superficie = "var(--rootsy-sotobosque-superficie)"
-  const elevada = "var(--rootsy-sotobosque-elevada)"
-  const borde = "var(--rootsy-sotobosque-borde)"
-  const texto = "var(--rootsy-sotobosque-texto)"
-  const textoMuted = "var(--rootsy-sotobosque-texto-muted)"
-  const accion = rootsyColorHex("savia", "600")
-  const accionHover = rootsyColorHex("savia", "700")
-  const foco = rootsyColorHex("savia", "400")
-  const actionText = rootsyColorHex("savia", "50")
-
-  return {
-    id: "sotobosque",
-    label: "Sotobosque",
-    className: "rootsy-theme-sotobosque",
     fondo,
     superficie,
     elevada,
@@ -160,7 +116,6 @@ export const ROOTSY_THEMES: RootsyThemeTokens[] = [
     className: "rootsy-theme-bruma-oscura",
     atmosphere: "bruma-noche",
   }),
-  sotobosqueTheme(),
   themeTokens({
     id: "marketing",
     label: "Marketing · hero",

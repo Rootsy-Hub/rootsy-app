@@ -3,7 +3,7 @@
  * Fuente CSS espejo de lib/design-system/tokens/colors.ts
  *
  * Paleta: once pasos (50–950) × siete familias.
- * Atmósferas: éter · bruma · sombra · sotobosque (compuesta)
+ * Atmósferas: éter · bruma (Sotobosque · Luz filtrada) · sombra (Sotobosque · Sombra)
  * Funcionales: savia · cielo · sol · lava
  *
  * Tokens de propósito (--color-fondo, --color-accion, …) nombran el trabajo.
@@ -24,83 +24,96 @@
   --rootsy-eter-900: #02060a;
   --rootsy-eter-950: #010306;
 
-  /* Bruma — el aire para leer */
-  --rootsy-bruma-50: #f4f6f9;
-  --rootsy-bruma-100: #eef1f5;
-  --rootsy-bruma-200: #dfe4ea;
-  --rootsy-bruma-300: #cbd5e1;
-  --rootsy-bruma-400: #94a3b8;
-  --rootsy-bruma-500: #64748b;
-  --rootsy-bruma-600: #475569;
-  --rootsy-bruma-700: #334155;
-  --rootsy-bruma-800: #1a1f28;
-  --rootsy-bruma-900: #121417;
-  --rootsy-bruma-950: #0a0c0f;
+  /* Sotobosque · Luz filtrada — el claro para leer (tokens: bruma) */
+  --rootsy-bruma-50: #f8faf5;
+  --rootsy-bruma-100: #f3f5ef;
+  --rootsy-bruma-200: #e5eee2;
+  --rootsy-bruma-300: #cbdccc;
+  --rootsy-bruma-400: #a8bba9;
+  --rootsy-bruma-500: #8a988c;
+  --rootsy-bruma-600: #6a776c;
+  --rootsy-bruma-700: #4a554c;
+  --rootsy-bruma-800: #2d352f;
+  --rootsy-bruma-900: #1c231e;
+  --rootsy-bruma-950: #0a0f0c;
 
-  /* Sombra — el dosel */
-  --rootsy-sombra-50: #f3f6f4;
-  --rootsy-sombra-100: #e5ece8;
-  --rootsy-sombra-200: #c5d0ca;
-  --rootsy-sombra-300: #8fa396;
-  --rootsy-sombra-400: #5a6b63;
-  --rootsy-sombra-500: #222b27;
-  --rootsy-sombra-600: #1b2420;
-  --rootsy-sombra-700: #151c19;
-  --rootsy-sombra-800: #0e1311;
-  --rootsy-sombra-900: #080c0b;
-  --rootsy-sombra-950: #050807;
+  /* Sotobosque · Sombra — el dosel para operar (tokens: sombra) */
+  --rootsy-sombra-50: #e8f4ec;
+  --rootsy-sombra-100: #c8dfd2;
+  --rootsy-sombra-200: #9dc4b0;
+  --rootsy-sombra-300: #6f9a86;
+  --rootsy-sombra-400: #4a7d62;
+  --rootsy-sombra-500: #336b50;
+  --rootsy-sombra-600: #285742;
+  --rootsy-sombra-700: #193827;
+  --rootsy-sombra-800: #11251a;
+  --rootsy-sombra-900: #0b1811;
+  --rootsy-sombra-950: #07100c;
 
-  /* Savia — vida que acciona */
-  --rootsy-savia-50: #ecfdf5;
-  --rootsy-savia-100: #d1fae5;
-  --rootsy-savia-200: #a7f3d0;
-  --rootsy-savia-300: #6ee7b7;
-  --rootsy-savia-400: #34d399;
-  --rootsy-savia-500: #10b981;
-  --rootsy-savia-600: #059669;
-  --rootsy-savia-700: #047857;
-  --rootsy-savia-800: #065f46;
-  --rootsy-savia-900: #064e3b;
-  --rootsy-savia-950: #022c22;
+  /* Savia — vivo #02FE85 · profundo #05713F · on #07120C */
+  --rootsy-savia-50: #e8fff3;
+  --rootsy-savia-100: #c4fee4;
+  --rootsy-savia-200: #8afdca;
+  --rootsy-savia-300: #4ffcb0;
+  --rootsy-savia-400: #1efe98;
+  --rootsy-savia-500: #02fe85;
+  --rootsy-savia-600: #00bc66;
+  --rootsy-savia-700: #05713f;
+  --rootsy-savia-800: #0a482b;
+  --rootsy-savia-900: #0a2c1b;
+  --rootsy-savia-950: #07120c;
 
-  /* Cielo de día — información */
-  --rootsy-cielo-50: #eaf6fe;
-  --rootsy-cielo-100: #d4ecfc;
-  --rootsy-cielo-200: #a8d6fa;
-  --rootsy-cielo-300: #76bdf4;
-  --rootsy-cielo-400: #45a6f2;
-  --rootsy-cielo-500: #1286e8;
-  --rootsy-cielo-600: #0c72c2;
-  --rootsy-cielo-700: #0b5a98;
-  --rootsy-cielo-800: #0a4574;
-  --rootsy-cielo-900: #062e52;
-  --rootsy-cielo-950: #041a30;
+  /* Cielo — vivo #48AEF1 · profundo #176EAA · on #061A29 */
+  --rootsy-cielo-50: #e7f5ff;
+  --rootsy-cielo-100: #d4ecff;
+  --rootsy-cielo-200: #b1dcfc;
+  --rootsy-cielo-300: #8dcbf8;
+  --rootsy-cielo-400: #60baf8;
+  --rootsy-cielo-500: #48aef1;
+  --rootsy-cielo-600: #3391d1;
+  --rootsy-cielo-700: #176eaa;
+  --rootsy-cielo-800: #104a73;
+  --rootsy-cielo-900: #0b314c;
+  --rootsy-cielo-950: #061a29;
 
-  /* Sol — atención */
-  --rootsy-sol-50: #fdf8e8;
-  --rootsy-sol-100: #fbf3c6;
-  --rootsy-sol-200: #f8e17a;
-  --rootsy-sol-300: #f5d054;
-  --rootsy-sol-400: #f3c62e;
-  --rootsy-sol-500: #e8b10f;
-  --rootsy-sol-600: #c98c0d;
-  --rootsy-sol-700: #9c640a;
-  --rootsy-sol-800: #7a4e08;
-  --rootsy-sol-900: #523406;
-  --rootsy-sol-950: #2e1c04;
+  /* Sol — vivo #F1C452 · profundo #956600 · on #241B06 */
+  --rootsy-sol-50: #fcf6e6;
+  --rootsy-sol-100: #fbf0d5;
+  --rootsy-sol-200: #f8e4b5;
+  --rootsy-sol-300: #f6d893;
+  --rootsy-sol-400: #f5cb67;
+  --rootsy-sol-500: #f1c452;
+  --rootsy-sol-600: #c79832;
+  --rootsy-sol-700: #956600;
+  --rootsy-sol-800: #644706;
+  --rootsy-sol-900: #423007;
+  --rootsy-sol-950: #241b06;
 
-  /* Lava — peligro */
-  --rootsy-lava-50: #fdf5f2;
-  --rootsy-lava-100: #f8e0d6;
-  --rootsy-lava-200: #f0b8a4;
-  --rootsy-lava-300: #e48868;
-  --rootsy-lava-400: #d45c38;
-  --rootsy-lava-500: #c43a18;
-  --rootsy-lava-600: #a82c12;
-  --rootsy-lava-700: #82220e;
-  --rootsy-lava-800: #58170a;
-  --rootsy-lava-900: #381008;
-  --rootsy-lava-950: #1c0805;
+  /* Lava — vivo #F05B4D · profundo #B53D34 · on #2A0B08 */
+  --rootsy-lava-50: #ffebe7;
+  --rootsy-lava-100: #ffd9d3;
+  --rootsy-lava-200: #ffb9ae;
+  --rootsy-lava-300: #fd978a;
+  --rootsy-lava-400: #fa7061;
+  --rootsy-lava-500: #f05b4d;
+  --rootsy-lava-600: #d54d42;
+  --rootsy-lava-700: #b53d34;
+  --rootsy-lava-800: #7a2821;
+  --rootsy-lava-900: #501914;
+  --rootsy-lava-950: #2a0b08;
+
+  --rootsy-savia-vivo: var(--rootsy-savia-500);
+  --rootsy-savia-profundo: var(--rootsy-savia-700);
+  --rootsy-savia-on: var(--rootsy-savia-950);
+  --rootsy-cielo-vivo: var(--rootsy-cielo-500);
+  --rootsy-cielo-profundo: var(--rootsy-cielo-700);
+  --rootsy-cielo-on: var(--rootsy-cielo-950);
+  --rootsy-sol-vivo: var(--rootsy-sol-500);
+  --rootsy-sol-profundo: var(--rootsy-sol-700);
+  --rootsy-sol-on: var(--rootsy-sol-950);
+  --rootsy-lava-vivo: var(--rootsy-lava-500);
+  --rootsy-lava-profundo: var(--rootsy-lava-700);
+  --rootsy-lava-on: var(--rootsy-lava-950);
 
   /* Luz de Bruma clara — fuera de la rampa de once pasos. No es savia-50. */
   --rootsy-blanco: #ffffff;
@@ -115,16 +128,24 @@
   --color-superficie: var(--rootsy-bruma-50);
   --color-elevada: var(--rootsy-blanco);
   --color-borde: var(--rootsy-bruma-200);
-  --color-texto: var(--rootsy-bruma-900);
+  --color-texto: var(--rootsy-bruma-950);
   --color-texto-muted: var(--rootsy-bruma-700);
 
-  --color-accion: var(--rootsy-savia-600);
-  --color-accion-hover: var(--rootsy-savia-700);
+  --color-accion: var(--rootsy-savia-500);
+  --color-accion-hover: var(--rootsy-savia-600);
+  --color-accion-texto: var(--rootsy-savia-950);
+  --color-accion-profundo: var(--rootsy-savia-700);
   --color-foco: var(--rootsy-savia-400);
   --color-exito: var(--rootsy-savia-500);
   --color-informacion: var(--rootsy-cielo-500);
+  --color-informacion-texto: var(--rootsy-cielo-950);
+  --color-informacion-profundo: var(--rootsy-cielo-700);
   --color-atencion: var(--rootsy-sol-500);
-  --color-peligro: var(--rootsy-lava-600);
+  --color-atencion-texto: var(--rootsy-sol-950);
+  --color-atencion-profundo: var(--rootsy-sol-700);
+  --color-peligro: var(--rootsy-lava-500);
+  --color-peligro-texto: var(--rootsy-lava-950);
+  --color-peligro-profundo: var(--rootsy-lava-700);
   --color-status-danger: var(--color-peligro);
   --color-status-warning: var(--color-atencion);
   --color-status-info: var(--color-informacion);
@@ -138,7 +159,7 @@
   --color-text-secondary: var(--color-texto-muted);
   --color-action: var(--color-accion);
   --color-action-hover: var(--color-accion-hover);
-  --color-action-text: var(--rootsy-savia-50);
+  --color-action-text: var(--color-accion-texto);
   --color-accent: var(--color-foco);
 
   /* Alias de primitivos fuera de paleta — apuntan a un paso handbook */
@@ -163,7 +184,7 @@
   --rootsy-warning: var(--rootsy-sol-500);
   --rootsy-warning-text: var(--rootsy-sol-900);
   --rootsy-warning-soft: var(--rootsy-sol-50);
-  --rootsy-danger: var(--rootsy-lava-600);
+  --rootsy-danger: var(--rootsy-lava-500);
   --rootsy-danger-dark: var(--rootsy-lava-700);
 
   --rootsy-ceniza-950: var(--rootsy-sombra-950);

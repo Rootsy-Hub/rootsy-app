@@ -1,5 +1,9 @@
+import { handbookColorHex } from "@/app/handbook/color/handbookColorPalettes"
 import {
+  functionalRecipeHex,
+  HANDBOOK_FUNCTIONAL_RECIPES,
   worldAtmosphereHex,
+  type HandbookAtmosphereId,
   type HandbookWorldAtmosphereId,
 } from "@/app/handbook/color/handbookColorSpec"
 import {
@@ -28,7 +32,6 @@ import {
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
-import "@/components/data-workspace/dataWorkspaceBlocksAtmosphereBrumaOscura.css"
 import "@/components/data-workspace/dataWorkspaceTablesAtmosphere.css"
 import "@/components/layouts-tables/rootsLayoutsTablesScope.css"
 import { cn } from "@/lib/utils"
@@ -43,8 +46,36 @@ function Token({ children }: { children: string }) {
   )
 }
 
+function SurfaceChart({ familyId }: { familyId: HandbookAtmosphereId }) {
+  const quietSteps = familyId === "bruma" ? (["200", "300", "200"] as const) : (["800", "700", "600"] as const)
+  const heights = ["42%", "60%", "76%"] as const
+
+  return (
+    <div className="mt-4 flex h-12 items-end gap-1" aria-hidden>
+      {quietSteps.map((step, index) => (
+        <span
+          key={`${familyId}-${step}-${index}`}
+          className="min-w-0 flex-1 rounded-sm"
+          style={{
+            height: heights[index],
+            backgroundColor: handbookColorHex(familyId, step),
+          }}
+        />
+      ))}
+      <span
+        className="min-w-0 flex-1 rounded-sm"
+        style={{
+          height: "100%",
+          backgroundColor: handbookColorHex("savia", "500"),
+        }}
+      />
+    </div>
+  )
+}
+
 function FondoStack({ atmosphereId }: { atmosphereId: HandbookWorldAtmosphereId }) {
   const atmosphere = HANDBOOK_SURFACE_ATMOSPHERES.find((item) => item.id === atmosphereId)
+  const accion = HANDBOOK_FUNCTIONAL_RECIPES.find((recipe) => recipe.id === "accion")!
   return (
     <article className={cn("overflow-hidden rounded-2xl border", libraryDocBorderClass)}>
       <div className="space-y-2 p-4" style={{ background: worldAtmosphereHex("fondo", atmosphereId) }}>
@@ -63,11 +94,21 @@ function FondoStack({ atmosphereId }: { atmosphereId: HandbookWorldAtmosphereId 
               {atmosphere?.name}
             </p>
             <p
-              className="mt-1 font-stream text-xs"
+              className="mt-1 font-stream text-xs leading-relaxed"
               style={{ color: worldAtmosphereHex("texto-muted", atmosphereId) }}
             >
-              {atmosphere?.sample}
+              {atmosphere?.body ?? atmosphere?.sample}
             </p>
+            <span
+              className="mt-3 inline-flex rounded-lg px-2.5 py-1 font-canopy text-[11px] font-semibold"
+              style={{
+                backgroundColor: functionalRecipeHex(accion, "solidFill"),
+                color: functionalRecipeHex(accion, "solidText"),
+              }}
+            >
+              {atmosphere?.cta ?? "Acción"}
+            </span>
+            <SurfaceChart familyId={atmosphereId} />
           </div>
         </div>
       </div>
@@ -87,27 +128,25 @@ function MiniLoseta({
   title,
   amount,
   open,
-  night,
 }: {
   title: string
   amount: string
   open?: boolean
-  night?: boolean
 }) {
   return (
     <article
       className="flex min-w-0 flex-col overflow-hidden rounded-xl border px-2.5 py-2.5"
       style={{
-        backgroundColor: night ? "var(--rootsy-bruma-800)" : "var(--color-elevada)",
-        borderColor: night ? "var(--rootsy-bruma-700)" : "var(--color-borde)",
+        backgroundColor: "var(--color-elevada)",
+        borderColor: "var(--color-borde)",
       }}
     >
       <div className="flex min-w-0 items-center gap-2">
         <span
           className="flex size-7 shrink-0 items-center justify-center rounded-lg border"
           style={{
-            borderColor: night ? "var(--rootsy-bruma-700)" : "var(--color-borde)",
-            color: night ? "var(--rootsy-bruma-200)" : "var(--color-texto-muted)",
+            borderColor: "var(--color-borde)",
+            color: "var(--color-texto-muted)",
           }}
           aria-hidden
         >
@@ -115,14 +154,14 @@ function MiniLoseta({
         </span>
         <p
           className="min-w-0 truncate font-canopy text-xs font-semibold"
-          style={{ color: night ? "var(--rootsy-bruma-50)" : "var(--color-texto)" }}
+          style={{ color: "var(--color-texto)" }}
         >
           {title}
         </p>
       </div>
       <p
         className="mt-3 font-numeric text-sm tabular-nums"
-        style={{ color: night ? "var(--rootsy-bruma-50)" : "var(--color-texto)" }}
+        style={{ color: "var(--color-texto)" }}
       >
         {amount}
       </p>
@@ -135,8 +174,8 @@ function MiniLoseta({
                 color: "var(--rootsy-savia-800)",
               }
             : {
-                backgroundColor: night ? "var(--rootsy-bruma-700)" : "var(--rootsy-bruma-100)",
-                color: night ? "var(--rootsy-bruma-200)" : "var(--rootsy-bruma-700)",
+                backgroundColor: "var(--rootsy-bruma-100)",
+                color: "var(--rootsy-bruma-700)",
               }
         }
       >
@@ -193,25 +232,24 @@ export function HandbookSurfacesView() {
       <section id="fondos" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Fondos</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
-          Éter, bruma, sombra y sotobosque son el lienzo. Se elige una atmósfera por
-          contexto. Encima viven superficie y elevada. En Bruma clara la elevada es
-          blanco; en éter y sombra sube un paso de la rampa. Sotobosque tiñe los
-          oscuros con savia 400.
+          Éter, Luz filtrada y Sombra son el lienzo. Se elige una atmósfera por
+          contexto. Encima viven superficie y elevada. En Luz filtrada la elevada es
+          blanco; en éter y Sombra sube un paso de la rampa.
         </p>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid gap-3 lg:grid-cols-3">
           {HANDBOOK_SURFACE_ATMOSPHERES.map((atmosphere) => (
             <FondoStack key={atmosphere.id} atmosphereId={atmosphere.id} />
           ))}
         </div>
         <p className={cn(libraryDocPageDescriptionClass, "mt-4")}>
           <Token>--color-fondo</Token> es el lienzo. <Token>--color-superficie</Token> el
-          panel. <Token>--color-elevada</Token> la card. En Bruma clara esa card es{" "}
+          panel. <Token>--color-elevada</Token> la card. En Luz filtrada esa card es{" "}
           <Token>--rootsy-blanco</Token>.
         </p>
         <div className="mt-8">
           <LibraryDoDontPair
-            doText="Una atmósfera por pantalla. Fondo, superficie y elevada del mismo aire. En Bruma, el papel es blanco."
-            dontText="No mezcles éter de fondo con sombra de card. No uses savia-50 como papel de Bruma."
+            doText="Una atmósfera por pantalla. Fondo, superficie y elevada del mismo aire. En Luz filtrada, el papel es blanco."
+            dontText="No mezcles éter de fondo con Sombra de card. No uses savia-50 como papel de Luz filtrada."
           />
         </div>
 
@@ -229,7 +267,7 @@ export function HandbookSurfacesView() {
           Bruma-50. El valle de las losetas — cajas, cuentas, personas, reportes. Cada
           loseta es blanca. Sin planeta ni rampa.
         </p>
-        <div className="mt-6 grid gap-3 lg:grid-cols-3">
+        <div className="mt-6 grid gap-3 lg:grid-cols-2">
           <LienzoSwatch id="lienzo-plano">
             <div className="data-workspace-tables-atmosphere workspace-layouts-tables flex h-full flex-col">
               <div className="data-workspace-tables-filters-dawn h-9 shrink-0" />
@@ -256,12 +294,6 @@ export function HandbookSurfacesView() {
             <div className="data-workspace-blocks-atmosphere grid h-full grid-cols-2 content-start items-start gap-2.5 p-3">
               <MiniLoseta title="Mostrador" amount="$ 48.320" open />
               <MiniLoseta title="Patio" amount="$ 0" />
-            </div>
-          </LienzoSwatch>
-          <LienzoSwatch id="lienzo-de-bloques-noche">
-            <div className="data-workspace-blocks-atmosphere-bruma-oscura grid h-full grid-cols-2 content-start items-start gap-2.5 p-3">
-              <MiniLoseta title="Mostrador" amount="$ 48.320" open night />
-              <MiniLoseta title="Patio" amount="$ 0" night />
             </div>
           </LienzoSwatch>
         </div>
@@ -293,7 +325,7 @@ export function HandbookSurfacesView() {
         </div>
         <div className="mt-8">
           <LibraryDoDontPair
-            doText="Lienzo de bloques en losetas. Lienzo plano en tablas. Papel blanco en Bruma clara."
+            doText="Lienzo de bloques en losetas. Lienzo plano en tablas. Papel blanco en Luz filtrada."
             dontText="No pongas foto, planeta ni estrellas detrás del trabajo. No uses savia-50 como papel."
           />
         </div>
