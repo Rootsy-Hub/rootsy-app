@@ -5,7 +5,7 @@
 .layouts-operar-earth-floor {
   overflow: visible;
   background: var(--rootsy-sombra-950);
-  border-top: 1px solid var(--rootsy-sombra-800);
+  border-top: 1px solid var(--rootsy-sombra-700);
 }
 
 /**

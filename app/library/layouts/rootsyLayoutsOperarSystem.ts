@@ -109,7 +109,7 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
 export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
   shell: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
   header: { token: "sombra-950→900", css: "linear-gradient chrome" },
-  rail: { token: "sombra-900 · library-sidebar", css: "var(--rootsy-sombra-900)" },
+  rail: { token: "sombra-800 · library-sidebar", css: "var(--rootsy-sombra-800)" },
   canvas: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
   productCard: { token: "sombra-800", css: "var(--rootsy-sombra-800)" },
   footer: {

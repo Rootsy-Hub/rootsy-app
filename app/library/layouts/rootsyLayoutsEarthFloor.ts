@@ -9,8 +9,8 @@ const hx = rootsyColorHex
 
 export const ROOTSY_LAYOUTS_EARTH_FLOOR = {
   background: hx("sombra", "950"),
-  borderTop: `1px solid ${hx("sombra", "800")}`,
-  dividerColor: hx("sombra", "800"),
+  borderTop: `1px solid ${hx("sombra", "700")}`,
+  dividerColor: hx("sombra", "700"),
   baseCss: hx("sombra", "950"),
   textColor: hx("sombra", "50"),
   mutedColor: hx("sombra", "300"),
@@ -22,7 +22,7 @@ export const rootsyLayoutsEarthFloorSurfaceClass =
   "bg-[var(--rootsy-sombra-950)]"
 
 export const rootsyLayoutsEarthFloorBorderClass =
-  "border-t border-[var(--rootsy-sombra-800)]"
+  "border-t border-[var(--rootsy-sombra-700)]"
 
 export const rootsyLayoutsEarthFloorShadowClass =
   "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-sombra-400)_18%,transparent)]"

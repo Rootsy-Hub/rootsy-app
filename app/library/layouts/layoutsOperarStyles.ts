@@ -102,7 +102,7 @@ export const layoutsOperarCatalogColumnInMainGridClass = cn(
 /** Rail catálogo — inline en desktop; overlay a la izquierda en mobile. */
 export const layoutsOperarCatalogSidebarClass = cn(
   "relative shrink-0 overflow-hidden",
-  "border-r border-[var(--layouts-operar-border-dark-hairline)]",
+  "border-r border-[var(--layouts-operar-border-dark-default)]",
   "transition-[width,border-color,transform] duration-300 ease-in-out motion-reduce:transition-none",
   "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:h-full max-md:shadow-xl",
   librarySidebarClass,
@@ -150,8 +150,8 @@ export const layoutsOperarCatalogCanvasClass = cn(
 
 export const layoutsOperarCatalogToolbarClass = cn(
   "flex min-w-0 shrink-0 items-center gap-3 px-4",
-  "bg-[var(--rootsy-sombra-950)]",
-  "border-b border-[var(--layouts-operar-border-dark-hairline)]",
+  "bg-[var(--rootsy-sombra-800)]",
+  "border-b border-[var(--layouts-operar-border-dark-default)]",
   "[height:var(--layouts-operar-catalog-toolbar-h)]",
 )
 

@@ -14,10 +14,10 @@
  * acá se pisa a sombra-800, la misma costura que canvas / toolbar / toolbox. */
 .rootsy-theme-pos .library-sidebar,
 .rootsy-theme-pos .handbook-rail {
-  --color-shell: var(--rootsy-sombra-900);
-  --color-borde: var(--rootsy-sombra-800);
-  background-color: var(--rootsy-sombra-900) !important;
-  border-color: var(--rootsy-sombra-800) !important;
+  --color-shell: var(--rootsy-sombra-800);
+  --color-borde: var(--rootsy-sombra-700);
+  background-color: var(--rootsy-sombra-800) !important;
+  border-color: var(--rootsy-sombra-700) !important;
 }
 
 .rootsy-theme-pos.layouts-operar-body,
@@ -26,9 +26,9 @@
   --layouts-operar-rail-section-label: var(--rootsy-sombra-400);
   --layouts-operar-rail-item-text: var(--rootsy-sombra-300);
   --layouts-operar-rail-item-text-hover: var(--rootsy-sombra-50);
-  --layouts-operar-rail-item-text-selected: var(--rootsy-sombra-50);
+  --layouts-operar-rail-item-text-selected: var(--rootsy-savia-950);
   --layouts-operar-rail-item-hover: color-mix(in srgb, var(--rootsy-sombra-900) 48%, transparent);
-  --layouts-operar-rail-item-selected: color-mix(in srgb, var(--rootsy-sombra-800) 52%, transparent);
+  --layouts-operar-rail-item-selected: var(--rootsy-savia-500);
   --layouts-operar-rail-item-border: color-mix(in srgb, var(--rootsy-sombra-900) 80%, transparent);
   --layouts-operar-rail-accent: var(--rootsy-sombra-50);
   --layouts-operar-rail-focus-ring: color-mix(in srgb, var(--rootsy-savia-400) 45%, transparent);
@@ -85,7 +85,7 @@
   --layouts-operar-product-card-shadow-selected: none;
   --layouts-operar-product-card-title: var(--rootsy-sombra-50);
   --layouts-operar-product-card-desc: var(--rootsy-sombra-300);
-  --layouts-operar-product-card-price: var(--layouts-operar-product-card-desc);
+  --layouts-operar-product-card-price: var(--layouts-operar-product-card-title);
   --layouts-operar-product-card-price-hover: var(--rootsy-savia-500);
   --layouts-operar-product-card-media-bg: var(--rootsy-sombra-800);
 
@@ -353,18 +353,28 @@
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item:hover,
 .rootsy-theme-pos .layouts-operar-body .library-nav-item:hover {
-  background-color: var(--rootsy-sombra-800);
+  background-color: var(--rootsy-sombra-700);
 }
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item--active,
-.rootsy-theme-pos .layouts-operar-body .library-nav-item--active {
+.rootsy-theme-pos .layouts-operar-body .library-nav-item--active,
+.rootsy-theme-pos .handbook-rail .library-nav-item--active {
   border-color: transparent;
-  background-color: var(--rootsy-sombra-800);
+  background-color: var(--rootsy-savia-500);
+  color: var(--rootsy-savia-950);
+}
+
+.rootsy-theme-pos.layouts-operar-body .library-nav-item--active:hover,
+.rootsy-theme-pos .layouts-operar-body .library-nav-item--active:hover,
+.rootsy-theme-pos .handbook-rail .library-nav-item--active:hover {
+  background-color: var(--rootsy-savia-400);
+  color: var(--rootsy-savia-950);
 }
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item--active .library-nav-item-icon,
-.rootsy-theme-pos .layouts-operar-body .library-nav-item--active .library-nav-item-icon {
-  color: var(--rootsy-sombra-50);
+.rootsy-theme-pos .layouts-operar-body .library-nav-item--active .library-nav-item-icon,
+.rootsy-theme-pos .handbook-rail .library-nav-item--active .library-nav-item-icon {
+  color: inherit;
 }
 
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-selected],
