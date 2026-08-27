@@ -1,22 +1,28 @@
 import type { HandbookColorFamily } from "@/app/handbook/color/handbookColorPalettes"
 import {
   HANDBOOK_ATMOSPHERES,
+  HANDBOOK_BLANCO,
   HANDBOOK_FUNCTIONAL_COLORS,
   handbookColorHex,
 } from "@/app/handbook/color/handbookColorPalettes"
 import {
+  applicationAtmosphereHex,
   atmosphereTokenHex,
   functionalTokenHex,
+  HANDBOOK_APPLICATION_ATMOSPHERES,
   HANDBOOK_ATMOSPHERE_CONTEXTS,
   HANDBOOK_ATMOSPHERE_TOKENS,
   HANDBOOK_BRUMA_NOCHE,
   HANDBOOK_CONTRAST_FAIL,
   HANDBOOK_CONTRAST_PASS,
   HANDBOOK_CONTRAST_RULES,
+  HANDBOOK_FUNCTIONAL_APPLICATION_RULES,
+  HANDBOOK_FUNCTIONAL_RECIPES,
   HANDBOOK_FUNCTIONAL_TOKENS,
   HANDBOOK_STATUS_TINT_RULE,
   type HandbookContrastLevel,
   type HandbookContrastPair,
+  type HandbookFunctionalRecipe,
 } from "@/app/handbook/color/handbookColorSpec"
 import {
   libraryDocBodyClass,
@@ -172,6 +178,35 @@ function FamilyRamp({ family }: { family: HandbookColorFamily }) {
   )
 }
 
+function BlancoCallout() {
+  return (
+    <section id="blanco" className="mt-8 scroll-mt-24 space-y-3">
+      <div className={cn("overflow-hidden rounded-2xl border", libraryDocBorderClass)}>
+        <div className="flex items-center gap-4 px-4 py-4">
+          <span
+            className="size-10 shrink-0 rounded-lg border"
+            style={{
+              backgroundColor: HANDBOOK_BLANCO.hex,
+              borderColor: "var(--color-borde)",
+            }}
+          />
+          <div className="min-w-0">
+            <p className={cn("font-canopy text-sm font-semibold", libraryDocPrimaryTextClass)}>
+              Blanco
+            </p>
+            <p className={cn("font-numeric text-[11px] tabular-nums", libraryDocMutedTextClass)}>
+              {HANDBOOK_BLANCO.token} · {HANDBOOK_BLANCO.hex}
+            </p>
+            <p className={cn("mt-1 font-canopy text-xs leading-relaxed", libraryDocMutedTextClass)}>
+              {HANDBOOK_BLANCO.usage}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function Swatch({ hex, className }: { hex: string; className?: string }) {
   return (
     <span
@@ -181,9 +216,193 @@ function Swatch({ hex, className }: { hex: string; className?: string }) {
   )
 }
 
+function FunctionalChip({
+  children,
+  fill,
+  text,
+  border,
+}: {
+  children: string
+  fill: string
+  text: string
+  border?: string
+}) {
+  return (
+    <span
+      className="inline-flex rounded-lg px-2.5 py-1 font-canopy text-[11px] font-semibold"
+      style={{
+        backgroundColor: fill,
+        color: text,
+        boxShadow: border ? `inset 0 0 0 1px ${border}` : undefined,
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
+function functionalRecipeHex(
+  recipe: HandbookFunctionalRecipe,
+  step: "solidFill" | "solidText" | "tintFill" | "tintBorder" | "tintText" | "signal",
+) {
+  return handbookColorHex(recipe.familyId, recipe[step])
+}
+
+const FUNCTIONAL_SIGNAL_RECIPES = HANDBOOK_FUNCTIONAL_RECIPES.filter(
+  (recipe, index, list) => list.findIndex((item) => item.familyId === recipe.familyId) === index,
+)
+
+function FunctionalApplicationPreview() {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {HANDBOOK_APPLICATION_ATMOSPHERES.map((atmosphere) => (
+        <div
+          key={atmosphere.id}
+          className="overflow-hidden rounded-2xl p-4"
+          style={{ backgroundColor: applicationAtmosphereHex("fondo", atmosphere.id) }}
+        >
+          <p
+            className="font-canopy text-[11px] font-semibold uppercase tracking-[0.12em]"
+            style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
+          >
+            {atmosphere.name}
+          </p>
+          <p
+            className="mt-1 font-canopy text-[11px]"
+            style={{ color: applicationAtmosphereHex("texto-muted", atmosphere.id) }}
+          >
+            {atmosphere.sample}
+          </p>
+          <div
+            className="mt-3 rounded-xl p-3"
+            style={{ backgroundColor: applicationAtmosphereHex("superficie", atmosphere.id) }}
+          >
+            <div
+              className="space-y-3 rounded-lg p-3"
+              style={{ backgroundColor: applicationAtmosphereHex("elevada", atmosphere.id) }}
+            >
+              <div className="flex flex-wrap gap-2">
+                {HANDBOOK_FUNCTIONAL_RECIPES.filter((recipe) => recipe.hasSolid).map((recipe) => (
+                  <FunctionalChip
+                    key={`${atmosphere.id}-${recipe.id}-solid`}
+                    fill={functionalRecipeHex(recipe, "solidFill")}
+                    text={functionalRecipeHex(recipe, "solidText")}
+                  >
+                    {recipe.sampleSolid}
+                  </FunctionalChip>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {HANDBOOK_FUNCTIONAL_RECIPES.filter((recipe) => recipe.hasTint).map((recipe) => (
+                  <FunctionalChip
+                    key={`${atmosphere.id}-${recipe.id}-tint`}
+                    fill={functionalRecipeHex(recipe, "tintFill")}
+                    text={functionalRecipeHex(recipe, "tintText")}
+                    border={functionalRecipeHex(recipe, "tintBorder")}
+                  >
+                    {recipe.sampleTint}
+                  </FunctionalChip>
+                ))}
+              </div>
+              {atmosphere.dark ? (
+                <div className="flex flex-wrap gap-3">
+                  {FUNCTIONAL_SIGNAL_RECIPES.map((recipe) => (
+                    <span
+                      key={`${atmosphere.id}-${recipe.id}-signal`}
+                      className="inline-flex items-center gap-1.5 font-canopy text-[11px] font-semibold"
+                      style={{ color: functionalRecipeHex(recipe, "signal") }}
+                    >
+                      <span
+                        className="size-1.5 rounded-full"
+                        style={{ backgroundColor: functionalRecipeHex(recipe, "signal") }}
+                      />
+                      {recipe.familyName} 400
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function FunctionalRecipeLegend() {
+  const accion = HANDBOOK_FUNCTIONAL_RECIPES.find((recipe) => recipe.id === "accion")!
+  const exito = HANDBOOK_FUNCTIONAL_RECIPES.find((recipe) => recipe.id === "exito")!
+  const atencion = HANDBOOK_FUNCTIONAL_RECIPES.find((recipe) => recipe.id === "atencion")!
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <div className={cn("rounded-xl border p-3", libraryDocBorderClass, libraryDocSurfaceMutedClass)}>
+        <p className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}>Sólido</p>
+        <div className="mt-2">
+          <FunctionalChip
+            fill={functionalRecipeHex(accion, "solidFill")}
+            text={functionalRecipeHex(accion, "solidText")}
+          >
+            {accion.sampleSolid}
+          </FunctionalChip>
+        </div>
+        <p className={cn(libraryDocPageDescriptionClass, "mt-2")}>
+          Identidad + texto 50. CTA chico sube a savia 700.
+        </p>
+      </div>
+      <div className={cn("rounded-xl border p-3", libraryDocBorderClass, libraryDocSurfaceMutedClass)}>
+        <p className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}>Tint</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <FunctionalChip
+            fill={functionalRecipeHex(exito, "tintFill")}
+            text={functionalRecipeHex(exito, "tintText")}
+            border={functionalRecipeHex(exito, "tintBorder")}
+          >
+            {exito.sampleTint}
+          </FunctionalChip>
+          <FunctionalChip
+            fill={functionalRecipeHex(atencion, "tintFill")}
+            text={functionalRecipeHex(atencion, "tintText")}
+            border={functionalRecipeHex(atencion, "tintBorder")}
+          >
+            {atencion.sampleTint}
+          </FunctionalChip>
+        </div>
+        <p className={cn(libraryDocPageDescriptionClass, "mt-2")}>
+          Isla 50, borde 200, texto 800. Sol usa 900.
+        </p>
+      </div>
+      <div
+        className="rounded-xl p-3"
+        style={{ backgroundColor: applicationAtmosphereHex("elevada", "eter") }}
+      >
+        <p
+          className={cn(libraryDocMetaLabelClass, "normal-case tracking-normal")}
+          style={{ color: applicationAtmosphereHex("texto-muted", "eter") }}
+        >
+          Señal
+        </p>
+        <p
+          className="mt-2 font-canopy text-[11px] font-semibold"
+          style={{ color: functionalRecipeHex(accion, "signal") }}
+        >
+          Savia 400
+        </p>
+        <p
+          className="mt-2 font-canopy text-xs leading-relaxed"
+          style={{ color: applicationAtmosphereHex("texto-muted", "eter") }}
+        >
+          Foco, link e icono sobre oscuro. No es cuerpo en Bruma clara.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function AtmosphereContextPreview() {
   const fondo = HANDBOOK_ATMOSPHERE_TOKENS.find((token) => token.id === "fondo")!
   const superficie = HANDBOOK_ATMOSPHERE_TOKENS.find((token) => token.id === "superficie")!
+  const elevada = HANDBOOK_ATMOSPHERE_TOKENS.find((token) => token.id === "elevada")!
   const texto = HANDBOOK_ATMOSPHERE_TOKENS.find((token) => token.id === "texto")!
   const muted = HANDBOOK_ATMOSPHERE_TOKENS.find((token) => token.id === "texto-muted")!
   const accion = HANDBOOK_FUNCTIONAL_TOKENS.find((token) => token.id === "accion")!
@@ -206,21 +425,26 @@ function AtmosphereContextPreview() {
             className="mt-3 space-y-3 rounded-xl p-3"
             style={{ backgroundColor: atmosphereTokenHex(superficie, context.id) }}
           >
-            <p
-              className="font-canopy text-sm font-semibold"
-              style={{ color: atmosphereTokenHex(texto, context.id) }}
+            <div
+              className="space-y-3 rounded-lg p-3"
+              style={{ backgroundColor: atmosphereTokenHex(elevada, context.id) }}
             >
-              {context.sample}
-            </p>
-            <span
-              className="inline-flex rounded-lg px-2.5 py-1 font-canopy text-[11px] font-semibold"
-              style={{
-                backgroundColor: functionalTokenHex(accion),
-                color: handbookColorHex("savia", "50"),
-              }}
-            >
-              Acción
-            </span>
+              <p
+                className="font-canopy text-sm font-semibold"
+                style={{ color: atmosphereTokenHex(texto, context.id) }}
+              >
+                {context.sample}
+              </p>
+              <span
+                className="inline-flex rounded-lg px-2.5 py-1 font-canopy text-[11px] font-semibold"
+                style={{
+                  backgroundColor: functionalTokenHex(accion),
+                  color: handbookColorHex("savia", "50"),
+                }}
+              >
+                Acción
+              </span>
+            </div>
           </div>
         </div>
       ))}
@@ -410,8 +634,9 @@ export function HandbookColorView() {
       </p>
       <p className={cn(libraryDocBodyClass, "mt-3")}>
         Esta paleta es la que usa la aplicación. Cada familia tiene once pasos,
-        de 50 a 950. El paso marcado es la identidad de la familia. Si un color en la aplicación
-        no está acá, no entra.
+        de 50 a 950. El paso marcado es la identidad de la familia. Bruma clara suma un
+        blanco fuera de rampa: la luz del papel. Si un color en la aplicación no está
+        acá, no entra.
       </p>
 
       <section
@@ -427,7 +652,10 @@ export function HandbookColorView() {
           <FamilyOverviewStrip families={HANDBOOK_ATMOSPHERES} />
         </div>
         {HANDBOOK_ATMOSPHERES.map((family) => (
-          <FamilyRamp key={family.id} family={family} />
+          <div key={family.id}>
+            <FamilyRamp family={family} />
+            {family.id === "bruma" ? <BlancoCallout /> : null}
+          </div>
         ))}
       </section>
 
@@ -454,8 +682,9 @@ export function HandbookColorView() {
       >
         <h2 className={libraryDocSectionTitleClass}>Tokens de color</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
-          Los tokens nombran propósito. El hex sale de la paleta. Un token, un trabajo: no se
-          escribe un color suelto ni se reutiliza un paso porque “queda parecido”.
+          Los tokens nombran propósito. El hex sale de la paleta, salvo el papel de Bruma:
+          --rootsy-blanco. Un token, un trabajo: no se escribe un color suelto ni se
+          reutiliza un paso porque “queda parecido”.
         </p>
 
         <div className="mt-6">
@@ -479,7 +708,8 @@ export function HandbookColorView() {
           Bruma de noche usa los mismos tokens, invertidos: fondo {HANDBOOK_BRUMA_NOCHE.fondo},
           superficie {HANDBOOK_BRUMA_NOCHE.superficie}, elevada {HANDBOOK_BRUMA_NOCHE.elevada},
           borde {HANDBOOK_BRUMA_NOCHE.borde}, texto {HANDBOOK_BRUMA_NOCHE.texto}, muted{" "}
-          {HANDBOOK_BRUMA_NOCHE.muted}. No es una familia nueva.
+          {HANDBOOK_BRUMA_NOCHE.muted}. No es una familia nueva. En Bruma clara la elevada
+          es blanco, no un paso de la rampa.
         </p>
 
         <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>
@@ -495,10 +725,40 @@ export function HandbookColorView() {
           {HANDBOOK_STATUS_TINT_RULE}
         </p>
 
+        <h3
+          id="funcionales-en-atmosferas"
+          className={cn(libraryDocSubheadingClass, "mt-8 scroll-mt-24")}
+        >
+          Funcionales en atmósferas
+        </h3>
+        <p className={cn(libraryDocBodyClass, "mt-3")}>
+          Los pasos no cambian con la atmósfera. Cambia el aire debajo: sólido, tint y señal
+          usan la misma receta en éter, bruma, sombra y bruma noche.
+        </p>
+        <div className="mt-4">
+          <FunctionalApplicationPreview />
+        </div>
+        <div className="mt-4">
+          <FunctionalRecipeLegend />
+        </div>
+        <ul className="mt-4 max-w-3xl space-y-2">
+          {HANDBOOK_FUNCTIONAL_APPLICATION_RULES.map((rule) => (
+            <li key={rule} className={cn(libraryDocBodyClass, "text-sm")}>
+              {rule}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-6">
+          <LibraryDoDontPair
+            doText="Tint 50 sobre éter y sombra: una isla clara. CTA savia 700 + texto 50 en las cuatro atmósferas."
+            dontText="No rellenes un estado con 800 en oscuro, ni uses sol 500 con texto 50, ni pintes cuerpo con 400 en Bruma clara."
+          />
+        </div>
+
         <div className="mt-8">
           <LibraryDoDontPair
-            doText="Nombrá el propósito y tomá el paso de la paleta. --color-accion es savia 600 en cualquier pantalla."
-            dontText="No pongas un hex a mano ni uses lava para atención, sol para error o savia para pintar un fondo entero."
+            doText="Nombrá el propósito y tomá el paso de la paleta. --color-accion es savia 600. --color-elevada en Bruma clara es blanco."
+            dontText="No pongas un hex a mano ni uses savia-50 como papel, lava para atención o savia para pintar un fondo entero."
           />
         </div>
       </section>
@@ -541,7 +801,7 @@ export function HandbookColorView() {
         <div className="mt-8">
           <LibraryDoDontPair
             doText="Medí el par en el contexto real: bruma 700 para muted claro, savia 700 si el CTA es chico, lava 600 para destructivo."
-            dontText="No uses bruma 400 como cuerpo, ni blanco sobre sol 500, ni savia 600 para un label de 12px."
+            dontText="No uses bruma 400 como cuerpo, ni blanco sobre sol 500, ni savia-50 como papel de Bruma."
           />
         </div>
       </section>

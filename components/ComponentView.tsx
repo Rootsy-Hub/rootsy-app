@@ -70,6 +70,8 @@ export type ComponentViewProps = {
   componentProperties: readonly ComponentViewProperty[]
   variants: readonly ComponentViewChoice[]
   extras?: readonly ComponentViewExtraRow[]
+  /** Si es true, el canvas arranca desplegado. */
+  defaultOpen?: boolean
   render: (
     variant: string,
     extras: readonly string[],
@@ -134,9 +136,10 @@ export function ComponentView({
   componentProperties,
   variants,
   extras = [],
+  defaultOpen = false,
   render,
 }: ComponentViewProps) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen)
   const [variantIndex, setVariantIndex] = useState(0)
   const [extraIndices, setExtraIndices] = useState(() => extras.map(initialExtraIndex))
   const [worldId, setWorldId] = useState<string | null>(() => worldIdFromBackground(background))
@@ -191,8 +194,8 @@ export function ComponentView({
             className="relative flex min-h-44 items-center justify-center px-3 py-6"
             style={{ background: canvas } satisfies CSSProperties}
           >
-            <div
-              className="absolute top-3 right-3 flex gap-1.5"
+              <div
+              className="absolute top-3 right-3 z-10 flex gap-1.5"
               role="group"
               aria-label="Mundo de fondo"
             >

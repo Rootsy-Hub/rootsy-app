@@ -5,6 +5,7 @@
 
 import {
   handbookColorHex,
+  type HandbookColorRefStep,
   type HandbookColorStepId,
 } from "@/app/handbook/color/handbookColorPalettes"
 
@@ -25,7 +26,7 @@ export type HandbookAtmosphereToken = {
   token: string
   label: string
   purpose: string
-  steps: Record<HandbookAtmosphereId, HandbookColorStepId>
+  steps: Record<HandbookAtmosphereId, HandbookColorRefStep>
 }
 
 export const HANDBOOK_ATMOSPHERE_TOKENS: HandbookAtmosphereToken[] = [
@@ -47,8 +48,8 @@ export const HANDBOOK_ATMOSPHERE_TOKENS: HandbookAtmosphereToken[] = [
     id: "elevada",
     token: "--color-elevada",
     label: "Elevada",
-    purpose: "Card sobre la superficie.",
-    steps: { eter: "700", bruma: "50", sombra: "500" },
+    purpose: "Card sobre la superficie. En Bruma clara es blanco.",
+    steps: { eter: "700", bruma: "blanco", sombra: "500" },
   },
   {
     id: "borde",
@@ -161,14 +162,158 @@ export const HANDBOOK_BRUMA_NOCHE = {
   muted: "400" as HandbookColorStepId,
 }
 
+export type HandbookApplicationAtmosphereId = HandbookAtmosphereId | "bruma-noche"
+
+export const HANDBOOK_APPLICATION_ATMOSPHERES: {
+  id: HandbookApplicationAtmosphereId
+  name: string
+  sample: string
+  dark: boolean
+}[] = [
+  { id: "eter", name: "Éter", sample: "Header, menú, vacío.", dark: true },
+  { id: "bruma", name: "Bruma", sample: "Workspace, tablas, ticket.", dark: false },
+  { id: "sombra", name: "Sombra", sample: "Mostrador, catálogo, rail.", dark: true },
+  { id: "bruma-noche", name: "Bruma noche", sample: "Losetas invertidas.", dark: true },
+]
+
+export type HandbookFunctionalRecipe = {
+  id: string
+  label: string
+  familyId: string
+  familyName: string
+  purpose: string
+  /** Relleno de CTA o destructivo. Texto chico: savia 700. */
+  solidFill: HandbookColorStepId
+  solidText: HandbookColorStepId
+  /** Estado suave: 50 + borde 200 + texto 800. Sol usa 900. */
+  tintFill: HandbookColorStepId
+  tintBorder: HandbookColorStepId
+  tintText: HandbookColorStepId
+  /** Foco, link e icono sobre oscuro. No es cuerpo en Bruma clara. */
+  signal: HandbookColorStepId
+  sampleSolid: string
+  sampleTint: string
+  hasSolid: boolean
+  hasTint: boolean
+}
+
+export const HANDBOOK_FUNCTIONAL_RECIPES: HandbookFunctionalRecipe[] = [
+  {
+    id: "accion",
+    label: "Acción",
+    familyId: "savia",
+    familyName: "Savia",
+    purpose: "CTA. El texto chico sube a 700.",
+    solidFill: "700",
+    solidText: "50",
+    tintFill: "50",
+    tintBorder: "200",
+    tintText: "800",
+    signal: "400",
+    sampleSolid: "Guardar",
+    sampleTint: "Listo",
+    hasSolid: true,
+    hasTint: false,
+  },
+  {
+    id: "exito",
+    label: "Éxito",
+    familyId: "savia",
+    familyName: "Savia",
+    purpose: "Pagado, activo, listo.",
+    solidFill: "700",
+    solidText: "50",
+    tintFill: "50",
+    tintBorder: "200",
+    tintText: "800",
+    signal: "400",
+    sampleSolid: "Activo",
+    sampleTint: "Pagado",
+    hasSolid: false,
+    hasTint: true,
+  },
+  {
+    id: "informacion",
+    label: "Información",
+    familyId: "cielo-de-dia",
+    familyName: "Cielo",
+    purpose: "En curso, enviado, contexto.",
+    solidFill: "600",
+    solidText: "50",
+    tintFill: "50",
+    tintBorder: "200",
+    tintText: "800",
+    signal: "400",
+    sampleSolid: "Enviar",
+    sampleTint: "En curso",
+    hasSolid: false,
+    hasTint: true,
+  },
+  {
+    id: "atencion",
+    label: "Atención",
+    familyId: "sol",
+    familyName: "Sol",
+    purpose: "Preparando, pendiente. Nunca texto 50 sobre 500.",
+    solidFill: "700",
+    solidText: "50",
+    tintFill: "50",
+    tintBorder: "200",
+    tintText: "900",
+    signal: "400",
+    sampleSolid: "Aviso",
+    sampleTint: "Pendiente",
+    hasSolid: false,
+    hasTint: true,
+  },
+  {
+    id: "peligro",
+    label: "Peligro",
+    familyId: "lava",
+    familyName: "Lava",
+    purpose: "Error y lo que no se deshace.",
+    solidFill: "600",
+    solidText: "50",
+    tintFill: "50",
+    tintBorder: "200",
+    tintText: "800",
+    signal: "400",
+    sampleSolid: "Eliminar",
+    sampleTint: "Error",
+    hasSolid: true,
+    hasTint: true,
+  },
+]
+
+export const HANDBOOK_FUNCTIONAL_APPLICATION_RULES = [
+  "Los pasos no cambian con la atmósfera. Cambia el aire debajo.",
+  "Sólido: identidad (savia 700 si el texto es chico, lava 600) y texto 50.",
+  "Tint: fondo 50, borde 200 y texto 800 de la misma familia. Sol usa 900.",
+  "Sobre éter, sombra y bruma noche el tint sigue en 50: una isla clara, no un 800 de relleno.",
+  "Señal sobre oscuro: paso 400 para foco, links e iconos. En Bruma clara no es cuerpo.",
+] as const
+
+export function applicationAtmosphereHex(
+  tokenId: "fondo" | "superficie" | "elevada" | "texto" | "texto-muted" | "borde",
+  atmosphereId: HandbookApplicationAtmosphereId,
+): string {
+  if (atmosphereId === "bruma-noche") {
+    const step = tokenId === "texto-muted" ? HANDBOOK_BRUMA_NOCHE.muted : HANDBOOK_BRUMA_NOCHE[tokenId]
+    return handbookColorHex("bruma", step)
+  }
+  const token = HANDBOOK_ATMOSPHERE_TOKENS.find((item) => item.id === tokenId)
+  if (!token) throw new Error(`Unknown atmosphere token: ${tokenId}`)
+  return atmosphereTokenHex(token, atmosphereId)
+}
+
 export type HandbookContrastLevel = "AAA" | "AA" | "AA grande" | "No"
 
 export type HandbookContrastPair = {
   id: string
   label: string
   context: string
-  foreground: { familyId: string; step: HandbookColorStepId }
-  background: { familyId: string; step: HandbookColorStepId }
+  foreground: { familyId: string; step: HandbookColorRefStep }
+  background: { familyId: string; step: HandbookColorRefStep }
   ratio: string
   level: HandbookContrastLevel
 }
@@ -199,6 +344,15 @@ export const HANDBOOK_CONTRAST_PASS: HandbookContrastPair[] = [
     foreground: { familyId: "bruma", step: "900" },
     background: { familyId: "bruma", step: "100" },
     ratio: "16.3:1",
+    level: "AAA",
+  },
+  {
+    id: "bruma-texto-blanco",
+    label: "Bruma 900 sobre blanco",
+    context: "Cuerpo sobre papel, loseta y formulario en Bruma clara.",
+    foreground: { familyId: "bruma", step: "900" },
+    background: { familyId: "blanco", step: "blanco" },
+    ratio: "18.7:1",
     level: "AAA",
   },
   {
@@ -365,13 +519,16 @@ export const HANDBOOK_CONTRAST_RULES = [
   "Sobre tint funcional: fondo 50 y texto 800 de la misma familia. Sol usa 900.",
   "Nunca texto claro sobre sol 500. Nunca bruma 400 como cuerpo en claro.",
   "Bruma de noche no toma muted de sombra: el mute del dosel no es el mute de la neblina.",
+  "En Bruma clara el papel es --rootsy-blanco, no savia-50 ni bruma-50. Savia-50 es el inverso del CTA.",
 ] as const
 
 export function atmosphereTokenHex(
   token: HandbookAtmosphereToken,
   atmosphereId: HandbookAtmosphereId,
 ): string {
-  return handbookColorHex(atmosphereId, token.steps[atmosphereId])
+  const step = token.steps[atmosphereId]
+  if (step === "blanco") return "#FFFFFF"
+  return handbookColorHex(atmosphereId, step)
 }
 
 export function functionalTokenHex(token: HandbookFunctionalToken): string {

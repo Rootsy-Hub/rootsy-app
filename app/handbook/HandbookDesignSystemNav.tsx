@@ -4,11 +4,13 @@ import {
   HANDBOOK_DESIGN_SYSTEM_NAV,
   handbookDesignSystemHref,
 } from "@/app/handbook/handbookDesignSystem"
+import { getHandbookDesignSystemNavIcon } from "@/app/handbook/handbookNavIcons"
 import {
   libraryNavGroupClass,
   libraryNavGroupLabelClass,
   libraryNavItemActiveClass,
   libraryNavItemClass,
+  libraryNavItemIconClass,
   libraryNavItemLabelClass,
 } from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
@@ -33,6 +35,7 @@ export function HandbookDesignSystemNav({
           <ul className="library-nav-list">
             {group.items.map((item) => {
               const isActive = item.id === activePageId
+              const Icon = getHandbookDesignSystemNavIcon(item.id)
               return (
                 <li key={item.id}>
                   <Link
@@ -43,6 +46,7 @@ export function HandbookDesignSystemNav({
                     className={cn(libraryNavItemClass, isActive && libraryNavItemActiveClass)}
                     onClick={() => onSelectPage?.(item.id)}
                   >
+                    {Icon ? <Icon className={libraryNavItemIconClass} aria-hidden /> : null}
                     <span className={libraryNavItemLabelClass}>{item.label}</span>
                   </Link>
                 </li>

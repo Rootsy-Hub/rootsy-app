@@ -61,11 +61,12 @@ export function useSaleBoardCategories(
 
   const networkQuery = useQuery({
     queryKey: saleBoardCategoriesQueryKey(popId ?? "", "http"),
-    queryFn: () =>
-      fetchPopArticleCategories(popId!, {
-        itemKind: "merchandise",
-        showInSale: true,
-      }),
+    queryFn: async () => {
+      const rows = await fetchPopArticleCategories(popId!)
+      return rows.filter(
+        (row) => row.itemKind === "merchandise" && row.showInSale,
+      )
+    },
     enabled: fallback && enabled,
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,

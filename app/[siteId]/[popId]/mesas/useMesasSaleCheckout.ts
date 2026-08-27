@@ -322,6 +322,7 @@ export function useMesasSaleCheckout(
   const lastSavedUpdatedAtRef = useRef<string | null>(null)
   const lastAppliedRemoteUpdatedAtRef = useRef<string | null>(null)
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const saleIdempotencyKeyRef = useRef(crypto.randomUUID())
 
   checkoutStateRef.current = {
     carrito,
@@ -419,6 +420,9 @@ export function useMesasSaleCheckout(
       void flushCheckoutPersist(prevId, checkoutStateRef.current)
     }
 
+    if (prevId !== tableSessionId) {
+      saleIdempotencyKeyRef.current = crypto.randomUUID()
+    }
     loadedSessionIdRef.current = tableSessionId
     lastSavedUpdatedAtRef.current = null
     lastAppliedRemoteUpdatedAtRef.current = null
@@ -1571,6 +1575,7 @@ export function useMesasSaleCheckout(
         const res = await completeSale(popId, {
           siteId,
           priceListId: getSalePriceListSession(popId),
+          idempotencyKey: saleIdempotencyKeyRef.current,
           lines: buildCompleteSaleLinesFromCart({
             carrito: carritoToSell,
             quantityDealApplications:
@@ -1617,6 +1622,7 @@ export function useMesasSaleCheckout(
           setSubmitError(res.error)
           return false
         }
+        saleIdempotencyKeyRef.current = crypto.randomUUID()
 
         setConfirmOpen(false)
         setPartialPayment(false)

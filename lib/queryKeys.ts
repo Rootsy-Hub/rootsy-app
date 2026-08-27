@@ -295,15 +295,27 @@ export function popLocalArticlesHydrateQueryRoot(popId: string) {
   return [...popLocalDbQueryRoot(popId), "hydrate", "articles"] as const
 }
 
-export function popLocalArticlesHydrateQueryKey(
-  popId: string,
-  categoryId: string,
-) {
-  return [...popLocalArticlesHydrateQueryRoot(popId), categoryId] as const
+export function popLocalArticlesHydrateQueryKey(popId: string) {
+  return popLocalArticlesHydrateQueryRoot(popId)
 }
 
 export function popLocalCategoriesHydrateQueryKey(popId: string) {
   return [...popLocalDbQueryRoot(popId), "hydrate", "categories"] as const
+}
+
+export function popLocalPromotionsHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "promotions"] as const
+}
+
+export function saleBoardPromotionsQueryRoot(popId: string) {
+  return ["promotions", popId, "sale-board"] as const
+}
+
+export function saleBoardPromotionsQueryKey(
+  popId: string,
+  source: "local" | "http" = "local",
+) {
+  return [...saleBoardPromotionsQueryRoot(popId), source] as const
 }
 
 export function popPriceListsQueryKey(popId: string) {

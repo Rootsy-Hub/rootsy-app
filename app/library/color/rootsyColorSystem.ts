@@ -4,13 +4,14 @@
  */
 
 import {
+  ROOTSY_BLANCO,
   ROOTSY_CIELO,
   ROOTSY_COLOR_SEMANTIC,
   ROOTSY_ETER,
   ROOTSY_SOL,
   ROOTSY_SUELO,
   rootsyColorHex,
-} from "@/lib/design-system"
+} from "@/lib/design-system/tokens/colors"
 
 const hx = rootsyColorHex
 const W = ROOTSY_COLOR_SEMANTIC.white
@@ -288,11 +289,11 @@ export const ROOTSY_SEMANTIC_TOKENS: SemanticToken[] = [
   {
     id: "background-workspace",
     token: "--color-elevada",
-    label: "Workspace sutil",
-    hex: hx("bruma", "50"),
+    label: "Papel de workspace",
+    hex: ROOTSY_BLANCO,
     textHex: hx("bruma", "900"),
     borderHex: hx("bruma", "200"),
-    usage: "Filas alternadas — mapea a --color-elevated en .rootsy-theme-workspace.",
+    usage: "Cards, losetas y formularios — --color-elevada en Bruma clara.",
     themes: ["workspace", "library"],
   },
   {

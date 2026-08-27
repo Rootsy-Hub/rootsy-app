@@ -1,23 +1,41 @@
 import {
+  Accessibility,
   AlignLeft,
+  AppWindow,
+  BadgeCheck,
+  Bell,
   BookOpen,
   Building2,
+  Circle,
   Compass,
   Component,
+  CornerDownRight,
   Eye,
+  GitPullRequest,
   Globe,
   Heart,
+  Layers,
+  Layers2,
+  LayoutGrid,
   LayoutTemplate,
   Library,
   Map,
+  Menu,
   MessageCircle,
+  MousePointerClick,
+  Move,
   Newspaper,
   Package,
   Palette,
+  Play,
   Scale,
   Sparkles,
+  Square,
+  Table2,
   Target,
+  TextCursor,
   TrendingUp,
+  Type,
   Users,
   Workflow,
   type LucideIcon,
@@ -46,6 +64,40 @@ const HANDBOOK_NAV_ICONS: Record<string, LucideIcon> = {
   actualizaciones: Newspaper,
 }
 
+const HANDBOOK_DESIGN_SYSTEM_NAV_ICONS: Record<string, LucideIcon> = {
+  overview: Compass,
+  color: Palette,
+  tipografia: Type,
+  "espaciado-y-proporciones": Move,
+  layout: LayoutGrid,
+  "superficies-y-profundidad": Layers2,
+  borde: Square,
+  radios: CornerDownRight,
+  elevacion: Layers,
+  iconografia: Circle,
+  logotipos: BadgeCheck,
+  movimiento: Play,
+  navegacion: Menu,
+  acciones: MousePointerClick,
+  formularios: TextCursor,
+  datos: Table2,
+  feedback: Bell,
+  overlays: AppWindow,
+  patrones: Workflow,
+  "presencia-de-rootsy": Sparkles,
+  accesibilidad: Accessibility,
+  "contenido-de-interfaz": AlignLeft,
+  contribuciones: GitPullRequest,
+}
+
 export function getHandbookNavIcon(sectionId: string): LucideIcon | null {
   return HANDBOOK_NAV_ICONS[sectionId] ?? BookOpen
+}
+
+export function getHandbookDesignSystemNavIcon(pageId: string): LucideIcon | null {
+  return (
+    HANDBOOK_DESIGN_SYSTEM_NAV_ICONS[pageId] ??
+    HANDBOOK_DESIGN_SYSTEM_NAV_ICONS[pageId.replace(/-final$/, "")] ??
+    null
+  )
 }

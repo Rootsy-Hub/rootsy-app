@@ -2,7 +2,8 @@
  * Paleta de color Rootsy — fuente de verdad.
  * Espejo de styles/rootsy/tokens/colors.css
  *
- * Once pasos (50–950) en siete familias. Si un hex no está acá, no entra.
+ * Once pasos (50–950) en siete familias, más --rootsy-blanco fuera de rampa.
+ * Si un hex no está acá, no entra.
  *
  * Atmósferas: éter · bruma · sombra
  * Funcionales: savia · cielo · sol · lava
@@ -47,6 +48,9 @@ export type LegacyRootsyColorFamily =
   | "cielo-de-dia"
 
 export type RootsyColorRamp = Record<RootsyColorStepId, string>
+
+/** Luz de Bruma clara. No es un paso de rampa. No pinta éter ni sombra. */
+export const ROOTSY_BLANCO = "#FFFFFF"
 
 export const ROOTSY_COLOR_RAMPS: Record<RootsyColorFamily, RootsyColorRamp> = {
   eter: {
@@ -237,13 +241,13 @@ export function rootsyColorHex(
 }
 
 /**
- * Tokens de propósito. El hex sale de la paleta.
+ * Tokens de propósito. El hex sale de la paleta, salvo elevada en Bruma clara (blanco).
  * Atmósfera por defecto: bruma clara (workspace).
  */
 export const ROOTSY_COLOR_SEMANTIC = {
   fondo: rootsyColorHex("bruma", "100"),
   superficie: rootsyColorHex("bruma", "50"),
-  elevada: rootsyColorHex("bruma", "50"),
+  elevada: ROOTSY_BLANCO,
   borde: rootsyColorHex("bruma", "200"),
   texto: rootsyColorHex("bruma", "900"),
   textoMuted: rootsyColorHex("bruma", "700"),
@@ -255,8 +259,8 @@ export const ROOTSY_COLOR_SEMANTIC = {
   atencion: rootsyColorHex("sol", "500"),
   peligro: rootsyColorHex("lava", "600"),
 
-  /** @deprecated Usar savia 50 o sombra 50 según contraste. */
-  white: rootsyColorHex("savia", "50"),
+  /** Papel de Bruma. Alias de ROOTSY_BLANCO. Inverso de CTA: savia 50. Sobre dosel: sombra 50. */
+  white: ROOTSY_BLANCO,
   /** @deprecated Usar sombra 50. */
   textOnDark: rootsyColorHex("sombra", "50"),
   /** @deprecated Usar accion. */

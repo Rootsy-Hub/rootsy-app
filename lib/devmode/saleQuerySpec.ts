@@ -39,7 +39,7 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "GET /v1/pops/:popId/cash-registers/open-session",
                 detail:
-                  "Turno de caja abierto por el usuario. En paralelo con categories, payment-context y comprobantes. El GET de articles no sale acá: espera categoryId de localStorage o la primera categoría del rail. Si no hay turno propio, session es null. No cae a cajas de otros. Tras un cobro rechazado por caja cerrada se invalida.",
+                  "Turno de caja abierto por el usuario. En paralelo con categories, articles, payment-context y comprobantes. El GET de articles pagina todo merchandise al entrar, sin esperar categoryId. Si no hay turno propio, session es null. No cae a cajas de otros. Tras un cobro rechazado por caja cerrada se invalida.",
                 cache: CACHE_TANSTACK_24H_REFETCH_MOUNT,
               },
             ],
@@ -81,7 +81,7 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "GET /v1/pops/:popId/categories",
                 detail:
-                  "Si las categorías ya están en SQLite (OPFS), solo SELECT local del rail (merchandise + show_in_sale). Si no hay marca de hidratación, un GET sin filtros. Fallback HTTP filtrado si SQLite no carga.",
+                  "Si las categorías ya están en SQLite (OPFS), solo SELECT local del rail (merchandise + show_in_sale). Si no hay marca de hidratación, un GET sin filtros (todas las categorías). Fallback HTTP: GET sin filtros y el rail filtra en cliente.",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],
@@ -107,9 +107,9 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             calls: [
               {
                 endpoint:
-                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&soloActivos=true&includeStock=false&categoryId=:id&page=1&pageSize=100",
+                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&includeStock=false&page=1&pageSize=100",
                 detail:
-                  "Si esa categoría ya está en SQLite (OPFS), solo SELECT local: no hay GET. Si no está, GET con categoryId de localStorage o la primera del rail, hidrata y marca la categoría. Sin categoryId no hay GET. includeStock=false: no consulta inventory, ignora filtros de stock y no persiste stock. Fallback HTTP si SQLite no carga.",
+                  "Al entrar, si no hay marca global de hidratación: pagina todo merchandise sin soloActivos ni categoryId. includeStock=false: no consulta inventory. Persiste activos e inactivos. El tablero filtra en SELECT local (activo + vendible + categoría). Fallback HTTP: el mismo GET y filtra en cliente.",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],
@@ -142,7 +142,7 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "SELECT articles WHERE category_id",
                 detail:
-                  "Guarda el categoryId en localStorage y lee SQLite. GET a articles solo si esa categoría nunca se hidrató (o se invalidó el catálogo). Si ya está en OPFS, no hay red.",
+                  "Guarda el categoryId en localStorage y lee SQLite. No hay GET: el dump de mercadería ya está en OPFS (o se está hidratando al entrar).",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],
@@ -178,10 +178,10 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             title: "Al escanear",
             calls: [
               {
-                endpoint: "GET /v1/pops/:popId/sale/catalog/scan",
+                endpoint: "SELECT articles WHERE barcode|sku|name",
                 detail:
-                  "Enter en el input. Si el código ya está en lo visible, cero red. Si no, una pegada por Enter.",
-                cache: CACHE_NONE,
+                  "Enter en el input. Busca en SQLite del pop (barcode/sku exacto o nombre único). Sin GET. Si no está, toast y no agrega.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },
@@ -242,10 +242,10 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             title: "Al armar el carrito",
             calls: [
               {
-                endpoint: "GET /v1/pops/:popId/sale/catalog/articles",
+                endpoint: "SELECT/REPLACE sale_cart_lines",
                 detail:
-                  "Cuando el pedido tiene ids que no están en cache. Carrito vacío o artículo recién escaneado: no pega.",
-                cache: CACHE_TANSTACK_24H,
+                  "El ticket es un SELECT de líneas persistidas en SQLite. Agregar copia snapshot desde articles locales. Un UPDATE del artículo no reescribe la línea abierta.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },

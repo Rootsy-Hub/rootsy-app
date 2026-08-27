@@ -50,3 +50,46 @@ export type CategorySnapshot = {
   visible: boolean
   showInMenu: boolean
 }
+
+export type PromotionSlotOptionSnap = {
+  id: string
+  kind: "article" | "recipe"
+  refId: string
+  name: string
+  salePrice: number
+  iva: number
+}
+
+export type PromotionSlotSnap = {
+  id: string
+  label: string
+  quantity: number
+  sortOrder: number
+  options: PromotionSlotOptionSnap[]
+}
+
+export type PromotionSnapshot = {
+  id: string
+  name: string
+  description: string
+  imageUrl: string | null
+  promotionType: "combo" | "quantity_deal"
+  pricingMode: "fixed_total" | "percent_off" | "fixed_off"
+  fixedPrice: number | null
+  discountMode: "porcentaje" | "fijo" | null
+  discountValue: number | null
+  buyQuantity: number | null
+  benefitQuantity: number | null
+  benefitDiscountPct: number | null
+  applyBenefitTo: "cheapest" | "most_expensive" | null
+  autoApply: boolean
+  showInMenu: boolean
+  isActive: boolean
+  sortOrder: number
+  validFrom: string | null
+  validUntil: string | null
+  validTimeStart: string | null
+  validTimeEnd: string | null
+  scheduleDays: number[]
+  slots: PromotionSlotSnap[]
+}

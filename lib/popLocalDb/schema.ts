@@ -1,4 +1,4 @@
-export const POP_LOCAL_SCHEMA_VERSION = 2
+export const POP_LOCAL_SCHEMA_VERSION = 3
 export const POP_LOCAL_DB_DIR = "rootsy-pop-db"
 
 export function popLocalDbFileName(popId: string): string {
@@ -101,9 +101,36 @@ CREATE TABLE IF NOT EXISTS categories (
 
 CREATE INDEX IF NOT EXISTS categories_sale_board
   ON categories (item_kind, show_in_sale, sort_order, name COLLATE NOCASE);
+
+CREATE TABLE IF NOT EXISTS sale_cart_lines (
+  line_id TEXT PRIMARY KEY,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  product_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  quantity REAL NOT NULL,
+  snapshot_name TEXT NOT NULL,
+  snapshot_price REAL NOT NULL,
+  snapshot_price_original REAL,
+  snapshot_image TEXT,
+  snapshot_description TEXT,
+  snapshot_iva REAL,
+  snapshot_category TEXT,
+  snapshot_discount_mode TEXT,
+  snapshot_discount_value REAL,
+  comment TEXT NOT NULL DEFAULT '',
+  discount_mode TEXT,
+  discount_draft TEXT NOT NULL DEFAULT '',
+  discount_suppressed INTEGER NOT NULL DEFAULT 0,
+  promotion_selections TEXT NOT NULL DEFAULT '[]',
+  paid_locked INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS sale_cart_lines_sort ON sale_cart_lines (sort_order, line_id);
 `
 
 export const POP_LOCAL_DROP_SQL = `
+DROP TABLE IF EXISTS sale_cart_lines;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS promotions;
 DROP TABLE IF EXISTS recipes;

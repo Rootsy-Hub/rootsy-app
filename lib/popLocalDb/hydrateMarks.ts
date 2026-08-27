@@ -1,47 +1,26 @@
 import type { PopLocalDatabase } from "@/lib/popLocalDb/database"
 
-const BACKFILL_META = "articles_hydrated_backfilled"
+const ARTICLES_HYDRATED_META = "articles_hydrated"
+const ARTICLES_HYDRATED_BACKFILL_META = "articles_hydrated_backfilled"
+const CATEGORIES_HYDRATED_META = "categories_hydrated"
+const PROMOTIONS_HYDRATED_META = "promotions_hydrated"
 
-export function articlesHydratedMetaKey(categoryId: string) {
-  return `articles_hydrated:${categoryId}`
+export function isArticlesHydrated(db: PopLocalDatabase): boolean {
+  return Boolean(db.getMeta(ARTICLES_HYDRATED_META))
 }
 
-export function backfillArticlesHydratedMarks(db: PopLocalDatabase): boolean {
-  if (db.getMeta(BACKFILL_META)) return false
-  const at = new Date().toISOString()
-  const rows = db.all<{ category_id: string }>(
-    `SELECT DISTINCT category_id AS category_id
-     FROM articles
-     WHERE item_kind = 'merchandise'
-       AND IFNULL(category_id, '') != ''`,
-  )
-  for (const row of rows) {
-    db.setMeta(articlesHydratedMetaKey(row.category_id), at)
-  }
-  db.setMeta(BACKFILL_META, at)
-  return true
-}
-
-export function isArticlesCategoryHydrated(
+export function markArticlesHydrated(
   db: PopLocalDatabase,
-  categoryId: string,
-): boolean {
-  return Boolean(db.getMeta(articlesHydratedMetaKey(categoryId)))
-}
-
-export function markArticlesCategoryHydrated(
-  db: PopLocalDatabase,
-  categoryId: string,
   at = new Date().toISOString(),
 ) {
-  db.setMeta(articlesHydratedMetaKey(categoryId), at)
+  db.setMeta(ARTICLES_HYDRATED_META, at)
 }
 
 export function clearArticlesHydratedMarks(db: PopLocalDatabase) {
+  db.run("DELETE FROM meta WHERE key = ?", [ARTICLES_HYDRATED_META])
   db.run("DELETE FROM meta WHERE key LIKE 'articles_hydrated:%'")
+  db.run("DELETE FROM meta WHERE key = ?", [ARTICLES_HYDRATED_BACKFILL_META])
 }
-
-const CATEGORIES_HYDRATED_META = "categories_hydrated"
 
 export function isCategoriesHydrated(db: PopLocalDatabase): boolean {
   return Boolean(db.getMeta(CATEGORIES_HYDRATED_META))
@@ -56,4 +35,19 @@ export function markCategoriesHydrated(
 
 export function clearCategoriesHydratedMark(db: PopLocalDatabase) {
   db.run("DELETE FROM meta WHERE key = ?", [CATEGORIES_HYDRATED_META])
+}
+
+export function isPromotionsHydrated(db: PopLocalDatabase): boolean {
+  return Boolean(db.getMeta(PROMOTIONS_HYDRATED_META))
+}
+
+export function markPromotionsHydrated(
+  db: PopLocalDatabase,
+  at = new Date().toISOString(),
+) {
+  db.setMeta(PROMOTIONS_HYDRATED_META, at)
+}
+
+export function clearPromotionsHydratedMark(db: PopLocalDatabase) {
+  db.run("DELETE FROM meta WHERE key = ?", [PROMOTIONS_HYDRATED_META])
 }

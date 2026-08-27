@@ -1,12 +1,12 @@
 /**
  * Tema Workspace — atmósfera bruma clara.
- * Fondo 100 · superficie 50 · texto 900 · muted 700.
+ * Fondo 100 · superficie 50 · elevada blanco · texto 900 · muted 700.
  */
 
 .rootsy-theme-workspace {
   --color-fondo: var(--rootsy-bruma-100);
   --color-superficie: var(--rootsy-bruma-50);
-  --color-elevada: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-blanco);
   --color-borde: var(--rootsy-bruma-200);
   --color-texto: var(--rootsy-bruma-900);
   --color-texto-muted: var(--rootsy-bruma-700);

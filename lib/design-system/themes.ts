@@ -4,7 +4,7 @@
  * Los pasos salen del handbook: atmósfera por contexto, funcionales fijos.
  */
 
-import { rootsyColorHex } from "@/lib/design-system/tokens/colors"
+import { ROOTSY_BLANCO, rootsyColorHex } from "@/lib/design-system/tokens/colors"
 
 export type RootsyThemeId = "pos" | "workspace" | "bruma-oscura" | "marketing" | "library"
 
@@ -60,7 +60,10 @@ function themeTokens(spec: {
 
   const fondo = rootsyColorHex(steps.family, steps.fondo)
   const superficie = rootsyColorHex(steps.family, steps.superficie)
-  const elevada = rootsyColorHex(steps.family, steps.elevada)
+  const elevada =
+    spec.atmosphere === "bruma"
+      ? ROOTSY_BLANCO
+      : rootsyColorHex(steps.family, steps.elevada)
   const borde = rootsyColorHex(steps.family, steps.borde)
   const texto = rootsyColorHex(steps.family, steps.texto)
   const textoMuted = rootsyColorHex(steps.family, steps.muted)

@@ -10,6 +10,8 @@ export {
   deleteArticleById,
   deleteMerchandiseNotIn,
   deleteMerchandiseNotInCategory,
+  findSaleBoardArticleByScan,
+  getArticleById,
   listSaleBoardArticles,
   renameArticlesCategory,
   replaceMerchandiseArticles,
@@ -26,6 +28,7 @@ export {
 } from "@/lib/popLocalDb/realtimeSeq"
 export {
   clearPopLocalArticlesHydrateMarks,
+  fetchSaleBoardMerchandisePages,
   hydratePopArticlesFromNetwork,
   popLocalArticlesHydrateInput,
   POP_LOCAL_ARTICLES_PAGE_SIZE,
@@ -35,6 +38,13 @@ export {
   hydratePopCategoriesFromNetwork,
 } from "@/lib/popLocalDb/hydrateCategories"
 export {
+  clearPopLocalPromotionsHydrateMark,
+  fetchSaleBoardPromotionPages,
+  hydratePopPromotionsFromNetwork,
+  popLocalPromotionsHydrateInput,
+  POP_LOCAL_PROMOTIONS_PAGE_SIZE,
+} from "@/lib/popLocalDb/hydratePromotions"
+export {
   deleteCategoryById,
   getCategoryById,
   listAllCategories,
@@ -42,6 +52,12 @@ export {
   replaceAllCategories,
   upsertCategorySnapshots,
 } from "@/lib/popLocalDb/categoriesRepo"
+export {
+  deletePromotionById,
+  deletePromotionsNotIn,
+  listAllPromotions,
+  upsertPromotionSnapshots,
+} from "@/lib/popLocalDb/promotionsRepo"
 export {
   articleListItemToSnapshot,
   articleSnapshotBindValues,
@@ -51,9 +67,20 @@ export {
   categorySnapshotToOption,
   dtoToCategorySnapshot,
 } from "@/lib/popLocalDb/mapCategory"
+export {
+  listSaleCart,
+  replaceSaleCart,
+} from "@/lib/popLocalDb/saleCartRepo"
+export type { SaleCartSnapshot } from "@/lib/popLocalDb/saleCartRepo"
+export {
+  promotionDumpRowToSnapshot,
+  promotionSnapshotToMenuCatalog,
+  splitLocalPromotionsForSale,
+} from "@/lib/popLocalDb/mapPromotion"
 export type {
   ArticleSnapshot,
   CategorySnapshot,
   ListSaleBoardArticlesInput,
   ListSaleBoardArticlesResult,
+  PromotionSnapshot,
 } from "@/lib/popLocalDb/types"

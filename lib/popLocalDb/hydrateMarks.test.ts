@@ -3,13 +3,15 @@ import { describe, it } from "node:test"
 import { upsertArticleSnapshots } from "./articlesRepo"
 import { createPopLocalDatabase } from "./engine"
 import {
-  backfillArticlesHydratedMarks,
   clearArticlesHydratedMarks,
   clearCategoriesHydratedMark,
-  isArticlesCategoryHydrated,
+  clearPromotionsHydratedMark,
+  isArticlesHydrated,
   isCategoriesHydrated,
-  markArticlesCategoryHydrated,
+  isPromotionsHydrated,
+  markArticlesHydrated,
   markCategoriesHydrated,
+  markPromotionsHydrated,
 } from "./hydrateMarks"
 import type { ArticleSnapshot } from "./types"
 
@@ -39,25 +41,23 @@ function snap(
 }
 
 describe("hydrate marks", () => {
-  it("marca categorías que ya están en un dump viejo y no las vuelve a pedir", async () => {
+  it("las marcas viejas por categoría no cuentan como dump completo", async () => {
     const db = await createPopLocalDatabase()
     upsertArticleSnapshots(db, [
       snap({ id: "a1", name: "Coca", categoryId: "cat-1" }),
-      snap({ id: "a2", name: "Agua", categoryId: "cat-2" }),
     ])
-    assert.equal(backfillArticlesHydratedMarks(db), true)
-    assert.equal(backfillArticlesHydratedMarks(db), false)
-    assert.equal(isArticlesCategoryHydrated(db, "cat-1"), true)
-    assert.equal(isArticlesCategoryHydrated(db, "cat-2"), true)
-    assert.equal(isArticlesCategoryHydrated(db, "cat-3"), false)
+    db.setMeta("articles_hydrated:cat-1", new Date().toISOString())
+    assert.equal(isArticlesHydrated(db), false)
   })
 
-  it("al invalidar borra las marcas y hay que hidratar de nuevo", async () => {
+  it("al invalidar borra la marca global y las viejas por categoría", async () => {
     const db = await createPopLocalDatabase()
-    markArticlesCategoryHydrated(db, "cat-1", "2026-01-01T00:00:00.000Z")
-    assert.equal(isArticlesCategoryHydrated(db, "cat-1"), true)
+    markArticlesHydrated(db, "2026-01-01T00:00:00.000Z")
+    db.setMeta("articles_hydrated:cat-1", "2026-01-01T00:00:00.000Z")
+    assert.equal(isArticlesHydrated(db), true)
     clearArticlesHydratedMarks(db)
-    assert.equal(isArticlesCategoryHydrated(db, "cat-1"), false)
+    assert.equal(isArticlesHydrated(db), false)
+    assert.equal(db.getMeta("articles_hydrated:cat-1"), null)
   })
 
   it("la marca de categorías es una sola por pop", async () => {
@@ -67,5 +67,14 @@ describe("hydrate marks", () => {
     assert.equal(isCategoriesHydrated(db), true)
     clearCategoriesHydratedMark(db)
     assert.equal(isCategoriesHydrated(db), false)
+  })
+
+  it("la marca de promociones es una sola por pop", async () => {
+    const db = await createPopLocalDatabase()
+    assert.equal(isPromotionsHydrated(db), false)
+    markPromotionsHydrated(db, "2026-01-01T00:00:00.000Z")
+    assert.equal(isPromotionsHydrated(db), true)
+    clearPromotionsHydratedMark(db)
+    assert.equal(isPromotionsHydrated(db), false)
   })
 })

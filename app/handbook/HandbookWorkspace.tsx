@@ -1,5 +1,6 @@
 "use client"
 
+import { HandbookBorderView } from "@/app/handbook/border/HandbookBorderView"
 import { HandbookColorView } from "@/app/handbook/color/HandbookColorView"
 import { HandbookComponentsFinalView } from "@/app/handbook/components/HandbookComponentsFinalView"
 import { HandbookComponentsView } from "@/app/handbook/components/HandbookComponentsView"
@@ -7,9 +8,13 @@ import {
   isHandbookComponentFinalPageId,
   isHandbookComponentPageId,
 } from "@/app/handbook/components/handbookComponentsSpec"
+import { HandbookElevationView } from "@/app/handbook/elevation/HandbookElevationView"
 import { HandbookIconographyView } from "@/app/handbook/iconography/HandbookIconographyView"
 import { HandbookLayoutView } from "@/app/handbook/layout/HandbookLayoutView"
+import { HandbookLogosView } from "@/app/handbook/logos/HandbookLogosView"
 import { HandbookMotionView } from "@/app/handbook/motion/HandbookMotionView"
+import { HandbookPatternsView } from "@/app/handbook/patterns/HandbookPatternsView"
+import { HandbookRadiusView } from "@/app/handbook/radius/HandbookRadiusView"
 import { HandbookSpacingView } from "@/app/handbook/spacing/HandbookSpacingView"
 import { HandbookSurfacesView } from "@/app/handbook/surfaces/HandbookSurfacesView"
 import { HandbookTypographyView } from "@/app/handbook/typography/HandbookTypographyView"
@@ -194,14 +199,24 @@ export function HandbookWorkspace() {
             <HandbookLayoutView />
           ) : isDesignSystem && activeDesignSystemPageId === "superficies-y-profundidad" ? (
             <HandbookSurfacesView />
+          ) : isDesignSystem && activeDesignSystemPageId === "borde" ? (
+            <HandbookBorderView />
+          ) : isDesignSystem && activeDesignSystemPageId === "radios" ? (
+            <HandbookRadiusView />
+          ) : isDesignSystem && activeDesignSystemPageId === "elevacion" ? (
+            <HandbookElevationView />
           ) : isDesignSystem && activeDesignSystemPageId === "iconografia" ? (
             <HandbookIconographyView />
+          ) : isDesignSystem && activeDesignSystemPageId === "logotipos" ? (
+            <HandbookLogosView />
           ) : isDesignSystem && activeDesignSystemPageId === "movimiento" ? (
             <HandbookMotionView />
           ) : isDesignSystem && isHandbookComponentPageId(activeDesignSystemPageId) ? (
             <HandbookComponentsView pageId={activeDesignSystemPageId} />
           ) : isDesignSystem && isHandbookComponentFinalPageId(activeDesignSystemPageId) ? (
             <HandbookComponentsFinalView pageId={activeDesignSystemPageId} />
+          ) : isDesignSystem && activeDesignSystemPageId === "patrones" ? (
+            <HandbookPatternsView />
           ) : isDesignSystem ? (
             <HandbookSectionView meta={designSystemMeta} />
           ) : (

@@ -49,7 +49,7 @@ export const rootsDropdownContentListClass = cn(
 
 export const rootsDropdownContentSurfaceLightClass = cn(
   rootsDropdownPanelRadiusClass,
-  "border border-[var(--rootsy-bruma-200)] bg-white",
+  "border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)]",
   "shadow-[0_22px_70px_-18px_rgba(0,0,0,0.28)]",
 )
 

@@ -7,7 +7,7 @@
 .handbook-shell {
   --color-fondo: var(--rootsy-bruma-100);
   --color-superficie: var(--rootsy-bruma-50);
-  --color-elevada: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-blanco);
   --color-borde: var(--rootsy-bruma-200);
   --color-texto: var(--rootsy-bruma-900);
   --color-texto-muted: var(--rootsy-bruma-700);
@@ -70,7 +70,7 @@
 .handbook-shell .handbook-content {
   --color-fondo: var(--rootsy-bruma-100);
   --color-superficie: var(--rootsy-bruma-50);
-  --color-elevada: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-blanco);
   --color-borde: var(--rootsy-bruma-200);
   --color-texto: var(--rootsy-bruma-900);
   --color-texto-muted: var(--rootsy-bruma-700);

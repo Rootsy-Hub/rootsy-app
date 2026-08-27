@@ -1,24 +1,20 @@
-"use client"
-
 import type { SaleCatalogArticle } from "@/app/[siteId]/[popId]/sale/actions"
-import type { GetPopArticlesTableInput } from "@/app/[siteId]/[popId]/articles/actions"
 import { usePopLocalDb } from "@/hooks/usePopLocalDb"
-import {
-  popLocalArticlesHydrateQueryKey,
-  saleBoardArticlesQueryKey,
-  saleBoardArticlesQueryRoot,
-} from "@/lib/queryKeys"
-import { operateCatalogQueryOptions } from "@/lib/queryStaleTimes"
+import { prefetchCatalogProductImages } from "@/lib/catalogProductImageCache"
 import { uniqueById, uniqueInfinitePages } from "@/lib/operateCatalogPage"
 import {
+  fetchSaleBoardMerchandisePages,
   hydratePopArticlesFromNetwork,
   listSaleBoardArticles,
   openPopLocalDb,
 } from "@/lib/popLocalDb"
 import type { ArticleSnapshot } from "@/lib/popLocalDb/types"
+import {
+  popLocalArticlesHydrateQueryKey,
+  saleBoardArticlesQueryKey,
+  saleBoardArticlesQueryRoot,
+} from "@/lib/queryKeys"
 import type { ArticleListItem } from "@/lib/rootsyApi/articlesClient"
-import { fetchPopArticlesTable } from "@/lib/rootsyApi/articlesClient"
-import { prefetchCatalogProductImages } from "@/lib/catalogProductImageCache"
 import {
   articleListItemToSaleCatalogArticle,
   articleSnapshotToSaleCatalogArticle,
@@ -35,34 +31,26 @@ type UseSaleBoardArticlesOptions = {
   priceListId?: string
 }
 
-function saleBoardArticlesInput(
-  categoryId: string,
-  page: number,
-  search: string,
-): GetPopArticlesTableInput {
-  const q = search.trim()
-  return {
-    page,
-    pageSize: SALE_BOARD_ARTICLE_PAGE_SIZE,
-    search: q,
-    soloActivos: true,
-    soloInactivos: false,
-    conDescuento: false,
-    sinDescuento: false,
-    conStock: false,
-    sinStock: false,
-    stockNegativo: false,
-    ventaSinStock: false,
-    includeStock: false,
-    categoryId: q ? "" : categoryId,
-    itemKinds: ["merchandise"],
-    sort: "name",
-    ord: "asc",
-  }
-}
-
 function nextPageFromCount(page: number, totalCount: number, pageSize: number) {
   return page * pageSize < totalCount ? page + 1 : undefined
+}
+
+function isSaleBoardHttpArticle(
+  row: ArticleListItem,
+  categoryId: string | null,
+  search: string,
+): boolean {
+  if (!row.isActive || !row.isSellable) return false
+  const q = search.trim().toLowerCase()
+  if (q) {
+    return (
+      row.name.toLowerCase().includes(q) ||
+      (row.barcode ?? "").toLowerCase().includes(q) ||
+      (row.sku ?? "").toLowerCase().includes(q)
+    )
+  }
+  if (categoryId) return row.categoryId === categoryId
+  return false
 }
 
 export function useSaleBoardArticles(
@@ -76,16 +64,17 @@ export function useSaleBoardArticles(
   const fallback = localStatus === "fallback"
   const search = options?.search?.trim() ?? ""
   const isSearch = Boolean(search)
-  const enabled =
+  const listingEnabled =
     Boolean(popId) &&
     (options?.enabled ?? true) &&
     (isSearch || Boolean(categoryId))
+  const hydrateEnabled =
+    Boolean(popId) && (options?.hydrate ?? true)
 
   const hydrate = useQuery({
-    queryKey: popLocalArticlesHydrateQueryKey(popId ?? "", categoryId ?? ""),
+    queryKey: popLocalArticlesHydrateQueryKey(popId ?? ""),
     queryFn: async () => {
       await hydratePopArticlesFromNetwork(popId!, {
-        categoryId: categoryId!,
         onProgress: () => {
           void queryClient.invalidateQueries({
             queryKey: saleBoardArticlesQueryRoot(popId!),
@@ -94,11 +83,7 @@ export function useSaleBoardArticles(
       })
       return true
     },
-    enabled:
-      sqliteReady &&
-      Boolean(popId) &&
-      Boolean(categoryId) &&
-      (options?.hydrate ?? options?.enabled ?? true),
+    enabled: sqliteReady && hydrateEnabled,
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
     refetchOnMount: false,
@@ -134,7 +119,7 @@ export function useSaleBoardArticles(
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: sqliteReady && enabled,
+    enabled: sqliteReady && listingEnabled,
     select: uniqueInfinitePages,
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
@@ -143,43 +128,26 @@ export function useSaleBoardArticles(
     refetchOnReconnect: false,
   })
 
-  const networkQuery = useInfiniteQuery({
-    queryKey: saleBoardArticlesQueryKey(
-      popId ?? "",
-      isSearch ? "" : (categoryId ?? ""),
-      search,
-      "http",
-    ),
-    queryFn: async ({ pageParam }) => {
-      const page = typeof pageParam === "number" ? pageParam : 1
-      const res = await fetchPopArticlesTable(
-        popId!,
-        saleBoardArticlesInput(categoryId ?? "", page, search),
-      )
-      if (!res.success) throw new Error(res.error)
-      return {
-        articles: res.articles,
-        nextPage: nextPageFromCount(
-          res.page,
-          res.totalCount,
-          SALE_BOARD_ARTICLE_PAGE_SIZE,
-        ),
-      }
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: fallback && enabled,
-    select: uniqueInfinitePages,
-    ...(isSearch
-      ? {
-          staleTime: 0,
-          gcTime: 0,
-          refetchOnMount: "always" as const,
-          refetchOnWindowFocus: false,
-          refetchOnReconnect: false,
-        }
-      : operateCatalogQueryOptions),
+  const networkDump = useQuery({
+    queryKey: [...popLocalArticlesHydrateQueryKey(popId ?? ""), "http"] as const,
+    queryFn: () => fetchSaleBoardMerchandisePages(popId!),
+    enabled: fallback && hydrateEnabled,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: Number.POSITIVE_INFINITY,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: 1,
   })
+
+  const networkArticles = useMemo((): SaleCatalogArticle[] => {
+    const rows = (networkDump.data ?? []).filter((row) =>
+      isSaleBoardHttpArticle(row, isSearch ? null : categoryId, search),
+    )
+    return uniqueById(rows).map((row) =>
+      articleListItemToSaleCatalogArticle(row, options?.priceListId),
+    )
+  }, [categoryId, isSearch, networkDump.data, options?.priceListId, search])
 
   const localArticles = useMemo((): SaleCatalogArticle[] => {
     const rows = uniqueById(
@@ -191,53 +159,55 @@ export function useSaleBoardArticles(
     )
   }, [localQuery.data, options?.priceListId])
 
-  const networkArticles = useMemo((): SaleCatalogArticle[] => {
-    const rows = uniqueById(
-      (networkQuery.data?.pages.flatMap((page) => page.articles) ??
-        []) as ArticleListItem[],
-    )
-    return rows.map((row) =>
-      articleListItemToSaleCatalogArticle(row, options?.priceListId),
-    )
-  }, [networkQuery.data, options?.priceListId])
-
   const articles = sqliteReady ? localArticles : networkArticles
 
   useEffect(() => {
     prefetchCatalogProductImages(articles.map((row) => row.imageUrl))
   }, [articles])
+
   const waitingLocalHydrate =
     sqliteReady &&
-    Boolean(categoryId) &&
+    listingEnabled &&
     localArticles.length === 0 &&
     hydrate.isLoading &&
     !hydrate.isError
+  const waitingNetworkDump =
+    fallback &&
+    listingEnabled &&
+    networkArticles.length === 0 &&
+    networkDump.isLoading &&
+    !networkDump.isError
   const isLoading =
     localStatus === "loading" ||
     waitingLocalHydrate ||
-    (sqliteReady && enabled && localQuery.isLoading) ||
-    (fallback && networkQuery.isLoading)
+    waitingNetworkDump ||
+    (sqliteReady && listingEnabled && localQuery.isLoading)
 
-  const activeQuery = sqliteReady ? localQuery : networkQuery
   const hydrateError =
     sqliteReady && localArticles.length === 0 && hydrate.error
       ? hydrate.error instanceof Error
         ? hydrate.error.message
         : String(hydrate.error)
       : null
+  const networkError =
+    fallback && networkDump.error
+      ? networkDump.error instanceof Error
+        ? networkDump.error.message
+        : String(networkDump.error)
+      : null
   const queryError =
-    activeQuery.error instanceof Error
-      ? activeQuery.error.message
-      : activeQuery.error
-        ? String(activeQuery.error)
+    localQuery.error instanceof Error
+      ? localQuery.error.message
+      : localQuery.error
+        ? String(localQuery.error)
         : null
 
   return {
     articles,
     isLoading,
-    isFetchingNextPage: activeQuery.isFetchingNextPage,
-    hasNextPage: Boolean(activeQuery.hasNextPage),
-    fetchNextPage: activeQuery.fetchNextPage,
-    error: hydrateError ?? queryError,
+    isFetchingNextPage: sqliteReady ? localQuery.isFetchingNextPage : false,
+    hasNextPage: sqliteReady ? Boolean(localQuery.hasNextPage) : false,
+    fetchNextPage: sqliteReady ? localQuery.fetchNextPage : async () => {},
+    error: hydrateError ?? networkError ?? queryError,
   }
 }

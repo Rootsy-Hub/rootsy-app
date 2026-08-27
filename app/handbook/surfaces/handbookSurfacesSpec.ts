@@ -1,21 +1,10 @@
 /**
  * Spec de superficies del handbook.
- * Bordes, radio y elevación salen de /library. Fondos, de las atmósferas.
+ * Fondos salen de las atmósferas. Capas, del z-index de /library.
+ * Borde, radios y elevación tienen página propia.
  */
 
-import {
-  ROOTSY_BORDER_COLOR_TOKENS,
-  ROOTSY_BORDER_PAIRINGS,
-  ROOTSY_BORDER_WIDTHS,
-} from "@/app/library/border/rootsyBorderSystem"
-import {
-  ROOTSY_ELEVATION_LEVELS,
-  ROOTSY_ELEVATION_SHADOW_TOKENS,
-  ROOTSY_ELEVATION_SURFACES_DARK,
-  ROOTSY_ELEVATION_SURFACES_LIGHT,
-  ROOTSY_ELEVATION_Z_INDEX,
-} from "@/app/library/elevation/rootsyElevationSystem"
-import { ROOTSY_RADIUS_TOKENS } from "@/app/library/radius/rootsyRadiusSystem"
+import { ROOTSY_ELEVATION_Z_INDEX } from "@/app/library/elevation/rootsyElevationSystem"
 import {
   HANDBOOK_ATMOSPHERE_CONTEXTS,
   HANDBOOK_ATMOSPHERE_TOKENS,
@@ -25,30 +14,70 @@ export const HANDBOOK_SURFACE_ATMOSPHERES = HANDBOOK_ATMOSPHERE_CONTEXTS
 export const HANDBOOK_SURFACE_TOKENS = HANDBOOK_ATMOSPHERE_TOKENS.filter((token) =>
   ["fondo", "superficie", "elevada"].includes(token.id),
 )
-export const HANDBOOK_BORDER_WIDTHS = ROOTSY_BORDER_WIDTHS
-export const HANDBOOK_BORDER_COLORS = ROOTSY_BORDER_COLOR_TOKENS
-export const HANDBOOK_BORDER_PAIRINGS = ROOTSY_BORDER_PAIRINGS
-export const HANDBOOK_RADIUS_TOKENS = ROOTSY_RADIUS_TOKENS
-export const HANDBOOK_ELEVATION_LEVELS = ROOTSY_ELEVATION_LEVELS
-export const HANDBOOK_ELEVATION_SHADOWS = ROOTSY_ELEVATION_SHADOW_TOKENS
-export const HANDBOOK_ELEVATION_LIGHT = ROOTSY_ELEVATION_SURFACES_LIGHT
-export const HANDBOOK_ELEVATION_DARK = ROOTSY_ELEVATION_SURFACES_DARK
 export const HANDBOOK_Z_INDEX = ROOTSY_ELEVATION_Z_INDEX
 
 export const HANDBOOK_SURFACE_PRINCIPLES = [
   {
     title: "El aire primero",
     detail:
-      "Éter, bruma o sombra pintan el lienzo. La superficie y la elevada se leen encima.",
+      "Éter, bruma o sombra pintan el lienzo. Encima, superficie y elevada. En Bruma clara la elevada es blanco.",
   },
   {
-    title: "Borde antes que sombra",
+    title: "Una atmósfera por pantalla",
     detail:
-      "1px bruma alcanza. Raised solo con drag, modal o un foco único.",
+      "Fondo, superficie y elevada del mismo aire. No se mezcla éter con sombra.",
   },
   {
-    title: "La curva crece con el elemento",
+    title: "Un z por rol",
     detail:
-      "Large en controles, xlarge en cards, xxlarge en modales. Tile solo en el logomark.",
+      "El contenido vive abajo. El modal, arriba del backdrop. El toast, encima del modal.",
+  },
+] as const
+
+/** Dos lienzos de bruma. El plano es tablas. El de bloques es cajas, cuentas, personas. */
+export const HANDBOOK_SURFACE_LIENZOS = [
+  {
+    id: "lienzo-plano",
+    name: "Lienzo plano",
+    token: "bruma-100",
+    product: "data-workspace-tables-atmosphere",
+    use: "Listados tabla",
+  },
+  {
+    id: "lienzo-de-bloques",
+    name: "Lienzo de bloques",
+    token: "bruma-50",
+    product: "data-workspace-blocks-atmosphere",
+    use: "Cajas, cuentas, personas, reportes",
+  },
+  {
+    id: "lienzo-de-bloques-noche",
+    name: "Lienzo de bloques · noche",
+    token: "bruma-950",
+    product: "data-workspace-blocks-atmosphere-bruma-oscura",
+    use: "Losetas en bruma oscura",
+  },
+] as const
+
+export const HANDBOOK_BLOCKS_ATMOSPHERE_LAYERS = [
+  {
+    role: "Base",
+    value: "bruma-50",
+    detail: "El valle. No es el bruma-100 de las tablas.",
+  },
+  {
+    role: "Neblina",
+    value: "radial bruma-100 · cielo",
+    detail: "El aire entra desde arriba.",
+  },
+  {
+    role: "Savia",
+    value: "radial savia-500 14%",
+    detail: "Un susurro abajo. No pinta el lienzo.",
+  },
+  {
+    role: "Planeta",
+    value: "rootsyplanet · 22% · blur 22",
+    detail: "Atrás, enmascarado. El trabajo queda en las losetas.",
   },
 ] as const

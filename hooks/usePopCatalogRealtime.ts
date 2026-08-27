@@ -4,6 +4,7 @@ import { usePopRealtime } from "@/hooks/usePopRealtime"
 import {
   applyArticleRealtimeEvent,
   applyCategoryRealtimeEvent,
+  applyPromotionRealtimeEvent,
 } from "@/lib/catalogRealtime/apply"
 import {
   bumpCatalogHydrateEpoch,
@@ -14,32 +15,52 @@ import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableIn
 import {
   clearPopLocalArticlesHydrateMarks,
   clearPopLocalCategoriesHydrateMark,
+  clearPopLocalPromotionsHydrateMark,
 } from "@/lib/popLocalDb"
 import {
   popArticleCategoriesQueryRoot,
   popArticlesQueryRoot,
   popLocalArticlesHydrateQueryRoot,
   popLocalCategoriesHydrateQueryKey,
+  popLocalPromotionsHydrateQueryKey,
+  popPromotionsQueryRoot,
   saleBoardArticlesQueryRoot,
   saleBoardCategoriesQueryRoot,
+  saleBoardPromotionsQueryRoot,
 } from "@/lib/queryKeys"
 import type { DomainEvent } from "@/lib/realtime/protocol"
 import { useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect } from "react"
 
-const CATALOG_CHANNELS = ["domain:articles", "domain:categories"] as const
+const CATALOG_CHANNELS = [
+  "domain:articles",
+  "domain:categories",
+  "domain:promotions",
+] as const
 
 function isCatalogRealtimeChannel(channel: string) {
-  return channel === "domain:articles" || channel === "domain:categories"
+  return (
+    channel === "domain:articles" ||
+    channel === "domain:categories" ||
+    channel === "domain:promotions"
+  )
 }
 
 export function usePopCatalogRealtime(popId: string | undefined) {
   const queryClient = useQueryClient()
 
-  const applyArticle = useCallback(
+  const applyCatalogEvent = useCallback(
     (event: DomainEvent) => {
       if (!popId || event.popId !== popId) return
-      return applyArticleRealtimeEvent(queryClient, popId, event)
+      if (event.type.startsWith("articles.")) {
+        return applyArticleRealtimeEvent(queryClient, popId, event)
+      }
+      if (event.type.startsWith("categories.")) {
+        return applyCategoryRealtimeEvent(queryClient, popId, event)
+      }
+      if (event.type.startsWith("promotions.")) {
+        return applyPromotionRealtimeEvent(queryClient, popId, event)
+      }
     },
     [popId, queryClient],
   )
@@ -49,22 +70,22 @@ export function usePopCatalogRealtime(popId: string | undefined) {
       setCatalogArticleEventApplier(null)
       return
     }
-    setCatalogArticleEventApplier(applyArticle)
+    setCatalogArticleEventApplier(applyCatalogEvent)
     return () => setCatalogArticleEventApplier(null)
-  }, [applyArticle, popId])
+  }, [applyCatalogEvent, popId])
 
   const onEvent = useCallback(
     (event: DomainEvent) => {
       if (!popId || event.popId !== popId) return
-      if (event.type.startsWith("articles.")) {
+      if (
+        event.type.startsWith("articles.") ||
+        event.type.startsWith("promotions.")
+      ) {
         scheduleCatalogArticleReplayIfHydrating(event)
-        return applyArticle(event)
       }
-      if (event.type.startsWith("categories.")) {
-        return applyCategoryRealtimeEvent(queryClient, popId, event)
-      }
+      return applyCatalogEvent(event)
     },
-    [popId, queryClient],
+    [applyCatalogEvent, popId],
   )
 
   const onResync = useCallback(
@@ -103,9 +124,26 @@ export function usePopCatalogRealtime(popId: string | undefined) {
             refetchType: "all",
           })
         })
+      void clearPopLocalPromotionsHydrateMark(popId)
+        .catch(() => undefined)
+        .then(() => {
+          void queryClient.invalidateQueries({
+            queryKey: popLocalPromotionsHydrateQueryKey(popId),
+            refetchType: "all",
+          })
+          void queryClient.invalidateQueries({
+            queryKey: saleBoardPromotionsQueryRoot(popId),
+            refetchType: "all",
+          })
+        })
       void invalidateDataWorkspaceTableInfinite(
         queryClient,
         popArticlesQueryRoot(popId),
+        { refetchType: "all" },
+      )
+      void invalidateDataWorkspaceTableInfinite(
+        queryClient,
+        popPromotionsQueryRoot(popId),
         { refetchType: "all" },
       )
     },

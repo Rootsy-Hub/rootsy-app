@@ -38,3 +38,9 @@
   --input: var(--color-borde);
   --ring: var(--color-foco);
 }
+
+.rootsy-theme-workspace,
+.rootsy-theme-library {
+  --secondary: var(--color-superficie);
+  --muted: var(--color-superficie);
+}

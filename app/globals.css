@@ -73,7 +73,7 @@
   --primary-foreground: var(--color-action-text);
   --secondary: var(--color-superficie);
   --secondary-foreground: var(--color-texto);
-  --muted: var(--color-elevada);
+  --muted: var(--color-superficie);
   --muted-foreground: var(--color-texto-muted);
   --accent: var(--rootsy-savia-100);
   --accent-foreground: var(--rootsy-savia-800);
@@ -162,7 +162,7 @@
 [data-rootsy-light-shell="true"] {
   --color-fondo: var(--rootsy-bruma-100);
   --color-superficie: var(--rootsy-bruma-50);
-  --color-elevada: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-blanco);
   --color-borde: var(--rootsy-bruma-200);
   --color-texto: var(--rootsy-bruma-900);
   --color-texto-muted: var(--rootsy-bruma-700);
@@ -177,7 +177,7 @@
   --primary-foreground: var(--color-action-text);
   --secondary: var(--color-superficie);
   --secondary-foreground: var(--color-texto);
-  --muted: var(--color-elevada);
+  --muted: var(--color-superficie);
   --muted-foreground: var(--color-texto-muted);
   --accent: var(--rootsy-savia-100);
   --accent-foreground: var(--rootsy-savia-800);
@@ -215,7 +215,7 @@
 .rootsy-library-shell.rootsy-theme-library {
   --color-fondo: var(--rootsy-bruma-100);
   --color-superficie: var(--rootsy-bruma-50);
-  --color-elevada: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-blanco);
   --color-borde: var(--rootsy-bruma-200);
   --color-texto: var(--rootsy-bruma-900);
   --color-texto-muted: var(--rootsy-bruma-700);
@@ -227,7 +227,7 @@
   --popover-foreground: var(--color-texto);
   --secondary: var(--color-superficie);
   --secondary-foreground: var(--color-texto);
-  --muted: var(--color-elevada);
+  --muted: var(--color-superficie);
   --muted-foreground: var(--color-texto-muted);
   --accent: var(--rootsy-savia-100);
   --accent-foreground: var(--rootsy-savia-800);

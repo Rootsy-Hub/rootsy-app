@@ -3,7 +3,7 @@
 import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
 import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import { findMenuCatalogItemByScan } from "@/lib/rootsyApi/menuCatalogClient"
-import { findSaleCatalogArticleByScan } from "@/lib/rootsyApi/saleClient"
+import { findSaleBoardArticleByScan, openPopLocalDb } from "@/lib/popLocalDb"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
 import type { MenuCartItemKind } from "@/lib/menuCart"
 import {
@@ -39,6 +39,7 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import { useSaleBoardArticles } from "@/hooks/useSaleBoardArticles"
 import { useSaleBoardCategories } from "@/hooks/useSaleBoardCategories"
+import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
 import {
   useMenuCatalogItems,
 } from "@/hooks/useOperateCatalogItems"
@@ -83,7 +84,6 @@ import { flushSync } from "react-dom"
 type CatalogScope = "sale" | "menu"
 
 const EMPTY_SALE_BOARD_CATEGORIES: SaleCatalogCategory[] = []
-const EMPTY_SALE_BOARD_SECTIONS: MenuCatalogCategorySection[] = []
 
 type Props = {
   siteId: string
@@ -145,6 +145,10 @@ export function SaleCatalogBrowser({
   const saleCategoriesQuery = useSaleBoardCategories(popId, {
     enabled: isSaleBoard && itemsEnabled && Boolean(popId),
   })
+  const salePromotionsQuery = useSaleBoardPromotions(popId, {
+    enabled: isSaleBoard && itemsEnabled && Boolean(popId),
+    hydrate: Boolean(popId) && isSaleBoard,
+  })
   const saleBoardCategories = useMemo(() => {
     const rows = saleCategoriesQuery.data
     if (!rows?.length) return EMPTY_SALE_BOARD_CATEGORIES
@@ -155,15 +159,22 @@ export function SaleCatalogBrowser({
     }))
   }, [saleCategoriesQuery.data])
   const saleBoardSections = useMemo((): MenuCatalogCategorySection[] => {
-    if (saleBoardCategories.length === 0) return EMPTY_SALE_BOARD_SECTIONS
-    return [
-      {
-        id: "products",
-        label: "Productos",
-        categories: saleBoardCategories,
-      },
-    ]
-  }, [saleBoardCategories])
+    const sections: MenuCatalogCategorySection[] = []
+    if (salePromotionsQuery.combos.length > 0) {
+      sections.push({
+        id: "promotions",
+        label: "Promociones",
+        categories: [{ id: "all", name: "Promociones", sortOrder: 0 }],
+      })
+    }
+    if (saleBoardCategories.length === 0) return sections
+    sections.push({
+      id: "products",
+      label: "Productos",
+      categories: saleBoardCategories,
+    })
+    return sections
+  }, [saleBoardCategories, salePromotionsQuery.combos.length])
   const railCategories = isSaleBoard ? saleBoardCategories : categories
   const railSections = isSaleBoard ? saleBoardSections : categorySections
   const railLoading = isSaleBoard ? saleCategoriesQuery.isLoading : loading
@@ -375,12 +386,7 @@ export function SaleCatalogBrowser({
       itemsEnabled &&
       itemsQueryReady &&
       itemsFilter.section !== "promotions",
-    hydrate:
-      Boolean(popId) &&
-      isSaleBoard &&
-      itemsEnabled &&
-      Boolean(saleBoardCategoryId) &&
-      itemsFilter.section !== "promotions",
+    hydrate: Boolean(popId) && isSaleBoard,
     search: isSearch ? itemsFilter.search : "",
     priceListId,
   })
@@ -446,29 +452,58 @@ export function SaleCatalogBrowser({
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key !== "Enter") return
       event.preventDefault()
+      if (addDisabled) return
       const query = busqueda
-      const match =
-        findCatalogProductByScanQuery(productosFiltrados, query) ??
-        findCatalogProductByScanQuery(products, query)
-      if (match) {
+      const visibleMatch = findCatalogProductByScanQuery(
+        productosFiltrados,
+        query,
+      )
+      if (visibleMatch && source !== "sale") {
         const kind =
-          "kind" in match && typeof match.kind === "string"
-            ? (match.kind as MenuCartItemKind)
+          "kind" in visibleMatch && typeof visibleMatch.kind === "string"
+            ? (visibleMatch.kind as MenuCartItemKind)
             : undefined
-        handleAddProduct(match.id, kind)
+        handleAddProduct(visibleMatch.id, kind)
         setBusqueda("")
         return
       }
 
       void (async () => {
         if (source === "sale") {
-          const res = await findSaleCatalogArticleByScan(popId, query, priceListId)
-          if (!res.success || !res.article) return
-          const article = res.article
-          flushSync(() => {
-            mergeCatalogArticles?.([article])
+          try {
+            const handle = await openPopLocalDb(popId)
+            const article = findSaleBoardArticleByScan(handle.database, query)
+            if (article) {
+              handleAddProduct(article.id, "article")
+              setBusqueda("")
+              return
+            }
+          } catch {
+            /* miss local */
+          }
+          const promoMatch = findCatalogProductByScanQuery(
+            promotionProducts,
+            query,
+          )
+          if (promoMatch) {
+            handleAddProduct(promoMatch.id, "promotion")
+            setBusqueda("")
+            return
+          }
+          showRootsyToast({
+            title: "No está en el catálogo local",
+            intent: "warning",
           })
-          handleAddProduct(article.id, "article")
+          return
+        }
+        const match =
+          visibleMatch ?? findCatalogProductByScanQuery(products, query)
+        if (match) {
+          const kind =
+            "kind" in match && typeof match.kind === "string"
+              ? (match.kind as MenuCartItemKind)
+              : undefined
+          handleAddProduct(match.id, kind)
           setBusqueda("")
           return
         }
@@ -494,6 +529,7 @@ export function SaleCatalogBrowser({
       })()
     },
     [
+      addDisabled,
       busqueda,
       handleAddProduct,
       mergeCatalogArticles,
@@ -502,6 +538,7 @@ export function SaleCatalogBrowser({
       priceListId,
       products,
       productosFiltrados,
+      promotionProducts,
       source,
     ],
   )

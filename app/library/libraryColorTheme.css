@@ -19,7 +19,7 @@
   --popover-foreground: var(--color-texto);
   --secondary: var(--color-superficie);
   --secondary-foreground: var(--color-texto);
-  --muted: var(--color-elevada);
+  --muted: var(--color-superficie);
   --muted-foreground: var(--color-texto-muted);
   --accent: var(--rootsy-savia-100);
   --accent-foreground: var(--rootsy-savia-800);

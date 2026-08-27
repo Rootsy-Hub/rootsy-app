@@ -83,7 +83,7 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
           heading("Cómo usar el sistema", {
             blocks: [
               ol([
-                "Empezar por las foundations: color, tipografía, espaciado, layout, superficies y movimiento.",
+                "Empezar por las foundations: color, tipografía, espaciado, layout, superficies, borde, radios, elevación, iconografía, logotipos y movimiento.",
                 "Usar componentes existentes antes de crear soluciones nuevas.",
                 "Aplicar patrones definidos para flujos repetidos, como tablas, formularios, operaciones, alertas y estados.",
                 "Mantener los mensajes funcionales claros y dejar que Rootsy hable cuando necesite orientar, explicar o recomendar.",
@@ -108,6 +108,7 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
           heading("Atmósferas del mundo", [
             heading("Éter"),
             heading("Bruma"),
+            heading("Blanco"),
             heading("Sombra"),
           ]),
           heading("Colores funcionales", [
@@ -116,7 +117,9 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
             heading("Sol"),
             heading("Lava"),
           ]),
-          heading("Tokens de color"),
+          heading("Tokens de color", [
+            heading("Funcionales en atmósferas"),
+          ]),
           heading("Contraste y legibilidad"),
         ],
       },
@@ -155,11 +158,39 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
         id: "superficies-y-profundidad",
         label: "Superficies y profundidad",
         topics: [
-          heading("Fondos"),
-          heading("Bordes"),
-          heading("Radio"),
-          heading("Elevación"),
+          heading("Fondos", [
+            heading("Lienzo plano"),
+            heading("Lienzo de bloques"),
+          ]),
           heading("Capas"),
+        ],
+      },
+      {
+        id: "borde",
+        label: "Borde",
+        topics: [
+          heading("Anchos"),
+          heading("Colores"),
+          heading("Estados"),
+        ],
+      },
+      {
+        id: "radios",
+        label: "Radios",
+        topics: [
+          heading("Escala"),
+          heading("Uso"),
+          heading("Focus"),
+        ],
+      },
+      {
+        id: "elevacion",
+        label: "Elevación",
+        topics: [
+          heading("Niveles"),
+          heading("Sombras"),
+          heading("Superficies"),
+          heading("Interacción"),
         ],
       },
       {
@@ -170,6 +201,17 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
           heading("Tamaños"),
           heading("Uso"),
           heading("Estados"),
+        ],
+      },
+      {
+        id: "logotipos",
+        label: "Logotipos",
+        topics: [
+          heading("Anatomía"),
+          heading("Rootsy"),
+          heading("POP"),
+          heading("Persona"),
+          heading("Uso"),
         ],
       },
       {

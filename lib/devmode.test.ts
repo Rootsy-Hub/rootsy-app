@@ -56,5 +56,27 @@ describe("devmode", () => {
         ),
       ),
     )
+    assert.ok(
+      SALE_QUERY_SPEC.some((place) =>
+        place.domains.some((domain) =>
+          domain.moments.some((moment) =>
+            moment.calls.some((call) =>
+              call.endpoint.includes("sale_cart_lines"),
+            ),
+          ),
+        ),
+      ),
+    )
+    assert.ok(
+      SALE_QUERY_SPEC.some((place) =>
+        place.domains.some((domain) =>
+          domain.moments.some((moment) =>
+            moment.calls.some((call) =>
+              call.endpoint.includes("SELECT articles WHERE barcode"),
+            ),
+          ),
+        ),
+      ),
+    )
   })
 })

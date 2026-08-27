@@ -19,6 +19,7 @@ export type PromotionSlotOptionRow = {
   refId: string
   name: string
   salePrice: number
+  iva?: number
 }
 
 export type PromotionSlotRow = {
@@ -56,6 +57,7 @@ export type PromotionTableRow = {
   optionCount: number
   pricingSummary: string
   scheduleSummary: string
+  slots?: PromotionSlotRow[]
 }
 
 export type PromotionDetail = PromotionTableRow & {
@@ -104,6 +106,7 @@ export type GetPopPromotionsTableInput = {
   page?: number
   pageSize?: number
   soloActivos?: boolean
+  includeSlots?: boolean
   promotionType?: PromotionType | ""
   sort?: string | null
   ord?: "asc" | "desc"

@@ -1,4 +1,4 @@
-import type { MenuSectionKey } from "@/lib/menuCatalog"
+import type { MenuPlanetRealm } from "@/lib/menu/menuHoloStyles"
 import {
   menuHoloChromeCoreClass,
   menuHoloChromeCoreLifeClass,
@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils"
 
 type Props = {
-  sectionKey?: MenuSectionKey
+  sectionKey?: MenuPlanetRealm
   alive?: boolean
 }
 

@@ -3,11 +3,9 @@ import {
   type HandbookAtmosphereId,
 } from "@/app/handbook/color/handbookColorSpec"
 import {
-  HANDBOOK_BORDER_PAIRINGS,
-  HANDBOOK_BORDER_WIDTHS,
-  HANDBOOK_ELEVATION_LEVELS,
-  HANDBOOK_RADIUS_TOKENS,
+  HANDBOOK_BLOCKS_ATMOSPHERE_LAYERS,
   HANDBOOK_SURFACE_ATMOSPHERES,
+  HANDBOOK_SURFACE_LIENZOS,
   HANDBOOK_SURFACE_PRINCIPLES,
   HANDBOOK_SURFACE_TOKENS,
   HANDBOOK_Z_INDEX,
@@ -15,21 +13,34 @@ import {
 import {
   libraryDocBodyClass,
   libraryDocBorderClass,
-  libraryDocMetaLabelClass,
   libraryDocMutedTextClass,
   libraryDocPageDescriptionClass,
   libraryDocPageTitleClass,
   libraryDocPrimaryTextClass,
   libraryDocSectionTitleClass,
   libraryDocSubheadingClass,
-  libraryDocSurfaceMutedClass,
   libraryDocTableHeaderClass,
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
+import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
+import "@/components/data-workspace/dataWorkspaceBlocksAtmosphereBrumaOscura.css"
+import {
+  dataWorkspaceEntityCardEyebrowClass,
+  dataWorkspaceEntityCardHeaderClass,
+  dataWorkspaceEntityCardIsotypeClass,
+  dataWorkspaceEntityCardLosetaSurfaceClass,
+  dataWorkspaceEntityCardSaldoSectionClass,
+  dataWorkspaceEntityCardStatLabelClass,
+  dataWorkspaceEntityCardStatValueLargeClass,
+  dataWorkspaceEntityCardStatusOpenClass,
+  dataWorkspaceEntityCardTitleClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
+import { Calculator } from "lucide-react"
+import type { ReactNode } from "react"
 
 function Token({ children }: { children: string }) {
   return (
@@ -83,41 +94,62 @@ function FondoStack({ atmosphereId }: { atmosphereId: HandbookAtmosphereId }) {
   )
 }
 
-function ElevationCard({
-  level,
+function MiniLoseta({
+  eyebrow,
+  title,
+  amount,
+  open,
 }: {
-  level: (typeof HANDBOOK_ELEVATION_LEVELS)[number]
+  eyebrow: string
+  title: string
+  amount: string
+  open?: boolean
 }) {
-  const isRaised = level.id === "raised"
-  const isOverlay = level.id === "overlay"
-  const isSunken = level.id === "sunken"
-  const isBordered = level.id === "default-bordered"
   return (
-    <div
-      className="rounded-2xl px-4 py-4"
-      style={{
-        background: isSunken
-          ? "var(--rootsy-bruma-50)"
-          : isOverlay || isRaised
-            ? "var(--color-superficie)"
-            : "var(--rootsy-bruma-100)",
-        border: isBordered ? "1px solid var(--color-borde)" : "1px solid transparent",
-        boxShadow: isRaised
-          ? "0 1px 2px rgb(5 8 7 / 0.07), 0 4px 14px rgb(5 8 7 / 0.08)"
-          : isOverlay
-            ? "0 22px 70px -18px rgb(5 8 7 / 0.28)"
-            : undefined,
-      }}
-    >
-      <p className={libraryDocMetaLabelClass}>{level.natureName}</p>
-      <p className={cn(libraryDocSectionTitleClass, "mt-1 text-sm")}>{level.label}</p>
-      <p className="mt-2">
-        <Token>{level.token}</Token>
-      </p>
-      <p className={cn("mt-2 font-stream text-xs leading-relaxed", libraryDocMutedTextClass)}>
-        {level.usage}
-      </p>
-    </div>
+    <article className={dataWorkspaceEntityCardLosetaSurfaceClass}>
+      <div className={dataWorkspaceEntityCardHeaderClass}>
+        <div className="flex items-start gap-3">
+          <span className={dataWorkspaceEntityCardIsotypeClass} aria-hidden>
+            <Calculator className="size-5" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0">
+            <p className={dataWorkspaceEntityCardEyebrowClass}>{eyebrow}</p>
+            <p className={dataWorkspaceEntityCardTitleClass}>{title}</p>
+          </div>
+        </div>
+      </div>
+      <div className={dataWorkspaceEntityCardSaldoSectionClass}>
+        <p className={dataWorkspaceEntityCardStatLabelClass}>Efectivo en caja</p>
+        <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>{amount}</p>
+        {open ? (
+          <p className={cn("mt-2", dataWorkspaceEntityCardStatusOpenClass)}>Abierta</p>
+        ) : null}
+      </div>
+    </article>
+  )
+}
+
+function LienzoSwatch({
+  id,
+  children,
+}: {
+  id: string
+  children: ReactNode
+}) {
+  const lienzo = HANDBOOK_SURFACE_LIENZOS.find((item) => item.id === id)
+  if (!lienzo) return null
+
+  return (
+    <article className={cn("overflow-hidden rounded-2xl border", libraryDocBorderClass)}>
+      <div className="h-52 overflow-hidden">{children}</div>
+      <div className="space-y-1 px-4 py-3">
+        <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{lienzo.name}</p>
+        <Token>{lienzo.product}</Token>
+        <p className={cn("font-stream text-sm leading-relaxed", libraryDocMutedTextClass)}>
+          {lienzo.use}
+        </p>
+      </div>
+    </article>
   )
 }
 
@@ -126,9 +158,8 @@ export function HandbookSurfacesView() {
     <article className="max-w-5xl">
       <h1 className={cn(libraryDocPageTitleClass, "text-2xl")}>Superficies y profundidad</h1>
       <p className={cn(libraryDocBodyClass, "mt-4")}>
-        Hundido para agrupar, plano para trabajar, flotante para interrumpir. El fondo es el
-        aire de la pantalla. El borde delimita. La curva crece con el elemento. La sombra
-        aparece cuando hace falta, no de adorno.
+        El fondo es el aire de la pantalla. Encima, superficie y elevada. Las capas dicen
+        quién tapa a quién. El borde, el radio y la elevación tienen página propia.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -146,7 +177,8 @@ export function HandbookSurfacesView() {
         <h2 className={libraryDocSectionTitleClass}>Fondos</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Éter, bruma y sombra son el lienzo. Se elige una atmósfera por contexto. Encima
-          viven superficie y elevada — el mismo token, distinta luz.
+          viven superficie y elevada. En Bruma clara la elevada es blanco; en éter y sombra
+          sube un paso de la rampa.
         </p>
         <div className="mt-6 grid gap-3 lg:grid-cols-3">
           {HANDBOOK_SURFACE_ATMOSPHERES.map((atmosphere) => (
@@ -155,143 +187,89 @@ export function HandbookSurfacesView() {
         </div>
         <p className={cn(libraryDocPageDescriptionClass, "mt-4")}>
           <Token>--color-fondo</Token> es el lienzo. <Token>--color-superficie</Token> el
-          panel. <Token>--color-elevada</Token> la card. No se pinta un hex suelto.
+          panel. <Token>--color-elevada</Token> la card. En Bruma clara esa card es{" "}
+          <Token>--rootsy-blanco</Token>.
         </p>
         <div className="mt-8">
           <LibraryDoDontPair
-            doText="Una atmósfera por pantalla. Fondo, superficie y elevada del mismo aire."
-            dontText="No mezcles éter de fondo con sombra de card. No uses savia para pintar un lienzo entero."
+            doText="Una atmósfera por pantalla. Fondo, superficie y elevada del mismo aire. En Bruma, el papel es blanco."
+            dontText="No mezcles éter de fondo con sombra de card. No uses savia-50 como papel de Bruma."
           />
         </div>
-      </section>
 
-      <section id="bordes" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
-        <h2 className={libraryDocSectionTitleClass}>Bordes</h2>
-        <p className={cn(libraryDocBodyClass, "mt-4")}>
-          El borde divide, no decora. 1px bruma en reposo. 2px savia cuando hay elección o
-          foco. Ancho y color siempre juntos.
+        <h3 id="lienzo-plano" className={cn(libraryDocSubheadingClass, "mt-10 scroll-mt-24")}>
+          Lienzo plano
+        </h3>
+        <p className={cn(libraryDocBodyClass, "mt-3")}>
+          Bruma-100, sin planeta. Es el aire de las tablas: filtros, filas y pie.
+        </p>
+
+        <h3 id="lienzo-de-bloques" className={cn(libraryDocSubheadingClass, "mt-8 scroll-mt-24")}>
+          Lienzo de bloques
+        </h3>
+        <p className={cn(libraryDocBodyClass, "mt-3")}>
+          Bruma-50, neblina, un susurro de savia y el planeta atrás. Es el valle de las
+          losetas — cajas, cuentas, personas, reportes. El papel de cada loseta es blanco.
         </p>
         <div className="mt-6 grid gap-3 lg:grid-cols-3">
-          {HANDBOOK_BORDER_WIDTHS.map((width) => (
-            <article key={width.id} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
-              <div
-                className="mb-4 h-16 rounded-xl"
-                style={{
-                  borderWidth: width.value,
-                  borderStyle: "solid",
-                  borderColor:
-                    width.id === "default" ? "var(--color-borde)" : "var(--color-accion)",
-                }}
-              />
-              <p className={libraryDocMetaLabelClass}>{width.natureName}</p>
-              <p className={cn(libraryDocSectionTitleClass, "mt-1 text-sm")}>{width.value}</p>
-              <p className="mt-1">
-                <Token>{width.token}</Token>
-              </p>
-              <p className={cn("mt-2 font-stream text-xs leading-relaxed", libraryDocMutedTextClass)}>
-                {width.usage}
-              </p>
-            </article>
-          ))}
-        </div>
-        <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>Pares ancho + color</h3>
-        <div className="mt-4">
-          <div className={libraryDocTableShellOverflowClass}>
-            <table className="w-full border-collapse text-left">
-              <thead>
-                <tr className={libraryDocTableHeaderClass}>
-                  <th className="px-3 py-2.5">Ancho</th>
-                  <th className="px-3 py-2.5">Color</th>
-                  <th className="px-3 py-2.5">Uso</th>
-                </tr>
-              </thead>
-              <tbody>
-                {HANDBOOK_BORDER_PAIRINGS.map((pair) => (
-                  <tr key={pair.id} className={libraryDocTableRowClass}>
-                    <td className="px-3 py-2.5">
-                      <Token>{pair.widthToken}</Token>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <Token>{pair.colorToken}</Token>
-                    </td>
-                    <td className={cn("px-3 py-2.5 font-stream text-sm", libraryDocMutedTextClass)}>
-                      {pair.usage}
-                    </td>
-                  </tr>
+          <LienzoSwatch id="lienzo-plano">
+            <div className="flex h-full flex-col bg-[var(--rootsy-bruma-100)]">
+              <div className="h-10 border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]" />
+              <div className="flex-1 space-y-px bg-[var(--rootsy-bruma-50)]">
+                {Array.from({ length: 5 }, (_, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "h-8 border-b border-[var(--rootsy-bruma-200)]",
+                      index % 2 === 0 ? "bg-[var(--rootsy-bruma-50)]" : "bg-[var(--rootsy-bruma-100)]",
+                    )}
+                  />
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          </LienzoSwatch>
+          <LienzoSwatch id="lienzo-de-bloques">
+            <div className="data-workspace-blocks-atmosphere flex h-full flex-col px-3 py-3">
+              <div className="grid min-h-0 flex-1 grid-cols-2 gap-3">
+                <MiniLoseta eyebrow="Caja" title="Mostrador" amount="$ 48.320" open />
+                <MiniLoseta eyebrow="Caja" title="Patio" amount="$ 0" />
+              </div>
+            </div>
+          </LienzoSwatch>
+          <LienzoSwatch id="lienzo-de-bloques-noche">
+            <div className="data-workspace-blocks-atmosphere-bruma-oscura h-full" />
+          </LienzoSwatch>
+        </div>
+        <div className={cn("mt-6", libraryDocTableShellOverflowClass)}>
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className={libraryDocTableHeaderClass}>
+                <th className="px-3 py-2.5">Capa</th>
+                <th className="px-3 py-2.5">Valor</th>
+                <th className="px-3 py-2.5">Para qué</th>
+              </tr>
+            </thead>
+            <tbody>
+              {HANDBOOK_BLOCKS_ATMOSPHERE_LAYERS.map((row) => (
+                <tr key={row.role} className={libraryDocTableRowClass}>
+                  <td className={cn("px-3 py-2.5 text-sm", libraryDocPrimaryTextClass)}>
+                    {row.role}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <Token>{row.value}</Token>
+                  </td>
+                  <td className={cn("px-3 py-2.5 font-stream text-sm", libraryDocMutedTextClass)}>
+                    {row.detail}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
         <div className="mt-8">
           <LibraryDoDontPair
-            doText="Bruma 200 en claro. Sombra-border en POS. Savia 400 en foco. Savia 600 en selección."
-            dontText="No uses 2px gris sin token ni dupliques borde fuerte con sombra fuerte."
-          />
-        </div>
-      </section>
-
-      <section id="radio" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
-        <h2 className={libraryDocSectionTitleClass}>Radio</h2>
-        <p className={cn(libraryDocBodyClass, "mt-4")}>
-          De semilla a copa. Poco redondeo en datos densos; más donde el contenedor abraza.
-          El anillo de foco es el radio del control + 2px, en savia.
-        </p>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {HANDBOOK_RADIUS_TOKENS.map((radius) => (
-            <article key={radius.id} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
-              <div
-                className={cn("mb-4 h-16", libraryDocSurfaceMutedClass)}
-                style={{
-                  borderRadius: radius.id === "full" ? 9999 : radius.id === "tile" ? "34%" : radius.value,
-                  outline: "2px solid color-mix(in srgb, var(--color-accion) 35%, transparent)",
-                  outlineOffset: 2,
-                }}
-              />
-              <p className={libraryDocMetaLabelClass}>{radius.natureName}</p>
-              <p className={cn(libraryDocSectionTitleClass, "mt-1 text-sm")}>{radius.value}</p>
-              <p className="mt-1">
-                <Token>{radius.token}</Token>
-              </p>
-              <p className={cn("mt-2 font-stream text-xs leading-relaxed", libraryDocMutedTextClass)}>
-                {radius.usage}
-              </p>
-            </article>
-          ))}
-        </div>
-        <div className="mt-8">
-          <LibraryDoDontPair
-            doText="rounded-lg en inputs. xlarge en cards. xxlarge en modales. Full en avatares."
-            dontText="No uses tile en una card ni inventes rounded-[13px]. No pongas xxlarge en un input denso."
-          />
-        </div>
-      </section>
-
-      <section id="elevacion" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
-        <h2 className={libraryDocSectionTitleClass}>Elevación</h2>
-        <p className={cn(libraryDocBodyClass, "mt-4")}>
-          Tres lecturas: hundido, plano, flotante. Superficie y sombra van de a pares. Preferí
-          borde o aire antes de levantar.
-        </p>
-        <div
-          className={cn("mt-6 rounded-3xl p-6", libraryDocSurfaceMutedClass)}
-          style={{ background: "var(--rootsy-bruma-100)" }}
-        >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {HANDBOOK_ELEVATION_LEVELS.filter((level) => level.id !== "overflow").map((level) => (
-              <ElevationCard key={level.id} level={level} />
-            ))}
-          </div>
-        </div>
-        <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>Pares</h3>
-        <p className={cn(libraryDocBodyClass, "mt-3")}>
-          Raised siempre con <Token>elevation.shadow.raised</Token>. Overlay siempre con{" "}
-          <Token>elevation.shadow.overlay</Token>. Sunken no lleva sombra.
-        </p>
-        <div className="mt-8">
-          <LibraryDoDontPair
-            doText="Sunken sobre default claro. Raised con su sombra. Borde bruma antes que lift."
-            dontText="No mezcles shadow.raised con surface.overlay ni eleves un formulario denso."
+            doText="Lienzo de bloques en módulos de losetas. Lienzo plano en listados tabla."
+            dontText="No pongas el planeta detrás de una tabla. No pintes el valle con savia sólida."
           />
         </div>
       </section>

@@ -58,6 +58,30 @@ describe("pop local db articles", () => {
     assert.equal(page.articles[0]?.stockOnHand, 0)
   })
 
+  it("guarda inactivos pero el tablero no los lista", async () => {
+    const db = await createPopLocalDatabase()
+    replaceMerchandiseArticles(db, [
+      snap({ id: "a1", name: "Coca", categoryId: "cat-1", isActive: true }),
+      snap({ id: "a2", name: "Fanta", categoryId: "cat-1", isActive: false }),
+      snap({
+        id: "a3",
+        name: "Agua",
+        categoryId: "cat-1",
+        isSellable: false,
+      }),
+    ])
+    assert.equal(countLocalArticles(db), 3)
+    const page = listSaleBoardArticles(db, {
+      categoryId: "cat-1",
+      page: 1,
+      pageSize: 50,
+    })
+    assert.deepEqual(
+      page.articles.map((row) => row.id),
+      ["a1"],
+    )
+  })
+
   it("busca por nombre y barcode sin categoría", async () => {
     const db = await createPopLocalDatabase()
     replaceMerchandiseArticles(db, [

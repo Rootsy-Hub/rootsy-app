@@ -3,7 +3,7 @@
  * Los hex se resuelven desde lib/design-system. No se inventan colores sueltos.
  */
 
-import { ROOTSY_COLOR_RAMPS } from "@/lib/design-system"
+import { ROOTSY_COLOR_RAMPS } from "@/lib/design-system/tokens/colors"
 
 export const HANDBOOK_COLOR_STEPS = [
   "50",
@@ -97,8 +97,8 @@ export const HANDBOOK_BRUMA: HandbookColorFamily = family({
   identity: "100",
   hexes: ROOTSY_COLOR_RAMPS.bruma,
   usage: {
-    "50": "Superficie de listado y filas zebra.",
-    "100": "Panel de lectura — ticket, tablas, workspace.",
+    "50": "Superficie y valle. Listado, filas zebra, lienzo de bloques. No es el papel.",
+    "100": "Lienzo plano — ticket, tablas, workspace.",
     "200": "Divisores hairline.",
     "300": "Bordes de inputs y tabs.",
     "400": "Metadatos — solo si el contraste alcanza.",
@@ -254,7 +254,18 @@ export const HANDBOOK_COLOR_FAMILIES: HandbookColorFamily[] = [
   ...HANDBOOK_FUNCTIONAL_COLORS,
 ]
 
-export function handbookColorHex(familyId: string, step: HandbookColorStepId): string {
+export type HandbookColorRefStep = HandbookColorStepId | "blanco"
+
+/** Luz de Bruma clara. Fuera de la rampa. Documentada en Color → Blanco. */
+export const HANDBOOK_BLANCO = {
+  id: "blanco",
+  token: "--rootsy-blanco",
+  hex: "#FFFFFF",
+  usage: "Papel de Bruma clara. --color-elevada, losetas, formularios y overlay. No pinta éter ni sombra.",
+} as const
+
+export function handbookColorHex(familyId: string, step: HandbookColorRefStep): string {
+  if (familyId === "blanco" || step === "blanco") return "#FFFFFF"
   const family = HANDBOOK_COLOR_FAMILIES.find((item) => item.id === familyId)
   const found = family?.steps.find((item) => item.step === step)
   if (!found) {

@@ -141,6 +141,59 @@ export function deleteArticleById(db: PopLocalDatabase, articleId: string) {
   db.run("DELETE FROM articles WHERE id = ?", [articleId])
 }
 
+export function getArticleById(
+  db: PopLocalDatabase,
+  articleId: string,
+): ArticleSnapshot | null {
+  const id = articleId.trim()
+  if (!id) return null
+  const row = db.get("SELECT * FROM articles WHERE id = ?", [id])
+  return row ? sqlArticleRowToSnapshot(row) : null
+}
+
+/** Scan de Vender: barcode o sku exacto, o nombre único. Solo merchandise vendible. */
+export function findSaleBoardArticleByScan(
+  db: PopLocalDatabase,
+  rawQuery: string,
+): ArticleSnapshot | null {
+  const query = rawQuery.trim()
+  if (!query) return null
+
+  const barcodeRows = db.all(
+    `SELECT * FROM articles
+     WHERE ${SALE_BOARD_WHERE}
+       AND IFNULL(barcode, '') = ?
+     ORDER BY name COLLATE NOCASE`,
+    [query],
+  )
+  if (barcodeRows.length === 1) {
+    return sqlArticleRowToSnapshot(barcodeRows[0]!) ?? null
+  }
+  if (barcodeRows.length > 1) return null
+
+  const skuRows = db.all(
+    `SELECT * FROM articles
+     WHERE ${SALE_BOARD_WHERE}
+       AND IFNULL(sku, '') = ?
+     ORDER BY name COLLATE NOCASE`,
+    [query],
+  )
+  if (skuRows.length === 1) {
+    return sqlArticleRowToSnapshot(skuRows[0]!) ?? null
+  }
+  if (skuRows.length > 1) return null
+
+  const nameRows = db.all(
+    `SELECT * FROM articles
+     WHERE ${SALE_BOARD_WHERE}
+       AND name = ? COLLATE NOCASE
+     ORDER BY name COLLATE NOCASE`,
+    [query],
+  )
+  if (nameRows.length !== 1) return null
+  return sqlArticleRowToSnapshot(nameRows[0]!) ?? null
+}
+
 /** Renombra la categoría denormalizada en artículos locales. Sin rehidratar. */
 export function renameArticlesCategory(
   db: PopLocalDatabase,

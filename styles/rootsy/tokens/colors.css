@@ -7,7 +7,7 @@
  * Funcionales: savia · cielo · sol · lava
  *
  * Tokens de propósito (--color-fondo, --color-accion, …) nombran el trabajo.
- * El hex siempre sale de un paso de paleta.
+ * El hex sale de un paso de paleta, salvo --rootsy-blanco: luz de Bruma clara.
  */
 
 :root {
@@ -102,6 +102,10 @@
   --rootsy-lava-900: #381008;
   --rootsy-lava-950: #1c0805;
 
+  /* Luz de Bruma clara — fuera de la rampa de once pasos. No es savia-50. */
+  --rootsy-blanco: #ffffff;
+  --rootsy-white: var(--rootsy-blanco);
+
   /*
    * Tokens de propósito — atmósfera por defecto: bruma clara.
    * Los temas (--rootsy-theme-*) reasignan fondo / superficie / texto.
@@ -109,7 +113,7 @@
    */
   --color-fondo: var(--rootsy-bruma-100);
   --color-superficie: var(--rootsy-bruma-50);
-  --color-elevada: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-blanco);
   --color-borde: var(--rootsy-bruma-200);
   --color-texto: var(--rootsy-bruma-900);
   --color-texto-muted: var(--rootsy-bruma-700);
@@ -139,7 +143,6 @@
 
   /* Alias de primitivos fuera de paleta — apuntan a un paso handbook */
   --rootsy-sombra-border: var(--rootsy-sombra-400);
-  --rootsy-white: var(--rootsy-savia-50);
   --rootsy-savia-teal: var(--rootsy-savia-500);
   --rootsy-savia-990: var(--rootsy-savia-950);
   --rootsy-savia-975: var(--rootsy-savia-950);
@@ -270,4 +273,7 @@
   --color-rootsy-lava-800: var(--rootsy-lava-800);
   --color-rootsy-lava-900: var(--rootsy-lava-900);
   --color-rootsy-lava-950: var(--rootsy-lava-950);
+
+  --color-rootsy-blanco: var(--rootsy-blanco);
+  --color-rootsy-white: var(--rootsy-white);
 }

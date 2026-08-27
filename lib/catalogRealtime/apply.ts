@@ -3,13 +3,16 @@
 import {
   clearPopLocalArticlesHydrateMarks,
   clearPopLocalCategoriesHydrateMark,
+  clearPopLocalPromotionsHydrateMark,
   deleteArticleById,
   deleteCategoryById,
+  deletePromotionById,
   getCategoryById,
   openPopLocalDb,
   renameArticlesCategory,
   upsertArticleSnapshots,
   upsertCategorySnapshots,
+  upsertPromotionSnapshots,
 } from "@/lib/popLocalDb"
 import {
   articleIdFromRealtimeEvent,
@@ -19,6 +22,10 @@ import {
   categoryPatchFromRealtimePayload,
   categorySnapshotFromPatch,
 } from "@/lib/catalogRealtime/categoryPayload"
+import {
+  promotionIdFromRealtimeEvent,
+  promotionSnapshotFromRealtimePayload,
+} from "@/lib/catalogRealtime/promotionPayload"
 import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableInfinite"
 import {
   popArticleCategoriesQueryRoot,
@@ -26,8 +33,11 @@ import {
   popArticlesQueryRoot,
   popLocalArticlesHydrateQueryRoot,
   popLocalCategoriesHydrateQueryKey,
+  popLocalPromotionsHydrateQueryKey,
+  popPromotionsQueryRoot,
   saleBoardArticlesQueryRoot,
   saleBoardCategoriesQueryRoot,
+  saleBoardPromotionsQueryRoot,
 } from "@/lib/queryKeys"
 import type { DomainEvent } from "@/lib/realtime/protocol"
 import type { QueryClient } from "@tanstack/react-query"
@@ -198,4 +208,80 @@ export async function applyCategoryRealtimeEvent(
     invalidateSaleBoardArticles(queryClient, popId)
   }
   invalidateLocalCategories(queryClient, popId)
+}
+
+function invalidateSaleBoardPromotions(queryClient: QueryClient, popId: string) {
+  void queryClient.invalidateQueries({
+    queryKey: saleBoardPromotionsQueryRoot(popId),
+    ...REFETCH_ALL,
+  })
+  void invalidateDataWorkspaceTableInfinite(
+    queryClient,
+    popPromotionsQueryRoot(popId),
+  )
+}
+
+async function recoverPromotionsCatalog(queryClient: QueryClient, popId: string) {
+  await clearPopLocalPromotionsHydrateMark(popId).catch(() => undefined)
+  void queryClient.invalidateQueries({
+    queryKey: popLocalPromotionsHydrateQueryKey(popId),
+    ...REFETCH_ALL,
+  })
+  invalidateSaleBoardPromotions(queryClient, popId)
+}
+
+async function writePromotionEventToSqlite(
+  popId: string,
+  event: DomainEvent,
+  promotionId: string,
+) {
+  const handle = await openPopLocalDb(popId)
+  if (event.type === "promotions.deleted") {
+    deletePromotionById(handle.database, promotionId)
+    handle.markDirty()
+    await handle.flush()
+    return "ok" as const
+  }
+  const snapshot = promotionSnapshotFromRealtimePayload(event.payload.promotion)
+  if (!snapshot) return "needs-rehydrate" as const
+  upsertPromotionSnapshots(handle.database, [snapshot])
+  handle.markDirty()
+  await handle.flush()
+  return "ok" as const
+}
+
+export async function applyPromotionRealtimeEvent(
+  queryClient: QueryClient,
+  popId: string,
+  event: DomainEvent,
+) {
+  const type = event.type
+  if (
+    type !== "promotions.created" &&
+    type !== "promotions.updated" &&
+    type !== "promotions.deleted"
+  ) {
+    return
+  }
+  const promotionId =
+    (event.resource?.type === "promotion" && event.resource.id) ||
+    promotionIdFromRealtimeEvent(event.payload)
+  if (!promotionId) return
+
+  let outcome: "ok" | "needs-rehydrate" = "needs-rehydrate"
+  try {
+    outcome = await retrySqlite(() =>
+      writePromotionEventToSqlite(popId, event, promotionId),
+    )
+  } catch {
+    await recoverPromotionsCatalog(queryClient, popId)
+    return
+  }
+
+  if (outcome === "needs-rehydrate") {
+    await recoverPromotionsCatalog(queryClient, popId)
+    return
+  }
+
+  invalidateSaleBoardPromotions(queryClient, popId)
 }

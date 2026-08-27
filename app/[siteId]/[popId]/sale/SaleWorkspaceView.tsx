@@ -12,6 +12,7 @@ import {
   type SaleCatalogPaymentOption,
 } from "@/app/[siteId]/[popId]/sale/actions"
 import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
+import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
 import { useSaleCatalogLoader } from "@/hooks/useSaleCatalogLoader"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
 import { useQueryClient } from "@tanstack/react-query"
@@ -235,9 +236,6 @@ export function SaleWorkspaceView() {
   )
 
   const {
-    catalogArticles,
-    catalogPromotions,
-    catalogQuantityDeals,
     treasuryPaymentContext,
     canReadClients,
     canReadPaymentMethods,
@@ -253,10 +251,12 @@ export function SaleWorkspaceView() {
     comprobanteEmitter,
     comprobantesLoaded,
     mergeCatalogArticles,
-    ensureCatalogArticles,
     catalogLoading: catalogQueryLoading,
     catalogError: catalogQueryError,
   } = useSaleCatalogLoader(popId, { enabled: Boolean(popId && siteId) })
+  const saleBoardPromotions = useSaleBoardPromotions(popId, {
+    enabled: Boolean(popId && siteId),
+  })
   const catalogLoading = !popId || !siteId ? false : catalogQueryLoading
   useSaleOpenCashSessionToasts(
     siteId,
@@ -299,20 +299,13 @@ export function SaleWorkspaceView() {
     promoWizardTarget,
     confirmarPromoWizard,
     restaurarDesdeCheckout,
+    cartReady,
   } = useSaleTicketCart({
-    menuArticles: catalogArticles,
-    menuPromotions: catalogPromotions,
-    menuQuantityDeals: catalogQuantityDeals,
+    popId,
+    menuPromotions: saleBoardPromotions.combos,
+    menuQuantityDeals: saleBoardPromotions.quantityDeals,
     onCartLineAdded: cartScrollHighlight.notifyLineAdded,
   })
-
-  useEffect(() => {
-    void ensureCatalogArticles(
-      carrito
-        .filter((item) => (item.kind ?? "article") !== "promotion")
-        .map((item) => item.productoId),
-    )
-  }, [carrito, ensureCatalogArticles])
 
   const [clienteSeleccionado, setClienteSeleccionado] =
     useState<ClienteVentaSeleccionado | null>(null)
@@ -425,6 +418,7 @@ export function SaleWorkspaceView() {
 
   const quoteLoadRef = useRef<string | null>(null)
   const quoteLoadingRef = useRef<string | null>(null)
+  const saleIdempotencyKeyRef = useRef(crypto.randomUUID())
   const [quoteRestorePending, setQuoteRestorePending] = useState(
     () => Boolean(quoteIdFromUrl),
   )
@@ -600,6 +594,7 @@ export function SaleWorkspaceView() {
       const res = await completeSale(popId, {
         siteId,
         priceListId: getSalePriceListSession(popId),
+        idempotencyKey: saleIdempotencyKeyRef.current,
         lines: buildCompleteSaleLinesFromCart({
           carrito,
           quantityDealApplications,
@@ -634,6 +629,7 @@ export function SaleWorkspaceView() {
         setVentaError(res.error)
         return
       }
+      saleIdempotencyKeyRef.current = crypto.randomUUID()
       setVenderConfirmOpen(false)
       limpiarVenta()
       if (popId) invalidatePopOperateCatalogs(queryClient, popId)
@@ -947,7 +943,7 @@ export function SaleWorkspaceView() {
   ])
 
   useEffect(() => {
-    if (!quoteIdFromUrl || !popId || catalogLoading || !bootstrapLoaded) return
+    if (!quoteIdFromUrl || !popId || catalogLoading || !bootstrapLoaded || !cartReady) return
     if (quoteLoadRef.current === quoteIdFromUrl) return
     if (quoteLoadingRef.current === quoteIdFromUrl) return
 
@@ -973,6 +969,7 @@ export function SaleWorkspaceView() {
   }, [
     aplicarPresupuestoEnVenta,
     bootstrapLoaded,
+    cartReady,
     catalogLoading,
     popId,
     quoteIdFromUrl,
@@ -1250,6 +1247,7 @@ export function SaleWorkspaceView() {
                 loading={catalogLoading}
                 error={catalogError}
                 onAddProduct={handleAddProduct}
+                addDisabled={!cartReady || ventaSubmitting}
                 catalogSidebarOpen={catalogSidebarOpen}
                 onCatalogSidebarOpenChange={setCatalogSidebarOpen}
                 catalogScope="sale"

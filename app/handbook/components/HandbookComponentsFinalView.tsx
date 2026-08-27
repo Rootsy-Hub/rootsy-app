@@ -1,9 +1,26 @@
 "use client"
 
 import { HomePageHeader } from "@/app/home/HomePageHeader"
+import { MenuDormantDock } from "@/app/[siteId]/[popId]/menu/MenuDormantDock"
 import { MenuDormantHeader } from "@/app/[siteId]/[popId]/menu/MenuDormantHeader"
+import { MenuDormantNavigator } from "@/app/[siteId]/[popId]/menu/MenuDormantNavigator"
+import { DockIconVisual } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
+import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
+import { MenuOuterEntity } from "@/app/[siteId]/[popId]/menu/MenuOuterEntity"
 import { MenuPageHeader } from "@/app/[siteId]/[popId]/menu/MenuPageHeader"
+import { MenuSectionNavigator } from "@/app/[siteId]/[popId]/menu/MenuSectionNavigator"
+import { menuGhostBarClass, menuGhostTileClass } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
+import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import {
+  menuPlanetIconGlyphClass,
+  menuPlanetIconShellClass,
+  menuPlanetTileClass,
+  menuPlanetTileLabelClass,
+} from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
+import "@/app/library/color/rootsyNaturePalette.css"
+import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
+import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
 import { HandbookDesignSystemNav } from "@/app/handbook/HandbookDesignSystemNav"
 import {
   HANDBOOK_COMPONENT_PAGES,
@@ -19,7 +36,27 @@ import {
 } from "@/components/ComponentView"
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import { MenuSidebar } from "@/components/MenuSidebar"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
+import {
+  menuHoloFloatLiftClass,
+  menuHoloFocusRingForSection,
+  menuHoloGlyphClass,
+  menuHoloIconHoverForSection,
+  menuHoloIconShellForSection,
+  menuHoloLabelClass,
+  menuHoloPlanetLifeClass,
+  menuHoloRealmWorldRimClass,
+  menuHoloTileMotionClass,
+  menuPlanetLifeStyle,
+  type MenuPlanetRealm,
+} from "@/lib/menu/menuHoloStyles"
+import {
+  DEFAULT_MENU_DOCK_IDS,
+  getMenuCatalogItem,
+  menuSectionsRaw,
+  type MenuCatalogItem,
+} from "@/lib/menuCatalog"
 import {
   libraryDocPageDescriptionClass,
   libraryDocPageTitleClass,
@@ -28,6 +65,7 @@ import {
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
+import { Check, Pencil } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 const PERSON_PHOTO = "/rootsy/rootsy-alerta-amable.png"
@@ -417,23 +455,274 @@ function TabsFinalSpecimen() {
   )
 }
 
+const MENU_POP_SECTIONS = [
+  { key: "operar", title: menuSectionsRaw.operar.title },
+  { key: "administrar", title: menuSectionsRaw.administrar.title },
+  { key: "configurar", title: menuSectionsRaw.configurar.title },
+] as const
+
+const MENU_POP_DOCK_ITEMS = DEFAULT_MENU_DOCK_IDS.map((id) =>
+  getMenuCatalogItem(id),
+).filter((item) => item != null)
+
+const MENU_BUTTON_EXAMPLE_IDS = ["sale", "mesas", "articles", "settings"] as const
+
+const MENU_BUTTON_EXAMPLES = MENU_BUTTON_EXAMPLE_IDS.map((id) =>
+  getMenuCatalogItem(id),
+).filter((item): item is MenuCatalogItem => item != null)
+
+const MENU_BUTTON_WORLDS = {
+  Savia: "operar",
+  Sol: "administrar",
+  Cielo: "configurar",
+  Lava: "lava",
+} as const satisfies Record<string, MenuPlanetRealm>
+
+type MenuButtonWorldName = keyof typeof MENU_BUTTON_WORLDS
+
+function MenuPlanetButtonVisual({
+  item,
+  realm,
+}: {
+  item: MenuCatalogItem
+  realm: MenuPlanetRealm
+}) {
+  const Icon = item.icon
+  const lifeStyle = menuPlanetLifeStyle(`${realm}-${item.id}`)
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        menuPlanetTileClass,
+        "border-0 bg-transparent p-0",
+        menuHoloFocusRingForSection(realm),
+      )}
+    >
+      <div
+        className={cn("relative overflow-visible p-1 -m-1", menuHoloPlanetLifeClass)}
+        style={lifeStyle}
+      >
+        <div
+          className={cn(
+            menuPlanetIconShellClass,
+            menuHoloIconShellForSection(realm, "default"),
+            menuHoloRealmWorldRimClass(realm),
+            menuHoloFloatLiftClass,
+            menuHoloTileMotionClass,
+            menuHoloIconHoverForSection(realm),
+          )}
+        >
+          <MenuIconChrome sectionKey={realm} alive />
+          <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
+        </div>
+      </div>
+      <span
+        className={cn(
+          "flex h-7 w-full items-start justify-center text-center line-clamp-2 md:h-8 md:items-center",
+          menuPlanetTileLabelClass,
+          menuHoloLabelClass,
+        )}
+      >
+        {item.name}
+      </span>
+    </button>
+  )
+}
+
+function MenuPlanetButtonGhost() {
+  return (
+    <div aria-hidden className={cn(menuPlanetTileClass, "justify-self-center")}>
+      <div className={cn(menuPlanetIconShellClass, menuGhostTileClass)} />
+      <span className={cn(menuGhostBarClass, "h-3 w-[3.25rem]")} />
+    </div>
+  )
+}
+
+function MenuGridItemButtonSpecimen({
+  world,
+  loading,
+}: {
+  world: string
+  loading: boolean
+}) {
+  const realm =
+    MENU_BUTTON_WORLDS[world as MenuButtonWorldName] ?? MENU_BUTTON_WORLDS.Savia
+
+  return (
+    <div className={cn("dark", menuNatureShellClass, "w-full py-8")}>
+      <div className="flex flex-wrap items-end justify-center gap-x-3 gap-y-6 md:gap-x-6">
+        {loading
+          ? MENU_BUTTON_EXAMPLES.map((item) => (
+              <MenuPlanetButtonGhost key={item.id} />
+            ))
+          : MENU_BUTTON_EXAMPLES.map((item) => (
+              <MenuPlanetButtonVisual key={item.id} item={item} realm={realm} />
+            ))}
+      </div>
+    </div>
+  )
+}
+
+function MenuSectionNavigatorSpecimen({ loading }: { loading: boolean }) {
+  const [selectedIndex, setSelectedIndex] = useState(0)
+
+  return (
+    <div className={cn("dark", menuNatureShellClass, "w-full py-6")}>
+      {loading ? (
+        <MenuDormantNavigator />
+      ) : (
+        <MenuSectionNavigator
+          sections={[...MENU_POP_SECTIONS]}
+          selectedIndex={selectedIndex}
+          onSelect={setSelectedIndex}
+        />
+      )}
+    </div>
+  )
+}
+
+function MenuDockSpecimen({
+  loading,
+  editing,
+}: {
+  loading: boolean
+  editing: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        "dark",
+        menuNatureShellClass,
+        "relative flex min-h-[8rem] w-full items-center justify-center py-8",
+      )}
+    >
+      {loading ? (
+        <MenuDormantDock />
+      ) : (
+        <MenuOuterEntity
+          variant="foot"
+          floating
+          className="!relative !bottom-auto !left-auto !w-auto !max-w-full !translate-x-0"
+        >
+          <div className="flex items-end overflow-visible px-2 py-1">
+            <div className="flex items-end gap-4">
+              {MENU_POP_DOCK_ITEMS.map((item) => (
+                <DockIconVisual
+                  key={item.id}
+                  icon={item.icon}
+                  sectionKey={item.sectionKey}
+                  variant="dock"
+                  size="md"
+                />
+              ))}
+            </div>
+            <div
+              className="ml-3 hidden shrink-0 items-center self-end md:flex"
+              style={{ height: 48 }}
+            >
+              <div
+                className="mr-2 w-px shrink-0 bg-white/20"
+                style={{ height: 32 }}
+                aria-hidden
+              />
+              <RootsIconButton
+                tone="ghost"
+                surface="dark"
+                size="compact"
+                label={editing ? "Listo" : "Editar accesos directos"}
+              >
+                {editing ? (
+                  <Check aria-hidden strokeWidth={2.5} />
+                ) : (
+                  <Pencil aria-hidden />
+                )}
+              </RootsIconButton>
+            </div>
+          </div>
+        </MenuOuterEntity>
+      )}
+    </div>
+  )
+}
+
 function MenusFinalSpecimen() {
   return (
-    <ComponentView
-      background={BRUMA}
-      componentName="MenuSidebar"
-      componentProperties={[
-        { name: "children", values: ["ReactNode"] },
-        { name: "backHref", values: ["string", "undefined"] },
-        { name: "backLabel", values: ["string"] },
-        { name: "onBack", values: ["() => void"] },
-        { name: "eyebrow", values: ["string"] },
-        { name: "brand", values: ["ReactNode"] },
-        { name: "collapseBelowLg", values: ["true", "false"] },
-      ]}
-      variants={[{ name: "Sistema de diseño" }, { name: "Handbook" }]}
-      render={(variant) => <MenuSidebarSpecimen variant={variant} />}
-    />
+    <div className="flex flex-col gap-4">
+      <ComponentView
+        background={ETER}
+        componentName="MenuSectionNavigator"
+        componentProperties={[
+          { name: "sections", values: ["Operar", "Administrar", "Configurar"] },
+          { name: "selectedIndex", values: ["number"] },
+          { name: "onSelect", values: ["(index: number) => void"] },
+          { name: "dormant", values: ["true", "false"] },
+        ]}
+        variants={[{ name: "Menú POP" }]}
+        extras={[{ items: [{ name: "loaded" }, { name: "loading" }] }]}
+        render={(_variant, extras) => (
+          <MenuSectionNavigatorSpecimen loading={extras[0] === "loading"} />
+        )}
+      />
+      <ComponentView
+        background={ETER}
+        componentName="MenuGridItemButton"
+        componentProperties={[
+          { name: "item", values: ["Vender", "Mesas", "Artículos", "Ajustes"] },
+          { name: "sectionKey", values: ["operar", "administrar", "configurar"] },
+          { name: "world", values: ["savia", "sol", "cielo", "lava"] },
+        ]}
+        variants={[
+          { name: "Savia" },
+          { name: "Sol" },
+          { name: "Cielo" },
+          { name: "Lava" },
+        ]}
+        extras={[{ items: [{ name: "loaded" }, { name: "loading" }] }]}
+        render={(variant, extras) => (
+          <MenuGridItemButtonSpecimen
+            world={variant}
+            loading={extras[0] === "loading"}
+          />
+        )}
+      />
+      <ComponentView
+        background={ETER}
+        componentName="MenuDock"
+        componentProperties={[
+          { name: "siteId", values: ["string"] },
+          { name: "popId", values: ["string"] },
+          { name: "dockItems", values: ["home", "sale", "mesas", "articles", "settings"] },
+          { name: "editing", values: ["true", "false"] },
+        ]}
+        variants={[{ name: "Menú POP" }]}
+        extras={[
+          { items: [{ name: "loaded" }, { name: "loading" }] },
+          { items: [{ name: "idle" }, { name: "editing" }] },
+        ]}
+        render={(_variant, extras) => (
+          <MenuDockSpecimen
+            loading={extras[0] === "loading"}
+            editing={extras[1] === "editing"}
+          />
+        )}
+      />
+      <ComponentView
+        background={BRUMA}
+        componentName="MenuSidebar"
+        componentProperties={[
+          { name: "children", values: ["ReactNode"] },
+          { name: "backHref", values: ["string", "undefined"] },
+          { name: "backLabel", values: ["string"] },
+          { name: "onBack", values: ["() => void"] },
+          { name: "eyebrow", values: ["string"] },
+          { name: "brand", values: ["ReactNode"] },
+          { name: "collapseBelowLg", values: ["true", "false"] },
+        ]}
+        variants={[{ name: "Sistema de diseño" }, { name: "Handbook" }]}
+        render={(variant) => <MenuSidebarSpecimen variant={variant} />}
+      />
+    </div>
   )
 }
 
