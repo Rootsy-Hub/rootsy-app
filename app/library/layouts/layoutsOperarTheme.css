@@ -9,11 +9,15 @@
 
 @import "./rootsyLayoutsEarthFloor.css";
 
-/* Rail categorías — mismo --color-shell que library-sidebar (Estadísticas / Ajustes). */
-.rootsy-theme-pos .library-sidebar {
+/* Rail categorías — mismo --color-shell que library-sidebar (Estadísticas / Ajustes).
+ * handbook-rail pinta border-color con --color-borde (sombra-400) e !important:
+ * acá se pisa a sombra-800, la misma costura que canvas / toolbar / toolbox. */
+.rootsy-theme-pos .library-sidebar,
+.rootsy-theme-pos .handbook-rail {
   --color-shell: var(--rootsy-sombra-900);
+  --color-borde: var(--rootsy-sombra-800);
   background-color: var(--rootsy-sombra-900) !important;
-  border-color: var(--rootsy-sombra-800);
+  border-color: var(--rootsy-sombra-800) !important;
 }
 
 .rootsy-theme-pos.layouts-operar-body,
