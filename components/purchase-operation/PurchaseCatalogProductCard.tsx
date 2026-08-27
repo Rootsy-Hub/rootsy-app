@@ -4,11 +4,15 @@ import {
   layoutsOperarProductCardProposalAddClass,
   layoutsOperarProductCardProposalBodyClass,
   layoutsOperarProductCardProposalDescClass,
+  layoutsOperarProductCardProposalGridInnerClass,
   layoutsOperarProductCardProposalGridShellClass,
   layoutsOperarProductCardProposalListShellClass,
+  layoutsOperarProductCardProposalTriggerClass,
   layoutsOperarProductCardProposalMediaClass,
   layoutsOperarProductCardProposalMediaStyle,
   layoutsOperarProductCardProposalPriceClass,
+  layoutsOperarProductCardProposalPriceRowClass,
+  layoutsOperarProductCardProposalTextClass,
   layoutsOperarProductCardProposalTitleClass,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
@@ -38,6 +42,66 @@ export function PurchaseCatalogProductCard({
   const proposalId = LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL
   const mediaStyle = layoutsOperarProductCardProposalMediaStyle(proposalId)
 
+  const media = (
+    <div
+      className={layoutsOperarProductCardProposalMediaClass(proposalId, layoutVariant)}
+      style={mediaStyle}
+    >
+      <CatalogProductCardMediaPhoto
+        src={product.imagen}
+        proposalId={proposalId}
+        sizes={isList ? "80px" : "33vw"}
+      />
+      {!disabled ? (
+        <span className={layoutsOperarProductCardProposalAddClass(proposalId)} aria-hidden>
+          <Plus className="size-4" strokeWidth={2.5} aria-hidden />
+        </span>
+      ) : null}
+    </div>
+  )
+
+  if (isList) {
+    return (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        data-proposal={proposalId}
+        className={cn(
+          layoutsOperarProductCardProposalListShellClass(proposalId),
+          disabled && "cursor-not-allowed opacity-50",
+        )}
+      >
+        {media}
+        <div className={layoutsOperarProductCardProposalBodyClass(proposalId, layoutVariant)}>
+          <div className="min-h-0 min-w-0">
+            <h3
+              className={cn(
+                layoutsOperarProductCardProposalTitleClass(proposalId),
+                "line-clamp-1",
+              )}
+            >
+              {product.nombre}
+            </h3>
+            <p
+              className={cn(
+                layoutsOperarProductCardProposalDescClass(proposalId),
+                "line-clamp-1",
+              )}
+            >
+              {product.descripcion}
+            </p>
+          </div>
+          <div className="shrink-0">
+            <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
+              {purchaseCatalogCostHint(product)}
+            </span>
+          </div>
+        </div>
+      </button>
+    )
+  }
+
   return (
     <button
       type="button"
@@ -45,50 +109,29 @@ export function PurchaseCatalogProductCard({
       onClick={onClick}
       data-proposal={proposalId}
       className={cn(
-        isList
-          ? layoutsOperarProductCardProposalListShellClass(proposalId)
-          : layoutsOperarProductCardProposalGridShellClass(proposalId),
+        layoutsOperarProductCardProposalTriggerClass(proposalId),
         disabled && "cursor-not-allowed opacity-50",
       )}
     >
       <div
-        className={layoutsOperarProductCardProposalMediaClass(proposalId, layoutVariant)}
-        style={mediaStyle}
+        className={layoutsOperarProductCardProposalGridShellClass(proposalId)}
+        data-proposal={proposalId}
       >
-        <CatalogProductCardMediaPhoto
-          src={product.imagen}
-          proposalId={proposalId}
-          sizes={isList ? "80px" : "33vw"}
-        />
-        {!disabled ? (
-          <span className={layoutsOperarProductCardProposalAddClass(proposalId)} aria-hidden>
-            <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-          </span>
-        ) : null}
-      </div>
-      <div className={layoutsOperarProductCardProposalBodyClass(proposalId, layoutVariant)}>
-        <div className={cn("min-h-0 min-w-0", !isList && "self-start")}>
-          <h3
-            className={cn(
-              layoutsOperarProductCardProposalTitleClass(proposalId),
-              isList && "line-clamp-1",
-            )}
-          >
-            {product.nombre}
-          </h3>
-          <p
-            className={cn(
-              layoutsOperarProductCardProposalDescClass(proposalId),
-              isList && "line-clamp-1",
-            )}
-          >
-            {product.descripcion}
-          </p>
-        </div>
-        <div className={isList ? "shrink-0" : "self-end"}>
-          <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
-            {purchaseCatalogCostHint(product)}
-          </span>
+        <div className={layoutsOperarProductCardProposalGridInnerClass(proposalId)}>
+          {media}
+          <div className={layoutsOperarProductCardProposalTextClass(proposalId)}>
+            <h3 className={layoutsOperarProductCardProposalTitleClass(proposalId)}>
+              {product.nombre}
+            </h3>
+            <p className={layoutsOperarProductCardProposalDescClass(proposalId)}>
+              {product.descripcion}
+            </p>
+          </div>
+          <div className={layoutsOperarProductCardProposalPriceRowClass(proposalId)}>
+            <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
+              {purchaseCatalogCostHint(product)}
+            </span>
+          </div>
         </div>
       </div>
     </button>

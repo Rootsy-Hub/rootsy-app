@@ -12,8 +12,11 @@ import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSi
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { mesasAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import { popMesasLayoutQueryKey } from "@/lib/queryKeys"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { useParams } from "@/lib/pop-spa/navigation"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useCallback, useMemo, useRef } from "react"
 
 function MesasPage() {
   const params = useParams()
@@ -28,8 +31,6 @@ function MesasPage() {
     setOpen: setCatalogSidebarOpen,
   } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
 
-  const [layoutLoading, setLayoutLoading] = useState(true)
-  const [salons, setSalons] = useState<MesaSalon[]>([])
   const reloadLayoutRef = useRef<() => Promise<void>>(async () => {})
   const layoutDataRef = useRef<() => MesasLayoutData | null>(() => null)
 
@@ -38,38 +39,35 @@ function MesasPage() {
     [bootstrap?.permissionKeys],
   )
 
-  const loadLayout = useCallback(async () => {
-    if (!popId || !siteId) {
-      setLayoutLoading(false)
-      return
-    }
-    setLayoutLoading(true)
-    const layoutRes = await fetchMesasLayout(popId)
-    setLayoutLoading(false)
+  const layoutQuery = useQuery({
+    queryKey: popMesasLayoutQueryKey(popId ?? ""),
+    queryFn: async () => {
+      const res = await fetchMesasLayout(popId!)
+      if (!res.success) throw new Error(res.error)
+      return res.data
+    },
+    enabled: Boolean(popId && siteId),
+    ...sessionListQueryOptions,
+  })
 
-    if (layoutRes.success) {
-      setSalons(
-        layoutRes.data.salons
-          .filter((s) => s.isActive)
-          .map((s) => ({
-            id: s.id,
-            name: s.name,
-            sortOrder: s.sortOrder,
-            isActive: s.isActive,
-          })),
-      )
-    }
-  }, [popId, siteId])
-
-  useEffect(() => {
-    void loadLayout()
-  }, [loadLayout])
+  const salons = useMemo<MesaSalon[]>(
+    () =>
+      (layoutQuery.data?.salons ?? [])
+        .filter((s) => s.isActive)
+        .map((s) => ({
+          id: s.id,
+          name: s.name,
+          sortOrder: s.sortOrder,
+          isActive: s.isActive,
+        })),
+    [layoutQuery.data?.salons],
+  )
 
   const handleLayoutChanged = useCallback(async () => {
-    await loadLayout()
     await reloadLayoutRef.current()
-  }, [loadLayout])
+  }, [])
 
+  const layoutLoading = Boolean(popId && siteId) && layoutQuery.isPending
   const loading = bootstrapLoading || layoutLoading
   const popName = bootstrap?.popName ?? ""
 

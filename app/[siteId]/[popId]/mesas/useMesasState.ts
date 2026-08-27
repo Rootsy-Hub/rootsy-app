@@ -5,6 +5,7 @@ import {
   closeTableSessionApi,
   fetchMesasLayout,
   fetchMesasReservationSettings,
+  fetchMesasWaiters,
   fetchOpenTableSessions,
   fetchTableReservations,
   openTableSessionApi,
@@ -33,6 +34,7 @@ import type {
   MesaReservationInput,
   MesaSession,
   MesaTable,
+  MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import {
   mapLayoutToState,
@@ -54,6 +56,7 @@ import {
   popMesasReservationSettingsQueryKey,
   popMesasReservationsQueryKey,
   popMesasSessionsQueryKey,
+  popMesasWaitersQueryKey,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -184,6 +187,17 @@ export function useMesasState(popId: string, siteId: string) {
         settings: res.settings,
         operationalDayCloseTime: res.operationalDayCloseTime,
       }
+    },
+    enabled,
+    ...sessionListQueryOptions,
+  })
+
+  const waitersQuery = useQuery({
+    queryKey: popMesasWaitersQueryKey(popId),
+    queryFn: async (): Promise<MesaWaiter[]> => {
+      const res = await fetchMesasWaiters(popId)
+      if (!res.success) throw new Error(res.error)
+      return res.waiters
     },
     enabled,
     ...sessionListQueryOptions,
@@ -678,6 +692,7 @@ export function useMesasState(popId: string, siteId: string) {
     salons,
     tables,
     sessions,
+    waiters: waitersQuery.data ?? [],
     reservations: visibleReservations,
     decors,
     activeSalonId,

@@ -26,7 +26,11 @@ import type { SaleCatalogClient, SaleCatalogPaymentOption, SaleOpenCashSession }
 import { useMenuCatalogLoader } from "@/hooks/useMenuCatalogLoader"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
+import {
+  clientsAccessFromKeys,
+  saleCatalogAccessFromKeys,
+} from "@/lib/popWorkspaceAccess"
 import {
   buildOperationPartyManualSelection,
   type OperationPartyManualConfirmOptions,
@@ -201,18 +205,22 @@ export function useMesasSaleCheckout(
   const onCartLineAdded = options?.onCartLineAdded
   const catalogEnabled =
     options?.catalogLoadEnabled ?? Boolean(tableSessionId)
-  const toolboxEnabled = options?.toolboxLoadEnabled ?? catalogEnabled
+  const [httpMetaNeeded, setHttpMetaNeeded] = useState(
+    () => (remoteSession?.checkout?.carrito.length ?? 0) > 0,
+  )
+  const toolboxEnabled =
+    (options?.toolboxLoadEnabled ?? catalogEnabled) || httpMetaNeeded
 
   const {
     menuCategorySections,
     menuRecipes,
     menuArticles,
-    menuPromotions,
-    menuQuantityDeals,
+    menuPromotions: apiMenuPromotions,
+    menuQuantityDeals: apiMenuQuantityDeals,
     treasuryPaymentContext,
-    canReadClients,
-    canCreateSale,
-    canReadCashRegisters,
+    canReadClients: apiCanReadClients,
+    canCreateSale: apiCanCreateSale,
+    canReadCashRegisters: apiCanReadCashRegisters,
     openCashSession,
     invoiceTypeSiteId,
     hasValidPopFiscalCuit: apiHasValidPopFiscalCuit,
@@ -228,9 +236,20 @@ export function useMesasSaleCheckout(
     mergeCatalogRecipes,
     ensureCatalogItems,
   } = useMenuCatalogLoader(popId, {
-    enabled: catalogEnabled,
+    enabled: toolboxEnabled,
     toolboxEnabled,
   })
+
+  const localPromotions = useSaleBoardPromotions(popId, {
+    enabled: Boolean(popId),
+    scope: "menu",
+  })
+  const menuPromotions = catalogLoadAttempted
+    ? apiMenuPromotions
+    : localPromotions.combos
+  const menuQuantityDeals = catalogLoadAttempted
+    ? apiMenuQuantityDeals
+    : localPromotions.quantityDeals
 
   const fiscalBootstrap = usePopSaleComprobanteFiscalContext()
   const hasValidPopFiscalCuit = comprobantesLoaded
@@ -244,12 +263,28 @@ export function useMesasSaleCheckout(
 
   const { bootstrap } = usePopWorkspace()
   const queryClient = useQueryClient()
+  const saleAccess = useMemo(
+    () => saleCatalogAccessFromKeys(bootstrap?.permissionKeys ?? []),
+    [bootstrap?.permissionKeys],
+  )
+  const canReadClients = catalogLoadAttempted
+    ? apiCanReadClients
+    : saleAccess.canReadClients
+  const canCreateSale = catalogLoadAttempted
+    ? apiCanCreateSale
+    : saleAccess.canCreateSale
+  const canReadCashRegisters = catalogLoadAttempted
+    ? apiCanReadCashRegisters
+    : saleAccess.canReadCashRegisters
   const canCreateClient = useMemo(
     () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canCreate,
     [bootstrap?.permissionKeys],
   )
 
   const [carrito, setCarrito] = useState<MesasCartItem[]>([])
+  useEffect(() => {
+    if (carrito.length > 0) setHttpMetaNeeded(true)
+  }, [carrito.length])
   const [clienteSeleccionado, setClienteSeleccionado] =
     useState<MesasClienteSeleccionado | null>(null)
   const [manualNombreCliente, setManualNombreCliente] = useState("")

@@ -47,7 +47,7 @@ export const ROOTSY_LAYOUTS_OPERAR_PRINCIPLES = [
   {
     title: "Catálogo · dosel denso",
     detail:
-      "Sidebar w-64 (256px) · library-sidebar + library-nav · canvas sombra-950 · cards sombra-500 · toolbox banda 950 · pairing pos-core.",
+      "Sidebar w-64 (256px) · library-sidebar 700 + library-nav · canvas sombra-950 · cards sombra-700 · toolbox banda 950 · pairing pos-core.",
   },
   {
     title: "Ticket · bruma-50",
@@ -109,9 +109,9 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
 export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
   shell: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
   header: { token: "sombra-950→900", css: "linear-gradient chrome" },
-  rail: { token: "sombra-950 · library-sidebar", css: "var(--rootsy-sombra-950)" },
+  rail: { token: "sombra-700 · library-sidebar", css: "var(--rootsy-sombra-700)" },
   canvas: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
-  productCard: { token: "sombra-500", css: "var(--rootsy-sombra-500)" },
+  productCard: { token: "sombra-800", css: "var(--rootsy-sombra-800)" },
   footer: {
     token: ROOTSY_LAYOUTS_EARTH_FLOOR.chromeToken,
     css: ROOTSY_LAYOUTS_EARTH_FLOOR.background,
@@ -137,10 +137,10 @@ export const ROOTSY_LAYOUTS_OPERAR_BORDERS = {
     token: "sombra-border / 80%",
     css: `color-mix(in srgb, ${hx("sombra", "border")} 80%, transparent)`,
   },
-  /** Contorno card sombra-500 sobre canvas 600 */
+  /** Contorno card — más oscuro que el cuerpo 700. */
   darkCard: {
-    token: "sombra-border",
-    css: hx("sombra", "border"),
+    token: "sombra-900",
+    css: hx("sombra", "900"),
   },
   /** Split columna sombra ↔ bruma (pos-split) */
   splitColumn: {
@@ -300,7 +300,7 @@ export const ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS: LayoutsOperarProductC
     pairingId: "pos-core",
     pairingLabel: "Sombra 600 + 900 + Savia 500",
     summary:
-      "Cuerpo sombra-500 · canvas 950 · precio savia-500 · chip oferta 900+savia-500.",
+      "Cuerpo sombra-700 · canvas 950 · precio savia-500 · chip oferta 900+savia-500.",
     uxNote:
       "Tarjeta plana bajo el canvas — lectura rápida en grilla densa. Alineada al dosel denso del grid.",
     recommended: true,

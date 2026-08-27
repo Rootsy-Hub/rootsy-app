@@ -120,6 +120,17 @@ export function menuBoardPromotionsQueryKey(
   return [...menuBoardItemsQueryRoot(popId), "promotions", source] as const
 }
 
+export function menuBoardPromotionSplitQueryRoot(popId: string) {
+  return [...menuBoardItemsQueryRoot(popId), "promotion-split"] as const
+}
+
+export function menuBoardPromotionSplitQueryKey(
+  popId: string,
+  source: "local" | "http" = "local",
+) {
+  return [...menuBoardPromotionSplitQueryRoot(popId), source] as const
+}
+
 export function purchaseCatalogItemsQueryKey(
   popId: string,
   filterKey: string,
@@ -285,6 +296,10 @@ export function popMesasReservationsQueryKey(popId: string) {
 
 export function popMesasReservationSettingsQueryKey(popId: string) {
   return ["pop-mesas", popId, "reservation-settings"] as const
+}
+
+export function popMesasWaitersQueryKey(popId: string) {
+  return ["pop-mesas", popId, "waiters"] as const
 }
 
 export function popMostradorQueryRoot(popId: string) {

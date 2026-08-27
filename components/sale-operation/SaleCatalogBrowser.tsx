@@ -149,7 +149,7 @@ export function SaleCatalogBrowser({
     hydrate: Boolean(popId) && isSaleBoard,
   })
   const menuSectionsQuery = useMenuCatalogSections(popId, {
-    enabled: !isSaleBoard && Boolean(popId),
+    enabled: !isSaleBoard && itemsEnabled && Boolean(popId),
   })
   const saleBoardCategories = useMemo(() => {
     const rows = saleCategoriesQuery.data

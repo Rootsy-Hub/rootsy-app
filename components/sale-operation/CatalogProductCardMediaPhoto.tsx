@@ -48,7 +48,7 @@ export function CatalogProductCardMediaPhoto({
           onLoad={() => setRevealed(true)}
           onError={() => setFailed(true)}
           className={cn(
-            "object-cover transition-[opacity,transform] duration-200 ease-out group-hover:scale-[1.03]",
+            "object-cover object-center transition-[opacity,transform] duration-300 ease-out group-hover:scale-[1.03]",
             revealed ? "opacity-100" : "opacity-0",
           )}
         />

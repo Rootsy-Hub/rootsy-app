@@ -7,9 +7,12 @@ import {
   hydratePopPromotionsFromNetwork,
   listAllPromotions,
   openPopLocalDb,
+  splitLocalPromotionsForMenu,
   splitLocalPromotionsForSale,
 } from "@/lib/popLocalDb"
 import {
+  menuBoardPromotionSplitQueryKey,
+  menuBoardPromotionSplitQueryRoot,
   popLocalPromotionsHydrateQueryKey,
   saleBoardPromotionsQueryKey,
   saleBoardPromotionsQueryRoot,
@@ -22,6 +25,8 @@ const EMPTY_DEALS: MenuCatalogPromotion[] = []
 type UseSaleBoardPromotionsOptions = {
   enabled?: boolean
   hydrate?: boolean
+  /** `menu` = combos/deals de Mesas · Mostrador. Default: Vender. */
+  scope?: "sale" | "menu"
 }
 
 export function useSaleBoardPromotions(
@@ -34,6 +39,17 @@ export function useSaleBoardPromotions(
   const fallback = localStatus === "fallback"
   const enabled = Boolean(popId) && (options?.enabled ?? true)
   const hydrateEnabled = Boolean(popId) && (options?.hydrate ?? true)
+  const scope = options?.scope ?? "sale"
+  const splitPromotions =
+    scope === "menu" ? splitLocalPromotionsForMenu : splitLocalPromotionsForSale
+  const localKey =
+    scope === "menu"
+      ? menuBoardPromotionSplitQueryKey(popId ?? "", "local")
+      : saleBoardPromotionsQueryKey(popId ?? "", "local")
+  const httpKey =
+    scope === "menu"
+      ? menuBoardPromotionSplitQueryKey(popId ?? "", "http")
+      : saleBoardPromotionsQueryKey(popId ?? "", "http")
 
   const hydrate = useQuery({
     queryKey: popLocalPromotionsHydrateQueryKey(popId ?? ""),
@@ -41,7 +57,10 @@ export function useSaleBoardPromotions(
       await hydratePopPromotionsFromNetwork(popId!, {
         onProgress: () => {
           void queryClient.invalidateQueries({
-            queryKey: saleBoardPromotionsQueryRoot(popId!),
+            queryKey:
+              scope === "menu"
+                ? menuBoardPromotionSplitQueryRoot(popId!)
+                : saleBoardPromotionsQueryRoot(popId!),
           })
         },
       })
@@ -57,10 +76,10 @@ export function useSaleBoardPromotions(
   })
 
   const localQuery = useQuery({
-    queryKey: saleBoardPromotionsQueryKey(popId ?? "", "local"),
+    queryKey: localKey,
     queryFn: async () => {
       const handle = await openPopLocalDb(popId!)
-      return splitLocalPromotionsForSale(listAllPromotions(handle.database))
+      return splitPromotions(listAllPromotions(handle.database))
     },
     enabled: sqliteReady && enabled && (hydrate.isSuccess || hydrate.isError),
     staleTime: Number.POSITIVE_INFINITY,
@@ -71,10 +90,10 @@ export function useSaleBoardPromotions(
   })
 
   const networkQuery = useQuery({
-    queryKey: saleBoardPromotionsQueryKey(popId ?? "", "http"),
+    queryKey: httpKey,
     queryFn: async () => {
       const rows = await fetchSaleBoardPromotionPages(popId!)
-      return splitLocalPromotionsForSale(rows)
+      return splitPromotions(rows)
     },
     enabled: fallback && hydrateEnabled,
     staleTime: Number.POSITIVE_INFINITY,

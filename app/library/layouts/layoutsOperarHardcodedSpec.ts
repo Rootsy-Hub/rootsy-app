@@ -2,7 +2,11 @@ import {
   layoutsOperarProductCardAddClass,
   layoutsOperarProductCardClass,
   layoutsOperarProductCardDescClass,
+  layoutsOperarProductCardGridInnerClass,
   layoutsOperarProductCardGridBodyClass,
+  layoutsOperarProductCardTriggerClass,
+  layoutsOperarProductCardGridPriceRowClass,
+  layoutsOperarProductCardGridTextClass,
   layoutsOperarProductCardListBodyClass,
   layoutsOperarProductCardListClass,
   layoutsOperarProductCardListMediaClass,
@@ -522,15 +526,15 @@ export function layoutsOperarProductCardProposalGridShellClass(id: LayoutsOperar
 
   if (id === "losa-sombra") {
     return cn(
-      "layouts-operar-product-card group relative grid h-[256px] w-full grid-rows-[120px_1fr] overflow-hidden rounded-xl text-left",
-      "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-700)]",
+      "layouts-operar-product-card group relative h-[256px] w-full overflow-hidden rounded-xl text-left",
+      "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-800)]",
       "shadow-none transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_38%,var(--rootsy-sombra-700))]",
     )
   }
 
   return cn(
-    "layouts-operar-product-card group relative grid h-[256px] w-full grid-rows-[120px_1fr] overflow-hidden rounded-2xl text-left",
-    "border border-[color-mix(in_srgb,var(--rootsy-sombra-400)_45%,transparent)] bg-[var(--rootsy-sombra-500)]",
+    "layouts-operar-product-card group relative h-[256px] w-full overflow-hidden rounded-2xl text-left",
+    "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
     "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_28%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
     "transition-[box-shadow,transform,ring-color] duration-200 ease-out hover:-translate-y-0.5",
@@ -545,14 +549,14 @@ export function layoutsOperarProductCardProposalListShellClass(id: LayoutsOperar
   if (id === "losa-sombra") {
     return cn(
       "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-xl text-left",
-      "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-700)]",
+      "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-800)]",
       "shadow-none transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_38%,var(--rootsy-sombra-700))]",
     )
   }
 
   return cn(
     "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-2xl text-left",
-    "border border-[color-mix(in_srgb,var(--rootsy-sombra-400)_45%,transparent)] bg-[var(--rootsy-sombra-500)]",
+    "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
     "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_28%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
     "transition-[box-shadow,transform,ring-color] duration-200 ease-out hover:-translate-y-0.5",
@@ -593,6 +597,34 @@ export function layoutsOperarProductCardProposalMediaStyle(
     backgroundColor: toolboxHx("sombra", "500"),
     boxShadow: `inset 0 0 0 1px ${getLayoutsOperarBorderCss("darkHairline")}`,
   }
+}
+
+export function layoutsOperarProductCardProposalTriggerClass(
+  id: LayoutsOperarProductCardProposalId,
+) {
+  void id
+  return layoutsOperarProductCardTriggerClass
+}
+
+export function layoutsOperarProductCardProposalGridInnerClass(
+  id: LayoutsOperarProductCardProposalId,
+) {
+  void id
+  return layoutsOperarProductCardGridInnerClass
+}
+
+export function layoutsOperarProductCardProposalTextClass(
+  id: LayoutsOperarProductCardProposalId,
+) {
+  void id
+  return layoutsOperarProductCardGridTextClass
+}
+
+export function layoutsOperarProductCardProposalPriceRowClass(
+  id: LayoutsOperarProductCardProposalId,
+) {
+  void id
+  return layoutsOperarProductCardGridPriceRowClass
 }
 
 export function layoutsOperarProductCardProposalBodyClass(

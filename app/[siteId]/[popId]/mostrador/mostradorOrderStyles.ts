@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 /** Misma loseta que el catálogo — sin la grilla de 256px. */
 const orderCardBaseClass = cn(
   "layouts-operar-product-card relative w-full overflow-hidden rounded-2xl text-left",
-  "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-600)]",
+  "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-800)]",
   "px-3 py-3",
   "transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5",
 )

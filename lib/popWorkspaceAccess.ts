@@ -109,6 +109,24 @@ export function operationsAccessFromKeys(
   )
 }
 
+/** Permisos de venta que publica GET /menu-catalog (caja / cobrar). */
+export function saleCatalogAccessFromKeys(keys: readonly string[]) {
+  const canReadSale = permissionKeysInclude(
+    keys,
+    POP_PERMS.SALE_READ.resource,
+    POP_PERMS.SALE_READ.action,
+  )
+  return {
+    canReadClients: canReadSale,
+    canReadCashRegisters: canReadSale,
+    canCreateSale: permissionKeysInclude(
+      keys,
+      POP_PERMS.SALE_CREATE.resource,
+      POP_PERMS.SALE_CREATE.action,
+    ),
+  }
+}
+
 export function clientsAccessFromKeys(
   keys: readonly string[],
 ): ModuleAccessSnapshot {

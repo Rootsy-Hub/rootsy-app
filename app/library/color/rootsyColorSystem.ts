@@ -733,7 +733,7 @@ export const ROOTSY_SURFACE_STACKS: Record<ColorThemeId, SurfaceLayer[]> = {
     { level: 0, label: "Shell", token: "sombra-950", hex: hx("sombra", "950"), usage: "Fondo — siempre el más oscuro." },
     { level: 1, label: "Rail", token: "sombra-950", hex: hx("sombra", "950"), usage: "Categorías, mismo piso." },
     { level: 2, label: "Canvas", token: "sombra-950", hex: hx("sombra", "950"), usage: "Grilla, mismo fondo." },
-    { level: 3, label: "Card", token: "sombra-500", hex: hx("sombra", "500"), usage: "Producto elevada." },
+    { level: 3, label: "Card", token: "sombra-700", hex: hx("sombra", "700"), usage: "Producto elevada." },
     { level: 4, label: "Toolbox", token: "sombra-950", hex: hx("sombra", "950"), usage: "Banda, mismo piso." },
     { level: 5, label: "Totales", token: "savia-975→990", hex: hx("savia", "975"), usage: "Gradiente cobro." },
   ],

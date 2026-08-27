@@ -48,8 +48,8 @@
 }
 
 .library-sidebar {
-  /* Rail — Sotobosque · Sombra. No hereda el fondo de Luz filtrada. */
-  background-color: var(--rootsy-sombra-950) !important;
+  /* Rail — Sotobosque · Sombra 700. */
+  background-color: var(--rootsy-sombra-700) !important;
   border-color: var(--rootsy-sombra-400);
 }
 

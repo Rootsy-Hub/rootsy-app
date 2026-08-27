@@ -11,7 +11,7 @@
 
 /* Rail categorías — mismo --color-shell que library-sidebar (Estadísticas / Ajustes). */
 .rootsy-theme-pos .library-sidebar {
-  --color-shell: var(--rootsy-sombra-950);
+  --color-shell: var(--rootsy-sombra-700);
 }
 
 .rootsy-theme-pos.layouts-operar-body,
@@ -77,20 +77,14 @@
   --layouts-operar-footer-icon-configured-bg: color-mix(in srgb, var(--rootsy-savia-500) 72%, var(--rootsy-savia-700));
   --layouts-operar-footer-icon-configured-text: var(--rootsy-savia-950);
 
-  /* Product cards — elevada 500 sobre fondo 950 */
-  --layouts-operar-product-card-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--rootsy-sombra-50) 8%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, var(--rootsy-sombra-400) 28%, transparent);
-  --layouts-operar-product-card-shadow-hover:
-    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-300) 16%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, var(--rootsy-savia-500) 42%, transparent);
-  --layouts-operar-product-card-shadow-selected:
-    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-300) 18%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, var(--rootsy-savia-500) 55%, transparent);
+  /* Un solo trazo: border. El inset lo tapa la foto y el borde se ve distinto. */
+  --layouts-operar-product-card-shadow: none;
+  --layouts-operar-product-card-shadow-hover: none;
+  --layouts-operar-product-card-shadow-selected: none;
   --layouts-operar-product-card-title: var(--rootsy-sombra-50);
   --layouts-operar-product-card-desc: var(--rootsy-sombra-300);
   --layouts-operar-product-card-price: var(--rootsy-savia-500);
-  --layouts-operar-product-card-media-bg: var(--rootsy-sombra-500);
+  --layouts-operar-product-card-media-bg: var(--rootsy-sombra-800);
 
   /* Form controls dark — paridad catalog-toolbar-control */
   --layouts-operar-form-dark-surface: color-mix(in srgb, var(--rootsy-sombra-950) 55%, transparent);
@@ -310,7 +304,7 @@
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:not([data-proposal]) {
   border-radius: var(--radius-xlarge);
   box-shadow: var(--layouts-operar-product-card-shadow);
-  background: var(--rootsy-sombra-500);
+  background: var(--rootsy-sombra-800);
   border-color: var(--layouts-operar-border-dark-card);
   transform: none;
 }
@@ -319,14 +313,15 @@
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"]:hover,
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card:not([data-proposal]):hover,
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:not([data-proposal]):hover {
-  box-shadow: var(--layouts-operar-product-card-shadow-hover);
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--rootsy-savia-500) 42%, transparent);
 }
 
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-selected],
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card[data-selected] {
   border-color: color-mix(in srgb, var(--rootsy-savia-500) 45%, transparent);
-  background: color-mix(in srgb, var(--rootsy-savia-500) 10%, var(--rootsy-sombra-500));
-  box-shadow: var(--layouts-operar-product-card-shadow-selected);
+  background: color-mix(in srgb, var(--rootsy-savia-500) 10%, var(--rootsy-sombra-800));
+  box-shadow: none;
 }
 
 /**

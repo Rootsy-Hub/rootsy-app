@@ -9,12 +9,10 @@ import { MesasTablePickerList } from "@/app/[siteId]/[popId]/mesas/components/Me
 import { MesasOrderPanel } from "@/app/[siteId]/[popId]/mesas/components/MesasOrderPanel"
 import { MesasRightPanelTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasRightPanelTabs"
 import { MesasSalonTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasSalonTabs"
-import { fetchMesasWaiters } from "@/lib/rootsyApi/mesasClient"
 import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
 import type {
   MesaOpenSessionInput,
   MesaReservation,
-  MesaWaiter,
   MesasRightPanelView,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
@@ -91,6 +89,7 @@ export function MesasWorkspace({
     salons,
     tables,
     sessions,
+    waiters,
     activeSalonId,
     setActiveSalonId,
     selectedTableId,
@@ -137,8 +136,9 @@ export function MesasWorkspace({
   const [agendaReservationId, setAgendaReservationId] = useState<string | null>(
     null,
   )
-  const [waiters, setWaiters] = useState<MesaWaiter[]>([])
   const showCatalog = rightView === "cart"
+  const hasTicketItems =
+    (selectedSession?.checkout?.carrito.length ?? 0) > 0
   const cartScrollHighlight = useCartListScrollHighlight()
 
   const remoteSession = useMemo(
@@ -179,7 +179,7 @@ export function MesasWorkspace({
       catalogLoadEnabled:
         showCatalog || mobileStage?.stage === "catalog",
       toolboxLoadEnabled:
-        showCatalog ||
+        hasTicketItems ||
         (mobileStage?.stage === "ticket" && selectedSession != null),
       onCartLineAdded: handleCartLineAdded,
     },
@@ -191,18 +191,6 @@ export function MesasWorkspace({
     Boolean(popId && siteId),
     !floorLoading,
   )
-
-  useEffect(() => {
-    if (!popId || !siteId) return
-    void (async () => {
-      const res = await fetchMesasWaiters(popId)
-      if (res.success) {
-        setWaiters(res.waiters)
-      } else {
-        setWaiters([])
-      }
-    })()
-  }, [popId, siteId])
 
   useEffect(() => {
     if (!selectedSession) {

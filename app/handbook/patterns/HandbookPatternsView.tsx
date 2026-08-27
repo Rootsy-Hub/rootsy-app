@@ -555,7 +555,7 @@ function OperarPatternCopy() {
             },
             {
               name: "Catálogo",
-              values: ["rail", "toolbar", "canvas sombra-950", "cards sombra-500"],
+              values: ["rail 700", "toolbar", "canvas sombra-950", "cards sombra-700"],
             },
             {
               name: "Toolbox",
