@@ -621,7 +621,9 @@ export function buildSaleComprobantePreviewLineGroups(
       .map((regularRow) => buildRegularPreviewLine(regularRow, overrides))
       .filter((line): line is SaleComprobantePreviewLine => line != null)
 
-    groups.push(...groupSaleComprobantePreviewLines(regularLines))
+    groups.push(
+      ...groupSaleComprobantePreviewLines(regularLines, groups.length),
+    )
   }
 
   return groups
@@ -638,6 +640,7 @@ export function buildSaleComprobantePreviewLines(
 
 export function groupSaleComprobantePreviewLines(
   lines: SaleComprobantePreviewLine[],
+  idOffset = 0,
 ): SaleComprobantePreviewLineGroup[] {
   const groups: SaleComprobantePreviewLineGroup[] = []
   const indexByCategory = new Map<string, number>()
@@ -650,7 +653,7 @@ export function groupSaleComprobantePreviewLines(
     } else {
       indexByCategory.set(category, groups.length)
       groups.push({
-        id: `category:${category}:${groups.length}`,
+        id: `category:${category}:${idOffset + groups.length}`,
         category,
         lines: [line],
       })

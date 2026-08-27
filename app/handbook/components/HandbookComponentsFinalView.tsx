@@ -22,6 +22,7 @@ import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
 import { HandbookDesignSystemNav } from "@/app/handbook/HandbookDesignSystemNav"
+import { HANDBOOK_FINAL_SECTION_SPECIMENS } from "@/app/handbook/components/HandbookComponentsFinalSpecimens"
 import {
   HANDBOOK_COMPONENT_PAGES,
   HANDBOOK_COMPONENT_SECTIONS,
@@ -116,7 +117,7 @@ function renderAvatar(
 function HeaderFinalSpecimen() {
   return (
     <div className="flex flex-col gap-4">
-      <ComponentView
+      <ComponentView defaultOpen
         background={ETER}
         componentName="HomePageHeader"
         componentProperties={[
@@ -133,7 +134,7 @@ function HeaderFinalSpecimen() {
           <HomePageHeader loading={extras[0] === "loading"} />
         )}
       />
-      <ComponentView
+      <ComponentView defaultOpen
         background={ETER}
         componentName="MenuPageHeader"
         componentProperties={[
@@ -167,7 +168,7 @@ function HeaderFinalSpecimen() {
           />
         )}
       />
-      <ComponentView
+      <ComponentView defaultOpen
         background={ETER}
         componentName="ModuleWorkspaceHeader"
         componentProperties={[
@@ -190,12 +191,23 @@ function HeaderFinalSpecimen() {
           {
             items: [{ name: "loaded" }, { name: "loading" }],
           },
+          {
+            items: [{ name: "con sidebar" }, { name: "sin sidebar" }],
+          },
+          {
+            items: [{ name: "online" }, { name: "offline" }],
+          },
         ]}
         render={(_variant, extras) => (
-          <ModuleWorkspaceHeaderSpecimen loading={extras[0] === "loading"} />
+          <ModuleWorkspaceHeaderSpecimen
+            loading={extras[0] === "loading"}
+            canCollapseSidebar={extras[1] !== "sin sidebar"}
+            isOnline={extras[2] !== "offline"}
+          />
         )}
       />
       <AvatarFinalSpecimen />
+      {HANDBOOK_FINAL_SECTION_SPECIMENS["header-pieces"]?.()}
     </div>
   )
 }
@@ -252,7 +264,15 @@ function MenuPageHeaderSpecimen({
   )
 }
 
-function ModuleWorkspaceHeaderSpecimen({ loading }: { loading: boolean }) {
+function ModuleWorkspaceHeaderSpecimen({
+  loading,
+  canCollapseSidebar,
+  isOnline,
+}: {
+  loading: boolean
+  canCollapseSidebar: boolean
+  isOnline: boolean
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
@@ -270,12 +290,12 @@ function ModuleWorkspaceHeaderSpecimen({ loading }: { loading: boolean }) {
         rolePending={loading}
         userName="María González"
         userAvatarSrc={PERSON_PHOTO}
-        isOnline
+        isOnline={isOnline}
         subline="Administradora"
         hasResolvedRole
         isFullscreen={isFullscreen}
         onToggleFullscreen={() => setIsFullscreen((current) => !current)}
-        canCollapseSidebar
+        canCollapseSidebar={canCollapseSidebar}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((current) => !current)}
         subscriptionsHref={null}
@@ -286,7 +306,7 @@ function ModuleWorkspaceHeaderSpecimen({ loading }: { loading: boolean }) {
 
 function AvatarFinalSpecimen() {
   return (
-    <ComponentView
+    <ComponentView defaultOpen
       background={BRUMA}
       componentName="Avatar"
       componentProperties={[
@@ -402,7 +422,7 @@ function TabsSegmentLive({
 }) {
   const isFilter = variant !== "Formulario"
   const options = isFilter ? TAB_FILTER_OPTIONS : TAB_FORM_OPTIONS
-  const [value, setValue] = useState(options[0].value)
+  const [value, setValue] = useState<string>(options[0].value)
   const chrome = atmosphereChrome(worldId)
 
   return (
@@ -427,7 +447,7 @@ function TabsSegmentLive({
 
 function TabsFinalSpecimen() {
   return (
-    <ComponentView
+    <ComponentView defaultOpen
       background={BRUMA}
       componentName="RootsFormSegmentField"
       componentProperties={[
@@ -650,7 +670,7 @@ function MenuDockSpecimen({
 function MenusFinalSpecimen() {
   return (
     <div className="flex flex-col gap-4">
-      <ComponentView
+      <ComponentView defaultOpen
         background={ETER}
         componentName="MenuSectionNavigator"
         componentProperties={[
@@ -665,7 +685,7 @@ function MenusFinalSpecimen() {
           <MenuSectionNavigatorSpecimen loading={extras[0] === "loading"} />
         )}
       />
-      <ComponentView
+      <ComponentView defaultOpen
         background={ETER}
         componentName="MenuGridItemButton"
         componentProperties={[
@@ -687,7 +707,7 @@ function MenusFinalSpecimen() {
           />
         )}
       />
-      <ComponentView
+      <ComponentView defaultOpen
         background={ETER}
         componentName="MenuDock"
         componentProperties={[
@@ -708,7 +728,7 @@ function MenusFinalSpecimen() {
           />
         )}
       />
-      <ComponentView
+      <ComponentView defaultOpen
         background={BRUMA}
         componentName="MenuSidebar"
         componentProperties={[
@@ -746,12 +766,18 @@ export function HandbookComponentsFinalView({ pageId }: { pageId: string }) {
           >
             <h2 className={libraryDocSectionTitleClass}>{section.title}</h2>
             <div className="mt-6">
-              {pageId === "navegacion-final" && section.id === "header" ? (
+              {section.status === "absent" && section.absentNote ? (
+                <p className={cn(libraryDocPageDescriptionClass, "max-w-md italic")}>
+                  {section.absentNote}
+                </p>
+              ) : pageId === "navegacion-final" && section.id === "header" ? (
                 <HeaderFinalSpecimen />
               ) : pageId === "navegacion-final" && section.id === "menus" ? (
                 <MenusFinalSpecimen />
               ) : pageId === "navegacion-final" && section.id === "tabs" ? (
                 <TabsFinalSpecimen />
+              ) : HANDBOOK_FINAL_SECTION_SPECIMENS[section.id] ? (
+                HANDBOOK_FINAL_SECTION_SPECIMENS[section.id]()
               ) : (
                 <p className={cn(libraryDocPageDescriptionClass, "max-w-md italic")}>
                   Esta parte todavía se está formando.

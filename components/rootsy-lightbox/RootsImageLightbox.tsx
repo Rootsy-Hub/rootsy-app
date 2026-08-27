@@ -1,6 +1,12 @@
 "use client"
 
-import { Dialog, DialogOverlay, DialogPortal, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 
@@ -39,6 +45,7 @@ export function RootsImageLightbox({
           onClick={() => onOpenChange(false)}
         >
           <DialogTitle className="sr-only">{title}</DialogTitle>
+          <DialogDescription className="sr-only">{title}</DialogDescription>
           <div
             className={cn(
               "size-[min(72vh,22rem)] overflow-hidden rounded-xl shadow-[0_24px_64px_rgba(8,12,11,0.45)]",
