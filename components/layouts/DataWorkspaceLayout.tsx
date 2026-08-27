@@ -86,13 +86,13 @@ export type DataWorkspaceLayoutProps = {
   contentFlush?: boolean
   /** Clases extra en el `<main>`. */
   mainClassName?: string
-  /** Fondo fotográfico del POP. No elige el header. */
+  /** Fondo fotográfico del POP. Apagado en módulos: el cuerpo no lleva foto. */
   usePopBackdrop?: boolean
-  /** Fondo de /home cuando no hay foto de POP (Librería, Backoffice). */
+  /** Fondo de /home (estrellas). No usar detrás del contenido de un módulo. */
   useHomeBackdrop?: boolean
   /**
    * Capas de fondo (foto POP, home o fallback).
-   * `false` = superficie plana. El layout de tablas no admite foto de POP.
+   * `false` = superficie plana. Default de los módulos con header reutilizable.
    */
   useBackdrop?: boolean
   /** Sesión actual (opcional: si no se pasa, se oculta el bloque usuario a la derecha). */

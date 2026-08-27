@@ -170,7 +170,7 @@ export function HandbookWorkspace() {
           libraryScrollLightClass,
         )}
       >
-        <div className="w-full space-y-8">
+        <div className="mx-auto max-w-5xl space-y-8">
           <HandbookMobileNav
             activeSectionId={sectionId}
             designSystemPageId={activeDesignSystemPageId}

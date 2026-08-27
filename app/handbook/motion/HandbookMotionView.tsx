@@ -24,6 +24,8 @@ import {
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
@@ -63,7 +65,7 @@ export function HandbookMotionView() {
         movimiento.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {HANDBOOK_MOTION_PRINCIPLES.map((item) => (
           <div key={item.title} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
             <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{item.title}</p>
@@ -76,7 +78,7 @@ export function HandbookMotionView() {
 
       <section
         id="principios-de-movimiento"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Principios de movimiento</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
@@ -118,7 +120,7 @@ export function HandbookMotionView() {
         </div>
       </section>
 
-      <section id="duraciones" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="duraciones" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Duraciones</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Ocho pasos, de 0 a 600ms. Hover casi instantáneo. Modal a 250ms. 600ms es
@@ -165,7 +167,7 @@ export function HandbookMotionView() {
         </div>
       </section>
 
-      <section id="curvas" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="curvas" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Curvas</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Cuatro easings con nombre de bosque. Aterrizaje para entrar. Despegue para salir.
@@ -208,7 +210,7 @@ export function HandbookMotionView() {
         </div>
       </section>
 
-      <section id="transiciones" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="transiciones" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Transiciones</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Un token semántico empaqueta duración, curva y propiedades. El dropdown entra desde
@@ -269,7 +271,7 @@ export function HandbookMotionView() {
 
       <section
         id="estados-de-carga"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Estados de carga</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>

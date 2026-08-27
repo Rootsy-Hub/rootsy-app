@@ -44,8 +44,9 @@ function BackofficeShell({ children }: BackofficeShellProps) {
       popLogoSrc="/logos/uroboros.png"
       title={navItem?.label ?? "Uroboros"}
       contentFlush
+      useBackdrop={false}
       usePopBackdrop={false}
-      useHomeBackdrop
+      useHomeBackdrop={false}
       rootClassName={cn(
         libraryThemeClass,
         "rootsy-app-light rootsy-nature-palette",

@@ -23,6 +23,8 @@ import {
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
@@ -137,7 +139,7 @@ export function HandbookLayoutView() {
         respiran con <Token>space.*</Token>.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {HANDBOOK_LAYOUT_PRINCIPLES.map((item) => (
           <div key={item.title} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
             <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{item.title}</p>
@@ -148,7 +150,7 @@ export function HandbookLayoutView() {
         ))}
       </div>
 
-      <section id="grillas" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="grillas" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Grillas</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Solo el área de contenido entra a la grilla. El cielo de navegación, el bosque
@@ -188,7 +190,7 @@ export function HandbookLayoutView() {
         </div>
       </section>
 
-      <section id="contenedores" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="contenedores" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Contenedores</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Tres tipos. Fixed-wide es el default del workspace. Narrow para leer de corrido.
@@ -245,7 +247,7 @@ export function HandbookLayoutView() {
         </div>
       </section>
 
-      <section id="breakpoints" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="breakpoints" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Breakpoints</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Se miden contra el viewport completo. Colapsar el sidebar no cambia el breakpoint.
@@ -304,7 +306,7 @@ export function HandbookLayoutView() {
         </div>
       </section>
 
-      <section id="responsive" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="responsive" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Responsive</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Tres lecturas. El contenido se reordena; la escala de espacio no se inventa. Debajo

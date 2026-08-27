@@ -25,6 +25,8 @@ import {
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
@@ -91,14 +93,10 @@ function ScaleBars() {
 function NatureTiers() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {HANDBOOK_SPACING_TIERS.map((tier, index) => (
+      {HANDBOOK_SPACING_TIERS.map((tier) => (
         <article
           key={tier.id}
           className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}
-          style={{
-            borderLeftWidth: 3,
-            borderLeftColor: `color-mix(in srgb, var(--color-accion) ${35 + index * 10}%, var(--color-borde))`,
-          }}
         >
           <p className={libraryDocMetaLabelClass}>{tier.subtitle}</p>
           <p className={cn(libraryDocSectionTitleClass, "mt-1 text-sm")}>{tier.title}</p>
@@ -423,7 +421,7 @@ export function HandbookSpacingView() {
         separan. Si el tamaño no está en la escala, no entra.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {HANDBOOK_SPACING_PRINCIPLES.map((item) => (
           <div key={item.title} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
             <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{item.title}</p>
@@ -436,19 +434,19 @@ export function HandbookSpacingView() {
 
       <section
         id="escala-de-espaciado"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Escala de espaciado</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Base {HANDBOOK_SPACING_BASE_PX}px. El sufijo es el porcentaje de esa unidad:{" "}
-          <Token>space.200</Token> es 200% = 16px. Seis capas nature le dan nombre al ritmo —
-          rocío, hoja, rama, tronco, claro, horizonte.
+          <Token>space.200</Token> es 200% = 16px. Seis nombres le dan ritmo a la escala —
+          rocío, hoja, rama, tronco, claro, horizonte. No son un diseño de tarjeta.
         </p>
 
         <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>Capas nature</h3>
         <p className={cn(libraryDocPageDescriptionClass, "mt-3")}>
-          Cada distancia tiene territorio. Denso donde los elementos comparten savia; amplio
-          donde la vista descansa.
+          Nombres del espaciado, no un patrón visual. Denso donde los elementos
+          comparten savia; amplio donde la vista descansa.
         </p>
         <div className="mt-4">
           <NatureTiers />
@@ -495,7 +493,7 @@ export function HandbookSpacingView() {
 
       <section
         id="tamanos"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Tamaños</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
@@ -538,7 +536,7 @@ export function HandbookSpacingView() {
 
       <section
         id="densidad"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Densidad</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
@@ -566,7 +564,7 @@ export function HandbookSpacingView() {
 
       <section
         id="proporciones"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Proporciones</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>

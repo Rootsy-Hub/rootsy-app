@@ -61,6 +61,7 @@ import {
   libraryDocPageDescriptionClass,
   libraryDocPageTitleClass,
   libraryDocSectionTitleClass,
+  handbookDocChapterClass,
 } from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
@@ -741,7 +742,7 @@ export function HandbookComponentsFinalView({ pageId }: { pageId: string }) {
           <section
             key={section.id}
             id={section.id}
-            className="scroll-mt-24 border-t border-[var(--color-borde)] py-10 first:border-t-0 first:pt-0"
+            className={cn(handbookDocChapterClass, "first:border-t-0 first:pt-0")}
           >
             <h2 className={libraryDocSectionTitleClass}>{section.title}</h2>
             <div className="mt-6">

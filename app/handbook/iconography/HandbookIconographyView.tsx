@@ -23,6 +23,8 @@ import {
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
@@ -77,7 +79,7 @@ export function HandbookIconographyView() {
         identidad nature vive en color e ilustración — no en el trazo.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {HANDBOOK_ICON_PRINCIPLES.map((item) => (
           <div key={item.title} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
             <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{item.title}</p>
@@ -88,7 +90,7 @@ export function HandbookIconographyView() {
         ))}
       </div>
 
-      <section id="estilo" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="estilo" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Estilo</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           {HANDBOOK_ICON_LIBRARY.rationale} Frente, sin 3D. Color por token, nunca un hex
@@ -154,7 +156,7 @@ export function HandbookIconographyView() {
         </div>
       </section>
 
-      <section id="tamanos" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="tamanos" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Tamaños</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Cuatro pasos. 16px cubre botones, nav e inputs. 12px es para chevrons y validación.
@@ -187,7 +189,7 @@ export function HandbookIconographyView() {
         </div>
       </section>
 
-      <section id="uso" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="uso" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Uso</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Metáforas que el usuario ya conoce. Ícono junto al texto, con{" "}
@@ -241,7 +243,7 @@ export function HandbookIconographyView() {
         </div>
       </section>
 
-      <section id="estados" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="estados" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Estados</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           El color nombra el rol. Neutro junto al texto. Savia en la acción. Subtle cuando no

@@ -34,7 +34,7 @@ export function SpacingOverviewSection() {
         <SpacingDocSection
           id="nature-rhythm"
           title="Capas nature"
-          description="Seis distancias con alma de bosque — cada una con su territorio en la UI."
+          description="Seis nombres del ritmo de espaciado. No es un diseño de tarjeta."
         >
           <NatureRhythmTiersGrid />
         </SpacingDocSection>

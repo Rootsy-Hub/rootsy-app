@@ -26,6 +26,8 @@ import {
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { ROOTSY_TEXT_STYLES } from "@/lib/design-system/tokens/typography"
@@ -328,7 +330,7 @@ export function HandbookTypographyView() {
         texto guía; no compite con la interfaz.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {HANDBOOK_TYPE_PRINCIPLES.map((item) => (
           <div
             key={item.title}
@@ -344,7 +346,7 @@ export function HandbookTypographyView() {
 
       <section
         id="familias-tipograficas"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Familias tipográficas</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
@@ -363,7 +365,7 @@ export function HandbookTypographyView() {
 
       <section
         id="escalas"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Escalas</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
@@ -416,7 +418,7 @@ export function HandbookTypographyView() {
 
       <section
         id="jerarquias"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Jerarquías</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
@@ -442,7 +444,7 @@ export function HandbookTypographyView() {
 
       <section
         id="pesos"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Pesos</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
@@ -466,7 +468,7 @@ export function HandbookTypographyView() {
 
       <section
         id="uso-editorial"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Uso editorial</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>

@@ -9,6 +9,7 @@ import {
   libraryDocPageDescriptionClass,
   libraryDocPageTitleClass,
   libraryDocSectionTitleClass,
+  handbookDocChapterClass,
 } from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 
@@ -82,7 +83,7 @@ function HandbookTopicSection({
       id={topic.id}
       className={cn(
         "scroll-mt-24",
-        level === 2 && "border-t border-[var(--color-borde)] py-10 first:border-t-0 first:pt-0",
+        level === 2 && cn(handbookDocChapterClass, "first:border-t-0 first:pt-0"),
         level === 3 && "mt-8",
       )}
     >

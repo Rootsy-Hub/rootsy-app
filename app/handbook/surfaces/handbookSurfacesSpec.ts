@@ -61,23 +61,18 @@ export const HANDBOOK_SURFACE_LIENZOS = [
 
 export const HANDBOOK_BLOCKS_ATMOSPHERE_LAYERS = [
   {
-    role: "Base",
-    value: "bruma-50",
-    detail: "El valle. No es el bruma-100 de las tablas.",
+    role: "Valle",
+    value: "--color-superficie · bruma-50",
+    detail: "El lienzo de bloques. No es el bruma-100 de las tablas.",
   },
   {
-    role: "Neblina",
-    value: "radial bruma-100 · cielo",
-    detail: "El aire entra desde arriba.",
+    role: "Loseta",
+    value: "--color-elevada · blanco",
+    detail: "El papel de cada card. En Bruma clara no es savia-50.",
   },
   {
-    role: "Savia",
-    value: "radial savia-500 14%",
-    detail: "Un susurro abajo. No pinta el lienzo.",
-  },
-  {
-    role: "Planeta",
-    value: "rootsyplanet · 22% · blur 22",
-    detail: "Atrás, enmascarado. El trabajo queda en las losetas.",
+    role: "Noche",
+    value: "bruma-950",
+    detail: "El mismo valle, invertido. Sin foto ni planeta.",
   },
 ] as const

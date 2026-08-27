@@ -22,6 +22,8 @@ import {
   libraryDocSubheadingClass,
   libraryDocSurfaceMutedClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { Avatar } from "@/components/Avatar"
@@ -56,7 +58,7 @@ export function HandbookLogosView() {
         prestársela.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {HANDBOOK_LOGO_PRINCIPLES.map((item) => (
           <div key={item.title} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
             <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{item.title}</p>
@@ -67,7 +69,7 @@ export function HandbookLogosView() {
         ))}
       </div>
 
-      <section id="anatomia" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="anatomia" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Anatomía</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Logomark, wordmark y lockup para Rootsy. Avatar y nombre para el negocio. Círculo
@@ -85,7 +87,7 @@ export function HandbookLogosView() {
         </div>
       </section>
 
-      <section id="rootsy" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="rootsy" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Rootsy</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Inverse sobre savia o sombra. Brand sobre claro. Neutral en pies y watermarks. El
@@ -147,7 +149,7 @@ export function HandbookLogosView() {
         </p>
       </section>
 
-      <section id="pop" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="pop" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>POP</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           El negocio se lee con foto y nombre. Círculo en home, cuadrado en header. El logo
@@ -235,7 +237,7 @@ export function HandbookLogosView() {
         </div>
       </section>
 
-      <section id="persona" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="persona" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Persona</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Nombre, rol y foto son una sola persona. Círculo siempre. El menú se abre desde
@@ -283,7 +285,7 @@ export function HandbookLogosView() {
         </div>
       </section>
 
-      <section id="uso" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="uso" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Uso</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Assets oficiales, proporciones fijas. El logo Rootsy no representa un POP. El

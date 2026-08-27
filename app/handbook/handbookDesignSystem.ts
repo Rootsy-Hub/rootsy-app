@@ -83,7 +83,7 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
           heading("Cómo usar el sistema", {
             blocks: [
               ol([
-                "Empezar por las foundations: color, tipografía, espaciado, layout, superficies, borde, radios, elevación, iconografía, logotipos y movimiento.",
+                "Empezar por las foundations: color, tipografía, espaciado, superficies, layout, elevación, borde, radios, iconografía, movimiento y logotipos.",
                 "Usar componentes existentes antes de crear soluciones nuevas.",
                 "Aplicar patrones definidos para flujos repetidos, como tablas, formularios, operaciones, alertas y estados.",
                 "Mantener los mensajes funcionales claros y dejar que Rootsy hable cuando necesite orientar, explicar o recomendar.",
@@ -145,6 +145,17 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
         ],
       },
       {
+        id: "superficies-y-profundidad",
+        label: "Superficies y profundidad",
+        topics: [
+          heading("Fondos", [
+            heading("Lienzo plano"),
+            heading("Lienzo de bloques"),
+          ]),
+          heading("Capas"),
+        ],
+      },
+      {
         id: "layout",
         label: "Layout",
         topics: [
@@ -155,14 +166,13 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
         ],
       },
       {
-        id: "superficies-y-profundidad",
-        label: "Superficies y profundidad",
+        id: "elevacion",
+        label: "Elevación",
         topics: [
-          heading("Fondos", [
-            heading("Lienzo plano"),
-            heading("Lienzo de bloques"),
-          ]),
-          heading("Capas"),
+          heading("Niveles"),
+          heading("Sombras"),
+          heading("Superficies"),
+          heading("Interacción"),
         ],
       },
       {
@@ -184,16 +194,6 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
         ],
       },
       {
-        id: "elevacion",
-        label: "Elevación",
-        topics: [
-          heading("Niveles"),
-          heading("Sombras"),
-          heading("Superficies"),
-          heading("Interacción"),
-        ],
-      },
-      {
         id: "iconografia",
         label: "Iconografía",
         topics: [
@@ -201,17 +201,6 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
           heading("Tamaños"),
           heading("Uso"),
           heading("Estados"),
-        ],
-      },
-      {
-        id: "logotipos",
-        label: "Logotipos",
-        topics: [
-          heading("Anatomía"),
-          heading("Rootsy"),
-          heading("POP"),
-          heading("Persona"),
-          heading("Uso"),
         ],
       },
       {
@@ -223,6 +212,17 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
           heading("Curvas"),
           heading("Transiciones"),
           heading("Estados de carga"),
+        ],
+      },
+      {
+        id: "logotipos",
+        label: "Logotipos",
+        topics: [
+          heading("Anatomía"),
+          heading("Rootsy"),
+          heading("POP"),
+          heading("Persona"),
+          heading("Uso"),
         ],
       },
     ],

@@ -23,6 +23,8 @@ import {
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
@@ -85,7 +87,7 @@ export function HandbookElevationView() {
         sombra van de a pares. Preferí borde o aire antes de levantar.
       </p>
 
-      <div className="mt-6 mb-10 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {HANDBOOK_ELEVATION_PRINCIPLES.map((item) => (
           <div key={item.title} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
             <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{item.title}</p>
@@ -96,7 +98,7 @@ export function HandbookElevationView() {
         ))}
       </div>
 
-      <section id="niveles" className="mt-10 scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="niveles" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Niveles</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Del suelo al dosel. Sunken agrupa. Default trabaja. Raised pide un foco. Overlay
@@ -129,7 +131,7 @@ export function HandbookElevationView() {
         </div>
       </section>
 
-      <section id="sombras" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="sombras" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Sombras</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Matiz bosque. Raised siempre con su sombra. Overlay siempre con la suya. Overflow
@@ -166,7 +168,7 @@ export function HandbookElevationView() {
         </div>
       </section>
 
-      <section id="superficies" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="superficies" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Superficies</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Workspace sube hacia blanco. POS separa capas con sombra. El mismo nivel, distinta
@@ -243,7 +245,7 @@ export function HandbookElevationView() {
         </div>
       </section>
 
-      <section id="interaccion" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="interaccion" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Interacción</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           El hover cambia de superficie antes de subir de nivel. Pressed da feedback táctil

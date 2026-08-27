@@ -8,6 +8,7 @@ import {
   libraryDocPageDescriptionClass,
   libraryDocPageTitleClass,
   libraryDocSectionTitleClass,
+  handbookDocChapterClass,
 } from "@/app/library/libraryColorTheme"
 import { ComponentView } from "@/components/ComponentView"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
@@ -537,7 +538,7 @@ export function HandbookPatternsView() {
             <section
               key={topic.id}
               id={topic.id}
-              className="scroll-mt-24 border-t border-[var(--color-borde)] py-10 first:border-t-0 first:pt-0"
+              className={cn(handbookDocChapterClass, "first:border-t-0 first:pt-0")}
             >
               <h2 className={libraryDocSectionTitleClass}>{topic.title}</h2>
               {isTables ? (

@@ -65,6 +65,12 @@ export const libraryDocBorderClass = "border-[var(--color-borde)]"
 export const libraryRelatedLinksSectionClass =
   "library-related-links space-y-3 border-t border-[var(--color-borde)] pt-8"
 
+/** Capítulo de fundamentos: space.500 (40px) a cada lado de la línea. */
+export const handbookDocChapterClass =
+  "scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+/** Cierre del intro (lead + principios) antes del primer capítulo. */
+export const handbookDocIntroAfterClass = "mb-10"
+
 /** Tablas de documentación — header y filas con bruma. */
 export const libraryDocTableShellOverflowClass =
   "library-doc-table-shell overflow-hidden rounded-2xl"

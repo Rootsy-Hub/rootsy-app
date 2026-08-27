@@ -39,6 +39,8 @@ import {
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
@@ -632,7 +634,7 @@ export function HandbookColorView() {
         la pantalla. Los colores funcionales dicen qué está ocurriendo: acción, información,
         atención o peligro.
       </p>
-      <p className={cn(libraryDocBodyClass, "mt-3")}>
+      <p className={cn(libraryDocBodyClass, "mt-3", handbookDocIntroAfterClass)}>
         Esta paleta es la que usa la aplicación. Cada familia tiene once pasos,
         de 50 a 950. El paso marcado es la identidad de la familia. Bruma clara suma un
         blanco fuera de rampa: la luz del papel. Si un color en la aplicación no está
@@ -641,7 +643,7 @@ export function HandbookColorView() {
 
       <section
         id="atmosferas-del-mundo"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Atmósferas del mundo</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
@@ -661,7 +663,7 @@ export function HandbookColorView() {
 
       <section
         id="colores-funcionales"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Colores funcionales</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
@@ -678,7 +680,7 @@ export function HandbookColorView() {
 
       <section
         id="tokens-de-color"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Tokens de color</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
@@ -765,7 +767,7 @@ export function HandbookColorView() {
 
       <section
         id="contraste-y-legibilidad"
-        className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+        className={handbookDocChapterClass}
       >
         <h2 className={libraryDocSectionTitleClass}>Contraste y legibilidad</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>

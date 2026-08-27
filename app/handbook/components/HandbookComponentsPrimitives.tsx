@@ -10,6 +10,8 @@ import {
   libraryDocSectionTitleClass,
   libraryDocSurfaceMutedClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
@@ -29,7 +31,7 @@ export function HandbookComponentPage({
     <article className="w-full">
       <h1 className={libraryDocPageTitleClass}>{title}</h1>
       <p className={cn(libraryDocBodyClass, "mt-4")}>{lead}</p>
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {principles.map((item) => (
           <div
             key={item.title}
@@ -67,7 +69,7 @@ export function HandbookComponentSection({
   return (
     <section
       id={id}
-      className="scroll-mt-24 border-t border-[var(--color-borde)] py-10"
+      className={handbookDocChapterClass}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h2 className={libraryDocSectionTitleClass}>{title}</h2>

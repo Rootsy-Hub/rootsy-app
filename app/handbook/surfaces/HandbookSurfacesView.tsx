@@ -23,21 +23,14 @@ import {
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
 import "@/components/data-workspace/dataWorkspaceBlocksAtmosphereBrumaOscura.css"
-import {
-  dataWorkspaceEntityCardEyebrowClass,
-  dataWorkspaceEntityCardHeaderClass,
-  dataWorkspaceEntityCardIsotypeClass,
-  dataWorkspaceEntityCardLosetaSurfaceClass,
-  dataWorkspaceEntityCardSaldoSectionClass,
-  dataWorkspaceEntityCardStatLabelClass,
-  dataWorkspaceEntityCardStatValueLargeClass,
-  dataWorkspaceEntityCardStatusOpenClass,
-  dataWorkspaceEntityCardTitleClass,
-} from "@/components/data-workspace/dataWorkspaceListStyles"
+import "@/components/data-workspace/dataWorkspaceTablesAtmosphere.css"
+import "@/components/layouts-tables/rootsLayoutsTablesScope.css"
 import { cn } from "@/lib/utils"
 import { Calculator } from "lucide-react"
 import type { ReactNode } from "react"
@@ -95,36 +88,64 @@ function FondoStack({ atmosphereId }: { atmosphereId: HandbookAtmosphereId }) {
 }
 
 function MiniLoseta({
-  eyebrow,
   title,
   amount,
   open,
+  night,
 }: {
-  eyebrow: string
   title: string
   amount: string
   open?: boolean
+  night?: boolean
 }) {
   return (
-    <article className={dataWorkspaceEntityCardLosetaSurfaceClass}>
-      <div className={dataWorkspaceEntityCardHeaderClass}>
-        <div className="flex items-start gap-3">
-          <span className={dataWorkspaceEntityCardIsotypeClass} aria-hidden>
-            <Calculator className="size-5" strokeWidth={1.75} />
-          </span>
-          <div className="min-w-0">
-            <p className={dataWorkspaceEntityCardEyebrowClass}>{eyebrow}</p>
-            <p className={dataWorkspaceEntityCardTitleClass}>{title}</p>
-          </div>
-        </div>
+    <article
+      className="flex min-w-0 flex-col overflow-hidden rounded-xl border px-2.5 py-2.5"
+      style={{
+        backgroundColor: night ? "var(--rootsy-bruma-800)" : "var(--color-elevada)",
+        borderColor: night ? "var(--rootsy-bruma-700)" : "var(--color-borde)",
+      }}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <span
+          className="flex size-7 shrink-0 items-center justify-center rounded-lg border"
+          style={{
+            borderColor: night ? "var(--rootsy-bruma-700)" : "var(--color-borde)",
+            color: night ? "var(--rootsy-bruma-200)" : "var(--color-texto-muted)",
+          }}
+          aria-hidden
+        >
+          <Calculator className="size-3.5" strokeWidth={1.75} />
+        </span>
+        <p
+          className="min-w-0 truncate font-canopy text-xs font-semibold"
+          style={{ color: night ? "var(--rootsy-bruma-50)" : "var(--color-texto)" }}
+        >
+          {title}
+        </p>
       </div>
-      <div className={dataWorkspaceEntityCardSaldoSectionClass}>
-        <p className={dataWorkspaceEntityCardStatLabelClass}>Efectivo en caja</p>
-        <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>{amount}</p>
-        {open ? (
-          <p className={cn("mt-2", dataWorkspaceEntityCardStatusOpenClass)}>Abierta</p>
-        ) : null}
-      </div>
+      <p
+        className="mt-3 font-numeric text-sm tabular-nums"
+        style={{ color: night ? "var(--rootsy-bruma-50)" : "var(--color-texto)" }}
+      >
+        {amount}
+      </p>
+      <p
+        className="mt-1.5 inline-flex w-fit rounded-md px-1.5 py-0.5 font-canopy text-[10px] font-semibold"
+        style={
+          open
+            ? {
+                backgroundColor: "var(--rootsy-savia-50)",
+                color: "var(--rootsy-savia-800)",
+              }
+            : {
+                backgroundColor: night ? "var(--rootsy-bruma-700)" : "var(--rootsy-bruma-100)",
+                color: night ? "var(--rootsy-bruma-200)" : "var(--rootsy-bruma-700)",
+              }
+        }
+      >
+        {open ? "Abierta" : "Cerrada"}
+      </p>
     </article>
   )
 }
@@ -141,7 +162,7 @@ function LienzoSwatch({
 
   return (
     <article className={cn("overflow-hidden rounded-2xl border", libraryDocBorderClass)}>
-      <div className="h-52 overflow-hidden">{children}</div>
+      <div className="h-56 overflow-hidden">{children}</div>
       <div className="space-y-1 px-4 py-3">
         <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{lienzo.name}</p>
         <Token>{lienzo.product}</Token>
@@ -162,7 +183,7 @@ export function HandbookSurfacesView() {
         quién tapa a quién. El borde, el radio y la elevación tienen página propia.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {HANDBOOK_SURFACE_PRINCIPLES.map((item) => (
           <div key={item.title} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
             <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{item.title}</p>
@@ -173,7 +194,7 @@ export function HandbookSurfacesView() {
         ))}
       </div>
 
-      <section id="fondos" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="fondos" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Fondos</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Éter, bruma y sombra son el lienzo. Se elige una atmósfera por contexto. Encima
@@ -201,43 +222,50 @@ export function HandbookSurfacesView() {
           Lienzo plano
         </h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
-          Bruma-100, sin planeta. Es el aire de las tablas: filtros, filas y pie.
+          Bruma-100. Filtros en superficie, filas 50/100, pie sombra. Sin foto ni planeta.
         </p>
 
         <h3 id="lienzo-de-bloques" className={cn(libraryDocSubheadingClass, "mt-8 scroll-mt-24")}>
           Lienzo de bloques
         </h3>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
-          Bruma-50, neblina, un susurro de savia y el planeta atrás. Es el valle de las
-          losetas — cajas, cuentas, personas, reportes. El papel de cada loseta es blanco.
+          Bruma-50. El valle de las losetas — cajas, cuentas, personas, reportes. Cada
+          loseta es blanca. Sin planeta ni rampa.
         </p>
         <div className="mt-6 grid gap-3 lg:grid-cols-3">
           <LienzoSwatch id="lienzo-plano">
-            <div className="flex h-full flex-col bg-[var(--rootsy-bruma-100)]">
-              <div className="h-10 border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]" />
-              <div className="flex-1 space-y-px bg-[var(--rootsy-bruma-50)]">
+            <div className="data-workspace-tables-atmosphere workspace-layouts-tables flex h-full flex-col">
+              <div className="data-workspace-tables-filters-dawn h-9 shrink-0" />
+              <div className="min-h-0 flex-1">
                 {Array.from({ length: 5 }, (_, index) => (
                   <div
                     key={index}
-                    className={cn(
-                      "h-8 border-b border-[var(--rootsy-bruma-200)]",
-                      index % 2 === 0 ? "bg-[var(--rootsy-bruma-50)]" : "bg-[var(--rootsy-bruma-100)]",
-                    )}
+                    className="h-8 border-b"
+                    style={{
+                      borderColor: "var(--wt-border)",
+                      backgroundColor:
+                        index % 2 === 0 ? "var(--wt-surface)" : "var(--wt-surface-stripe)",
+                    }}
                   />
                 ))}
               </div>
+              <div
+                className="h-7 shrink-0"
+                style={{ backgroundColor: "var(--rootsy-sombra-600)" }}
+              />
             </div>
           </LienzoSwatch>
           <LienzoSwatch id="lienzo-de-bloques">
-            <div className="data-workspace-blocks-atmosphere flex h-full flex-col px-3 py-3">
-              <div className="grid min-h-0 flex-1 grid-cols-2 gap-3">
-                <MiniLoseta eyebrow="Caja" title="Mostrador" amount="$ 48.320" open />
-                <MiniLoseta eyebrow="Caja" title="Patio" amount="$ 0" />
-              </div>
+            <div className="data-workspace-blocks-atmosphere grid h-full grid-cols-2 content-start items-start gap-2.5 p-3">
+              <MiniLoseta title="Mostrador" amount="$ 48.320" open />
+              <MiniLoseta title="Patio" amount="$ 0" />
             </div>
           </LienzoSwatch>
           <LienzoSwatch id="lienzo-de-bloques-noche">
-            <div className="data-workspace-blocks-atmosphere-bruma-oscura h-full" />
+            <div className="data-workspace-blocks-atmosphere-bruma-oscura grid h-full grid-cols-2 content-start items-start gap-2.5 p-3">
+              <MiniLoseta title="Mostrador" amount="$ 48.320" open night />
+              <MiniLoseta title="Patio" amount="$ 0" night />
+            </div>
           </LienzoSwatch>
         </div>
         <div className={cn("mt-6", libraryDocTableShellOverflowClass)}>
@@ -268,13 +296,13 @@ export function HandbookSurfacesView() {
         </div>
         <div className="mt-8">
           <LibraryDoDontPair
-            doText="Lienzo de bloques en módulos de losetas. Lienzo plano en listados tabla."
-            dontText="No pongas el planeta detrás de una tabla. No pintes el valle con savia sólida."
+            doText="Lienzo de bloques en losetas. Lienzo plano en tablas. Papel blanco en Bruma clara."
+            dontText="No pongas foto, planeta ni estrellas detrás del trabajo. No uses savia-50 como papel."
           />
         </div>
       </section>
 
-      <section id="capas" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="capas" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Capas</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           El z-index nombra quién tapa a quién. El contenido vive abajo. El modal, arriba del

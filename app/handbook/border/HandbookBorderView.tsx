@@ -19,6 +19,8 @@ import {
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
@@ -40,7 +42,7 @@ export function HandbookBorderView() {
         ojo sigue caminando. Solo savia interrumpe cuando hay foco o elección.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {HANDBOOK_BORDER_PRINCIPLES.map((item) => (
           <div key={item.title} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
             <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{item.title}</p>
@@ -51,7 +53,7 @@ export function HandbookBorderView() {
         ))}
       </div>
 
-      <section id="anchos" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="anchos" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Anchos</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Tres medidas. Vena 1px para dividir. Selección y foco a 2px, siempre con savia.
@@ -84,7 +86,7 @@ export function HandbookBorderView() {
         </div>
       </section>
 
-      <section id="colores" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="colores" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Colores</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Bruma 200 en claro. Sombra-border en POS. Savia 600 al elegir. Savia 400 al
@@ -127,7 +129,7 @@ export function HandbookBorderView() {
         </div>
       </section>
 
-      <section id="estados" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="estados" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Estados</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Reposo, selección, foco, error. Cada estado es un par ancho + color, no un gris

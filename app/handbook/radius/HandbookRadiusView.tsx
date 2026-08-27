@@ -19,6 +19,8 @@ import {
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
   libraryDocTokenAccentClass,
+  handbookDocChapterClass,
+  handbookDocIntroAfterClass,
 } from "@/app/library/libraryColorTheme"
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
@@ -46,7 +48,7 @@ export function HandbookRadiusView() {
         abraza. Una escala, un idioma — no se re-decide en cada pantalla.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
+      <div className={cn("mt-6 grid gap-3 sm:grid-cols-3", handbookDocIntroAfterClass)}>
         {HANDBOOK_RADIUS_PRINCIPLES.map((item) => (
           <div key={item.title} className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
             <p className={cn(libraryDocSectionTitleClass, "text-sm")}>{item.title}</p>
@@ -57,7 +59,7 @@ export function HandbookRadiusView() {
         ))}
       </div>
 
-      <section id="escala" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="escala" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Escala</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Ocho pasos, de 2px a círculo. El tile (~34%) es exclusivo del logomark Rootsy.
@@ -90,7 +92,7 @@ export function HandbookRadiusView() {
         </p>
       </section>
 
-      <section id="uso" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="uso" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Uso</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Si ya usaste un formulario Rootsy, conocés el radio. La misma curva en todo el
@@ -132,7 +134,7 @@ export function HandbookRadiusView() {
         </div>
       </section>
 
-      <section id="focus" className="scroll-mt-24 border-t border-[var(--color-borde)] py-10">
+      <section id="focus" className={handbookDocChapterClass}>
         <h2 className={libraryDocSectionTitleClass}>Focus</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           El anillo es el radio del control + 2px, en savia 400. Sigue la forma: no hay
