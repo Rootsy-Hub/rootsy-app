@@ -668,10 +668,10 @@ export function layoutsOperarProductCardProposalPriceClass(id: LayoutsOperarProd
   if (id === "plano-dosel") return layoutsOperarProductCardPriceClass
 
   if (id === "losa-sombra") {
-    return "text-lg font-semibold tabular-nums text-[var(--rootsy-savia-500)]"
+    return "text-lg font-semibold tabular-nums text-[var(--layouts-operar-product-card-desc)]"
   }
 
-  return "text-lg font-bold tabular-nums text-[var(--rootsy-savia-500)]"
+  return "text-lg font-bold tabular-nums text-[var(--layouts-operar-product-card-desc)]"
 }
 
 export function layoutsOperarProductCardMediaEmptyStateShellClass(
@@ -712,14 +712,14 @@ export function layoutsOperarProductCardProposalAddClass(id: LayoutsOperarProduc
       "border border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
       "bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_55%,transparent)]",
       "text-[color-mix(in_srgb,var(--rootsy-savia-300)_92%,white)]",
-      "opacity-100 transition-colors duration-200 group-hover:bg-[var(--rootsy-savia-500)] group-hover:text-[var(--rootsy-savia-950)]",
+      "opacity-100 transition-colors duration-200 group-hover:bg-[var(--rootsy-savia-600)] group-hover:text-[var(--rootsy-savia-950)]",
     )
   }
 
   return cn(
     "pointer-events-none absolute right-2 bottom-2 z-10 flex size-8 items-center justify-center rounded-full",
     "border border-[color-mix(in_srgb,var(--rootsy-savia-300)_45%,transparent)]",
-    "bg-[var(--rootsy-savia-500)] text-[var(--rootsy-savia-950)]",
+    "bg-[var(--rootsy-savia-600)] text-[var(--rootsy-savia-950)]",
     "opacity-60 transition-[opacity,transform] duration-200",
     "group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100",
   )

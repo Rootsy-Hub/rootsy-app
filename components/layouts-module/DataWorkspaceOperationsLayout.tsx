@@ -5,8 +5,8 @@ import "@/app/library/layouts/layoutsOperarTheme.css"
 import "@/app/library/libraryColorTheme.css"
 import { getLayoutsOperarGridCssVariables } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import {
-  layoutsOperationsBodyScopeClass,
-  layoutsOperationsBodyShellClass,
+  layoutsOperarBodyShellClass,
+  layoutsOperarModuleBodyClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   OperarCatalogMobileChromeProvider,
@@ -94,10 +94,8 @@ export function OperationsModuleBody({
   return (
     <div
       className={cn(
-        "rootsy-theme-pos rootsy-radius-system",
-        layoutsOperationsBodyScopeClass,
-        layoutsOperationsBodyShellClass,
-        "dark relative flex min-h-0 flex-1 flex-col overflow-hidden text-white",
+        layoutsOperarModuleBodyClass,
+        layoutsOperarBodyShellClass,
         className,
       )}
       style={getLayoutsOperarGridCssVariables()}

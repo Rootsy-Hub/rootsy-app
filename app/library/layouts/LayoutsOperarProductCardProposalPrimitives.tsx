@@ -143,7 +143,7 @@ function LayoutsOperarProductCardProposalMedia({
           src={product.image ?? undefined}
           alt=""
           onError={() => setImageFailed(true)}
-          className="size-full object-cover object-center transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+          className="size-full max-h-none object-cover object-center transition-transform duration-300 ease-out group-hover:scale-[1.03]"
         />
       )}
       {showOfferOverlay ? (

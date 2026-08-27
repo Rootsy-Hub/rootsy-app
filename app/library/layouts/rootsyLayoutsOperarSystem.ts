@@ -109,7 +109,7 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
 export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
   shell: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
   header: { token: "sombra-950→900", css: "linear-gradient chrome" },
-  rail: { token: "sombra-700 · library-sidebar", css: "var(--rootsy-sombra-700)" },
+  rail: { token: "sombra-900 · library-sidebar", css: "var(--rootsy-sombra-900)" },
   canvas: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
   productCard: { token: "sombra-800", css: "var(--rootsy-sombra-800)" },
   footer: {
@@ -127,20 +127,20 @@ export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
  * Dosel denso: hairlines sutiles dentro del catálogo; sombra-700 en split bruma; bruma-200 en ticket.
  */
 export const ROOTSY_LAYOUTS_OPERAR_BORDERS = {
-  /** Rail ↔ canvas, toolbar, slots toolbox — mismo dosel, división mínima */
+  /** Rail 900 ↔ canvas 950 · toolbar · toolbox — costura sólida. */
   darkHairline: {
-    token: "sombra-border / 55%",
-    css: `color-mix(in srgb, ${hx("sombra", "border")} 55%, transparent)`,
+    token: "sombra-800",
+    css: hx("sombra", "800"),
   },
-  /** Catálogo ↔ toolbox, header chrome — borde oscuro estándar POS */
+  /** Hover / chrome un paso más legible, todavía dosel. */
   darkDefault: {
-    token: "sombra-border / 80%",
-    css: `color-mix(in srgb, ${hx("sombra", "border")} 80%, transparent)`,
+    token: "sombra-700",
+    css: hx("sombra", "700"),
   },
-  /** Contorno card — más oscuro que el cuerpo 700. */
+  /** Contorno card 800 sobre canvas 950. */
   darkCard: {
-    token: "sombra-900",
-    css: hx("sombra", "900"),
+    token: "sombra-800",
+    css: hx("sombra", "800"),
   },
   /** Split columna sombra ↔ bruma (pos-split) */
   splitColumn: {
@@ -300,7 +300,7 @@ export const ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS: LayoutsOperarProductC
     pairingId: "pos-core",
     pairingLabel: "Sombra 600 + 900 + Savia 500",
     summary:
-      "Cuerpo sombra-700 · canvas 950 · precio savia-500 · chip oferta 900+savia-500.",
+      "Cuerpo sombra-800 · canvas 950 · precio sombra-300 · chip oferta 900+savia-600.",
     uxNote:
       "Tarjeta plana bajo el canvas — lectura rápida en grilla densa. Alineada al dosel denso del grid.",
     recommended: true,

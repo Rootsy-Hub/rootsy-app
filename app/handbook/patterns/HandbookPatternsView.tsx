@@ -518,7 +518,7 @@ function BlocksPatternSpecimen({ extra }: { extra: string }) {
 
 function OperarPatternSpecimen() {
   return (
-    <div className="flex h-[32rem] w-full min-w-0 flex-col overflow-hidden rounded-xl">
+    <div className="flex h-[52rem] w-full min-w-0 flex-col overflow-hidden rounded-xl">
       <LayoutsOperarBody composed />
     </div>
   )

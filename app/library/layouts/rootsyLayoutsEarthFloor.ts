@@ -9,8 +9,8 @@ const hx = rootsyColorHex
 
 export const ROOTSY_LAYOUTS_EARTH_FLOOR = {
   background: hx("sombra", "950"),
-  borderTop: `1px solid color-mix(in srgb, ${hx("sombra", "400")} 40%, transparent)`,
-  dividerColor: `color-mix(in srgb, ${hx("sombra", "400")} 35%, transparent)`,
+  borderTop: `1px solid ${hx("sombra", "800")}`,
+  dividerColor: hx("sombra", "800"),
   baseCss: hx("sombra", "950"),
   textColor: hx("sombra", "50"),
   mutedColor: hx("sombra", "300"),
@@ -22,7 +22,7 @@ export const rootsyLayoutsEarthFloorSurfaceClass =
   "bg-[var(--rootsy-sombra-950)]"
 
 export const rootsyLayoutsEarthFloorBorderClass =
-  "border-t border-[color-mix(in_srgb,var(--rootsy-sombra-400)_40%,transparent)]"
+  "border-t border-[var(--rootsy-sombra-800)]"
 
 export const rootsyLayoutsEarthFloorShadowClass =
   "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-sombra-400)_18%,transparent)]"
@@ -36,3 +36,4 @@ export const rootsyLayoutsEarthFloorSlotConfiguredClass = "is-configured"
 export const rootsyLayoutsEarthFloorSlotIconClass = "layouts-operar-earth-slot-icon"
 export const rootsyLayoutsEarthFloorSlotLabelClass = "layouts-operar-earth-slot-label"
 export const rootsyLayoutsEarthFloorSlotValueClass = "layouts-operar-earth-slot-value"
+export const rootsyLayoutsEarthFloorSlotMetaClass = "layouts-operar-earth-slot-meta"

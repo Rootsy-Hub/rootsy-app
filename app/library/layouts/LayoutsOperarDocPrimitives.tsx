@@ -6,8 +6,8 @@ import {
   LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
   LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX,
   layoutsOperarBodyMainGridClass,
-  layoutsOperarBodyScopeClass,
   layoutsOperarBodyShellClass,
+  layoutsOperarModuleBodyClass,
   layoutsOperarBodyWireframeClass,
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
@@ -451,8 +451,7 @@ export function LayoutsOperarBody({
   return (
     <div
       className={cn(
-        "rootsy-theme-pos",
-        layoutsOperarBodyScopeClass,
+        layoutsOperarModuleBodyClass,
         layoutsOperarBodyShellClass,
         wireframe && layoutsOperarBodyWireframeClass,
       )}

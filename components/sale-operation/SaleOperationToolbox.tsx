@@ -10,6 +10,7 @@ import {
   layoutsOperarToolboxBarGridClass,
   layoutsOperarToolboxIconWrapClass,
   layoutsOperarToolboxSlotClass,
+  layoutsOperarToolboxSlotMetaClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { LayoutsOperarToolboxFloor } from "@/components/layouts-module/LayoutsOperarToolboxFloor"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
@@ -165,7 +166,7 @@ export function SaleOperationToolbox({
               {clienteLabel}
             </span>
             {clienteIvaLabel ? (
-              <span className="mt-0.5 block truncate text-[11px] font-medium text-[var(--rootsy-sombra-300)]">
+              <span className={layoutsOperarToolboxSlotMetaClass}>
                 {clienteIvaLabel}
               </span>
             ) : null}
@@ -232,7 +233,7 @@ export function SaleOperationToolbox({
               {pagoLabel}
             </span>
             {pagoSubLabel ? (
-              <span className="mt-0.5 block truncate text-[11px] font-medium text-[var(--rootsy-sombra-300)]">
+              <span className={layoutsOperarToolboxSlotMetaClass}>
                 {pagoSubLabel}
               </span>
             ) : null}
