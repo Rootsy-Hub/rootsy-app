@@ -50,9 +50,9 @@ export const ROOTSY_LAYOUTS_OPERAR_PRINCIPLES = [
       "Sidebar w-64 (256px) · library-sidebar 700 + library-nav · canvas sombra-950 · cards sombra-700 · toolbox banda 950 · pairing pos-core.",
   },
   {
-    title: "Ticket · bruma-50",
+    title: "Ticket · lienzo 100 · papel blanco",
     detail:
-      "Panel, carrito y total bruma-50 (mismo piso que cuentas/cajas) · hairline bruma-200 · split sombra-700 · el total solo aparece con ítems.",
+      "Lienzo bruma-100 · líneas y total en blanco · bruma-50 solo como aire o velo · hairline bruma-200 · split sombra-700 · el total solo aparece con ítems.",
   },
 ] as const
 
@@ -116,10 +116,10 @@ export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
     token: ROOTSY_LAYOUTS_EARTH_FLOOR.chromeToken,
     css: ROOTSY_LAYOUTS_EARTH_FLOOR.background,
   },
-  lightPanel: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
-  lightContent: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
-  lightActions: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
-  lightTotals: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
+  lightPanel: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
+  lightContent: { token: "blanco", css: "var(--rootsy-blanco)" },
+  lightActions: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
+  lightTotals: { token: "blanco", css: "var(--rootsy-blanco)" },
 } as const
 
 /**
@@ -367,11 +367,11 @@ export const ROOTSY_LAYOUTS_OPERAR_TICKET_PROPOSALS: LayoutsOperarTicketProposal
     letter: "A",
     title: "Bruma savia",
     pairingId: "pos-core",
-    pairingLabel: "Bruma 50 · módulo cuentas",
+    pairingLabel: "Lienzo 100 · papel blanco",
     summary:
-      "Cart bruma-50 · hairlines bruma-200 · total en el mismo piso · aparece con ítems.",
+      "Lienzo bruma-100 · líneas y total en blanco · hairlines bruma-200 · el total aparece con ítems.",
     uxNote:
-      "Canónico del grid — la columna del pedido es el mundo de cuentas/cajas. El total no es otra capa: solo se muestra cuando hay líneas.",
+      "Canónico del grid — el pedido aterriza en blanca. La bruma-50 queda como aire o velo, no como piso de la línea.",
     recommended: true,
     totalsLayout: "gradiente",
   },

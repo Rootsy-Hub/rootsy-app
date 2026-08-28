@@ -417,7 +417,7 @@ function LayoutsOperarSummaryPanel({
       aria-label="Carrito de la venta"
     >
       {wireframe ? (
-        <LayoutHeightBadge label={`${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px · bruma-50`} />
+          <LayoutHeightBadge label={`${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px · lienzo 100 · papel blanco`} />
       ) : null}
       {showDraftCart ? (
         <>

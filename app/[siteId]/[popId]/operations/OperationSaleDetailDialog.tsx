@@ -302,7 +302,7 @@ export function OperationSaleDetailDialog({
                 className={cn(
                   "rootsy-app-light layouts-operar-ticket-shell",
                   "flex h-full min-h-0 min-w-0 flex-col overflow-hidden",
-                  "border-t border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]",
+                  "border-t border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-100)]",
                   "lg:border-t-0 lg:border-l",
                 )}
               >

@@ -215,13 +215,13 @@ export function getLayoutsOperarWireframeZoneStyle(zone: LayoutsOperarWireframeZ
       return { backgroundColor: surfaces.lightContent.css }
     case "ticket-actions":
       return {
-        backgroundColor: surfaces.lightPanel.css,
+        backgroundColor: surfaces.lightActions.css,
         borderTop: `1px solid ${border("lightHairline")}`,
         borderBottom: `1px solid ${border("lightHairline")}`,
       }
     case "ticket-total":
       return {
-        backgroundColor: surfaces.lightPanel.css,
+        backgroundColor: surfaces.lightTotals.css,
         borderTop: `1px solid ${border("lightHairline")}`,
       }
   }
@@ -839,7 +839,7 @@ export function layoutsOperarTicketProposalLineCommentClass(id: LayoutsOperarTic
   }
 
   return cn(
-    "border-t border-[var(--layouts-operar-light-cart-divider)] bg-[color-mix(in_srgb,var(--rootsy-bruma-50)_65%,white)] px-3 py-2",
+    "border-t border-[var(--layouts-operar-light-cart-divider)] bg-[color-mix(in_srgb,var(--rootsy-bruma-50)_28%,var(--rootsy-blanco))] px-3 py-2",
     "text-[11px] leading-snug text-[var(--layouts-operar-light-cart-line-meta)]",
   )
 }

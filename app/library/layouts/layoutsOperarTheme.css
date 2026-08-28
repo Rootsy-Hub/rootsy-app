@@ -140,12 +140,12 @@
   --layouts-operar-light-cart-divider: color-mix(in srgb, var(--rootsy-bruma-300) 70%, transparent);
   --layouts-operar-light-cart-promo-banner-bg: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--rootsy-savia-400) 22%, var(--rootsy-bruma-100)) 0%,
+    color-mix(in srgb, var(--rootsy-savia-400) 22%, var(--rootsy-blanco)) 0%,
     transparent 100%
   );
   --layouts-operar-light-cart-discount-banner-bg: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--rootsy-savia-600) 18%, var(--rootsy-bruma-100)) 0%,
+    color-mix(in srgb, var(--rootsy-savia-600) 18%, var(--rootsy-blanco)) 0%,
     transparent 100%
   );
   --layouts-operar-light-cart-promo-banner-text: var(--rootsy-savia-950);
@@ -239,7 +239,7 @@
 
 @media (prefers-reduced-transparency: reduce) {
   .layouts-operar-ticket-header-frost {
-    background: var(--rootsy-bruma-50);
+    background: var(--rootsy-bruma-100);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -249,12 +249,12 @@
   scrollbar-gutter: stable;
 }
 
-/* Total del pedido — mismo piso bruma-50 que cuentas/cajas. */
+/* Total del pedido — elevada blanca, mismo papel que las líneas. */
 .rootsy-nature-palette .rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
 .rootsy-theme-pos .layouts-operar-body .layouts-operar-summary-totals,
 .layouts-operar-ticket-shell .layouts-operar-summary-totals {
-  background: var(--rootsy-bruma-50);
+  background: var(--rootsy-blanco);
   color: var(--rootsy-bruma-900);
 }
 

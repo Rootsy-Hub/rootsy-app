@@ -663,11 +663,11 @@ export function layoutsOperarToolboxIconWrapClass(_configured: boolean) {
   )
 }
 
-/** Superficie ticket — bloque scrolleable (pedido + ítems + totales) · acciones. */
+/** Superficie ticket — lienzo bruma-100; el papel de líneas y total es blanca. */
 export const layoutsOperarSummaryPanelSurfaceClass = cn(
   "layouts-operar-ticket-shell rootsy-app-light grid min-h-0 overflow-hidden",
   "[grid-template-rows:var(--layouts-operar-ticket-rows)]",
-  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
+  "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-900)]",
 )
 
 /** Grid ticket interno — sin placement en grid principal (p. ej. dentro de tabs mostrador). */
@@ -680,7 +680,7 @@ export const layoutsOperarSummaryPanelInnerGridClass = cn(
 /** Cuerpo bajo tabs Mesa/Datos — flex, sin grid 1.2.x (sesión / formulario channel). */
 export const layoutsOperarSummaryPanelTabBodyClass = cn(
   "row-start-2 flex min-h-0 flex-col overflow-hidden",
-  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
+  "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-900)]",
   "rootsy-app-light layouts-operar-ticket-shell h-full min-h-0 w-full",
 )
 
@@ -697,7 +697,7 @@ export const layoutsOperarSummaryPanelClass = cn(
 export const layoutsOperarSummaryPanelTabsClass = cn(
   "layouts-operar-ticket-shell rootsy-app-light grid min-h-0 h-full w-full overflow-hidden",
   "grid-rows-[auto_minmax(0,1fr)]",
-  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
+  "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-900)]",
   "md:col-start-2 md:row-start-1",
   "md:border-l md:border-[var(--layouts-operar-border-split)]",
   "md:w-[var(--layouts-operar-ticket-w)] md:max-w-[var(--layouts-operar-ticket-w)]",
@@ -737,11 +737,11 @@ export const layoutsOperarSummaryHeaderRowClass =
   "flex shrink-0 items-center justify-between gap-2 px-3 py-2"
 
 export const layoutsOperarSummaryCartRowClass =
-  "relative flex min-h-0 flex-col bg-[var(--rootsy-bruma-50)]"
+  "relative flex min-h-0 flex-col bg-[var(--rootsy-blanco)]"
 
 export const layoutsOperarSummaryActionsRowClass = cn(
   "row-start-2 grid shrink-0 grid-cols-2 overflow-hidden",
-  "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-50)]",
+  "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-100)]",
   "[height:var(--layouts-operar-ticket-actions-h)]",
 )
 
@@ -749,7 +749,7 @@ export const layoutsOperarSummaryActionsRowClass = cn(
 export const layoutsOperarTicketCircleActionsRowClass = cn(
   "row-start-2 flex shrink-0 items-center justify-center",
   "gap-[var(--rootsy-space-300)]",
-  "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-50)]",
+  "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-100)]",
   "[height:var(--layouts-operar-ticket-actions-h)]",
 )
 
@@ -772,9 +772,9 @@ export const layoutsOperarSummaryTotalRowClass = cn(
   "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
 )
 
-/** Total en el mundo del módulo — bruma-50, mismo piso que cuentas/cajas. */
+/** Total — elevada blanca, mismo papel que las líneas. */
 export const layoutsOperarSummaryTotalsSurfaceClass = cn(
-  "bg-[var(--rootsy-bruma-50)]",
+  "bg-[var(--rootsy-blanco)]",
   "text-[var(--rootsy-bruma-900)]",
 )
 
@@ -801,7 +801,7 @@ export const layoutsOperarSummaryTotalsCellClass = cn(
   layoutsOperarSummaryTotalsPlacementClass,
 )
 
-export const layoutsOperarSummaryCartListSurfaceClass = "bg-[var(--rootsy-bruma-50)]"
+export const layoutsOperarSummaryCartListSurfaceClass = "bg-[var(--rootsy-blanco)]"
 
 export const layoutsOperarSummaryCartHeadingClass =
   "text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--layouts-operar-light-cart-heading)]"
