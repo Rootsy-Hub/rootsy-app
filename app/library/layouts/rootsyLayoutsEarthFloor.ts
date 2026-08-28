@@ -1,6 +1,6 @@
 /**
  * Piso de toolbox operar — Sotobosque · Sombra.
- * Banda 950, el mismo fondo que el canvas. Encima, savia se prende en el slot.
+ * Banda 950 sobre el vacío negro. Encima, savia se prende en el slot.
  */
 
 import { rootsyColorHex } from "@/lib/design-system"
@@ -27,7 +27,7 @@ export const rootsyLayoutsEarthFloorBorderClass =
 export const rootsyLayoutsEarthFloorShadowClass =
   "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-sombra-400)_18%,transparent)]"
 
-/** Piso del toolbox — mismo 950 que el canvas. */
+/** Piso del toolbox — banda 950 sobre el vacío negro. */
 export const rootsyLayoutsEarthFloorBandClass = "layouts-operar-earth-floor"
 
 /** Slot sobre la banda — ver rootsyLayoutsEarthFloor.css */

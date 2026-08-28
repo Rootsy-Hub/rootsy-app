@@ -15,7 +15,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Shell",
     component: "OperationsModuleBody",
-    token: "layouts-operar-body · .rootsy-theme-pos · sombra-950",
+    token: "layouts-operar-body · .rootsy-theme-pos · negro",
     source: "DataWorkspaceOperationsLayout",
   },
   {

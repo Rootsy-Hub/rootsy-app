@@ -86,7 +86,7 @@
   --layouts-operar-product-card-title: var(--rootsy-sombra-50);
   --layouts-operar-product-card-desc: var(--rootsy-sombra-300);
   --layouts-operar-product-card-price: var(--layouts-operar-product-card-title);
-  --layouts-operar-product-card-price-hover: var(--rootsy-savia-500);
+  --layouts-operar-product-card-price-hover: var(--layouts-operar-product-card-title);
   --layouts-operar-product-card-media-bg: var(--rootsy-sombra-800);
 
   /* Form controls dark — paridad catalog-toolbar-control */
@@ -372,13 +372,8 @@
   transform: translateY(-2px);
   border-color: var(--rootsy-sombra-700);
   box-shadow:
-    0 6px 16px color-mix(in srgb, var(--rootsy-sombra-950) 62%, transparent),
+    0 6px 16px color-mix(in srgb, var(--rootsy-negro) 62%, transparent),
     0 1px 0 color-mix(in srgb, var(--rootsy-sombra-50) 5%, transparent);
-}
-
-.rootsy-theme-pos.layouts-operar-body .layouts-operar-product-card:hover .layouts-operar-product-card-price,
-.rootsy-theme-pos .layouts-operar-body .layouts-operar-product-card:hover .layouts-operar-product-card-price {
-  color: var(--layouts-operar-product-card-price-hover);
 }
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item:hover,

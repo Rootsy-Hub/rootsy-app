@@ -2,7 +2,7 @@
  * Paleta de color Rootsy — fuente de verdad.
  * Espejo de styles/rootsy/tokens/colors.css
  *
- * Once pasos (50–950) en siete familias, más --rootsy-blanco fuera de rampa.
+ * Once pasos (50–950) en siete familias, más --rootsy-blanco y --rootsy-negro fuera de rampa.
  * Éter suma un clima de paint (glow / void), no una octava familia.
  * Si un hex no está acá, no entra.
  *
@@ -52,6 +52,9 @@ export type RootsyColorRamp = Record<RootsyColorStepId, string>
 
 /** Luz de Bruma clara. No es un paso de rampa. No pinta éter ni sombra. */
 export const ROOTSY_BLANCO = "#FFFFFF"
+
+/** Tope de oscuridad de Sotobosque · Sombra. No es un paso de rampa. */
+export const ROOTSY_NEGRO = "#000000"
 
 export const ROOTSY_COLOR_RAMPS: Record<RootsyColorFamily, RootsyColorRamp> = {
   eter: {

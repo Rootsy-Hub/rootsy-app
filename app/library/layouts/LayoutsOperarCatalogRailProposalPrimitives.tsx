@@ -65,7 +65,7 @@ export function LayoutsOperarCatalogRailDemoShell({
     >
       <div
         className={cn(
-          "rootsy-theme-pos rootsy-radius-system h-full bg-[var(--rootsy-sombra-950)]",
+          "rootsy-theme-pos rootsy-radius-system h-full bg-[var(--rootsy-negro)]",
           layoutsOperarBodyScopeClass,
         )}
         style={getLayoutsOperarGridCssVariables()}

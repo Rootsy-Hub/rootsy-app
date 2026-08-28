@@ -47,7 +47,7 @@ export const ROOTSY_LAYOUTS_OPERAR_PRINCIPLES = [
   {
     title: "Catálogo · dosel denso",
     detail:
-      "Sidebar w-64 (256px) · library-sidebar 700 + library-nav · canvas sombra-950 · cards sombra-700 · toolbox banda 950 · pairing pos-core.",
+      "Sidebar w-64 (256px) · library-sidebar 800 + library-nav · canvas negro · cards sombra-800 · toolbox banda 950 · pairing pos-core.",
   },
   {
     title: "Ticket · lienzo 100 · papel blanco",
@@ -107,10 +107,10 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
  * Catálogo plano bajo el dosel; savia reservada para acciones y totales.
  */
 export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
-  shell: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
+  shell: { token: "negro", css: "var(--rootsy-negro)" },
   header: { token: "sombra-950→900", css: "linear-gradient chrome" },
   rail: { token: "sombra-800 · library-sidebar", css: "var(--rootsy-sombra-800)" },
-  canvas: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
+  canvas: { token: "negro", css: "var(--rootsy-negro)" },
   productCard: { token: "sombra-800", css: "var(--rootsy-sombra-800)" },
   footer: {
     token: ROOTSY_LAYOUTS_EARTH_FLOOR.chromeToken,
@@ -127,7 +127,7 @@ export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
  * Dosel denso: hairlines sutiles dentro del catálogo; sombra-700 en split bruma; bruma-200 en ticket.
  */
 export const ROOTSY_LAYOUTS_OPERAR_BORDERS = {
-  /** Rail 900 ↔ canvas 950 · toolbar · toolbox — costura sólida. */
+  /** Rail 800 ↔ canvas negro · toolbar · toolbox — costura sólida. */
   darkHairline: {
     token: "sombra-800",
     css: hx("sombra", "800"),
@@ -137,7 +137,7 @@ export const ROOTSY_LAYOUTS_OPERAR_BORDERS = {
     token: "sombra-700",
     css: hx("sombra", "700"),
   },
-  /** Contorno card 500 sobre canvas 950. */
+  /** Contorno card 700 sobre canvas negro. */
   darkCard: {
     token: "sombra-700",
     css: hx("sombra", "700"),
@@ -300,7 +300,7 @@ export const ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS: LayoutsOperarProductC
     pairingId: "pos-core",
     pairingLabel: "Sombra 600 + 900 + Savia 500",
     summary:
-      "Cuerpo sombra-800 · canvas 950 · precio sombra-300 · chip oferta 900+savia-600.",
+      "Cuerpo sombra-800 · canvas negro · precio sombra-50 · chip oferta 900+savia-600.",
     uxNote:
       "Tarjeta plana bajo el canvas — lectura rápida en grilla densa. Alineada al dosel denso del grid.",
     recommended: true,

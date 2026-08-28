@@ -57,7 +57,7 @@ export const HANDBOOK_ATMOSPHERE_TOKENS: HandbookAtmosphereToken[] = [
     id: "fondo",
     token: "--color-fondo",
     label: "Fondo",
-    purpose: "Lienzo de la pantalla. En Sombra es siempre el paso más oscuro (950).",
+    purpose: "Lienzo de la pantalla. En Sombra el tope es negro; el 950 es aire.",
     steps: { eter: "950", bruma: "100", sombra: "950" },
   },
   {
@@ -554,6 +554,7 @@ export function atmosphereTokenHex(
 ): string {
   const step = token.steps[atmosphereId]
   if (step === "blanco") return "#FFFFFF"
+  if (step === "negro") return "#000000"
   return handbookColorHex(atmosphereId, step)
 }
 

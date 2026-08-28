@@ -1,10 +1,10 @@
 /**
  * Tema POS — Sotobosque · Sombra.
- * Fondo 950 · superficie 600 · elevada 500 · borde 400 · texto 50 · muted 300.
+ * Fondo negro · superficie 600 · elevada 500 · borde 400 · texto 50 · muted 300.
  */
 
 .rootsy-theme-pos {
-  --color-fondo: var(--rootsy-sombra-950);
+  --color-fondo: var(--rootsy-negro);
   --color-superficie: var(--rootsy-sombra-600);
   --color-elevada: var(--rootsy-sombra-500);
   --color-borde: var(--rootsy-sombra-400);

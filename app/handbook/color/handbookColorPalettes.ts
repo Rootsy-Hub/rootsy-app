@@ -254,7 +254,7 @@ export const HANDBOOK_COLOR_FAMILIES: HandbookColorFamily[] = [
   ...HANDBOOK_FUNCTIONAL_COLORS,
 ]
 
-export type HandbookColorRefStep = HandbookColorStepId | "blanco"
+export type HandbookColorRefStep = HandbookColorStepId | "blanco" | "negro"
 
 /** Luz de Bruma clara. Fuera de la rampa. Documentada en Color → Blanco. */
 export const HANDBOOK_BLANCO = {
@@ -264,8 +264,16 @@ export const HANDBOOK_BLANCO = {
   usage: "Papel de Luz filtrada. --color-elevada, losetas, formularios y overlay. No pinta éter ni Sotobosque · Sombra.",
 } as const
 
+export const HANDBOOK_NEGRO = {
+  id: "negro",
+  token: "--rootsy-negro",
+  hex: "#000000",
+  usage: "Tope de Sotobosque · Sombra. Vacío del catálogo. No es sombra-950.",
+} as const
+
 export function handbookColorHex(familyId: string, step: HandbookColorRefStep): string {
   if (familyId === "blanco" || step === "blanco") return "#FFFFFF"
+  if (familyId === "negro" || step === "negro") return "#000000"
   const family = HANDBOOK_COLOR_FAMILIES.find((item) => item.id === familyId)
   const found = family?.steps.find((item) => item.step === step)
   if (!found) {

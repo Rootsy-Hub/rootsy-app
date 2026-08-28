@@ -70,7 +70,7 @@ export const layoutsOperarHeaderGridClass =
   "relative z-10 grid h-17 w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4"
 
 export const layoutsOperarBodyShellClass = cn(
-  "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--rootsy-sombra-950)]",
+  "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--rootsy-negro)]",
 )
 
 /** Grid principal 1 · mobile: escena única. Desktop: operación | ticket. */
@@ -142,9 +142,9 @@ export const layoutsOperarWireframeSummaryPanelClass = cn(
   "border-l border-[var(--layouts-operar-border-split)]",
 )
 
-/** Canvas productos — fondo 950. Cards 800 encima. */
+/** Canvas productos — vacío negro. Cards 800 encima. */
 export const layoutsOperarCatalogCanvasClass = cn(
-  "grid min-h-0 min-w-0 flex-1 bg-[var(--rootsy-sombra-950)]",
+  "grid min-h-0 min-w-0 flex-1 bg-[var(--rootsy-negro)]",
   "[grid-template-rows:var(--layouts-operar-catalog-rows)]",
 )
 
@@ -526,7 +526,7 @@ export const layoutsOperarProductCardAddClass = cn(
 export const layoutsOperarProductCardSelectedClass = cn(
   "border-[color-mix(in_srgb,var(--rootsy-savia-600)_45%,transparent)]",
   "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,var(--rootsy-sombra-800))]",
-  "ring-2 ring-[color-mix(in_srgb,var(--rootsy-savia-600)_28%,transparent)] ring-offset-2 ring-offset-[var(--rootsy-sombra-950)]",
+  "ring-2 ring-[color-mix(in_srgb,var(--rootsy-savia-600)_28%,transparent)] ring-offset-2 ring-offset-[var(--rootsy-negro)]",
   "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-300)_14%,transparent),0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-400)_24%,transparent)]",
 )
 
@@ -595,7 +595,7 @@ export const layoutsOperarToolboxBandClass = cn(
   "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
 )
 
-/** Piso del toolbox — mundo Sombra, paridad canvas del catálogo. */
+/** Piso del toolbox — banda 950 sobre el vacío negro. */
 export const layoutsOperarToolboxFloorClass = cn(
   "relative w-full overflow-visible",
   rootsyLayoutsEarthFloorBandClass,

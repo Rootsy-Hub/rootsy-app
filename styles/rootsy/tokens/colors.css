@@ -7,7 +7,7 @@
  * Funcionales: savia · cielo · sol · lava
  *
  * Tokens de propósito (--color-fondo, --color-accion, …) nombran el trabajo.
- * El hex sale de un paso de paleta, salvo --rootsy-blanco: luz de Bruma clara.
+ * El hex sale de un paso de paleta, salvo --rootsy-blanco y --rootsy-negro.
  */
 
 :root {
@@ -44,7 +44,7 @@
   --rootsy-bruma-900: #1c231e;
   --rootsy-bruma-950: #0a0f0c;
 
-  /* Sotobosque · Sombra — el dosel para operar. 950 #080c0b es siempre el más oscuro. */
+  /* Sotobosque · Sombra — el dosel para operar. El tope de oscuridad es --rootsy-negro. */
   --rootsy-sombra-50: #e8f4ec;
   --rootsy-sombra-100: #c8dfd2;
   --rootsy-sombra-200: #9dc4b0;
@@ -125,6 +125,10 @@
   /* Luz de Bruma clara — fuera de la rampa de once pasos. No es savia-50. */
   --rootsy-blanco: #ffffff;
   --rootsy-white: var(--rootsy-blanco);
+
+  /* Tope de Sotobosque · Sombra — fuera de la rampa. El 950 ya no es el vacío. */
+  --rootsy-negro: #000000;
+  --rootsy-black: var(--rootsy-negro);
 
   /*
    * Tokens de propósito — atmósfera por defecto: bruma clara.
@@ -309,4 +313,6 @@
 
   --color-rootsy-blanco: var(--rootsy-blanco);
   --color-rootsy-white: var(--rootsy-white);
+  --color-rootsy-negro: var(--rootsy-negro);
+  --color-rootsy-black: var(--rootsy-black);
 }
