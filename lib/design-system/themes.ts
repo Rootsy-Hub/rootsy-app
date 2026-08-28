@@ -53,7 +53,7 @@ function themeTokens(spec: {
     spec.atmosphere === "eter"
       ? { fondo: "950", superficie: "800", elevada: "700", borde: "700", texto: "50", muted: "300", family: "eter" as const }
       : spec.atmosphere === "sombra"
-        ? { fondo: "950", superficie: "600", elevada: "500", borde: "400", texto: "50", muted: "300", family: "sombra" as const }
+        ? { fondo: "950", superficie: "800", elevada: "800", borde: "700", texto: "50", muted: "300", family: "sombra" as const }
         : spec.atmosphere === "bruma-noche"
           ? { fondo: "950", superficie: "800", elevada: "700", borde: "700", texto: "50", muted: "400", family: "bruma" as const }
           : { fondo: "100", superficie: "50", elevada: "50", borde: "200", texto: "950", muted: "700", family: "bruma" as const }

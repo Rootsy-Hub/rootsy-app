@@ -253,7 +253,7 @@ const HANDBOOK_SECTION_META: Record<string, HandbookSectionMeta> = {
       topic("Color", [
         p("El color de Rootsy no es una paleta decorativa. Son tres familias que nombran lugares del mundo: sombra, bruma y savia. Cada tono tiene un trabajo. Si un color no ordena, no entra."),
         ul([
-          "Sombra: el dosel. Rails, catálogos y superficies que contienen. El fondo es siempre el paso más oscuro. Es el bosque, no el negro genérico.",
+          "Sombra: el dosel. Rails, catálogos y superficies que contienen. El tope es negro. El 950 es aire. La hoja es 800. Es el bosque, no un slate genérico.",
           "Bruma: el aire. Fondos, lectura y workspaces. De día es clara; de noche es bruma oscura — la misma neblina, no sombra.",
           "Savia: la vida. Acción, foco y confirmación. Aparece poco, y solo donde hay que moverse.",
         ]),

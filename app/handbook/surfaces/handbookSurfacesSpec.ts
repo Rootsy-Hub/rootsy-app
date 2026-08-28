@@ -30,7 +30,7 @@ export const HANDBOOK_SURFACE_PRINCIPLES = [
   {
     title: "El fondo es el piso",
     detail:
-      "En Sombra el lienzo es 950, el paso más oscuro. No se aclara el fondo para separar zonas: se eleva lo que se toca.",
+      "En Sombra el lienzo es negro. El 950 es aire. La hoja es 800. No se aclara el fondo: se eleva lo que se toca.",
   },
   {
     title: "Un z por rol",

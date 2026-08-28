@@ -158,12 +158,12 @@ export const layoutsOperarCatalogToolbarClass = cn(
 /** Campo al ras — hairline del rail, mismo plano que library-nav-item. */
 export const layoutsOperarCatalogToolbarControlShellClass = cn(
   "layouts-operar-catalog-toolbar-control",
-  "h-10 shrink-0 rounded-lg",
+  "h-10 shrink-0 rounded-[length:var(--radius-large,12px)]",
   "border border-[var(--layouts-operar-border-dark-hairline)]",
   "bg-[var(--rootsy-sombra-950)]",
   "shadow-none",
   "transition-[border-color] duration-200 ease-out",
-  "hover:border-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]",
+  "hover:border-[var(--rootsy-sombra-600)]",
   "hover:bg-[var(--rootsy-sombra-950)]",
 )
 
@@ -212,7 +212,7 @@ export const layoutsOperarCatalogToolbarViewToggleButtonIdleClass = cn(
 export const layoutsOperarCatalogToolbarScanInputClass = cn(
   layoutsOperarCatalogToolbarControlShellClass,
   layoutsOperarCatalogToolbarScanInputFocusClass,
-  "w-full min-w-0 pl-10 pr-10 text-sm font-normal text-[var(--rootsy-sombra-300)]",
+  "w-full min-w-0 pl-10 pr-10 rootsy-text-body text-[var(--rootsy-sombra-300)]",
   "placeholder:text-[var(--rootsy-sombra-300)]",
 )
 
@@ -228,7 +228,7 @@ export const layoutsOperarFormDarkMutedTextClass =
 
 /** Label uppercase — formularios dark operar (paridad --layouts-operar-form-dark-label). */
 export const layoutsOperarFormDarkSectionLabelClass = cn(
-  "text-xs font-semibold uppercase tracking-[0.1em]",
+  "rootsy-text-label",
   "text-[var(--layouts-operar-form-dark-label)]",
 )
 
@@ -301,7 +301,7 @@ export const layoutsOperarCatalogToolbarQtyShellClass = cn(
 export const layoutsOperarCatalogToolbarPriceListClass = cn(
   layoutsOperarCatalogToolbarControlShellClass,
   layoutsOperarCatalogToolbarControlFocusClass,
-  "flex min-w-[9.5rem] items-center justify-start gap-2 px-3 text-sm font-medium text-[var(--rootsy-sombra-50)]",
+  "flex min-w-[9.5rem] items-center justify-start gap-2 px-3 rootsy-text-body font-medium text-[var(--rootsy-sombra-50)]",
   "[&>svg:last-child]:hidden",
 )
 
@@ -325,7 +325,7 @@ export const layoutsOperarCatalogToolbarQtyButtonClass = cn(
 
 export const layoutsOperarCatalogToolbarQtyValueClass = cn(
   layoutsOperarCatalogToolbarQtyHitClass,
-  "text-center text-sm font-medium tabular-nums text-[var(--rootsy-sombra-50)]",
+  "text-center rootsy-text-body font-medium tabular-nums text-[var(--rootsy-sombra-50)]",
   layoutsOperarCatalogToolbarControlFocusClass,
 )
 
@@ -504,21 +504,21 @@ export const layoutsOperarProductCardBodyClass =
   "flex min-h-0 flex-col justify-between gap-2 p-4"
 
 export const layoutsOperarProductCardTitleClass =
-  "line-clamp-2 text-sm font-bold leading-tight text-[var(--layouts-operar-product-card-title)]"
+  "rootsy-text-heading-xsmall line-clamp-2 text-[var(--layouts-operar-product-card-title)]"
 
 export const layoutsOperarProductCardDescClass =
-  "line-clamp-2 text-xs leading-relaxed text-[var(--layouts-operar-product-card-desc)]"
+  "rootsy-text-meta line-clamp-2 text-[var(--layouts-operar-product-card-desc)]"
 
 export const layoutsOperarProductCardPriceClass =
-  "layouts-operar-product-card-price text-base font-bold tabular-nums text-[var(--layouts-operar-product-card-price)] transition-colors duration-200"
+  "layouts-operar-product-card-price rootsy-text-metric-small text-[var(--layouts-operar-product-card-price)]"
 
 export const layoutsOperarProductCardOfferClass =
-  "absolute left-2 top-2 z-10 rounded-md bg-[var(--rootsy-sombra-900)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--rootsy-savia-600)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-600)_45%,transparent)]"
+  "absolute left-2 top-2 z-10 rounded-md bg-[var(--rootsy-sombra-900)] px-1.5 py-0.5 rootsy-text-label font-bold text-[var(--rootsy-savia-600)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-600)_45%,transparent)]"
 
 export const layoutsOperarProductCardAddClass = cn(
   "pointer-events-none absolute right-2 bottom-2 z-10 flex size-8 items-center justify-center rounded-full",
   "border border-[color-mix(in_srgb,var(--rootsy-savia-300)_45%,transparent)]",
-  "bg-[var(--rootsy-savia-600)] text-[var(--rootsy-savia-950)]",
+  "bg-[var(--rootsy-savia-500)] text-[var(--rootsy-savia-950)]",
   "opacity-0 transition-opacity duration-200 group-hover:opacity-100",
 )
 
@@ -533,9 +533,9 @@ export const layoutsOperarProductCardSelectedClass = cn(
 export const layoutsOperarProductCardSelectedAddClass = cn(
   "pointer-events-none absolute right-2 bottom-2 z-10 flex size-8 items-center justify-center rounded-full",
   "border border-[color-mix(in_srgb,var(--rootsy-savia-200)_55%,transparent)]",
-  "bg-[var(--rootsy-savia-600)] text-[var(--rootsy-savia-950)]",
+  "bg-[var(--rootsy-savia-500)] text-[var(--rootsy-savia-950)]",
   "opacity-100 translate-y-0 scale-100",
-  "shadow-[0_2px_8px_color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)]",
+  "shadow-[0_2px_8px_color-mix(in_srgb,var(--rootsy-savia-500)_35%,transparent)]",
 )
 
 /** Barra de contexto del paso activo — título + resumen en una línea. */
@@ -642,7 +642,7 @@ export const layoutsOperarToolboxSlotFocusRingClass =
 export function layoutsOperarToolboxSlotClass(configured: boolean, active = false) {
   return cn(
     rootsyLayoutsEarthFloorSlotClass,
-    "group flex h-full min-h-[var(--layouts-operar-toolbox-slot-min-h)] w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left sm:min-h-[var(--layouts-operar-toolbox-slot-min-h-sm)] sm:gap-3 sm:px-3",
+    "group flex h-full min-h-[var(--layouts-operar-toolbox-slot-min-h)] w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left sm:min-h-[var(--layouts-operar-toolbox-slot-min-h-sm)] sm:gap-3 sm:px-3",
     "focus-visible:outline-none",
     configured && rootsyLayoutsEarthFloorSlotConfiguredClass,
     active
@@ -653,7 +653,7 @@ export function layoutsOperarToolboxSlotClass(configured: boolean, active = fals
 
 export const layoutsOperarToolboxSlotMetaClass = cn(
   rootsyLayoutsEarthFloorSlotMetaClass,
-  "mt-0.5 block truncate text-[11px] font-medium",
+  "mt-0.5 block truncate rootsy-text-meta",
 )
 
 export function layoutsOperarToolboxIconWrapClass(_configured: boolean) {

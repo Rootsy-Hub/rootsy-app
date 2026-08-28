@@ -138,6 +138,14 @@
   letter-spacing: var(--rootsy-text-heading-tracking);
 }
 
+.rootsy-text-heading-xsmall {
+  font-family: var(--rootsy-font-ui);
+  font-size: var(--rootsy-text-heading-xsmall-size);
+  line-height: var(--rootsy-text-heading-xsmall-lh);
+  font-weight: var(--rootsy-font-weight-bold);
+  letter-spacing: var(--rootsy-text-heading-tracking);
+}
+
 .rootsy-text-metric {
   font-family: var(--rootsy-font-numeric);
   font-size: var(--rootsy-text-metric-large-size);

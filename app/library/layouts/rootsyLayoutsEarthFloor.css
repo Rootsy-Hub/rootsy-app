@@ -9,33 +9,34 @@
 }
 
 /**
- * Slots toolbox — misma hoja que las cards: 800, lift 2px.
- * Cargado = secondary oscuro: fondo 950 · líneas savia · valor/meta savia · label apagado.
+ * Slots toolbox — misma hoja que las cards: 800 sobre banda 950.
+ * Cargado: solo el ícono es savia. Valor en tinta 50. Meta muted.
  */
 
 .layouts-operar-earth-slot {
-  --earth-slot-idle-bg: var(--rootsy-sombra-950);
-  --earth-slot-idle-hover-bg: var(--rootsy-sombra-950);
-  --earth-slot-idle-pressed-bg: var(--rootsy-sombra-950);
-  --earth-slot-idle-ink: color-mix(in srgb, var(--rootsy-sombra-500) 70%, transparent);
-  --earth-slot-idle-hover-ink: var(--rootsy-sombra-300);
+  --earth-slot-idle-bg: var(--rootsy-sombra-800);
+  --earth-slot-idle-hover-bg: var(--rootsy-sombra-800);
+  --earth-slot-idle-pressed-bg: var(--rootsy-sombra-800);
+  --earth-slot-idle-ink: color-mix(in srgb, var(--rootsy-sombra-400) 78%, transparent);
+  --earth-slot-idle-hover-ink: var(--rootsy-sombra-200);
   --earth-slot-idle-shadow: none;
   --earth-slot-idle-hover-shadow:
-    0 6px 16px color-mix(in srgb, var(--rootsy-sombra-950) 62%, transparent),
+    0 6px 16px color-mix(in srgb, var(--rootsy-negro) 62%, transparent),
     0 1px 0 color-mix(in srgb, var(--rootsy-sombra-50) 5%, transparent);
   --earth-slot-idle-pressed-shadow: none;
-  --earth-slot-sprout-bg: var(--rootsy-sombra-950);
-  --earth-slot-sprout-hover-bg: var(--rootsy-sombra-950);
-  --earth-slot-sprout-pressed-bg: var(--rootsy-sombra-950);
+  --earth-slot-sprout-bg: var(--rootsy-sombra-800);
+  --earth-slot-sprout-hover-bg: var(--rootsy-sombra-800);
+  --earth-slot-sprout-pressed-bg: var(--rootsy-sombra-800);
   --earth-slot-sprout-shadow: none;
   --earth-slot-sprout-hover-shadow:
-    0 6px 16px color-mix(in srgb, var(--rootsy-sombra-950) 62%, transparent),
+    0 6px 16px color-mix(in srgb, var(--rootsy-negro) 62%, transparent),
     0 1px 0 color-mix(in srgb, var(--rootsy-sombra-50) 5%, transparent);
   --earth-slot-sprout-pressed-shadow: none;
 
   position: relative;
   z-index: 1;
-  border: 1px solid var(--rootsy-sombra-800);
+  border: 1px solid var(--rootsy-sombra-700);
+  border-radius: var(--radius-xlarge, 16px);
   background: var(--earth-slot-idle-bg);
   box-shadow: var(--earth-slot-idle-shadow);
   transform: translateY(0);
@@ -62,29 +63,29 @@
 }
 
 .layouts-operar-earth-slot.is-configured {
-  border-color: var(--rootsy-savia-700);
+  border-color: var(--rootsy-sombra-700);
   background: var(--earth-slot-sprout-bg);
   box-shadow: var(--earth-slot-sprout-shadow);
 }
 
 .layouts-operar-earth-slot.is-configured:hover {
   background: var(--earth-slot-sprout-hover-bg);
-  border-color: var(--rootsy-savia-700);
+  border-color: var(--rootsy-sombra-700);
   box-shadow: var(--earth-slot-sprout-hover-shadow);
   transform: translateY(-2px);
 }
 
 .layouts-operar-earth-slot.is-configured:enabled:active {
   background: var(--earth-slot-sprout-pressed-bg);
-  border-color: var(--rootsy-savia-700);
+  border-color: var(--rootsy-sombra-800);
   box-shadow: var(--earth-slot-sprout-pressed-shadow);
   transform: translateY(0);
 }
 
 .layouts-operar-earth-slot-icon {
-  background: var(--rootsy-sombra-950);
+  background: var(--rootsy-sombra-900);
   color: var(--earth-slot-idle-ink);
-  box-shadow: inset 0 0 0 1px var(--rootsy-sombra-500);
+  box-shadow: inset 0 0 0 1px var(--rootsy-sombra-700);
   transition:
     background 160ms ease-out,
     color 160ms ease-out,
@@ -104,13 +105,13 @@
 
 .layouts-operar-earth-slot.is-configured .layouts-operar-earth-slot-icon {
   background: var(--rootsy-savia-500);
-  color: var(--rootsy-sombra-950);
+  color: var(--rootsy-savia-950);
   box-shadow: none;
 }
 
 .layouts-operar-earth-slot.is-configured:hover .layouts-operar-earth-slot-icon {
   background: var(--rootsy-savia-500);
-  color: var(--rootsy-sombra-950);
+  color: var(--rootsy-savia-950);
 }
 
 .layouts-operar-earth-slot-label {
@@ -128,7 +129,7 @@
 }
 
 .layouts-operar-earth-slot.is-configured .layouts-operar-earth-slot-value {
-  color: var(--rootsy-savia-500);
+  color: var(--rootsy-sombra-50);
 }
 
 .layouts-operar-earth-slot-meta {
@@ -137,7 +138,7 @@
 }
 
 .layouts-operar-earth-slot.is-configured .layouts-operar-earth-slot-meta {
-  color: var(--rootsy-savia-500);
+  color: var(--rootsy-sombra-300);
 }
 
 @media (prefers-reduced-motion: reduce) {

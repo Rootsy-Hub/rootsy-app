@@ -1,13 +1,13 @@
 /**
  * Tema POS — Sotobosque · Sombra.
- * Fondo negro · superficie 600 · elevada 500 · borde 400 · texto 50 · muted 300.
+ * Fondo negro · hoja 800 · borde 700 · texto 50 · muted 300. El 950 es aire, no vacío.
  */
 
 .rootsy-theme-pos {
   --color-fondo: var(--rootsy-negro);
-  --color-superficie: var(--rootsy-sombra-600);
-  --color-elevada: var(--rootsy-sombra-500);
-  --color-borde: var(--rootsy-sombra-400);
+  --color-superficie: var(--rootsy-sombra-800);
+  --color-elevada: var(--rootsy-sombra-800);
+  --color-borde: var(--rootsy-sombra-700);
   --color-texto: var(--rootsy-sombra-50);
   --color-texto-muted: var(--rootsy-sombra-300);
 }

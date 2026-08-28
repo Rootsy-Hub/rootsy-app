@@ -166,7 +166,7 @@
 .rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-toolbar-control {
   height: 2.5rem;
   min-height: 2.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-large, 12px);
   border: 1px solid var(--layouts-operar-border-dark-hairline);
   background-color: var(--rootsy-sombra-950);
   box-shadow: none;
@@ -189,7 +189,7 @@
 .rootsy-theme-pos.layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control[data-state="open"],
 .rootsy-theme-pos .layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control[data-state="open"] {
   background-color: var(--rootsy-sombra-950);
-  border-color: color-mix(in srgb, var(--rootsy-savia-400) 55%, transparent);
+  border-color: var(--rootsy-sombra-600);
 }
 
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-toolbar-control:focus,

@@ -168,7 +168,7 @@ export const ROOTSY_TEXT_STYLES = {
     sizePx: 14,
     lineHeightPx: 20,
     family: "ui" as const,
-    usage: "Subtítulos en espacios reducidos.",
+    usage: "Título de producto en el catálogo y valor de slot toolbox.",
   },
   "heading.xxsmall": {
     fontSize: "0.75rem",
@@ -247,7 +247,7 @@ export const ROOTSY_TYPE_SCALE_STEPS = [
   { sizePx: 32, tokens: "heading.xxlarge" },
 ] as const
 
-/** Cinco roles del día a día. Si dudás, usá uno de estos. */
+/** Roles del día a día. Si dudás, usá uno de estos. */
 export const ROOTSY_TYPE_ROLES = [
   {
     id: "page-title",
@@ -262,6 +262,13 @@ export const ROOTSY_TYPE_ROLES = [
     sample: "Tu pedido",
     style: "heading.medium" as const,
     html: "h2",
+  },
+  {
+    id: "product-title",
+    label: "Título de producto",
+    sample: "Agua mineral",
+    style: "heading.xsmall" as const,
+    html: "h3",
   },
   {
     id: "body",
@@ -291,6 +298,7 @@ export const ROOTSY_TEXT_ROLE_CLASS = {
   pageTitle: "rootsy-text-page-title",
   sectionTitle: "rootsy-text-section-title",
   headingSmall: "rootsy-text-heading-small",
+  headingXsmall: "rootsy-text-heading-xsmall",
   body: "rootsy-text-body",
   meta: "rootsy-text-meta",
   metric: "rootsy-text-metric",

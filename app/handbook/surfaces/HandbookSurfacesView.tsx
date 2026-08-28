@@ -233,10 +233,9 @@ export function HandbookSurfacesView() {
         <h2 className={libraryDocSectionTitleClass}>Fondos</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Éter, Luz filtrada y Sombra son el lienzo. Se elige una atmósfera por
-          contexto. Encima viven superficie y elevada. En Sombra el fondo es
-          siempre 950, el paso más oscuro: no se aclara el lienzo para separar
-          zonas. En Luz filtrada la elevada es blanco; en éter y Sombra sube un
-          paso de la rampa.
+          contexto. Encima viven superficie y elevada. En Sombra el tope es
+          negro. El 950 es aire. La hoja es 800: rail, cards y slots. En Luz
+          filtrada la elevada es blanco.
         </p>
         <div className="mt-6 grid gap-3 lg:grid-cols-3">
           {HANDBOOK_SURFACE_ATMOSPHERES.map((atmosphere) => (
@@ -250,8 +249,8 @@ export function HandbookSurfacesView() {
         </p>
         <div className="mt-8">
           <LibraryDoDontPair
-            doText="Una atmósfera por pantalla. En Sombra el fondo es 950. Superficie y elevada se prenden encima. En Luz filtrada, el papel es blanco."
-            dontText="No aclares el lienzo de Sombra para separar zonas. No mezcles éter de fondo con Sombra de card."
+            doText="Una atmósfera por pantalla. En Sombra el vacío es negro, el aire 950 y la hoja 800. En Luz filtrada, el papel es blanco."
+            dontText="No uses 950 como canvas de Sombra. No mezcles éter de fondo con Sombra de card. No dejes slot y banda en el mismo paso."
           />
         </div>
 

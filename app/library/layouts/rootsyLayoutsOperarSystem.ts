@@ -47,7 +47,7 @@ export const ROOTSY_LAYOUTS_OPERAR_PRINCIPLES = [
   {
     title: "Catálogo · dosel denso",
     detail:
-      "Sidebar w-64 (256px) · library-sidebar 800 + library-nav · canvas negro · cards sombra-800 · toolbox banda 950 · pairing pos-core.",
+      "Sidebar w-64 (256px) · library-sidebar 800 + library-nav · canvas negro · cards y slots 800 · toolbox banda 950 · savia solo en oficio (nav, + , ícono) · pairing pos-core.",
   },
   {
     title: "Ticket · lienzo 100 · papel blanco",
@@ -228,9 +228,9 @@ export const ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS: LayoutsOperarToolboxPropos
     pairingId: "pos-core",
     pairingLabel: "Tierra empapada + Savia viva",
     summary:
-      "Banda inset tierra empapada · slots en relieve · savia brota al configurar.",
+      "Banda inset 950 · slots hoja 800 · savia solo en el ícono al configurar.",
     uxNote:
-      "Los slots son piedras sobre el barro. Al cargar, la savia sale como raíz y hoja — la vida del mundo, no un accent.",
+      "Los slots son la misma hoja que las cards. Al cargar, prende el ícono — no el valor ni el marco.",
     recommended: true,
     bandLayout: "inset",
     bandMinHeightPx: ROOTSY_LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx,
@@ -300,7 +300,7 @@ export const ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS: LayoutsOperarProductC
     pairingId: "pos-core",
     pairingLabel: "Sombra 600 + 900 + Savia 500",
     summary:
-      "Cuerpo sombra-800 · canvas negro · precio sombra-50 · chip oferta 900+savia-600.",
+      "Cuerpo sombra-800 · canvas negro · título heading-xsmall · precio metric-small · chip label + savia-600.",
     uxNote:
       "Tarjeta plana bajo el canvas — lectura rápida en grilla densa. Alineada al dosel denso del grid.",
     recommended: true,

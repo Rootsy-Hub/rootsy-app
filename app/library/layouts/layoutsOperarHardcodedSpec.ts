@@ -493,7 +493,7 @@ export function layoutsOperarToolboxProposalSlotValueClass(
 ) {
   if (id === "bruma-ascendente") {
     return cn(
-      "block truncate text-sm font-semibold leading-snug",
+      "block truncate rootsy-text-heading-xsmall",
       configured
         ? "text-[color-mix(in_srgb,var(--rootsy-bruma-100)_94%,white)]"
         : "text-[color-mix(in_srgb,var(--rootsy-sombra-400)_72%,transparent)]",
@@ -501,13 +501,13 @@ export function layoutsOperarToolboxProposalSlotValueClass(
   }
   if (id === "cubiertas-sombra") {
     return cn(
-      "block truncate text-sm font-semibold leading-snug",
+      "block truncate rootsy-text-heading-xsmall",
       configured ? "text-[var(--rootsy-sombra-50)]" : "text-[var(--rootsy-sombra-300)]",
     )
   }
   return cn(
     rootsyLayoutsEarthFloorSlotValueClass,
-    "block truncate text-sm font-semibold leading-snug",
+    "block truncate rootsy-text-heading-xsmall",
   )
 }
 

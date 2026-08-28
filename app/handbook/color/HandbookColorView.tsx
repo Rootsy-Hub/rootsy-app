@@ -3,6 +3,7 @@ import {
   HANDBOOK_ATMOSPHERES,
   HANDBOOK_BLANCO,
   HANDBOOK_FUNCTIONAL_COLORS,
+  HANDBOOK_NEGRO,
   handbookColorHex,
 } from "@/app/handbook/color/handbookColorPalettes"
 import {
@@ -192,6 +193,39 @@ function FamilyRamp({ family }: { family: HandbookColorFamily }) {
           </tbody>
         </table>
       </div>
+    </section>
+  )
+}
+
+function NegroCallout() {
+  return (
+    <section id="negro" className="mt-8 scroll-mt-24 space-y-3">
+      <div className={cn("overflow-hidden rounded-2xl border", libraryDocBorderClass)}>
+        <div className="flex items-center gap-4 px-4 py-4">
+          <span
+            className="size-10 shrink-0 rounded-lg border"
+            style={{
+              backgroundColor: HANDBOOK_NEGRO.hex,
+              borderColor: "var(--color-borde)",
+            }}
+          />
+          <div className="min-w-0">
+            <p className={cn("font-canopy text-sm font-semibold", libraryDocPrimaryTextClass)}>
+              Negro
+            </p>
+            <p className={cn("font-numeric text-[11px] tabular-nums", libraryDocMutedTextClass)}>
+              {HANDBOOK_NEGRO.token} · {HANDBOOK_NEGRO.hex}
+            </p>
+            <p className={cn("mt-1 font-canopy text-xs leading-relaxed", libraryDocMutedTextClass)}>
+              {HANDBOOK_NEGRO.usage}
+            </p>
+          </div>
+        </div>
+      </div>
+      <LibraryDoDontPair
+        doText="Vacío negro. Aire 950. Hoja 800 en rail, cards y slots. Savia solo en oficio: nav, +, ícono cargado."
+        dontText="No uses 950 como canvas. No pintes valor, meta ni hover de toolbar con savia. No dejes el slot en 950: desaparece en la banda."
+      />
     </section>
   )
 }
@@ -817,8 +851,8 @@ export function HandbookColorView() {
       <p className={cn(libraryDocBodyClass, "mt-3", handbookDocIntroAfterClass)}>
         Esta paleta es la que usa la aplicación. Cada familia tiene once pasos,
         de 50 a 950. El paso marcado es la identidad de la familia. Luz filtrada suma un
-        blanco fuera de rampa: la luz del papel. Si un color en la aplicación no está
-        acá, no entra.
+        blanco fuera de rampa: la luz del papel. Sombra suma un negro fuera de rampa:
+        el vacío del dosel. Si un color en la aplicación no está acá, no entra.
       </p>
 
       <section
@@ -830,8 +864,8 @@ export function HandbookColorView() {
           Éter es el afuera: noche neutra, sin azul de marca. Sotobosque es un solo
           lugar con dos luces: Sombra para operar y Luz filtrada para leer. Se elige
           una atmósfera por contexto; no se mezclan como si fueran acentos. En Sombra
-          el fondo es siempre 950: el paso más oscuro. Lo que se toca se eleva; el
-          lienzo no se aclara.
+          el tope es negro. El 950 es aire, no vacío. Lo que se toca es hoja 800;
+          el lienzo no se aclara.
         </p>
         <div className="mt-6">
           <AtmosphereContextPreview />
@@ -847,6 +881,7 @@ export function HandbookColorView() {
           <div key={family.id}>
             <FamilyRamp family={family} />
             {family.id === "bruma" ? <BlancoCallout /> : null}
+            {family.id === "sombra" ? <NegroCallout /> : null}
           </div>
         ))}
       </section>
@@ -939,8 +974,8 @@ export function HandbookColorView() {
         </ul>
         <div className="mt-6">
           <LibraryDoDontPair
-            doText="CTA vivo 500 + 950. Texto y link sobre claro: profundo 700. Sobre Sombra: vivo."
-            dontText="No pongas Savia vivo sobre blanco, ni texto 50 sobre un vivo, ni Savia para pintar un fondo entero."
+            doText="CTA vivo 500 + 950. Texto y link sobre claro: profundo 700. Sobre Sombra: vivo solo en oficio — nav, botón, ícono."
+            dontText="No pongas Savia vivo sobre blanco, ni texto 50 sobre un vivo, ni Savia en precio, valor de slot o borde de hover."
           />
         </div>
 

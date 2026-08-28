@@ -530,9 +530,9 @@ function OperarPatternCopy() {
   return (
     <>
       <p className={cn(libraryDocBodyClass, "mt-4 max-w-3xl")}>
-        El canvas de operar: catálogo en Sombra, ticket en bruma. El fondo
-        es 950 — el paso más oscuro. Cards y slots se elevan encima. El mismo
-        shell cubre vender, mesas, mostrador y compras.
+        El canvas de operar: catálogo en Sombra, ticket en bruma. El vacío
+        es negro. El 950 es aire. Cards y slots son hoja 800. Savia solo en
+        oficio. El mismo shell cubre vender, mesas, mostrador y compras.
       </p>
       <div className="mt-6">
         <ComponentView
@@ -545,15 +545,15 @@ function OperarPatternCopy() {
             },
             {
               name: "OperationsModuleBody",
-              values: ["rootsy-theme-pos", "sombra-950"],
+              values: ["rootsy-theme-pos", "negro"],
             },
             {
               name: "Catálogo",
-              values: ["rail 700", "toolbar", "canvas sombra-950", "cards sombra-700"],
+              values: ["rail 800", "toolbar", "canvas negro", "cards 800"],
             },
             {
               name: "Toolbox",
-              values: ["Cliente", "Comprobante", "Pago", "Descuento"],
+              values: ["banda 950", "slots 800", "savia solo ícono"],
             },
             {
               name: "Ticket",
@@ -566,8 +566,8 @@ function OperarPatternCopy() {
       </div>
       <div className="mt-8">
         <LibraryDoDontPair
-          doText="Un solo shell de operar. Fondo 950. Se eleva lo que se toca, no se aclara el lienzo."
-          dontText="Inventar otro POS por módulo o pintar el canvas con 800, suelo o savia."
+          doText="Un solo shell. Vacío negro, hoja 800, banda 950. Savia en nav, + e ícono. Título heading-xsmall, precio metric-small."
+          dontText="No pintes canvas con 950. No dejes slots en 950. No pongas savia en precio, valor de slot o hover de toolbar."
         />
       </div>
     </>

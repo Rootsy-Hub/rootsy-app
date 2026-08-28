@@ -1,6 +1,6 @@
 /**
  * Piso de toolbox operar — Sotobosque · Sombra.
- * Banda 950 sobre el vacío negro. Encima, savia se prende en el slot.
+ * Banda 950 sobre el vacío negro. Slots 800. Savia solo en el ícono configurado.
  */
 
 import { rootsyColorHex } from "@/lib/design-system"
@@ -15,7 +15,7 @@ export const ROOTSY_LAYOUTS_EARTH_FLOOR = {
   textColor: hx("sombra", "50"),
   mutedColor: hx("sombra", "300"),
   moistureColor: hx("savia", "500"),
-  chromeToken: "sombra · banda 950 · savia 500",
+  chromeToken: "sombra · banda 950 · hoja 800 · savia solo ícono",
 } as const
 
 export const rootsyLayoutsEarthFloorSurfaceClass =

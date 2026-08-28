@@ -373,8 +373,9 @@ export function HandbookTypographyView() {
           {HANDBOOK_TYPE_SCALE.units}
         </p>
         <p className={cn(libraryDocBodyClass, "mt-3")}>
-          Cinco roles cubren casi todas las pantallas. El resto de la escala existe para marketing,
-          tiles y casos chicos — no para inventar un sexto tamaño de body.
+          Los roles del día cubren casi todas las pantallas. Título de producto
+          es heading-xsmall; el precio, metric-small. El resto de la escala existe
+          para marketing y tiles — no para inventar un tamaño de body.
         </p>
         <div className="mt-6">
           <EverydayScale />
@@ -410,8 +411,8 @@ export function HandbookTypographyView() {
         </div>
         <div className="mt-8">
           <LibraryDoDontPair
-            doText="Elegí un token de la escala. 16px para leer de corrido, 14px en componentes, 12px solo en metadata."
-            dontText="No pongas un text-[13px] ni un heading.xxsmall como párrafo. 12px no es cuerpo."
+            doText="Elegí un token de la escala. Título de card: heading-xsmall. Precio: metric-small. Meta: meta. 12px solo en metadata."
+            dontText="No pongas un text-[13px], un text-[10px] ni un text-[11px] suelto. 12px no es cuerpo."
           />
         </div>
       </section>
