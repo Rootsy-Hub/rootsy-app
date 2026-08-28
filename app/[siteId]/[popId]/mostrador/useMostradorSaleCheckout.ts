@@ -1045,14 +1045,18 @@ export function useMostradorSaleCheckout(
           setItemComentarios,
         })
       }
-      setCarrito((prev) =>
-        applyComandaSendToCart(
-          prev,
-          res.sentCartLineIds,
-          res.peels,
-          productosByKey,
-        ),
+      const nextCart = applyComandaSendToCart(
+        checkoutStateRef.current.carrito,
+        res.sentCartLineIds,
+        res.peels,
+        productosByKey,
       )
+      setCarrito(nextCart)
+      checkoutStateRef.current = {
+        ...checkoutStateRef.current,
+        carrito: nextCart,
+      }
+      await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
       setComandasOpen(false)
     },
     [counterOrderId, flushCheckoutPersist, popId, productosByKey, siteId],

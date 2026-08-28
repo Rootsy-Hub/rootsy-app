@@ -1047,14 +1047,18 @@ export function useMesasSaleCheckout(
           setItemComentarios,
         })
       }
-      setCarrito((prev) =>
-        applyComandaSendToCart(
-          prev,
-          res.sentCartLineIds,
-          res.peels,
-          productosByKey,
-        ),
+      const nextCart = applyComandaSendToCart(
+        checkoutStateRef.current.carrito,
+        res.sentCartLineIds,
+        res.peels,
+        productosByKey,
       )
+      setCarrito(nextCart)
+      checkoutStateRef.current = {
+        ...checkoutStateRef.current,
+        carrito: nextCart,
+      }
+      await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
       setComandasOpen(false)
     },
     [flushCheckoutPersist, popId, productosByKey, siteId, tableSessionId],

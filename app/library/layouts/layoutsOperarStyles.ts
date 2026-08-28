@@ -50,7 +50,9 @@ export const layoutsOperarCatalogSidebarInnerClass = cn(
 )
 
 export function layoutsOperarCatalogSidebarAsideWidthClass(open: boolean) {
-  return open ? layoutsOperarCatalogSidebarOpenWidthClass : "w-0 border-r-0"
+  return open
+    ? cn(layoutsOperarCatalogSidebarOpenWidthClass, layoutsOperarCatalogSidebarOpenMinWidthClass)
+    : "w-0 min-w-0 border-r-0"
 }
 
 /** Scope operar — activar tokens en layoutsOperarTheme.css bajo .rootsy-theme-pos. */
@@ -101,9 +103,9 @@ export const layoutsOperarCatalogColumnInMainGridClass = cn(
 
 /** Rail catálogo — inline en desktop; overlay a la izquierda en mobile. */
 export const layoutsOperarCatalogSidebarClass = cn(
-  "relative shrink-0 overflow-hidden",
+  "relative min-w-0 shrink-0 overflow-hidden",
   "border-r border-[var(--layouts-operar-border-dark-default)]",
-  "transition-[width,border-color,transform] duration-300 ease-in-out motion-reduce:transition-none",
+  "transition-[width,min-width,border-color,transform] duration-300 ease-in-out motion-reduce:transition-none",
   "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:h-full max-md:shadow-xl",
   librarySidebarClass,
 )
@@ -111,8 +113,8 @@ export const layoutsOperarCatalogSidebarClass = cn(
 export const layoutsOperarCatalogSidebarOpenClass =
   "w-[var(--layouts-operar-catalog-sidebar-w)] min-w-[var(--layouts-operar-catalog-sidebar-w)]"
 export const layoutsOperarCatalogSidebarClosedClass = cn(
-  "w-0 border-r-0",
-  "max-md:w-[var(--layouts-operar-catalog-sidebar-w)] max-md:-translate-x-full max-md:pointer-events-none",
+  "w-0 min-w-0 border-r-0",
+  "max-md:w-[var(--layouts-operar-catalog-sidebar-w)] max-md:min-w-[var(--layouts-operar-catalog-sidebar-w)] max-md:-translate-x-full max-md:pointer-events-none",
 )
 
 export const layoutsOperarCatalogRailBackdropClass = cn(
