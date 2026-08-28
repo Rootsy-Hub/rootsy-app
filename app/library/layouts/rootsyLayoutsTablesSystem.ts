@@ -9,7 +9,7 @@ import {
   ROOTSY_ELEVATION_SHADOW_TOKENS,
 } from "@/app/library/elevation/rootsyElevationSystem"
 import { ROOTSY_RADIUS_TOKENS } from "@/app/library/radius/rootsyRadiusSystem"
-import { ROOTSY_COLOR_SEMANTIC, rootsyColorHex, rootsySpacePx } from "@/lib/design-system"
+import { ROOTSY_BLANCO, ROOTSY_COLOR_SEMANTIC, rootsyColorHex, rootsySpacePx } from "@/lib/design-system"
 
 const hx = rootsyColorHex
 
@@ -45,11 +45,11 @@ export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   },
   {
     title: "Tabla bruma",
-    detail: "Head space.500 · filas space.600+100 · header bruma-100 · even blanco / odd bruma-100 · selección savia-100.",
+    detail: "Head space.500 · filas space.600+100 · header bruma-100 · líneas en blanco · selección savia-100.",
   },
   {
     title: "Claro opaco",
-    detail: "Lienzo bruma-100. Filas pares en blanco. El pie es sombra.",
+    detail: "Lienzo bruma-100. Todas las líneas en blanco. El pie es sombra.",
   },
   {
     title: "Acciones por capa",
@@ -98,7 +98,7 @@ export const ROOTSY_LAYOUTS_TABLES_TOOLBAR = {
 /** Lienzo detrás de la hoja — bruma, sin planeta oculto bajo la tabla. */
 export const ROOTSY_LAYOUTS_TABLES_ATMOSPHERE = {
   mistToken: "bruma-100 · fondo del listado",
-  planetToken: "sin planeta — la hoja es bruma",
+  planetToken: "sin planeta — la hoja es blanca",
   veilToken: "toolbar gradiente bruma 100→50→blanco",
   horizonToken: "footer sombra · superficie 600",
   productClass: "data-workspace-tables-atmosphere",
@@ -106,11 +106,11 @@ export const ROOTSY_LAYOUTS_TABLES_ATMOSPHERE = {
 
 export const ROOTSY_LAYOUTS_TABLES_BODY = {
   canvasBackground: hx("bruma", "100"),
-  tableBackground: hx("bruma", "50"),
+  tableBackground: ROOTSY_BLANCO,
   headBackground: hx("bruma", "100"),
   headTextColor: hx("bruma", "700"),
-  rowEvenBackground: hx("bruma", "50"),
-  rowOddBackground: hx("bruma", "100"),
+  rowEvenBackground: ROOTSY_BLANCO,
+  rowOddBackground: ROOTSY_BLANCO,
   rowHoverBackground: hx("savia", "50"),
   rowSelectedBackground: hx("savia", "100"),
   primaryTextColor: hx("bruma", "900"),

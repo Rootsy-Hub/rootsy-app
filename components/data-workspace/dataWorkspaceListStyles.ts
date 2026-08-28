@@ -85,12 +85,12 @@ export const workspaceTableSurfaceClass =
 export const dataWorkspaceTablesSheetFrameClass =
   "relative z-1 flex min-h-0 min-w-0 flex-1 flex-col"
 
-/** Hoja flush — tabla + piso stripe (no blanco) bajo la última fila. */
+/** Hoja flush — líneas en blanca; el piso 100 es el lienzo bajo la última fila. */
 export const dataWorkspaceTablesSheetClass = cn(
   "flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--wt-surface-stripe)]",
 )
 
-/** Piso del listado — el “otro” de las filas (stripe), no el blanco. */
+/** Piso del listado — lienzo bruma-100, no el papel. */
 export const dataWorkspaceTableBodyFloorClass = "bg-[var(--wt-surface-stripe)]"
 
 /** Cuerpo de tabla — mismo `game-scroll` que el body de los modales. */
@@ -395,7 +395,7 @@ export const workspaceTableNatureHeaderCellClass = cn(
 export const workspaceTableNatureBodyRowInactiveClass = "opacity-[0.78]"
 
 export function workspaceTableNatureBodyRowClassNames(
-  index: number,
+  _index: number,
   options?: {
     selected?: boolean
     noHover?: boolean
@@ -403,14 +403,8 @@ export function workspaceTableNatureBodyRowClassNames(
     signal?: "warning" | "danger"
   },
 ): string {
-  const isEven = index % 2 === 0
-  /** Par handbook — even superficie 50 · odd fondo 100. */
-  const rowSurface = isEven
-    ? "bg-[var(--wt-surface)]"
-    : "bg-[var(--wt-surface-stripe)]"
-  const rowSurfaceHover = isEven
-    ? "hover:!bg-[var(--wt-surface)]"
-    : "hover:!bg-[var(--wt-surface-stripe)]"
+  const rowSurface = "bg-[var(--wt-surface)]"
+  const rowSurfaceHover = "hover:!bg-[var(--wt-surface)]"
 
   return cn(
     "border-b border-[var(--wt-border)] transition-colors duration-150",

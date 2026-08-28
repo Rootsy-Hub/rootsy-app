@@ -273,15 +273,8 @@ export function getLayoutsTablesSortButtonStyle(
   }
 }
 
-export function getLayoutsTablesRowBackground(index: number, options?: { noHover?: boolean }) {
-  if (options?.noHover) {
-    return index % 2 === 0
-      ? ROOTSY_LAYOUTS_TABLES_BODY.rowEvenBackground
-      : ROOTSY_LAYOUTS_TABLES_BODY.rowOddBackground
-  }
-  return index % 2 === 0
-    ? ROOTSY_LAYOUTS_TABLES_BODY.rowEvenBackground
-    : ROOTSY_LAYOUTS_TABLES_BODY.rowOddBackground
+export function getLayoutsTablesRowBackground(_index?: number, _options?: { noHover?: boolean }) {
+  return ROOTSY_LAYOUTS_TABLES_BODY.rowEvenBackground
 }
 
 export function getLayoutsTablesBodyCellStyle() {

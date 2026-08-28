@@ -280,8 +280,7 @@ export function HandbookSurfacesView() {
                     className="h-8 border-b"
                     style={{
                       borderColor: "var(--wt-border)",
-                      backgroundColor:
-                        index % 2 === 0 ? "var(--wt-surface)" : "var(--wt-surface-stripe)",
+                      backgroundColor: "var(--wt-surface)",
                     }}
                   />
                 ))}
