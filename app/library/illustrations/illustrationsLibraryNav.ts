@@ -18,7 +18,7 @@ export const ILLUSTRATIONS_PAGE_META: Record<string, IllustrationsPageMeta> = {
     id: "illustrations",
     title: "Ilustraciones",
     description:
-      "Spots, mascota Rootsy y patrones ambient — alineados a sombra · bruma · savia.",
+      "Spots, mascota y patrones ambient. La ilustración sigue la paleta; nunca compite con un dato.",
   },
 }
 

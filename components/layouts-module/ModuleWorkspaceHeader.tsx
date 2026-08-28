@@ -9,6 +9,15 @@ import {
   isDarkChromeHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import {
+  moduleWorkspaceHeaderDividerClass,
+  moduleWorkspaceHeaderIdentityTone,
+  moduleWorkspaceHeaderIconProps,
+  moduleWorkspaceHeaderMutedClass,
+  moduleWorkspaceHeaderTitleClass,
+  moduleWorkspaceHeaderVariant,
+} from "@/components/layouts-module/moduleWorkspaceHeaderChrome"
+import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
 import { RootsIconButton } from "@/components/rootsy-button"
 import {
   RootsDropdownContent,
@@ -20,11 +29,6 @@ import { PopIdentityHeaderCompact } from "@/components/pop-identity/PopIdentityH
 import {
   menuGhostBarClass,
 } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
-import {
-  eterHeaderDividerClass,
-  eterHeaderMutedClass,
-  eterHeaderTitleClass,
-} from "@/lib/eter/eterChrome"
 import {
   getMenuCatalogItemByName,
   getMenuCatalogItemForModule,
@@ -65,6 +69,8 @@ export type ModuleWorkspaceHeaderProps = {
   userPending?: boolean
   rolePending?: boolean
   headerVariant?: DataWorkspaceHeaderVariant
+  /** Superficie del chrome. Si no se pasa, el header queda en éter. */
+  atmosphere?: RootsButtonAtmosphere
   titleAdornment?: ReactNode
   headerActions?: ReactNode
   headerMoreActions?: readonly DataWorkspaceHeaderMoreAction[]
@@ -101,6 +107,7 @@ export function ModuleWorkspaceHeader({
   userPending: userPendingProp = false,
   rolePending = false,
   headerVariant = "dark",
+  atmosphere,
   titleAdornment,
   headerActions,
   headerMoreActions,
@@ -148,21 +155,29 @@ export function ModuleWorkspaceHeader({
   const showActions = Boolean(
     headerActions || hasMoreActions || hasMobileMoreActions || sectionMenu,
   )
+  const resolvedAtmosphere = atmosphere ?? "eter"
+  const resolvedHeaderVariant = atmosphere
+    ? moduleWorkspaceHeaderVariant(atmosphere)
+    : headerVariant
+  const iconProps = moduleWorkspaceHeaderIconProps(resolvedAtmosphere)
+  const titleClass = moduleWorkspaceHeaderTitleClass(resolvedAtmosphere)
+  const dividerClass = moduleWorkspaceHeaderDividerClass(resolvedAtmosphere)
+  const identityTone = moduleWorkspaceHeaderIdentityTone(resolvedAtmosphere)
   const renderMoreMenu = (presentation: "icons" | "menu") => {
     const actions =
       presentation === "menu" ? mobileMoreActions : desktopMoreActions
     if (actions.length === 0) return null
-    const dark = isDarkChromeHeader(headerVariant)
-    const iconProps = dark
-      ? ({ semantic: "tertiary", atmosphere: "eter", size: "default" } as const)
+    const dark = isDarkChromeHeader(resolvedHeaderVariant)
+    const moreIconProps = dark
+      ? iconProps
       : ({ theme: "workspace", emphasis: "ghost", size: "default" } as const)
-    const dropdownAtmosphere = dark ? "eter" : "bruma"
+    const dropdownAtmosphere = resolvedAtmosphere
 
     if (presentation === "menu") {
       return (
         <RootsDropdownMenu>
           <RootsDropdownTrigger asChild>
-            <RootsIconButton label="Más acciones" {...iconProps}>
+            <RootsIconButton label="Más acciones" {...moreIconProps}>
               <EllipsisVertical aria-hidden />
             </RootsIconButton>
           </RootsDropdownTrigger>
@@ -200,7 +215,7 @@ export function ModuleWorkspaceHeader({
               key={action.label}
               label={action.label}
               onClick={action.onClick}
-              {...iconProps}
+              {...moreIconProps}
             >
               <Icon aria-hidden />
             </RootsIconButton>
@@ -212,15 +227,14 @@ export function ModuleWorkspaceHeader({
 
   return (
     <>
-      <MenuHeaderEntity size="module">
+      <MenuHeaderEntity size="module" atmosphere={resolvedAtmosphere}>
         <div className="flex h-full min-w-0 items-center gap-1.5 px-2 md:hidden">
           {showBack ? (
             <RootsIconButton
               size="default"
               href={backHref}
               label="Volver al menú"
-              semantic="tertiary"
-              atmosphere="eter"
+              {...iconProps}
             >
               <ArrowLeft aria-hidden />
             </RootsIconButton>
@@ -230,7 +244,7 @@ export function ModuleWorkspaceHeader({
             <RootsIconButton
               size="default"
               semantic={sidebarOpen ? "tertiary" : "destructive"}
-              atmosphere="eter"
+              atmosphere={resolvedAtmosphere}
               onClick={onToggleSidebar}
               aria-expanded={sidebarOpen}
               aria-controls="data-workspace-sidebar"
@@ -253,6 +267,7 @@ export function ModuleWorkspaceHeader({
             title={resolvedTitle}
             titleIcon={TitleIcon}
             pending={brandPending}
+            atmosphere={resolvedAtmosphere}
           />
 
           <div className="ml-auto flex shrink-0 items-center gap-0.5">
@@ -280,8 +295,7 @@ export function ModuleWorkspaceHeader({
                     size="default"
                     href={backHref}
                     label="Volver al menú"
-                    semantic="tertiary"
-                    atmosphere="eter"
+                    {...iconProps}
                   >
                     <ArrowLeft aria-hidden />
                   </RootsIconButton>
@@ -289,8 +303,7 @@ export function ModuleWorkspaceHeader({
                 {showFullscreenButton ? (
                   <RootsIconButton
                     size="default"
-                    semantic="tertiary"
-                    atmosphere="eter"
+                    {...iconProps}
                     label={
                       isFullscreen
                         ? "Salir de pantalla completa"
@@ -309,7 +322,7 @@ export function ModuleWorkspaceHeader({
                   <RootsIconButton
                     size="default"
                     semantic={sidebarOpen ? "tertiary" : "destructive"}
-                    atmosphere="eter"
+                    atmosphere={resolvedAtmosphere}
                     onClick={onToggleSidebar}
                     aria-expanded={sidebarOpen}
                     aria-controls="data-workspace-sidebar"
@@ -334,7 +347,7 @@ export function ModuleWorkspaceHeader({
                 name={popName || "—"}
                 imageUrl={popLogoSrc}
                 fallbackSeed={popName || "pop"}
-                tone="dark"
+                tone={identityTone}
                 pending={brandPending}
               />
             ) : null}
@@ -346,14 +359,14 @@ export function ModuleWorkspaceHeader({
                 {TitleIcon ? (
                   <TitleIcon
                     aria-hidden
-                    className={cn("size-5 shrink-0", eterHeaderTitleClass)}
+                    className={cn("size-5 shrink-0", titleClass)}
                     strokeWidth={1.75}
                   />
                 ) : null}
                 <h1
                   className={cn(
                     "rootsy-text-section-title truncate",
-                    eterHeaderTitleClass,
+                    titleClass,
                   )}
                 >
                   {resolvedTitle}
@@ -373,14 +386,14 @@ export function ModuleWorkspaceHeader({
               </div>
             ) : null}
             {showActions && showUser ? (
-              <div className={cn("h-6 w-px", eterHeaderDividerClass)} aria-hidden />
+              <div className={cn("h-6 w-px", dividerClass)} aria-hidden />
             ) : null}
             {showUser ? (
               <DataWorkspaceHeaderUserMenu
                 userName={userName ?? ""}
                 userAvatarSrc={userAvatarSrc}
                 isOnline={isOnline}
-                headerVariant="dark"
+                headerVariant={resolvedHeaderVariant}
                 size="compact"
                 roleLabel={subline}
                 hasResolvedRole={hasResolvedRole}
@@ -396,7 +409,7 @@ export function ModuleWorkspaceHeader({
         <div
           className={cn(
             "relative z-10 border-t px-3 py-2 md:px-6",
-            dataWorkspaceHeaderToolbarClass(headerVariant),
+            dataWorkspaceHeaderToolbarClass(resolvedHeaderVariant),
           )}
         >
           <div className={cn("mx-auto w-full", mainMaxWidthClass)}>{toolbar}</div>
@@ -411,13 +424,17 @@ function ModuleWorkspaceMobileTitle({
   title,
   titleIcon: TitleIcon,
   pending,
+  atmosphere,
 }: {
   popName?: string
   title: string | null
   titleIcon: LucideIcon | null
   pending: boolean
+  atmosphere: RootsButtonAtmosphere
 }) {
   const resolvedPopName = popName?.trim() || null
+  const titleClass = moduleWorkspaceHeaderTitleClass(atmosphere)
+  const mutedClass = moduleWorkspaceHeaderMutedClass(atmosphere)
 
   if (pending && !title && !resolvedPopName) {
     return (
@@ -437,7 +454,7 @@ function ModuleWorkspaceMobileTitle({
       {pending && !resolvedPopName ? (
         <span className={cn(menuGhostBarClass, "mb-0.5 block h-2.5 w-20")} aria-hidden />
       ) : resolvedPopName ? (
-        <p className={cn("rootsy-text-meta truncate font-medium", eterHeaderMutedClass)}>
+        <p className={cn("rootsy-text-meta truncate font-medium", mutedClass)}>
           {resolvedPopName}
         </p>
       ) : null}
@@ -446,14 +463,14 @@ function ModuleWorkspaceMobileTitle({
           {TitleIcon ? (
             <TitleIcon
               aria-hidden
-              className={cn("size-4 shrink-0", eterHeaderTitleClass)}
+              className={cn("size-4 shrink-0", titleClass)}
               strokeWidth={1.75}
             />
           ) : null}
           <h1
             className={cn(
               "rootsy-text-heading-small truncate",
-              eterHeaderTitleClass,
+              titleClass,
             )}
           >
             {title}

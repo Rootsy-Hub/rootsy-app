@@ -23,7 +23,11 @@ import {
 } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import { cn } from "@/lib/utils"
 import { popHeaderGlassBorderClass } from "@/components/layouts/popHeaderBackdropStyles"
-import { eterHeaderDropdownSurfaceClass } from "@/lib/eter/eterChrome"
+import {
+  eterHeaderBodyClass,
+  eterHeaderDropdownSurfaceClass,
+  eterHeaderMutedClass,
+} from "@/lib/eter/eterChrome"
 
 export type DataWorkspaceHeaderVariant = "default" | "dark" | "night" | "tables"
 export const nightForestSurfaceClass =
@@ -394,6 +398,26 @@ export function dataWorkspaceHeaderEdgeToggleClass(
     )
   }
   return "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+}
+
+export function dataWorkspaceHeaderIdentityNameClass(
+  headerVariant: DataWorkspaceHeaderVariant = "default",
+): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return "antialiased text-[var(--rootsy-sombra-50)]"
+  }
+  if (isNightForestHeader(headerVariant)) return eterHeaderBodyClass
+  return "antialiased text-[var(--rootsy-bruma-950)]"
+}
+
+export function dataWorkspaceHeaderIdentityMutedClass(
+  headerVariant: DataWorkspaceHeaderVariant = "default",
+): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return "text-[var(--rootsy-sombra-300)]"
+  }
+  if (isNightForestHeader(headerVariant)) return eterHeaderMutedClass
+  return "text-[var(--rootsy-bruma-700)]"
 }
 
 export function dataWorkspaceHeaderRoleLabelClass(

@@ -187,6 +187,41 @@ const FOCUS_RING_NEUTRAL = `0 0 0 2px color-mix(in srgb, ${hx("savia", "600")} 2
 const FOCUS_RING_DARK = `0 0 0 2px color-mix(in srgb, ${TEXT_ON_DARK} 14%, ${hx("savia", "400")} 6%)`
 const FOCUS_RING_ETER = `0 0 0 2px color-mix(in srgb, ${hx("eter", "100")} 22%, transparent)`
 
+/** Subtle sobre Sombra — rampa del dosel. No usa 500 ni savia en hover. */
+function getSombraSubtleAppearanceSurface(
+  state: ButtonsUiInteractionState,
+): HardcodedButtonSurface {
+  const base: HardcodedButtonSurface = {
+    backgroundColor: "transparent",
+    color: hx("sombra", "300"),
+    border: "1px solid transparent",
+    fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+  }
+
+  switch (state) {
+    case "default":
+      return base
+    case "hover":
+      return {
+        ...base,
+        backgroundColor: hx("sombra", "950"),
+        color: hx("sombra", "50"),
+      }
+    case "active":
+      return {
+        ...base,
+        backgroundColor: hx("sombra", "900"),
+        color: hx("sombra", "50"),
+      }
+    case "focus":
+      return { ...base, boxShadow: FOCUS_RING_DARK }
+    case "disabled":
+      return { ...base, opacity: 0.5 }
+    case "loading":
+      return { ...base, loadingLabel: "Cancelando…", opacity: 0.92 }
+  }
+}
+
 /** Subtle sobre éter — rampa neutra. No usa elevación de sombra. */
 function getEterSubtleAppearanceSurface(
   state: ButtonsUiInteractionState,
@@ -330,6 +365,9 @@ export function getButtonsUiAppearanceSurface(
   atmosphere?: RootsButtonAtmosphere,
 ): HardcodedButtonSurface {
   const resolvedAtmosphere = resolveRootsButtonAtmosphere({ atmosphere, theme })
+  if (appearance === "subtle" && resolvedAtmosphere === "sombra") {
+    return getSombraSubtleAppearanceSurface(state)
+  }
   if (appearance === "subtle" && resolvedAtmosphere === "eter") {
     return getEterSubtleAppearanceSurface(state)
   }

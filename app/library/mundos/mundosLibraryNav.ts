@@ -17,9 +17,9 @@ export type MundosPageMeta = {
 export const MUNDOS_PAGE_META: Record<string, MundosPageMeta> = {
   mundos: {
     id: "mundos",
-    title: "Mundos dentro de Rootsy",
+    title: "Mundos",
     description:
-      "Cada superficie del producto es un hábitat. Acá se ven habitados — no como swatches, como pantallas.",
+      "Hábitats de producto: éter, luz filtrada, sombra y los aires que no son marca. Acá se ven habitados.",
   },
 }
 
@@ -29,9 +29,9 @@ export function getMundosPageMeta(sectionId: string): MundosPageMeta | undefined
 
 export const MUNDOS_RELATED_LINKS = [
   {
-    sectionId: "colors-new-mundos",
-    label: "Color · Mundos",
-    hint: "Rampas y mapa de uso — no es esta galería.",
+    sectionId: "colors-new",
+    label: "Color",
+    hint: "Atmósferas y funcionales — el criterio de aire.",
   },
   {
     sectionId: "ui-components-mensaje-rootsy",
@@ -40,7 +40,6 @@ export const MUNDOS_RELATED_LINKS = [
   },
   { sectionId: "toast", label: "Toast", hint: "Globo vivo sobre el paisaje." },
   { sectionId: "empty-state", label: "Empty state", hint: "Ícono por mundo cuando no hay nada." },
-  { sectionId: "layouts-operar", label: "Layout · Operar", hint: "Sombra en catálogo, suelo en toolbox." },
-  { sectionId: "layouts-tables", label: "Layout · Tablas", hint: "Suelo en el pie de listados." },
-  { sectionId: "colors-new", label: "Color", hint: "Sombra, bruma, savia y climas." },
+  { sectionId: "layouts-operar", label: "Operar", hint: "Sombra en catálogo, suelo en toolbox." },
+  { sectionId: "layouts-tables", label: "Tablas", hint: "Luz filtrada en listados." },
 ] as const

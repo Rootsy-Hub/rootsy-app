@@ -34,23 +34,20 @@ export type RootsyTypeface = {
 }
 
 export const ROOTSY_TYPOGRAPHY_MANIFESTO =
-  "La tipografía de Rootsy se lee sin esfuerzo: tamaños con ritmo natural, pesos con intención clara y dos familias. Inter cubre la interfaz y los números; Nunito Sans, la prosa. El texto guía — no compite con la interfaz."
+  "La tipografía se lee sin esfuerzo. El texto guía; no compite con la interfaz. Inter para la UI y los números. Nunito Sans para la prosa."
 
 export const ROOTSY_TYPOGRAPHY_PRINCIPLES = [
   {
     title: "Se lee solo",
-    detail:
-      "Jerarquía obvia: título, contexto, cuerpo, dato. Sin saltos de tamaño ni pesos al azar.",
+    detail: "Título, contexto, cuerpo, dato. Si hay que explicar la jerarquía, está mal armada.",
   },
   {
     title: "Dos familias",
-    detail:
-      "Inter en chrome y montos, Nunito Sans en la prosa — cada fuente en su lugar.",
+    detail: "Inter en chrome y montos. Nunito Sans en la prosa. No se mezclan en la misma línea.",
   },
   {
-    title: "Pocos tamaños",
-    detail:
-      "Escala acotada sobre 16px. Si dudás, subí o bajá un nivel — no inventes valores sueltos.",
+    title: "La escala alcanza",
+    detail: "Si dudás, subí o bajá un nivel. Un px suelto no entra.",
   },
 ] as const
 

@@ -1,20 +1,16 @@
-/** Sistema de color Rootsy — navegación de la librería. */
+/** Sistema de color Rootsy — mismo mapa que el handbook. */
 export const COLOR_NEW_LIBRARY_ROOT = { id: "colors-new", label: "Color" } as const
 
 export const COLOR_NEW_LIBRARY_SUBITEMS = [
-  { id: "colors-new-semantic", label: "Semántica" },
-  { id: "colors-new-themes", label: "Temas" },
-  { id: "colors-new-pairings", label: "Complementarios" },
-  { id: "colors-new-mundos", label: "Mundos" },
-  { id: "colors-new-contrast", label: "Contraste" },
-  { id: "colors-new-accents", label: "Énfasis" },
-  { id: "colors-new-palettes", label: "Paletas" },
-  { id: "colors-new-data-viz", label: "Datos" },
-  { id: "colors-new-examples", label: "Ejemplos" },
+  { id: "colors-new-eter", label: "Éter" },
+  { id: "colors-new-bruma", label: "Luz filtrada" },
   { id: "colors-new-sombra", label: "Sombra" },
-  { id: "colors-new-bruma", label: "Bruma" },
   { id: "colors-new-savia", label: "Savia" },
-  { id: "colors-new-atmosphere", label: "Atmósfera" },
+  { id: "colors-new-cielo", label: "Cielo" },
+  { id: "colors-new-sol", label: "Sol" },
+  { id: "colors-new-lava", label: "Lava" },
+  { id: "colors-new-semantic", label: "Tokens" },
+  { id: "colors-new-contrast", label: "Contraste" },
 ] as const
 
 /** @deprecated Alias de migración. */
@@ -26,10 +22,22 @@ export const COLOR_NEW_LIBRARY_ITEMS = [
   ...COLOR_NEW_LIBRARY_SUBITEMS,
 ] as const
 
+export const COLOR_NEW_LEGACY_SECTION_IDS = [
+  "colors-new-themes",
+  "colors-new-pairings",
+  "colors-new-mundos",
+  "colors-new-accents",
+  "colors-new-palettes",
+  "colors-new-data-viz",
+  "colors-new-examples",
+  "colors-new-atmosphere",
+  "colors-new-landing",
+  "colors-new-ceniza",
+] as const
+
 export const COLOR_NEW_SECTION_IDS = [
   ...COLOR_NEW_LIBRARY_ITEMS.map((item) => item.id),
-  "colors-new-ceniza",
-  "colors-new-landing",
+  ...COLOR_NEW_LEGACY_SECTION_IDS,
 ] as const
 
 export function isColorNewLibrarySection(sectionId: string): boolean {
@@ -53,18 +61,18 @@ export const COLOR_NEW_PAGE_META: Record<string, ColorNewPageMeta> = {
     id: "colors-new",
     title: "Color",
     description:
-      "Tres familias de marca — sombra, bruma y savia — más climas de mundo (suelo, cielo, sol, éter).",
+      "Atmósferas (éter, luz filtrada, sombra) y funcionales (savia, cielo, sol, lava). Blanco y negro viven fuera de rampa.",
   },
   "colors-new-semantic": {
     id: "colors-new-semantic",
-    title: "Semántica",
+    title: "Tokens",
     description:
-      "Tokens con propósito — shell, ticket, acción savia, foco y estados funcionales.",
+      "Fondo, superficie, elevada, borde y texto por atmósfera. Acción, foco y estados con savia, cielo, sol y lava.",
   },
   "colors-new-themes": {
     id: "colors-new-themes",
     title: "Temas",
-    description: "POS, workspace, bruma oscura, marketing y librería — composiciones de las tres familias.",
+    description: "POS, workspace, bruma oscura, marketing y librería — composiciones de las atmósferas.",
   },
   "colors-new-pairings": {
     id: "colors-new-pairings",
@@ -76,12 +84,12 @@ export const COLOR_NEW_PAGE_META: Record<string, ColorNewPageMeta> = {
     id: "colors-new-mundos",
     title: "Mundos",
     description:
-      "Sombra, bruma, savia, suelo, cielo, sol y éter — dónde vive cada uno y qué no es. Bruma oscura es la misma neblina de noche.",
+      "Hábitats de producto. Las atmósferas del sistema son éter, luz filtrada y sombra.",
   },
   "colors-new-contrast": {
     id: "colors-new-contrast",
     title: "Contraste",
-    description: "Pares WCAG validados sobre sombra, bruma y hero marketing.",
+    description: "Pares WCAG validados sobre éter, luz filtrada y sombra.",
   },
   "colors-new-accents": {
     id: "colors-new-accents",
@@ -91,53 +99,74 @@ export const COLOR_NEW_PAGE_META: Record<string, ColorNewPageMeta> = {
   "colors-new-palettes": {
     id: "colors-new-palettes",
     title: "Paletas",
-    description: "Las tres rampas oficiales — sombra, bruma y savia — más suelo, cielo, sol y éter.",
+    description: "Rampas de atmósfera y funcionales — éter, bruma, sombra, savia, cielo, sol y lava.",
   },
   "colors-new-data-viz": {
     id: "colors-new-data-viz",
     title: "Visualización de datos",
-    description: "Savia, teal, sombra y bruma en gráficos; ámbar/rojo solo como funcionales.",
+    description: "Savia, cielo y sombra en gráficos; sol y lava solo como funcionales.",
   },
   "colors-new-examples": {
     id: "colors-new-examples",
     title: "Ejemplos",
     description:
-      "Color en UI real — formularios, listados, tiles POS, cards, banners y shell con tipografía, espaciado, borde, radio y elevación.",
+      "Color en UI real — formularios, listados, tiles POS, cards, banners y shell.",
+  },
+  "colors-new-eter": {
+    id: "colors-new-eter",
+    title: "Éter",
+    description:
+      "El afuera del planeta. Rampa neutra para chrome: header, menú y vacío. El clima no es cielo.",
   },
   "colors-new-sombra": {
     id: "colors-new-sombra",
-    title: "Sombra",
+    title: "Sotobosque · Sombra",
     description:
-      "Neutros oscuros con matiz bosque — bajo el dosel: rail, canvas, cards y toolbox POS.",
+      "El dosel para operar. El tope es negro. El 950 es aire. La hoja es 800: rail, toolbar, cards y slots.",
   },
   "colors-new-ceniza": {
     id: "colors-new-sombra",
-    title: "Sombra",
+    title: "Sotobosque · Sombra",
     description:
-      "Neutros oscuros con matiz bosque — bajo el dosel: rail, canvas, cards y toolbox POS.",
+      "El dosel para operar. El tope es negro. El 950 es aire. La hoja es 800: rail, toolbar, cards y slots.",
   },
   "colors-new-bruma": {
     id: "colors-new-bruma",
-    title: "Bruma",
+    title: "Sotobosque · Luz filtrada",
     description:
-      "Neblina para leer — de día en 50/100, de noche en 950/800. Ticket, tablas y workspace. Bruma oscura es variante, no familia.",
+      "El claro para leer. Workspaces, tablas, tickets y formularios. Un solo lugar, condición de lectura.",
   },
   "colors-new-savia": {
     id: "colors-new-savia",
     title: "Savia",
-    description: "Verde operativo — acción, foco y totales en todo el producto.",
+    description: "Acción, foco y progreso. Rayo 500. No pinta superficies enteras.",
+  },
+  "colors-new-cielo": {
+    id: "colors-new-cielo",
+    title: "Cielo",
+    description: "Información, orientación y contexto. No es éter ni un azul de plantilla.",
+  },
+  "colors-new-sol": {
+    id: "colors-new-sol",
+    title: "Sol",
+    description: "Atención y aviso. Calor vivo, no otoño ni plantilla de warning.",
+  },
+  "colors-new-lava": {
+    id: "colors-new-lava",
+    title: "Lava",
+    description: "Riesgo, error, bloqueo y acción destructiva. No es sol ni un rojo de dashboard.",
   },
   "colors-new-atmosphere": {
     id: "colors-new-atmosphere",
-    title: "Atmósfera",
+    title: "Atmósfera de marketing",
     description:
-      "Composición del hero — sombra + savia + auroras blur. No es una cuarta familia de color.",
+      "Composición del hero — sombra + savia + auroras blur. No es una atmósfera del sistema.",
   },
   "colors-new-landing": {
     id: "colors-new-atmosphere",
-    title: "Atmósfera",
+    title: "Atmósfera de marketing",
     description:
-      "Composición del hero — sombra + savia + auroras blur. No es una cuarta familia de color.",
+      "Composición del hero — sombra + savia + auroras blur. No es una atmósfera del sistema.",
   },
 }
 
@@ -147,12 +176,15 @@ export function getColorNewPageMeta(sectionId: string): ColorNewPageMeta | undef
 }
 
 export const COLOR_NEW_RELATED_LINKS = [
-  { sectionId: "colors-new-semantic", label: "Semántica", hint: "Tokens oficiales." },
-  { sectionId: "colors-new-themes", label: "Temas", hint: "POS · workspace · marketing." },
-  { sectionId: "colors-new-mundos", label: "Mundos", hint: "Rampas y mapa de uso." },
-  { sectionId: "mundos", label: "Mundos en producto", hint: "Éter, bruma, bruma oscura, suelo, sombra y herramientas." },
-  { sectionId: "colors-new-palettes", label: "Paletas", hint: "Tres familias." },
-  { sectionId: "colors-new-atmosphere", label: "Atmósfera", hint: "Hero marketing." },
-  { sectionId: "colors-new-sombra", label: "Sombra", hint: "Bajo el dosel." },
-  { sectionId: "colors-new", label: "Color", hint: "Visión del sistema." },
+  { sectionId: "colors-new-eter", label: "Éter", hint: "Chrome y vacío." },
+  { sectionId: "colors-new-bruma", label: "Luz filtrada", hint: "El claro para leer." },
+  { sectionId: "colors-new-sombra", label: "Sombra", hint: "El dosel para operar." },
+  { sectionId: "colors-new-savia", label: "Savia", hint: "Acción y foco." },
+  { sectionId: "colors-new-cielo", label: "Cielo", hint: "Información." },
+  { sectionId: "colors-new-sol", label: "Sol", hint: "Atención." },
+  { sectionId: "colors-new-lava", label: "Lava", hint: "Riesgo." },
+  { sectionId: "colors-new-semantic", label: "Tokens", hint: "Propósito, no familia." },
+  { sectionId: "colors-new-contrast", label: "Contraste", hint: "Pares WCAG." },
+  { sectionId: "mundos", label: "Mundos", hint: "Hábitats habitados." },
+  { sectionId: "colors-new", label: "Color", hint: "Mapa del sistema." },
 ] as const

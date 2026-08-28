@@ -2,7 +2,7 @@
 export const MOTION_LIBRARY_ROOT = { id: "motion", label: "Movimiento" } as const
 
 export const MOTION_LIBRARY_SUBITEMS = [
-  { id: "motion-applying", label: "Aplicar movimiento" },
+  { id: "motion-applying", label: "Transiciones" },
 ] as const
 
 export const MOTION_LIBRARY_ITEMS = [MOTION_LIBRARY_ROOT, ...MOTION_LIBRARY_SUBITEMS] as const
@@ -24,13 +24,13 @@ export const MOTION_PAGE_META: Record<string, MotionPageMeta> = {
     id: "motion",
     title: "Movimiento",
     description:
-      "Naturalidad, simplicidad e intuición — brisa en hover, ráfaga en modal, tokens semánticos.",
+      "Inercia creíble. Acelera y frena como un cuerpo — nunca easing de plantilla.",
   },
   "motion-applying": {
     id: "motion-applying",
-    title: "Aplicar movimiento",
+    title: "Transiciones",
     description:
-      "Tokens semánticos primero — composición custom, entradas/salidas y reduced motion.",
+      "Duraciones, curvas, entradas/salidas y reduced motion.",
   },
 }
 
@@ -41,8 +41,8 @@ export function getMotionPageMeta(sectionId: string): MotionPageMeta | undefined
 export const MOTION_RELATED_LINKS = [
   {
     sectionId: "motion-applying",
-    label: "Aplicar movimiento",
-    hint: "Semantic tokens, entradas y salidas.",
+    label: "Transiciones",
+    hint: "Duraciones, curvas, entradas y salidas.",
   },
   { sectionId: "motion", label: "Movimiento", hint: "Duración, easing y propiedades." },
   { sectionId: "spacing", label: "Espaciado", hint: "Ritmo visual complementario." },

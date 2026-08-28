@@ -1,12 +1,14 @@
 /**
- * Paleta de producto Rootsy — rampas para la librería Color (nuevo).
- * Tres familias: sombra · bruma · savia. Atmósfera = composición de marketing.
+ * Paleta de producto Rootsy — rampas para la librería Color.
+ * Atmósferas: éter · bruma (luz filtrada) · sombra.
+ * Funcionales: savia · cielo · sol · lava.
  */
 
 import {
   ROOTSY_CIELO,
   ROOTSY_ETER,
   ROOTSY_ETER_CLIMA,
+  ROOTSY_LAVA,
   ROOTSY_SOL,
   ROOTSY_SUELO,
   rootsyColorHex,
@@ -47,13 +49,13 @@ export type NatureSwatch = {
   textHex?: string
 }
 
-/** Neutros oscuros con matiz bosque — bajo el dosel: catálogo y mostrador POS. */
+/** Sotobosque · Sombra — el dosel para operar. */
 export const SOMBRA_FAMILY: NatureFamily = {
   id: "sombra",
-  title: "Sombra · oscuros bajo el dosel",
-  subtitle: "Mostrador y catálogo",
+  title: "Sotobosque · Sombra",
+  subtitle: "El dosel para operar",
   description:
-    "Carbón verdoso — no gris de oficina ni tierra cálida. El fondo es siempre 950, el paso más oscuro. Cards y slots se elevan encima. Continuidad con marketing y profundidad savia.",
+    "Sombra profunda del mismo bosque. El tope es negro, fuera de rampa. El 950 es aire. La hoja es 800: rail, toolbar, cards y slots. Savia solo en oficio.",
   steps: [
     { id: "z950", label: "950", hex: hx("sombra", "950"), usage: "★ Fondo — shell, rail, canvas y toolbox. Siempre el más oscuro." },
     { id: "z900", label: "900", hex: hx("sombra", "900"), usage: "Velos e item activo." },
@@ -69,13 +71,13 @@ export const SOMBRA_FAMILY: NatureFamily = {
 /** @deprecated Alias — usar SOMBRA_FAMILY */
 export const CENIZA_FAMILY = SOMBRA_FAMILY
 
-/** Neutros claros — neblina matinal: ticket, listados y paneles light. */
+/** Sotobosque · Luz filtrada — el claro para leer. */
 export const BRUMA_FAMILY: NatureFamily = {
   id: "bruma",
-  title: "Bruma · neblina clara",
-  subtitle: "Ticket y listados",
+  title: "Sotobosque · Luz filtrada",
+  subtitle: "El claro para leer",
   description:
-    "Off-white frío como neblina matinal — columnas de resumen, tickets y tablas workspace. De noche, los mismos pasos 950/800/50 arman Bruma oscura. Contraste limpio con sombra bajo el dosel y acentos savia.",
+    "Luz que entra entre las hojas. Workspaces, tablas, tickets y formularios. Un solo lugar, condición de lectura. No es gris slate ni Sotobosque · Sombra.",
   steps: [
     { id: "b50", label: "50", hex: hx("bruma", "50"), usage: "★ Superficie listado — ítems del ticket." },
     { id: "b100", label: "100", hex: hx("bruma", "100"), usage: "★ Panel resumen — aside TU PEDIDO." },
@@ -91,13 +93,13 @@ export const BRUMA_FAMILY: NatureFamily = {
   ],
 }
 
-/** Verde operativo — savia emerald de la pantalla Vender. */
+/** Savia — acción, foco y progreso. */
 export const SAVIA_FAMILY: NatureFamily = {
   id: "savia",
-  title: "Savia · verde operativo",
-  subtitle: "Acciones, foco y éxito",
+  title: "Savia",
+  subtitle: "Acción, foco y progreso",
   description:
-    "Emerald vivo sobre sombra — CTA Vender, botón agregar, rail activo, toolbox configurado y barra de totales. El único verde con intención en producto.",
+    "Acción principal, foco, selección, check y progreso. Rayo 500. No pinta superficies enteras. Sobre el vivo, el texto es savia 950.",
   steps: [
     { id: "s990", label: "990", hex: hx("savia", "990"), usage: "Totales POS — cierre del gradiente." },
     { id: "s975", label: "975", hex: hx("savia", "975"), usage: "★ Totales POS — inicio del gradiente." },
@@ -158,16 +160,13 @@ export const SUELO_FAMILY: NatureFamily = {
   ],
 }
 
-/**
- * Cielo — clima complementario, no familia de marca.
- * Azul cerúleo vivo: informa y abre aire sin caer en sky Tailwind ni en teal de marketing.
- */
+/** Cielo — información y contexto. */
 export const CIELO_FAMILY: NatureFamily = {
   id: "cielo",
-  title: "Cielo · azul de naturaleza",
-  subtitle: "Clima complementario",
+  title: "Cielo",
+  subtitle: "Información y contexto",
   description:
-    "Cerúleo de siesta — más vivo que el sky genérico, más azul que el teal de savia. Headers de mundo (enviada), amplitud e info de clima. No es --color-status-info.",
+    "Información, orientación y contexto. Es el cielo abierto del negocio, no el espacio. No es éter ni un azul de plantilla.",
   steps: [
     { id: "k800", label: "800", hex: ROOTSY_CIELO["800"], usage: "★ Texto sobre cielo 50/100." },
     { id: "k700", label: "700", hex: ROOTSY_CIELO["700"], usage: "Hover / pressed de mundo." },
@@ -180,16 +179,13 @@ export const CIELO_FAMILY: NatureFamily = {
   ],
 }
 
-/**
- * Sol — clima complementario, no familia de marca.
- * Amarillo sol: calor de cocina / preparando. El ámbar #D97706 se queda para aviso UX.
- */
+/** Sol — atención y aviso. */
 export const SOL_FAMILY: NatureFamily = {
   id: "sol",
-  title: "Sol · amarillo vivo",
-  subtitle: "Clima complementario",
+  title: "Sol",
+  subtitle: "Atención y aviso",
   description:
-    "Sol a través del dosel — amarillo oro, no otoño naranja ni warning. Calor de “preparando” y mundos cálidos. El ámbar funcional no se toca.",
+    "Atención, aviso y algo que requiere mirada. Calor vivo, no otoño ni plantilla de warning. No es lava.",
   steps: [
     { id: "o800", label: "800", hex: ROOTSY_SOL["800"], usage: "★ Texto sobre sol 50/100." },
     { id: "o700", label: "700", hex: ROOTSY_SOL["700"], usage: "Hover de mundo." },
@@ -202,16 +198,13 @@ export const SOL_FAMILY: NatureFamily = {
   ],
 }
 
-/**
- * Éter — chrome del header, no familia de marca.
- * El espacio fuera del planeta: rampa neutra para chrome, clima para el vacío.
- */
+/** Éter — el afuera del planeta. */
 export const ETER_FAMILY: NatureFamily = {
   id: "eter",
-  title: "Éter · espacio fuera del planeta",
-  subtitle: "Chrome de header",
+  title: "Éter",
+  subtitle: "El afuera del planeta",
   description:
-    "Rampa neutra para controles. No es sombra ni cielo. El vacío, el horizonte y las estrellas son clima (glow / void).",
+    "Rampa neutra para lo que se toca: texto, borde, botón, dropdown. El aire del fondo — home y headers — usa el clima (glow / void), no esta rampa. El clima no es cielo.",
   steps: [
     { id: "t950", label: "950", hex: ROOTSY_ETER["950"], usage: "★ Fondo de chrome. El cierre del mundo es void-950." },
     { id: "t900", label: "900", hex: ROOTSY_ETER["900"], usage: "★ Elevada / menú." },
@@ -222,11 +215,42 @@ export const ETER_FAMILY: NatureFamily = {
   ],
 }
 
-/** Paletas del grupo Color (nuevo) — tres familias de marca. */
-export const COLOR_NEW_FAMILIES: NatureFamily[] = [
-  SOMBRA_FAMILY,
+/** Lava — riesgo y lo que no se deshace. */
+export const LAVA_FAMILY: NatureFamily = {
+  id: "lava",
+  title: "Lava",
+  subtitle: "Riesgo y lo que no se deshace",
+  description:
+    "Riesgo, error, bloqueo y acción destructiva. Tiene calor de volcán, no el rojo de un dashboard. No es sol.",
+  steps: [
+    { id: "l950", label: "950", hex: ROOTSY_LAVA["950"], usage: "Texto sobre Lava vivo." },
+    { id: "l800", label: "800", hex: ROOTSY_LAVA["800"], usage: "Texto profundo sobre tint si el 700 no alcanza." },
+    { id: "l700", label: "700", hex: ROOTSY_LAVA["700"], usage: "Profundo — texto y links sobre Luz filtrada." },
+    { id: "l600", label: "600", hex: ROOTSY_LAVA["600"], usage: "Hover del vivo." },
+    { id: "l500", label: "500", hex: ROOTSY_LAVA["500"], usage: "★ Vivo — relleno de riesgo y crítico." },
+    { id: "l200", label: "200", hex: ROOTSY_LAVA["200"], usage: "Borde suave de alerta." },
+    { id: "l100", label: "100", hex: ROOTSY_LAVA["100"], usage: "Banner y fila de riesgo." },
+    { id: "l50", label: "50", hex: ROOTSY_LAVA["50"], usage: "Fondo de error suave." },
+  ],
+}
+
+export const COLOR_NEW_ATMOSPHERES: NatureFamily[] = [
+  ETER_FAMILY,
   BRUMA_FAMILY,
+  SOMBRA_FAMILY,
+]
+
+export const COLOR_NEW_FUNCTIONALS: NatureFamily[] = [
   SAVIA_FAMILY,
+  CIELO_FAMILY,
+  SOL_FAMILY,
+  LAVA_FAMILY,
+]
+
+/** Paletas del grupo Color — atmósferas y funcionales. */
+export const COLOR_NEW_FAMILIES: NatureFamily[] = [
+  ...COLOR_NEW_ATMOSPHERES,
+  ...COLOR_NEW_FUNCTIONALS,
 ]
 
 export const COLOR_NEW_GRADIENTS: NatureGradient[] = [

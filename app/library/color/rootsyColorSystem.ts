@@ -120,51 +120,46 @@ export type ProductEmphasisFamily = {
 }
 
 export const ROOTSY_COLOR_CONCEPT = {
-  title: "Un ecosistema de luz y sombra",
+  title: "Atmósferas y funcionales",
   lead:
-    "Rootsy no pinta interfaces: traduce un parque digital. Hay zonas bajo el dosel, neblina que aclara el camino y savia que marca dónde actuar.",
+    "Las atmósferas pintan el aire de la pantalla. Los funcionales dicen qué está ocurriendo. Si un color no ordena, no entra.",
   why: [
-    "Cada color nombra una sensación del mundo de la mascota — no un hex suelto ni un gris de dashboard.",
-    "Claro y oscuro comparten el mismo matiz bosque: la bruma del ticket y la sombra del catálogo son el mismo ecosistema.",
-    "Savia es el único verde con intención — vida, acción, foco. Todo lo demás es neutro con alma natural.",
+    "Éter, luz filtrada y sombra son el lienzo. Una atmósfera por pantalla.",
+    "Savia acciona. Cielo informa. Sol avisa. Lava bloquea o destruye.",
+    "Blanco y negro viven fuera de rampa. No se inventan verdes, grises ni degradados sueltos.",
   ],
   closing:
-    "Si el usuario ya recorrió el parque una vez, los colores le resultan familiares antes de leer una etiqueta.",
+    "Savia donde hay acción. Luz filtrada donde se lee. Sombra donde se contiene. Éter donde se abre el espacio.",
 } as const
 
 export const ROOTSY_COLOR_MANIFESTO =
-  "Tres familias, un ecosistema. Sombra es el dosel — oscuro con alma de bosque; bruma es la neblina que aclara; savia es la vida que acciona. El hero de marketing no es una cuarta paleta: es la misma noche (sombra) con savia encendida y auroras de atmósfera."
+  "Las atmósferas pintan el aire: éter, luz filtrada y sombra. Los funcionales dicen qué ocurre: savia, cielo, sol y lava. Blanco y negro viven fuera de rampa. Si un color no ordena, no entra."
 
 export const ROOTSY_COLOR_PRINCIPLES = [
   {
-    title: "Tres familias, roles fijos",
+    title: "Una atmósfera por pantalla",
     detail:
-      "Sombra, bruma y savia no se intercambian. Cada una responde a una superficie o acción del producto.",
+      "Éter, Luz filtrada o Sombra pintan el lienzo. Fondo, superficie y elevada del mismo aire. No se mezcla éter con sombra.",
   },
   {
-    title: "Un verde operativo",
+    title: "Funcionales para lo que ocurre",
     detail:
-      "Savia es el verde de acción en POS y workspace. En marketing el CTA puede ir a savia 500→teal — misma familia, más luminosa.",
+      "Savia acciona y enfoca. Cielo informa. Sol avisa. Lava bloquea o destruye. No se disfrazan de atmósfera.",
   },
   {
-    title: "Un eje verde-bosque",
+    title: "Savia no pinta superficies",
     detail:
-      "Sombra lleva carbón verdoso; bruma es neblina fría. Sin slate azulado de dashboard genérico.",
+      "El vivo es acción y foco. Sobre el vivo, el texto es savia 950. Sobre luz filtrada, el profundo es 700.",
   },
   {
     title: "Contraste como requisito",
     detail:
-      "Texto bruma 900 sobre bruma 100; inverso sobre sombra 500+. Savia 600 lleva blanco en CTAs.",
+      "Texto con los tokens de la atmósfera. WCAG AA. Un hex suelto no entra.",
   },
   {
-    title: "Estados fuera de la marca",
+    title: "Hábitats, no una cuarta marca",
     detail:
-      "Aviso, peligro e info usan ámbar, rojo y teal funcionales — no son familias del sistema, solo semántica UX.",
-  },
-  {
-    title: "Atmósfera aislada",
-    detail:
-      "Aurora neón (#25FE02) vive solo en blur del hero. Nunca texto, borde ni botón sólido.",
+      "Suelo, bruma oscura y herramientas cambian el aire de una pantalla. No inventan una familia nueva.",
   },
 ] as const
 

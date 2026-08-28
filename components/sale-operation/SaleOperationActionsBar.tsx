@@ -174,8 +174,8 @@ export function SaleOperationActionsBar({
       <div className="flex h-full w-full items-center justify-center gap-[var(--rootsy-space-300)]">
         <RootsIconButton
           label="Descartar"
-          theme="workspace"
-          emphasis="outlined"
+          semantic="destructiveSubtle"
+          atmosphere="bruma"
           size="large"
           sizeChildren={false}
           disabled={discardDisabled}

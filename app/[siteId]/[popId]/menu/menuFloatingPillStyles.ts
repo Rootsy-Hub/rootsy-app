@@ -18,7 +18,7 @@ export const menuHeaderRowClass = cn(
 
 /** Header de módulo — mismo grid, menos aire a los costados. */
 export const menuModuleHeaderRowClass = cn(
-  "grid h-full min-w-0 min-h-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1.2fr)] items-center gap-2 px-3 lg:gap-4 lg:px-4",
+  "grid h-full min-w-0 min-h-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 lg:gap-4 lg:px-4",
 )
 
 /** Fila simple del header home — misma altura fija, layout de una sola banda. */

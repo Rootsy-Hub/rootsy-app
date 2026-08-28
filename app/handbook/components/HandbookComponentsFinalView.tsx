@@ -36,6 +36,7 @@ import {
   type ComponentViewRenderContext,
 } from "@/components/ComponentView"
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
+import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
 import { MenuSidebar } from "@/components/MenuSidebar"
 import { RootsIconButton } from "@/components/rootsy-button"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
@@ -172,6 +173,7 @@ function HeaderFinalSpecimen() {
         background={ETER}
         componentName="ModuleWorkspaceHeader"
         componentProperties={[
+          { name: "atmosphere", values: ["eter", "sombra", "bruma"] },
           { name: "backHref", values: ["string", "undefined"] },
           { name: "title", values: ["string", "undefined"] },
           { name: "titleIcon", values: ["LucideIcon", "undefined"] },
@@ -188,7 +190,11 @@ function HeaderFinalSpecimen() {
           { name: "canCollapseSidebar", values: ["true", "false"] },
           { name: "sidebarOpen", values: ["true", "false"] },
         ]}
-        variants={[{ name: "Módulo" }]}
+        variants={[
+          { name: "Sotobosque" },
+          { name: "Sombra" },
+          { name: "Luz" },
+        ]}
         extras={[
           {
             items: [{ name: "loaded" }, { name: "loading" }],
@@ -203,8 +209,9 @@ function HeaderFinalSpecimen() {
             items: [{ name: "ícono apagado" }, { name: "ícono prendido" }],
           },
         ]}
-        render={(_variant, extras) => (
+        render={(variant, extras) => (
           <ModuleWorkspaceHeaderSpecimen
+            atmosphere={headerAtmosphereFromVariant(variant)}
             loading={extras[0] === "loading"}
             canCollapseSidebar={extras[1] !== "sin sidebar"}
             isOnline={extras[2] !== "offline"}
@@ -270,12 +277,20 @@ function MenuPageHeaderSpecimen({
   )
 }
 
+function headerAtmosphereFromVariant(variant: string): RootsButtonAtmosphere {
+  if (variant === "Sombra") return "sombra"
+  if (variant === "Luz") return "bruma"
+  return "eter"
+}
+
 function ModuleWorkspaceHeaderSpecimen({
+  atmosphere,
   loading,
   canCollapseSidebar,
   isOnline,
   showTitleIcon,
 }: {
+  atmosphere: RootsButtonAtmosphere
   loading: boolean
   canCollapseSidebar: boolean
   isOnline: boolean
@@ -285,8 +300,15 @@ function ModuleWorkspaceHeaderSpecimen({
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   return (
-    <div className="w-full">
+    <div
+      className={cn(
+        "w-full",
+        atmosphere === "bruma" && "rootsy-theme-workspace",
+        atmosphere === "sombra" && "rootsy-theme-pos",
+      )}
+    >
       <ModuleWorkspaceHeader
+        atmosphere={atmosphere}
         backHref="/home"
         showFullscreen
         popLogoSrc={POP_PHOTO}

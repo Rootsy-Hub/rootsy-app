@@ -1,8 +1,8 @@
 /** Raíz y subsecciones de espaciado. */
-export const SPACING_LIBRARY_ROOT = { id: "spacing", label: "Espaciado" } as const
+export const SPACING_LIBRARY_ROOT = { id: "spacing", label: "Espaciado y proporciones" } as const
 
 export const SPACING_LIBRARY_SUBITEMS = [
-  { id: "spacing-primitives", label: "Primitivos de layout" },
+  { id: "spacing-primitives", label: "Proporciones" },
 ] as const
 
 export const SPACING_LIBRARY_ITEMS = [
@@ -25,13 +25,13 @@ export type SpacingPageMeta = {
 export const SPACING_PAGE_META: Record<string, SpacingPageMeta> = {
   spacing: {
     id: "spacing",
-    title: "Espaciado",
+    title: "Espaciado y proporciones",
     description:
-      "Ritmo nature sobre base 8px — rocío a horizonte, tokens antes que píxeles sueltos.",
+      "Base 8px. Proximidad, ritmo y densidad — tokens antes que píxeles sueltos.",
   },
   "spacing-primitives": {
     id: "spacing-primitives",
-    title: "Primitivos de layout",
+    title: "Proporciones",
     description:
       "Box, Inline y Stack — composición con tokens, no píxeles sueltos.",
   },
@@ -44,7 +44,7 @@ export function getSpacingPageMeta(sectionId: string): SpacingPageMeta | undefin
 export const SPACING_RELATED_LINKS = [
   {
     sectionId: "spacing-primitives",
-    label: "Primitivos de layout",
+    label: "Proporciones",
     hint: "Box, Inline y Stack en acción.",
   },
   {

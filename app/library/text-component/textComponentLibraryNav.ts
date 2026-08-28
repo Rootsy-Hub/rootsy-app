@@ -92,7 +92,7 @@ export function getTextComponentPageMeta(
 
 export const TEXT_COMPONENT_RELATED_LINKS = [
   { sectionId: "typography", label: "Tipografía", hint: "Escala, familias y tokens base." },
-  { sectionId: "typography-applying", label: "En producto", hint: "Demos tipográficas en contexto." },
+  { sectionId: "typography-applying", label: "Jerarquías", hint: "Título, contexto, cuerpo, dato." },
   { sectionId: "colors-new", label: "Color", hint: "Contraste de texto y tokens muted." },
   { sectionId: "spacing", label: "Espaciado", hint: "Ritmo entre bloques de texto." },
 ] as const

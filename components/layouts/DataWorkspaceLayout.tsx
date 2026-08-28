@@ -11,6 +11,7 @@ import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import { dataWorkspaceHeaderEdgeToggleClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts-module/ModuleWorkspaceHeader"
+import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
 import {
   ModuleWorkspaceBackdropFallback,
   moduleWorkspaceFallbackSurfaceClass,
@@ -50,6 +51,8 @@ export type DataWorkspaceLayoutProps = {
   loading?: boolean
   /** Cabecera clara o bosque nocturno (`dark` / `night`, equivalentes). */
   headerVariant?: DataWorkspaceHeaderVariant
+  /** Superficie del header. Si no se pasa, el chrome queda en éter. */
+  atmosphere?: RootsButtonAtmosphere
   /** Cabecera cristal — siempre `ModuleWorkspaceHeader`. */
   showFullscreen?: boolean
   /** En pantalla completa oculta el chrome (estación de fichaje). */
@@ -116,6 +119,7 @@ export function DataWorkspaceLayout({
   userRoleLabel,
   loading = false,
   headerVariant = "default",
+  atmosphere,
   showFullscreen = true,
   hideHeaderInFullscreen = false,
   stationLocked = false,
@@ -360,6 +364,7 @@ export function DataWorkspaceLayout({
             userPending={userPending}
             rolePending={rolePending}
             headerVariant={headerVariant}
+            atmosphere={atmosphere}
             titleAdornment={titleAdornment}
             headerActions={headerActions}
             headerMoreActions={headerMoreActions}

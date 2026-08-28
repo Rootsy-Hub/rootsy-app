@@ -57,9 +57,13 @@ export function ColorNewFoundationView({ sectionId }: Props) {
     case "colors-new-examples":
       content = <ColorNewExamplesSection />
       break
+    case "colors-new-eter":
     case "colors-new-sombra":
     case "colors-new-bruma":
     case "colors-new-savia":
+    case "colors-new-cielo":
+    case "colors-new-sol":
+    case "colors-new-lava":
     case "colors-new-atmosphere":
     case "colors-new-landing":
       content = <ColorNewFamilySection sectionId={sectionId} />

@@ -39,7 +39,7 @@ export function ColorNewSemanticSection() {
         <ColorDocSection
           id="semantic-roles"
           title="Roles en UI"
-          description="Mapeo directo a las tres familias — sombra, bruma, savia."
+          description="Mapeo a atmósferas y funcionales — no a hex sueltos."
         >
           <ProductRoleTable />
         </ColorDocSection>

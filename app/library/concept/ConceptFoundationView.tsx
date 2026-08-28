@@ -29,5 +29,5 @@ export function ConceptFoundationView({ sectionId }: Props) {
 }
 
 export function getConceptFoundationHeading(sectionId: string) {
-  return getConceptPageMeta(sectionId)?.title ?? "Concepto"
+  return getConceptPageMeta(sectionId)?.title ?? "Overview"
 }

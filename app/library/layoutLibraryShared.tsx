@@ -85,7 +85,7 @@ export type LibraryNavGroup = {
   items: LibraryNavItem[]
 }
 
-/** Navegación agrupada — orden de lectura de la librería. */
+/** Navegación agrupada — mismo mapa que el handbook · sistema de diseño. */
 export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
   {
     id: "foundation",
@@ -96,42 +96,42 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
         ...COLOR_NEW_LIBRARY_ROOT,
         children: [...COLOR_NEW_LIBRARY_SUBITEMS],
       },
-      { ...MUNDOS_LIBRARY_ROOT },
-      {
-        ...SPACING_LIBRARY_ROOT,
-        children: [...SPACING_LIBRARY_SUBITEMS],
-      },
-      {
-        ...GRID_LIBRARY_ROOT,
-        children: [...GRID_LIBRARY_SUBITEMS],
-      },
       {
         ...TYPOGRAPHY_LIBRARY_ROOT,
         children: [...TYPOGRAPHY_LIBRARY_SUBITEMS],
       },
       {
-        ...MOTION_LIBRARY_ROOT,
-        children: [...MOTION_LIBRARY_SUBITEMS],
+        ...SPACING_LIBRARY_ROOT,
+        children: [...SPACING_LIBRARY_SUBITEMS],
       },
-      { ...ICONOGRAPHY_LIBRARY_ROOT },
-      { ...ILLUSTRATIONS_LIBRARY_ROOT },
-      { ...LOGOS_LIBRARY_ROOT },
+      { ...MUNDOS_LIBRARY_ROOT },
+      {
+        ...GRID_LIBRARY_ROOT,
+        children: [...GRID_LIBRARY_SUBITEMS],
+      },
       {
         ...ELEVATION_LIBRARY_ROOT,
         children: [...ELEVATION_LIBRARY_SUBITEMS],
       },
       { ...BORDER_LIBRARY_ROOT },
       { ...RADIUS_LIBRARY_ROOT },
+      { ...ICONOGRAPHY_LIBRARY_ROOT },
       {
-        ...UI_COMPONENTS_LIBRARY_ROOT,
-        children: [...UI_COMPONENTS_LIBRARY_SUBITEMS],
+        ...MOTION_LIBRARY_ROOT,
+        children: [...MOTION_LIBRARY_SUBITEMS],
       },
+      { ...LOGOS_LIBRARY_ROOT },
+      { ...ILLUSTRATIONS_LIBRARY_ROOT },
     ],
   },
   {
     id: "components",
     label: "Componentes",
     items: [
+      {
+        ...UI_COMPONENTS_LIBRARY_ROOT,
+        children: [...UI_COMPONENTS_LIBRARY_SUBITEMS],
+      },
       {
         ...TEXT_COMPONENT_LIBRARY_ROOT,
         children: [...TEXT_COMPONENT_LIBRARY_SUBITEMS],
@@ -155,7 +155,7 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
   },
   {
     id: "layouts",
-    label: "Layouts",
+    label: "Patrones",
     items: [...LAYOUTS_LIBRARY_SUBITEMS],
   },
 ]
@@ -197,13 +197,15 @@ export function getLibraryNavGroup(sectionId: string): LibraryNavGroup | undefin
     isElevationLibrarySection(sectionId) ||
     isBorderLibrarySection(sectionId) ||
     isRadiusLibrarySection(sectionId) ||
-    isUiComponentsLibrarySection(sectionId) ||
     isLayoutsLibrarySection(sectionId)
   ) {
     if (isLayoutsLibrarySection(sectionId)) {
       return LIBRARY_NAV_GROUPS.find((group) => group.id === "layouts")
     }
     return LIBRARY_NAV_GROUPS.find((group) => group.id === "foundation")
+  }
+  if (isUiComponentsLibrarySection(sectionId)) {
+    return LIBRARY_NAV_GROUPS.find((group) => group.id === "components")
   }
   return LIBRARY_NAV_GROUPS.find((group) =>
     group.items.some(

@@ -5,7 +5,7 @@
  */
 
 export const ROOTSY_MUNDOS_MANIFESTO =
-  "Un mundo no es un color. Es el aire donde viven los controles: éter en home y headers, bruma en cuentas y cajas, bruma oscura cuando ese mismo aire se lee de noche, suelo bajo el toolbox y el pie de tablas, sombra en el catálogo y el rail de estadísticas. Herramientas de Rootsy es el claro del chat — paisaje y cristal."
+  "Un mundo no es un color. Es el aire habitado. Las atmósferas del sistema son éter, luz filtrada y sombra. Suelo, bruma oscura y herramientas son hábitats: cambian el aire de una pantalla, no inventan una cuarta marca."
 
 export type RootsyProductWorldId =
   | "eter"
@@ -31,9 +31,9 @@ export const ROOTSY_PRODUCT_WORLDS: RootsyProductWorld[] = [
   },
   {
     id: "bruma",
-    name: "Bruma",
-    usedIn: "Cuentas, cajas y workspaces claros — neblina para leer.",
-    concept: "Aire matinal. Losetas blancas sobre bruma-50. No es gris slate.",
+    name: "Luz filtrada",
+    usedIn: "Cuentas, cajas y workspaces claros — el claro para leer.",
+    concept: "Luz entre las hojas. Losetas blancas sobre bruma-50. No es gris slate ni sombra.",
   },
   {
     id: "bruma-oscura",

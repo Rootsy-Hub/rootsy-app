@@ -4,6 +4,8 @@ import {
   menuFooterEntityBodyClass,
   menuFooterEntityVeilClass,
   menuHeaderEntityBodyClass,
+  menuHeaderEntityBodyLuzClass,
+  menuHeaderEntityBodySombraClass,
   menuHeaderEntityClass,
 } from "@/app/[siteId]/[popId]/menu/menuHeaderEntityStyles"
 import "@/app/[siteId]/[popId]/menu/menuHeaderEntity.css"
@@ -11,6 +13,7 @@ import {
   menuHeaderHeightClass,
   menuModuleHeaderHeightClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -20,7 +23,15 @@ type Props = {
   size?: "home" | "module" | "dialog"
   /** header = éter · footer = suelo. */
   as?: "header" | "footer"
+  /** Superficie del header. El footer no cambia. */
+  atmosphere?: RootsButtonAtmosphere
   className?: string
+}
+
+function headerBodyClass(atmosphere: RootsButtonAtmosphere) {
+  if (atmosphere === "sombra") return menuHeaderEntityBodySombraClass
+  if (atmosphere === "bruma") return menuHeaderEntityBodyLuzClass
+  return menuHeaderEntityBodyClass
 }
 
 /** Éter arriba, suelo abajo — el umbral del mundo Rootsy. */
@@ -28,6 +39,7 @@ export function MenuHeaderEntity({
   children,
   size = "home",
   as = "header",
+  atmosphere = "eter",
   className,
 }: Props) {
   const Tag = as
@@ -41,10 +53,13 @@ export function MenuHeaderEntity({
         : menuHeaderHeightClass
 
   return (
-    <Tag className={cn(menuHeaderEntityClass, className)}>
+    <Tag
+      className={cn(menuHeaderEntityClass, className)}
+      data-rootsy-atmosphere={isFooter ? "sombra" : atmosphere}
+    >
       <div
         className={cn(
-          isFooter ? menuFooterEntityBodyClass : menuHeaderEntityBodyClass,
+          isFooter ? menuFooterEntityBodyClass : headerBodyClass(atmosphere),
           !isFooter && !isDialog && "pt-[env(safe-area-inset-top)]",
           isFooter && !isDialog && "pb-[env(safe-area-inset-bottom)]",
         )}
@@ -62,6 +77,9 @@ export function MenuHeaderEntity({
         ) : (
           <>
             <div aria-hidden className="menu-header-entity-atmosphere" />
+            {atmosphere === "sombra" ? (
+              <div aria-hidden className="menu-header-entity-soil" />
+            ) : null}
             <div aria-hidden className="menu-header-entity-horizon" />
             {isDialog ? null : (
               <div aria-hidden className="menu-header-entity-bridge" />

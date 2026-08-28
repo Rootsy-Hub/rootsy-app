@@ -1,5 +1,5 @@
 /** Sección de radio — página única en fundamentos. */
-export const RADIUS_LIBRARY_ROOT = { id: "radius", label: "Radio" } as const
+export const RADIUS_LIBRARY_ROOT = { id: "radius", label: "Radios" } as const
 
 export const RADIUS_SECTION_IDS = [RADIUS_LIBRARY_ROOT.id] as const
 
@@ -16,9 +16,9 @@ export type RadiusPageMeta = {
 export const RADIUS_PAGE_META: Record<string, RadiusPageMeta> = {
   radius: {
     id: "radius",
-    title: "Radio",
+    title: "Radios",
     description:
-      "Redondez estandarizada — de semilla a copa. Focus ring = radio del elemento + 2px.",
+      "El radio crece con el contenedor — más cerrado en datos densos, más abierto en cards y overlay.",
   },
 }
 

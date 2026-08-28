@@ -2,7 +2,7 @@
 export const ELEVATION_LIBRARY_ROOT = { id: "elevation", label: "Elevación" } as const
 
 export const ELEVATION_LIBRARY_SUBITEMS = [
-  { id: "elevation-applying", label: "Aplicar elevación" },
+  { id: "elevation-applying", label: "Interacción" },
 ] as const
 
 export const ELEVATION_LIBRARY_ITEMS = [
@@ -27,13 +27,13 @@ export const ELEVATION_PAGE_META: Record<string, ElevationPageMeta> = {
     id: "elevation",
     title: "Elevación",
     description:
-      "Profundidad con bruma y sombra — sunken, raised y overlay sin ruido visual.",
+      "Profundidad de bruma, no de teatro. Niveles, sombras y superficies — una sombra alcanza.",
   },
   "elevation-applying": {
     id: "elevation-applying",
-    title: "Aplicar elevación",
+    title: "Interacción",
     description:
-      "Tokens semánticos, z-index, estados hover/pressed y mapeo a componentes Rootsy.",
+      "Tokens semánticos, z-index, hover/pressed y mapeo a componentes.",
   },
 }
 
@@ -44,7 +44,7 @@ export function getElevationPageMeta(sectionId: string): ElevationPageMeta | und
 export const ELEVATION_RELATED_LINKS = [
   {
     sectionId: "elevation-applying",
-    label: "Aplicar elevación",
+    label: "Interacción",
     hint: "Z-index, tokens semánticos y componentes.",
   },
   { sectionId: "elevation", label: "Elevación", hint: "Niveles sunken → overlay." },

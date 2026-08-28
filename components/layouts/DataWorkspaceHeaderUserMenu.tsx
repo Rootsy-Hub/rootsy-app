@@ -7,16 +7,14 @@ import { Avatar } from "@/components/Avatar"
 import {
   dataWorkspaceHeaderDropdownLogoutItemClass,
   dataWorkspaceHeaderDropdownSeparatorClassForVariant,
+  dataWorkspaceHeaderIdentityMutedClass,
+  dataWorkspaceHeaderIdentityNameClass,
   dataWorkspaceHeaderUserDropdownContentClassForVariant,
   isDarkChromeHeader,
   isDataWorkspaceTintedHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import type { RootsIconButtonSize } from "@/components/rootsy-button/rootsButtonStyles"
-import {
-  eterHeaderBodyClass,
-  eterHeaderMutedClass,
-} from "@/lib/eter/eterChrome"
 import { initialsFromPopName } from "@/lib/popIdentityDisplay"
 import {
   RootsDropdownContent,
@@ -138,11 +136,21 @@ export function DataWorkspaceHeaderUserMenu({
               showIdentity ? identityClass : "hidden",
             )}
           >
-            <span className={cn("truncate text-sm", eterHeaderBodyClass, "font-semibold")}>
+            <span
+              className={cn(
+                "truncate text-sm font-semibold",
+                dataWorkspaceHeaderIdentityNameClass(headerVariant),
+              )}
+            >
               {userName}
             </span>
             {resolvedRoleLabel ? (
-              <span className={cn("truncate text-xs font-normal", eterHeaderMutedClass)}>
+              <span
+                className={cn(
+                  "truncate text-xs font-normal",
+                  dataWorkspaceHeaderIdentityMutedClass(headerVariant),
+                )}
+              >
                 {resolvedRoleLabel}
               </span>
             ) : rolePending ? (
