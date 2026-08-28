@@ -789,10 +789,11 @@ export const layoutsOperarSummaryCartCellClass = cn(
   "row-start-2 min-h-0 overflow-hidden",
 )
 
-/** Bloques + totales al piso; el aire queda arriba. Si hay overflow, el scroll nace abajo. */
-export const layoutsOperarTicketBlocksFloorClass = "mt-auto flex min-h-0 shrink-0 flex-col"
+/** Lista arriba. Crece si sobra aire para que el total se apoye abajo. */
+export const layoutsOperarTicketBlocksFloorClass =
+  "flex min-h-0 grow flex-col bg-[var(--rootsy-blanco)]"
 
-/** Totales al piso del pedido cuando sobra aire; si hay overflow, van al final del scroll. */
+/** Total al piso si no hay scroll. Si hay overflow, queda al final de la lista. */
 export const layoutsOperarSummaryTotalsPlacementClass = "mt-auto shrink-0"
 
 /** @deprecated Usar layoutsOperarSummaryTotalsPlacementClass + TotalBar tone operar. */
