@@ -1,6 +1,7 @@
 "use client"
 
 import { HandbookBorderView } from "@/app/handbook/border/HandbookBorderView"
+import { HandbookColorApplicationView } from "@/app/handbook/color/HandbookColorApplicationView"
 import { HandbookColorView } from "@/app/handbook/color/HandbookColorView"
 import { HandbookComponentsFinalView } from "@/app/handbook/components/HandbookComponentsFinalView"
 import { isHandbookComponentPageId } from "@/app/handbook/components/handbookComponentsSpec"
@@ -155,6 +156,8 @@ export function HandbookWorkspace() {
     ? getHandbookDesignSystemPageMeta(activeDesignSystemPageId)
     : undefined
   const isPatternsPage = isDesignSystem && activeDesignSystemPageId === "patrones"
+  const isColorApplicationPage =
+    isDesignSystem && activeDesignSystemPageId === "aplicacion-colores"
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -177,7 +180,7 @@ export function HandbookWorkspace() {
         <div
           className={cn(
             "mx-auto w-full space-y-8",
-            isPatternsPage ? "max-w-none" : "max-w-5xl",
+            isPatternsPage || isColorApplicationPage ? "max-w-none" : "max-w-5xl",
           )}
         >
           <HandbookMobileNav
@@ -200,6 +203,8 @@ export function HandbookWorkspace() {
 
           {isDesignSystem && activeDesignSystemPageId === "color" ? (
             <HandbookColorView />
+          ) : isDesignSystem && activeDesignSystemPageId === "aplicacion-colores" ? (
+            <HandbookColorApplicationView />
           ) : isDesignSystem && activeDesignSystemPageId === "tipografia" ? (
             <HandbookTypographyView />
           ) : isDesignSystem && activeDesignSystemPageId === "espaciado-y-proporciones" ? (

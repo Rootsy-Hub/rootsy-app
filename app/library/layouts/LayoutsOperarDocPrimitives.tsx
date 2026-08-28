@@ -373,7 +373,7 @@ function LayoutsOperarCatalogColumn({
       <section className={cn(layoutsOperarCatalogCanvasClass, wireframe && "relative")}>
         {composed ? <LayoutsOperarCatalogToolbar /> : null}
         {wireframe ? (
-          <LayoutHeightBadge label="canvas · negro · scroll" onDark />
+          <LayoutHeightBadge label="canvas · 950 · scroll" onDark />
         ) : composed ? (
           <LayoutsOperarProductCatalog />
         ) : null}

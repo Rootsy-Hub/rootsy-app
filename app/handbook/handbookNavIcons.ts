@@ -27,6 +27,7 @@ import {
   Newspaper,
   Package,
   Palette,
+  Paintbrush,
   Play,
   Scale,
   Sparkles,
@@ -67,6 +68,7 @@ const HANDBOOK_NAV_ICONS: Record<string, LucideIcon> = {
 const HANDBOOK_DESIGN_SYSTEM_NAV_ICONS: Record<string, LucideIcon> = {
   overview: Compass,
   color: Palette,
+  "aplicacion-colores": Paintbrush,
   tipografia: Type,
   "espaciado-y-proporciones": Move,
   layout: LayoutGrid,

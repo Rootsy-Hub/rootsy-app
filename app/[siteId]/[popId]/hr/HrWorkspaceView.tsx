@@ -68,6 +68,7 @@ import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { resolveHomeAvatarUrl } from "@/app/home/homeUserDataResolve"
 import {
   hrDashboardQueryOptions,
   invalidateHrDashboardQuery,
@@ -102,12 +103,65 @@ type ConfirmAction =
   | { kind: "return"; person: EmployeeRow }
   | { kind: "clock"; person: EmployeeRow }
 
-function memberDisplayName(member: MemberRow): string {
-  return `${member.firstName} ${member.lastName}`.trim() || "Sin nombre"
-}
-
 function personDisplayName(person: EmployeeRow): string {
   return `${person.firstName} ${person.lastName}`.trim() || "Sin nombre"
+}
+
+/** Nombre de la ficha. El perfil de Rootsy no se usa en Personal. */
+function fichaNameForMember(
+  member: MemberRow,
+  employee: EmployeeRow | undefined,
+): { firstName: string; lastName: string } {
+  if (employee) {
+    return { firstName: employee.firstName, lastName: employee.lastName }
+  }
+  return { firstName: "", lastName: "" }
+}
+
+function fichaDisplayName(
+  member: MemberRow,
+  employee: EmployeeRow | undefined,
+): string {
+  const { firstName, lastName } = fichaNameForMember(member, employee)
+  return `${firstName} ${lastName}`.trim() || "Sin nombre"
+}
+
+/** Foto del perfil de Rootsy. La ficha no tiene foto. */
+function profilePhotoUrl(
+  member: MemberRow | undefined,
+  self: { userId?: string; imageUrl?: string | null },
+): string | null {
+  const fromMember = member?.imageUrl?.trim() || ""
+  if (fromMember) return fromMember
+  if (member?.userId && self.userId && member.userId === self.userId) {
+    const fromSelf = self.imageUrl?.trim() || ""
+    if (fromSelf) return fromSelf
+  }
+  return null
+}
+
+const OWNER_SNAPSHOT_ROLE = {
+  id: "owner",
+  name: "owner",
+  displayName: "Propietario",
+  description: null,
+  isSystem: true,
+  popId: null,
+} as const
+
+function snapshotPersonFromMember(
+  member: MemberRow,
+  employee: EmployeeRow | undefined,
+  self: { userId?: string; imageUrl?: string | null },
+) {
+  const name = fichaNameForMember(member, employee)
+  return {
+    userId: member.userId,
+    firstName: name.firstName,
+    lastName: name.lastName,
+    imageUrl: profilePhotoUrl(member, self),
+    jobTitle: employee?.jobTitle ?? null,
+  }
 }
 
 function isStubPersonName(person: EmployeeRow): boolean {
@@ -163,6 +217,18 @@ function HrWorkspaceReady({
     refresh,
   } = usePopWorkspace()
   const { user } = useAuth()
+  const selfProfilePhoto = useMemo(
+    () =>
+      resolveHomeAvatarUrl(
+        bootstrap?.userImageUrl
+          ? { firstName: "", lastName: "", imageUrl: bootstrap.userImageUrl }
+          : null,
+        user ?? {},
+      ) ??
+      bootstrap?.userImageUrl ??
+      null,
+    [bootstrap?.userImageUrl, user],
+  )
 
   const hrSections = useMemo(
     () =>
@@ -309,6 +375,23 @@ function HrWorkspaceReady({
     [roles],
   )
 
+  const employeeByUserId = useMemo(() => {
+    const map = new Map<string, EmployeeRow>()
+    for (const person of employees) {
+      if (person.userId) map.set(person.userId, person)
+    }
+    return map
+  }, [employees])
+
+  const ownerMembers = useMemo(
+    () => activeMembers.filter((member) => member.isOwner),
+    [activeMembers],
+  )
+  const snapshotRoles = useMemo(
+    () => roles.filter((role) => role.name !== "owner"),
+    [roles],
+  )
+
   const membersByRoleId = useMemo(() => {
     const map = new Map<string, MemberRow[]>()
     for (const member of activeMembers) {
@@ -318,19 +401,14 @@ function HrWorkspaceReady({
     }
     for (const list of map.values()) {
       list.sort((a, b) =>
-        memberDisplayName(a).localeCompare(memberDisplayName(b), "es"),
+        fichaDisplayName(a, employeeByUserId.get(a.userId)).localeCompare(
+          fichaDisplayName(b, employeeByUserId.get(b.userId)),
+          "es",
+        ),
       )
     }
     return map
-  }, [activeMembers])
-
-  const jobTitleByUserId = useMemo(() => {
-    const map = new Map<string, string | null>()
-    for (const person of employees) {
-      if (person.userId) map.set(person.userId, person.jobTitle)
-    }
-    return map
-  }, [employees])
+  }, [activeMembers, employeeByUserId])
 
   const hrPermissionTotal = useMemo(
     () => countHrGrantedVerbs(hrSections, []).total,
@@ -339,11 +417,13 @@ function HrWorkspaceReady({
 
   const operativeRoles = useMemo(
     () =>
-      roles.map((role) => {
+      snapshotRoles.map((role) => {
         const grantKeys = roleGrantKeys[role.id]
         return {
           role,
-          peopleCount: membersByRoleId.get(role.id)?.length ?? 0,
+          peopleCount: (membersByRoleId.get(role.id) ?? []).filter(
+            (member) => !member.isOwner,
+          ).length,
           permissionGranted:
             role.popId && grantKeys
               ? countHrGrantedVerbs(hrSections, grantKeys).granted
@@ -351,7 +431,7 @@ function HrWorkspaceReady({
           permissionTotal: hrPermissionTotal,
         }
       }),
-    [roles, membersByRoleId, roleGrantKeys, hrSections, hrPermissionTotal],
+    [snapshotRoles, membersByRoleId, roleGrantKeys, hrSections, hrPermissionTotal],
   )
 
   const confirmCopy = useMemo(() => {
@@ -374,7 +454,7 @@ function HrWorkspaceReady({
     if (confirmAction.kind === "deactivate") {
       return {
         title: "Quitar acceso a Rootsy",
-        description: `¿Sacar a ${memberDisplayName(confirmAction.member)} de Rootsy en este local? Sigue en el equipo. No va a poder abrir el sistema.`,
+        description: `¿Sacar a ${fichaDisplayName(confirmAction.member, employeeByUserId.get(confirmAction.member.userId))} de Rootsy en este local? Sigue en el equipo. No va a poder abrir el sistema.`,
         confirmLabel: "Quitar acceso",
         destructive: true,
       }
@@ -382,7 +462,7 @@ function HrWorkspaceReady({
     if (confirmAction.kind === "reactivate") {
       return {
         title: "Restaurar acceso a Rootsy",
-        description: `¿${memberDisplayName(confirmAction.member)} vuelve a entrar a este local con el rol ${confirmAction.member.roleDisplayName}?`,
+        description: `¿${fichaDisplayName(confirmAction.member, employeeByUserId.get(confirmAction.member.userId))} vuelve a entrar a este local con el rol ${confirmAction.member.roleDisplayName}?`,
         confirmLabel: "Restaurar acceso",
         destructive: false,
       }
@@ -441,11 +521,11 @@ function HrWorkspaceReady({
     }
     return {
       title: "Eliminar usuario",
-      description: `¿Eliminar a ${memberDisplayName(confirmAction.member)} de este negocio? No va a figurar más en RRHH.`,
+      description: `¿Eliminar a ${fichaDisplayName(confirmAction.member, employeeByUserId.get(confirmAction.member.userId))} de este negocio? No va a figurar más en RRHH.`,
       confirmLabel: "Eliminar",
       destructive: true,
     }
-  }, [confirmAction, members])
+  }, [confirmAction, employeeByUserId, members])
 
   const closePermModal = () => {
     setPermModalOpen(false)
@@ -946,7 +1026,10 @@ function HrWorkspaceReady({
                             <HrPersonCard
                               key={person.id}
                               person={cardPerson}
-                              imageUrl={member?.imageUrl}
+                              imageUrl={profilePhotoUrl(member, {
+                                userId: user?.id,
+                                imageUrl: selfProfilePhoto,
+                              })}
                               isOwner={Boolean(member?.isOwner)}
                               isSelf={isSelf}
                               rootsyRole={
@@ -1071,29 +1154,49 @@ function HrWorkspaceReady({
                       }
                     />
                     </div>
-                    {roles.length === 0 ? (
+                    {ownerMembers.length === 0 && snapshotRoles.length === 0 ? (
                       <p className={dataWorkspaceBlocksEmptyStateClass}>
                         Cuando haya roles, acá se ve quién entra y qué puesto
                         tiene en el local.
                       </p>
                     ) : (
-                      roles.map((role) => (
-                        <HrRoleSnapshotCard
-                          key={role.id}
-                          role={role}
-                          currentUserId={user?.id}
-                          people={(membersByRoleId.get(role.id) ?? []).map(
-                            (member) => ({
-                              userId: member.userId,
-                              firstName: member.firstName,
-                              lastName: member.lastName,
-                              imageUrl: member.imageUrl,
-                              jobTitle:
-                                jobTitleByUserId.get(member.userId) ?? null,
-                            }),
-                          )}
-                        />
-                      ))
+                      <>
+                        {ownerMembers.length > 0 ? (
+                          <HrRoleSnapshotCard
+                            role={OWNER_SNAPSHOT_ROLE}
+                            currentUserId={user?.id}
+                            people={ownerMembers.map((member) =>
+                              snapshotPersonFromMember(
+                                member,
+                                employeeByUserId.get(member.userId),
+                                {
+                                  userId: user?.id,
+                                  imageUrl: selfProfilePhoto,
+                                },
+                              ),
+                            )}
+                          />
+                        ) : null}
+                        {snapshotRoles.map((role) => (
+                          <HrRoleSnapshotCard
+                            key={role.id}
+                            role={role}
+                            currentUserId={user?.id}
+                            people={(membersByRoleId.get(role.id) ?? [])
+                              .filter((member) => !member.isOwner)
+                              .map((member) =>
+                                snapshotPersonFromMember(
+                                  member,
+                                  employeeByUserId.get(member.userId),
+                                  {
+                                    userId: user?.id,
+                                    imageUrl: selfProfilePhoto,
+                                  },
+                                ),
+                              )}
+                          />
+                        ))}
+                      </>
                     )}
                   </div>
                 </DataWorkspaceBlocksSection>
@@ -1120,7 +1223,14 @@ function HrWorkspaceReady({
 
       <HrChangeRoleDialog
         open={roleMember !== null}
-        personName={roleMember ? memberDisplayName(roleMember) : ""}
+        personName={
+          roleMember
+            ? fichaDisplayName(
+                roleMember,
+                employeeByUserId.get(roleMember.userId),
+              )
+            : ""
+        }
         roles={assignableRoles}
         currentRoleId={roleMember?.roleId ?? ""}
         saving={roleSaving}

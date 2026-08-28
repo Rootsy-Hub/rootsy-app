@@ -251,14 +251,14 @@ const HANDBOOK_SECTION_META: Record<string, HandbookSectionMeta> = {
         p("Los assets y las reglas de tamaño, respiro y alt-text viven en la librería. Acá se decide cuándo aparece la marca; allá se especifica cómo se dibuja."),
       ]),
       topic("Color", [
-        p("El color de Rootsy no es una paleta decorativa. Son tres familias que nombran lugares del mundo: sombra, bruma y savia. Cada tono tiene un trabajo. Si un color no ordena, no entra."),
+        p("El color de Rootsy no es una paleta decorativa. Se organiza en dos capas: las atmósferas pintan el aire de la pantalla; los colores funcionales dicen qué está ocurriendo. Las atmósferas nombran lugares del mundo. Cada tono tiene un trabajo. Si un color no ordena, no entra."),
         ul([
-          "Sombra: el dosel. Rails, catálogos y superficies que contienen. El tope es negro. El 950 es aire. La hoja es 800. Es el bosque, no un slate genérico.",
-          "Bruma: el aire. Fondos, lectura y workspaces. De día es clara; de noche es bruma oscura — la misma neblina, no sombra.",
-          "Savia: la vida. Acción, foco y confirmación. Aparece poco, y solo donde hay que moverse.",
+          "Éter: el afuera del planeta. Header, menú y vacío. Noche neutra, sin azul de marca. Encabeza, contiene y abre espacio.",
+          "Sotobosque · Sombra: el dosel para operar. Mostrador, catálogo y rail. El tope es negro. El 950 es aire. La hoja es 800. Es el bosque, no un slate genérico.",
+          "Sotobosque · Luz filtrada: el claro para leer. Workspaces, tablas y tickets. Luz que entra entre las hojas.",
         ]),
-        p("Los colores funcionales — aviso, error, información — existen fuera de esas tres familias. No se disfrazan de savia ni de sombra. Los mundos del producto (éter, suelo, bruma oscura, herramientas) son hábitats: cambian el aire de una pantalla, no inventan una cuarta marca."),
-        p("La semántica, las rampas y los temas viven en la librería. Acá vale una sola regla: savia donde hay acción; bruma donde se lee — de día o de noche; sombra donde se contiene."),
+        p("Sotobosque es un solo lugar con dos luces: Sombra para operar, Luz filtrada para leer. Se elige una atmósfera por contexto; no se mezclan como si fueran acentos. Los colores funcionales — savia, cielo, sol, lava — no pintan el mundo. Marcan acción, estado y prioridad. Savia es el rayo: aparece poco, y solo donde hay que moverse. El vivo es el mismo en cada luz."),
+        p("La semántica, las rampas y los tokens viven en el sistema de diseño. Acá vale una sola regla: éter donde se contiene el afuera; sotobosque sombra donde se opera; sotobosque luz filtrada donde se lee; savia donde hay acción."),
       ]),
       topic("Tipografía", [
         p("La tipografía se lee sin esfuerzo. El texto guía; no compite con la interfaz. Hay dos familias: Inter para la UI y los números, Nunito Sans para la prosa."),
@@ -300,7 +300,7 @@ const HANDBOOK_SECTION_META: Record<string, HandbookSectionMeta> = {
         h3("Hacer"),
         ul([
           "Usar los assets oficiales del lockup y del logomark, sin redibujarlos.",
-          "Respetar el respiro del logo y su contraste sobre bruma, sombra o savia.",
+          "Respetar el respiro del logo y su contraste sobre éter, sotobosque o savia.",
           "Dejar que el POP se presente con su foto y su nombre.",
           "Aplicar color, tipo y forma desde la librería.",
           "Usar savia para acción y foco, no para pintar superficies enteras.",
@@ -309,7 +309,7 @@ const HANDBOOK_SECTION_META: Record<string, HandbookSectionMeta> = {
         ul([
           "Estirar, rotar, recortar o agregar sombras, brillos o contornos al logo.",
           "Reemplazar el wordmark por otra tipografía, o el tile por un círculo o un ícono genérico.",
-          "Inventar verdes, grises o degradados fuera de sombra, bruma y savia.",
+          "Inventar verdes, grises o degradados fuera de las atmósferas y los colores funcionales.",
           "Usar naturaleza, mascota o patrones como adorno de fondo.",
           "Poner a Rootsy y al negocio a competir por el mismo lugar de la pantalla.",
           "Tratar la complejidad visual como señal de calidad.",

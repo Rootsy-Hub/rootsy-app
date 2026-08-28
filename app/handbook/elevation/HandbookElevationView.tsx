@@ -1,13 +1,16 @@
 import {
+  HANDBOOK_ELEVATION_ATMOSPHERES,
   HANDBOOK_ELEVATION_DARK,
   HANDBOOK_ELEVATION_GUIDELINES,
   HANDBOOK_ELEVATION_INTERACTION,
   HANDBOOK_ELEVATION_LEVELS,
+  HANDBOOK_ELEVATION_LEVEL_COPY,
+  HANDBOOK_ELEVATION_LEVEL_SURFACES,
   HANDBOOK_ELEVATION_LIGHT,
   HANDBOOK_ELEVATION_PRINCIPLES,
   HANDBOOK_ELEVATION_SEMANTIC,
   HANDBOOK_ELEVATION_SHADOWS,
-  HANDBOOK_SUNKEN_VS_NEUTRAL,
+  type HandbookElevationAtmosphereId,
 } from "@/app/handbook/elevation/handbookElevationSpec"
 import {
   libraryDocBodyClass,
@@ -18,7 +21,6 @@ import {
   libraryDocPrimaryTextClass,
   libraryDocSectionTitleClass,
   libraryDocSubheadingClass,
-  libraryDocSurfaceMutedClass,
   libraryDocTableHeaderClass,
   libraryDocTableRowClass,
   libraryDocTableShellOverflowClass,
@@ -29,9 +31,12 @@ import {
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
 
-function Token({ children }: { children: string }) {
+function Token({ children, dark }: { children: string; dark?: boolean }) {
   return (
-    <code className={cn("text-[0.75rem] font-medium", libraryDocTokenAccentClass)}>
+    <code
+      className={cn("text-[0.75rem] font-medium", !dark && libraryDocTokenAccentClass)}
+      style={dark ? { color: "var(--rootsy-savia-400)" } : undefined}
+    >
       {children}
     </code>
   )
@@ -39,41 +44,134 @@ function Token({ children }: { children: string }) {
 
 function ElevationCard({
   level,
+  atmosphere,
 }: {
   level: (typeof HANDBOOK_ELEVATION_LEVELS)[number]
+  atmosphere: HandbookElevationAtmosphereId
 }) {
-  const isRaised = level.id === "raised"
-  const isOverlay = level.id === "overlay"
-  const isSunken = level.id === "sunken"
-  const isBordered = level.id === "default-bordered"
+  const surface = HANDBOOK_ELEVATION_LEVEL_SURFACES[atmosphere][level.id]
+  const copy = HANDBOOK_ELEVATION_LEVEL_COPY[atmosphere][level.id]
+  const isDark = atmosphere === "sombra"
+
   return (
     <div
       className="rounded-2xl px-4 py-4"
       style={{
-        background: isSunken
-          ? "var(--rootsy-bruma-50)"
-          : isOverlay || isRaised
-            ? "var(--color-superficie)"
-            : "var(--rootsy-bruma-100)",
-        border: isBordered ? "1px solid var(--color-borde)" : "1px solid transparent",
-        boxShadow: isRaised
-          ? "0 1px 2px rgb(5 8 7 / 0.07), 0 4px 14px rgb(5 8 7 / 0.08)"
-          : isOverlay
-            ? "0 22px 70px -18px rgb(5 8 7 / 0.28)"
-            : undefined,
+        background: surface?.background,
+        border: surface?.border ?? "1px solid transparent",
+        boxShadow: surface?.boxShadow,
       }}
     >
-      <p className={libraryDocMetaLabelClass}>{level.natureName}</p>
-      <p className={cn(libraryDocSectionTitleClass, "mt-1 text-sm")}>{level.label}</p>
+      <p
+        className={libraryDocMetaLabelClass}
+        style={isDark ? { color: "var(--rootsy-sombra-400)" } : undefined}
+      >
+        {level.natureName}
+      </p>
+      <p
+        className={cn(libraryDocSectionTitleClass, "mt-1 text-sm")}
+        style={isDark ? { color: "var(--rootsy-sombra-50)" } : undefined}
+      >
+        {level.label}
+      </p>
       <p className="mt-2">
-        <Token>{level.token}</Token>
+        <Token dark={isDark}>{level.token}</Token>
       </p>
-      <p className={cn("mt-2 font-stream text-xs leading-relaxed", libraryDocMutedTextClass)}>
-        {level.usage}
+      <p
+        className={cn("mt-2 font-stream text-xs leading-relaxed", libraryDocMutedTextClass)}
+        style={isDark ? { color: "var(--rootsy-sombra-300)" } : undefined}
+      >
+        {copy?.usage ?? level.usage}
       </p>
-      {level.pairRule ? (
-        <p className={cn("mt-2 font-stream text-xs", libraryDocMutedTextClass)}>{level.pairRule}</p>
+      {copy?.pairRule || level.pairRule ? (
+        <p
+          className={cn("mt-2 font-stream text-xs", libraryDocMutedTextClass)}
+          style={isDark ? { color: "var(--rootsy-sombra-300)" } : undefined}
+        >
+          {copy?.pairRule ?? level.pairRule}
+        </p>
       ) : null}
+    </div>
+  )
+}
+
+function ElevationAtmosphereBlock({
+  atmosphere,
+}: {
+  atmosphere: (typeof HANDBOOK_ELEVATION_ATMOSPHERES)[number]
+}) {
+  const isDark = atmosphere.id === "sombra"
+
+  return (
+    <div className="mt-8 first:mt-6">
+      <h3 id={atmosphere.headingId} className={libraryDocSubheadingClass}>
+        {atmosphere.name}
+      </h3>
+      <div
+        className={cn("mt-4 rounded-3xl p-6", atmosphere.themeClass)}
+        style={{ background: atmosphere.stage }}
+      >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {HANDBOOK_ELEVATION_LEVELS.filter((level) => level.id !== "overflow").map((level) => (
+            <ElevationCard key={level.id} level={level} atmosphere={atmosphere.id} />
+          ))}
+        </div>
+      </div>
+      <h4
+        className={cn(libraryDocSubheadingClass, "mt-8 text-base")}
+      >
+        Sunken vs transparente
+      </h4>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div
+          className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}
+          style={
+            isDark
+              ? {
+                  background: "var(--rootsy-sombra-800)",
+                  borderColor: "var(--rootsy-sombra-700)",
+                }
+              : undefined
+          }
+        >
+          <p
+            className={cn(libraryDocSectionTitleClass, "text-sm")}
+            style={isDark ? { color: "var(--rootsy-sombra-50)" } : undefined}
+          >
+            Sunken
+          </p>
+          <p
+            className={cn("mt-2 font-stream text-sm leading-relaxed", libraryDocMutedTextClass)}
+            style={isDark ? { color: "var(--rootsy-sombra-300)" } : undefined}
+          >
+            {atmosphere.sunkenVs.sunken}
+          </p>
+        </div>
+        <div
+          className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}
+          style={
+            isDark
+              ? {
+                  background: "var(--rootsy-sombra-800)",
+                  borderColor: "var(--rootsy-sombra-700)",
+                }
+              : undefined
+          }
+        >
+          <p
+            className={cn(libraryDocSectionTitleClass, "text-sm")}
+            style={isDark ? { color: "var(--rootsy-sombra-50)" } : undefined}
+          >
+            Neutro
+          </p>
+          <p
+            className={cn("mt-2 font-stream text-sm leading-relaxed", libraryDocMutedTextClass)}
+            style={isDark ? { color: "var(--rootsy-sombra-300)" } : undefined}
+          >
+            {atmosphere.sunkenVs.neutral}
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
@@ -102,33 +200,11 @@ export function HandbookElevationView() {
         <h2 className={libraryDocSectionTitleClass}>Niveles</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Del suelo al dosel. Sunken agrupa. Default trabaja. Raised pide un foco. Overlay
-          interrumpe.
+          interrumpe. La misma escala en las dos luces del sotobosque.
         </p>
-        <div
-          className={cn("mt-6 rounded-3xl p-6", libraryDocSurfaceMutedClass)}
-          style={{ background: "var(--rootsy-bruma-100)" }}
-        >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {HANDBOOK_ELEVATION_LEVELS.filter((level) => level.id !== "overflow").map((level) => (
-              <ElevationCard key={level.id} level={level} />
-            ))}
-          </div>
-        </div>
-        <h3 className={cn(libraryDocSubheadingClass, "mt-8")}>Sunken vs transparente</h3>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
-            <p className={cn(libraryDocSectionTitleClass, "text-sm")}>Sunken</p>
-            <p className={cn("mt-2 font-stream text-sm leading-relaxed", libraryDocMutedTextClass)}>
-              {HANDBOOK_SUNKEN_VS_NEUTRAL.sunken}
-            </p>
-          </div>
-          <div className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
-            <p className={cn(libraryDocSectionTitleClass, "text-sm")}>Neutro</p>
-            <p className={cn("mt-2 font-stream text-sm leading-relaxed", libraryDocMutedTextClass)}>
-              {HANDBOOK_SUNKEN_VS_NEUTRAL.neutral}
-            </p>
-          </div>
-        </div>
+        {HANDBOOK_ELEVATION_ATMOSPHERES.map((atmosphere) => (
+          <ElevationAtmosphereBlock key={atmosphere.id} atmosphere={atmosphere} />
+        ))}
       </section>
 
       <section id="sombras" className={handbookDocChapterClass}>

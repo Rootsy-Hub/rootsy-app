@@ -552,7 +552,7 @@ function OperarPatternCopy() {
             },
             {
               name: "Catálogo",
-              values: ["rail 800", "toolbar", "canvas negro", "cards 800"],
+              values: ["rail 800", "toolbar", "canvas 950", "cards negro"],
             },
             {
               name: "Toolbox",

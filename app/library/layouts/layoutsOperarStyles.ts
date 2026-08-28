@@ -144,9 +144,9 @@ export const layoutsOperarWireframeSummaryPanelClass = cn(
   "border-l border-[var(--layouts-operar-border-split)]",
 )
 
-/** Canvas productos — vacío negro. Cards 800 encima. */
+/** Canvas productos — aire sombra-950. Cards negro encima. */
 export const layoutsOperarCatalogCanvasClass = cn(
-  "grid min-h-0 min-w-0 flex-1 bg-[var(--rootsy-negro)]",
+  "grid min-h-0 min-w-0 flex-1 bg-[var(--rootsy-sombra-950)]",
   "[grid-template-rows:var(--layouts-operar-catalog-rows)]",
 )
 
@@ -425,8 +425,8 @@ export const layoutsOperarCatalogEmptyTitleClass =
 export const layoutsOperarCatalogEmptyHintClass =
   "mt-1 font-canopy text-xs leading-snug text-[color-mix(in_srgb,var(--rootsy-sombra-300)_88%,transparent)]"
 
-/** Skeleton catálogo — 2 tonos sombra muy cercanos (800 base · bloque apenas más oscuro). */
-export const layoutsOperarCatalogSkeletonSurfaceClass = "bg-[var(--rootsy-sombra-800)]"
+/** Skeleton catálogo — 2 tonos muy cercanos (negro base · bloque apenas más claro). */
+export const layoutsOperarCatalogSkeletonSurfaceClass = "bg-[var(--rootsy-negro)]"
 
 export const layoutsOperarCatalogSkeletonGhostClass =
   "animate-pulse bg-[color-mix(in_srgb,var(--rootsy-sombra-700)_38%,var(--rootsy-sombra-800))]"
@@ -438,7 +438,7 @@ export const layoutsOperarCatalogSkeletonGhostClass =
 export const layoutsOperarProductCardClass = cn(
   "layouts-operar-product-card group relative box-border grid h-[256px] w-full",
   "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip rounded-[16px] p-0 text-left",
-  "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-800)]",
+  "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-negro)]",
 )
 
 /** @deprecated La grilla vive en el shell. `contents` no genera caja. */
@@ -465,7 +465,7 @@ export const layoutsOperarProductCardTriggerClass = cn(
 export const layoutsOperarProductCardListClass = cn(
   "layouts-operar-product-card group relative box-border flex min-h-[80px] w-full items-stretch",
   "overflow-clip rounded-[16px] p-0 text-left",
-  "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-800)]",
+  "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-negro)]",
   layoutsOperarProductCardLiftClass,
 )
 
@@ -523,7 +523,7 @@ export const layoutsOperarProductCardMediaPhotoClass = cn(
 /** Superficie foto ausente — mismo fondo que la card, icono savia al centro. */
 export const layoutsOperarProductCardMediaEmptyStateClass = cn(
   "relative flex size-full items-center justify-center",
-  "bg-[var(--rootsy-sombra-800)]",
+  "bg-[var(--rootsy-negro)]",
 )
 
 export const layoutsOperarProductCardMediaEmptyStateIconClass =
@@ -554,7 +554,7 @@ export const layoutsOperarProductCardAddClass = cn(
 /** Tarjeta catálogo seleccionada — paridad CheckoutOptionCard dark + hover savia de product card. */
 export const layoutsOperarProductCardSelectedClass = cn(
   "border-[color-mix(in_srgb,var(--rootsy-savia-600)_45%,transparent)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,var(--rootsy-sombra-800))]",
+  "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,var(--rootsy-negro))]",
   "ring-2 ring-[color-mix(in_srgb,var(--rootsy-savia-600)_28%,transparent)] ring-offset-2 ring-offset-[var(--rootsy-negro)]",
   "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-300)_14%,transparent),0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-400)_24%,transparent)]",
 )
@@ -763,7 +763,7 @@ export const layoutsOperarTicketScrollColumnClass = cn(
 )
 
 export const layoutsOperarSummaryHeaderRowClass =
-  "flex shrink-0 items-center justify-between gap-2 px-3 py-2"
+  "flex shrink-0 items-center justify-between gap-2 bg-[var(--rootsy-blanco)] px-3 py-2"
 
 export const layoutsOperarSummaryCartRowClass =
   "relative flex min-h-0 flex-col bg-[var(--rootsy-blanco)]"

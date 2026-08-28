@@ -124,6 +124,22 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
         ],
       },
       {
+        id: "aplicacion-colores",
+        label: "Aplicación colores",
+        topics: [
+          heading("Acciones"),
+          heading("Cards"),
+          heading("Tabla"),
+          heading("Dropdown"),
+          heading("Galería"),
+          heading("Formulario"),
+          heading("Ticket"),
+          heading("Métricas"),
+          heading("Filtros"),
+          heading("Estados"),
+        ],
+      },
+      {
         id: "tipografia",
         label: "Tipografía",
         topics: [
@@ -169,7 +185,10 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
         id: "elevacion",
         label: "Elevación",
         topics: [
-          heading("Niveles"),
+          heading("Niveles", [
+            heading("Sotobosque · Luz filtrada"),
+            heading("Sotobosque · Sombra"),
+          ]),
           heading("Sombras"),
           heading("Superficies"),
           heading("Interacción"),
