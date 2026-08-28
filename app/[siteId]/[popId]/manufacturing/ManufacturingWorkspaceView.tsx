@@ -16,6 +16,7 @@ import {
   DataWorkspaceTableListPage,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -287,6 +288,7 @@ export function ManufacturingWorkspaceView() {
           </DataWorkspaceTableListFiltersBar>
 
           <DataWorkspaceTableListShell
+            lockScroll={listFetching}
             activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -324,6 +326,18 @@ export function ManufacturingWorkspaceView() {
               !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
               ) : null
+            }
+            footerFloating
+            footerFloatingCentered
+            scrollResetKey={sliceResetKey}
+            footer={
+              <DataWorkspaceTableListPageDock
+                listFetching={listFetching}
+                loadedCount={pageRows.length}
+                totalCount={totalCount}
+                page={1}
+                onPageJump={slice.revealUpToPage}
+              />
             }
             infinite={{
               world: "manufacturing",

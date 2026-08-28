@@ -11,6 +11,7 @@ import {
   rootsFormUiChoiceRowClass,
   rootsFormUiChoiceTextWrapClass,
 } from "@/components/rootsy-form/rootsFormUiStyles"
+import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import { RootsFormLabelInfo } from "@/components/rootsy-form/RootsFormLabelInfo"
 import { cn } from "@/lib/utils"
 import { useId, useRef, type ReactNode } from "react"
@@ -41,8 +42,10 @@ export function RootsFormSwitchField({
   const autoId = useId()
   const switchId = id ?? autoId
   const switchRef = useRef<HTMLButtonElement>(null)
-  const labelStyle = getFormChoiceLabelStyle("switch")
-  const descriptionStyle = getFormChoiceDescriptionStyle()
+  const tone = useRootsFormControlTone()
+  const styleOptions = { tone }
+  const labelStyle = getFormChoiceLabelStyle("switch", styleOptions)
+  const descriptionStyle = getFormChoiceDescriptionStyle(styleOptions)
 
   return (
     <label

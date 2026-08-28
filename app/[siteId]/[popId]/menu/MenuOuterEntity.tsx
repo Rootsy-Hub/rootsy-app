@@ -41,13 +41,6 @@ function MenuOuterEntityAtmosphere({
       <div aria-hidden className={menuOuterEntityVeilClass} />
       <div aria-hidden className="menu-outer-entity-weight" />
       <div aria-hidden className="menu-outer-entity-edge" />
-      <div aria-hidden className="menu-outer-entity-stars" />
-      <div aria-hidden className="menu-outer-entity-stars--bright">
-        <span className="menu-outer-entity-star menu-outer-entity-star--md" />
-        <span className="menu-outer-entity-star menu-outer-entity-star--sm" />
-        <span className="menu-outer-entity-star menu-outer-entity-star--md" />
-        <span className="menu-outer-entity-star menu-outer-entity-star--sm" />
-      </div>
       {withHorizon ? (
         <div aria-hidden className="menu-outer-entity-horizon" />
       ) : null}
@@ -94,9 +87,7 @@ export function MenuOuterEntity({
 
       <div className={bodyClass} style={lifeStyle}>
         {isFloatingFoot ? (
-          <div aria-hidden className={menuOuterEntityFootFloatingChromeClass}>
-            <MenuOuterEntityAtmosphere withHorizon={false} />
-          </div>
+          <div aria-hidden className={menuOuterEntityFootFloatingChromeClass} />
         ) : (
           <MenuOuterEntityAtmosphere />
         )}

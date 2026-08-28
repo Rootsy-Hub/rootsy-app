@@ -21,27 +21,6 @@
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 14% 22%, rgba(255, 255, 255, 0.95) 0 0.65px, transparent 1.55px),
-    radial-gradient(circle at 31% 48%, rgba(255, 255, 255, 0.7) 0 0.45px, transparent 1.2px),
-    radial-gradient(circle at 47% 18%, rgba(255, 255, 255, 0.9) 0 0.65px, transparent 1.55px),
-    radial-gradient(circle at 62% 56%, rgba(255, 255, 255, 0.68) 0 0.45px, transparent 1.2px),
-    radial-gradient(circle at 74% 28%, rgba(255, 255, 255, 0.88) 0 0.65px, transparent 1.55px),
-    radial-gradient(circle at 86% 64%, rgba(255, 255, 255, 0.66) 0 0.45px, transparent 1.2px),
-    radial-gradient(circle at 8% 72%, rgba(255, 255, 255, 0.92) 0 0.65px, transparent 1.55px),
-    radial-gradient(circle at 6% 18%, rgba(255, 255, 255, 0.72) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 12% 62%, rgba(255, 255, 255, 0.4) 0 0.45px, transparent 1.1px),
-    radial-gradient(circle at 19% 34%, rgba(255, 255, 255, 0.55) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 27% 78%, rgba(255, 255, 255, 0.36) 0 0.4px, transparent 1.05px),
-    radial-gradient(circle at 34% 22%, rgba(255, 255, 255, 0.5) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 41% 54%, rgba(255, 255, 255, 0.42) 0 0.45px, transparent 1.1px),
-    radial-gradient(circle at 48% 12%, rgba(255, 255, 255, 0.48) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 55% 71%, rgba(255, 255, 255, 0.38) 0 0.4px, transparent 1.05px),
-    radial-gradient(circle at 62% 39%, rgba(255, 255, 255, 0.56) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 69% 86%, rgba(255, 255, 255, 0.34) 0 0.4px, transparent 1.05px),
-    radial-gradient(circle at 76% 28%, rgba(255, 255, 255, 0.52) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 83% 58%, rgba(255, 255, 255, 0.44) 0 0.45px, transparent 1.1px),
-    radial-gradient(circle at 90% 16%, rgba(255, 255, 255, 0.6) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 94% 74%, rgba(255, 255, 255, 0.4) 0 0.45px, transparent 1.1px),
     radial-gradient(
       ellipse 90% 55% at 50% -28%,
       color-mix(in srgb, var(--rootsy-eter-glow-100) 8%, transparent) 0%,

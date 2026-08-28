@@ -6,7 +6,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { layoutsOperarFormDarkIconClass } from "@/app/library/layouts/layoutsOperarStyles"
+import { isRootsFormToneDark } from "@/app/library/ui-components/rootsFormAtmosphere"
+import { rootsFormMutedIconClassForTone } from "@/components/rootsy-form/rootsFormStyles"
 import type { RootsFormTone } from "@/app/library/ui-components/formsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
 import { CircleHelp } from "lucide-react"
@@ -26,7 +27,7 @@ export function RootsFormLabelInfo({
   tone,
 }: Props) {
   const resolvedTone = useRootsFormControlTone(tone)
-  const isDark = resolvedTone === "dark"
+  const isDark = isRootsFormToneDark(resolvedTone)
 
   return (
     <Tooltip>
@@ -35,12 +36,12 @@ export function RootsFormLabelInfo({
           type="button"
           className={cn(
             "inline-flex size-4 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
-            isDark
-              ? cn(
-                  layoutsOperarFormDarkIconClass,
-                  "hover:text-[color-mix(in_srgb,var(--rootsy-sombra-200)_82%,white)]",
-                )
-              : "text-[var(--rootsy-bruma-500)] hover:text-[var(--rootsy-bruma-700)]",
+            rootsFormMutedIconClassForTone(resolvedTone),
+            resolvedTone === "eter"
+              ? "hover:text-[var(--rootsy-eter-50)]"
+              : isDark
+                ? "hover:text-[var(--rootsy-sombra-50)]"
+                : "hover:text-[var(--rootsy-bruma-950)]",
           )}
           aria-label={ariaLabel}
           onPointerDown={(event) => event.preventDefault()}

@@ -1,7 +1,5 @@
 "use client"
 
-import { RootsyThinkingHalo, useRootsyThinkingPresence } from "@/components/rootsy-thinking/RootsyThinkingHalo"
-import { dataWorkspaceTableInfiniteCopy } from "@/components/data-workspace/dataWorkspaceTableInfiniteCopy"
 import { cn } from "@/lib/utils"
 import { useEffect, useState, type ReactNode } from "react"
 import {
@@ -61,7 +59,6 @@ export function DataWorkspaceListTableShell({
   const bodySurfaceClass = isFlush ? workspaceTableSurfaceClass : dataWorkspaceShellCard
   const resolvedBodySurface = className ? undefined : bodySurfaceClass
   const fetchingMore = Boolean(infinite?.isFetchingMore)
-  const floorHalo = useRootsyThinkingPresence(fetchingMore)
 
   useEffect(() => {
     if (!scrollRoot) return
@@ -128,16 +125,6 @@ export function DataWorkspaceListTableShell({
               ) : null}
             </div>
           </div>
-          {floorHalo.visible && infinite ? (
-            <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
-              <RootsyThinkingHalo
-                className="rootsy-thinking--floor"
-                label={dataWorkspaceTableInfiniteCopy(infinite.world)}
-                showDots={false}
-                exiting={floorHalo.exiting}
-              />
-            </div>
-          ) : null}
           {overlay ? (
             <div className="pointer-events-none absolute inset-0 z-10 overflow-visible">
               {overlay}
@@ -146,8 +133,8 @@ export function DataWorkspaceListTableShell({
           {footer && footerFloating ? (
             <div
               className={cn(
-                "pointer-events-none absolute inset-x-0 bottom-0 z-30 flex justify-end pb-[max(0.75rem,env(safe-area-inset-bottom))]",
-                footerFloatingCentered ? "pl-3 pr-6" : "px-3",
+                "pointer-events-none absolute inset-x-0 bottom-0 z-30 flex pb-[max(0.75rem,env(safe-area-inset-bottom))]",
+                footerFloatingCentered ? "justify-center px-3" : "justify-end px-3",
               )}
             >
               <div

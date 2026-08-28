@@ -94,7 +94,9 @@ import {
   RootsFormTextareaField,
   RootsFormTextField,
   RootsFormTimeField,
+  RootsFormToneProvider,
 } from "@/components/rootsy-form"
+import type { RootsFormTone } from "@/app/library/ui-components/formsUiHardcodedSpec"
 import { RootsImageLightbox } from "@/components/rootsy-lightbox/RootsImageLightbox"
 import { RootsSortableActionList } from "@/components/rootsy-list/RootsSortableActionList"
 import { showRootsyMensajeToast } from "@/components/rootsy-mensaje"
@@ -226,6 +228,31 @@ function atmosphereTheme(worldId: ComponentViewRenderContext["worldId"]) {
     default:
       return "rootsy-theme-workspace"
   }
+}
+
+function formToneFromWorld(
+  worldId: ComponentViewRenderContext["worldId"],
+): RootsFormTone {
+  if (worldId === "eter" || worldId === "sombra") return worldId
+  return "bruma"
+}
+
+function FormAtmosphere({
+  worldId,
+  className,
+  children,
+}: {
+  worldId: ComponentViewRenderContext["worldId"]
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <div className={cn(atmosphereTheme(worldId), className)}>
+      <RootsFormToneProvider tone={formToneFromWorld(worldId)}>
+        {children}
+      </RootsFormToneProvider>
+    </div>
+  )
 }
 
 function Stack({ children }: { children: ReactNode }) {
@@ -728,7 +755,7 @@ function FormTextView() {
       variants={[{ name: "Texto" }]}
       extras={FIELD_STATES}
       render={(_v, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormTextField
               label="Nombre"
@@ -737,7 +764,7 @@ function FormTextView() {
               {...fieldAssist(extras[0] ?? "idle")}
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -755,7 +782,7 @@ function FormTextareaView() {
       variants={[{ name: "Área" }]}
       extras={FIELD_STATES}
       render={(_v, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormTextareaField
               label="Notas"
@@ -763,7 +790,7 @@ function FormTextareaView() {
               {...fieldAssist(extras[0] ?? "idle")}
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -782,7 +809,7 @@ function FormSearchView() {
       variants={[{ name: "Búsqueda" }]}
       extras={IDLE_DISABLED}
       render={(_v, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormSearchField
               label="Buscar"
@@ -791,7 +818,7 @@ function FormSearchView() {
               disabled={extras[0] === "deshabilitado"}
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -810,7 +837,7 @@ function FormMoneyView() {
       variants={[{ name: "Monto" }]}
       extras={FIELD_STATES}
       render={(_v, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormMoneyField
               label="Precio"
@@ -819,7 +846,7 @@ function FormMoneyView() {
               {...fieldAssist(extras[0] ?? "idle")}
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -835,7 +862,7 @@ function FormQuantityView() {
       variants={[{ name: "Cantidad" }]}
       extras={FIELD_STATES}
       render={(_v, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormQuantityField
               label="Cantidad"
@@ -844,7 +871,7 @@ function FormQuantityView() {
               {...fieldAssist(extras[0] ?? "idle")}
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -860,7 +887,7 @@ function FormIntegerView() {
       variants={[{ name: "Entero" }]}
       extras={FIELD_STATES}
       render={(_v, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormIntegerField
               label="Mesas"
@@ -869,7 +896,7 @@ function FormIntegerView() {
               {...fieldAssist(extras[0] ?? "idle")}
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -884,7 +911,7 @@ function FormPhoneView() {
       variants={[{ name: "Teléfono" }]}
       extras={FIELD_STATES}
       render={(_v, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormPhoneField
               label="Teléfono"
@@ -892,7 +919,7 @@ function FormPhoneView() {
               {...fieldAssist(extras[0] ?? "idle")}
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -913,7 +940,7 @@ function FormTaxView() {
         { items: [{ name: "idle" }, { name: "con acción" }, { name: "deshabilitado" }] },
       ]}
       render={(variant, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormTaxDocumentField
               label="CUIT"
@@ -928,7 +955,7 @@ function FormTaxView() {
               }
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -948,7 +975,7 @@ function FormDiscountView() {
       variants={[{ name: "porcentaje" }, { name: "fijo" }]}
       extras={FIELD_STATES}
       render={(variant, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormDiscountField
               label="Descuento"
@@ -959,7 +986,7 @@ function FormDiscountView() {
               {...fieldAssist(extras[0] ?? "idle")}
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -974,7 +1001,7 @@ function FormImageView() {
       variants={[{ name: "Imagen" }]}
       extras={IDLE_DISABLED}
       render={(_v, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormImageUploadField
               label="Foto"
@@ -982,7 +1009,7 @@ function FormImageView() {
               disabled={extras[0] === "deshabilitado"}
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -1002,7 +1029,7 @@ function SelectsFinalSpecimen() {
       variants={[{ name: "Select" }]}
       extras={FIELD_STATES}
       render={(_v, extras, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormSelectField
               label="Categoría"
@@ -1014,7 +1041,7 @@ function SelectsFinalSpecimen() {
               <RootsFormSelectItem value="b">Bebidas</RootsFormSelectItem>
             </RootsFormSelectField>
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )
@@ -1033,7 +1060,7 @@ function CheckboxesFinalSpecimen() {
         variants={[{ name: "Campo" }]}
         extras={[{ items: [{ name: "marcado" }, { name: "libre" }, { name: "deshabilitado" }] }]}
         render={(_v, extras, context) => (
-          <CheckboxFieldLive extras={extras} theme={atmosphereTheme(context.worldId)} />
+          <CheckboxFieldLive extras={extras} worldId={context.worldId} />
         )}
       />
       <LiveView
@@ -1045,35 +1072,51 @@ function CheckboxesFinalSpecimen() {
         ]}
         variants={[{ name: "Fila" }]}
         extras={[{ items: [{ name: "marcado" }, { name: "libre" }, { name: "deshabilitado" }] }]}
-        render={(_v, extras) => <CheckboxRowLive extras={extras} />}
+        render={(_v, extras, context) => (
+          <CheckboxRowLive extras={extras} worldId={context.worldId} />
+        )}
       />
     </Stack>
   )
 }
 
-function CheckboxFieldLive({ extras, theme }: { extras: readonly string[]; theme: string }) {
+function CheckboxFieldLive({
+  extras,
+  worldId,
+}: {
+  extras: readonly string[]
+  worldId: ComponentViewRenderContext["worldId"]
+}) {
   const [checked, setChecked] = useState(extras[0] !== "libre")
   return (
-    <div className={theme}>
+    <FormAtmosphere worldId={worldId}>
       <RootsFormCheckboxField
         label="Aplica a venta"
         checked={checked}
         onCheckedChange={setChecked}
         disabled={extras[0] === "deshabilitado"}
       />
-    </div>
+    </FormAtmosphere>
   )
 }
 
-function CheckboxRowLive({ extras }: { extras: readonly string[] }) {
+function CheckboxRowLive({
+  extras,
+  worldId,
+}: {
+  extras: readonly string[]
+  worldId: ComponentViewRenderContext["worldId"]
+}) {
   const [checked, setChecked] = useState(extras[0] !== "libre")
   return (
-    <RootsFormCheckboxChoiceRow
-      label="Incluir en el reporte"
-      checked={checked}
-      onCheckedChange={setChecked}
-      disabled={extras[0] === "deshabilitado"}
-    />
+    <FormAtmosphere worldId={worldId}>
+      <RootsFormCheckboxChoiceRow
+        label="Incluir en el reporte"
+        checked={checked}
+        onCheckedChange={setChecked}
+        disabled={extras[0] === "deshabilitado"}
+      />
+    </FormAtmosphere>
   )
 }
 
@@ -1092,7 +1135,7 @@ function RadiosFinalSpecimen() {
         <RadiosLive
           variant={variant}
           disabled={extras[0] === "deshabilitado"}
-          theme={atmosphereTheme(context.worldId)}
+          worldId={context.worldId}
         />
       )}
     />
@@ -1102,16 +1145,16 @@ function RadiosFinalSpecimen() {
 function RadiosLive({
   variant,
   disabled,
-  theme,
+  worldId,
 }: {
   variant: string
   disabled: boolean
-  theme: string
+  worldId: ComponentViewRenderContext["worldId"]
 }) {
   const isFilter = variant === "Filtro"
   const [value, setValue] = useState(isFilter ? "all" : "product")
   return (
-    <div className={cn(theme, isFilter ? "w-full" : "w-full max-w-sm")}>
+    <FormAtmosphere worldId={worldId} className={isFilter ? "w-full" : "w-full max-w-sm"}>
       <RootsFormSegmentField
         label={isFilter ? "Ver" : "Tipo"}
         layout={isFilter ? "inline" : "grid"}
@@ -1133,7 +1176,7 @@ function RadiosLive({
               ]
         }
       />
-    </div>
+    </FormAtmosphere>
   )
 }
 
@@ -1149,23 +1192,29 @@ function SwitchFinalSpecimen() {
       variants={[{ name: "Switch" }]}
       extras={[{ items: [{ name: "encendido" }, { name: "apagado" }, { name: "deshabilitado" }] }]}
       render={(_v, extras, context) => (
-        <SwitchLive extras={extras} theme={atmosphereTheme(context.worldId)} />
+        <SwitchLive extras={extras} worldId={context.worldId} />
       )}
     />
   )
 }
 
-function SwitchLive({ extras, theme }: { extras: readonly string[]; theme: string }) {
+function SwitchLive({
+  extras,
+  worldId,
+}: {
+  extras: readonly string[]
+  worldId: ComponentViewRenderContext["worldId"]
+}) {
   const [checked, setChecked] = useState(extras[0] !== "apagado")
   return (
-    <div className={theme}>
+    <FormAtmosphere worldId={worldId}>
       <RootsFormSwitchField
         label="Activo"
         checked={checked}
         onCheckedChange={setChecked}
         disabled={extras[0] === "deshabilitado"}
       />
-    </div>
+    </FormAtmosphere>
   )
 }
 
@@ -1181,7 +1230,7 @@ function DatesFinalSpecimen() {
         ]}
         variants={[{ name: "Fecha" }]}
         extras={FIELD_STATES}
-        render={(_v, extras, context) => <DateLive extras={extras} theme={atmosphereTheme(context.worldId)} />}
+        render={(_v, extras, context) => <DateLive extras={extras} worldId={context.worldId} />}
       />
       <LiveView
         background={BRUMA}
@@ -1189,7 +1238,7 @@ function DatesFinalSpecimen() {
         componentProperties={[{ name: "label", values: ["string"] }, { name: "value", values: ["HH:mm"] }]}
         variants={[{ name: "Hora" }]}
         extras={IDLE_DISABLED}
-        render={(_v, extras, context) => <TimeLive extras={extras} theme={atmosphereTheme(context.worldId)} />}
+        render={(_v, extras, context) => <TimeLive extras={extras} worldId={context.worldId} />}
       />
       <LiveView
         background={BRUMA}
@@ -1199,18 +1248,26 @@ function DatesFinalSpecimen() {
           { name: "preset", values: ["this_month", "custom", "…"] },
         ]}
         variants={[{ name: "panel" }, { name: "compact" }, { name: "layout" }]}
-        render={(variant) => (
-          <PeriodLive variant={variant as "panel" | "compact" | "layout"} />
+        render={(variant, _e, context) => (
+          <FormAtmosphere worldId={context.worldId} className="w-full">
+            <PeriodLive variant={variant as "panel" | "compact" | "layout"} />
+          </FormAtmosphere>
         )}
       />
     </Stack>
   )
 }
 
-function DateLive({ extras, theme }: { extras: readonly string[]; theme: string }) {
+function DateLive({
+  extras,
+  worldId,
+}: {
+  extras: readonly string[]
+  worldId: ComponentViewRenderContext["worldId"]
+}) {
   const [value, setValue] = useState("2026-08-26")
   return (
-    <div className={theme}>
+    <FormAtmosphere worldId={worldId}>
       <FieldShell>
         <RootsFormDateField
           label="Fecha"
@@ -1219,14 +1276,20 @@ function DateLive({ extras, theme }: { extras: readonly string[]; theme: string 
           {...fieldAssist(extras[0] ?? "idle")}
         />
       </FieldShell>
-    </div>
+    </FormAtmosphere>
   )
 }
 
-function TimeLive({ extras, theme }: { extras: readonly string[]; theme: string }) {
+function TimeLive({
+  extras,
+  worldId,
+}: {
+  extras: readonly string[]
+  worldId: ComponentViewRenderContext["worldId"]
+}) {
   const [value, setValue] = useState("09:00")
   return (
-    <div className={theme}>
+    <FormAtmosphere worldId={worldId}>
       <FieldShell>
         <RootsFormTimeField
           label="Apertura"
@@ -1235,7 +1298,7 @@ function TimeLive({ extras, theme }: { extras: readonly string[]; theme: string 
           disabled={extras[0] === "deshabilitado"}
         />
       </FieldShell>
-    </div>
+    </FormAtmosphere>
   )
 }
 
@@ -1270,7 +1333,7 @@ function ValidationFinalSpecimen() {
       ]}
       variants={[{ name: "error" }, { name: "warning" }, { name: "success" }, { name: "hint" }]}
       render={(variant, _e, context) => (
-        <div className={atmosphereTheme(context.worldId)}>
+        <FormAtmosphere worldId={context.worldId}>
           <FieldShell>
             <RootsFormTextField
               label="Campo"
@@ -1278,7 +1341,7 @@ function ValidationFinalSpecimen() {
               {...fieldAssist(variant)}
             />
           </FieldShell>
-        </div>
+        </FormAtmosphere>
       )}
     />
   )

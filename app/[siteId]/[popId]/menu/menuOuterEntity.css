@@ -12,7 +12,8 @@
 }
 
 .menu-outer-entity--foot-floating .menu-outer-entity-body {
-  border-top: none;
+  border: none;
+  box-shadow: none;
 }
 
 .menu-outer-entity--foot-floating .menu-outer-entity-horizon {

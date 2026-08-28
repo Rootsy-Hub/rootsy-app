@@ -45,6 +45,12 @@ import {
   rootsFormUiTextareaFieldClass,
 } from "@/components/rootsy-form/rootsFormUiStyles"
 import { rootsFormBrumaDividerClass } from "@/components/rootsy-form/rootsFormBrumaTokens"
+import {
+  isRootsFormToneDark,
+  resolveRootsFormAtmosphere,
+  type RootsFormTone,
+} from "@/app/library/ui-components/rootsFormAtmosphere"
+import { layoutsOperarFormDarkIconClass, layoutsOperarFormDarkPlaceholderClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 
 export const rootsFormControlSelectionClass = rootsFormUiSelectionClass
@@ -147,7 +153,42 @@ export const rootsFormSelectItemClass = cn(
   "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
 )
 
-export type RootsFormSelectTone = "light" | "dark"
+export type RootsFormSelectTone = RootsFormTone
+
+export function rootsFormPlaceholderClassForTone(tone: RootsFormTone = "light") {
+  if (tone === "dark") return layoutsOperarFormDarkPlaceholderClass
+  switch (resolveRootsFormAtmosphere(tone)) {
+    case "eter":
+      return "placeholder:text-[var(--rootsy-eter-300)]"
+    case "sombra":
+      return "placeholder:text-[var(--rootsy-sombra-300)]"
+    default:
+      return "placeholder:text-[var(--rootsy-bruma-700)]"
+  }
+}
+
+export function rootsFormControlSelectionClassForTone(tone: RootsFormTone = "light") {
+  switch (resolveRootsFormAtmosphere(tone)) {
+    case "eter":
+      return "selection:bg-[var(--rootsy-eter-700)] selection:text-[var(--rootsy-eter-50)]"
+    case "sombra":
+      return "selection:bg-[var(--rootsy-sombra-700)] selection:text-[var(--rootsy-sombra-50)]"
+    default:
+      return rootsFormControlSelectionClass
+  }
+}
+
+export function rootsFormMutedIconClassForTone(tone: RootsFormTone = "light") {
+  if (tone === "dark") return layoutsOperarFormDarkIconClass
+  switch (resolveRootsFormAtmosphere(tone)) {
+    case "eter":
+      return "text-[var(--rootsy-eter-300)]"
+    case "sombra":
+      return "text-[var(--rootsy-sombra-300)]"
+    default:
+      return "text-[var(--rootsy-bruma-700)]"
+  }
+}
 
 /** Select compacto — operar dark (paridad catalog-toolbar-control). */
 export const rootsFormSelectDarkTriggerClass = cn(
@@ -182,6 +223,36 @@ export const rootsFormSelectDarkItemClass = cn(
   "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
 )
 
+export const rootsFormSelectSombraContentClass = cn(
+  rootsFormPortalZClass,
+  "overflow-x-hidden overflow-y-auto rounded-[12px] border p-0",
+  "border-[var(--rootsy-sombra-700)] bg-[var(--rootsy-sombra-800)]",
+  "shadow-[0_18px_40px_-18px_color-mix(in_srgb,var(--rootsy-sombra-950)_70%,transparent)]",
+  "w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) max-w-(--radix-select-trigger-width)",
+)
+
+export const rootsFormSelectSombraItemClass = cn(
+  "relative flex w-full cursor-default select-none items-center py-2.5 pl-3 pr-10 text-sm text-[var(--rootsy-sombra-50)] outline-none",
+  "data-[highlighted]:bg-[color-mix(in_srgb,var(--rootsy-savia-500)_16%,var(--rootsy-sombra-800))] data-[highlighted]:text-[var(--rootsy-sombra-50)]",
+  "data-[state=checked]:bg-[color-mix(in_srgb,var(--rootsy-savia-500)_22%,var(--rootsy-sombra-800))] data-[state=checked]:text-[var(--rootsy-savia-500)]",
+  "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+)
+
+export const rootsFormSelectEterContentClass = cn(
+  rootsFormPortalZClass,
+  "overflow-x-hidden overflow-y-auto rounded-[12px] border p-0",
+  "border-[var(--rootsy-eter-700)] bg-[var(--rootsy-eter-800)]",
+  "shadow-[0_18px_40px_-18px_color-mix(in_srgb,var(--rootsy-eter-950)_70%,transparent)]",
+  "w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) max-w-(--radix-select-trigger-width)",
+)
+
+export const rootsFormSelectEterItemClass = cn(
+  "relative flex w-full cursor-default select-none items-center py-2.5 pl-3 pr-10 text-sm text-[var(--rootsy-eter-50)] outline-none",
+  "data-[highlighted]:bg-[color-mix(in_srgb,var(--rootsy-savia-500)_16%,var(--rootsy-eter-800))] data-[highlighted]:text-[var(--rootsy-eter-50)]",
+  "data-[state=checked]:bg-[color-mix(in_srgb,var(--rootsy-savia-500)_22%,var(--rootsy-eter-800))] data-[state=checked]:text-[var(--rootsy-savia-500)]",
+  "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+)
+
 /** Listado dentro de dropdown redondeado — sin padding interno; el hover lo recorta el shell. */
 export const rootsFormDropdownListClass = "p-0"
 
@@ -189,6 +260,24 @@ export function rootsFormDropdownHighlightItemClassForTone(
   tone: RootsFormSelectTone = "light",
   state: "default" | "highlighted" | "selected" = "default",
 ) {
+  if (tone === "eter") {
+    return cn(
+      state === "selected"
+        ? "bg-[color-mix(in_srgb,var(--rootsy-savia-500)_22%,var(--rootsy-eter-800))] text-[var(--rootsy-savia-500)]"
+        : state === "highlighted"
+          ? "bg-[color-mix(in_srgb,var(--rootsy-savia-500)_16%,var(--rootsy-eter-800))] text-[var(--rootsy-eter-50)]"
+          : "text-[var(--rootsy-eter-50)]",
+    )
+  }
+  if (tone === "sombra") {
+    return cn(
+      state === "selected"
+        ? "bg-[color-mix(in_srgb,var(--rootsy-savia-500)_22%,var(--rootsy-sombra-800))] text-[var(--rootsy-savia-500)]"
+        : state === "highlighted"
+          ? "bg-[color-mix(in_srgb,var(--rootsy-savia-500)_16%,var(--rootsy-sombra-800))] text-[var(--rootsy-sombra-50)]"
+          : "text-[var(--rootsy-sombra-50)]",
+    )
+  }
   if (tone === "dark") {
     return cn(
       state === "selected"
@@ -214,7 +303,7 @@ export function rootsFormSelectTriggerClassForTone(
   prefixVariant: "sunken" | "inline" = "sunken",
 ) {
   if (prefixed) {
-    if (tone === "light" && prefixVariant === "inline") {
+    if (!isRootsFormToneDark(tone) && prefixVariant === "inline") {
       return rootsFormInlineIconPrefixedSelectTriggerClass
     }
     return rootsFormPrefixedSelectTriggerClass
@@ -223,11 +312,17 @@ export function rootsFormSelectTriggerClassForTone(
 }
 
 export function rootsFormSelectContentClassForTone(tone: RootsFormSelectTone = "light") {
-  return tone === "dark" ? rootsFormSelectDarkContentClass : rootsFormSelectContentClass
+  if (tone === "dark") return rootsFormSelectDarkContentClass
+  if (tone === "eter") return rootsFormSelectEterContentClass
+  if (tone === "sombra") return rootsFormSelectSombraContentClass
+  return rootsFormSelectContentClass
 }
 
 export function rootsFormSelectItemClassForTone(tone: RootsFormSelectTone = "light") {
-  return tone === "dark" ? rootsFormSelectDarkItemClass : rootsFormSelectItemClass
+  if (tone === "dark") return rootsFormSelectDarkItemClass
+  if (tone === "eter") return rootsFormSelectEterItemClass
+  if (tone === "sombra") return rootsFormSelectSombraItemClass
+  return rootsFormSelectItemClass
 }
 
 /** Date picker sin prefijo. */
@@ -269,7 +364,7 @@ export function rootsFormSegmentGroupClassForTone(
   tone: RootsFormSelectTone = "light",
   layout: "grid" | "inline" = "grid",
 ) {
-  if (tone === "dark") return rootsFormUiSegmentGroupDarkClass
+  if (isRootsFormToneDark(tone)) return rootsFormUiSegmentGroupDarkClass
   if (layout === "inline") return rootsFormUiSegmentGroupInlineClass
   return rootsFormUiSegmentGroupClass
 }
@@ -278,7 +373,7 @@ export function rootsFormSegmentSelectedSurfaceClassForTone(
   tone: RootsFormSelectTone = "light",
   layout: "grid" | "inline" = "grid",
 ) {
-  if (tone === "dark") return rootsFormUiSegmentSelectedSurfaceDarkClass
+  if (isRootsFormToneDark(tone)) return rootsFormUiSegmentSelectedSurfaceDarkClass
   if (layout === "inline") return rootsFormUiSegmentSelectedSurfaceFilterLightClass
   return rootsFormUiSegmentSelectedSurfaceLightClass
 }
@@ -309,7 +404,7 @@ export function rootsFormSegmentOptionClassForTone(
   disabled?: boolean,
   tone: RootsFormSelectTone = "light",
 ) {
-  return tone === "dark"
+  return isRootsFormToneDark(tone)
     ? rootsFormUiSegmentOptionDarkClass(selected, disabled)
     : rootsFormUiSegmentOptionClass(selected, disabled)
 }
@@ -330,6 +425,22 @@ export const rootsFormAffixClearButtonClass = rootsFormUiAffixClearButtonClass
 export function rootsFormAffixClearButtonClassForTone(
   tone: RootsFormSelectTone = "light",
 ) {
+  if (tone === "eter") {
+    return cn(
+      "flex size-8 items-center justify-center rounded-md transition-[color,background-color] duration-150",
+      "text-[var(--rootsy-eter-300)]",
+      "hover:bg-[var(--rootsy-eter-900)] hover:text-[var(--rootsy-eter-50)]",
+      "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-500)_28%,transparent)]",
+    )
+  }
+  if (tone === "sombra") {
+    return cn(
+      "flex size-8 items-center justify-center rounded-md transition-[color,background-color] duration-150",
+      "text-[var(--rootsy-sombra-300)]",
+      "hover:bg-[var(--rootsy-sombra-900)] hover:text-[var(--rootsy-sombra-50)]",
+      "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-500)_28%,transparent)]",
+    )
+  }
   if (tone === "dark") {
     return cn(
       "flex size-8 items-center justify-center rounded-md transition-[color,background-color] duration-150",
@@ -362,11 +473,11 @@ export const rootsFormImageUploadThumbEmptyClass = cn(
 )
 
 export const rootsFormImageUploadTitleClass = cn(
-  "truncate text-sm font-medium leading-tight text-[var(--rootsy-bruma-900)]",
+  "truncate text-sm font-medium leading-tight text-[var(--rootsy-bruma-950)]",
 )
 
 export const rootsFormImageUploadMetaClass = cn(
-  "mt-0.5 truncate text-xs leading-snug text-[var(--rootsy-bruma-500)]",
+  "mt-0.5 truncate text-xs leading-snug text-[var(--rootsy-bruma-700)]",
 )
 
 export const rootsFormImageUploadActionClass = cn(

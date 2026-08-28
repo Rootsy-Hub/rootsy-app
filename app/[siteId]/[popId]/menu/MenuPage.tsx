@@ -20,8 +20,6 @@ import "@/app/[siteId]/[popId]/menu/menuContentReveal.css"
 import {
   menuAmbientTopGlowClass,
   menuNatureShellClass,
-  menuPlanetAmbientWashClass,
-  menuPlanetOrbClass,
   menuVignetteClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
@@ -130,17 +128,6 @@ function MenuPage() {
   searchQueryRef.current = searchQuery
   const [time, setTime] = useState<Date | null>(null)
   const [isMounted, setIsMounted] = useState(false)
-  const [particles, setParticles] = useState<
-    Array<{
-      width: number
-      height: number
-      left: number
-      top: number
-      opacity: number
-      duration: number
-      delay: number
-    }>
-  >([])
   const [isOnline, setIsOnline] = useState(true)
 
   const {
@@ -225,18 +212,6 @@ function MenuPage() {
     setSearchShortcutLabel(detectSearchShortcutLabel())
     setTime(new Date())
     const timer = setInterval(() => setTime(new Date()), 60_000)
-
-    setParticles(
-      Array.from({ length: 12 }, () => ({
-        width: Math.random() * 2 + 1,
-        height: Math.random() * 2 + 1,
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        opacity: Math.random() * 0.2 + 0.05,
-        duration: Math.random() * 20 + 15,
-        delay: Math.random() * 5,
-      })),
-    )
 
     return () => clearInterval(timer)
   }, [])
@@ -412,55 +387,12 @@ function MenuPage() {
           <MenuDormantFirmament />
         ) : (
           <>
-            {(["operar", "administrar", "configurar"] as const).map((sectionKey, index) => (
-              <div
-                key={sectionKey}
-                aria-hidden
-                className={cn(
-                  "absolute rounded-full blur-[150px] transition-opacity duration-[2000ms] ease-out menu-content-emerge",
-                  menuPlanetOrbClass(sectionKey),
-                  activeSectionKey === sectionKey ? "opacity-100" : "opacity-45",
-                )}
-                style={{
-                  width: 520,
-                  height: 520,
-                  left: index === 0 ? "18%" : index === 1 ? "50%" : "82%",
-                  top: index === 0 ? "38%" : index === 1 ? "48%" : "36%",
-                  transform: "translate(-50%, -50%)",
-                }}
-              />
-            ))}
-
-            <div
-              aria-hidden
-              className={cn(
-                "absolute inset-0 transition-opacity duration-[2000ms] ease-out menu-content-emerge",
-                menuPlanetAmbientWashClass(activeSectionKey),
-              )}
-            />
-
             <div
               className={cn(
                 "absolute top-0 left-1/2 h-[400px] w-[1000px] -translate-x-1/2 rounded-full blur-[120px] menu-content-emerge",
                 menuAmbientTopGlowClass,
               )}
             />
-            {particles.map((particle, i) => (
-              <div
-                key={i}
-                className="absolute rounded-full animate-float menu-content-emerge"
-                style={{
-                  width: particle.width + "px",
-                  height: particle.height + "px",
-                  left: particle.left + "%",
-                  top: particle.top + "%",
-                  background: "rgba(255,255,255,0.55)",
-                  opacity: particle.opacity,
-                  animationDuration: particle.duration + "s",
-                  animationDelay: particle.delay + "s",
-                }}
-              />
-            ))}
             <div className={cn("absolute inset-0 menu-content-emerge", menuVignetteClass)} />
           </>
         )}
@@ -564,6 +496,7 @@ function MenuPage() {
                               sectionKey={styleSectionKey}
                               disabled={!target}
                               href={target}
+                              finish="glass"
                             />
                           )
                         })}

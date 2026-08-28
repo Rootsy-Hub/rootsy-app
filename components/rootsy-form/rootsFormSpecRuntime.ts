@@ -14,6 +14,7 @@ import {
   getFormAssistUiStyle,
   getFormControlSpec,
   getFormControlUiSurface,
+  getFormLabelUiStyle,
   getFormUiInlineIconShellStyle,
   getImageUploadThumbUiStyle,
   getImageUploadUiSurface,
@@ -26,7 +27,7 @@ import {
   type RootsFormStyleOptions,
   type RootsFormTone,
 } from "@/app/library/ui-components/formsUiHardcodedSpec"
-import { LAYOUTS_OPERAR_FORM_DARK } from "@/app/library/layouts/layoutsOperarFormTokens"
+import { getRootsFormAtmosphereRecipe } from "@/app/library/ui-components/rootsFormAtmosphere"
 import { rootsySpacePx, ROOTSY_TEXT_STYLES } from "@/lib/design-system"
 import type { CSSProperties } from "react"
 
@@ -37,7 +38,7 @@ function getFormSingleLinePaddingY(heightPx: number, borderPx = 2): number {
   return Math.max(0, (heightPx - borderPx - FORM_CONTROL_LINE_HEIGHT_PX) / 2)
 }
 
-export { FORM_UI_LABEL_STYLE, FORM_UI_LABEL_STYLE_DARK, FORM_UI_CONTROL_TYPOGRAPHY, FORM_UI_LEADING_SLOT_TYPOGRAPHY }
+export { FORM_UI_LABEL_STYLE, FORM_UI_LABEL_STYLE_DARK, FORM_UI_CONTROL_TYPOGRAPHY, FORM_UI_LEADING_SLOT_TYPOGRAPHY, getFormLabelUiStyle }
 export type { RootsFormStyleOptions, RootsFormTone }
 
 export type RootsFormInteractionFlags = {
@@ -161,7 +162,7 @@ export function getFormCompositeInputStyle(
   const spec = getFormControlSpec("leading-currency")
   const tone = options?.tone ?? "light"
   const styleOptions: RootsFormStyleOptions = { tone }
-  const shell = getCompositeShellUiSurface(state, styleOptions)
+  const recipe = getRootsFormAtmosphereRecipe(tone)
   const valueStyle = getCompositeValueUiStyle(state, styleOptions)
 
   return {
@@ -177,7 +178,7 @@ export function getFormCompositeInputStyle(
     paddingRight: options?.hasTrailing ? rootsySpacePx("050") : spec.inputPaddingXPx,
     border: "none",
     backgroundColor: valueStyle.backgroundColor,
-    color: tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.text : shell.color,
+    color: recipe.text,
     opacity: valueStyle.opacity,
     outline: "none",
     boxShadow: "none",
@@ -190,7 +191,7 @@ export function getFormDiscountModeGroupStyle(
   state: FormControlStateId,
   options?: RootsFormStyleOptions,
 ): CSSProperties {
-  const tone = options?.tone ?? "light"
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
   const leading = getLeadingSlotUiStyle(state, options)
 
   return {
@@ -199,9 +200,8 @@ export function getFormDiscountModeGroupStyle(
     flexShrink: 0,
     alignSelf: "stretch",
     overflow: "hidden",
-    borderRight: leading.borderRight,
-    backgroundColor:
-      tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.surface : "var(--rootsy-white)",
+    borderRight: "none",
+    backgroundColor: recipe.surface,
     opacity: leading.opacity,
   }
 }
@@ -212,7 +212,7 @@ export function getFormDiscountModeButtonStyle(
   selected: boolean,
   options?: RootsFormStyleOptions,
 ): CSSProperties {
-  const tone = options?.tone ?? "light"
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
   const leading = getLeadingSlotUiStyle(state, options)
 
   return {
@@ -223,19 +223,8 @@ export function getFormDiscountModeButtonStyle(
     justifyContent: "center",
     alignSelf: "stretch",
     fontWeight: selected ? 600 : 400,
-    backgroundColor: selected
-      ? leading.backgroundColor
-      : tone === "dark"
-        ? LAYOUTS_OPERAR_FORM_DARK.surface
-        : "var(--rootsy-white)",
-    color:
-      tone === "dark"
-        ? selected
-          ? LAYOUTS_OPERAR_FORM_DARK.text
-          : LAYOUTS_OPERAR_FORM_DARK.textMuted
-        : selected
-          ? "var(--rootsy-bruma-600)"
-          : "var(--rootsy-bruma-400)",
+    backgroundColor: selected ? leading.backgroundColor : recipe.surface,
+    color: selected ? recipe.text : recipe.textMuted,
     border: "none",
     cursor: "pointer",
     opacity: leading.opacity,
@@ -284,10 +273,12 @@ export function getFormCompositeValueAreaStyle(
 
 export function getFormSelectTriggerStyle(
   state: FormControlStateId,
-  options?: { prefixed?: boolean; inlineIcon?: boolean },
+  options?: { prefixed?: boolean; inlineIcon?: boolean; tone?: RootsFormTone },
 ): CSSProperties {
+  const styleOptions: RootsFormStyleOptions = { tone: options?.tone }
+
   if (options?.inlineIcon) {
-    const { spec, shell, gapPx, paddingXPx } = getFormUiInlineIconShellStyle(state)
+    const { spec, shell, gapPx, paddingXPx } = getFormUiInlineIconShellStyle(state, styleOptions)
 
     return {
       ...FORM_UI_CONTROL_TYPOGRAPHY,
@@ -313,11 +304,11 @@ export function getFormSelectTriggerStyle(
   }
 
   if (options?.prefixed) {
-    const surface = getCompositeShellUiSurface(state)
+    const surface = getCompositeShellUiSurface(state, styleOptions)
 
     return {
       ...FORM_UI_CONTROL_TYPOGRAPHY,
-      ...getFormCompositeShellStyle(state),
+      ...getFormCompositeShellStyle(state, styleOptions),
       color: surface.color,
       width: "100%",
       cursor: "default",
@@ -325,7 +316,7 @@ export function getFormSelectTriggerStyle(
   }
 
   const spec = getFormControlSpec("select")
-  const surface = getFormControlUiSurface(state)
+  const surface = getFormControlUiSurface(state, styleOptions)
 
   return {
     ...FORM_UI_CONTROL_TYPOGRAPHY,
@@ -350,9 +341,12 @@ export function getFormSelectTriggerStyle(
   }
 }
 
-export function getFormSelectChevronWrapStyle(state: FormControlStateId): CSSProperties {
+export function getFormSelectChevronWrapStyle(
+  state: FormControlStateId,
+  options?: RootsFormStyleOptions,
+): CSSProperties {
   const spec = getFormControlSpec("select")
-  const surface = getFormControlUiSurface(state)
+  const surface = getFormControlUiSurface(state, options)
 
   return {
     display: "inline-flex",
@@ -531,9 +525,10 @@ export function getFormCheckboxStyle(
 export function getFormSwitchTrackStyle(
   state: FormControlStateId,
   on: boolean,
+  options?: RootsFormStyleOptions,
 ): CSSProperties {
   const spec = getFormControlSpec("switch")
-  const surface = getSwitchUiSurface(on, state)
+  const surface = getSwitchUiSurface(on, state, options)
   const inset = rootsySpacePx("025")
 
   return {
@@ -556,10 +551,13 @@ export function getFormSwitchTrackStyle(
   }
 }
 
-export function getFormSwitchThumbStyle(on: boolean): CSSProperties {
+export function getFormSwitchThumbStyle(
+  on: boolean,
+  options?: RootsFormStyleOptions,
+): CSSProperties {
   const spec = getFormControlSpec("switch")
   const inset = rootsySpacePx("025")
-  const surface = getSwitchUiSurface(on)
+  const surface = getSwitchUiSurface(on, "default", options)
   const travelPx = spec.widthPx - spec.thumbPx - inset * 2
 
   return {
@@ -568,7 +566,7 @@ export function getFormSwitchThumbStyle(on: boolean): CSSProperties {
     height: spec.thumbPx,
     borderRadius: 9999,
     backgroundColor: surface.thumbColor,
-    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.18)",
+    boxShadow: "0 1px 3px color-mix(in srgb, var(--rootsy-sombra-950) 28%, transparent)",
     transform: on ? `translateX(${travelPx}px)` : "translateX(0)",
     transition: "transform 200ms ease-out",
     pointerEvents: "none",
@@ -578,9 +576,10 @@ export function getFormSwitchThumbStyle(on: boolean): CSSProperties {
 export function getFormImageUploadShellStyle(
   mode: FormImageUploadModeId,
   state: FormImageUploadDisplayStateId,
+  options?: RootsFormStyleOptions,
 ): CSSProperties {
   const spec = getFormControlSpec("image-upload")
-  const shell = getImageUploadUiSurface(mode, state)
+  const shell = getImageUploadUiSurface(mode, state, options)
 
   return {
     display: "flex",
@@ -603,9 +602,10 @@ export function getFormImageUploadShellStyle(
 export function getFormImageUploadThumbStyle(
   mode: FormImageUploadModeId,
   state: FormImageUploadDisplayStateId,
+  options?: RootsFormStyleOptions,
 ): CSSProperties {
   const spec = getFormControlSpec("image-upload")
-  const thumb = getImageUploadThumbUiStyle(mode, state)
+  const thumb = getImageUploadThumbUiStyle(mode, state, options)
 
   return {
     display: "flex",
@@ -621,7 +621,7 @@ export function getFormImageUploadThumbStyle(
     borderColor: thumb.borderColor,
     opacity: thumb.opacity,
     overflow: "hidden",
-    color: "var(--rootsy-bruma-500)",
+    color: getRootsFormAtmosphereRecipe(options?.tone).icon,
   }
 }
 

@@ -15,7 +15,37 @@ import {
   layoutsTablesFooterSelectItemClass,
   layoutsTablesFooterSelectTriggerClass,
 } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
+import { dataWorkspaceTableInfiniteDockPages } from "@/lib/dataWorkspaceTableInfinite"
 import { cn } from "@/lib/utils"
+
+/** Dock de artículos — alcanza con page + conteos. */
+export function DataWorkspaceTableListPageDock({
+  listFetching,
+  loadedCount,
+  totalCount,
+  page = 1,
+  onPageJump,
+}: {
+  listFetching: boolean
+  loadedCount: number
+  totalCount: number
+  page?: number
+  onPageJump: (page: number) => void
+}) {
+  const { startPage, totalPages, loadedPages } =
+    dataWorkspaceTableInfiniteDockPages(loadedCount, totalCount, page)
+  return (
+    <DataWorkspaceTableInfinitePageDock
+      listFetching={listFetching}
+      loadedCount={loadedCount}
+      totalCount={totalCount}
+      startPage={startPage}
+      totalPages={totalPages}
+      loadedPages={loadedPages}
+      onPageJump={onPageJump}
+    />
+  )
+}
 
 export function DataWorkspaceTableInfinitePageDock({
   listFetching,
@@ -48,10 +78,10 @@ export function DataWorkspaceTableInfinitePageDock({
     <MenuHeaderEntity
       as="footer"
       size="dialog"
-      className="data-workspace-table-page-dock isolate w-auto overflow-hidden rounded-xl shadow-[0_16px_40px_color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]"
+      className="data-workspace-table-page-dock transform-gpu w-64 overflow-hidden rounded-xl backdrop-blur-[8px] backdrop-saturate-[1.05] shadow-[0_16px_40px_color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]"
     >
       <div
-        className="relative z-[2] flex items-center gap-2.5 py-1.5 pl-3 pr-1.5"
+        className="relative z-[2] flex w-full items-center justify-between gap-4 py-1.5 pl-3.5 pr-1.5"
         role="navigation"
         aria-label="Paginación del listado"
         aria-busy={listFetching}
@@ -59,7 +89,7 @@ export function DataWorkspaceTableInfinitePageDock({
         <p
           className={cn(
             layoutsTablesFooterCountTextClass,
-            "block whitespace-nowrap text-xs font-medium tabular-nums md:justify-self-auto",
+            "block min-w-0 flex-1 truncate text-left text-xs font-medium tabular-nums md:justify-self-auto",
           )}
         >
           <span className="sr-only" aria-live="polite" aria-atomic="true">
@@ -83,6 +113,7 @@ export function DataWorkspaceTableInfinitePageDock({
             )}
           </span>
         </p>
+        <div className="shrink-0">
         <Select
           value={selectValue}
           disabled={selectDisabled}
@@ -116,6 +147,7 @@ export function DataWorkspaceTableInfinitePageDock({
             ))}
           </RootsFormSelectContent>
         </Select>
+        </div>
       </div>
     </MenuHeaderEntity>
   )

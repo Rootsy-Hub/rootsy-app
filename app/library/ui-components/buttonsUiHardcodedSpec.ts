@@ -147,7 +147,7 @@ export function getButtonsUiRadiusPx(
   shape: ButtonsUiShapeId = "default",
 ): number {
   if (shape === "pill") return BUTTONS_UI_PILL_RADIUS_PX
-  return BUTTONS_UI_SIZE_SPECS[sizeId].radiusPx
+  return (BUTTONS_UI_SIZE_SPECS[sizeId] ?? BUTTONS_UI_SIZE_SPECS.compact).radiusPx
 }
 
 export type HardcodedButtonSurface = {

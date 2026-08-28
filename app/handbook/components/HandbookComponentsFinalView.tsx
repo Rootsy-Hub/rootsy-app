@@ -21,6 +21,10 @@ import {
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
+import "@/app/[siteId]/[popId]/menu/menuPlanetFlat.css"
+import "@/app/[siteId]/[popId]/menu/menuPlanetPiedra.css"
+import "@/app/[siteId]/[popId]/menu/menuPlanetGlass.css"
+import { MenuPlanetGlassLayers } from "@/app/[siteId]/[popId]/menu/MenuPlanetGlassLayers"
 import { HandbookDesignSystemNav } from "@/app/handbook/HandbookDesignSystemNav"
 import { HANDBOOK_FINAL_SECTION_SPECIMENS } from "@/app/handbook/components/HandbookComponentsFinalSpecimens"
 import {
@@ -39,7 +43,28 @@ import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspa
 import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
 import { MenuSidebar } from "@/components/MenuSidebar"
 import { RootsIconButton } from "@/components/rootsy-button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
+import {
+  menuFlatGlyphClass,
+  menuFlatIconShellForSection,
+  menuFlatLabelClass,
+  type MenuPlanetFinish,
+} from "@/lib/menu/menuFlatStyles"
+import {
+  menuGlassGlyphClass,
+  menuGlassIconShellForSection,
+  menuGlassLabelClass,
+} from "@/lib/menu/menuGlassStyles"
+import {
+  menuPiedraGlyphClass,
+  menuPiedraIconShellForSection,
+  menuPiedraLabelClass,
+} from "@/lib/menu/menuPiedraStyles"
 import {
   menuHoloFloatLiftClass,
   menuHoloFocusRingForSection,
@@ -531,11 +556,17 @@ type MenuButtonWorldName = keyof typeof MENU_BUTTON_WORLDS
 function MenuPlanetButtonVisual({
   item,
   realm,
+  finish = "holo",
 }: {
   item: MenuCatalogItem
   realm: MenuPlanetRealm
+  finish?: MenuPlanetFinish
 }) {
   const Icon = item.icon
+  const isHolo = finish === "holo"
+  const isFlat = finish === "flat"
+  const isPiedra = finish === "piedra"
+  const isGlass = finish === "glass"
   const lifeStyle = menuPlanetLifeStyle(`${realm}-${item.id}`)
 
   return (
@@ -548,28 +579,60 @@ function MenuPlanetButtonVisual({
       )}
     >
       <div
-        className={cn("relative overflow-visible p-1 -m-1", menuHoloPlanetLifeClass)}
-        style={lifeStyle}
+        className={cn(
+          "relative overflow-visible p-1 -m-1",
+          isHolo && menuHoloPlanetLifeClass,
+        )}
+        style={isHolo ? lifeStyle : undefined}
       >
         <div
           className={cn(
             menuPlanetIconShellClass,
-            menuHoloIconShellForSection(realm, "default"),
-            menuHoloRealmWorldRimClass(realm),
-            menuHoloFloatLiftClass,
-            menuHoloTileMotionClass,
-            menuHoloIconHoverForSection(realm),
+            isGlass
+              ? menuGlassIconShellForSection(realm, "default", true)
+              : isPiedra
+                ? menuPiedraIconShellForSection(
+                    realm,
+                    "default",
+                    true,
+                    `${item.id}-${item.name}`,
+                  )
+                : isFlat
+                  ? menuFlatIconShellForSection(realm, "default", true)
+                  : menuHoloIconShellForSection(realm, "default"),
+            isHolo && menuHoloRealmWorldRimClass(realm),
+            isHolo && menuHoloFloatLiftClass,
+            isHolo && menuHoloTileMotionClass,
+            isHolo && menuHoloIconHoverForSection(realm),
           )}
         >
-          <MenuIconChrome sectionKey={realm} alive />
-          <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
+          {isHolo ? <MenuIconChrome sectionKey={realm} alive /> : null}
+          {isGlass ? <MenuPlanetGlassLayers /> : null}
+          <Icon
+            className={cn(
+              menuPlanetIconGlyphClass,
+              isGlass
+                ? menuGlassGlyphClass
+                : isPiedra
+                  ? menuPiedraGlyphClass
+                  : isFlat
+                    ? menuFlatGlyphClass
+                    : menuHoloGlyphClass,
+            )}
+          />
         </div>
       </div>
       <span
         className={cn(
           "flex h-7 w-full items-start justify-center text-center line-clamp-2 md:h-8 md:items-center",
           menuPlanetTileLabelClass,
-          menuHoloLabelClass,
+          isGlass
+            ? menuGlassLabelClass
+            : isPiedra
+              ? menuPiedraLabelClass
+              : isFlat
+                ? menuFlatLabelClass
+                : menuHoloLabelClass,
         )}
       >
         {item.name}
@@ -589,9 +652,11 @@ function MenuPlanetButtonGhost() {
 
 function MenuGridItemButtonSpecimen({
   world,
+  finish,
   loading,
 }: {
   world: string
+  finish: MenuPlanetFinish
   loading: boolean
 }) {
   const realm =
@@ -605,7 +670,12 @@ function MenuGridItemButtonSpecimen({
               <MenuPlanetButtonGhost key={item.id} />
             ))
           : MENU_BUTTON_EXAMPLES.map((item) => (
-              <MenuPlanetButtonVisual key={item.id} item={item} realm={realm} />
+              <MenuPlanetButtonVisual
+                key={item.id}
+                item={item}
+                realm={realm}
+                finish={finish}
+              />
             ))}
       </div>
     </div>
@@ -656,13 +726,21 @@ function MenuDockSpecimen({
           <div className="flex items-end overflow-visible px-2 py-1">
             <div className="flex items-end gap-4">
               {MENU_POP_DOCK_ITEMS.map((item) => (
-                <DockIconVisual
-                  key={item.id}
-                  icon={item.icon}
-                  sectionKey={item.sectionKey}
-                  variant="dock"
-                  size="md"
-                />
+                <Tooltip key={item.id} delayDuration={200}>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <DockIconVisual
+                        icon={item.icon}
+                        sectionKey={item.sectionKey}
+                        variant="dock"
+                        size="md"
+                      />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={10} atmosphere="eter">
+                    {item.name}
+                  </TooltipContent>
+                </Tooltip>
               ))}
             </div>
             <div
@@ -675,8 +753,8 @@ function MenuDockSpecimen({
                 aria-hidden
               />
               <RootsIconButton
-                tone="ghost"
-                surface="dark"
+                semantic="tertiary"
+                atmosphere="eter"
                 size="compact"
                 label={editing ? "Listo" : "Editar accesos directos"}
               >
@@ -719,6 +797,7 @@ function MenusFinalSpecimen() {
           { name: "item", values: ["Vender", "Mesas", "Artículos", "Ajustes"] },
           { name: "sectionKey", values: ["operar", "administrar", "configurar"] },
           { name: "world", values: ["savia", "sol", "cielo", "lava"] },
+          { name: "finish", values: ["holo", "flat", "piedra", "glass"] },
         ]}
         variants={[
           { name: "Savia" },
@@ -726,11 +805,30 @@ function MenusFinalSpecimen() {
           { name: "Cielo" },
           { name: "Lava" },
         ]}
-        extras={[{ items: [{ name: "loaded" }, { name: "loading" }] }]}
+        extras={[
+          {
+            items: [
+              { name: "Holo" },
+              { name: "Flat" },
+              { name: "Piedra" },
+              { name: "Glass" },
+            ],
+          },
+          { items: [{ name: "loaded" }, { name: "loading" }] },
+        ]}
         render={(variant, extras) => (
           <MenuGridItemButtonSpecimen
             world={variant}
-            loading={extras[0] === "loading"}
+            finish={
+              extras[0] === "Flat"
+                ? "flat"
+                : extras[0] === "Piedra"
+                  ? "piedra"
+                  : extras[0] === "Glass"
+                    ? "glass"
+                    : "holo"
+            }
+            loading={extras[1] === "loading"}
           />
         )}
       />

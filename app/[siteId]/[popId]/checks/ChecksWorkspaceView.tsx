@@ -49,6 +49,7 @@ import {
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -458,6 +459,7 @@ export function ChecksWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
         <DataWorkspaceTableListShell
+          lockScroll={loading}
           activeFiltersBar={
             hasFilterChips ? (
               <DataWorkspaceListActiveFiltersBar
@@ -497,6 +499,18 @@ export function ChecksWorkspaceView() {
           }
           overlay={
             !loading && totalCount === 0 ? <DataWorkspaceTableEmptyMascot /> : null
+          }
+          footerFloating
+          footerFloatingCentered
+          scrollResetKey={ws.page}
+          footer={
+            <DataWorkspaceTableListPageDock
+              listFetching={loading}
+              loadedCount={checks.length}
+              totalCount={totalCount}
+              page={ws.page}
+              onPageJump={(nextPage) => pushWs({ page: nextPage })}
+            />
           }
             infinite={tableListInfiniteFromQuery(checksQuery, "checks")}
         >

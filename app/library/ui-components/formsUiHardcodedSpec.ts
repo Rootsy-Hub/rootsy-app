@@ -29,13 +29,21 @@ import {
 import { ROOTSY_BORDER_COLOR_TOKENS } from "@/app/library/border/rootsyBorderSystem"
 import { ROOTSY_RADIUS_TOKENS } from "@/app/library/radius/rootsyRadiusSystem"
 import { ROOTSY_ELEVATION_SURFACES_LIGHT } from "@/app/library/elevation/rootsyElevationSystem"
-import { ROOTSY_SEMANTIC_TOKENS } from "@/app/library/color/rootsyColorSystem"
-import { getRootsyTheme, rootsyColorHex, rootsySpacePx } from "@/lib/design-system"
-import { LAYOUTS_OPERAR_FORM_DARK } from "@/app/library/layouts/layoutsOperarFormTokens"
+import { rootsyColorHex, rootsySpacePx } from "@/lib/design-system"
+import {
+  getRootsFormAtmosphereRecipe,
+  type RootsFormStyleOptions,
+} from "@/app/library/ui-components/rootsFormAtmosphere"
 import { ROOTSY_FONT_WEIGHTS, ROOTSY_TEXT_STYLES } from "@/lib/design-system/tokens/typography"
 
+export type { RootsFormAtmosphere, RootsFormStyleOptions, RootsFormTone } from "@/app/library/ui-components/rootsFormAtmosphere"
+export {
+  getRootsFormAtmosphereRecipe,
+  isRootsFormToneDark,
+  resolveRootsFormAtmosphere,
+} from "@/app/library/ui-components/rootsFormAtmosphere"
+
 const hx = rootsyColorHex
-const workspace = getRootsyTheme("workspace")
 
 function borderHex(token: string): string {
   return ROOTSY_BORDER_COLOR_TOKENS.find((item) => item.token === token)!.value
@@ -44,29 +52,6 @@ function borderHex(token: string): string {
 function elevationHex(token: string): string {
   return ROOTSY_ELEVATION_SURFACES_LIGHT.find((item) => item.token === token)!.value
 }
-
-function semanticHex(id: string): string {
-  return ROOTSY_SEMANTIC_TOKENS.find((item) => item.id === id)!.hex
-}
-
-function semanticTextHex(id: string): string {
-  const row = ROOTSY_SEMANTIC_TOKENS.find((item) => item.id === id)!
-  return "textHex" in row && row.textHex ? row.textHex : row.hex
-}
-
-const FOCUS_RING = `0 0 0 2px color-mix(in srgb, ${borderHex("color.border.focused")} 45%, transparent)`
-const ERROR_RING = `0 0 0 2px color-mix(in srgb, ${semanticHex("status-danger")} 25%, transparent)`
-
-export type RootsFormTone = "light" | "dark"
-
-export type RootsFormStyleOptions = {
-  tone?: RootsFormTone
-}
-
-const FORM_DARK_BORDER = LAYOUTS_OPERAR_FORM_DARK.border
-const FORM_DARK_BORDER_HOVER = LAYOUTS_OPERAR_FORM_DARK.borderHover
-const FORM_DARK_BORDER_FOCUS = LAYOUTS_OPERAR_FORM_DARK.borderFocus
-const FORM_DARK_FOCUS_RING = LAYOUTS_OPERAR_FORM_DARK.focusRing
 
 export type FormControlUiSurface = {
   backgroundColor: string
@@ -86,18 +71,26 @@ export const FORM_UI_FIELD_STACK = {
   gapPx: rootsySpacePx("100"),
 }
 
-/** Label — font.body medium · bruma-700 · sin all-caps (typography guidelines). */
+/** Label — font.body medium · muted de la atmósfera · sin all-caps. */
 export const FORM_UI_LABEL_STYLE = {
   fontFamily: "var(--rootsy-font-ui)",
   fontSize: ROOTSY_TEXT_STYLES.body.fontSize,
   lineHeight: ROOTSY_TEXT_STYLES.body.lineHeight,
   fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
-  color: hx("bruma", "700"),
+  color: "var(--rootsy-bruma-700)",
 }
 
 export const FORM_UI_LABEL_STYLE_DARK = {
   ...FORM_UI_LABEL_STYLE,
-  color: LAYOUTS_OPERAR_FORM_DARK.label,
+  color: "var(--rootsy-sombra-300)",
+}
+
+export function getFormLabelUiStyle(options?: RootsFormStyleOptions) {
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
+  return {
+    ...FORM_UI_LABEL_STYLE,
+    color: recipe.label,
+  }
 }
 
 export const FORM_UI_CONTROL_TYPOGRAPHY = {
@@ -110,24 +103,16 @@ export const FORM_UI_CONTROL_TYPOGRAPHY = {
 export const FORM_UI_LEADING_SLOT_TYPOGRAPHY = {
   ...FORM_UI_CONTROL_TYPOGRAPHY,
   fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
-  color: hx("bruma", "500"),
+  color: "var(--rootsy-bruma-700)",
 }
 
-function getDefaultControlSurface(): FormControlUiSurface {
+function getDefaultControlSurface(options?: RootsFormStyleOptions): FormControlUiSurface {
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
   return {
-    backgroundColor: elevationHex("elevation.surface.overlay"),
-    color: hx("bruma", "900"),
-    border: `1px solid ${borderHex("color.border")}`,
-    placeholderColor: hx("bruma", "500"),
-  }
-}
-
-function getDarkDefaultControlSurface(): FormControlUiSurface {
-  return {
-    backgroundColor: LAYOUTS_OPERAR_FORM_DARK.surface,
-    color: LAYOUTS_OPERAR_FORM_DARK.text,
-    border: `1px solid ${FORM_DARK_BORDER}`,
-    placeholderColor: LAYOUTS_OPERAR_FORM_DARK.textMuted,
+    backgroundColor: recipe.surface,
+    color: recipe.text,
+    border: `1px solid ${recipe.border}`,
+    placeholderColor: recipe.textMuted,
   }
 }
 
@@ -135,9 +120,8 @@ export function getFormControlUiSurface(
   state: FormControlStateId = "default",
   options?: RootsFormStyleOptions,
 ): FormControlUiSurface {
-  const tone = options?.tone ?? "light"
-  const base =
-    tone === "dark" ? getDarkDefaultControlSurface() : getDefaultControlSurface()
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
+  const base = getDefaultControlSurface(options)
 
   switch (state) {
     case "default":
@@ -145,36 +129,27 @@ export function getFormControlUiSurface(
     case "hover":
       return {
         ...base,
-        border:
-          tone === "dark"
-            ? `1px solid ${FORM_DARK_BORDER_HOVER}`
-            : `1px solid ${hx("bruma", "300")}`,
+        border: `1px solid ${recipe.borderHover}`,
       }
     case "focus":
       return {
         ...base,
-        border:
-          tone === "dark"
-            ? `1px solid ${FORM_DARK_BORDER_FOCUS}`
-            : `1px solid ${borderHex("color.border.focused")}`,
-        boxShadow: tone === "dark" ? FORM_DARK_FOCUS_RING : FOCUS_RING,
+        border: `1px solid ${recipe.focus}`,
+        boxShadow: recipe.focusRing,
       }
     case "disabled":
       return { ...base, opacity: 0.5 }
     case "error":
       return {
         ...base,
-        border: `1px solid ${semanticHex("status-danger")}`,
-        boxShadow: ERROR_RING,
+        border: `1px solid ${recipe.error}`,
+        boxShadow: recipe.errorRing,
       }
     case "readonly":
       return {
         ...base,
-        backgroundColor:
-          tone === "dark"
-            ? LAYOUTS_OPERAR_FORM_DARK.surfaceSunken
-            : elevationHex("elevation.surface.sunken"),
-        color: tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.text : workspace.textPrimary,
+        backgroundColor: recipe.surfaceSunken,
+        color: recipe.text,
       }
   }
 }
@@ -183,7 +158,7 @@ export function getFormAssistUiStyle(
   variant: FormAssistVariantId,
   options?: RootsFormStyleOptions,
 ): CSSPropertiesLike {
-  const tone = options?.tone ?? "light"
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
   const base = {
     fontFamily: "var(--rootsy-font-ui)",
     fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
@@ -193,29 +168,13 @@ export function getFormAssistUiStyle(
 
   switch (variant) {
     case "hint":
-      return {
-        ...base,
-        color:
-          tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.textMuted : hx("bruma", "500"),
-      }
+      return { ...base, color: recipe.textMuted }
     case "error":
-      return {
-        ...base,
-        color:
-          tone === "dark"
-            ? `color-mix(in srgb, ${semanticHex("status-danger")} 72%, white)`
-            : semanticHex("status-danger"),
-      }
+      return { ...base, color: recipe.errorText }
     case "warning":
-      return { ...base, color: semanticTextHex("status-warning") }
+      return { ...base, color: recipe.warningText }
     case "success":
-      return {
-        ...base,
-        color:
-          tone === "dark"
-            ? "color-mix(in srgb, var(--rootsy-savia-300) 88%, white)"
-            : semanticTextHex("status-success"),
-      }
+      return { ...base, color: recipe.successText }
   }
 }
 
@@ -232,14 +191,14 @@ export function getCheckboxUiSurface(
   state: FormControlStateId = "default",
   options?: RootsFormStyleOptions,
 ): FormControlUiSurface {
-  const tone = options?.tone ?? "light"
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
   const base = getFormControlUiSurface(state, options)
 
   if (checked) {
     return {
-      backgroundColor: state === "disabled" ? hx("savia", "400") : hx("savia", "600"),
-      color: elevationHex("elevation.surface.overlay"),
-      border: `1px solid ${state === "error" ? semanticHex("status-danger") : hx("savia", "600")}`,
+      backgroundColor: recipe.solidFill,
+      color: recipe.solidInk,
+      border: `1px solid ${state === "error" ? recipe.error : recipe.solidFill}`,
       boxShadow: base.boxShadow,
       opacity: base.opacity,
     }
@@ -247,27 +206,26 @@ export function getCheckboxUiSurface(
 
   return {
     ...base,
-    backgroundColor:
-      tone === "dark"
-        ? LAYOUTS_OPERAR_FORM_DARK.surface
-        : elevationHex("elevation.surface.overlay"),
+    backgroundColor: recipe.surface,
   }
 }
 
 export function getSwitchUiSurface(
   on: boolean,
   state: FormControlStateId = "default",
+  options?: RootsFormStyleOptions,
 ): {
   trackColor: string
   thumbColor: string
   opacity?: number
   boxShadow?: string
 } {
-  const control = getFormControlUiSurface(state)
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
+  const control = getFormControlUiSurface(state, options)
 
   return {
-    trackColor: on ? hx("savia", "600") : hx("bruma", "200"),
-    thumbColor: elevationHex("elevation.surface.overlay"),
+    trackColor: on ? recipe.solidFill : recipe.trackOff,
+    thumbColor: on ? recipe.solidInk : recipe.thumbOff,
     opacity: control.opacity,
     boxShadow: control.boxShadow,
   }
@@ -295,33 +253,14 @@ export function getLeadingSlotUiStyle(
   state: FormControlStateId = "default",
   options?: RootsFormStyleOptions,
 ): LeadingSlotUiStyle {
-  const tone = options?.tone ?? "light"
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
   const shell = getCompositeShellUiSurface(state, options)
-  const dividerColor =
-    tone === "dark"
-      ? state === "hover"
-        ? FORM_DARK_BORDER_HOVER
-        : state === "error"
-          ? semanticHex("status-danger")
-          : state === "focus"
-            ? FORM_DARK_BORDER_FOCUS
-            : FORM_DARK_BORDER
-      : state === "hover"
-        ? hx("bruma", "300")
-        : state === "error"
-          ? semanticHex("status-danger")
-          : state === "focus"
-            ? borderHex("color.border.focused")
-            : borderHex("color.border")
 
   return {
     ...FORM_UI_LEADING_SLOT_TYPOGRAPHY,
-    color: tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.icon : FORM_UI_LEADING_SLOT_TYPOGRAPHY.color,
-    backgroundColor:
-      tone === "dark"
-        ? LAYOUTS_OPERAR_FORM_DARK.surfaceSunken
-        : elevationHex("elevation.surface.sunken"),
-    borderRight: `1px solid ${dividerColor}`,
+    color: recipe.icon,
+    backgroundColor: "transparent",
+    borderRight: "none",
     opacity: shell.opacity,
   }
 }
@@ -333,15 +272,12 @@ export function getCompositeValueUiStyle(
   backgroundColor: string
   opacity?: number
 } {
-  const tone = options?.tone ?? "light"
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
   const shell = getCompositeShellUiSurface(state, options)
 
   if (state === "readonly") {
     return {
-      backgroundColor:
-        tone === "dark"
-          ? LAYOUTS_OPERAR_FORM_DARK.surfaceSunken
-          : elevationHex("elevation.surface.sunken"),
+      backgroundColor: recipe.surfaceSunken,
       opacity: shell.opacity,
     }
   }
@@ -382,7 +318,7 @@ function imageUploadBorder(
 function imageUploadSurfaceFromBase(
   base: FormControlUiSurface,
   style: "solid" | "dashed",
-  borderColor = borderHex("color.border"),
+  borderColor: string,
 ): ImageUploadUiSurface {
   const { border: _border, ...rest } = base
   return {
@@ -394,44 +330,45 @@ function imageUploadSurfaceFromBase(
 export function getImageUploadUiSurface(
   mode: FormImageUploadModeId,
   state: FormImageUploadDisplayStateId = "default",
+  options?: RootsFormStyleOptions,
 ): ImageUploadUiSurface {
-  const base = getDefaultControlSurface()
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
+  const base = getDefaultControlSurface(options)
   const borderStyle: "solid" | "dashed" = mode === "empty" ? "dashed" : "solid"
 
   if (state === "drag") {
     return {
-      backgroundColor: `color-mix(in srgb, ${borderHex("color.border.selected")} 4%, ${elevationHex("elevation.surface.overlay")})`,
-      color: hx("bruma", "900"),
-      ...imageUploadBorder(borderHex("color.border.selected"), borderStyle),
-      boxShadow: `0 0 0 2px color-mix(in srgb, ${borderHex("color.border.selected")} 20%, transparent)`,
+      backgroundColor: `color-mix(in srgb, ${recipe.focus} 8%, ${recipe.surface})`,
+      color: recipe.text,
+      ...imageUploadBorder(recipe.focus, borderStyle),
+      boxShadow: recipe.focusRing,
     }
   }
 
   switch (state) {
     case "default":
-      return imageUploadSurfaceFromBase(base, borderStyle)
+      return imageUploadSurfaceFromBase(base, borderStyle, recipe.border)
     case "hover":
       return {
-        ...imageUploadSurfaceFromBase(base, borderStyle, hx("bruma", "300")),
-        backgroundColor:
-          mode === "empty" ? elevationHex("elevation.surface.sunken") : base.backgroundColor,
+        ...imageUploadSurfaceFromBase(base, borderStyle, recipe.borderHover),
+        backgroundColor: mode === "empty" ? recipe.surfaceSunken : base.backgroundColor,
       }
     case "focus":
       return {
-        ...imageUploadSurfaceFromBase(base, borderStyle, borderHex("color.border.focused")),
-        boxShadow: FOCUS_RING,
+        ...imageUploadSurfaceFromBase(base, borderStyle, recipe.focus),
+        boxShadow: recipe.focusRing,
       }
     case "disabled":
-      return { ...imageUploadSurfaceFromBase(base, borderStyle), opacity: 0.5 }
+      return { ...imageUploadSurfaceFromBase(base, borderStyle, recipe.border), opacity: 0.5 }
     case "error":
       return {
-        ...imageUploadSurfaceFromBase(base, borderStyle, semanticHex("status-danger")),
-        boxShadow: ERROR_RING,
+        ...imageUploadSurfaceFromBase(base, borderStyle, recipe.error),
+        boxShadow: recipe.errorRing,
       }
     case "readonly":
       return {
-        ...imageUploadSurfaceFromBase(base, "solid"),
-        backgroundColor: elevationHex("elevation.surface.sunken"),
+        ...imageUploadSurfaceFromBase(base, "solid", recipe.border),
+        backgroundColor: recipe.surfaceSunken,
       }
   }
 }
@@ -439,6 +376,7 @@ export function getImageUploadUiSurface(
 export function getImageUploadThumbUiStyle(
   mode: FormImageUploadModeId,
   state: FormImageUploadDisplayStateId = "default",
+  options?: RootsFormStyleOptions,
 ): {
   backgroundColor: string
   borderWidth: string
@@ -447,35 +385,39 @@ export function getImageUploadThumbUiStyle(
   borderRadiusPx: number
   opacity?: number
 } {
-  const shell = getImageUploadUiSurface(mode, state === "drag" ? "drag" : state)
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
+  const shell = getImageUploadUiSurface(mode, state === "drag" ? "drag" : state, options)
   const borderColor =
     state === "error"
-      ? semanticHex("status-danger")
+      ? recipe.error
       : state === "focus" || state === "drag"
-        ? borderHex("color.border.focused")
-        : borderHex("color.border")
+        ? recipe.focus
+        : recipe.border
 
   return {
-    backgroundColor:
-      mode === "filled" ? hx("bruma", "100") : elevationHex("elevation.surface.sunken"),
+    backgroundColor: mode === "filled" ? recipe.surfaceSunken : recipe.surfaceSunken,
     ...imageUploadBorder(borderColor, mode === "empty" ? "dashed" : "solid"),
     borderRadiusPx: ROOTSY_FORM_CONTROL_SPECS["image-upload"].thumbRadiusPx,
     opacity: shell.opacity,
   }
 }
 
-export function getImageUploadActionUiStyle(state: FormControlStateId = "default"): {
+export function getImageUploadActionUiStyle(
+  state: FormControlStateId = "default",
+  options?: RootsFormStyleOptions,
+): {
   sizePx: number
   color: string
   hoverBackground: string
   opacity?: number
 } {
-  const shell = getFormControlUiSurface(state)
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
+  const shell = getFormControlUiSurface(state, options)
 
   return {
     sizePx: ROOTSY_FORM_CONTROL_SPECS["image-upload"].actionHitPx,
-    color: hx("bruma", "500"),
-    hoverBackground: elevationHex("elevation.surface.sunken"),
+    color: recipe.icon,
+    hoverBackground: recipe.surfaceSunken,
     opacity: shell.opacity,
   }
 }
@@ -491,7 +433,22 @@ export const FORM_UI_IMAGE_UPLOAD_META_STYLE = {
   fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
   lineHeight: ROOTSY_TEXT_STYLES["body.small"].lineHeight,
   fontWeight: ROOTSY_FONT_WEIGHTS.regular.value,
-  color: hx("bruma", "500"),
+  color: "var(--rootsy-bruma-700)",
+}
+
+export function getFormImageUploadCopyStyle(options?: RootsFormStyleOptions) {
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
+  return {
+    title: {
+      ...FORM_UI_IMAGE_UPLOAD_TITLE_STYLE,
+      color: recipe.text,
+    },
+    meta: {
+      ...FORM_UI_IMAGE_UPLOAD_META_STYLE,
+      color: recipe.textMuted,
+    },
+    icon: recipe.icon,
+  }
 }
 
 export const FORM_UI_DEMO_COPY = {
@@ -706,14 +663,14 @@ export function getFormUiInlineIconShellStyle(
   state: FormControlStateId = "default",
   options?: RootsFormStyleOptions,
 ) {
-  const tone = options?.tone ?? "light"
+  const recipe = getRootsFormAtmosphereRecipe(options?.tone)
   const spec = getFormControlSpec("text")
   const shell = getFormControlUiSurface(state, options)
 
   return {
     spec,
     shell,
-    iconColor: tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.icon : hx("bruma", "500"),
+    iconColor: recipe.icon,
     gapPx: rootsySpacePx("100"),
     paddingXPx: spec.paddingXPx,
     typography: FORM_UI_CONTROL_TYPOGRAPHY,

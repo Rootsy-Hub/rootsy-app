@@ -1,6 +1,7 @@
 "use client"
 
 import { HomeHeaderUserCluster } from "@/app/home/HomeHeaderUserCluster"
+import "@/app/[siteId]/[popId]/menu/menuHeaderEntity.css"
 import { eterHeaderFocusRingClass } from "@/lib/eter/eterChrome"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
@@ -13,8 +14,9 @@ export type HomePageHeaderProps = {
 
 export function HomePageHeader({ userId, loading }: HomePageHeaderProps) {
   return (
-    <header className="relative z-20 w-full shrink-0 pt-[env(safe-area-inset-top)]">
-      <div className="flex h-16 min-h-0 items-center justify-between px-4 md:h-20 md:px-8">
+    <header className="relative z-20 w-full shrink-0 overflow-hidden pt-[env(safe-area-inset-top)]">
+      <div aria-hidden className="menu-header-entity-atmosphere" />
+      <div className="relative flex h-16 min-h-0 items-center justify-between px-4 md:h-20 md:px-8">
         <Link
           href="/"
           aria-label="Rootsy — landing"

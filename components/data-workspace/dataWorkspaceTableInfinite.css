@@ -181,174 +181,159 @@
   }
 }
 
-/** Dock de páginas — atmósfera sombra (fondo 950 + blur). */
-.data-workspace-table-page-dock.menu-header-entity .menu-header-entity-body--floor {
-  --tw-backdrop-blur: blur(18px);
-  --tw-backdrop-saturate: saturate(1.08);
-  border-radius: inherit;
-  background: color-mix(in srgb, var(--rootsy-sombra-950) 78%, transparent);
-  border-color: color-mix(in srgb, var(--rootsy-sombra-400) 55%, transparent);
-  backdrop-filter: blur(18px) saturate(1.08);
-  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+/**
+ * Dock de páginas — cristal sombra, sin borde en reposo.
+ * El cristal va en el footer con utilidades Tailwind: Lightning CSS
+ * descarta backdrop-filter del CSS plano. isolate en el mismo nodo
+ * también vacía el backdrop.
+ * Hover / carga: outline pensando + sombra accent detrás.
+ */
+.data-workspace-table-page-dock.menu-header-entity {
+  overflow: hidden;
+  width: 16rem;
+  min-width: 16rem;
+  max-width: 16rem;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--rootsy-negro) 90%, transparent);
+  transition: border-color 520ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .data-workspace-table-page-dock.menu-header-entity .menu-header-entity-body--floor {
-    background: var(--rootsy-sombra-950);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
+.data-workspace-table-page-dock:has([aria-busy="true"]),
+[data-fetching-more] .data-workspace-table-page-dock.menu-header-entity {
+  border-color: var(--rootsy-savia-500);
+}
+
+.data-workspace-table-page-dock.menu-header-entity
+  .menu-header-entity-body.menu-header-entity-body--floor {
+  --tw-backdrop-blur: none;
+  isolation: auto;
+  border: 0;
+  border-top-width: 0;
+  outline: 1.5px solid transparent;
+  outline-offset: 0;
+  border-radius: inherit;
+  box-shadow: none;
+  background: transparent;
 }
 
 .data-workspace-table-page-dock
   .menu-header-entity-body--floor
-  :is(
-    .menu-header-entity-core,
-    .menu-header-entity-sky,
-    .menu-header-entity-weight,
-    .menu-header-entity-soil,
-    .menu-header-entity-horizon
-  ) {
+  > [aria-hidden] {
   display: none;
 }
 
-/**
- * Pulso de actividad — conic que recorre el borde + wash de accent.
- * Se enciende con aria-busy (carga inicial) o [data-fetching-more] (infinite).
- * El ::after tapa el centro; el anillo deja ver el conic. Solo rotate / background-position.
- */
-:is(
-  .data-workspace-table-page-dock:has([aria-busy="true"]),
-  [data-fetching-more] .data-workspace-table-page-dock
-).data-workspace-table-page-dock {
-  overflow: visible;
-}
-
-:is(
-  .data-workspace-table-page-dock:has([aria-busy="true"]),
-  [data-fetching-more] .data-workspace-table-page-dock
-).data-workspace-table-page-dock.menu-header-entity
-  .menu-header-entity-body--floor {
-  isolation: isolate;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-foco) 22%, transparent),
-    0 0 18px color-mix(in srgb, var(--color-foco) 16%, transparent);
-}
-
-:is(
-  .data-workspace-table-page-dock:has([aria-busy="true"]),
-  [data-fetching-more] .data-workspace-table-page-dock
-).data-workspace-table-page-dock.menu-header-entity
+.data-workspace-table-page-dock.menu-header-entity
   .menu-header-entity-body--floor
   > .relative {
   z-index: 2;
 }
 
-:is(
-  .data-workspace-table-page-dock:has([aria-busy="true"]),
-  [data-fetching-more] .data-workspace-table-page-dock
-).data-workspace-table-page-dock.menu-header-entity
-  .menu-header-entity-body--floor::before,
-:is(
-  .data-workspace-table-page-dock:has([aria-busy="true"]),
-  [data-fetching-more] .data-workspace-table-page-dock
-).data-workspace-table-page-dock.menu-header-entity
-  .menu-header-entity-body--floor::after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
+.data-workspace-table-page-dock:is(:hover, :focus-within),
+.data-workspace-table-page-dock:has([aria-busy="true"]),
+[data-fetching-more] .data-workspace-table-page-dock {
+  animation: data-workspace-table-page-dock-think-shadow 5.2s
+    ease-in-out infinite;
 }
 
-:is(
-  .data-workspace-table-page-dock:has([aria-busy="true"]),
-  [data-fetching-more] .data-workspace-table-page-dock
-).data-workspace-table-page-dock.menu-header-entity
-  .menu-header-entity-body--floor::before {
-  z-index: 0;
-  top: 50%;
-  left: 50%;
-  width: 240%;
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    transparent 268deg,
-    color-mix(in srgb, var(--color-foco) 0%, transparent) 292deg,
-    color-mix(in srgb, var(--color-foco) 42%, transparent) 318deg,
-    color-mix(in srgb, var(--rootsy-savia-300) 88%, var(--rootsy-blanco)) 338deg,
-    color-mix(in srgb, var(--color-foco) 48%, transparent) 352deg,
-    transparent 360deg
-  );
-  animation: data-workspace-table-page-dock-orbit 2.2s linear infinite;
+.data-workspace-table-page-dock:is(:hover, :focus-within)
+  .menu-header-entity-body--floor,
+.data-workspace-table-page-dock:has([aria-busy="true"])
+  .menu-header-entity-body--floor,
+[data-fetching-more]
+  .data-workspace-table-page-dock
+  .menu-header-entity-body--floor {
+  animation: data-workspace-table-page-dock-think-outline 2.8s
+    ease-in-out infinite;
 }
 
-:is(
-  .data-workspace-table-page-dock:has([aria-busy="true"]),
-  [data-fetching-more] .data-workspace-table-page-dock
-).data-workspace-table-page-dock.menu-header-entity
-  .menu-header-entity-body--floor::after {
-  inset: 1.5px;
-  z-index: 0;
-  border-radius: inherit;
-  background:
-    linear-gradient(
-      118deg,
-      transparent 18%,
-      color-mix(in srgb, var(--color-foco) 10%, transparent) 42%,
-      color-mix(in srgb, var(--rootsy-savia-600) 12%, transparent) 52%,
-      color-mix(in srgb, var(--color-foco) 8%, transparent) 64%,
-      transparent 82%
-    )
-    0 0 / 220% 220%,
-    color-mix(in srgb, var(--rootsy-sombra-950) 94%, transparent);
-  animation: data-workspace-table-page-dock-wash 4.6s
-    cubic-bezier(0.4, 0, 0.2, 1) infinite;
+.data-workspace-table-page-dock:has([aria-busy="true"])
+  .menu-header-entity-body--floor,
+[data-fetching-more]
+  .data-workspace-table-page-dock
+  .menu-header-entity-body--floor {
+  animation-duration: 2.2s;
 }
 
-@keyframes data-workspace-table-page-dock-orbit {
-  to {
-    rotate: 360deg;
-  }
+.data-workspace-table-page-dock:has([aria-busy="true"]),
+[data-fetching-more] .data-workspace-table-page-dock {
+  animation-duration: 4.4s;
 }
 
-@keyframes data-workspace-table-page-dock-wash {
+@keyframes data-workspace-table-page-dock-think-outline {
   0%,
   100% {
-    background-position: 12% 38%, 0 0;
+    outline-color: color-mix(in srgb, var(--color-foco) 22%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-foco) 16%, transparent),
+      0 0 16px color-mix(in srgb, var(--color-foco) 12%, transparent);
   }
   50% {
-    background-position: 88% 62%, 0 0;
+    outline-color: color-mix(in srgb, var(--color-foco) 62%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-foco) 36%, transparent),
+      0 0 26px color-mix(in srgb, var(--color-foco) 28%, transparent);
+  }
+}
+
+@keyframes data-workspace-table-page-dock-think-shadow {
+  0%,
+  100% {
+    box-shadow:
+      0 16px 40px color-mix(in srgb, var(--rootsy-sombra-950) 42%, transparent),
+      0 10px 28px color-mix(in srgb, var(--color-foco) 16%, transparent),
+      0 0 18px color-mix(in srgb, var(--rootsy-savia-400) 10%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 18px 48px color-mix(in srgb, var(--rootsy-sombra-950) 36%, transparent),
+      0 6px 36px color-mix(in srgb, var(--color-foco) 34%, transparent),
+      0 0 28px color-mix(in srgb, var(--rootsy-savia-400) 22%, transparent);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .data-workspace-table-page-dock.menu-header-entity {
+    --tw-backdrop-blur: none;
+    background: var(--rootsy-negro);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :is(
-    .data-workspace-table-page-dock:has([aria-busy="true"]),
-    [data-fetching-more] .data-workspace-table-page-dock
-  ).data-workspace-table-page-dock.menu-header-entity
-    .menu-header-entity-body--floor::before,
-  :is(
-    .data-workspace-table-page-dock:has([aria-busy="true"]),
-    [data-fetching-more] .data-workspace-table-page-dock
-  ).data-workspace-table-page-dock.menu-header-entity
-    .menu-header-entity-body--floor::after {
+  .data-workspace-table-page-dock.menu-header-entity {
+    transition: none;
+  }
+
+  .data-workspace-table-page-dock:is(:hover, :focus-within),
+  .data-workspace-table-page-dock:has([aria-busy="true"]),
+  [data-fetching-more] .data-workspace-table-page-dock,
+  .data-workspace-table-page-dock:is(:hover, :focus-within)
+    .menu-header-entity-body--floor,
+  .data-workspace-table-page-dock:has([aria-busy="true"])
+    .menu-header-entity-body--floor,
+  [data-fetching-more]
+    .data-workspace-table-page-dock
+    .menu-header-entity-body--floor {
     animation: none;
   }
 
-  :is(
-    .data-workspace-table-page-dock:has([aria-busy="true"]),
-    [data-fetching-more] .data-workspace-table-page-dock
-  ).data-workspace-table-page-dock.menu-header-entity
-    .menu-header-entity-body--floor::before {
-    rotate: 210deg;
+  .data-workspace-table-page-dock:is(:hover, :focus-within)
+    .menu-header-entity-body--floor,
+  .data-workspace-table-page-dock:has([aria-busy="true"])
+    .menu-header-entity-body--floor,
+  [data-fetching-more]
+    .data-workspace-table-page-dock
+    .menu-header-entity-body--floor {
+    outline-color: color-mix(in srgb, var(--color-foco) 42%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-foco) 28%, transparent),
+      0 0 18px color-mix(in srgb, var(--color-foco) 18%, transparent);
   }
 
-  :is(
-    .data-workspace-table-page-dock:has([aria-busy="true"]),
-    [data-fetching-more] .data-workspace-table-page-dock
-  ).data-workspace-table-page-dock.menu-header-entity
-    .menu-header-entity-body--floor::after {
-    background-position: 50% 50%, 0 0;
+  .data-workspace-table-page-dock:is(:hover, :focus-within),
+  .data-workspace-table-page-dock:has([aria-busy="true"]),
+  [data-fetching-more] .data-workspace-table-page-dock {
+    box-shadow:
+      0 16px 40px color-mix(in srgb, var(--rootsy-sombra-950) 42%, transparent),
+      0 8px 28px color-mix(in srgb, var(--color-foco) 22%, transparent);
   }
 }

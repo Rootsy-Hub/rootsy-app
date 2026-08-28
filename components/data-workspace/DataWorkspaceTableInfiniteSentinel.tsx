@@ -35,11 +35,11 @@ export function tableListInfiniteFromQuery(
     hasNextPage: boolean
     isFetchingNextPage: boolean
     fetchNextPage: () => unknown
-    data?: { totalCount?: number } | null
+    data?: { totalCount?: number; total?: number } | null
   },
   world: DataWorkspaceTableInfiniteWorld,
 ): DataWorkspaceTableListInfinite {
-  const totalCount = query.data?.totalCount ?? 0
+  const totalCount = query.data?.totalCount ?? query.data?.total ?? 0
   const loaded = loadedTableRowCount(query.data)
   const hasItems = totalCount > 0 || loaded > 0
   const loadedAll = totalCount > 0 && loaded >= totalCount

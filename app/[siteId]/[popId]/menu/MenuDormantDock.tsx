@@ -1,5 +1,4 @@
 import {
-  DOCK_CHROME_INSET_PX,
   DOCK_ICON_SIZE_PX,
   DOCK_SHELL_PADDING_X_PX,
   DOCK_SHELL_PADDING_Y_PX,
@@ -15,8 +14,10 @@ import { cn } from "@/lib/utils"
 /** Dock en fantasma — mismos huecos, sin íconos. */
 export function MenuDormantDock() {
   const dockCount = DEFAULT_MENU_DOCK_IDS.length
-  const trackWidth = dockCount * DOCK_SLOT_SHIFT_PX
-  const iconInset = (DOCK_SLOT_SHIFT_PX - DOCK_ICON_SIZE_PX) / 2
+  const trackWidth =
+    dockCount > 0
+      ? (dockCount - 1) * DOCK_SLOT_SHIFT_PX + DOCK_ICON_SIZE_PX
+      : 0
 
   return (
     <div className="flex w-full justify-center" aria-hidden>
@@ -26,7 +27,7 @@ export function MenuDormantDock() {
           paddingTop: DOCK_SHELL_PADDING_Y_PX,
           paddingBottom: DOCK_SHELL_PADDING_Y_PX,
           paddingLeft: DOCK_SHELL_PADDING_X_PX,
-          paddingRight: DOCK_CHROME_INSET_PX,
+          paddingRight: DOCK_SHELL_PADDING_X_PX,
         }}
       >
         <div
@@ -42,7 +43,7 @@ export function MenuDormantDock() {
               )}
               style={{
                 bottom: DOCK_TRACK_INSET_Y_PX,
-                left: index * DOCK_SLOT_SHIFT_PX + iconInset,
+                left: index * DOCK_SLOT_SHIFT_PX,
                 width: DOCK_ICON_SIZE_PX,
               }}
             >

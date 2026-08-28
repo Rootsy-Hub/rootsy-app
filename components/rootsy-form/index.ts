@@ -1,5 +1,12 @@
 export { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 export { RootsFormToneProvider } from "@/components/rootsy-form/rootsFormToneContext"
+export {
+  getRootsFormAtmosphereRecipe,
+  isRootsFormToneDark,
+  resolveRootsFormAtmosphere,
+  type RootsFormAtmosphere,
+  type RootsFormTone,
+} from "@/app/library/ui-components/rootsFormAtmosphere"
 export { RootsFormLabelInfo } from "@/components/rootsy-form/RootsFormLabelInfo"
 export { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
 export { RootsFormTextField } from "@/components/rootsy-form/RootsFormTextField"

@@ -4,16 +4,9 @@ import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceH
 import { WorkspaceMobileAccountCluster } from "@/components/layouts/WorkspaceMobileAccountCluster"
 import { PopLogoLightboxButton } from "@/components/pop-identity/PopLogoLightboxButton"
 import { RootsIconButton } from "@/components/rootsy-button"
+import { RootsFormSearchField, RootsFormToneProvider } from "@/components/rootsy-form"
 import { menuHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
-import {
-  menuSearchClearButtonClass,
-  menuSearchFieldActiveClass,
-  menuSearchFieldIconClass,
-  menuSearchFieldIdleClass,
-  menuSearchInputClass,
-  menuSearchShellClass,
-  menuSearchShortcutClass,
-} from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
+import { menuSearchShortcutClass } from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
 import {
   eterHeaderDividerClass,
   eterHeaderHairlineClass,
@@ -22,7 +15,7 @@ import {
 } from "@/lib/eter/eterChrome"
 import { cn } from "@/lib/utils"
 import { MenuNotificationsButton } from "@/app/[siteId]/[popId]/menu/MenuNotificationsButton"
-import { Home, Search, X } from "lucide-react"
+import { Home, Search } from "lucide-react"
 import type { RefObject } from "react"
 
 type MenuPageHeaderProps = {
@@ -274,58 +267,39 @@ function MenuSearchField({
 }) {
   return (
     <div
-      className={cn(menuSearchShellClass, "min-w-0 flex-1", !expanded && "cursor-text")}
+      className={cn("relative min-w-0 flex-1", !expanded && "cursor-text")}
       onClick={(event) => {
         if (expanded) return
         if (event.target instanceof HTMLInputElement) return
         onOpen()
       }}
     >
-      <Search
-        className={cn(
-          "pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2",
-          menuSearchFieldIconClass,
-        )}
-        aria-hidden
-      />
-      <input
-        ref={inputRef}
-        type="search"
-        inputMode="search"
-        enterKeyHint="search"
-        placeholder="Buscar..."
-        value={query}
-        onChange={(event) => onChange(event.target.value)}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        aria-label="Buscar en el menú"
-        aria-expanded={expanded}
-        className={cn(
-          menuSearchInputClass,
-          expanded ? menuSearchFieldActiveClass : menuSearchFieldIdleClass,
-        )}
-      />
-      {expanded ? (
-        <button
-          type="button"
-          data-menu-search-close
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={(event) => {
-            event.stopPropagation()
-            onClose()
+      <RootsFormToneProvider tone="eter">
+        <RootsFormSearchField
+          hideLabel
+          label="Buscar en el menú"
+          placeholder="Buscar..."
+          value={query}
+          onChange={(event) => onChange(event.target.value)}
+          onClear={expanded ? onClose : undefined}
+          inputRef={inputRef}
+          className="min-w-0 gap-0"
+          surface="ghost"
+          inputProps={{
+            "aria-expanded": expanded,
+            onFocus,
+            onBlur,
           }}
-          className={cn(
-            "absolute right-2 top-1/2 -translate-y-1/2",
-            menuSearchClearButtonClass,
-          )}
-          aria-label="Cerrar búsqueda"
-        >
-          <X className="size-4" aria-hidden />
-        </button>
-      ) : showShortcut ? (
+          clearButtonProps={{
+            "data-menu-search-close": true,
+            "aria-label": "Cerrar búsqueda",
+          }}
+        />
+      </RootsFormToneProvider>
+      {!expanded && showShortcut ? (
         <kbd
           className={cn(
-            "pointer-events-none absolute right-4 top-1/2 -translate-y-1/2",
+            "pointer-events-none absolute right-4 top-1/2 z-1 -translate-y-1/2",
             menuSearchShortcutClass,
           )}
         >

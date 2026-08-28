@@ -36,6 +36,7 @@ import {
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { DataWorkspaceViewFilter } from "@/components/data-workspace/DataWorkspaceViewFilter"
@@ -589,6 +590,7 @@ export function OperationsWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
           <DataWorkspaceTableListShell
+            lockScroll={listFetching}
             activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -630,6 +632,26 @@ export function OperationsWorkspaceView() {
               !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
               ) : null
+            }
+            footerFloating
+            footerFloatingCentered
+            scrollResetKey={`${activeView}:${page}`}
+            footer={
+              <DataWorkspaceTableListPageDock
+                listFetching={listFetching}
+                loadedCount={
+                  activeView === "purchases"
+                    ? purchases.length
+                    : activeView === "services"
+                      ? serviceCharges.length
+                      : activeView === "expenses"
+                        ? expenseLedger.length
+                        : sales.length
+                }
+                totalCount={totalCount}
+                page={page}
+                onPageJump={(nextPage) => pushWs({ page: nextPage })}
+              />
             }
             infinite={tableListInfiniteFromQuery(operationsQuery, "operations")}
           >

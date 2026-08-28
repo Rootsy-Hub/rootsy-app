@@ -8,6 +8,22 @@ export function dataWorkspaceTableStartPage(page: number) {
   return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
 }
 
+export function dataWorkspaceTableInfiniteDockPages(
+  loadedCount: number,
+  totalCount: number,
+  page = 1,
+  pageSize = DATA_WORKSPACE_TABLE_PAGE_SIZE,
+) {
+  const startPage = dataWorkspaceTableStartPage(page)
+  const totalPages = Math.max(1, Math.ceil(Math.max(0, totalCount) / pageSize))
+  const loadedPages = dataWorkspaceTableLoadedPageSet(
+    startPage,
+    loadedCount,
+    pageSize,
+  )
+  return { pageSize, startPage, totalPages, loadedPages }
+}
+
 export function dataWorkspaceTableLoadedPageSet(
   startPage: number,
   loadedCount: number,

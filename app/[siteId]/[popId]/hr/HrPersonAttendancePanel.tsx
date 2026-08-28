@@ -204,7 +204,7 @@ export function HrPersonAttendancePanel({
           {canManagePeople && onMarkFranco ? (
             <RootsDefaultButton
               type="button"
-              size="sm"
+              size="compact"
               className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
               onClick={onMarkFranco}
             >
@@ -215,7 +215,7 @@ export function HrPersonAttendancePanel({
           {canManagePeople && onMarkFalta ? (
             <RootsDefaultButton
               type="button"
-              size="sm"
+              size="compact"
               className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
               onClick={onMarkFalta}
             >

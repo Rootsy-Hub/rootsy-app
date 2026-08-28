@@ -6,13 +6,9 @@ import {
   menuGhostCircleClass,
   menuGhostTileClass,
 } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
-import {
-  menuSearchFieldIconClass,
-  menuSearchInputClass,
-  menuSearchShortcutClass,
-  menuSearchShellClass,
-} from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
+import { menuSearchShortcutClass } from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
+import { RootsFormSearchField, RootsFormToneProvider } from "@/components/rootsy-form"
 import {
   eterHeaderDividerClass,
   eterHeaderMutedClass,
@@ -20,7 +16,7 @@ import {
 } from "@/lib/eter/eterChrome"
 import { formatLocaleTime } from "@/lib/popTimezone"
 import { cn } from "@/lib/utils"
-import { Bell, Home, Search } from "lucide-react"
+import { Bell, Home } from "lucide-react"
 import { useEffect, useState } from "react"
 
 function detectSearchShortcutLabel(): string {
@@ -45,29 +41,22 @@ function useMenuClock() {
 
 function DormantSearchField({ shortcutLabel }: { shortcutLabel: string }) {
   return (
-    <div
-      className={cn(
-        menuSearchShellClass,
-        "pointer-events-none min-w-0 flex-1 opacity-50",
-      )}
-    >
-      <Search
-        className={cn(
-          "pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2",
-          menuSearchFieldIconClass,
-        )}
-        aria-hidden
-      />
-      <input
-        type="search"
-        placeholder="Buscar..."
-        disabled
-        aria-label="Buscar en el menú"
-        className={cn(menuSearchInputClass, "cursor-not-allowed")}
-      />
+    <div className="pointer-events-none relative min-w-0 flex-1 opacity-50">
+      <RootsFormToneProvider tone="eter">
+        <RootsFormSearchField
+          hideLabel
+          label="Buscar en el menú"
+          placeholder="Buscar..."
+          value=""
+          onChange={() => {}}
+          disabled
+          className="min-w-0 gap-0"
+          surface="ghost"
+        />
+      </RootsFormToneProvider>
       <kbd
         className={cn(
-          "pointer-events-none absolute right-4 top-1/2 -translate-y-1/2",
+          "pointer-events-none absolute right-4 top-1/2 z-1 -translate-y-1/2",
           menuSearchShortcutClass,
         )}
       >

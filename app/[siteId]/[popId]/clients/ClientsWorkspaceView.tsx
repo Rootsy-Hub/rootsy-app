@@ -32,6 +32,7 @@ import {
   DataWorkspaceTableListShell,
   tableListInfiniteFromQuery,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -753,6 +754,7 @@ export function ClientsWorkspaceView() {
           />
 
         <DataWorkspaceTableListShell
+          lockScroll={listFetching}
           activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -822,6 +824,18 @@ export function ClientsWorkspaceView() {
               !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
               ) : null
+            }
+            footerFloating
+            footerFloatingCentered
+            scrollResetKey={workspaceParsed.page}
+            footer={
+              <DataWorkspaceTableListPageDock
+                listFetching={listFetching}
+                loadedCount={rows.length}
+                totalCount={totalCount}
+                page={workspaceParsed.page}
+                onPageJump={(nextPage) => replaceWorkspaceQuery({ page: nextPage })}
+              />
             }
             infinite={tableListInfiniteFromQuery(clientsTableQuery, "clients")}
         >

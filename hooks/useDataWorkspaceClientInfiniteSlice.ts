@@ -25,5 +25,15 @@ export function useDataWorkspaceClientInfiniteSlice<T>(
     )
   }, [items.length])
 
-  return { visible, hasMore, loadMore }
+  const revealUpToPage = useCallback(
+    (page: number) => {
+      const nextPage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
+      setVisibleCount(
+        Math.min(nextPage * DATA_WORKSPACE_TABLE_PAGE_SIZE, items.length),
+      )
+    },
+    [items.length],
+  )
+
+  return { visible, hasMore, loadMore, revealUpToPage }
 }

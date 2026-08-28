@@ -18,6 +18,7 @@ import {
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -491,6 +492,7 @@ export function QuotesWorkspaceView() {
           </DataWorkspaceTableListFiltersBar>
 
           <DataWorkspaceTableListShell
+            lockScroll={listFetching}
             activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -518,6 +520,18 @@ export function QuotesWorkspaceView() {
               !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
               ) : null
+            }
+            footerFloating
+            footerFloatingCentered
+            scrollResetKey={ws.page}
+            footer={
+              <DataWorkspaceTableListPageDock
+                listFetching={listFetching}
+                loadedCount={rows.length}
+                totalCount={totalCount}
+                page={ws.page}
+                onPageJump={(nextPage) => pushWs({ page: nextPage })}
+              />
             }
             infinite={tableListInfiniteFromQuery(quotesQuery, "quotes")}
           >

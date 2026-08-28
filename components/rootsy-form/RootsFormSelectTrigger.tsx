@@ -7,10 +7,10 @@ import {
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import {
+  rootsFormMutedIconClassForTone,
   rootsFormSelectTriggerClassForTone,
   type RootsFormSelectTone,
 } from "@/components/rootsy-form/rootsFormStyles"
-import { layoutsOperarFormDarkIconClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { ChevronDownIcon } from "lucide-react"
@@ -27,7 +27,7 @@ type Props = ComponentProps<typeof SelectPrimitive.Trigger> & {
 
 const selectValueLayoutClass = cn(
   "[&_[data-slot=select-value]]:flex [&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:items-center [&_[data-slot=select-value]]:truncate [&_[data-slot=select-value]]:text-left",
-  "[&_[data-slot=select-value][data-placeholder]]:text-[var(--rootsy-bruma-500)]",
+  "[&_[data-slot=select-value][data-placeholder]]:text-[var(--rootsy-bruma-700)]",
 )
 
 export const RootsFormSelectTrigger = forwardRef<
@@ -62,25 +62,23 @@ export const RootsFormSelectTrigger = forwardRef<
     invalid,
   })
 
-  const useSpecStyles = tone === "light"
-  const isDark = tone === "dark"
-  const iconClass = isDark
-    ? layoutsOperarFormDarkIconClass
-    : "text-[var(--rootsy-bruma-500)]"
+  const useSpecStyles = tone !== "dark"
+  const iconClass = rootsFormMutedIconClassForTone(tone)
   const triggerStyle = useSpecStyles
     ? getFormSelectTriggerStyle(state, {
         prefixed: sunkenPrefix,
         inlineIcon,
+        tone,
       })
     : undefined
 
   const prefixStyle =
     useSpecStyles && sunkenPrefix && leadingPrefix
-      ? getFormLeadingPrefixStyle(state)
+      ? getFormLeadingPrefixStyle(state, { tone })
       : undefined
 
   const chevronWrapStyle =
-    useSpecStyles && sunkenPrefix ? getFormSelectChevronWrapStyle(state) : undefined
+    useSpecStyles && sunkenPrefix ? getFormSelectChevronWrapStyle(state, { tone }) : undefined
 
   return (
     <SelectPrimitive.Trigger

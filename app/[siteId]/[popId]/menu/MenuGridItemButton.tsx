@@ -6,6 +6,26 @@ import {
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
+import "@/app/[siteId]/[popId]/menu/menuPlanetFlat.css"
+import "@/app/[siteId]/[popId]/menu/menuPlanetPiedra.css"
+import "@/app/[siteId]/[popId]/menu/menuPlanetGlass.css"
+import { MenuPlanetGlassLayers } from "@/app/[siteId]/[popId]/menu/MenuPlanetGlassLayers"
+import {
+  menuFlatGlyphClass,
+  menuFlatIconShellForSection,
+  menuFlatLabelClass,
+  type MenuPlanetFinish,
+} from "@/lib/menu/menuFlatStyles"
+import {
+  menuGlassGlyphClass,
+  menuGlassIconShellForSection,
+  menuGlassLabelClass,
+} from "@/lib/menu/menuGlassStyles"
+import {
+  menuPiedraGlyphClass,
+  menuPiedraIconShellForSection,
+  menuPiedraLabelClass,
+} from "@/lib/menu/menuPiedraStyles"
 import {
   menuHoloFloatLiftClass,
   menuHoloFocusRingForSection,
@@ -85,6 +105,8 @@ type Props = {
   disabled?: boolean
   href?: string | null
   onActivate?: () => void
+  /** Acabado — `holo` vidrio, `flat` tecla, `piedra` canto, `glass` cristal Herramientas. */
+  finish?: MenuPlanetFinish
 }
 
 export function MenuGridItemButton({
@@ -93,6 +115,7 @@ export function MenuGridItemButton({
   disabled,
   href,
   onActivate,
+  finish = "holo",
 }: Props) {
   const {
     editing,
@@ -133,26 +156,61 @@ export function MenuGridItemButton({
 
   const Icon = item.icon
   const tileClassName = menuPlanetTileClass
+  const isHolo = finish === "holo"
+  const isFlat = finish === "flat"
+  const isPiedra = finish === "piedra"
+  const isGlass = finish === "glass"
+  const isInteractive =
+    !editing && !showDockPlacedStyle && !isDragGhost && !disabled
+
+  const finishShellClass = isGlass
+    ? menuGlassIconShellForSection(sectionKey, shellVariant, isInteractive)
+    : isPiedra
+      ? menuPiedraIconShellForSection(
+          sectionKey,
+          shellVariant,
+          isInteractive,
+          `${item.link}-${item.name}`,
+        )
+      : isFlat
+        ? menuFlatIconShellForSection(sectionKey, shellVariant, isInteractive)
+        : menuHoloIconShellForSection(sectionKey, shellVariant)
+
+  const finishGlyphClass = isGlass
+    ? menuGlassGlyphClass
+    : isPiedra
+      ? menuPiedraGlyphClass
+      : isFlat
+        ? menuFlatGlyphClass
+        : menuHoloGlyphClass
+
+  const finishLabelClass = isGlass
+    ? menuGlassLabelClass
+    : isPiedra
+      ? menuPiedraLabelClass
+      : isFlat
+        ? menuFlatLabelClass
+        : menuHoloLabelClass
 
   const tileInner = (
     <>
       <div
         className={cn(
           "relative overflow-visible p-1 -m-1",
-          isAlive && menuHoloPlanetLifeClass,
+          isHolo && isAlive && menuHoloPlanetLifeClass,
         )}
-        style={isAlive ? lifeStyle : undefined}
+        style={isHolo && isAlive ? lifeStyle : undefined}
       >
         <div
           className={cn(
             menuPlanetIconShellClass,
-            menuHoloIconShellForSection(sectionKey, shellVariant),
-            !isDragGhost &&
+            finishShellClass,
+            isHolo &&
+              !isDragGhost &&
               menuHoloRealmWorldRimClass(sectionKey, showDockPlacedStyle),
             editing && draggable && "animate-dock-wiggle",
-            !editing &&
-              !showDockPlacedStyle &&
-              !isDragGhost &&
+            isHolo &&
+              isInteractive &&
               cn(
                 menuHoloFloatLiftClass,
                 menuHoloTileMotionClass,
@@ -165,10 +223,13 @@ export function MenuGridItemButton({
               : undefined
           }
         >
-          {!isDragGhost ? (
+          {isHolo && !isDragGhost ? (
             <MenuIconChrome sectionKey={sectionKey} alive={isAlive} />
           ) : null}
-          <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
+          {isGlass && !isDragGhost ? <MenuPlanetGlassLayers /> : null}
+          <Icon
+            className={cn(menuPlanetIconGlyphClass, finishGlyphClass)}
+          />
         </div>
         {!isDragGhost && shouldShowMenuApiReadyBadge(item.link) ? (
           <MenuApiReadyBadge />
@@ -181,7 +242,7 @@ export function MenuGridItemButton({
           menuPlanetTileLabelClass,
           showDockPlacedStyle || isDragGhost
             ? menuHoloLabelDockPlacedClass
-            : menuHoloLabelClass,
+            : finishLabelClass,
           "max-md:!text-[11px] max-md:leading-tight",
         )}
       >

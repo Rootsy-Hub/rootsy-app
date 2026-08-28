@@ -59,6 +59,7 @@ import {
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -582,6 +583,7 @@ export function PromotionsWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
         <DataWorkspaceTableListShell
+          lockScroll={loading}
           activeFiltersBar={
             hasFilterChips ? (
               <DataWorkspaceListActiveFiltersBar
@@ -616,6 +618,18 @@ export function PromotionsWorkspaceView() {
             !loading && totalCount === 0 ? (
               <DataWorkspaceTableEmptyMascot />
             ) : null
+          }
+          footerFloating
+          footerFloatingCentered
+          scrollResetKey={ws.page}
+          footer={
+            <DataWorkspaceTableListPageDock
+              listFetching={loading}
+              loadedCount={promotions.length}
+              totalCount={totalCount}
+              page={ws.page}
+              onPageJump={(nextPage) => pushWs({ page: nextPage })}
+            />
           }
             infinite={tableListInfiniteFromQuery(promotionsQuery, "promotions")}
         >

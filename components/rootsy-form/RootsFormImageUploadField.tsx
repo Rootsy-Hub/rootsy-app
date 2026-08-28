@@ -3,10 +3,12 @@
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
 import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
+import { getFormImageUploadCopyStyle } from "@/app/library/ui-components/formsUiHardcodedSpec"
 import {
   getFormImageUploadShellStyle,
   getFormImageUploadThumbStyle,
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import {
   rootsFormImageUploadActionClass,
@@ -92,10 +94,13 @@ export function RootsFormImageUploadField({
   const uploadMode = hasFile ? "filled" : "empty"
   const showDocumentThumb = hasFile && !hasPreviewImage && DocumentIcon
   const ChangeIcon = ActionIcon ?? (DocumentIcon ? FileUp : ImagePlus)
+  const tone = useRootsFormControlTone()
   const displayState: FormImageUploadDisplayStateId = dragOver ? "drag" : interactionState
-  const shellStyle = getFormImageUploadShellStyle(uploadMode, displayState)
+  const styleOptions = { tone }
+  const copyStyle = getFormImageUploadCopyStyle(styleOptions)
+  const shellStyle = getFormImageUploadShellStyle(uploadMode, displayState, styleOptions)
   const thumbStyle = {
-    ...getFormImageUploadThumbStyle(uploadMode, displayState),
+    ...getFormImageUploadThumbStyle(uploadMode, displayState, styleOptions),
     ...(roundThumb ? { borderRadius: 9999 } : null),
   }
 
@@ -198,21 +203,21 @@ export function RootsFormImageUploadField({
               />
             ) : showDocumentThumb ? (
               <span className="flex size-full items-center justify-center">
-                <DocumentIcon className="size-5 text-[var(--rootsy-bruma-500)]" aria-hidden />
+                <DocumentIcon className="size-5" style={{ color: copyStyle.icon }} aria-hidden />
               </span>
             ) : null}
             {busy ? (
               <span className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
-                <Loader2 className="size-5 animate-spin text-[color:var(--rootsy-bruma-600)]" aria-hidden />
+                <Loader2 className="size-5 animate-spin" style={{ color: copyStyle.icon }} aria-hidden />
               </span>
             ) : null}
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className={rootsFormImageUploadTitleClass}>
+            <p className={rootsFormImageUploadTitleClass} style={copyStyle.title}>
               {busy ? "Subiendo…" : previewCaption}
             </p>
-            <p className={rootsFormImageUploadMetaClass}>
+            <p className={rootsFormImageUploadMetaClass} style={copyStyle.meta}>
               {statusHint ?? emptySubtitle}
             </p>
           </div>
@@ -257,22 +262,24 @@ export function RootsFormImageUploadField({
         >
           <span style={thumbStyle}>
             {busy ? (
-              <Loader2 className="size-5 animate-spin text-[color:var(--rootsy-bruma-600)]" aria-hidden />
+              <Loader2 className="size-5 animate-spin" style={{ color: copyStyle.icon }} aria-hidden />
             ) : DocumentIcon ? (
-              <DocumentIcon className="size-5 text-[var(--rootsy-bruma-500)]" aria-hidden />
+              <DocumentIcon className="size-5" style={{ color: copyStyle.icon }} aria-hidden />
             ) : (
-              <RootsFormImageUploadIcon className="size-5 text-[var(--rootsy-bruma-500)]" />
+              <span style={{ color: copyStyle.icon }}>
+                <RootsFormImageUploadIcon className="size-5" />
+              </span>
             )}
           </span>
           <span className="min-w-0 flex-1 text-left">
-            <span className={cn("block", rootsFormImageUploadTitleClass)}>
+            <span className={cn("block", rootsFormImageUploadTitleClass)} style={copyStyle.title}>
               {busy
                 ? DocumentIcon
                   ? "Procesando archivo…"
                   : "Procesando imagen…"
                 : emptyTitle}
             </span>
-            <span className={cn("block", rootsFormImageUploadMetaClass)}>
+            <span className={cn("block", rootsFormImageUploadMetaClass)} style={copyStyle.meta}>
               {emptySubtitle}
             </span>
           </span>

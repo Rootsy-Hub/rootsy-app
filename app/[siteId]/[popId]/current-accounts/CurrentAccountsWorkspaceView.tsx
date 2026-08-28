@@ -47,6 +47,7 @@ import {
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -503,6 +504,7 @@ export function CurrentAccountsWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
         <DataWorkspaceTableListShell
+          lockScroll={loading}
           activeFiltersBar={
             hasFilterChips ? (
               <DataWorkspaceListActiveFiltersBar
@@ -535,6 +537,18 @@ export function CurrentAccountsWorkspaceView() {
           }
           overlay={
             !loading && totalCount === 0 ? <DataWorkspaceTableEmptyMascot /> : null
+          }
+          footerFloating
+          footerFloatingCentered
+          scrollResetKey={ws.page}
+          footer={
+            <DataWorkspaceTableListPageDock
+              listFetching={loading}
+              loadedCount={parties.length}
+              totalCount={totalCount}
+              page={ws.page}
+              onPageJump={(nextPage) => pushWs({ page: nextPage })}
+            />
           }
             infinite={tableListInfiniteFromQuery(partiesQuery, "current-accounts")}
         >
@@ -626,7 +640,6 @@ export function CurrentAccountsWorkspaceView() {
                     <WorkspaceTableBodyRow
                       key={row.partyId}
                       index={index}
-                      noHover={false}
                       role="button"
                       tabIndex={0}
                       aria-label={`Ver cuenta de ${row.partyName}`}

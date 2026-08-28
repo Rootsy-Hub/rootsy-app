@@ -1,4 +1,3 @@
-import { menuSectionRealmSurfaceClass } from "@/app/[siteId]/[popId]/menu/menuSectionRealmStyles"
 import { cn } from "@/lib/utils"
 
 const menuDockBlockRadiusClass = "rounded-[1.1rem]"
@@ -49,11 +48,14 @@ export const menuOuterEntityBodyFloatingClass = cn(
   menuDockBlockRadiusClass,
 )
 
-/** Cristal del dock — radio 1.1rem. */
+/** Barra del dock — negro con frost y borde de 1px. */
 export const menuOuterEntityFootFloatingChromeClass = cn(
   "pointer-events-none absolute inset-0 overflow-hidden",
   menuDockBlockRadiusClass,
-  menuSectionRealmSurfaceClass,
+  "border border-[color-mix(in_srgb,var(--rootsy-blanco)_16%,transparent)]",
+  "bg-[color-mix(in_srgb,var(--rootsy-negro)_78%,transparent)]",
+  "backdrop-blur-[20px] backdrop-saturate-[1.15]",
+  "shadow-[0_10px_28px_color-mix(in_srgb,var(--rootsy-negro)_28%,transparent)]",
 )
 
 export const menuOuterEntityFootFloatingContentClass = cn(

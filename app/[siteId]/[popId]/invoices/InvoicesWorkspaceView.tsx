@@ -61,6 +61,7 @@ import {
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -620,6 +621,7 @@ export function InvoicesWorkspaceView() {
           </DataWorkspaceTableListFiltersBar>
 
             <DataWorkspaceTableListShell
+              lockScroll={loading}
               activeFiltersBar={
                 hasFilterChips ? (
                   <DataWorkspaceListActiveFiltersBar
@@ -654,6 +656,18 @@ export function InvoicesWorkspaceView() {
                 !loading && totalCount === 0 ? (
                   <DataWorkspaceTableEmptyMascot />
                 ) : null
+              }
+              footerFloating
+              footerFloatingCentered
+              scrollResetKey={ws.page}
+              footer={
+                <DataWorkspaceTableListPageDock
+                  listFetching={loading}
+                  loadedCount={invoices.length}
+                  totalCount={totalCount}
+                  page={ws.page}
+                  onPageJump={(nextPage) => pushWs({ page: nextPage })}
+                />
               }
             infinite={tableListInfiniteFromQuery(invoicesQuery, "invoices")}
             >
