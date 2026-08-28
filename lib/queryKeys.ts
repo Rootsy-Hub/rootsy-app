@@ -354,6 +354,14 @@ export function popCashRegistersFormContextQueryKey(popId: string) {
   return ["pop-cash-registers", popId, "form-context"] as const
 }
 
+export function popAccountsQueryRoot(popId: string) {
+  return ["pop-accounts", popId] as const
+}
+
+export function popAccountsListQueryKey(popId: string) {
+  return ["pop-accounts", popId, "list"] as const
+}
+
 export function popChatQueryRoot(popId: string) {
   return ["pop-chat", popId] as const
 }

@@ -15,6 +15,7 @@ import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { buildPopRoleLabel } from "@/lib/popWorkspaceFromAccess"
 import { prefetchCashRegistersListQuery } from "@/lib/cashRegistersListQuery"
 import { prefetchHrDashboardQuery } from "@/lib/hrDashboardQuery"
+import { prefetchTreasuryAccountsListQuery } from "@/lib/treasuryAccountsListQuery"
 import { popModuleKeyFromPath } from "@/lib/popRoutes"
 import { useParams, usePathname } from "@/lib/pop-spa/navigation"
 import { useQueryClient } from "@tanstack/react-query"
@@ -108,6 +109,10 @@ export function PopModuleLoading({
     }
     if (moduleKey === "cash-registers") {
       void prefetchCashRegistersListQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "accounts") {
+      void prefetchTreasuryAccountsListQuery(popId, queryClient)
     }
   }, [moduleKey, popId, queryClient])
 

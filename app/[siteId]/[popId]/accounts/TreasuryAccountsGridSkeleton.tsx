@@ -1,20 +1,38 @@
 "use client"
 
-import { cn } from "@/lib/utils"
+import { ACCOUNT_FILTER_OPTIONS } from "@/app/[siteId]/[popId]/accounts/workspaceUrl"
+import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
-  dataWorkspaceBlocksSkeletonTone,
+  dataWorkspaceBlocksPageContentClass,
+  dataWorkspaceBlocksSkeletonBreathTone,
   dataWorkspaceEntityCardHeaderClass,
-  dataWorkspaceEntityCardLosetaSurfaceClass,
   dataWorkspaceEntityCardLosetaGridClass,
+  dataWorkspaceEntityCardLosetaSurfaceClass,
   dataWorkspaceEntityCardSaldoSectionClass,
   dataWorkspaceEntityCardSettlementFooterClass,
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { RootsFormSegmentField } from "@/components/rootsy-form"
+import { cn } from "@/lib/utils"
 
 const NAME_WIDTHS = ["w-28", "w-36", "w-32", "w-24"] as const
 const BALANCE_WIDTHS = ["w-36", "w-32", "w-40", "w-28"] as const
 
-const sk = dataWorkspaceBlocksSkeletonTone
+const sk = dataWorkspaceBlocksSkeletonBreathTone
+
+function delayStyle(index: number) {
+  return { animationDelay: `${index * 160}ms` }
+}
+
+function Bone({
+  className,
+  delay = 0,
+}: {
+  className?: string
+  delay?: number
+}) {
+  return <div className={className} style={delayStyle(delay)} />
+}
 
 function TreasuryAccountCardSkeleton({ index }: { index: number }) {
   const nameWidth = NAME_WIDTHS[index % NAME_WIDTHS.length]
@@ -25,28 +43,28 @@ function TreasuryAccountCardSkeleton({ index }: { index: number }) {
       <div className={dataWorkspaceEntityCardLosetaGridClass}>
         <div className={cn(dataWorkspaceEntityCardHeaderClass, "pr-4")}>
           <div className="flex min-w-0 items-start gap-2">
-            <div className={cn("size-11 shrink-0 rounded-xl", sk.box)} />
+            <Bone className={cn("size-11 shrink-0 rounded-xl", sk.box)} delay={index} />
             <div className="min-w-0 flex-1 space-y-2">
-              <div className={cn("h-2.5 w-[4.5rem]", sk.pill)} />
-              <div className={cn("h-6", sk.bar, nameWidth)} />
+              <Bone className={cn("h-2.5 w-[4.5rem]", sk.pill)} delay={index} />
+              <Bone className={cn("h-6", sk.bar, nameWidth)} delay={index} />
             </div>
-            <div className={cn("-mr-1 size-8 shrink-0 rounded-lg", sk.box)} />
+            <Bone className={cn("-mr-1 size-8 shrink-0 rounded-lg", sk.box)} delay={index} />
           </div>
         </div>
 
         <div className={dataWorkspaceEntityCardSaldoSectionClass}>
-          <div className={cn("h-2.5 w-16", sk.pill)} />
-          <div className={cn("mt-1.5 h-8", sk.bar, balanceWidth)} />
+          <Bone className={cn("h-2.5 w-16", sk.pill)} delay={index} />
+          <Bone className={cn("mt-1.5 h-8", sk.bar, balanceWidth)} delay={index} />
         </div>
 
         <div className={dataWorkspaceEntityCardSettlementFooterClass}>
           <div>
-            <div className={cn("h-2.5 w-14", sk.pill)} />
-            <div className={cn("mt-1 h-6 w-24", sk.bar)} />
+            <Bone className={cn("h-2.5 w-14", sk.pill)} delay={index} />
+            <Bone className={cn("mt-1 h-6 w-24", sk.bar)} delay={index} />
           </div>
           <div>
-            <div className={cn("h-2.5 w-12", sk.pill)} />
-            <div className={cn("mt-1 h-6 w-20", sk.bar)} />
+            <Bone className={cn("h-2.5 w-12", sk.pill)} delay={index} />
+            <Bone className={cn("mt-1 h-6 w-20", sk.bar)} delay={index} />
           </div>
         </div>
       </div>
@@ -66,6 +84,27 @@ export function TreasuryAccountsGridSkeleton({ count = 8 }: { count?: number }) 
         <TreasuryAccountCardSkeleton key={index} index={index} />
       ))}
       <span className="sr-only">Cargando cuentas…</span>
+    </div>
+  )
+}
+
+export function TreasuryAccountsPageSkeleton() {
+  return (
+    <div className={dataWorkspaceBlocksPageContentClass}>
+      <DataWorkspaceBlocksSection>
+        <RootsFormSegmentField
+          label="Ver cuentas"
+          aria-label="Filtrar cuentas"
+          layout="inline"
+          className="[&>span:first-child]:sr-only"
+          groupClassName="border-0"
+          value="todas"
+          onValueChange={() => undefined}
+          options={ACCOUNT_FILTER_OPTIONS}
+          disabled
+        />
+        <TreasuryAccountsGridSkeleton />
+      </DataWorkspaceBlocksSection>
     </div>
   )
 }

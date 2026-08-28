@@ -23,6 +23,7 @@ export function createQueryClient() {
   client.setQueryDefaults(["_pop-access"], sessionListQueryOptions)
   client.setQueryDefaults(["pop-hr"], sessionListQueryOptions)
   client.setQueryDefaults(["pop-cash-registers"], sessionListQueryOptions)
+  client.setQueryDefaults(["pop-accounts"], sessionListQueryOptions)
 
   return client
 }

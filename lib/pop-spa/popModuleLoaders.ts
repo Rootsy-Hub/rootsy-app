@@ -7,6 +7,7 @@ import {
 } from "react"
 import { prefetchCashRegistersListQuery } from "@/lib/cashRegistersListQuery"
 import { prefetchHrDashboardQuery } from "@/lib/hrDashboardQuery"
+import { prefetchTreasuryAccountsListQuery } from "@/lib/treasuryAccountsListQuery"
 import type { PopViewKey } from "@/lib/pop-spa/matchPopRoute"
 import { matchPopRoute } from "@/lib/pop-spa/matchPopRoute"
 import { bindPopSpaPreload } from "@/lib/pop-spa/preload"
@@ -41,7 +42,15 @@ const LOADERS: Record<PopViewKey, Loader> = {
   "hr-person": () => import("./chunks/hr-person").then((m) => m.default()),
   articles: () => import("./chunks/articles").then((m) => m.default()),
   clients: () => import("./chunks/clients").then((m) => m.default()),
-  accounts: () => import("./chunks/accounts").then((m) => m.default()),
+  accounts: () =>
+    Promise.all([
+      import("./chunks/accounts").then((m) => m.default()),
+      prefetchTreasuryAccountsListQuery(
+        typeof window === "undefined"
+          ? ""
+          : matchPopRoute(window.location.pathname).params.popId,
+      ),
+    ]).then(([mod]) => mod),
   "account-detail": () =>
     import("./chunks/account-detail").then((m) => m.default()),
   printers: () => import("./chunks/printers").then((m) => m.default()),
@@ -108,6 +117,9 @@ export function preloadPopViewFromHref(href: string) {
   }
   if (match.view === "cash-registers") {
     void prefetchCashRegistersListQuery(match.params.popId)
+  }
+  if (match.view === "accounts") {
+    void prefetchTreasuryAccountsListQuery(match.params.popId)
   }
 }
 

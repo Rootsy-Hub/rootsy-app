@@ -8,7 +8,7 @@ import { PrintersPageSkeleton } from "@/app/[siteId]/[popId]/printers/PrintersPa
 import { CashRegistersPageSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegistersGridSkeleton"
 import { RootsIconButton } from "@/components/rootsy-button"
 import { Plus } from "lucide-react"
-import { TreasuryAccountsGridSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountsGridSkeleton"
+import { TreasuryAccountsPageSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountsGridSkeleton"
 import { ComandasBoardSkeleton } from "@/app/[siteId]/[popId]/comandas/components/ComandasBoard"
 import { comandasBrisaPageMainClass } from "@/app/[siteId]/[popId]/comandas/comandasBrisaStyles"
 import {
@@ -174,8 +174,23 @@ export function CashRegistersModulePageSkeleton(layout: PopModuleSkeletonLayout)
 
 export function AccountsModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
-    <BlocksModulePageSkeleton layout={layout} title="Dinero">
-      <TreasuryAccountsGridSkeleton />
+    <BlocksModulePageSkeleton
+      layout={layout}
+      title="Dinero"
+      contentClassName={null}
+      headerActions={
+        <RootsIconButton
+          label="Nueva cuenta"
+          semantic="primary"
+          atmosphere="eter"
+          size="default"
+          disabled
+        >
+          <Plus className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
+    >
+      <TreasuryAccountsPageSkeleton />
     </BlocksModulePageSkeleton>
   )
 }
