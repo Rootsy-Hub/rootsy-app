@@ -67,6 +67,7 @@ type Props = {
     settings: MesasReservationSettings,
   ) => Promise<boolean> | boolean
   waiters: MesaWaiter[]
+  waitersLoading?: boolean
   sessionError?: string | null
   onSaveReservation: (input: MesaReservationInput) => Promise<boolean> | boolean
   onCancelReservation: (reservationId: string) => Promise<boolean> | boolean
@@ -97,6 +98,7 @@ export function MesaAgendaPanel({
   reservationSettings,
   onSaveReservationSettings,
   waiters,
+  waitersLoading = false,
   sessionError,
   onSaveReservation,
   onCancelReservation,
@@ -346,6 +348,7 @@ export function MesaAgendaPanel({
         blockedMergeTables={blockedMergeTables}
         blockedMergeWarning={reservationOccupiedOpenWarning(blockedMergeTables)}
         waiters={waiters}
+        waitersLoading={waitersLoading}
         initial={mesaOpenInitialFromReservation(
           selectedReservation,
           checkInPrimaryTable.id,

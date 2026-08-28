@@ -83,7 +83,7 @@ export function menuIconHoverShadowForSection(_section: MenuSectionKey): string 
 }
 
 export const menuAmbientTopGlowClass =
-  "bg-[radial-gradient(ellipse_at_center,color-mix(in_srgb,var(--rootsy-eter-100)_6%,transparent)_0%,transparent_72%)]"
+  "bg-[radial-gradient(ellipse_at_center,color-mix(in_srgb,var(--rootsy-eter-glow-100)_6%,transparent)_0%,transparent_72%)]"
 
 /** Resplandor planetario — el mundo activo ilumina el éter. */
 const menuPlanetAmbientBySection: Record<MenuSectionKey, string> = {
@@ -111,10 +111,10 @@ export function menuPlanetOrbClass(section: MenuSectionKey): string {
 }
 
 export const menuVignetteClass =
-  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--rootsy-eter-950)_62%,transparent)_100%)]"
+  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--rootsy-eter-void-950)_62%,transparent)_100%)]"
 
 export const menuVignetteSoftClass =
-  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--rootsy-eter-950)_58%,transparent)_100%)]"
+  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--rootsy-eter-void-950)_58%,transparent)_100%)]"
 
 /** Home — armonía de savia, sol y cielo en el éter. */
 export const homeHarmonyWashClass =
@@ -140,7 +140,7 @@ export const homeHorizonGlowClass =
 
 /** Viñeta más abierta — deja respirar la luz. */
 export const homeVignetteClass =
-  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--rootsy-eter-950)_46%,transparent)_100%)]"
+  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--rootsy-eter-void-950)_46%,transparent)_100%)]"
 
 export const menuRoleLabelClass =
   "text-[color:var(--rootsy-savia-300)]"

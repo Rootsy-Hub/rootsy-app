@@ -136,46 +136,6 @@ export function dataWorkspaceHeaderChromeButtonClass(
   )
 }
 
-export function dataWorkspaceHeaderIconButtonClass(
-  headerVariant: DataWorkspaceHeaderVariant = "default",
-  options?: { primary?: boolean },
-): string {
-  const primary = options?.primary ?? false
-  if (isLayoutsTablesHeader(headerVariant)) {
-    return cn(
-      "group",
-      layoutsTablesChromeIconButtonClass,
-      dataWorkspaceHeaderButtonFocusClass,
-      dataWorkspaceHeaderButtonOpenClass(headerVariant),
-      "disabled:pointer-events-none disabled:opacity-40",
-    )
-  }
-  if (isNightForestHeader(headerVariant)) {
-    return cn(
-      "group inline-flex size-10 shrink-0 items-center justify-center rounded-xl border transition-all",
-      dataWorkspaceHeaderButtonFocusClass,
-      dataWorkspaceHeaderButtonOpenClass(headerVariant),
-      nightForestIconButtonStarSkinClass,
-      "disabled:pointer-events-none disabled:opacity-40",
-    )
-  }
-  if (primary) {
-    return cn(
-      "group inline-flex size-10 shrink-0 items-center justify-center rounded-xl border transition-all",
-      "border-primary/30 bg-primary/10 text-primary",
-      "hover:border-primary/40 hover:bg-primary/15",
-      "disabled:pointer-events-none disabled:opacity-40",
-    )
-  }
-  return cn(
-    "group inline-flex size-10 shrink-0 items-center justify-center rounded-xl border transition-all",
-    dataWorkspaceHeaderButtonFocusClass,
-    dataWorkspaceHeaderButtonOpenClass(headerVariant),
-    "border-foreground/10 bg-secondary text-muted-foreground hover:border-primary/25 hover:bg-muted hover:text-foreground",
-    "disabled:pointer-events-none disabled:opacity-40",
-  )
-}
-
 const dataWorkspaceSectionMenuTriggerLayoutClass = cn(
   "group inline-flex h-10 w-10 shrink-0 items-center justify-center gap-0 rounded-xl border px-0 text-sm font-semibold transition-all",
   "md:h-10 md:w-auto md:max-w-[min(100%,13rem)] md:justify-start md:gap-2 md:px-2.5",

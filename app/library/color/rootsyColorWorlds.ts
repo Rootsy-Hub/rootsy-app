@@ -7,10 +7,11 @@
 import {
   ROOTSY_CIELO,
   ROOTSY_ETER,
+  ROOTSY_ETER_CLIMA,
   ROOTSY_SOL,
   ROOTSY_SUELO,
   rootsyColorHex,
-} from "@/lib/design-system"
+} from "@/lib/design-system/tokens/colors"
 
 const hx = rootsyColorHex
 
@@ -122,15 +123,15 @@ export const ROOTSY_COLOR_WORLDS: RootsyColorWorld[] = [
     id: "eter",
     name: "Éter",
     kind: "clima",
-    concept: "Espacio fuera del planeta — noche profunda, estrellas, horizonte frío.",
+    concept: "Dos capas: rampa neutra para controles, clima (glow / void) para el vacío. No es cielo.",
     usedIn: "Header reutilizable, backdrop y viñeta del menú. MenuHeaderEntity as=header.",
-    not: "No es cielo de día ni sombra del catálogo.",
-    token: "--rootsy-eter-*",
+    not: "No es cielo de día ni sombra del catálogo. El navy del clima no pinta botones.",
+    token: "--rootsy-eter-* · --rootsy-eter-void-* · --rootsy-eter-glow-*",
     hexes: [
-      { label: "800", hex: ROOTSY_ETER["800"] },
-      { label: "900", hex: ROOTSY_ETER["900"] },
-      { label: "950", hex: ROOTSY_ETER["950"] },
-      { label: "100", hex: ROOTSY_ETER["100"] },
+      { label: "void 800", hex: ROOTSY_ETER_CLIMA.void["800"] },
+      { label: "void 950", hex: ROOTSY_ETER_CLIMA.void["950"] },
+      { label: "glow 100", hex: ROOTSY_ETER_CLIMA.glow["100"] },
+      { label: "rampa 950", hex: ROOTSY_ETER["950"] },
     ],
   },
   {

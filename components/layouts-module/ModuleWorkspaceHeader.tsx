@@ -25,7 +25,13 @@ import {
   eterHeaderMutedClass,
   eterHeaderTitleClass,
 } from "@/lib/eter/eterChrome"
+import {
+  getMenuCatalogItemByName,
+  getMenuCatalogItemForModule,
+} from "@/lib/menuCatalog"
+import { popModuleKeyFromPath } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
+import { usePathname } from "next/navigation"
 import {
   ArrowLeft,
   EllipsisVertical,
@@ -50,6 +56,10 @@ export type ModuleWorkspaceHeaderProps = {
   popName?: string
   popStreetAddress?: string | null
   title?: string
+  /** Ícono del módulo. Si no se pasa, se resuelve por ruta o por el título. */
+  titleIcon?: LucideIcon
+  /** Muestra el ícono junto al título. Apagado por defecto. */
+  showTitleIcon?: boolean
   loading?: boolean
   brandPending?: boolean
   userPending?: boolean
@@ -84,6 +94,8 @@ export function ModuleWorkspaceHeader({
   popLogoSrc,
   popName,
   title,
+  titleIcon,
+  showTitleIcon = false,
   loading = false,
   brandPending: brandPendingProp = false,
   userPending: userPendingProp = false,
@@ -109,7 +121,14 @@ export function ModuleWorkspaceHeader({
   sidebarOpen = true,
   onToggleSidebar,
 }: ModuleWorkspaceHeaderProps) {
+  const pathname = usePathname()
   const resolvedTitle = title?.trim() || null
+  const TitleIcon = showTitleIcon
+    ? titleIcon ??
+      getMenuCatalogItemForModule(popModuleKeyFromPath(pathname ?? ""))?.icon ??
+      getMenuCatalogItemByName(resolvedTitle ?? "")?.icon ??
+      null
+    : null
   const showBack = Boolean(backHref)
   const showFullscreenButton = showFullscreen && Boolean(onToggleFullscreen)
   const showSidebarToggle = canCollapseSidebar && Boolean(onToggleSidebar)
@@ -232,6 +251,7 @@ export function ModuleWorkspaceHeader({
           <ModuleWorkspaceMobileTitle
             popName={popName}
             title={resolvedTitle}
+            titleIcon={TitleIcon}
             pending={brandPending}
           />
 
@@ -322,14 +342,23 @@ export function ModuleWorkspaceHeader({
 
           <div className="flex min-w-0 items-center justify-center gap-2">
             {resolvedTitle ? (
-              <h1
-                className={cn(
-                  "rootsy-text-page-title truncate",
-                  eterHeaderTitleClass,
-                )}
-              >
-                {resolvedTitle}
-              </h1>
+              <>
+                {TitleIcon ? (
+                  <TitleIcon
+                    aria-hidden
+                    className={cn("size-5 shrink-0", eterHeaderTitleClass)}
+                    strokeWidth={1.75}
+                  />
+                ) : null}
+                <h1
+                  className={cn(
+                    "rootsy-text-section-title truncate",
+                    eterHeaderTitleClass,
+                  )}
+                >
+                  {resolvedTitle}
+                </h1>
+              </>
             ) : null}
             {titleAdornment}
           </div>
@@ -380,10 +409,12 @@ export function ModuleWorkspaceHeader({
 function ModuleWorkspaceMobileTitle({
   popName,
   title,
+  titleIcon: TitleIcon,
   pending,
 }: {
   popName?: string
   title: string | null
+  titleIcon: LucideIcon | null
   pending: boolean
 }) {
   const resolvedPopName = popName?.trim() || null
@@ -411,14 +442,23 @@ function ModuleWorkspaceMobileTitle({
         </p>
       ) : null}
       {title ? (
-        <h1
-          className={cn(
-            "rootsy-text-heading-small truncate",
-            eterHeaderTitleClass,
-          )}
-        >
-          {title}
-        </h1>
+        <div className="flex min-w-0 items-center gap-1.5">
+          {TitleIcon ? (
+            <TitleIcon
+              aria-hidden
+              className={cn("size-4 shrink-0", eterHeaderTitleClass)}
+              strokeWidth={1.75}
+            />
+          ) : null}
+          <h1
+            className={cn(
+              "rootsy-text-heading-small truncate",
+              eterHeaderTitleClass,
+            )}
+          >
+            {title}
+          </h1>
+        </div>
       ) : null}
     </div>
   )

@@ -4,6 +4,18 @@ const RESOURCE_ID_RE = /^[A-Za-z0-9._:-]{1,64}$/
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+export function sessionResourceChannel(sessionId: string): string {
+  return `resource:session:${sessionId}`
+}
+
+export function orderResourceChannel(orderId: string): string {
+  return `resource:order:${orderId}`
+}
+
+export function cajasUserChannel(userId: string): string {
+  return `resource:cajas:${userId}`
+}
+
 export function parseRealtimeChannel(raw: string): string | null {
   const channel = raw.trim()
   if (channel === "presence") return channel

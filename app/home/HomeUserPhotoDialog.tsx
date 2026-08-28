@@ -65,7 +65,7 @@ export function HomeUserPhotoDialog({
           className={cn(
             "relative size-[min(72vw,20rem)] overflow-hidden rounded-[34%]",
             "bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_70%,transparent)]",
-            "shadow-[0_0_0_1px_color-mix(in_srgb,var(--rootsy-eter-100)_12%,transparent),0_24px_64px_-18px_rgb(1_3_6/0.62),0_0_48px_color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent)]",
+            "shadow-[0_0_0_1px_color-mix(in_srgb,var(--rootsy-eter-100)_12%,transparent),0_24px_64px_-18px_rgb(4_5_6/0.62),0_0_48px_color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent)]",
           )}
         >
           <span

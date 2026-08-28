@@ -53,6 +53,8 @@ export type ComponentViewProps = {
   componentProperties: readonly ComponentViewProperty[]
   variants: readonly ComponentViewChoice[]
   extras?: readonly ComponentViewExtraRow[]
+  /** Clases extra del lienzo de vista. */
+  canvasClassName?: string
   /** Si es true, el canvas arranca desplegado. */
   defaultOpen?: boolean
   render: (
@@ -119,6 +121,7 @@ export function ComponentView({
   componentProperties,
   variants,
   extras = [],
+  canvasClassName,
   defaultOpen = false,
   render,
 }: ComponentViewProps) {
@@ -174,7 +177,10 @@ export function ComponentView({
       {open ? (
         <>
           <div
-            className="relative flex min-h-44 items-center justify-center px-3 py-6"
+            className={cn(
+              "relative flex min-h-44 items-center justify-center px-3 py-6",
+              canvasClassName,
+            )}
             style={{ background: canvas } satisfies CSSProperties}
           >
               <div

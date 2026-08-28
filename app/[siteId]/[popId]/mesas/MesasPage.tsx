@@ -2,7 +2,8 @@
 
 import { MesasLayoutAdmin } from "@/app/[siteId]/[popId]/mesas/components/MesasLayoutAdmin"
 import { MesasWorkspace } from "@/app/[siteId]/[popId]/mesas/components/MesasWorkspace"
-import { fetchMesasLayout } from "@/lib/rootsyApi/mesasClient"
+import { useMesasFloorHydrate } from "@/hooks/useMesasFloorHydrate"
+import { readMesasLayoutLocalOrFetch } from "@/lib/popLocalDb/hydrateMesasFloor"
 import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
 import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import {
@@ -11,6 +12,9 @@ import {
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { OperateQueryDevtoolsPanel } from "@/components/sale-operation/SaleDevtoolsPanel"
+import { isDevModeEnabled } from "@/lib/devmode"
+import { MESAS_QUERY_SPEC } from "@/lib/devmode/mesasQuerySpec"
 import { mesasAccessFromKeys } from "@/lib/popWorkspaceAccess"
 import { popMesasLayoutQueryKey } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
@@ -39,14 +43,11 @@ function MesasPage() {
     [bootstrap?.permissionKeys],
   )
 
+  const floorHydrate = useMesasFloorHydrate(popId)
   const layoutQuery = useQuery({
     queryKey: popMesasLayoutQueryKey(popId ?? ""),
-    queryFn: async () => {
-      const res = await fetchMesasLayout(popId!)
-      if (!res.success) throw new Error(res.error)
-      return res.data
-    },
-    enabled: Boolean(popId && siteId),
+    queryFn: () => readMesasLayoutLocalOrFetch(popId!),
+    enabled: Boolean(popId && siteId) && floorHydrate.canReadFloor,
     ...sessionListQueryOptions,
   })
 
@@ -67,8 +68,6 @@ function MesasPage() {
     await reloadLayoutRef.current()
   }, [])
 
-  const layoutLoading = Boolean(popId && siteId) && layoutQuery.isPending
-  const loading = bootstrapLoading || layoutLoading
   const popName = bootstrap?.popName ?? ""
 
   if (!popId || !siteId) {
@@ -79,7 +78,7 @@ function MesasPage() {
     )
   }
 
-  if (!loading && bootstrapError) {
+  if (!bootstrapLoading && bootstrapError) {
     return (
       <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
         {bootstrapError}
@@ -87,7 +86,7 @@ function MesasPage() {
     )
   }
 
-  if (!loading && !access.canRead) {
+  if (!bootstrapLoading && !access.canRead) {
     return (
       <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
         No tenés permiso para acceder a Mesas en este punto de venta.
@@ -110,9 +109,17 @@ function MesasPage() {
           popId={popId}
           popName={popName}
           title="Mesas"
-          loading={loading}
+          loading={bootstrapLoading}
           userName={bootstrap?.userFullName || user?.email || ""}
           userAvatarSrc={bootstrap?.userImageUrl}
+          headerActions={
+            isDevModeEnabled() ? (
+              <OperateQueryDevtoolsPanel
+                title="Mesas"
+                spec={MESAS_QUERY_SPEC}
+              />
+            ) : undefined
+          }
           headerMoreActions={moreActions}
           sidebarCollapsible
           sidebarEdgeToggle={false}

@@ -41,15 +41,15 @@ export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   },
   {
     title: "Filtros bruma",
-    detail: "Bruma a todo el ancho · superficie 50 · form.control.shell.inline-icon · umbral entre noche y claro.",
+    detail: "Bruma a todo el ancho · gradiente 100→50→blanco · form.control.shell.inline-icon · umbral entre noche y claro.",
   },
   {
     title: "Tabla bruma",
-    detail: "Head space.500 · filas space.600+100 · alternancia bruma-50 / bruma-100 · selección savia-100.",
+    detail: "Head space.500 · filas space.600+100 · header bruma-100 · even blanco / odd bruma-100 · selección savia-100.",
   },
   {
     title: "Claro opaco",
-    detail: "Lienzo bruma-100. Superficie y filas pares en bruma-50. El pie es sombra.",
+    detail: "Lienzo bruma-100. Filas pares en blanco. El pie es sombra.",
   },
   {
     title: "Acciones por capa",
@@ -99,7 +99,7 @@ export const ROOTSY_LAYOUTS_TABLES_TOOLBAR = {
 export const ROOTSY_LAYOUTS_TABLES_ATMOSPHERE = {
   mistToken: "bruma-100 · fondo del listado",
   planetToken: "sin planeta — la hoja es bruma",
-  veilToken: "toolbar superficie bruma-50",
+  veilToken: "toolbar gradiente bruma 100→50→blanco",
   horizonToken: "footer sombra · superficie 600",
   productClass: "data-workspace-tables-atmosphere",
 } as const

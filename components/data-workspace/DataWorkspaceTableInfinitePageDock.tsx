@@ -10,12 +10,10 @@ import {
   RootsFormSelectValue,
 } from "@/components/rootsy-form"
 import {
-  earthTableFooterSelectItemClass,
-  earthTableFooterSelectTriggerClass,
-} from "@/components/data-workspace/dataWorkspaceListStyles"
-import {
   layoutsTablesFooterCountStrongClass,
   layoutsTablesFooterCountTextClass,
+  layoutsTablesFooterSelectItemClass,
+  layoutsTablesFooterSelectTriggerClass,
 } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import { cn } from "@/lib/utils"
 
@@ -98,20 +96,20 @@ export function DataWorkspaceTableInfinitePageDock({
             tone="dark"
             aria-label="Ir a una página"
             className={cn(
-              earthTableFooterSelectTriggerClass,
+              layoutsTablesFooterSelectTriggerClass,
               "!h-8 !min-h-8 !w-[3.75rem] min-w-[3.75rem] max-w-[3.75rem] !rounded-lg text-[11px]",
             )}
           >
             <RootsFormSelectValue />
           </RootsFormSelectTrigger>
-          <RootsFormSelectContent tone="light" align="center" className="max-h-64">
+          <RootsFormSelectContent tone="dark" align="center" className="max-h-64">
             {pageOptions.map((page) => (
               <RootsFormSelectItem
                 key={page}
-                tone="light"
+                tone="dark"
                 value={String(page)}
                 disabled={loadedPages.has(page)}
-                className={earthTableFooterSelectItemClass}
+                className={layoutsTablesFooterSelectItemClass}
               >
                 {page.toLocaleString("es-AR")}
               </RootsFormSelectItem>

@@ -26,8 +26,8 @@ export const ROOTSY_PRODUCT_WORLDS: RootsyProductWorld[] = [
   {
     id: "eter",
     name: "Éter",
-    usedIn: "Home y headers reutilizables — noche sideral, fuera del planeta.",
-    concept: "Espacio profundo. Luz fría, estrellas, cristal sutil. No es sombra del catálogo.",
+    usedIn: "Home y headers reutilizables — noche neutra, fuera del planeta.",
+    concept: "Espacio profundo. Vacío, estrellas, cristal sutil. No es cielo ni sombra del catálogo.",
   },
   {
     id: "bruma",

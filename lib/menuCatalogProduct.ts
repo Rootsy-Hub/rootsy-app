@@ -144,8 +144,8 @@ export function collectCartCatalogEnsureIds(
   for (const item of items) {
     const kind = normalizeCartItemKind(item.kind)
     if (kind === "promotion" || !item.productoId) continue
-    articleIds.push(item.productoId)
-    recipeIds.push(item.productoId)
+    if (kind === "recipe") recipeIds.push(item.productoId)
+    else articleIds.push(item.productoId)
   }
   return { articleIds, recipeIds }
 }

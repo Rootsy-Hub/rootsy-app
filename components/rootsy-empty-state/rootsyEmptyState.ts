@@ -23,7 +23,7 @@ export const ROOTSY_EMPTY_STATE_WORLDS: {
   label: string
   usage: string
 }[] = [
-  { id: "eter", label: "Éter", usage: "Home y headers — noche sideral." },
+  { id: "eter", label: "Éter", usage: "Home y headers — noche neutra." },
   { id: "bruma", label: "Bruma", usage: "Pedido de Operar, cuentas y cajas." },
   { id: "bruma-oscura", label: "Bruma oscura", usage: "Misma lectura que bruma, de noche." },
   { id: "suelo", label: "Suelo", usage: "Toolbox de Operar y pie de tablas." },

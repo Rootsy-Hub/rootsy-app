@@ -48,13 +48,13 @@ import {
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { RootsBanner } from "@/components/rootsy-banner"
-import { RootsDefaultButton } from "@/components/rootsy-button"
+import { RootsDefaultButton,
+  RootsIconButton} from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -871,23 +871,26 @@ export function HrWorkspaceView() {
         headerActions={
           <>
             {siteId && popId ? (
-              <DataWorkspaceHeaderTooltipIconButton
+              <RootsIconButton
                 label="Fichar"
-                headerVariant={dataWorkspaceModuleHeaderVariant}
+                semantic="tertiary"
+                atmosphere="eter"
+                size="default"
                 onClick={() => router.push(`/${siteId}/${popId}/hr/fichar`)}
               >
                 <KeyRound className="size-5" aria-hidden />
-              </DataWorkspaceHeaderTooltipIconButton>
+              </RootsIconButton>
             ) : null}
             {canManagePeople ? (
-              <DataWorkspaceHeaderTooltipIconButton
+              <RootsIconButton
                 label="Cargar persona"
-                headerVariant={dataWorkspaceModuleHeaderVariant}
-                primary
+                semantic="primary"
+                atmosphere="eter"
+                size="default"
                 onClick={openNewPerson}
               >
                 <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderTooltipIconButton>
+              </RootsIconButton>
             ) : null}
           </>
         }

@@ -2,6 +2,8 @@
 
 import type { SaleCatalogArticle } from "@/app/[siteId]/[popId]/sale/actions"
 import { useCatalogItemCache } from "@/hooks/useCatalogItemCache"
+import { useOpenCashSession } from "@/hooks/useOpenCashSession"
+import { resolveOperateOpenCashSession } from "@/lib/saleOpenCashSession"
 import {
   saleCatalogKnownArticlesQueryKey,
   saleCatalogQueryKey,
@@ -18,7 +20,7 @@ import {
 import { DEFAULT_SALE_SITE_ID } from "@/lib/saleInvoiceTypes"
 import { useSalePriceListId } from "@/lib/salePriceListSession"
 import { useQuery } from "@tanstack/react-query"
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 
 type UseSaleCatalogLoaderOptions = {
   enabled?: boolean
@@ -64,6 +66,22 @@ export function useSaleCatalogLoader(
   })
 
   const data = catalogQuery.data
+  const operateCash = useOpenCashSession(popId, { enabled })
+  const openCashSession = useMemo(
+    () =>
+      resolveOperateOpenCashSession(
+        operateCash.isSuccess,
+        operateCash.data,
+        data?.openCashSession ?? null,
+        paymentQuery.data?.defaultCashTreasuryAccountId,
+      ),
+    [
+      data?.openCashSession,
+      operateCash.data,
+      operateCash.isSuccess,
+      paymentQuery.data?.defaultCashTreasuryAccountId,
+    ],
+  )
   const priceListId = useSalePriceListId(popId)
   const articleCache = useCatalogItemCache<SaleCatalogArticle>(
     saleCatalogKnownArticlesQueryKey(popId ?? "", priceListId),
@@ -101,7 +119,7 @@ export function useSaleCatalogLoader(
     canReadPaymentMethods: data?.canReadPaymentMethods ?? false,
     canCreateSale: data?.canCreateSale ?? false,
     canReadCashRegisters: data?.canReadCashRegisters ?? false,
-    openCashSession: data?.openCashSession ?? null,
+    openCashSession,
     invoiceTypeSiteId:
       comprobantesQuery.data?.invoiceTypeSiteId ??
       data?.invoiceTypeSiteId ??

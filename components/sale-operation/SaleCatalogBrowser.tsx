@@ -48,6 +48,7 @@ import {
   OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
 } from "@/lib/operateCatalogPage"
 import {
+  readSavedSaleCatalogChrome,
   readSavedSaleCatalogView,
   resolveSaleCatalogView,
   saleCatalogCategoryIdFromView,
@@ -56,6 +57,7 @@ import {
   saleCatalogViewToItemsFilter,
   saleCatalogVisibleCategoryIds,
   subscribeSaleCatalogView,
+  writeSavedSaleCatalogChrome,
   writeSavedSaleCatalogView,
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
@@ -207,7 +209,9 @@ export function SaleCatalogBrowser({
         categoria: "",
       },
   )
-  const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
+  const [modoVista, setModoVista] = useState<"grid" | "lista">(
+    () => readSavedSaleCatalogChrome(popId).modoVista ?? "grid",
+  )
   const [busqueda, setBusqueda] = useState("")
   const [cantidadIngreso, setCantidadIngreso] = useState(1)
   const [priceListsNeeded, setPriceListsNeeded] = useState(false)
@@ -343,6 +347,10 @@ export function SaleCatalogBrowser({
   useEffect(() => {
     setSalePriceListSession(popId, priceListId)
   }, [popId, priceListId])
+
+  useEffect(() => {
+    writeSavedSaleCatalogChrome(popId, { modoVista })
+  }, [popId, modoVista])
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)")

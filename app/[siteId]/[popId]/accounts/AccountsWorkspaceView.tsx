@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import { TreasuryAccountCard } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountCard"
 import { TreasuryAccountCreateDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountCreateDialog"
 import { TreasuryAccountDeleteDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDeleteDialog"
@@ -28,7 +29,6 @@ import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { RootsBanner } from "@/components/rootsy-banner"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
@@ -419,14 +419,15 @@ export function AccountsWorkspaceView() {
         userRoleLabel={bootstrap?.roleLabel}
         headerActions={
           canCreate ? (
-            <DataWorkspaceHeaderTooltipIconButton
+            <RootsIconButton
               label="Nueva cuenta"
-              headerVariant={dataWorkspaceModuleHeaderVariant}
-              primary
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
               onClick={() => openCreate()}
             >
               <Plus className="size-5" aria-hidden />
-            </DataWorkspaceHeaderTooltipIconButton>
+            </RootsIconButton>
           ) : null
         }
         contentFlush

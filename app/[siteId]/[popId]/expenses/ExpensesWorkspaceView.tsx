@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import type {
   ExpenseCategoryFamily,
   ExpenseCategoryKind,
@@ -35,7 +36,6 @@ import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { RootsBanner } from "@/components/rootsy-banner"
 import {
   RootsConfirmDialog,
@@ -124,7 +124,6 @@ function defaultDateInMonth(year: number, month1: number): string {
 function roundMoneyLocal(n: number): number {
   return Math.round(n * 100) / 100
 }
-
 
 export function ExpensesWorkspaceView() {
   const params = useParams()
@@ -537,26 +536,29 @@ export function ExpensesWorkspaceView() {
         headerActions={
           <>
             {canCreate ? (
-              <DataWorkspaceHeaderIconButton
+              <RootsIconButton
                 label="Nueva promesa"
-                headerVariant={dataWorkspaceModuleHeaderVariant}
-                primary
+                semantic="primary"
+                atmosphere="eter"
+                size="default"
                 onClick={() => openCreate()}
               >
                 <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
+              </RootsIconButton>
             ) : null}
             {canUpdate ? (
-              <DataWorkspaceHeaderIconButton
+              <RootsIconButton
                 label="Categorías"
-                headerVariant={dataWorkspaceModuleHeaderVariant}
+                semantic="tertiary"
+                atmosphere="eter"
+                size="default"
                 onClick={() => {
                   setCatBanner(null)
                   setCatOpen(true)
                 }}
               >
                 <Tags className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
+              </RootsIconButton>
             ) : null}
           </>
         }

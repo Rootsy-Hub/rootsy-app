@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import dynamic from "next/dynamic"
 import {
   type PurchaseCatalogArticle,
@@ -83,8 +84,6 @@ import {
   DataWorkspaceOperationsLayout,
   OperationsModuleBackdrop,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
-import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import {
@@ -232,7 +231,7 @@ function PurchasesPage() {
   )
   const [costPickerOpen, setCostPickerOpen] = useState(false)
   const [costPickerPendingQty, setCostPickerPendingQty] = useState(1)
-  const cartScrollHighlight = useCartListScrollHighlight()
+  const cartScrollHighlight = useCartListScrollHighlight(orderIdFromUrl)
   const [itemUnitCosts, setItemUnitCosts] = useState<Record<string, string>>({})
   const [itemUpdateArticleCost, setItemUpdateArticleCost] = useState<
     Record<string, boolean>
@@ -1200,9 +1199,11 @@ function PurchasesPage() {
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
         headerActions={
-          <DataWorkspaceHeaderTooltipIconButton
+          <RootsIconButton
             label="Crear orden de compra"
-            headerVariant={dataWorkspaceModuleHeaderVariant}
+            semantic="tertiary"
+            atmosphere="eter"
+            size="default"
             disabled={!hayItemsEnPedido || ordenSubmitting}
             onClick={() => {
               setOrdenError(null)
@@ -1210,7 +1211,7 @@ function PurchasesPage() {
             }}
           >
             <FileText className="size-5" aria-hidden />
-          </DataWorkspaceHeaderTooltipIconButton>
+          </RootsIconButton>
         }
       >
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">

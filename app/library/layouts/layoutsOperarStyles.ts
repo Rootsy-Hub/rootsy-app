@@ -729,7 +729,8 @@ export const layoutsOperarCatalogSectionShellClass = cn(
 )
 
 export const layoutsOperarTicketScrollColumnClass = cn(
-  "layouts-operar-scroll-minimal row-start-1 flex h-full min-h-0 flex-col overflow-y-auto",
+  "layouts-operar-scroll-minimal layouts-operar-ticket-scroll",
+  "row-start-1 flex h-full min-h-0 flex-col overflow-y-auto",
 )
 
 export const layoutsOperarSummaryHeaderRowClass =
@@ -787,6 +788,9 @@ export const layoutsOperarSummaryCartCellClass = cn(
   layoutsOperarSummaryCartRowClass,
   "row-start-2 min-h-0 overflow-hidden",
 )
+
+/** Bloques + totales al piso; el aire queda arriba. Si hay overflow, el scroll nace abajo. */
+export const layoutsOperarTicketBlocksFloorClass = "mt-auto flex min-h-0 shrink-0 flex-col"
 
 /** Totales al piso del pedido cuando sobra aire; si hay overflow, van al final del scroll. */
 export const layoutsOperarSummaryTotalsPlacementClass = "mt-auto shrink-0"

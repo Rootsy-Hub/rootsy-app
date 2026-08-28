@@ -5,18 +5,26 @@ import {
   applyMostradorRealtimeEvent,
   invalidateMostradorRealtimeQueries,
 } from "@/lib/mostradorRealtime/apply"
+import { popMostradorOrderQueryKey } from "@/lib/queryKeys"
+import { orderResourceChannel } from "@/lib/realtime/channels"
 import type { DomainEvent } from "@/lib/realtime/protocol"
 import { useQueryClient } from "@tanstack/react-query"
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 
-const MOSTRADOR_CHANNELS = ["domain:mostrador", "domain:comandas"] as const
-
-function isMostradorRealtimeChannel(channel: string) {
-  return channel === "domain:mostrador" || channel === "domain:comandas"
-}
-
-export function useMostradorRealtime(popId: string | undefined) {
+export function useMostradorRealtime(
+  popId: string | undefined,
+  selectedOrderId?: string | null,
+) {
   const queryClient = useQueryClient()
+  const resourceChannel = selectedOrderId
+    ? orderResourceChannel(selectedOrderId)
+    : null
+
+  const channels = useMemo(() => {
+    const next = ["domain:mostrador"]
+    if (resourceChannel) next.push(resourceChannel)
+    return next
+  }, [resourceChannel])
 
   const onEvent = useCallback(
     (event: DomainEvent) => {
@@ -27,17 +35,25 @@ export function useMostradorRealtime(popId: string | undefined) {
   )
 
   const onResync = useCallback(
-    (channels: string[], reason: "gap" | "empty") => {
+    (resyncChannels: string[], reason: "gap" | "empty") => {
       if (!popId) return
       if (reason !== "gap") return
-      if (!channels.some(isMostradorRealtimeChannel)) return
-      invalidateMostradorRealtimeQueries(queryClient, popId)
+      if (resyncChannels.includes("domain:mostrador")) {
+        invalidateMostradorRealtimeQueries(queryClient, popId)
+        return
+      }
+      if (resourceChannel && resyncChannels.includes(resourceChannel) && selectedOrderId) {
+        void queryClient.invalidateQueries({
+          queryKey: popMostradorOrderQueryKey(popId, selectedOrderId),
+          refetchType: "all",
+        })
+      }
     },
-    [popId, queryClient],
+    [popId, queryClient, resourceChannel, selectedOrderId],
   )
 
   usePopRealtime({
-    channels: MOSTRADOR_CHANNELS,
+    channels,
     enabled: Boolean(popId),
     onEvent,
     onResync,

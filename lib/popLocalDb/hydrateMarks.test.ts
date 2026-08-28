@@ -6,16 +6,22 @@ import {
   clearArticlesHydratedMarks,
   clearCategoriesHydratedMark,
   clearPromotionsHydratedMark,
+  clearMesasFloorHydratedMark,
+  clearMostradorBoardHydratedMark,
   clearRecipeCategoriesHydratedMark,
   clearRecipesHydratedMark,
   isArticlesHydrated,
   isCategoriesHydrated,
+  isMesasFloorHydrated,
+  isMostradorBoardHydrated,
   isPromotionsHydrated,
   isRecipeCategoriesHydrated,
   isRecipesHydrated,
   markArticlesHydrated,
   markCategoriesHydrated,
   markPromotionsHydrated,
+  markMesasFloorHydrated,
+  markMostradorBoardHydrated,
   markRecipeCategoriesHydrated,
   markRecipesHydrated,
 } from "./hydrateMarks"
@@ -100,5 +106,23 @@ describe("hydrate marks", () => {
     assert.equal(isRecipeCategoriesHydrated(db), true)
     clearRecipeCategoriesHydratedMark(db)
     assert.equal(isRecipeCategoriesHydrated(db), false)
+  })
+
+  it("la marca del piso de mesas es una sola por pop", async () => {
+    const db = await createPopLocalDatabase()
+    assert.equal(isMesasFloorHydrated(db), false)
+    markMesasFloorHydrated(db, "2026-01-01T00:00:00.000Z")
+    assert.equal(isMesasFloorHydrated(db), true)
+    clearMesasFloorHydratedMark(db)
+    assert.equal(isMesasFloorHydrated(db), false)
+  })
+
+  it("la marca del tablero de mostrador es una sola por pop", async () => {
+    const db = await createPopLocalDatabase()
+    assert.equal(isMostradorBoardHydrated(db), false)
+    markMostradorBoardHydrated(db, "2026-01-01T00:00:00.000Z")
+    assert.equal(isMostradorBoardHydrated(db), true)
+    clearMostradorBoardHydratedMark(db)
+    assert.equal(isMostradorBoardHydrated(db), false)
   })
 })

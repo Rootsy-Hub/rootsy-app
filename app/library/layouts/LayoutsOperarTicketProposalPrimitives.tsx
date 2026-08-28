@@ -32,6 +32,7 @@ import {
   layoutsOperarBodyScopeClass,
   layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
+  layoutsOperarTicketBlocksFloorClass,
   layoutsOperarTicketScrollColumnClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
@@ -414,47 +415,54 @@ export function LayoutsOperarTicketProposalPanel({
     >
       {measureBadge}
       <div className={layoutsOperarTicketScrollColumnClass}>
-        <div className={layoutsOperarTicketProposalHeaderClass(proposalId)}>
+        <div
+          className={cn(
+            layoutsOperarTicketProposalHeaderClass(proposalId),
+            "sticky top-0 z-20",
+          )}
+        >
           <h2 className={layoutsOperarSummaryCartTitleClass}>Pedido</h2>
         </div>
 
-        <div
-          className={cn(
-            layoutsOperarTicketProposalCartRowClass(proposalId),
-            layoutsOperarTicketProposalCartListClass(proposalId),
-          )}
-        >
-          {LAYOUTS_OPERAR_DEMO_TICKET_ENTRIES.map((entry) => {
-            if (entry.kind === "line") {
-              return (
-                <LayoutsOperarTicketProposalLine
-                  key={entry.line.id}
-                  proposalId={proposalId}
-                  line={entry.line}
-                />
-              )
-            }
-
-            return (
-              <div key={entry.group.id}>
-                <LayoutsOperarTicketProposalGroupBanner
-                  proposalId={proposalId}
-                  group={entry.group}
-                />
-                {entry.group.lines.map((line) => (
+        <div className={layoutsOperarTicketBlocksFloorClass}>
+          <div
+            className={cn(
+              layoutsOperarTicketProposalCartRowClass(proposalId),
+              layoutsOperarTicketProposalCartListClass(proposalId),
+            )}
+          >
+            {LAYOUTS_OPERAR_DEMO_TICKET_ENTRIES.map((entry) => {
+              if (entry.kind === "line") {
+                return (
                   <LayoutsOperarTicketProposalLine
-                    key={line.id}
+                    key={entry.line.id}
                     proposalId={proposalId}
-                    line={line}
-                    omitHiddenPricePlaceholder
+                    line={entry.line}
                   />
-                ))}
-              </div>
-            )
-          })}
-        </div>
-        <div className={layoutsOperarSummaryTotalsPlacementClass}>
-          <LayoutsOperarTicketProposalTotalsBar proposalId={proposalId} />
+                )
+              }
+
+              return (
+                <div key={entry.group.id}>
+                  <LayoutsOperarTicketProposalGroupBanner
+                    proposalId={proposalId}
+                    group={entry.group}
+                  />
+                  {entry.group.lines.map((line) => (
+                    <LayoutsOperarTicketProposalLine
+                      key={line.id}
+                      proposalId={proposalId}
+                      line={line}
+                      omitHiddenPricePlaceholder
+                    />
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+          <div className={layoutsOperarSummaryTotalsPlacementClass}>
+            <LayoutsOperarTicketProposalTotalsBar proposalId={proposalId} />
+          </div>
         </div>
       </div>
 

@@ -17,12 +17,17 @@
 }
 
 /**
- * Umbral de filtros — superficie bruma entre el header éter y la tabla.
+ * Umbral de filtros — sotobosque luz, gradiente suave bruma.
  */
 .data-workspace-tables-filters-dawn {
   position: relative;
   overflow: hidden;
-  background-color: var(--color-superficie);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--rootsy-bruma-100) 88%, white) 0%,
+    var(--rootsy-bruma-50) 42%,
+    white 100%
+  );
 }
 
 .data-workspace-tables-filters-dawn::after {

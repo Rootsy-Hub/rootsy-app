@@ -19,12 +19,20 @@ import {
   upsertMesasSessionCache,
 } from "@/app/[siteId]/[popId]/mesas/mesasQueryCache"
 import {
+  popLocalMesasFloorHydrateQueryKey,
   popMesasLayoutQueryKey,
   popMesasQueryRoot,
   popMesasReservationSettingsQueryKey,
   popMesasReservationsQueryKey,
+  popMesasSessionQueryKey,
   popMesasSessionsQueryKey,
 } from "@/lib/queryKeys"
+import {
+  clearPopLocalMesasFloorHydrateMark,
+  refreshMesasLayoutFromNetwork,
+  refreshMesasReservationsFromNetwork,
+  refreshMesasReservationSettingsFromNetwork,
+} from "@/lib/popLocalDb/hydrateMesasFloor"
 import type { DomainEvent } from "@/lib/realtime/protocol"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -154,9 +162,16 @@ export function invalidateMesasRealtimeQueries(
   queryClient: QueryClient,
   popId: string,
 ) {
-  void queryClient.invalidateQueries({
-    queryKey: popMesasQueryRoot(popId),
-    refetchType: "all",
+  void clearPopLocalMesasFloorHydrateMark(popId).then(() => {
+    void queryClient.invalidateQueries({
+      queryKey: popLocalMesasFloorHydrateQueryKey(popId),
+      refetchType: "all",
+    })
+    void queryClient.invalidateQueries({
+      queryKey: popMesasQueryRoot(popId),
+      refetchType: "all",
+      predicate: (query) => query.queryKey[2] !== "session",
+    })
   })
 }
 
@@ -191,10 +206,19 @@ export function applyMesasRealtimeEvent(
         refetchType: "all",
       })
     }
-    void queryClient.invalidateQueries({
-      queryKey: popMesasReservationsQueryKey(popId),
-      refetchType: "all",
-    })
+    void refreshMesasReservationsFromNetwork(popId)
+      .then((reservations) => {
+        queryClient.setQueryData(
+          popMesasReservationsQueryKey(popId),
+          reservations,
+        )
+      })
+      .catch(() => {
+        void queryClient.invalidateQueries({
+          queryKey: popMesasReservationsQueryKey(popId),
+          refetchType: "all",
+        })
+      })
     return
   }
 
@@ -209,6 +233,13 @@ export function applyMesasRealtimeEvent(
         updatedAt,
         event.payload.checkout,
       )
+      return
+    }
+    if (sessionId) {
+      void queryClient.invalidateQueries({
+        queryKey: popMesasSessionQueryKey(popId, sessionId),
+        refetchType: "all",
+      })
       return
     }
     void queryClient.invalidateQueries({
@@ -242,10 +273,16 @@ export function applyMesasRealtimeEvent(
   }
 
   if (event.type === "mesas.layout_changed") {
-    void queryClient.invalidateQueries({
-      queryKey: popMesasLayoutQueryKey(popId),
-      refetchType: "all",
-    })
+    void refreshMesasLayoutFromNetwork(popId)
+      .then((layout) => {
+        queryClient.setQueryData(popMesasLayoutQueryKey(popId), layout)
+      })
+      .catch(() => {
+        void queryClient.invalidateQueries({
+          queryKey: popMesasLayoutQueryKey(popId),
+          refetchType: "all",
+        })
+      })
     return
   }
 
@@ -283,10 +320,19 @@ export function applyMesasRealtimeEvent(
   }
 
   if (event.type === "mesas.settings_updated") {
-    void queryClient.invalidateQueries({
-      queryKey: popMesasReservationSettingsQueryKey(popId),
-      refetchType: "all",
-    })
+    void refreshMesasReservationSettingsFromNetwork(popId)
+      .then((settings) => {
+        queryClient.setQueryData(
+          popMesasReservationSettingsQueryKey(popId),
+          settings,
+        )
+      })
+      .catch(() => {
+        void queryClient.invalidateQueries({
+          queryKey: popMesasReservationSettingsQueryKey(popId),
+          refetchType: "all",
+        })
+      })
     return
   }
 

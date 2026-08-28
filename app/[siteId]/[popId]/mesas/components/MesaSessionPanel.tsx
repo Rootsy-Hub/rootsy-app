@@ -50,6 +50,7 @@ type Props = {
   sessionTables: MesaTable[]
   tables: MesaTable[]
   waiters: MesaWaiter[]
+  waitersLoading?: boolean
   mergeCandidates: MesaTable[]
   sessionError?: string | null
   onOpenSession: (input: MesaOpenSessionInput) => Promise<boolean> | boolean
@@ -87,6 +88,7 @@ export function MesaSessionPanel({
   sessionTables,
   tables,
   waiters,
+  waitersLoading = false,
   mergeCandidates,
   sessionError,
   onOpenSession,
@@ -232,7 +234,17 @@ export function MesaSessionPanel({
               />
 
               <ChannelDataFields>
-                <ChannelDataField label="Mozo">{waiter?.name ?? "—"}</ChannelDataField>
+                <ChannelDataField label="Mozo">
+                  {waitersLoading && session?.waiterId && !waiter ? (
+                    <span
+                      aria-busy="true"
+                      aria-label="Cargando mozo"
+                      className="mt-1 inline-block h-3 w-20 animate-pulse rounded-sm bg-[color-mix(in_srgb,var(--rootsy-sombra-400)_22%,transparent)]"
+                    />
+                  ) : (
+                    waiter?.name ?? "—"
+                  )}
+                </ChannelDataField>
                 <ChannelDataField label="Cliente">
                   {clientLabel?.trim() || "Sin asignar"}
                 </ChannelDataField>
@@ -370,6 +382,7 @@ export function MesaSessionPanel({
             blockedMergeTables={blockedMergeTables}
             blockedMergeWarning={blockedMergeWarning}
             waiters={waiters}
+            waitersLoading={waitersLoading}
             initial={
               floorReservation
                 ? mesaOpenInitialFromReservation(
@@ -392,6 +405,7 @@ export function MesaSessionPanel({
           primaryTable={table}
           mergeCandidates={mergeCandidates}
           waiters={waiters}
+          waitersLoading={waitersLoading}
           initial={{
             tableIds: session.tableIds,
             waiterId: session.waiterId,

@@ -43,7 +43,6 @@ import {
   dataWorkspaceEntityCardEyebrowClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -490,10 +489,11 @@ export function ChatWorkspaceView() {
         userRoleLabel={bootstrap?.roleLabel}
         headerActions={
           canCreate ? (
-            <DataWorkspaceHeaderTooltipIconButton
+            <RootsIconButton
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
               label={atLimitHint ?? "Nuevo canal"}
-              headerVariant={dataWorkspaceModuleHeaderVariant}
-              primary
               disabled={atLimit}
               onClick={() => {
                 setCreateBanner(null)
@@ -501,7 +501,7 @@ export function ChatWorkspaceView() {
               }}
             >
               <Plus className="size-5" aria-hidden />
-            </DataWorkspaceHeaderTooltipIconButton>
+            </RootsIconButton>
           ) : null
         }
         contentFlush

@@ -15,12 +15,12 @@ export const menuHeaderEntityClass = cn(
 
 const menuUniverseEntityBodySurfaceClass = cn(
   "menu-header-entity-body relative w-full overflow-hidden",
-  "bg-[linear-gradient(168deg,var(--rootsy-eter-800)_0%,var(--rootsy-eter-900)_52%,var(--rootsy-eter-950)_100%)]",
+  "bg-[linear-gradient(168deg,var(--rootsy-eter-void-800)_0%,var(--rootsy-eter-void-900)_52%,var(--rootsy-eter-void-950)_100%)]",
 )
 
 export const menuHeaderEntityBodyClass = cn(
   menuUniverseEntityBodySurfaceClass,
-  "border-b border-[color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent)]",
+  "border-b border-[color-mix(in_srgb,var(--rootsy-eter-glow-100)_10%,transparent)]",
 )
 
 /** Tierra mojada — humus oliva, humedad de savia. */

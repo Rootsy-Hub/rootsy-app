@@ -38,6 +38,7 @@ const ticketActionConfirmStyle = {
 
 export type SaleOperationActionsBarProps = {
   discardDisabled?: boolean
+  discardTitle?: string
   confirmDisabled?: boolean
   confirmLoading?: boolean
   confirmLabel?: string
@@ -48,21 +49,16 @@ export type SaleOperationActionsBarProps = {
   onConfirm: () => void
   onComandas?: () => void
   comandasDisabled?: boolean
+  comandasTitle?: string
   flush?: boolean
   /** Ticket operar — umbral circular Descartar · Cobrar / Pagar. */
   variant?: "default" | "operar" | "mobile"
-  /** Mesa o pedido — caption arriba, número abajo, alineado con los círculos. */
-  contextLabel?: {
-    caption: string
-    value: string
-    /** Pedido de mostrador: el código puede ser largo. */
-    valueSize?: "prominent" | "compact"
-  }
   className?: string
 }
 
 export function SaleOperationActionsBar({
   discardDisabled = false,
+  discardTitle,
   confirmDisabled = false,
   confirmLoading = false,
   confirmLabel,
@@ -72,9 +68,9 @@ export function SaleOperationActionsBar({
   onConfirm,
   onComandas,
   comandasDisabled = false,
+  comandasTitle,
   flush = false,
   variant = "default",
-  contextLabel,
   className,
 }: SaleOperationActionsBarProps) {
   const confirmInactive = confirmDisabled || confirmLoading
@@ -105,6 +101,7 @@ export function SaleOperationActionsBar({
               type="button"
               disabled={discardDisabled}
               aria-label="Descartar"
+              title={discardTitle}
               onClick={onDiscard}
               className={saleOpActionDiscardFillClass}
             >
@@ -114,6 +111,7 @@ export function SaleOperationActionsBar({
               type="button"
               disabled={comandasDisabled}
               aria-label="Comandas"
+              title={comandasTitle}
               onClick={() => onComandas?.()}
               className={saleOpActionComandasFillClass}
             >
@@ -124,6 +122,7 @@ export function SaleOperationActionsBar({
           <button
             type="button"
             disabled={discardDisabled}
+            title={discardTitle}
             onClick={onDiscard}
             className={saleOpActionDiscardClass}
           >
@@ -168,27 +167,11 @@ export function SaleOperationActionsBar({
     )
   }
 
+  const showComandas = typeof onComandas === "function"
+
   if (variant === "operar") {
     return (
       <div className="flex h-full w-full items-center justify-center gap-[var(--rootsy-space-300)]">
-        {contextLabel ? (
-          <p
-            className="flex min-w-[2.5rem] max-w-[7.5rem] flex-col items-center justify-center leading-none text-[var(--rootsy-bruma-800)]"
-            aria-label={`${contextLabel.caption} ${contextLabel.value}`}
-          >
-            <span className="font-canopy text-xs font-bold">
-              {contextLabel.caption}
-            </span>
-            <span
-              className={cn(
-                "-mt-0.5 truncate font-ledger font-bold tabular-nums tracking-tight",
-                contextLabel.valueSize === "compact" ? "text-sm" : "text-2xl",
-              )}
-            >
-              {contextLabel.value}
-            </span>
-          </p>
-        ) : null}
         <RootsIconButton
           label="Descartar"
           theme="workspace"
@@ -196,6 +179,7 @@ export function SaleOperationActionsBar({
           size="large"
           sizeChildren={false}
           disabled={discardDisabled}
+          title={discardTitle}
           onClick={onDiscard}
           style={ticketActionDiscardStyle}
         >
@@ -205,7 +189,7 @@ export function SaleOperationActionsBar({
             aria-hidden
           />
         </RootsIconButton>
-        {contextLabel ? (
+        {showComandas ? (
           <RootsIconButton
             label="Comandas"
             theme="pos"
@@ -213,6 +197,7 @@ export function SaleOperationActionsBar({
             size="large"
             sizeChildren={false}
             disabled={comandasDisabled}
+            title={comandasTitle}
             onClick={() => onComandas?.()}
             className={saleOpTicketActionComandasClass}
             style={ticketActionDiscardStyle}
@@ -255,6 +240,7 @@ export function SaleOperationActionsBar({
       <button
         type="button"
         disabled={discardDisabled}
+        title={discardTitle}
         onClick={onDiscard}
         className={cn(saleOpActionDiscardClass, !flush && "rounded-xl")}
       >

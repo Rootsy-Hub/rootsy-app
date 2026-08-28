@@ -75,7 +75,7 @@
   z-index: 0;
   overflow: hidden;
   border-radius: inherit;
-  background-color: var(--rootsy-eter-950);
+  background-color: var(--rootsy-eter-void-950);
   background-image:
     radial-gradient(circle at 18% 28%, rgba(255, 255, 255, 0.7) 0 0.5px, transparent 1.1px),
     radial-gradient(circle at 42% 16%, rgba(255, 255, 255, 0.48) 0 0.45px, transparent 1px),
@@ -85,19 +85,19 @@
     radial-gradient(circle at 56% 64%, rgba(255, 255, 255, 0.46) 0 0.45px, transparent 1.05px),
     radial-gradient(
       ellipse 88% 70% at 50% 118%,
-      color-mix(in srgb, var(--rootsy-eter-100) 16%, transparent) 0%,
+      color-mix(in srgb, var(--rootsy-eter-glow-100) 16%, transparent) 0%,
       transparent 70%
     ),
     radial-gradient(
       ellipse 90% 55% at 50% -28%,
-      color-mix(in srgb, var(--rootsy-eter-100) 10%, transparent) 0%,
+      color-mix(in srgb, var(--rootsy-eter-glow-100) 10%, transparent) 0%,
       transparent 58%
     ),
     linear-gradient(
       168deg,
-      var(--rootsy-eter-800) 0%,
-      var(--rootsy-eter-900) 46%,
-      var(--rootsy-eter-950) 100%
+      var(--rootsy-eter-void-800) 0%,
+      var(--rootsy-eter-void-900) 46%,
+      var(--rootsy-eter-void-950) 100%
     );
 }
 

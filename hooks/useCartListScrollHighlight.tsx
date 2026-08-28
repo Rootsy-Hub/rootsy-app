@@ -8,11 +8,20 @@ import {
   useRef,
   useState,
   type ReactNode,
-  type RefObject,
+  type RefCallback,
 } from "react"
 
+const PIN_THRESHOLD_PX = 64
+
+export function isCartScrollPinnedToBottom(
+  root: Pick<HTMLElement, "scrollHeight" | "scrollTop" | "clientHeight">,
+  thresholdPx = PIN_THRESHOLD_PX,
+) {
+  return root.scrollHeight - root.scrollTop - root.clientHeight <= thresholdPx
+}
+
 export type CartListScrollHighlightValue = {
-  scrollRef: RefObject<HTMLDivElement | null>
+  scrollRef: RefCallback<HTMLDivElement>
   notifyLineAdded: (lineId: string) => void
   isLineHighlighted: (lineId: string) => boolean
   highlightTick: number
@@ -26,8 +35,11 @@ function isLastCartLine(root: HTMLElement, el: HTMLElement) {
   return lines.length > 0 && lines[lines.length - 1] === el
 }
 
-function scrollCartToBlockEnd(root: HTMLDivElement) {
-  root.scrollTo({ top: root.scrollHeight, behavior: "smooth" })
+function scrollCartToBlockEnd(
+  root: HTMLDivElement,
+  behavior: ScrollBehavior = "smooth",
+) {
+  root.scrollTo({ top: root.scrollHeight, behavior })
 }
 
 function scrollCartToAffectedLine(root: HTMLDivElement, lineId: string) {
@@ -35,7 +47,6 @@ function scrollCartToAffectedLine(root: HTMLDivElement, lineId: string) {
   const el = root.querySelector<HTMLElement>(`[data-cart-line-id="${escaped}"]`)
   if (!el) return false
 
-  // Un ítem nuevo va al final: hay que revelar el bloque hasta Por cobrar / total.
   if (isLastCartLine(root, el)) {
     scrollCartToBlockEnd(root)
     return true
@@ -62,11 +73,21 @@ function scrollCartToAffectedLine(root: HTMLDivElement, lineId: string) {
   return true
 }
 
-export function useCartListScrollHighlight(): CartListScrollHighlightValue {
-  const scrollRef = useRef<HTMLDivElement>(null)
+export function useCartListScrollHighlight(
+  anchorKey?: string | null,
+): CartListScrollHighlightValue {
+  const scrollNodeRef = useRef<HTMLDivElement | null>(null)
+  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null)
+  const pinnedRef = useRef(true)
+  const programmaticRef = useRef(false)
   const [pulse, setPulse] = useState<{ lineId: string; tick: number } | null>(
     null,
   )
+
+  const scrollRef = useCallback<RefCallback<HTMLDivElement>>((node) => {
+    scrollNodeRef.current = node
+    setScrollEl(node)
+  }, [])
 
   const notifyLineAdded = useCallback((lineId: string) => {
     if (!lineId) return
@@ -79,16 +100,74 @@ export function useCartListScrollHighlight(): CartListScrollHighlightValue {
   )
 
   useEffect(() => {
+    pinnedRef.current = true
+  }, [anchorKey])
+
+  useEffect(() => {
+    const root = scrollEl
+    if (!root) return
+
+    const onScroll = () => {
+      if (programmaticRef.current) return
+      pinnedRef.current = isCartScrollPinnedToBottom(root)
+    }
+    root.addEventListener("scroll", onScroll, { passive: true })
+
+    const followIfPinned = () => {
+      if (!pinnedRef.current) return
+      programmaticRef.current = true
+      root.scrollTop = root.scrollHeight
+      requestAnimationFrame(() => {
+        programmaticRef.current = false
+      })
+    }
+
+    followIfPinned()
+
+    const ro = new ResizeObserver(followIfPinned)
+    ro.observe(root)
+    for (const child of Array.from(root.children)) {
+      ro.observe(child)
+    }
+
+    const mo = new MutationObserver(() => {
+      for (const child of Array.from(root.children)) {
+        ro.observe(child)
+      }
+      followIfPinned()
+    })
+    mo.observe(root, { childList: true, subtree: true })
+
+    return () => {
+      root.removeEventListener("scroll", onScroll)
+      ro.disconnect()
+      mo.disconnect()
+    }
+  }, [scrollEl, anchorKey])
+
+  useEffect(() => {
     if (!pulse?.lineId) return
 
     let attempts = 0
     let raf = 0
 
     const tryScroll = () => {
-      const root = scrollRef.current
-      if (root && scrollCartToAffectedLine(root, pulse.lineId)) return
+      const root = scrollNodeRef.current
+      if (root) {
+        const escaped = CSS.escape(pulse.lineId)
+        const el = root.querySelector<HTMLElement>(
+          `[data-cart-line-id="${escaped}"]`,
+        )
+        if (el && isLastCartLine(root, el)) {
+          pinnedRef.current = true
+        }
+        if (scrollCartToAffectedLine(root, pulse.lineId)) return
+      }
       if (attempts >= 12) {
-        if (root) scrollCartToBlockEnd(root)
+        if (root) {
+          pinnedRef.current = true
+          scrollCartToBlockEnd(root)
+        }
         return
       }
       attempts += 1
@@ -97,9 +176,17 @@ export function useCartListScrollHighlight(): CartListScrollHighlightValue {
 
     raf = requestAnimationFrame(tryScroll)
     const layoutFollowUp = window.setTimeout(() => {
-      const root = scrollRef.current
+      const root = scrollNodeRef.current
       if (!root) return
+      const escaped = CSS.escape(pulse.lineId)
+      const el = root.querySelector<HTMLElement>(
+        `[data-cart-line-id="${escaped}"]`,
+      )
+      if (el && isLastCartLine(root, el)) {
+        pinnedRef.current = true
+      }
       if (!scrollCartToAffectedLine(root, pulse.lineId)) {
+        pinnedRef.current = true
         scrollCartToBlockEnd(root)
       }
     }, 150)

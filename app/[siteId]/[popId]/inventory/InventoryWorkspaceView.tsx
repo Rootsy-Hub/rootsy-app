@@ -44,8 +44,6 @@ import {
   dataWorkspaceEntityCardStatValueLargeClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -754,41 +752,49 @@ export default function InventoryWorkspaceView() {
         headerActions={
           <div className="flex items-center gap-2">
             {clearing === "purchase" && metrics.purchaseCount > 0 ? (
-              <DataWorkspaceHeaderIconButton
+              <RootsIconButton
                 label="Imprimir lista"
-                headerVariant={dataWorkspaceModuleHeaderVariant}
+                semantic="tertiary"
+                atmosphere="eter"
+                size="default"
                 onClick={printPurchaseList}
               >
                 <Printer className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
+              </RootsIconButton>
             ) : null}
             {canCreate && locations.length > 1 ? (
-              <DataWorkspaceHeaderTooltipIconButton
+              <RootsIconButton
                 label="Trasladar stock"
-                headerVariant={dataWorkspaceModuleHeaderVariant}
+                semantic="tertiary"
+                atmosphere="eter"
+                size="default"
                 onClick={openTransfer}
               >
                 <ArrowRightLeft className="size-5" aria-hidden />
-              </DataWorkspaceHeaderTooltipIconButton>
+              </RootsIconButton>
             ) : null}
             {canCreate ? (
               <>
-                <DataWorkspaceHeaderTooltipIconButton
+                <RootsIconButton
                   label="Sumar stock"
-                  headerVariant={dataWorkspaceModuleHeaderVariant}
+                  semantic="tertiary"
+                  atmosphere="eter"
+                  size="default"
                   disabled={!canPostAdjustmentAccounting}
                   onClick={() => openCreate(undefined, true)}
                 >
                   <Plus className="size-5" aria-hidden />
-                </DataWorkspaceHeaderTooltipIconButton>
-                <DataWorkspaceHeaderTooltipIconButton
+                </RootsIconButton>
+                <RootsIconButton
                   label="Restar stock"
-                  headerVariant={dataWorkspaceModuleHeaderVariant}
+                  semantic="tertiary"
+                  atmosphere="eter"
+                  size="default"
                   disabled={!canPostAdjustmentAccounting}
                   onClick={() => openCreate(undefined, false)}
                 >
                   <Minus className="size-5" aria-hidden />
-                </DataWorkspaceHeaderTooltipIconButton>
+                </RootsIconButton>
               </>
             ) : null}
           </div>

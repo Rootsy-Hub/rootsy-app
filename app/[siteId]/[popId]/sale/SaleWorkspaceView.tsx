@@ -11,6 +11,7 @@ import {
   type SaleCatalogClient,
   type SaleCatalogPaymentOption,
 } from "@/app/[siteId]/[popId]/sale/actions"
+import { useCajasRealtime } from "@/hooks/useCajasRealtime"
 import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
 import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
 import { useSaleCatalogLoader } from "@/hooks/useSaleCatalogLoader"
@@ -258,6 +259,7 @@ export function SaleWorkspaceView() {
     enabled: Boolean(popId && siteId),
   })
   const catalogLoading = !popId || !siteId ? false : catalogQueryLoading
+  useCajasRealtime(popId, user?.id)
   useSaleOpenCashSessionToasts(
     siteId,
     popId,
@@ -275,7 +277,7 @@ export function SaleWorkspaceView() {
   const bootstrapLoaded =
     comprobantesLoaded || fiscalBootstrap.bootstrapLoaded
 
-  const cartScrollHighlight = useCartListScrollHighlight()
+  const cartScrollHighlight = useCartListScrollHighlight(quoteIdFromUrl)
 
   const {
     carrito,
@@ -1065,7 +1067,7 @@ export function SaleWorkspaceView() {
   ])
 
   const onClienteToolbarClick = () => {
-    if (!canReadClients) return
+    if (!canReadClients || !openCashSession) return
     setClienteModalAbierto(true)
   }
 
@@ -1263,9 +1265,10 @@ export function SaleWorkspaceView() {
                     ? "Sin permiso"
                     : (clienteSeleccionado?.name ?? "Elegir cliente")
                 }
-                clienteIvaLabel={ventaIvaLabel}
-                clienteDisabled={!canReadClients}
-                clienteConfigurado={Boolean(clienteSeleccionado)}
+                clienteIvaLabel={openCashSession ? ventaIvaLabel : null}
+                clienteDisabled={!canReadClients || !openCashSession}
+                clienteConfigurado={Boolean(clienteSeleccionado) && Boolean(openCashSession)}
+                toolbarDisabled={!openCashSession}
                 comprobanteLabel={comprobanteDisplayLabel}
                 pagoLabel={
                   openCashSession
@@ -1278,17 +1281,23 @@ export function SaleWorkspaceView() {
                 pagoIcon={
                   openCashSession ? toolboxPaymentDisplay.pagoIcon : undefined
                 }
-                pagoConfigurado={pagoConfigurado}
+                pagoConfigurado={pagoConfigurado && Boolean(openCashSession)}
                 pagoDisabled={!openCashSession}
                 descuentoLabel={descuentoToolboxLabel}
-                hayDescuento={hayDescuento}
+                hayDescuento={hayDescuento && Boolean(openCashSession)}
                 onClienteClick={onClienteToolbarClick}
-                onComprobanteClick={() => setComprobanteModalAbierto(true)}
+                onComprobanteClick={() => {
+                  if (!openCashSession) return
+                  setComprobanteModalAbierto(true)
+                }}
                 onPagoClick={() => {
                   if (!openCashSession) return
                   setPagoModalAbierto(true)
                 }}
-                onDescuentoClick={abrirModalDescuento}
+                onDescuentoClick={() => {
+                  if (!openCashSession) return
+                  abrirModalDescuento()
+                }}
               />
             }
             ticket={
@@ -1308,10 +1317,16 @@ export function SaleWorkspaceView() {
                   listTitle="Pedido"
                   cartScrollHighlight={cartScrollHighlight}
                   actions={{
-                    discardDisabled: !hayItemsEnPedido,
+                    discardDisabled: !hayItemsEnPedido || !openCashSession,
+                    discardTitle: !openCashSession
+                      ? "Requiere caja abierta"
+                      : undefined,
                     confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,
                     confirmLoading: ventaSubmitting,
-                    onDiscard: () => setDescartarConfirmOpen(true),
+                    onDiscard: () => {
+                      if (!openCashSession || !hayItemsEnPedido) return
+                      setDescartarConfirmOpen(true)
+                    },
                     onConfirm: () => {
                       setVentaError(null)
                       setVenderConfirmOpen(true)

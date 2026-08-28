@@ -1,12 +1,12 @@
 /**
  * Scope layout · tablas — tokens --wt-* sobre bruma (handbook).
- * Fondo 100 · superficie 50 · borde 200 · texto 900 · muted 700.
+ * Fondo 100 · even blanco · odd 100 · header 100 · borde 200 · texto 900 · muted 700.
  * El footer es sombra y no vive en este scope.
  */
 
 .workspace-layouts-tables {
-  --wt-surface: var(--color-superficie);
-  --wt-surface-stripe: var(--color-fondo);
+  --wt-surface: var(--rootsy-blanco);
+  --wt-surface-stripe: var(--rootsy-bruma-100);
   --wt-surface-hover: var(--rootsy-savia-50);
   --wt-surface-selected: var(--rootsy-savia-100);
   --wt-surface-selected-ring: color-mix(
@@ -14,12 +14,8 @@
     var(--rootsy-savia-600) 28%,
     transparent
   );
-  --wt-header-bg: var(--color-fondo);
-  --wt-header-bg-glass: color-mix(
-    in srgb,
-    var(--color-fondo) 88%,
-    var(--color-superficie)
-  );
+  --wt-header-bg: var(--rootsy-bruma-100);
+  --wt-header-bg-glass: var(--rootsy-bruma-100);
   --wt-header-text: var(--color-texto-muted);
   --wt-border: var(--color-borde);
   --wt-border-strong: var(--rootsy-bruma-300);

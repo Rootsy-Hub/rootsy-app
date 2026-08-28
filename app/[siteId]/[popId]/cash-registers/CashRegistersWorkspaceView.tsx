@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import type {
   ArcaSalePointOption,
   CashRegisterRow,
@@ -26,7 +27,6 @@ import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { RootsBanner } from "@/components/rootsy-banner"
 import {
   dataWorkspaceBlocksEmptyStateClass,
@@ -420,14 +420,15 @@ export function CashRegistersWorkspaceView() {
         userRoleLabel={bootstrap?.roleLabel}
         headerActions={
           canCreate ? (
-            <DataWorkspaceHeaderTooltipIconButton
+            <RootsIconButton
               label="Nueva caja"
-              headerVariant={dataWorkspaceModuleHeaderVariant}
-              primary
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
               onClick={() => openCreate()}
             >
               <Plus className="size-5" aria-hidden />
-            </DataWorkspaceHeaderTooltipIconButton>
+            </RootsIconButton>
           ) : null
         }
         contentFlush

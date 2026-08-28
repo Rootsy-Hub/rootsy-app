@@ -21,7 +21,7 @@ export const popHeaderBackgroundOverlayClass =
 
 /** @deprecated Usar menuVignetteClass */
 export const popWorkspaceVignetteClass =
-  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--rootsy-eter-950)_50%,transparent)_100%)]"
+  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--rootsy-eter-void-950)_50%,transparent)_100%)]"
 
 /** @deprecated Usar menuHeaderChromeClass */
 export const popHeaderGlassClass = cn(

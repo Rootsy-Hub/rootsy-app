@@ -207,8 +207,8 @@
   pointer-events: none;
   background: linear-gradient(
     to bottom,
-    rgba(1, 3, 6, 0.65) 0%,
-    rgba(2, 5, 8, 0.28) 45%,
+    color-mix(in srgb, var(--rootsy-eter-void-950) 65%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-eter-void-900) 28%, transparent) 45%,
     transparent 100%
   );
 }
@@ -223,8 +223,8 @@
   pointer-events: none;
   background: linear-gradient(
     to top,
-    rgba(1, 3, 6, 0.65) 0%,
-    rgba(2, 5, 8, 0.28) 45%,
+    color-mix(in srgb, var(--rootsy-eter-void-950) 65%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-eter-void-900) 28%, transparent) 45%,
     transparent 100%
   );
 }

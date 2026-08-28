@@ -38,23 +38,29 @@ export function MostradorOrderPanel({
     cerrarPedido,
     cerrarPedidoMode,
     puedeRegistrar,
+    openCashSession,
     orderPanelLoading,
   } = checkout
 
+  const requiereCajaAbierta = openCashSession == null
   const confirmLabel =
     puedeCerrarPedido && cerrarPedidoMode === "release"
       ? "Liberar pedido"
       : puedeCerrarPedido
         ? "Cerrar pedido"
         : "Cobrar pedido"
-  const confirmDisabled = puedeCerrarPedido ? !puedeCerrarPedido : !puedeRegistrar
+  const confirmDisabled = puedeCerrarPedido
+    ? !puedeCerrarPedido
+    : requiereCajaAbierta || !puedeRegistrar
   const confirmTitle = puedeCerrarPedido
     ? cerrarPedidoMode === "release"
       ? "No hay ítems ni cobros pendientes. Podés liberar el pedido."
       : "Todo el pedido está cobrado. Podés cerrarlo para marcarlo como pagado."
-    : !puedeRegistrar
-      ? "Completá el pedido, pago y pedido seleccionado."
-      : undefined
+    : requiereCajaAbierta
+      ? "Requiere caja abierta"
+      : !puedeRegistrar
+        ? "Completá el pedido, pago y pedido seleccionado."
+        : undefined
 
   return (
     <SaleOperationTicketOrderPanel

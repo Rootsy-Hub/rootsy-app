@@ -8,14 +8,12 @@ type Props = {
   value: MesasRightPanelView
   onChange: (view: MesasRightPanelView) => void
   pedidoDisabled?: boolean
-  tableLabel?: string | null
 }
 
 export function MesasRightPanelTabs({
   value,
   onChange,
   pedidoDisabled,
-  tableLabel,
 }: Props) {
   return (
     <SaleOperationPanelTabs
@@ -26,9 +24,8 @@ export function MesasRightPanelTabs({
       tabs={[
         {
           id: "session",
-          label: "Mesa",
+          label: "Mesas",
           icon: UtensilsCrossed,
-          suffix: tableLabel ?? undefined,
         },
         { id: "agenda", label: "Agenda", icon: CalendarDays },
         {

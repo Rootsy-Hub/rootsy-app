@@ -1,8 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import {
+  readSavedSaleCatalogChrome,
+  writeSavedSaleCatalogChrome,
+} from "@/lib/saleCatalogPreference"
 
-/** Lista elegida en Operar — vive en memoria de la sesión de página. */
+/** Lista elegida en Operar — memoria de página + localStorage por pop. */
 
 let session: { popId: string; priceListId: string } | null = null
 const listeners = new Set<() => void>()
@@ -13,12 +17,18 @@ function notifySalePriceListSession() {
 
 export function setSalePriceListSession(popId: string, priceListId: string) {
   session = { popId, priceListId }
+  writeSavedSaleCatalogChrome(popId, { priceListId })
   notifySalePriceListSession()
 }
 
 export function getSalePriceListSession(popId: string): string | undefined {
-  if (!session || session.popId !== popId) return undefined
-  return session.priceListId
+  if (session && session.popId === popId) return session.priceListId
+  const saved = readSavedSaleCatalogChrome(popId).priceListId
+  if (saved) {
+    session = { popId, priceListId: saved }
+    return saved
+  }
+  return undefined
 }
 
 export function subscribeSalePriceListSession(listener: () => void) {

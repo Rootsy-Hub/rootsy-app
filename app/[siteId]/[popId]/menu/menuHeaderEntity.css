@@ -154,9 +154,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent) 24%,
-    color-mix(in srgb, var(--rootsy-eter-100) 42%, transparent) 50%,
-    color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent) 76%,
+    color-mix(in srgb, var(--rootsy-eter-glow-100) 22%, transparent) 24%,
+    color-mix(in srgb, var(--rootsy-eter-glow-100) 42%, transparent) 50%,
+    color-mix(in srgb, var(--rootsy-eter-glow-100) 22%, transparent) 76%,
     transparent 100%
   );
   opacity: 0.75;
@@ -171,8 +171,8 @@
   pointer-events: none;
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--rootsy-eter-950) 72%, transparent) 0%,
-    color-mix(in srgb, var(--rootsy-eter-900) 34%, transparent) 42%,
+    color-mix(in srgb, var(--rootsy-eter-void-950) 72%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-eter-void-900) 34%, transparent) 42%,
     transparent 100%
   );
 }

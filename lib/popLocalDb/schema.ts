@@ -1,4 +1,4 @@
-export const POP_LOCAL_SCHEMA_VERSION = 4
+export const POP_LOCAL_SCHEMA_VERSION = 6
 export const POP_LOCAL_DB_DIR = "rootsy-pop-db"
 
 export function popLocalDbFileName(popId: string): string {
@@ -141,9 +141,106 @@ CREATE TABLE IF NOT EXISTS sale_cart_lines (
 );
 
 CREATE INDEX IF NOT EXISTS sale_cart_lines_sort ON sale_cart_lines (sort_order, line_id);
+
+CREATE TABLE IF NOT EXISTS mesas_salons (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS mesas_tables (
+  id TEXT PRIMARY KEY,
+  salon_id TEXT NOT NULL,
+  label TEXT NOT NULL,
+  shape TEXT NOT NULL,
+  x REAL NOT NULL,
+  y REAL NOT NULL,
+  rotation REAL NOT NULL DEFAULT 0,
+  seats INTEGER NOT NULL DEFAULT 0,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE INDEX IF NOT EXISTS mesas_tables_salon_id ON mesas_tables (salon_id);
+
+CREATE TABLE IF NOT EXISTS mesas_decors (
+  id TEXT PRIMARY KEY,
+  salon_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  x REAL NOT NULL,
+  y REAL NOT NULL,
+  width REAL NOT NULL,
+  height REAL NOT NULL,
+  rotation REAL NOT NULL DEFAULT 0,
+  label TEXT NOT NULL DEFAULT '',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  is_active INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE INDEX IF NOT EXISTS mesas_decors_salon_id ON mesas_decors (salon_id);
+
+CREATE TABLE IF NOT EXISTS mesas_sessions_slim (
+  id TEXT PRIMARY KEY,
+  table_ids TEXT NOT NULL,
+  waiter_id TEXT NOT NULL DEFAULT '',
+  guest_count INTEGER,
+  note TEXT NOT NULL DEFAULT '',
+  opened_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  floor_status TEXT NOT NULL DEFAULT 'open'
+);
+
+CREATE TABLE IF NOT EXISTS mesas_reservations_slim (
+  id TEXT PRIMARY KEY,
+  table_id TEXT,
+  table_ids TEXT NOT NULL,
+  client_id TEXT,
+  client_name TEXT NOT NULL DEFAULT '',
+  guest_count INTEGER,
+  arrival_at TEXT NOT NULL,
+  status TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS mesas_reservation_settings (
+  id TEXT PRIMARY KEY,
+  floor_buffer_minutes INTEGER NOT NULL,
+  grace_minutes INTEGER NOT NULL,
+  operational_day_close_time TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS mostrador_orders_slim (
+  id TEXT PRIMARY KEY,
+  order_day TEXT NOT NULL,
+  order_number INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL,
+  fulfillment_type TEXT NOT NULL,
+  delivery_address TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  driver_name TEXT NOT NULL DEFAULT '',
+  estimated_minutes INTEGER NOT NULL DEFAULT 0,
+  notes TEXT NOT NULL DEFAULT '',
+  immediate_fulfillment INTEGER NOT NULL DEFAULT 0,
+  sale_id TEXT,
+  opened_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  delivered_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS mostrador_orders_slim_status
+  ON mostrador_orders_slim (status, opened_at);
 `
 
 export const POP_LOCAL_DROP_SQL = `
+DROP TABLE IF EXISTS mostrador_orders_slim;
+DROP TABLE IF EXISTS mesas_reservation_settings;
+DROP TABLE IF EXISTS mesas_reservations_slim;
+DROP TABLE IF EXISTS mesas_sessions_slim;
+DROP TABLE IF EXISTS mesas_decors;
+DROP TABLE IF EXISTS mesas_tables;
+DROP TABLE IF EXISTS mesas_salons;
 DROP TABLE IF EXISTS sale_cart_lines;
 DROP TABLE IF EXISTS recipe_categories;
 DROP TABLE IF EXISTS categories;

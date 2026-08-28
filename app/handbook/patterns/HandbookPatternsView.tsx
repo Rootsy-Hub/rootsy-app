@@ -88,39 +88,16 @@ const SOMBRA = "var(--rootsy-sombra-950)"
 const noop = () => {}
 
 const PATTERN_ROWS = [
-  {
-    id: "1",
-    name: "Yerba mate orgánica",
-    status: "activo",
-    amount: "$ 4.250",
-  },
-  {
-    id: "2",
-    name: "Miel de monte",
-    status: "pendiente",
-    amount: "$ 2.800",
-    signal: "warning",
-  },
-  {
-    id: "3",
-    name: "Aceite de oliva",
-    status: "inactivo",
-    amount: "$ 0",
-    muted: true,
-  },
-  {
-    id: "4",
-    name: "Café de especialidad",
-    status: "vencido",
-    amount: "$ 6.100",
-    signal: "danger",
-  },
-  {
-    id: "5",
-    name: "Pan de masa madre",
-    status: "activo",
-    amount: "$ 1.200",
-  },
+  { id: "1", name: "Yerba mate orgánica", status: "activo", amount: "$ 4.250" },
+  { id: "2", name: "Miel de monte", status: "pendiente", amount: "$ 2.800", signal: "warning" },
+  { id: "3", name: "Aceite de oliva", status: "activo", amount: "$ 8.640" },
+  { id: "4", name: "Café de especialidad", status: "vencido", amount: "$ 6.100", signal: "danger" },
+  { id: "5", name: "Pan de masa madre", status: "activo", amount: "$ 1.200" },
+  { id: "6", name: "Queso de cabra", status: "activo", amount: "$ 3.480" },
+  { id: "7", name: "Dulce de leche", status: "activo", amount: "$ 1.890" },
+  { id: "8", name: "Harina 0000", status: "activo", amount: "$ 980" },
+  { id: "9", name: "Tomate triturado", status: "activo", amount: "$ 1.540" },
+  { id: "10", name: "Fideos al huevo", status: "activo", amount: "$ 720" },
 ] as const
 
 const LOADING_COLUMNS: WorkspaceTableSkeletonColumn[] = [
@@ -193,7 +170,7 @@ function TablesPatternSpecimen({ extra }: { extra: string }) {
     ) : undefined
 
   return (
-    <div className="flex h-[32rem] w-full min-w-0 overflow-hidden rounded-xl">
+    <div className="flex h-[42rem] w-full min-w-0 overflow-hidden rounded-xl">
       <DataWorkspaceTableListNatureShell className="h-full w-full">
         <DataWorkspaceTableListFiltersBar>
           <div className={dataWorkspaceListFiltersGridClass}>
@@ -310,7 +287,7 @@ function TablesPatternSpecimen({ extra }: { extra: string }) {
               <TableBody>
                 {isLoading ? (
                   <WorkspaceTableSkeletonRows
-                    rowCount={6}
+                    rowCount={10}
                     rowKeyPrefix="handbook-tables-sk"
                     columns={LOADING_COLUMNS}
                     tone="nature"
@@ -406,6 +383,23 @@ function TablesPatternSpecimen({ extra }: { extra: string }) {
         </DataWorkspaceTableListShell>
       </DataWorkspaceTableListNatureShell>
     </div>
+  )
+}
+
+function PageDockPatternSpecimen({ extra }: { extra: string }) {
+  const isLoading = extra === "Cargando"
+  const isEmpty = extra === "Vacío"
+
+  return (
+    <DataWorkspaceTableInfinitePageDock
+      listFetching={isLoading}
+      loadedCount={isEmpty ? 0 : 75}
+      totalCount={isEmpty ? 0 : 167}
+      startPage={1}
+      totalPages={isEmpty ? 1 : 9}
+      loadedPages={isEmpty ? new Set() : new Set([1, 2, 3, 4])}
+      onPageJump={noop}
+    />
   )
 }
 
@@ -642,6 +636,7 @@ export function HandbookPatternsView() {
                   <div className="mt-6">
                     <ComponentView
                       background={BRUMA}
+                      canvasClassName="h-[44rem] items-stretch py-4"
                       componentName="DataWorkspaceTableListLayout"
                       componentProperties={[
                         {
@@ -690,6 +685,55 @@ export function HandbookPatternsView() {
                           key={extras[0] ?? "Reposo"}
                           extra={extras[0] ?? "Reposo"}
                         />
+                      )}
+                    />
+                  </div>
+                  <div className="mt-6">
+                    <ComponentView
+                      background={BRUMA}
+                      componentName="DataWorkspaceTableInfinitePageDock"
+                      componentProperties={[
+                        {
+                          name: "loadedCount",
+                          values: ["number"],
+                        },
+                        {
+                          name: "totalCount",
+                          values: ["number"],
+                        },
+                        {
+                          name: "startPage",
+                          values: ["number"],
+                        },
+                        {
+                          name: "totalPages",
+                          values: ["number"],
+                        },
+                        {
+                          name: "loadedPages",
+                          values: ["ReadonlySet<number>"],
+                        },
+                        {
+                          name: "listFetching",
+                          values: ["true", "false"],
+                        },
+                        {
+                          name: "onPageJump",
+                          values: ["(page: number) => void"],
+                        },
+                      ]}
+                      variants={[{ name: "Dock" }]}
+                      extras={[
+                        {
+                          items: [
+                            { name: "Reposo" },
+                            { name: "Cargando" },
+                            { name: "Vacío" },
+                          ],
+                        },
+                      ]}
+                      render={(_variant, extras) => (
+                        <PageDockPatternSpecimen extra={extras[0] ?? "Reposo"} />
                       )}
                     />
                   </div>

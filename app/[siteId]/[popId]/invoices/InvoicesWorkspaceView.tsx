@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import type { InvoiceFormContextResult } from "@/app/[siteId]/[popId]/invoices/actions"
 import {
   formatInvoiceCbteFch,
@@ -59,7 +60,6 @@ import {
   DataWorkspaceTableListPage,
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
@@ -87,7 +87,6 @@ import {
   WorkspaceTableSkeletonRows,
 } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { invoicesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -526,23 +525,26 @@ export function InvoicesWorkspaceView() {
           headerActions: (
             <>
               {canReadInvoices ? (
-                <DataWorkspaceHeaderIconButton
+                <RootsIconButton
                   label="Configuración fiscal"
-                  headerVariant={dataWorkspaceTableListHeaderVariant}
+                  semantic="tertiary"
+                  atmosphere="eter"
+                  size="default"
                   onClick={() => setFiscalConfigOpen(true)}
                 >
                   <Settings className="size-5" aria-hidden />
-                </DataWorkspaceHeaderIconButton>
+                </RootsIconButton>
               ) : null}
               {canCreate ? (
-                <DataWorkspaceHeaderIconButton
+                <RootsIconButton
                   label="Nueva factura"
-                  headerVariant={dataWorkspaceTableListHeaderVariant}
-                  primary
+                  semantic="primary"
+                  atmosphere="eter"
+                  size="default"
                   onClick={openCompose}
                 >
                   <Plus className="size-5" aria-hidden />
-                </DataWorkspaceHeaderIconButton>
+                </RootsIconButton>
               ) : null}
             </>
           ),

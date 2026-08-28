@@ -1,14 +1,16 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import { MostradorWorkspace } from "@/app/[siteId]/[popId]/mostrador/components/MostradorWorkspace"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   DataWorkspaceOperationsLayout,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
-import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { OperateQueryDevtoolsPanel } from "@/components/sale-operation/SaleDevtoolsPanel"
+import { isDevModeEnabled } from "@/lib/devmode"
+import { MOSTRADOR_QUERY_SPEC } from "@/lib/devmode/mostradorQuerySpec"
 import { mostradorAccessFromKeys } from "@/lib/popWorkspaceAccess"
 import { Plus } from "lucide-react"
 import { useParams, useRouter } from "@/lib/pop-spa/navigation"
@@ -81,16 +83,27 @@ function MostradorPage() {
       sidebarOpen={catalogSidebarOpen}
       onSidebarOpenChange={setCatalogSidebarOpen}
       headerActions={
-        access.canCreate ? (
-          <DataWorkspaceHeaderIconButton
-            label="Nuevo pedido"
-            headerVariant={dataWorkspaceModuleHeaderVariant}
-            primary
-            onClick={() => startCreateOrderRef.current?.()}
-          >
-            <Plus className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
-        ) : null
+        isDevModeEnabled() || access.canCreate ? (
+          <>
+            {isDevModeEnabled() ? (
+              <OperateQueryDevtoolsPanel
+                title="Mostrador"
+                spec={MOSTRADOR_QUERY_SPEC}
+              />
+            ) : null}
+            {access.canCreate ? (
+              <RootsIconButton
+                label="Nuevo pedido"
+                semantic="primary"
+                atmosphere="eter"
+                size="default"
+                onClick={() => startCreateOrderRef.current?.()}
+              >
+                <Plus className="size-5" aria-hidden />
+              </RootsIconButton>
+            ) : null}
+          </>
+        ) : undefined
       }
     >
       <MostradorWorkspace

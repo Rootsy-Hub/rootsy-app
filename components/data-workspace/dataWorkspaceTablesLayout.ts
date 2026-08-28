@@ -196,7 +196,7 @@ export const dataWorkspaceListFiltersBarClass = cn(
   "relative z-1 shrink-0",
 )
 
-/** Fila principal de filtros — alba opaca. */
+/** Fila principal de filtros — sotobosque luz, gradiente bruma. */
 export const dataWorkspaceListFiltersBarRowClass = cn(
   "data-workspace-tables-filters-dawn",
 )
@@ -212,7 +212,7 @@ export const dataWorkspaceListFiltersGridFourClass =
 
 export const dataWorkspaceListFiltersPanelClass = cn(
   "flex min-h-12 min-w-0 items-center px-2.5 py-2",
-  "border-b border-[var(--color-borde)] last:border-b-0",
+  "border-b border-[color-mix(in_srgb,var(--color-borde)_38%,transparent)] last:border-b-0",
   "md:h-full md:border-b-0 md:border-r md:px-4 md:py-0 md:last:border-r-0",
 )
 

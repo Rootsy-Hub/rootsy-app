@@ -62,7 +62,6 @@ import {
   DataWorkspaceTableListPage,
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import { DataWorkspaceTableInfinitePageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
@@ -98,7 +97,6 @@ import {
   WorkspaceTableSkeletonRows,
 } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   TableBody,
   TableCell,
@@ -286,7 +284,6 @@ function parseCatalogFieldsForSubmit(form: ArticleFormState):
     discountValue: discount.discountValue,
   }
 }
-
 
 function defaultItemFormFields(kind: ArticleItemKind): ArticleItemFormState {
   return {
@@ -1105,14 +1102,15 @@ export function ArticlesWorkspaceView() {
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "Catálogo",
         headerActions: canCreate ? (
-          <DataWorkspaceHeaderIconButton
+          <RootsIconButton
             label="Nuevo artículo"
-            headerVariant={dataWorkspaceTableListHeaderVariant}
-            primary
+            semantic="primary"
+            atmosphere="eter"
+            size="default"
             onClick={openCreate}
           >
             <Plus className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
+          </RootsIconButton>
         ) : null,
         headerMoreActions: [
           {

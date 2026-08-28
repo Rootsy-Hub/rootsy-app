@@ -3,7 +3,14 @@
  * Tres familias: sombra · bruma · savia. Atmósfera = composición de marketing.
  */
 
-import { ROOTSY_CIELO, ROOTSY_ETER, ROOTSY_SOL, ROOTSY_SUELO, rootsyColorHex } from "@/lib/design-system"
+import {
+  ROOTSY_CIELO,
+  ROOTSY_ETER,
+  ROOTSY_ETER_CLIMA,
+  ROOTSY_SOL,
+  ROOTSY_SUELO,
+  rootsyColorHex,
+} from "@/lib/design-system/tokens/colors"
 
 const hx = rootsyColorHex
 
@@ -197,21 +204,21 @@ export const SOL_FAMILY: NatureFamily = {
 
 /**
  * Éter — chrome del header, no familia de marca.
- * El espacio fuera del planeta: noche profunda, estrellas, horizonte de luz fría.
+ * El espacio fuera del planeta: rampa neutra para chrome, clima para el vacío.
  */
 export const ETER_FAMILY: NatureFamily = {
   id: "eter",
   title: "Éter · espacio fuera del planeta",
   subtitle: "Chrome de header",
   description:
-    "Noche sideral — no es sombra (bosque bajo el dosel) ni cielo (día de comanda). El header reutilizable: estrellas, horizonte y puente al planeta.",
+    "Rampa neutra para controles. No es sombra ni cielo. El vacío, el horizonte y las estrellas son clima (glow / void).",
   steps: [
-    { id: "t950", label: "950", hex: ROOTSY_ETER["950"], usage: "★ Vacío más hondo — cierre del gradiente." },
-    { id: "t900", label: "900", hex: ROOTSY_ETER["900"], usage: "★ Centro de la banda." },
-    { id: "t800", label: "800", hex: ROOTSY_ETER["800"], usage: "★ Boca del header." },
-    { id: "t700", label: "700", hex: ROOTSY_ETER["700"], usage: "Vacío un poco más abierto." },
-    { id: "t200", label: "200", hex: ROOTSY_ETER["200"], usage: "Resplandor medio del horizonte." },
-    { id: "t100", label: "100", hex: ROOTSY_ETER["100"], usage: "★ Luz fría — línea de horizonte y borde." },
+    { id: "t950", label: "950", hex: ROOTSY_ETER["950"], usage: "★ Fondo de chrome. El cierre del mundo es void-950." },
+    { id: "t900", label: "900", hex: ROOTSY_ETER["900"], usage: "★ Elevada / menú." },
+    { id: "t800", label: "800", hex: ROOTSY_ETER["800"], usage: "★ Superficie de control." },
+    { id: "t700", label: "700", hex: ROOTSY_ETER["700"], usage: "Borde y popover." },
+    { id: "t200", label: "200", hex: ROOTSY_ETER["200"], usage: "Muted de chrome." },
+    { id: "t100", label: "100", hex: ROOTSY_ETER["100"], usage: "★ Hairline de controles — gris, no cian." },
   ],
 }
 
@@ -273,10 +280,10 @@ export const COLOR_NEW_GRADIENTS: NatureGradient[] = [
   {
     id: "eter-header",
     title: "Éter del header",
-    description: "Espacio fuera del planeta — éter 800 a 950. Estrellas y horizonte de luz fría.",
-    from: ROOTSY_ETER["800"],
-    via: ROOTSY_ETER["900"],
-    to: ROOTSY_ETER["950"],
+    description: "Paint del vacío — éter-void 800 a 950. No pinta botones.",
+    from: ROOTSY_ETER_CLIMA.void["800"],
+    via: ROOTSY_ETER_CLIMA.void["900"],
+    to: ROOTSY_ETER_CLIMA.void["950"],
   },
 ]
 

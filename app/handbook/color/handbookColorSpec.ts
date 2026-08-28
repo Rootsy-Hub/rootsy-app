@@ -23,7 +23,7 @@ export const HANDBOOK_ATMOSPHERE_CONTEXTS: {
     id: "eter",
     name: "Éter",
     sample: "Header, menú, vacío.",
-    body: "El cielo del mundo. Encabeza, contiene y abre espacio.",
+    body: "El afuera del planeta. Encabeza, contiene y abre espacio. Controles neutros; el vacío usa el clima.",
     cta: "Entrar",
   },
   {

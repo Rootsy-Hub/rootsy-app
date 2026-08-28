@@ -23,7 +23,7 @@ import { LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX } from "@/app/library/layouts/l
 import { cn } from "@/lib/utils"
 import { RootsIconButton } from "@/components/rootsy-button"
 import { popMenuHref } from "@/lib/popRoutes"
-import { Minimize2, PanelLeftOpen } from "lucide-react"
+import { Minimize2, PanelLeftOpen, type LucideIcon } from "lucide-react"
 import {
   useCallback,
   useEffect,
@@ -41,6 +41,8 @@ export type DataWorkspaceLayoutProps = {
   /** Isotipo a la izquierda del nombre. Si no se pasa, usa la foto del POP. */
   popLogoSrc?: string
   title?: string
+  titleIcon?: LucideIcon
+  showTitleIcon?: boolean
   /** Segunda línea bajo el nombre, solo si el rol del POP ya está. Mientras carga, hay esqueleto. */
   pillLabel?: string
   /** Respaldo opcional si el bootstrap del POP aún no tiene rol. */
@@ -108,6 +110,8 @@ export function DataWorkspaceLayout({
   popName,
   popLogoSrc: popLogoSrcProp,
   title,
+  titleIcon,
+  showTitleIcon = false,
   pillLabel = "Listados",
   userRoleLabel,
   loading = false,
@@ -349,6 +353,8 @@ export function DataWorkspaceLayout({
             popName={resolvedPopName}
             popStreetAddress={popStreetAddress}
             title={title}
+            titleIcon={titleIcon}
+            showTitleIcon={showTitleIcon}
             loading={loading}
             brandPending={brandPending}
             userPending={userPending}

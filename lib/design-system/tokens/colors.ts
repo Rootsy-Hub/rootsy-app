@@ -3,6 +3,7 @@
  * Espejo de styles/rootsy/tokens/colors.css
  *
  * Once pasos (50–950) en siete familias, más --rootsy-blanco fuera de rampa.
+ * Éter suma un clima de paint (glow / void), no una octava familia.
  * Si un hex no está acá, no entra.
  *
  * Atmósferas: éter · bruma (Sotobosque · Luz filtrada) · sombra (Sotobosque · Sombra)
@@ -54,17 +55,17 @@ export const ROOTSY_BLANCO = "#FFFFFF"
 
 export const ROOTSY_COLOR_RAMPS: Record<RootsyColorFamily, RootsyColorRamp> = {
   eter: {
-    "50": "#F3F8FB",
-    "100": "#E4F2F8",
-    "200": "#C8DCE8",
-    "300": "#8FB4C8",
-    "400": "#5A8AA4",
-    "500": "#2F5A78",
-    "600": "#163848",
-    "700": "#0B1824",
-    "800": "#040A0E",
-    "900": "#02060A",
-    "950": "#010306",
+    "50": "#F4F5F7",
+    "100": "#E6E8EB",
+    "200": "#C9CDD2",
+    "300": "#9A9FA6",
+    "400": "#6B7178",
+    "500": "#43484E",
+    "600": "#2B2F34",
+    "700": "#191C1F",
+    "800": "#101214",
+    "900": "#08090B",
+    "950": "#040506",
   },
   bruma: {
     "50": "#F8FAF5",
@@ -154,6 +155,23 @@ export const ROOTSY_FUNCTIONAL_ROLES = {
 } as const
 
 export const ROOTSY_ETER = ROOTSY_COLOR_RAMPS.eter
+
+/**
+ * Éter clima — paint del vacío. No es rampa ni cielo.
+ * Glow = horizonte. Void = noche del fondo. No pinta botones ni --color-*.
+ */
+export const ROOTSY_ETER_CLIMA = {
+  glow: {
+    "100": "#E4F2F8",
+    "200": "#C8DCE8",
+  },
+  void: {
+    "800": "#040A0E",
+    "900": "#02060A",
+    "950": "#010306",
+  },
+} as const
+
 export const ROOTSY_CIELO = ROOTSY_COLOR_RAMPS.cielo
 export const ROOTSY_SOL = ROOTSY_COLOR_RAMPS.sol
 export const ROOTSY_LAVA = ROOTSY_COLOR_RAMPS.lava

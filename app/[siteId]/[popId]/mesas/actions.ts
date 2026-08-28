@@ -1098,6 +1098,7 @@ export type TableSessionMutationInput = {
   guestCount?: number | null
   note?: string
   reservationId?: string | null
+  checkout?: TableSessionCheckoutSnapshot
 }
 
 const TABLE_SESSION_SELECT = `

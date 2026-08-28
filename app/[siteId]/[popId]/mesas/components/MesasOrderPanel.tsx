@@ -45,27 +45,31 @@ export function MesasOrderPanel({
     cerrarMesa,
     cerrarMesaMode,
     puedeRegistrar,
+    openCashSession,
     orderPanelLoading,
   } = checkout
   const [cannotChargeOpen, setCannotChargeOpen] = useState(false)
 
   const alreadyFullyCharged = totalPagadoAcumulado > 0 && total <= 0
+  const requiereCajaAbierta = openCashSession == null
   const confirmLabel =
     puedeCerrarMesa && !alreadyFullyCharged ? "Liberar mesa" : "Cobrar mesa"
   const confirmDisabled = alreadyFullyCharged
     ? false
     : puedeCerrarMesa
       ? !puedeCerrarMesa
-      : !puedeRegistrar
+      : requiereCajaAbierta || !puedeRegistrar
   const confirmTitle = alreadyFullyCharged
     ? "El pedido ya está cobrado. No queda saldo."
     : puedeCerrarMesa
       ? cerrarMesaMode === "release"
         ? "No hay ítems ni cobros pendientes. Podés liberar la mesa."
         : "Todo el pedido está cobrado. Podés liberar la mesa."
-      : !puedeRegistrar
-        ? "Completá el pedido, pago y mesa abierta."
-        : undefined
+      : requiereCajaAbierta
+        ? "Requiere caja abierta"
+        : !puedeRegistrar
+          ? "Completá el pedido, pago y mesa abierta."
+          : undefined
 
   return (
     <>

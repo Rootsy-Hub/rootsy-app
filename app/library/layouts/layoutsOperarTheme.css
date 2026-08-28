@@ -226,6 +226,29 @@
   color: var(--rootsy-sombra-50);
 }
 
+/**
+ * Pedido — fila del listado. Al scrollear queda sticky y blurea lo de atrás.
+ * El filter va en esta placa. scrollbar-gutter en el scroller deja el thumb
+ * a la derecha, sin que el header lo tape.
+ */
+.layouts-operar-ticket-header-frost {
+  background: color-mix(in srgb, var(--rootsy-bruma-50) 42%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.18);
+  backdrop-filter: blur(20px) saturate(1.18);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .layouts-operar-ticket-header-frost {
+    background: var(--rootsy-bruma-50);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.layouts-operar-ticket-scroll {
+  scrollbar-gutter: stable;
+}
+
 /* Total del pedido — mismo piso bruma-50 que cuentas/cajas. */
 .rootsy-nature-palette .rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
@@ -319,6 +342,12 @@
 .rootsy-theme-pos .layouts-operar-body .layouts-operar-scroll-minimal:hover::-webkit-scrollbar-thumb,
 .rootsy-theme-pos .layouts-operar-body .library-scroll--dark:hover::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--rootsy-sombra-400) 42%, transparent);
+}
+
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-ticket-scroll,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-ticket-scroll,
+.layouts-operar-ticket-scroll {
+  scrollbar-gutter: stable;
 }
 
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"],

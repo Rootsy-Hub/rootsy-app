@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import "@/app/library/libraryColorTheme.css"
 import { LayoutFinalComponentsModal } from "@/app/library/LayoutFinalComponentsModal"
 import { useLibraryPopContext } from "@/app/library/useLibraryPopContext"
@@ -9,9 +10,7 @@ import {
 } from "@/app/library/libraryColorTheme"
 import {
   DataWorkspaceModuleLayout,
-  dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { PopWorkspaceProvider } from "@/context/PopWorkspaceContext"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -70,13 +69,15 @@ function LibraryShellChromeInner({ children }: LibraryShellChromeProps) {
           "rootsy-app-light min-h-0 flex-1 flex-col overflow-hidden",
         )}
         headerActions={
-          <DataWorkspaceHeaderIconButton
+          <RootsIconButton
             label="Componentes finales"
-            headerVariant={dataWorkspaceModuleHeaderVariant}
+            semantic="tertiary"
+            atmosphere="eter"
+            size="default"
             onClick={() => setFinalComponentsOpen(true)}
           >
             <Layers3 aria-hidden />
-          </DataWorkspaceHeaderIconButton>
+          </RootsIconButton>
         }
       >
         <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden">

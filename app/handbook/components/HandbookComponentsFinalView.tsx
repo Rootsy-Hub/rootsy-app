@@ -174,6 +174,8 @@ function HeaderFinalSpecimen() {
         componentProperties={[
           { name: "backHref", values: ["string", "undefined"] },
           { name: "title", values: ["string", "undefined"] },
+          { name: "titleIcon", values: ["LucideIcon", "undefined"] },
+          { name: "showTitleIcon", values: ["true", "false"] },
           { name: "popName", values: ["string", "undefined"] },
           { name: "popLogoSrc", values: ["string", "undefined"] },
           { name: "loading", values: ["true", "false"] },
@@ -197,12 +199,16 @@ function HeaderFinalSpecimen() {
           {
             items: [{ name: "online" }, { name: "offline" }],
           },
+          {
+            items: [{ name: "ícono apagado" }, { name: "ícono prendido" }],
+          },
         ]}
         render={(_variant, extras) => (
           <ModuleWorkspaceHeaderSpecimen
             loading={extras[0] === "loading"}
             canCollapseSidebar={extras[1] !== "sin sidebar"}
             isOnline={extras[2] !== "offline"}
+            showTitleIcon={extras[3] === "ícono prendido"}
           />
         )}
       />
@@ -268,10 +274,12 @@ function ModuleWorkspaceHeaderSpecimen({
   loading,
   canCollapseSidebar,
   isOnline,
+  showTitleIcon,
 }: {
   loading: boolean
   canCollapseSidebar: boolean
   isOnline: boolean
+  showTitleIcon: boolean
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -284,6 +292,7 @@ function ModuleWorkspaceHeaderSpecimen({
         popLogoSrc={POP_PHOTO}
         popName="Narciso"
         title="Clientes"
+        showTitleIcon={showTitleIcon}
         loading={loading}
         brandPending={loading}
         userPending={loading}

@@ -9,13 +9,13 @@ export type EterSubtleSurface = {
   opacity?: number
 }
 
-/** Receta subtle de /home — luz del cristal, no chrome POS ni sombra. */
+/** Receta subtle de /home — rampa éter, no chrome POS ni sombra. */
 export function getEterSubtleSurface(
   state: ButtonsUiInteractionState,
 ): EterSubtleSurface {
   const base: EterSubtleSurface = {
     backgroundColor: "transparent",
-    color: "rgba(255,255,255,0.72)",
+    color: "var(--rootsy-eter-300)",
     border: "1px solid transparent",
   }
 
@@ -25,14 +25,14 @@ export function getEterSubtleSurface(
     case "hover":
       return {
         ...base,
-        backgroundColor: "rgba(255,255,255,0.08)",
-        color: "rgba(255,255,255,0.96)",
+        backgroundColor: "var(--rootsy-eter-800)",
+        color: "var(--rootsy-eter-50)",
       }
     case "active":
       return {
         ...base,
-        backgroundColor: "rgba(255,255,255,0.12)",
-        color: "#ffffff",
+        backgroundColor: "var(--rootsy-eter-700)",
+        color: "var(--rootsy-eter-50)",
       }
     case "focus":
       return {
@@ -152,7 +152,7 @@ export const eterHeaderDropdownSurfaceClass = cn(
   "!border-[color-mix(in_srgb,var(--rootsy-eter-100)_16%,transparent)]",
   "!bg-[var(--rootsy-eter-950)]",
   "text-white/96",
-  "!shadow-[0_24px_64px_-18px_rgb(1_3_6/0.72)]",
+  "!shadow-[0_24px_64px_-18px_rgb(4_5_6/0.72)]",
   "[&_[data-slot=dropdown-menu-item]:not([data-variant=destructive])]:text-white/96",
   "[&_[data-slot=dropdown-menu-item]:not([data-variant=destructive])]:data-[highlighted]:bg-[color-mix(in_srgb,var(--rootsy-eter-100)_8%,transparent)]",
   "[&_[data-slot=dropdown-menu-item]:not([data-variant=destructive])]:data-[highlighted]:text-white",

@@ -245,3 +245,62 @@ export function writeSavedSaleCatalogView(
     /* quota / private mode */
   }
 }
+
+export type SaleCatalogModoVista = "grid" | "lista"
+
+export type SaleCatalogChromePersisted = {
+  priceListId?: string
+  modoVista?: SaleCatalogModoVista
+}
+
+const CHROME_STORAGE_PREFIX = "rootsy:sale-catalog-chrome:"
+
+export function parseSaleCatalogChrome(
+  raw: unknown,
+): SaleCatalogChromePersisted {
+  if (raw == null || typeof raw !== "object") return {}
+  const o = raw as Record<string, unknown>
+  const priceListId =
+    typeof o.priceListId === "string" && o.priceListId.trim()
+      ? o.priceListId.trim()
+      : undefined
+  const modoVista =
+    o.modoVista === "grid" || o.modoVista === "lista" ? o.modoVista : undefined
+  return {
+    ...(priceListId ? { priceListId } : {}),
+    ...(modoVista ? { modoVista } : {}),
+  }
+}
+
+export function readSavedSaleCatalogChrome(
+  popId: string,
+): SaleCatalogChromePersisted {
+  if (typeof window === "undefined" || !popId) return {}
+  try {
+    const raw = window.localStorage.getItem(`${CHROME_STORAGE_PREFIX}${popId}`)
+    if (!raw) return {}
+    return parseSaleCatalogChrome(JSON.parse(raw))
+  } catch {
+    return {}
+  }
+}
+
+export function writeSavedSaleCatalogChrome(
+  popId: string,
+  patch: SaleCatalogChromePersisted,
+): void {
+  if (typeof window === "undefined" || !popId) return
+  try {
+    const current = readSavedSaleCatalogChrome(popId)
+    const next: SaleCatalogChromePersisted = {
+      ...current,
+      ...patch,
+    }
+    window.localStorage.setItem(
+      `${CHROME_STORAGE_PREFIX}${popId}`,
+      JSON.stringify(next),
+    )
+  } catch {
+    /* quota / private mode */
+  }
+}

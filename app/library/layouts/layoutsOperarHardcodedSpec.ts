@@ -751,22 +751,25 @@ export function layoutsOperarTicketProposalPanelClass(
 }
 
 export function layoutsOperarTicketProposalHeaderClass(id: LayoutsOperarTicketProposalId) {
+  const frost = "layouts-operar-ticket-header-frost"
+
   if (id === "bruma-ascendente") {
     return cn(
       layoutsOperarSummaryHeaderRowClass,
-      "relative border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_85%,transparent)]",
-      "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--rootsy-bruma-50)_92%,white)_0%,var(--rootsy-bruma-100)_100%)]",
+      frost,
+      "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_55%,transparent)]",
     )
   }
 
   if (id === "bruma-plana") {
     return cn(
       layoutsOperarSummaryHeaderRowClass,
-      "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_90%,transparent)] bg-[var(--rootsy-bruma-50)]",
+      frost,
+      "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_55%,transparent)]",
     )
   }
 
-  return layoutsOperarSummaryHeaderRowClass
+  return cn(layoutsOperarSummaryHeaderRowClass, frost)
 }
 
 export function layoutsOperarTicketProposalCartRowClass(id: LayoutsOperarTicketProposalId) {

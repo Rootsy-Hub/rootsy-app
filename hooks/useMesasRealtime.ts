@@ -5,18 +5,26 @@ import {
   applyMesasRealtimeEvent,
   invalidateMesasRealtimeQueries,
 } from "@/lib/mesasRealtime/apply"
+import { popMesasSessionQueryKey } from "@/lib/queryKeys"
+import { sessionResourceChannel } from "@/lib/realtime/channels"
 import type { DomainEvent } from "@/lib/realtime/protocol"
 import { useQueryClient } from "@tanstack/react-query"
-import { useCallback } from "react"
+import { useCallback, useMemo } from "react"
 
-const MESAS_CHANNELS = ["domain:mesas", "domain:comandas"] as const
-
-function isMesasRealtimeChannel(channel: string) {
-  return channel === "domain:mesas" || channel === "domain:comandas"
-}
-
-export function useMesasRealtime(popId: string | undefined) {
+export function useMesasRealtime(
+  popId: string | undefined,
+  selectedSessionId?: string | null,
+) {
   const queryClient = useQueryClient()
+  const resourceChannel = selectedSessionId
+    ? sessionResourceChannel(selectedSessionId)
+    : null
+
+  const channels = useMemo(() => {
+    const next = ["domain:mesas"]
+    if (resourceChannel) next.push(resourceChannel)
+    return next
+  }, [resourceChannel])
 
   const onEvent = useCallback(
     (event: DomainEvent) => {
@@ -27,17 +35,25 @@ export function useMesasRealtime(popId: string | undefined) {
   )
 
   const onResync = useCallback(
-    (channels: string[], reason: "gap" | "empty") => {
+    (resyncChannels: string[], reason: "gap" | "empty") => {
       if (!popId) return
       if (reason !== "gap") return
-      if (!channels.some(isMesasRealtimeChannel)) return
-      invalidateMesasRealtimeQueries(queryClient, popId)
+      if (resyncChannels.includes("domain:mesas")) {
+        invalidateMesasRealtimeQueries(queryClient, popId)
+        return
+      }
+      if (resourceChannel && resyncChannels.includes(resourceChannel) && selectedSessionId) {
+        void queryClient.invalidateQueries({
+          queryKey: popMesasSessionQueryKey(popId, selectedSessionId),
+          refetchType: "all",
+        })
+      }
     },
-    [popId, queryClient],
+    [popId, queryClient, resourceChannel, selectedSessionId],
   )
 
   usePopRealtime({
-    channels: MESAS_CHANNELS,
+    channels,
     enabled: Boolean(popId),
     onEvent,
     onResync,

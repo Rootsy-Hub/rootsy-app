@@ -19,10 +19,29 @@ import {
   upsertMostradorOrderCache,
 } from "@/app/[siteId]/[popId]/mostrador/mostradorQueryCache"
 import {
+  popLocalMostradorBoardHydrateQueryKey,
+  popMostradorOrderQueryKey,
   popMostradorOrdersQueryKey,
   popMostradorQueryRoot,
 } from "@/lib/queryKeys"
+import {
+  clearPopLocalMostradorBoardHydrateMark,
+  refreshMostradorOrdersFromNetwork,
+} from "@/lib/popLocalDb/hydrateMostradorBoard"
 import type { DomainEvent } from "@/lib/realtime/protocol"
+
+function refreshMostradorBoardCache(queryClient: QueryClient, popId: string) {
+  void refreshMostradorOrdersFromNetwork(popId)
+    .then((orders) => {
+      queryClient.setQueryData(popMostradorOrdersQueryKey(popId), orders)
+    })
+    .catch(() => {
+      void queryClient.invalidateQueries({
+        queryKey: popMostradorOrdersQueryKey(popId),
+        refetchType: "all",
+      })
+    })
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value))
@@ -145,9 +164,16 @@ export function invalidateMostradorRealtimeQueries(
   queryClient: QueryClient,
   popId: string,
 ) {
-  void queryClient.invalidateQueries({
-    queryKey: popMostradorQueryRoot(popId),
-    refetchType: "all",
+  void clearPopLocalMostradorBoardHydrateMark(popId).then(() => {
+    void queryClient.invalidateQueries({
+      queryKey: popLocalMostradorBoardHydrateQueryKey(popId),
+      refetchType: "all",
+    })
+    void queryClient.invalidateQueries({
+      queryKey: popMostradorQueryRoot(popId),
+      refetchType: "all",
+      predicate: (query) => query.queryKey[2] !== "order",
+    })
   })
 }
 
@@ -167,10 +193,7 @@ export function applyMostradorRealtimeEvent(
       upsertMostradorOrderCache(queryClient, popId, order)
       return
     }
-    void queryClient.invalidateQueries({
-      queryKey: popMostradorOrdersQueryKey(popId),
-      refetchType: "all",
-    })
+    refreshMostradorBoardCache(queryClient, popId)
     return
   }
 
@@ -190,10 +213,7 @@ export function applyMostradorRealtimeEvent(
       })
       return
     }
-    void queryClient.invalidateQueries({
-      queryKey: popMostradorOrdersQueryKey(popId),
-      refetchType: "all",
-    })
+    refreshMostradorBoardCache(queryClient, popId)
     return
   }
 
@@ -210,10 +230,14 @@ export function applyMostradorRealtimeEvent(
       )
       return
     }
-    void queryClient.invalidateQueries({
-      queryKey: popMostradorOrdersQueryKey(popId),
-      refetchType: "all",
-    })
+    if (orderId) {
+      void queryClient.invalidateQueries({
+        queryKey: popMostradorOrderQueryKey(popId, orderId),
+        refetchType: "all",
+      })
+      return
+    }
+    refreshMostradorBoardCache(queryClient, popId)
     return
   }
 
@@ -224,10 +248,7 @@ export function applyMostradorRealtimeEvent(
       removeMostradorOrderCache(queryClient, popId, orderId)
       return
     }
-    void queryClient.invalidateQueries({
-      queryKey: popMostradorOrdersQueryKey(popId),
-      refetchType: "all",
-    })
+    refreshMostradorBoardCache(queryClient, popId)
     return
   }
 

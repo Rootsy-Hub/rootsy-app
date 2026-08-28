@@ -185,6 +185,42 @@ const FOCUS_RING_SAVIA = `0 0 0 2px ${WHITE}, 0 0 0 4px color-mix(in srgb, ${hx(
 const FOCUS_RING_DANGER = `0 0 0 2px ${WHITE}, 0 0 0 4px color-mix(in srgb, ${colorTokenHex("danger", "Fondo")} 45%, transparent)`
 const FOCUS_RING_NEUTRAL = `0 0 0 2px color-mix(in srgb, ${hx("savia", "600")} 25%, transparent)`
 const FOCUS_RING_DARK = `0 0 0 2px color-mix(in srgb, ${TEXT_ON_DARK} 14%, ${hx("savia", "400")} 6%)`
+const FOCUS_RING_ETER = `0 0 0 2px color-mix(in srgb, ${hx("eter", "100")} 22%, transparent)`
+
+/** Subtle sobre éter — rampa neutra. No usa elevación de sombra. */
+function getEterSubtleAppearanceSurface(
+  state: ButtonsUiInteractionState,
+): HardcodedButtonSurface {
+  const base: HardcodedButtonSurface = {
+    backgroundColor: "transparent",
+    color: hx("eter", "300"),
+    border: "1px solid transparent",
+    fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+  }
+
+  switch (state) {
+    case "default":
+      return base
+    case "hover":
+      return {
+        ...base,
+        backgroundColor: hx("eter", "800"),
+        color: hx("eter", "50"),
+      }
+    case "active":
+      return {
+        ...base,
+        backgroundColor: hx("eter", "700"),
+        color: hx("eter", "50"),
+      }
+    case "focus":
+      return { ...base, boxShadow: FOCUS_RING_ETER }
+    case "disabled":
+      return { ...base, opacity: 0.5 }
+    case "loading":
+      return { ...base, loadingLabel: "Cancelando…", opacity: 0.92 }
+  }
+}
 
 function mergeShadow(base: string | undefined, ring: string): string {
   return base ? `${base}, ${ring}` : ring
@@ -294,6 +330,9 @@ export function getButtonsUiAppearanceSurface(
   atmosphere?: RootsButtonAtmosphere,
 ): HardcodedButtonSurface {
   const resolvedAtmosphere = resolveRootsButtonAtmosphere({ atmosphere, theme })
+  if (appearance === "subtle" && resolvedAtmosphere === "eter") {
+    return getEterSubtleAppearanceSurface(state)
+  }
   const darkInk =
     isRootsButtonAtmosphereDark(resolvedAtmosphere) &&
     (BUTTONS_UI_POS_TEXT_APPEARANCES as readonly string[]).includes(appearance)

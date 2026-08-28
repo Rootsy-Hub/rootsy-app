@@ -32,7 +32,6 @@ import {
   workspaceTableNatureStockOkClass,
   workspaceTableNatureStockWarningClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import {
@@ -403,28 +402,6 @@ function PaginationFinalSpecimen() {
 function HeaderPiecesFinalSpecimen() {
   return (
     <Stack>
-      <LiveView
-        background={BRUMA}
-        componentName="DataWorkspaceHeaderIconButton"
-        componentProperties={[
-          { name: "label", values: ["string"] },
-          { name: "headerVariant", values: ["default", "dark"] },
-          { name: "primary", values: ["true", "false"] },
-        ]}
-        variants={[{ name: "claro" }, { name: "oscuro" }]}
-        extras={IDLE_DISABLED}
-        render={(variant, extras) => (
-          <div className={cn("rounded-xl p-3", variant === "oscuro" && "bg-[var(--rootsy-sombra-800)]")}>
-            <DataWorkspaceHeaderIconButton
-              label="Acción"
-              headerVariant={variant === "oscuro" ? "dark" : "default"}
-              disabled={extras[0] === "deshabilitado"}
-            >
-              <Plus />
-            </DataWorkspaceHeaderIconButton>
-          </div>
-        )}
-      />
       <LiveView
         background={SOMBRA}
         componentName="DataWorkspaceHeaderUserMenu"

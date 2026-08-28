@@ -827,10 +827,11 @@ export function HandbookColorView() {
       >
         <h2 className={libraryDocSectionTitleClass}>Atmósferas del mundo</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
-          Éter es el cielo. Sotobosque es un solo lugar con dos luces: Sombra para
-          operar y Luz filtrada para leer. Se elige una atmósfera por contexto; no se
-          mezclan como si fueran acentos. En Sombra el fondo es siempre 950: el paso
-          más oscuro. Lo que se toca se eleva; el lienzo no se aclara.
+          Éter es el afuera: noche neutra, sin azul de marca. Sotobosque es un solo
+          lugar con dos luces: Sombra para operar y Luz filtrada para leer. Se elige
+          una atmósfera por contexto; no se mezclan como si fueran acentos. En Sombra
+          el fondo es siempre 950: el paso más oscuro. Lo que se toca se eleva; el
+          lienzo no se aclara.
         </p>
         <div className="mt-6">
           <AtmosphereContextPreview />

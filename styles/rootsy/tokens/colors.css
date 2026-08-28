@@ -11,18 +11,25 @@
  */
 
 :root {
-  /* Éter — el cielo del mundo */
-  --rootsy-eter-50: #f3f8fb;
-  --rootsy-eter-100: #e4f2f8;
-  --rootsy-eter-200: #c8dce8;
-  --rootsy-eter-300: #8fb4c8;
-  --rootsy-eter-400: #5a8aa4;
-  --rootsy-eter-500: #2f5a78;
-  --rootsy-eter-600: #163848;
-  --rootsy-eter-700: #0b1824;
-  --rootsy-eter-800: #040a0e;
-  --rootsy-eter-900: #02060a;
-  --rootsy-eter-950: #010306;
+  /* Éter rampa — chrome neutro. Controles, texto, borde. No es el paint del vacío. */
+  --rootsy-eter-50: #f4f5f7;
+  --rootsy-eter-100: #e6e8eb;
+  --rootsy-eter-200: #c9cdd2;
+  --rootsy-eter-300: #9a9fa6;
+  --rootsy-eter-400: #6b7178;
+  --rootsy-eter-500: #43484e;
+  --rootsy-eter-600: #2b2f34;
+  --rootsy-eter-700: #191c1f;
+  --rootsy-eter-800: #101214;
+  --rootsy-eter-900: #08090b;
+  --rootsy-eter-950: #040506;
+
+  /* Éter clima — solo paint de home y headers. No es cielo ni rampa de controles. */
+  --rootsy-eter-glow-100: #e4f2f8;
+  --rootsy-eter-glow-200: #c8dce8;
+  --rootsy-eter-void-800: #040a0e;
+  --rootsy-eter-void-900: #02060a;
+  --rootsy-eter-void-950: #010306;
 
   /* Sotobosque · Luz filtrada — el claro para leer (tokens: bruma) */
   --rootsy-bruma-50: #f8faf5;
@@ -222,6 +229,11 @@
   --color-rootsy-eter-800: var(--rootsy-eter-800);
   --color-rootsy-eter-900: var(--rootsy-eter-900);
   --color-rootsy-eter-950: var(--rootsy-eter-950);
+  --color-rootsy-eter-glow-100: var(--rootsy-eter-glow-100);
+  --color-rootsy-eter-glow-200: var(--rootsy-eter-glow-200);
+  --color-rootsy-eter-void-800: var(--rootsy-eter-void-800);
+  --color-rootsy-eter-void-900: var(--rootsy-eter-void-900);
+  --color-rootsy-eter-void-950: var(--rootsy-eter-void-950);
 
   --color-rootsy-bruma-50: var(--rootsy-bruma-50);
   --color-rootsy-bruma-100: var(--rootsy-bruma-100);

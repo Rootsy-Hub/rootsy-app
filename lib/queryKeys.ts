@@ -290,6 +290,10 @@ export function popMesasSessionsQueryKey(popId: string) {
   return ["pop-mesas", popId, "sessions"] as const
 }
 
+export function popMesasSessionQueryKey(popId: string, sessionId: string) {
+  return ["pop-mesas", popId, "session", sessionId] as const
+}
+
 export function popMesasReservationsQueryKey(popId: string) {
   return ["pop-mesas", popId, "reservations"] as const
 }
@@ -308,6 +312,10 @@ export function popMostradorQueryRoot(popId: string) {
 
 export function popMostradorOrdersQueryKey(popId: string) {
   return ["pop-mostrador", popId, "orders"] as const
+}
+
+export function popMostradorOrderQueryKey(popId: string, orderId: string) {
+  return ["pop-mostrador", popId, "order", orderId] as const
 }
 
 export function popComandasQueryRoot(popId: string) {
@@ -412,6 +420,14 @@ export function popLocalRecipesHydrateQueryKey(popId: string) {
 
 export function popLocalRecipeCategoriesHydrateQueryKey(popId: string) {
   return [...popLocalDbQueryRoot(popId), "hydrate", "recipe-categories"] as const
+}
+
+export function popLocalMesasFloorHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "mesas-floor"] as const
+}
+
+export function popLocalMostradorBoardHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "mostrador-board"] as const
 }
 
 export function saleBoardPromotionsQueryRoot(popId: string) {

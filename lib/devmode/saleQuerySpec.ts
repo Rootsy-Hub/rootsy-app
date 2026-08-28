@@ -1,32 +1,21 @@
-export type SaleQuerySpecCall = {
-  endpoint: string
-  detail: string
-  cache: string
-}
-
-export type SaleQuerySpecMoment = {
-  title: string
-  calls: SaleQuerySpecCall[]
-}
-
-export type SaleQuerySpecDomain = {
-  domain: string
-  moments: SaleQuerySpecMoment[]
-}
-
-export type SaleQuerySpecPlace = {
-  place: string
-  domains: SaleQuerySpecDomain[]
-}
-
-const CACHE_TANSTACK_24H = "TanStack · 24 h"
-const CACHE_TANSTACK_24H_REFETCH_MOUNT = "TanStack · 24 h · refetch al montar"
-const CACHE_TANSTACK_SESSION = "TanStack · sesión · staleTime ∞"
-const CACHE_SQLITE_OPFS = "SQLite · OPFS · por pop"
-const CACHE_NONE = "No"
+export type {
+  QuerySpecCall as SaleQuerySpecCall,
+  QuerySpecDomain as SaleQuerySpecDomain,
+  QuerySpecMoment as SaleQuerySpecMoment,
+  QuerySpecPlace as SaleQuerySpecPlace,
+} from "@/lib/devmode/querySpec"
+import type { QuerySpecPlace } from "@/lib/devmode/querySpec"
+import {
+  CACHE_NONE,
+  CACHE_SQLITE_OPFS,
+  CACHE_TANSTACK_24H,
+  CACHE_TANSTACK_24H_REFETCH_MOUNT,
+  CACHE_TANSTACK_SESSION,
+  CACHE_WS_DO,
+} from "@/lib/devmode/querySpec"
 
 /** Spec de consultas de Vender. Se completa a mano; el panel solo la muestra. */
-export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
+export const SALE_QUERY_SPEC: readonly QuerySpecPlace[] = [
   {
     place: "Página",
     domains: [
@@ -39,8 +28,14 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "GET /v1/pops/:popId/cash-registers/open-session",
                 detail:
-                  "Turno de caja abierto por el usuario. En paralelo con categories, articles, payment-context y comprobantes. El GET de articles pagina todo merchandise al entrar, sin esperar categoryId. Si no hay turno propio, session es null. No cae a cajas de otros. Tras un cobro rechazado por caja cerrada se invalida.",
+                  "Turno de caja abierto por el usuario. En paralelo con categories, articles, payment-context y comprobantes. El GET de articles pagina todo merchandise al entrar, sin esperar categoryId. Si no hay turno propio, session es null. No cae a cajas de otros. El socket resource:cajas:{userId} parchea esta cache; un cobro rechazado también la invalida.",
                 cache: CACHE_TANSTACK_24H_REFETCH_MOUNT,
+              },
+              {
+                endpoint: "WS resource:cajas:{userId}",
+                detail:
+                  "Listener al entrar a Vender. Apertura/cierre del turno propio (aunque lo cierre un supervisor). Cierre: setQueryData null, apaga Cobrar y muestra el toast. Apertura: parchea el GET y cierra el toast. Gap invalida open-session.",
+                cache: CACHE_WS_DO,
               },
             ],
           },

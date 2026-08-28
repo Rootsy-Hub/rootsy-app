@@ -280,3 +280,20 @@ export function resolveMenuDockCatalogItemsDisplay(
 export function isMenuDockItemId(value: unknown): value is MenuDockItemId {
   return typeof value === "string" && catalogById.has(value as MenuDockItemId)
 }
+
+export function getMenuCatalogItemForModule(
+  moduleKey: string,
+): MenuCatalogItem | undefined {
+  return isMenuDockItemId(moduleKey) ? getMenuCatalogItem(moduleKey) : undefined
+}
+
+export function getMenuCatalogItemByName(
+  name: string,
+): MenuCatalogItem | undefined {
+  const needle = name.trim().toLowerCase()
+  if (!needle) return undefined
+  for (const item of catalogById.values()) {
+    if (item.name.toLowerCase() === needle) return item
+  }
+  return undefined
+}

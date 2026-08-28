@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import type { CheckTableRow } from "@/app/[siteId]/[popId]/checks/actions"
 import { CheckLifecycleDialog } from "@/app/[siteId]/[popId]/checks/CheckLifecycleDialog"
 import {
@@ -47,7 +48,6 @@ import {
   DataWorkspaceTableListPage,
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
@@ -72,7 +72,6 @@ import {
   WorkspaceTableSkeletonRows,
 } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { checksSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { TableBody } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
@@ -393,21 +392,24 @@ export function ChecksWorkspaceView() {
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         headerActions: canCreate ? (
           <div className="flex items-center gap-2">
-            <DataWorkspaceHeaderIconButton
+            <RootsIconButton
               label="Recibir cheque"
-              headerVariant={dataWorkspaceTableListHeaderVariant}
-              primary
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
               onClick={() => openCreate("received")}
             >
               <ArrowDownLeft className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
-            <DataWorkspaceHeaderIconButton
+            </RootsIconButton>
+            <RootsIconButton
               label="Emitir cheque"
-              headerVariant={dataWorkspaceTableListHeaderVariant}
+              semantic="tertiary"
+              atmosphere="eter"
+              size="default"
               onClick={() => openCreate("issued")}
             >
               <ArrowUpRight className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
+            </RootsIconButton>
           </div>
         ) : null,
       }}
