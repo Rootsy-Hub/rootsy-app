@@ -137,10 +137,10 @@ export const ROOTSY_LAYOUTS_OPERAR_BORDERS = {
     token: "sombra-700",
     css: hx("sombra", "700"),
   },
-  /** Contorno card 800 sobre canvas 950. */
+  /** Contorno card 500 sobre canvas 950. */
   darkCard: {
-    token: "sombra-800",
-    css: hx("sombra", "800"),
+    token: "sombra-700",
+    css: hx("sombra", "700"),
   },
   /** Split columna sombra ↔ bruma (pos-split) */
   splitColumn: {

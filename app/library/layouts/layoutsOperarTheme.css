@@ -266,8 +266,9 @@
 
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-group--separated,
-.rootsy-theme-pos .layouts-operar-body .library-nav-group--separated {
-  border-top-color: var(--rootsy-sombra-800);
+.rootsy-theme-pos .layouts-operar-body .library-nav-group--separated,
+.rootsy-theme-pos .handbook-rail .library-nav-group--separated {
+  border-top-color: var(--rootsy-sombra-500);
 }
 
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll,

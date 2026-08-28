@@ -103,14 +103,14 @@
 }
 
 .layouts-operar-earth-slot.is-configured .layouts-operar-earth-slot-icon {
-  background: var(--rootsy-sombra-950);
-  color: var(--rootsy-savia-500);
-  box-shadow: inset 0 0 0 1px var(--rootsy-savia-700);
+  background: var(--rootsy-savia-500);
+  color: var(--rootsy-sombra-950);
+  box-shadow: none;
 }
 
 .layouts-operar-earth-slot.is-configured:hover .layouts-operar-earth-slot-icon {
-  color: var(--rootsy-savia-400);
-  background: var(--rootsy-sombra-950);
+  background: var(--rootsy-savia-500);
+  color: var(--rootsy-sombra-950);
 }
 
 .layouts-operar-earth-slot-label {
