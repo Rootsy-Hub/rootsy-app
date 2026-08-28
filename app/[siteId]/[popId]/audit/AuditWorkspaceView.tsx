@@ -21,6 +21,7 @@ import {
   DataWorkspaceTableListShell,
   tableListInfiniteFromQuery,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -75,7 +76,7 @@ import { DATA_WORKSPACE_TABLE_PAGE_SIZE, nextDataWorkspaceTablePage } from "@/li
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { cn } from "@/lib/utils"
 import { useInfiniteQuery } from "@tanstack/react-query"
-import { useParams } from "next/navigation"
+import { useParams } from "@/lib/pop-spa/navigation"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import type { DateRange } from "react-day-picker"
 
@@ -130,11 +131,24 @@ export function AuditWorkspaceView() {
   )
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
   const [detailEvent, setDetailEvent] = useState<AuditEventRow | null>(null)
+  const [listStartPage, setListStartPage] = useState(1)
 
   const dateBounds = useMemo(
     () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
     [customDateRange, datePreset],
   )
+  const filterResetKey = [
+    debouncedQ,
+    dateBounds.from,
+    dateBounds.to,
+    appliedFilters.actions.slice().sort().join(","),
+    appliedFilters.sources.slice().sort().join(","),
+  ].join("|")
+  const [startPageFilterKey, setStartPageFilterKey] = useState(filterResetKey)
+  if (startPageFilterKey !== filterResetKey) {
+    setStartPageFilterKey(filterResetKey)
+    setListStartPage(1)
+  }
 
   useEffect(() => {
     const next = searchInput.trim()
@@ -152,7 +166,7 @@ export function AuditWorkspaceView() {
 
   const query = useInfiniteQuery({
     queryKey: popAuditQueryKey(popId, {
-      page: 1,
+      page: listStartPage,
       pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
       q: debouncedQ,
       from: dateBounds.from,
@@ -160,7 +174,7 @@ export function AuditWorkspaceView() {
       action: appliedFilters.actions.slice().sort().join(","),
       source: appliedFilters.sources.slice().sort().join(","),
     }),
-    initialPageParam: 1,
+    initialPageParam: listStartPage,
     queryFn: async ({ pageParam }) => {
       const page = typeof pageParam === "number" ? pageParam : 1
       const res = await fetchPopAuditEvents(popId, {
@@ -187,6 +201,7 @@ export function AuditWorkspaceView() {
       return {
         ...first,
         events: data.pages.flatMap((page) => page.events),
+        totalCount: first.total,
       }
     },
     enabled: Boolean(popId && siteId && canRead),
@@ -194,7 +209,7 @@ export function AuditWorkspaceView() {
   })
 
   const events = query.data?.events ?? []
-  const totalCount = query.data?.total ?? 0
+  const totalCount = query.data?.totalCount ?? query.data?.total ?? 0
   const accessPending = !afterHydration || (bootstrapLoading && !canRead)
   const listFetching =
     accessPending ||
@@ -350,6 +365,7 @@ export function AuditWorkspaceView() {
           </DataWorkspaceTableListFiltersBar>
 
           <DataWorkspaceTableListShell
+            lockScroll={listFetching}
             activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -409,6 +425,18 @@ export function AuditWorkspaceView() {
               canRead && !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
               ) : null
+            }
+            footerFloating
+            footerFloatingCentered
+            scrollResetKey={listStartPage}
+            footer={
+              <DataWorkspaceTableListPageDock
+                listFetching={listFetching}
+                loadedCount={events.length}
+                totalCount={totalCount}
+                page={listStartPage}
+                onPageJump={setListStartPage}
+              />
             }
             infinite={tableListInfiniteFromQuery(query, "audit")}
           >
@@ -477,7 +505,6 @@ export function AuditWorkspaceView() {
                         key={event.id}
                         event={event}
                         index={index}
-                        selected={detailEvent?.id === event.id}
                         onOpen={() => setDetailEvent(event)}
                       />
                     ))
@@ -510,12 +537,10 @@ export function AuditWorkspaceView() {
 function AuditEventRowView({
   event,
   index,
-  selected,
   onOpen,
 }: {
   event: AuditEventRow
   index: number
-  selected: boolean
   onOpen: () => void
 }) {
   const when = formatWhenParts(event.occurred_at)
@@ -523,8 +548,6 @@ function AuditEventRowView({
   return (
     <WorkspaceTableBodyRow
       index={index}
-      selected={selected}
-      noHover={false}
       role="button"
       tabIndex={0}
       aria-label={`Ver ${presented.activity} · ${presented.recordTitle}`}

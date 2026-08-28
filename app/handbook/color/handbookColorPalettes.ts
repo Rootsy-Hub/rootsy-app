@@ -1,0 +1,283 @@
+/**
+ * Paletas de color del handbook — la misma paleta que alimenta el producto.
+ * Los hex se resuelven desde lib/design-system. No se inventan colores sueltos.
+ */
+
+import { ROOTSY_COLOR_RAMPS } from "@/lib/design-system/tokens/colors"
+
+export const HANDBOOK_COLOR_STEPS = [
+  "50",
+  "100",
+  "200",
+  "300",
+  "400",
+  "500",
+  "600",
+  "700",
+  "800",
+  "900",
+  "950",
+] as const
+
+export type HandbookColorStepId = (typeof HANDBOOK_COLOR_STEPS)[number]
+
+export type HandbookColorStep = {
+  step: HandbookColorStepId
+  hex: string
+  usage: string
+  identity?: boolean
+}
+
+export type HandbookColorFamily = {
+  id: string
+  name: string
+  kind: "atmosfera" | "funcional"
+  tagline: string
+  description: string
+  not: string
+  steps: HandbookColorStep[]
+}
+
+function family(
+  spec: Omit<HandbookColorFamily, "steps"> & {
+    usage: Record<HandbookColorStepId, string>
+    hexes: Record<HandbookColorStepId, string>
+    identity: HandbookColorStepId
+  },
+): HandbookColorFamily {
+  return {
+    id: spec.id,
+    name: spec.name,
+    kind: spec.kind,
+    tagline: spec.tagline,
+    description: spec.description,
+    not: spec.not,
+    steps: HANDBOOK_COLOR_STEPS.map((step) => ({
+      step,
+      hex: spec.hexes[step],
+      usage: spec.usage[step],
+      identity: step === spec.identity,
+    })),
+  }
+}
+
+export const HANDBOOK_ETER: HandbookColorFamily = family({
+  id: "eter",
+  name: "Éter",
+  kind: "atmosfera",
+  tagline: "El afuera del planeta",
+  description:
+    "Rampa neutra para lo que se toca: texto, borde, botón, dropdown. El aire del fondo — home y headers — usa el clima (glow / void), no esta rampa. El clima no es cielo.",
+  not: "No es Sotobosque · Sombra (el dosel) ni cielo (el funcional azul). El navy del vacío no pinta controles.",
+  identity: "900",
+  hexes: ROOTSY_COLOR_RAMPS.eter,
+  usage: {
+    "50": "Texto e iconos sobre éter.",
+    "100": "Hairline y foco sutil de controles.",
+    "200": "Resplandor muted de chrome.",
+    "300": "Texto muted e iconos sobre éter profundo.",
+    "400": "Acento neutro de controles.",
+    "500": "Piedra de noche. No es el azul de cielo.",
+    "600": "Superficie elevada de chrome.",
+    "700": "Borde y popover.",
+    "800": "Superficie de control. El vacío del header es éter-void-800.",
+    "900": "Elevada / menú. El centro del vacío es éter-void-900.",
+    "950": "Fondo de chrome. El cierre del mundo es éter-void-950.",
+  },
+})
+
+export const HANDBOOK_BRUMA: HandbookColorFamily = family({
+  id: "bruma",
+  name: "Sotobosque · Luz filtrada",
+  kind: "atmosfera",
+  tagline: "El claro para leer",
+  description:
+    "Luz que entra entre las hojas. Workspaces, tablas, tickets y formularios. Un solo lugar, condición de lectura: elegir, respirar, entrar.",
+  not: "No es gris slate ni Sotobosque · Sombra.",
+  identity: "100",
+  hexes: ROOTSY_COLOR_RAMPS.bruma,
+  usage: {
+    "50": "Niebla — superficie y valle. Listado, filas, lienzo de bloques.",
+    "100": "Luz — lienzo plano. Ticket, tablas, workspace.",
+    "200": "Hojas — divisores hairline.",
+    "300": "Claros — bordes de inputs y tabs.",
+    "400": "Metadatos — solo si el contraste alcanza.",
+    "500": "Encabezados secundarios.",
+    "600": "Descripciones y ayudas.",
+    "700": "Tronco — texto muted.",
+    "800": "Texto profundo sobre tint y ayudas.",
+    "900": "Texto profundo sobre el claro.",
+    "950": "Raíz — texto principal.",
+  },
+})
+
+export const HANDBOOK_SOMBRA: HandbookColorFamily = family({
+  id: "sombra",
+  name: "Sotobosque · Sombra",
+  kind: "atmosfera",
+  tagline: "El dosel para operar",
+  description:
+    "Sombra profunda del mismo bosque. El tope es negro, fuera de rampa. El 950 es aire — banda, pozo, control. La hoja es 800: rail, toolbar, cards y slots. Savia solo en oficio.",
+  not: "No es éter (el espacio) ni Luz filtrada (el claro para leer). El 950 no es el vacío.",
+  identity: "800",
+  hexes: ROOTSY_COLOR_RAMPS.sombra,
+  usage: {
+    "50": "Tinta — títulos, precios y valor de slot.",
+    "100": "Velo claro — glows livianos.",
+    "200": "Hover de tinta apagada en slots idle.",
+    "300": "Muted — metadatos de card y meta de slot.",
+    "400": "Labels de sección en el rail.",
+    "500": "Paso medio — no pinta hojas ni vacío.",
+    "600": "Hover de borde en controles. No es superficie.",
+    "700": "Borde de card, slot y rail.",
+    "800": "Hoja — rail, toolbar, cards y slots.",
+    "900": "Pozo del ícono idle. Un paso más hondo que la hoja.",
+    "950": "Aire — banda toolbox y pozo de controles. No es el vacío.",
+  },
+})
+
+export const HANDBOOK_SAVIA: HandbookColorFamily = family({
+  id: "savia",
+  name: "Savia",
+  kind: "funcional",
+  tagline: "Acción, foco y progreso",
+  description:
+    "Acción principal, foco, selección, check y progreso. Rayo 500, igual de prendido en Luz filtrada y en Sombra.",
+  not: "No pinta superficies enteras. El vivo no es texto sobre blanco ni sobre Luz filtrada: ahí va el profundo 700. Sobre el vivo, el texto es Savia 950.",
+  identity: "500",
+  hexes: ROOTSY_COLOR_RAMPS.savia,
+  usage: {
+    "50": "Chip y tint sobre Luz filtrada.",
+    "100": "Badges suaves en ticket claro.",
+    "200": "Borde del tint.",
+    "300": "Glow de cards y descuentos.",
+    "400": "Foco y rail activo.",
+    "500": "Vivo — relleno de acción y progreso. No es texto sobre blanco.",
+    "600": "Hover del vivo.",
+    "700": "Profundo — texto y links sobre Luz filtrada.",
+    "800": "Texto profundo sobre tint si el 700 no alcanza.",
+    "900": "Overlays sobre cards oscuras.",
+    "950": "Texto sobre Savia vivo.",
+  },
+})
+
+export const HANDBOOK_CIELO_DE_DIA: HandbookColorFamily = family({
+  id: "cielo-de-dia",
+  name: "Cielo",
+  kind: "funcional",
+  tagline: "Información y contexto",
+  description:
+    "Información, orientación y contexto. Es el cielo abierto del negocio, no el espacio.",
+  not: "No es éter ni un azul de plantilla. No se usa como atmósfera de pantalla.",
+  identity: "500",
+  hexes: ROOTSY_COLOR_RAMPS.cielo,
+  usage: {
+    "50": "Lavado más claro — fondos de estado.",
+    "100": "Superficie de aviso informativo.",
+    "200": "Borde suave del tint.",
+    "300": "Iconos livianos.",
+    "400": "Señal intermedia sobre oscuro.",
+    "500": "Vivo — relleno de información.",
+    "600": "Hover del vivo.",
+    "700": "Profundo — texto y links sobre Luz filtrada.",
+    "800": "Texto profundo sobre tint si el 700 no alcanza.",
+    "900": "Overlays sobre cards oscuras.",
+    "950": "Texto sobre Cielo vivo.",
+  },
+})
+
+export const HANDBOOK_SOL: HandbookColorFamily = family({
+  id: "sol",
+  name: "Sol",
+  kind: "funcional",
+  tagline: "Atención y aviso",
+  description:
+    "Atención, aviso y algo que requiere mirada. Calor vivo, no otoño ni plantilla de warning.",
+  not: "No es lava. No es el ámbar genérico de aviso.",
+  identity: "500",
+  hexes: ROOTSY_COLOR_RAMPS.sol,
+  usage: {
+    "50": "Lavado más claro — fondos de atención.",
+    "100": "Superficie de estado cálido.",
+    "200": "Veladura de header de mundo.",
+    "300": "Borde suave e iconos livianos.",
+    "400": "Señal intermedia sobre oscuro.",
+    "500": "Vivo — relleno de atención.",
+    "600": "Hover del vivo.",
+    "700": "Profundo — texto y links sobre Luz filtrada.",
+    "800": "Texto profundo sobre tint si el 700 no alcanza.",
+    "900": "Overlays sobre cards oscuras.",
+    "950": "Texto sobre Sol vivo.",
+  },
+})
+
+export const HANDBOOK_LAVA: HandbookColorFamily = family({
+  id: "lava",
+  name: "Lava",
+  kind: "funcional",
+  tagline: "Riesgo y lo que no se deshace",
+  description:
+    "Riesgo, error, bloqueo y acción destructiva. Tiene calor de volcán, no el rojo de un dashboard.",
+  not: "No es sol. No es un rojo de plantilla. No se usa para atención rutinaria.",
+  identity: "500",
+  hexes: ROOTSY_COLOR_RAMPS.lava,
+  usage: {
+    "50": "Fondo de error suave.",
+    "100": "Banner y fila de riesgo.",
+    "200": "Borde suave de alerta.",
+    "300": "Iconos livianos sobre lava 50.",
+    "400": "Señal intermedia sobre oscuro.",
+    "500": "Vivo — relleno de riesgo y crítico.",
+    "600": "Hover del vivo.",
+    "700": "Profundo — texto y links sobre Luz filtrada.",
+    "800": "Texto profundo sobre tint si el 700 no alcanza.",
+    "900": "Overlays sobre cards oscuras.",
+    "950": "Texto sobre Lava vivo.",
+  },
+})
+
+export const HANDBOOK_ATMOSPHERES: HandbookColorFamily[] = [
+  HANDBOOK_ETER,
+  HANDBOOK_BRUMA,
+  HANDBOOK_SOMBRA,
+]
+
+export const HANDBOOK_FUNCTIONAL_COLORS: HandbookColorFamily[] = [
+  HANDBOOK_SAVIA,
+  HANDBOOK_CIELO_DE_DIA,
+  HANDBOOK_SOL,
+  HANDBOOK_LAVA,
+]
+
+export const HANDBOOK_COLOR_FAMILIES: HandbookColorFamily[] = [
+  ...HANDBOOK_ATMOSPHERES,
+  ...HANDBOOK_FUNCTIONAL_COLORS,
+]
+
+export type HandbookColorRefStep = HandbookColorStepId | "blanco" | "negro"
+
+/** Luz de Bruma clara. Fuera de la rampa. Documentada en Color → Blanco. */
+export const HANDBOOK_BLANCO = {
+  id: "blanco",
+  token: "--rootsy-blanco",
+  hex: "#FFFFFF",
+  usage: "Papel de Luz filtrada. --color-elevada, losetas, formularios y overlay. No pinta éter ni Sotobosque · Sombra.",
+} as const
+
+export const HANDBOOK_NEGRO = {
+  id: "negro",
+  token: "--rootsy-negro",
+  hex: "#000000",
+  usage: "Tope de Sotobosque · Sombra. Vacío del catálogo. No es sombra-950.",
+} as const
+
+export function handbookColorHex(familyId: string, step: HandbookColorRefStep): string {
+  if (familyId === "blanco" || step === "blanco") return "#FFFFFF"
+  if (familyId === "negro" || step === "negro") return "#000000"
+  const family = HANDBOOK_COLOR_FAMILIES.find((item) => item.id === familyId)
+  const found = family?.steps.find((item) => item.step === step)
+  if (!found) {
+    throw new Error(`Unknown handbook color: ${familyId}.${step}`)
+  }
+  return found.hex
+}

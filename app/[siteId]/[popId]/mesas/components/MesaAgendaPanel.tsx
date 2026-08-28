@@ -28,7 +28,7 @@ import type {
   MesaTable,
   MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import {
   ChannelDataEmptyState,
@@ -67,6 +67,7 @@ type Props = {
     settings: MesasReservationSettings,
   ) => Promise<boolean> | boolean
   waiters: MesaWaiter[]
+  waitersLoading?: boolean
   sessionError?: string | null
   onSaveReservation: (input: MesaReservationInput) => Promise<boolean> | boolean
   onCancelReservation: (reservationId: string) => Promise<boolean> | boolean
@@ -97,6 +98,7 @@ export function MesaAgendaPanel({
   reservationSettings,
   onSaveReservationSettings,
   waiters,
+  waitersLoading = false,
   sessionError,
   onSaveReservation,
   onCancelReservation,
@@ -346,6 +348,7 @@ export function MesaAgendaPanel({
         blockedMergeTables={blockedMergeTables}
         blockedMergeWarning={reservationOccupiedOpenWarning(blockedMergeTables)}
         waiters={waiters}
+        waitersLoading={waitersLoading}
         initial={mesaOpenInitialFromReservation(
           selectedReservation,
           checkInPrimaryTable.id,
@@ -427,12 +430,16 @@ export function MesaAgendaPanel({
               }
               actions={
                 editable ? (
-                  <DataWorkspaceTableIconAction
+                  <RootsIconButton
+                    type="button"
                     label="Editar reserva"
-                    icon={Pencil}
-                    variant="edit"
+                    tone="action"
+                    intent="edit"
+                    size="compact"
                     onClick={() => setView("edit")}
-                  />
+                  >
+                    <Pencil />
+                  </RootsIconButton>
                 ) : undefined
               }
             />

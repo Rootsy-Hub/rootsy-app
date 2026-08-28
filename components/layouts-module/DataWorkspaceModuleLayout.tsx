@@ -15,13 +15,13 @@ export const dataWorkspaceModuleHeaderVariant =
 export type DataWorkspaceModuleLayoutProps = DataWorkspaceLayoutProps
 
 /**
- * Shell módulo POP — universo del menú + contenido bruma.
- * Envuelve DataWorkspaceLayout con defaults del design system layout · módulo.
+ * Shell módulo POP — header éter + cuerpo sotobosque luz.
+ * Sin foto POP, sin estrellas ni fallback detrás del contenido.
  */
 export function DataWorkspaceModuleLayout({
   headerVariant = dataWorkspaceModuleHeaderVariant,
-  usePopBackdrop = true,
-  useBackdrop = true,
+  usePopBackdrop = false,
+  useBackdrop = false,
   contentFlush = false,
   mainClassName,
   ...props

@@ -1,0 +1,148 @@
+"use client"
+
+import { MesasLayoutAdmin } from "@/app/[siteId]/[popId]/mesas/components/MesasLayoutAdmin"
+import { MesasWorkspace } from "@/app/[siteId]/[popId]/mesas/components/MesasWorkspace"
+import { useMesasFloorHydrate } from "@/hooks/useMesasFloorHydrate"
+import { readMesasLayoutLocalOrFetch } from "@/lib/popLocalDb/hydrateMesasFloor"
+import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
+import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import {
+  DataWorkspaceOperationsLayout,
+} from "@/components/layouts-module/DataWorkspaceOperationsLayout"
+import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAuth } from "@/context/AuthContextSupabase"
+import { OperateQueryDevtoolsPanel } from "@/components/sale-operation/SaleDevtoolsPanel"
+import { isDevModeEnabled } from "@/lib/devmode"
+import { MESAS_QUERY_SPEC } from "@/lib/devmode/mesasQuerySpec"
+import { mesasAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import { popMesasLayoutQueryKey } from "@/lib/queryKeys"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { useParams } from "@/lib/pop-spa/navigation"
+import { useQuery } from "@tanstack/react-query"
+import { useCallback, useMemo, useRef } from "react"
+
+function MesasPage() {
+  const params = useParams()
+  const siteId = typeof params?.siteId === "string" ? params.siteId : ""
+  const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const { user } = useAuth()
+  const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
+    usePopWorkspace()
+
+  const {
+    open: catalogSidebarOpen,
+    setOpen: setCatalogSidebarOpen,
+  } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
+
+  const reloadLayoutRef = useRef<() => Promise<void>>(async () => {})
+  const layoutDataRef = useRef<() => MesasLayoutData | null>(() => null)
+
+  const access = useMemo(
+    () => mesasAccessFromKeys(bootstrap?.permissionKeys ?? []),
+    [bootstrap?.permissionKeys],
+  )
+
+  const floorHydrate = useMesasFloorHydrate(popId)
+  const layoutQuery = useQuery({
+    queryKey: popMesasLayoutQueryKey(popId ?? ""),
+    queryFn: () => readMesasLayoutLocalOrFetch(popId!),
+    enabled: Boolean(popId && siteId) && floorHydrate.canReadFloor,
+    ...sessionListQueryOptions,
+  })
+
+  const salons = useMemo<MesaSalon[]>(
+    () =>
+      (layoutQuery.data?.salons ?? [])
+        .filter((s) => s.isActive)
+        .map((s) => ({
+          id: s.id,
+          name: s.name,
+          sortOrder: s.sortOrder,
+          isActive: s.isActive,
+        })),
+    [layoutQuery.data?.salons],
+  )
+
+  const handleLayoutChanged = useCallback(async () => {
+    await reloadLayoutRef.current()
+  }, [])
+
+  const popName = bootstrap?.popName ?? ""
+
+  if (!popId || !siteId) {
+    return (
+      <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
+        Punto de venta no encontrado
+      </div>
+    )
+  }
+
+  if (!bootstrapLoading && bootstrapError) {
+    return (
+      <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
+        {bootstrapError}
+      </div>
+    )
+  }
+
+  if (!bootstrapLoading && !access.canRead) {
+    return (
+      <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
+        No tenés permiso para acceder a Mesas en este punto de venta.
+      </div>
+    )
+  }
+
+  return (
+    <MesasLayoutAdmin
+      popId={popId}
+      siteId={siteId}
+      salons={salons}
+      canUpdate={access.canUpdate}
+      getLayoutData={() => layoutDataRef.current()}
+      onLayoutChanged={handleLayoutChanged}
+    >
+      {({ moreActions }) => (
+        <DataWorkspaceOperationsLayout
+          siteId={siteId}
+          popId={popId}
+          popName={popName}
+          title="Mesas"
+          loading={bootstrapLoading}
+          userName={bootstrap?.userFullName || user?.email || ""}
+          userAvatarSrc={bootstrap?.userImageUrl}
+          headerActions={
+            isDevModeEnabled() ? (
+              <OperateQueryDevtoolsPanel
+                title="Mesas"
+                spec={MESAS_QUERY_SPEC}
+              />
+            ) : undefined
+          }
+          headerMoreActions={moreActions}
+          sidebarCollapsible
+          sidebarEdgeToggle={false}
+          sidebarOpen={catalogSidebarOpen}
+          onSidebarOpenChange={setCatalogSidebarOpen}
+        >
+          <MesasWorkspace
+            siteId={siteId}
+            popId={popId}
+            catalogSidebarOpen={catalogSidebarOpen}
+            onCatalogSidebarOpenChange={setCatalogSidebarOpen}
+            canUpdateLayout={access.canUpdate}
+            onRegisterReload={(reload) => {
+              reloadLayoutRef.current = reload
+            }}
+            onRegisterLayoutData={(getter) => {
+              layoutDataRef.current = getter
+            }}
+          />
+        </DataWorkspaceOperationsLayout>
+      )}
+    </MesasLayoutAdmin>
+  )
+}
+
+export default MesasPage

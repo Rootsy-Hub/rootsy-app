@@ -8,17 +8,14 @@ import type {
 import {
   dataWorkspaceBlocksPageMainClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import {
-  statisticsMainContentClass,
-  statisticsNavAsideClass,
-  statisticsNavScrollClass,
-} from "@/components/statistics/statisticsWorkspaceStyles"
+import { MenuSidebar } from "@/components/MenuSidebar"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { StatisticsSectionNav } from "@/components/statistics/StatisticsSectionNav"
 import { StatisticsSectionPanel } from "@/components/statistics/StatisticsSectionPanel"
+import { statisticsMainContentClass } from "@/components/statistics/statisticsWorkspaceStyles"
 import {
   STATISTICS_SECTIONS,
   statisticsSectionById,
@@ -43,7 +40,7 @@ import {
   mergeStatisticsSectionData,
 } from "@/lib/rootsyApi/statisticsClient"
 import { cn } from "@/lib/utils"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "@/lib/pop-spa/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { DateRange } from "react-day-picker"
 
@@ -281,16 +278,14 @@ export function StatisticsWorkspaceView({
       )}
     >
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:overflow-hidden">
-        <aside className={statisticsNavAsideClass}>
-          <div className={statisticsNavScrollClass}>
-            <StatisticsSectionNav
-              sections={sections}
-              activeSectionId={activeSectionId}
-              getSectionHref={getSectionHref}
-              onSectionClick={handleSectionClick}
-            />
-          </div>
-        </aside>
+        <MenuSidebar layout="strip" aria-label="Secciones de estadísticas">
+          <StatisticsSectionNav
+            sections={sections}
+            activeSectionId={activeSectionId}
+            getSectionHref={getSectionHref}
+            onSectionClick={handleSectionClick}
+          />
+        </MenuSidebar>
 
         <div className={statisticsMainContentClass}>
           {bootstrapError ? (

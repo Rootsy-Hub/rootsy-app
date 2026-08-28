@@ -2,8 +2,8 @@
 export const TYPOGRAPHY_LIBRARY_ROOT = { id: "typography", label: "Tipografía" } as const
 
 export const TYPOGRAPHY_LIBRARY_SUBITEMS = [
-  { id: "typography-applying", label: "En producto" },
-  { id: "typography-typefaces", label: "Escala" },
+  { id: "typography-typefaces", label: "Familias y escala" },
+  { id: "typography-applying", label: "Jerarquías" },
 ] as const
 
 export const TYPOGRAPHY_LIBRARY_ITEMS = [
@@ -28,19 +28,19 @@ export const TYPOGRAPHY_PAGE_META: Record<string, TypographyPageMeta> = {
     id: "typography",
     title: "Tipografía",
     description:
-      "Tres voces, una escala — texto que se lee natural, sin esfuerzo ni adornos.",
+      "Inter en chrome y montos. Nunito Sans en la prosa. La escala es corta y parte de 16px.",
   },
   "typography-applying": {
     id: "typography-applying",
-    title: "En producto",
+    title: "Jerarquías",
     description:
-      "Cómo se ve la tipografía en pantallas reales — jerarquía, montos y metadatos.",
+      "Título, contexto, cuerpo, dato. Cómo conviven en una pantalla real.",
   },
   "typography-typefaces": {
     id: "typography-typefaces",
-    title: "Escala",
+    title: "Familias y escala",
     description:
-      "Familias, tamaños y pesos — la referencia técnica, sin ruido.",
+      "Familias, tamaños y pesos — la referencia técnica, sin px sueltos.",
   },
 }
 
@@ -49,9 +49,9 @@ export function getTypographyPageMeta(sectionId: string): TypographyPageMeta | u
 }
 
 export const TYPOGRAPHY_RELATED_LINKS = [
-  { sectionId: "concept", label: "Concepto", hint: "Principios de marca y diseño." },
-  { sectionId: "typography-applying", label: "En producto", hint: "Demos en contexto real." },
-  { sectionId: "typography-typefaces", label: "Escala", hint: "Tamaños, pesos y tokens." },
+  { sectionId: "concept", label: "Overview", hint: "Cómo usar la librería." },
+  { sectionId: "typography-typefaces", label: "Familias y escala", hint: "Tamaños, pesos y tokens." },
+  { sectionId: "typography-applying", label: "Jerarquías", hint: "Título, contexto, cuerpo, dato." },
   { sectionId: "spacing", label: "Espaciado", hint: "Ritmo entre bloques de texto." },
   { sectionId: "colors-new", label: "Color", hint: "Contraste y tokens de texto." },
 ] as const

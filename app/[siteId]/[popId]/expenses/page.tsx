@@ -1,5 +1,4 @@
-import { ExpensesWorkspaceView } from "@/app/[siteId]/[popId]/expenses/ExpensesWorkspaceView"
-
+import { ExpensesWorkspaceView } from "./ExpensesWorkspaceView"
 export default function ExpensesPage() {
   return <ExpensesWorkspaceView />
 }

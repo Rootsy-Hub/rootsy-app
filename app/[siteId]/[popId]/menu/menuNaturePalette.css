@@ -22,8 +22,8 @@
   --border: color-mix(in srgb, var(--rootsy-sombra-400) 38%, transparent);
   --input: color-mix(in srgb, var(--rootsy-sombra-400) 38%, transparent);
   --ring: color-mix(in srgb, var(--rootsy-savia-600) 45%, transparent);
-  --rootsy-hairline: color-mix(in srgb, var(--rootsy-eter-100) 8%, transparent);
-  --rootsy-particle: color-mix(in srgb, var(--rootsy-eter-100) 42%, transparent);
+  --rootsy-hairline: color-mix(in srgb, var(--rootsy-eter-glow-100) 8%, transparent);
+  --rootsy-particle: color-mix(in srgb, var(--rootsy-eter-glow-100) 42%, transparent);
 }
 
 .dark .menu-nature-shell.rootsy-nature-palette .menu-floating-pill,

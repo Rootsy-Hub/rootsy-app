@@ -24,15 +24,15 @@ import { userPopsQueryKey } from "@/lib/queryKeys"
 import { savePopDock } from "@/lib/rootsyApi/dockClient"
 import { useQueryClient } from "@tanstack/react-query"
 import {
-  menuHoloGlyphClass,
-  menuHoloIconShellForSection,
-  menuHoloRealmWorldRimClass,
-} from "@/lib/menu/menuHoloStyles"
+  menuGlassGlyphClass,
+  menuGlassIconShellForSection,
+} from "@/lib/menu/menuGlassStyles"
 import {
   menuNatureShellClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { MenuApiReadyBadge } from "@/app/[siteId]/[popId]/menu/MenuApiReadyBadge"
-import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
+import { MenuPlanetGlassLayers } from "@/app/[siteId]/[popId]/menu/MenuPlanetGlassLayers"
+import "@/app/[siteId]/[popId]/menu/menuPlanetGlass.css"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { shouldShowMenuApiReadyBadge } from "@/lib/menuApiReady"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
@@ -71,18 +71,13 @@ export const DOCK_ICON_SIZE_PX = 48
 export const DOCK_ICON_GAP_PX = 16
 export const DOCK_SLOT_SHIFT_PX = DOCK_ICON_SIZE_PX + DOCK_ICON_GAP_PX
 export const DOCK_SLOT_INSET_X_PX = DOCK_ICON_GAP_PX / 2
-/** Padding vertical del bloque de cristal. */
-export const DOCK_SHELL_PADDING_Y_PX = 3
-/** Inset vertical dentro del track (badges arriba + alinear fila de íconos). */
-export const DOCK_TRACK_INSET_Y_PX = 5
-/** Distancia cromo → ícono (arriba/abajo). El lado usa slot inset + este valor. */
-export const DOCK_CHROME_INSET_PX =
-  DOCK_SHELL_PADDING_Y_PX + DOCK_TRACK_INSET_Y_PX
-/** Lados: el slot ya trae 8px; esto iguala el aire vertical. */
-export const DOCK_SHELL_PADDING_X_PX = Math.max(
-  0,
-  DOCK_CHROME_INSET_PX - DOCK_SLOT_INSET_X_PX,
-)
+/** Aire del cromo — igual a la separación entre íconos. */
+export const DOCK_SHELL_PADDING_Y_PX = DOCK_ICON_GAP_PX
+/** Inset vertical del track. El aire visible lo pone el padding del cromo. */
+export const DOCK_TRACK_INSET_Y_PX = 0
+/** Distancia cromo → ícono (lados y vertical: misma que el hueco entre ítems). */
+export const DOCK_CHROME_INSET_PX = DOCK_ICON_GAP_PX
+export const DOCK_SHELL_PADDING_X_PX = DOCK_ICON_GAP_PX
 export const DOCK_TRACK_HEIGHT_PX =
   DOCK_ICON_SIZE_PX + DOCK_TRACK_INSET_Y_PX * 2
 export const DOCK_EDIT_DIVIDER_HEIGHT_PX = 32
@@ -367,17 +362,13 @@ export function DockIconVisual({
       <div
         className={cn(
           "relative flex items-center justify-center",
-          menuHoloIconShellForSection(sectionKey, variant),
-          variant !== "muted" &&
-            menuHoloRealmWorldRimClass(sectionKey, variant === "dock"),
+          menuGlassIconShellForSection(sectionKey, variant),
           dim,
           radius,
           className,
         )}
       >
-        {variant !== "muted" ? (
-          <MenuIconChrome sectionKey={sectionKey} />
-        ) : null}
+        {variant !== "muted" ? <MenuPlanetGlassLayers /> : null}
         {busy ? (
           <RootsSpinner
             size="sm"
@@ -386,7 +377,7 @@ export function DockIconVisual({
             label={busyLabel ?? "Cargando"}
           />
         ) : (
-          <Icon className={cn(menuHoloGlyphClass, iconDim)} />
+          <Icon className={cn(menuGlassGlyphClass, iconDim)} />
         )}
       </div>
       {apiReady && !busy ? <MenuApiReadyBadge size="sm" /> : null}

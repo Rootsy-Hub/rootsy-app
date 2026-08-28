@@ -2,7 +2,7 @@
 
 import { SaleCatalogPriceListDialog } from "@/components/sale-operation/SaleCatalogPriceListDialog"
 import type { SaleCatalogPriceListOption } from "@/components/sale-operation/saleCatalogPriceLists"
-import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
+import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import { DollarSign } from "lucide-react"
 import {
   createContext,

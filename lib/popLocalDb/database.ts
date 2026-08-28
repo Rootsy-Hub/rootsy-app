@@ -72,12 +72,33 @@ export class PopLocalDatabase {
   }
 }
 
+function tableHasColumn(
+  db: PopLocalDatabase,
+  table: string,
+  column: string,
+): boolean {
+  return db
+    .all<{ name: string }>(`PRAGMA table_info(${table})`)
+    .some((row) => row.name === column)
+}
+
+function migratePopLocalSchema(db: PopLocalDatabase, fromVersion: number) {
+  if (fromVersion < 4) {
+    if (!tableHasColumn(db, "recipes", "station_id")) {
+      db.exec("ALTER TABLE recipes ADD COLUMN station_id TEXT")
+    }
+  }
+}
+
 export function applyPopLocalSchema(db: PopLocalDatabase) {
   db.exec(POP_LOCAL_SCHEMA_SQL)
   const current = Number(db.getMeta("schema_version") ?? 0)
-  if (current !== 0 && current !== POP_LOCAL_SCHEMA_VERSION) {
+  if (current > POP_LOCAL_SCHEMA_VERSION) {
     db.exec(POP_LOCAL_DROP_SQL)
     db.exec(POP_LOCAL_SCHEMA_SQL)
+  } else if (current > 0 && current < POP_LOCAL_SCHEMA_VERSION) {
+    migratePopLocalSchema(db, current)
   }
+  db.exec("CREATE INDEX IF NOT EXISTS recipes_station_id ON recipes (station_id)")
   db.setMeta("schema_version", String(POP_LOCAL_SCHEMA_VERSION))
 }

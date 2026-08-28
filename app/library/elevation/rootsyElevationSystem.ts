@@ -3,7 +3,7 @@
  * Alineado a sombra · bruma · savia del design system.
  */
 
-import { rootsyColorHex } from "@/lib/design-system"
+import { ROOTSY_BLANCO, rootsyColorHex } from "@/lib/design-system/tokens/colors"
 
 const hx = rootsyColorHex
 
@@ -47,7 +47,7 @@ export const ROOTSY_ELEVATION_CONCEPT = {
   lead:
     "En Rootsy la profundidad se lee como en un sendero: suelo plano, hondonada que agrupa, algo que flota cuando pide atención. Sin manual — el ojo entiende antes que el token.",
   why: [
-    "Naturalidad: bruma es neblina bajo los pies; sombra es el dosel; el blanco aparece solo cuando algo importa — como un claro entre árboles.",
+    "Naturalidad: bruma es neblina bajo los pies; sombra es el dosel; el blanco es la luz de Bruma — el papel que flota sobre el valle.",
     "Simplicidad: tres lecturas — plano, hundido, flotante. Preferí borde o aire antes de levantar sombra.",
     "Intuitivo: si hay modal o menú, flota; si hay columna de kanban, se hunde; el resto queda en el suelo.",
   ],
@@ -176,16 +176,16 @@ export const ROOTSY_ELEVATION_SHADOW_TOKENS = [
 ] as const
 
 export const ROOTSY_ELEVATION_SURFACES_LIGHT = [
-  { token: "elevation.surface.sunken", value: hx("bruma", "50"), mapsTo: "--color-elevated" },
-  { token: "elevation.surface", value: hx("bruma", "100"), mapsTo: "--color-shell" },
-  { token: "elevation.surface.raised", value: hx("bruma", "50"), mapsTo: "white / --card" },
-  { token: "elevation.surface.overlay", value: "#FFFFFF", mapsTo: "white · modal" },
+  { token: "elevation.surface.sunken", value: hx("bruma", "50"), mapsTo: "--color-superficie" },
+  { token: "elevation.surface", value: hx("bruma", "100"), mapsTo: "--color-fondo" },
+  { token: "elevation.surface.raised", value: ROOTSY_BLANCO, mapsTo: "--color-elevada" },
+  { token: "elevation.surface.overlay", value: ROOTSY_BLANCO, mapsTo: "--rootsy-blanco · modal" },
 ] as const
 
 export const ROOTSY_ELEVATION_SURFACES_DARK = [
-  { token: "elevation.surface.sunken", value: hx("sombra", "700"), note: "Rail · header" },
-  { token: "elevation.surface", value: hx("sombra", "600"), note: "Canvas catálogo" },
-  { token: "elevation.surface.raised", value: hx("sombra", "500"), note: "Card producto" },
+  { token: "elevation.surface.sunken", value: hx("sombra", "950"), note: "Fondo — rail, canvas, toolbox" },
+  { token: "elevation.surface", value: hx("sombra", "600"), note: "Panel sobre el lienzo" },
+  { token: "elevation.surface.raised", value: hx("sombra", "500"), note: "Card y slot" },
   { token: "elevation.surface.overlay", value: hx("sombra", "500"), note: "Dropdown · modal oscuro" },
 ] as const
 

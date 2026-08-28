@@ -159,7 +159,7 @@ export function DataWorkspaceListSearchField({
             spellCheck={false}
             aria-label="Buscar en el listado"
             className={cn(
-              "min-w-0 flex-1 bg-transparent font-canopy placeholder:text-[var(--rootsy-bruma-500)] outline-none",
+              "min-w-0 flex-1 bg-transparent font-canopy placeholder:text-[var(--color-texto-muted)] outline-none",
               rootsFormControlSelectionClass,
               searchInputWithoutNativeClearClass,
               hasValue && onClear && "pr-8",

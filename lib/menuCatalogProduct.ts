@@ -59,6 +59,12 @@ export function snapshotFromCatalogProduct(
     ...(product.descripcion ? { descripcion: product.descripcion } : {}),
     ...(product.iva != null ? { iva: product.iva } : {}),
     ...(product.categoria ? { categoria: product.categoria } : {}),
+    ...(product.discountMode != null
+      ? { discountMode: product.discountMode }
+      : {}),
+    ...(product.discountValue != null
+      ? { discountValue: product.discountValue }
+      : {}),
   }
 }
 
@@ -78,6 +84,12 @@ export function catalogProductFromCartSnapshot(
       : {}),
     categoria: snapshot.categoria?.trim() ? snapshot.categoria : "—",
     imagen: resolveCatalogProductImage(item.productoId, snapshot.imagen),
+    ...(snapshot.discountMode != null
+      ? { discountMode: snapshot.discountMode }
+      : {}),
+    ...(snapshot.discountValue != null
+      ? { discountValue: snapshot.discountValue }
+      : {}),
     kind,
     section:
       kind === "recipe"
@@ -101,13 +113,27 @@ export function resolveMenuCartCatalogProduct(
   kind: MenuCartItemKind,
   snapshot?: MenuCartItemSnapshot,
 ): MenuCatalogProduct | null {
-  return (
+  const live =
     productosByKey.get(`${kind}:${productoId}`) ??
     productosByKey.get(`recipe:${productoId}`) ??
     productosByKey.get(`article:${productoId}`) ??
     productosByKey.get(`promotion:${productoId}`) ??
-    catalogProductFromCartSnapshot({ productoId, kind, snapshot })
-  )
+    null
+  const fromSnap = catalogProductFromCartSnapshot({ productoId, kind, snapshot })
+  if (live && fromSnap) {
+    return {
+      ...live,
+      nombre: fromSnap.nombre,
+      precio: fromSnap.precio,
+      ...(fromSnap.precioOriginal != null
+        ? { precioOriginal: fromSnap.precioOriginal }
+        : { precioOriginal: undefined }),
+      discountMode: fromSnap.discountMode ?? null,
+      discountValue: fromSnap.discountValue ?? null,
+      ...(fromSnap.iva != null ? { iva: fromSnap.iva } : {}),
+    }
+  }
+  return fromSnap ?? live
 }
 
 export function collectCartCatalogEnsureIds(
@@ -118,8 +144,8 @@ export function collectCartCatalogEnsureIds(
   for (const item of items) {
     const kind = normalizeCartItemKind(item.kind)
     if (kind === "promotion" || !item.productoId) continue
-    articleIds.push(item.productoId)
-    recipeIds.push(item.productoId)
+    if (kind === "recipe") recipeIds.push(item.productoId)
+    else articleIds.push(item.productoId)
   }
   return { articleIds, recipeIds }
 }

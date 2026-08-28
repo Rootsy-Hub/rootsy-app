@@ -22,6 +22,7 @@ import {
   libraryNavItemIconClass,
   libraryNavItemLabelClass,
 } from "@/app/library/libraryColorTheme"
+import { MenuSidebar } from "@/components/MenuSidebar"
 import { cn } from "@/lib/utils"
 import { Percent, Tag } from "lucide-react"
 import { useState } from "react"
@@ -64,12 +65,15 @@ export function LayoutsOperarCatalogRailDemoShell({
     >
       <div
         className={cn(
-          "rootsy-theme-pos rootsy-radius-system h-full bg-[var(--rootsy-sombra-950)]",
+          "rootsy-theme-pos rootsy-radius-system h-full bg-[var(--rootsy-negro)]",
           layoutsOperarBodyScopeClass,
         )}
         style={getLayoutsOperarGridCssVariables()}
       >
-        <aside
+        <MenuSidebar
+          collapseBelow={false}
+          padded={false}
+          fixedWidth={false}
           className={cn(
             layoutsOperarCatalogSidebarClass,
             layoutsOperarCatalogSidebarOpenClass,
@@ -77,7 +81,7 @@ export function LayoutsOperarCatalogRailDemoShell({
           )}
         >
           {children}
-        </aside>
+        </MenuSidebar>
       </div>
     </div>
   )

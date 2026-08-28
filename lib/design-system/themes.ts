@@ -1,11 +1,12 @@
 /**
  * Temas semánticos Rootsy — mapeo primitivos → roles de UI.
  * Espejo de styles/rootsy/themes/*.css
+ * Los pasos salen del handbook: atmósfera por contexto, funcionales fijos.
  */
 
-import { rootsyColorHex } from "@/lib/design-system/tokens/colors"
+import { ROOTSY_BLANCO, ROOTSY_NEGRO, rootsyColorHex } from "@/lib/design-system/tokens/colors"
 
-export type RootsyThemeId = "pos" | "workspace" | "marketing" | "library"
+export type RootsyThemeId = "pos" | "workspace" | "bruma-oscura" | "marketing" | "library"
 
 /** @deprecated Usar "marketing" */
 export type LegacyRootsyThemeId = RootsyThemeId | "landing"
@@ -14,74 +15,122 @@ export type RootsyThemeTokens = {
   id: RootsyThemeId
   label: string
   className: string
+  fondo: string
+  superficie: string
+  elevada: string
+  borde: string
+  texto: string
+  textoMuted: string
+  accion: string
+  accionHover: string
+  foco: string
+  /** @deprecated Usar fondo */
   shell: string
+  /** @deprecated Usar superficie */
   surface: string
+  /** @deprecated Usar elevada */
   elevated: string
+  /** @deprecated Usar borde */
   border: string
+  /** @deprecated Usar texto */
   textPrimary: string
+  /** @deprecated Usar textoMuted */
   textSecondary: string
+  /** @deprecated Usar accion */
   action: string
   actionText: string
+  /** @deprecated Usar foco */
   accent: string
 }
 
+function themeTokens(spec: {
+  id: RootsyThemeId
+  label: string
+  className: string
+  atmosphere: "eter" | "bruma" | "sombra" | "bruma-noche"
+}): RootsyThemeTokens {
+  const steps =
+    spec.atmosphere === "eter"
+      ? { fondo: "950", superficie: "800", elevada: "700", borde: "700", texto: "50", muted: "300", family: "eter" as const }
+      : spec.atmosphere === "sombra"
+        ? { fondo: "950", superficie: "800", elevada: "800", borde: "700", texto: "50", muted: "300", family: "sombra" as const }
+        : spec.atmosphere === "bruma-noche"
+          ? { fondo: "950", superficie: "800", elevada: "700", borde: "700", texto: "50", muted: "400", family: "bruma" as const }
+          : { fondo: "100", superficie: "50", elevada: "50", borde: "200", texto: "950", muted: "700", family: "bruma" as const }
+
+  const fondo =
+    spec.atmosphere === "sombra"
+      ? ROOTSY_NEGRO
+      : rootsyColorHex(steps.family, steps.fondo)
+  const superficie = rootsyColorHex(steps.family, steps.superficie)
+  const elevada =
+    spec.atmosphere === "bruma"
+      ? ROOTSY_BLANCO
+      : rootsyColorHex(steps.family, steps.elevada)
+  const borde = rootsyColorHex(steps.family, steps.borde)
+  const texto = rootsyColorHex(steps.family, steps.texto)
+  const textoMuted = rootsyColorHex(steps.family, steps.muted)
+  const accion = rootsyColorHex("savia", "500")
+  const accionHover = rootsyColorHex("savia", "600")
+  const foco = rootsyColorHex("savia", "400")
+  const actionText = rootsyColorHex("sombra", "950")
+
+  return {
+    id: spec.id,
+    label: spec.label,
+    className: spec.className,
+    fondo,
+    superficie,
+    elevada,
+    borde,
+    texto,
+    textoMuted,
+    accion,
+    accionHover,
+    foco,
+    shell: fondo,
+    surface: superficie,
+    elevated: elevada,
+    border: borde,
+    textPrimary: texto,
+    textSecondary: textoMuted,
+    action: accion,
+    actionText,
+    accent: foco,
+  }
+}
+
 export const ROOTSY_THEMES: RootsyThemeTokens[] = [
-  {
+  themeTokens({
     id: "pos",
     label: "Mostrador POS",
     className: "rootsy-theme-pos",
-    shell: rootsyColorHex("sombra", "950"),
-    surface: rootsyColorHex("sombra", "600"),
-    elevated: rootsyColorHex("sombra", "500"),
-    border: rootsyColorHex("sombra", "border"),
-    textPrimary: "#F4F8F6",
-    textSecondary: rootsyColorHex("sombra", "300"),
-    action: rootsyColorHex("savia", "600"),
-    actionText: "#FFFFFF",
-    accent: rootsyColorHex("savia", "400"),
-  },
-  {
+    atmosphere: "sombra",
+  }),
+  themeTokens({
     id: "workspace",
     label: "Workspace",
     className: "rootsy-theme-workspace",
-    shell: rootsyColorHex("bruma", "100"),
-    surface: "#FFFFFF",
-    elevated: rootsyColorHex("bruma", "50"),
-    border: rootsyColorHex("bruma", "200"),
-    textPrimary: rootsyColorHex("bruma", "900"),
-    textSecondary: rootsyColorHex("bruma", "500"),
-    action: rootsyColorHex("savia", "600"),
-    actionText: "#FFFFFF",
-    accent: rootsyColorHex("savia", "400"),
-  },
-  {
+    atmosphere: "bruma",
+  }),
+  themeTokens({
+    id: "bruma-oscura",
+    label: "Bruma oscura",
+    className: "rootsy-theme-bruma-oscura",
+    atmosphere: "bruma-noche",
+  }),
+  themeTokens({
     id: "marketing",
     label: "Marketing · hero",
     className: "rootsy-theme-landing",
-    shell: rootsyColorHex("sombra", "900"),
-    surface: rootsyColorHex("sombra", "800"),
-    elevated: "#141C19",
-    border: rootsyColorHex("sombra", "border"),
-    textPrimary: "#FFFFFF",
-    textSecondary: rootsyColorHex("sombra", "300"),
-    action: rootsyColorHex("savia", "500"),
-    actionText: "#FFFFFF",
-    accent: rootsyColorHex("savia", "400"),
-  },
-  {
+    atmosphere: "eter",
+  }),
+  themeTokens({
     id: "library",
     label: "Librería",
     className: "rootsy-theme-library",
-    shell: rootsyColorHex("sombra", "700"),
-    surface: rootsyColorHex("bruma", "100"),
-    elevated: "#FFFFFF",
-    border: rootsyColorHex("bruma", "200"),
-    textPrimary: rootsyColorHex("bruma", "900"),
-    textSecondary: rootsyColorHex("bruma", "500"),
-    action: rootsyColorHex("savia", "600"),
-    actionText: "#FFFFFF",
-    accent: rootsyColorHex("savia", "400"),
-  },
+    atmosphere: "bruma",
+  }),
 ]
 
 export function getRootsyTheme(id: RootsyThemeId | "landing"): RootsyThemeTokens {

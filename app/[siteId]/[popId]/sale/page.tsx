@@ -1,5 +1,4 @@
-import { SaleWorkspaceView } from "@/app/[siteId]/[popId]/sale/SaleWorkspaceView"
-
+import { SaleWorkspaceView } from "./SaleWorkspaceView"
 export default function SalePage() {
   return <SaleWorkspaceView />
 }

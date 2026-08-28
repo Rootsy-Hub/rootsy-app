@@ -46,7 +46,9 @@ export async function prefetchPopListQuery(
 }
 
 export async function prefetchPopInfiniteListQuery(
-  query: PrefetchPopInfiniteListQueryInput,
+  query: PrefetchPopInfiniteListQueryInput & {
+    initialPageParam?: number
+  },
 ): Promise<DehydratedState | null> {
   const user = await getInitialAuthUser()
   if (!user) return null
@@ -57,10 +59,15 @@ export async function prefetchPopInfiniteListQuery(
     },
   })
 
+  const initialPageParam =
+    Number.isFinite(query.initialPageParam) && (query.initialPageParam ?? 0) > 0
+      ? Math.floor(query.initialPageParam as number)
+      : 1
+
   await queryClient.prefetchInfiniteQuery({
     queryKey: query.queryKey,
-    initialPageParam: 1,
-    queryFn: ({ pageParam }) => query.queryFn(Number(pageParam) || 1),
+    initialPageParam,
+    queryFn: ({ pageParam }) => query.queryFn(Number(pageParam) || initialPageParam),
     ...sessionListQueryOptions,
   })
 

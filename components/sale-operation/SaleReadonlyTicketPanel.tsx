@@ -63,7 +63,7 @@ export function SaleReadonlyTicketPanel({
     return (
       <div
         className={cn(
-          "flex min-h-0 flex-1 flex-col bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]",
+          "flex min-h-0 flex-1 flex-col bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-900)]",
           className,
         )}
       >

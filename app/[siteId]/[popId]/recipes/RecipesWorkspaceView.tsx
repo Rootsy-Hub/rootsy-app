@@ -1,6 +1,7 @@
 "use client"
 
 import type { RecipeTableRow } from "@/app/[siteId]/[popId]/recipes/actions"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { ingredientLinesFromDetail } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientEditor"
 import { RecipeCategoryDeleteDialog } from "@/app/[siteId]/[popId]/recipes/RecipeCategoryDeleteDialog"
 import { RecipeCategoriesDialog } from "@/app/[siteId]/[popId]/recipes/RecipeCategoriesDialog"
@@ -55,12 +56,11 @@ import {
   DataWorkspaceTableListPage,
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
-  DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   workspaceTableLayoutClassName,
@@ -86,7 +86,6 @@ import {
   WorkspaceTableSkeletonRows,
 } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { recipesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { TableBody, TableCell } from "@/components/ui/table"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopComandaStations } from "@/hooks/usePopComandaStations"
@@ -141,7 +140,7 @@ import {
   usePathname,
   useRouter,
   useSearchParams,
-} from "next/navigation"
+} from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,
@@ -813,14 +812,15 @@ export function RecipesWorkspaceView() {
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "Menú",
         headerActions: canCreate ? (
-          <DataWorkspaceHeaderIconButton
+          <RootsIconButton
             label="Nueva receta"
-            headerVariant={dataWorkspaceTableListHeaderVariant}
-            primary
+            semantic="primary"
+            atmosphere="eter"
+            size="default"
             onClick={openCreate}
           >
             <Plus className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
+          </RootsIconButton>
         ) : null,
         headerMoreActions:
           canUpdate || canCreate
@@ -879,6 +879,7 @@ export function RecipesWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
           <DataWorkspaceTableListShell
+            lockScroll={loading}
             activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -913,6 +914,18 @@ export function RecipesWorkspaceView() {
               !loading && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
               ) : null
+            }
+            footerFloating
+            footerFloatingCentered
+            scrollResetKey={ws.page}
+            footer={
+              <DataWorkspaceTableListPageDock
+                listFetching={loading}
+                loadedCount={recipes.length}
+                totalCount={totalCount}
+                page={ws.page}
+                onPageJump={(nextPage) => pushWs({ page: nextPage })}
+              />
             }
             infinite={tableListInfiniteFromQuery(recipesQuery, "recipes")}
           >
@@ -1069,19 +1082,28 @@ export function RecipesWorkspaceView() {
                           >
                             <div className="flex items-center justify-end gap-0.5">
                               {canUpdate ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label={`Editar ${row.name}`}
-                                  icon={Pencil}
+                                  tone="action"
+                                  intent="edit"
+                                  size="compact"
                                   onClick={() => void openEdit(row)}
-                                />
+                                >
+                                  <Pencil />
+                                </RootsIconButton>
                               ) : null}
                               {canDelete ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label={`Eliminar ${row.name}`}
-                                  icon={Trash2}
-                                  variant="destructive"
+                                  tone="action"
+                                  intent="destructive"
+                                  size="compact"
                                   onClick={() => openDelete(row)}
-                                />
+                                >
+                                  <Trash2 />
+                                </RootsIconButton>
                               ) : null}
                             </div>
                           </TableCell>

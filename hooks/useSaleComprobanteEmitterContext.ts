@@ -2,6 +2,7 @@
 
 import { getPopComprobanteEmitterPreview } from "@/app/[siteId]/[popId]/sale/comprobantePreviewActions"
 import { saleComprobanteEmitterQueryKey } from "@/lib/queryKeys"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { useQuery } from "@tanstack/react-query"
 
 export function useSaleComprobanteEmitterContext(
@@ -19,6 +20,7 @@ export function useSaleComprobanteEmitterContext(
       return res.emitter
     },
     enabled: open && Boolean(popId),
+    ...sessionListQueryOptions,
   })
 
   return {

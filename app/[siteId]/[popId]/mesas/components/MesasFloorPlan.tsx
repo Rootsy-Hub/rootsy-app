@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils"
 import { Minus, Pencil, Plus, RotateCw } from "lucide-react"
 import { useCallback, useRef, useState } from "react"
 
-/** Fondo del canvas del plano — sombra-800, alineado con catálogo operar. */
+/** Fondo del canvas del plano — sombra-950, alineado con catálogo operar. */
 const floorPlanCanvasStyle = { backgroundColor: MESAS_FLOOR_PLAN_CANVAS_BG }
 
 const CANVAS_WIDTH = 720

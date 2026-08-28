@@ -31,18 +31,20 @@ export class PopLocalDbHandle {
       this.persistTimer = null
     }
     if (!this.dirty || !this.fileHandle) return
-    this.persistChain = this.persistChain.then(async () => {
+    const write = async () => {
       if (!this.dirty || !this.fileHandle) return
       const bytes = this.database.export()
       const writable = await this.fileHandle.createWritable()
       await writable.write(bytes)
       await writable.close()
       this.dirty = false
-    })
+    }
+    this.persistChain = this.persistChain.then(write, write)
     try {
       await this.persistChain
-    } catch {
+    } catch (error) {
       this.dirty = true
+      throw error
     }
   }
 }

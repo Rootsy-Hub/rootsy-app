@@ -3,16 +3,19 @@ import { cn } from "@/lib/utils"
 
 type MenuHoloIconVariant = "default" | "dock" | "muted" | "overlay" | "placed"
 
+/** Reinados del planeta — los tres del menú más lava para specimens y alerta. */
+export type MenuPlanetRealm = MenuSectionKey | "lava"
+
 /** Easing orgánico — aceleración y reposo como en la naturaleza. */
 const menuHoloEase = "duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
 
 /**
- * Tres planetas del mismo reinado — cada uno con su color y atmósfera,
- * compartiendo el mismo vidrio perfecto (translúcido, sin neón).
+ * Planetas del menú — mismo vidrio, atmósfera distinta.
  *
- * Operar      → savia / césped   (verde vivo)
- * Administrar → mar / agua       (celeste profundo)
- * Configurar  → dusk / ocaso     (violeta crepuscular)
+ * Operar      → savia  (vida que acciona)
+ * Administrar → sol    (atención y calor)
+ * Configurar  → cielo  (información y amplitud)
+ * Lava        → alerta (calor destructivo, specimens)
  */
 const menuHoloGlassBase = cn(
   "relative isolate overflow-hidden border-[0.5px] backdrop-blur-[6px] backdrop-saturate-[1.15]",
@@ -23,7 +26,7 @@ const menuHoloPlanetShellDepthClass =
 
 /** Cierre del mundo — borde que resalta el color del reinado. */
 export function menuHoloRealmWorldRimClass(
-  section: MenuSectionKey,
+  section: MenuPlanetRealm,
   soft = false,
 ): string {
   return cn(
@@ -58,48 +61,48 @@ export const menuHoloDormantRimClass = cn(
 )
 
 const menuHoloShellBySection: Record<
-  MenuSectionKey,
+  MenuPlanetRealm,
   Record<MenuHoloIconVariant, string>
 > = {
   operar: {
     default: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.36]",
-      "border-[rgba(111,216,156,0.28)]",
-      "bg-[linear-gradient(168deg,rgba(111,216,156,0.22)_0%,rgba(36,173,106,0.16)_46%,rgba(10,64,48,0.24)_100%)]",
-      "shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_rgba(14,87,57,0.22),0_0_20px_rgba(36,173,106,0.14),0_0_36px_rgba(36,173,106,0.07)]",
+      "border-[color-mix(in_srgb,var(--rootsy-savia-300)_28%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-savia-300)_22%,transparent)_0%,color-mix(in_srgb,var(--rootsy-savia-600)_16%,transparent)_46%,color-mix(in_srgb,var(--rootsy-savia-900)_24%,transparent)_100%)]",
+      "shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_color-mix(in_srgb,var(--rootsy-savia-800)_22%,transparent),0_0_20px_color-mix(in_srgb,var(--rootsy-savia-500)_14%,transparent),0_0_36px_color-mix(in_srgb,var(--rootsy-savia-500)_7%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
     dock: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.26]",
-      "border-[rgba(111,216,156,0.24)]",
-      "bg-[linear-gradient(168deg,rgba(111,216,156,0.13)_0%,rgba(36,173,106,0.1)_46%,rgba(10,64,48,0.18)_100%)]",
-      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(14,87,57,0.2),0_0_16px_rgba(36,173,106,0.1)]",
+      "border-[color-mix(in_srgb,var(--rootsy-savia-300)_24%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-savia-300)_13%,transparent)_0%,color-mix(in_srgb,var(--rootsy-savia-600)_10%,transparent)_46%,color-mix(in_srgb,var(--rootsy-savia-900)_18%,transparent)_100%)]",
+      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_color-mix(in_srgb,var(--rootsy-savia-800)_20%,transparent),0_0_16px_color-mix(in_srgb,var(--rootsy-savia-500)_10%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
     muted: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.1]",
-      "border-[rgba(111,216,156,0.14)]",
-      "bg-[rgba(10,64,48,0.1)]",
+      "border-[color-mix(in_srgb,var(--rootsy-savia-300)_14%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-900)_10%,transparent)]",
       "backdrop-blur-[2px]",
       "shadow-none",
     ),
     placed: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.28]",
-      "border-[rgba(111,216,156,0.26)]",
-      "bg-[linear-gradient(168deg,rgba(111,216,156,0.14)_0%,rgba(36,173,106,0.11)_46%,rgba(10,64,48,0.16)_100%)]",
-      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_20px_rgba(14,87,57,0.16)]",
+      "border-[color-mix(in_srgb,var(--rootsy-savia-300)_26%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-savia-300)_14%,transparent)_0%,color-mix(in_srgb,var(--rootsy-savia-600)_11%,transparent)_46%,color-mix(in_srgb,var(--rootsy-savia-900)_16%,transparent)_100%)]",
+      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_20px_color-mix(in_srgb,var(--rootsy-savia-800)_16%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
     overlay: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.36]",
-      "border-[rgba(127,224,168,0.34)]",
-      "bg-[linear-gradient(168deg,rgba(127,224,168,0.19)_0%,rgba(36,173,106,0.15)_46%,rgba(10,64,48,0.26)_100%)]",
-      "shadow-[0_4px_8px_rgba(0,0,0,0.1),0_12px_28px_rgba(14,87,57,0.26)]",
+      "border-[color-mix(in_srgb,var(--rootsy-savia-200)_34%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-savia-200)_19%,transparent)_0%,color-mix(in_srgb,var(--rootsy-savia-600)_15%,transparent)_46%,color-mix(in_srgb,var(--rootsy-savia-900)_26%,transparent)_100%)]",
+      "shadow-[0_4px_8px_rgba(0,0,0,0.1),0_12px_28px_color-mix(in_srgb,var(--rootsy-savia-800)_26%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
   },
@@ -107,41 +110,41 @@ const menuHoloShellBySection: Record<
     default: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.34]",
-      "border-[rgba(125,211,252,0.28)]",
-      "bg-[linear-gradient(168deg,rgba(186,230,253,0.22)_0%,rgba(8,145,178,0.16)_46%,rgba(21,94,117,0.24)_100%)]",
-      "shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_rgba(14,78,99,0.22),0_0_20px_rgba(8,145,178,0.14),0_0_36px_rgba(8,145,178,0.07)]",
+      "border-[color-mix(in_srgb,var(--rootsy-sol-300)_28%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-sol-300)_22%,transparent)_0%,color-mix(in_srgb,var(--rootsy-sol-600)_16%,transparent)_46%,color-mix(in_srgb,var(--rootsy-sol-900)_24%,transparent)_100%)]",
+      "shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_color-mix(in_srgb,var(--rootsy-sol-800)_22%,transparent),0_0_20px_color-mix(in_srgb,var(--rootsy-sol-500)_14%,transparent),0_0_36px_color-mix(in_srgb,var(--rootsy-sol-500)_7%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
     dock: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.24]",
-      "border-[rgba(125,211,252,0.24)]",
-      "bg-[linear-gradient(168deg,rgba(186,230,253,0.13)_0%,rgba(8,145,178,0.1)_46%,rgba(21,94,117,0.18)_100%)]",
-      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(14,78,99,0.2),0_0_16px_rgba(8,145,178,0.1)]",
+      "border-[color-mix(in_srgb,var(--rootsy-sol-300)_24%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-sol-300)_13%,transparent)_0%,color-mix(in_srgb,var(--rootsy-sol-600)_10%,transparent)_46%,color-mix(in_srgb,var(--rootsy-sol-900)_18%,transparent)_100%)]",
+      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_color-mix(in_srgb,var(--rootsy-sol-800)_20%,transparent),0_0_16px_color-mix(in_srgb,var(--rootsy-sol-500)_10%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
     muted: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.1]",
-      "border-[rgba(125,211,252,0.14)]",
-      "bg-[rgba(21,94,117,0.1)]",
+      "border-[color-mix(in_srgb,var(--rootsy-sol-300)_14%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-sol-900)_10%,transparent)]",
       "backdrop-blur-[2px]",
       "shadow-none",
     ),
     placed: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.26]",
-      "border-[rgba(125,211,252,0.26)]",
-      "bg-[linear-gradient(168deg,rgba(186,230,253,0.14)_0%,rgba(8,145,178,0.11)_46%,rgba(21,94,117,0.16)_100%)]",
-      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_20px_rgba(14,78,99,0.16)]",
+      "border-[color-mix(in_srgb,var(--rootsy-sol-300)_26%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-sol-300)_14%,transparent)_0%,color-mix(in_srgb,var(--rootsy-sol-600)_11%,transparent)_46%,color-mix(in_srgb,var(--rootsy-sol-900)_16%,transparent)_100%)]",
+      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_20px_color-mix(in_srgb,var(--rootsy-sol-800)_16%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
     overlay: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.34]",
-      "border-[rgba(103,232,249,0.34)]",
-      "bg-[linear-gradient(168deg,rgba(103,232,249,0.19)_0%,rgba(8,145,178,0.15)_46%,rgba(21,94,117,0.26)_100%)]",
-      "shadow-[0_4px_8px_rgba(0,0,0,0.1),0_12px_28px_rgba(14,78,99,0.26)]",
+      "border-[color-mix(in_srgb,var(--rootsy-sol-200)_34%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-sol-200)_19%,transparent)_0%,color-mix(in_srgb,var(--rootsy-sol-600)_15%,transparent)_46%,color-mix(in_srgb,var(--rootsy-sol-900)_26%,transparent)_100%)]",
+      "shadow-[0_4px_8px_rgba(0,0,0,0.1),0_12px_28px_color-mix(in_srgb,var(--rootsy-sol-800)_26%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
   },
@@ -149,48 +152,90 @@ const menuHoloShellBySection: Record<
     default: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.34]",
-      "border-[rgba(167,139,250,0.28)]",
-      "bg-[linear-gradient(168deg,rgba(196,181,253,0.22)_0%,rgba(124,58,237,0.16)_46%,rgba(52,28,100,0.24)_100%)]",
-      "shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_rgba(76,29,149,0.22),0_0_20px_rgba(124,58,237,0.14),0_0_36px_rgba(124,58,237,0.07)]",
+      "border-[color-mix(in_srgb,var(--rootsy-cielo-300)_28%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-cielo-300)_22%,transparent)_0%,color-mix(in_srgb,var(--rootsy-cielo-600)_16%,transparent)_46%,color-mix(in_srgb,var(--rootsy-cielo-900)_24%,transparent)_100%)]",
+      "shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_color-mix(in_srgb,var(--rootsy-cielo-800)_22%,transparent),0_0_20px_color-mix(in_srgb,var(--rootsy-cielo-500)_14%,transparent),0_0_36px_color-mix(in_srgb,var(--rootsy-cielo-500)_7%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
     dock: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.24]",
-      "border-[rgba(167,139,250,0.24)]",
-      "bg-[linear-gradient(168deg,rgba(196,181,253,0.13)_0%,rgba(124,58,237,0.1)_46%,rgba(52,28,100,0.18)_100%)]",
-      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(76,29,149,0.2),0_0_16px_rgba(124,58,237,0.1)]",
+      "border-[color-mix(in_srgb,var(--rootsy-cielo-300)_24%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-cielo-300)_13%,transparent)_0%,color-mix(in_srgb,var(--rootsy-cielo-600)_10%,transparent)_46%,color-mix(in_srgb,var(--rootsy-cielo-900)_18%,transparent)_100%)]",
+      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_color-mix(in_srgb,var(--rootsy-cielo-800)_20%,transparent),0_0_16px_color-mix(in_srgb,var(--rootsy-cielo-500)_10%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
     muted: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.1]",
-      "border-[rgba(167,139,250,0.14)]",
-      "bg-[rgba(52,28,100,0.1)]",
+      "border-[color-mix(in_srgb,var(--rootsy-cielo-300)_14%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-cielo-900)_10%,transparent)]",
       "backdrop-blur-[2px]",
       "shadow-none",
     ),
     placed: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.26]",
-      "border-[rgba(167,139,250,0.26)]",
-      "bg-[linear-gradient(168deg,rgba(196,181,253,0.14)_0%,rgba(124,58,237,0.11)_46%,rgba(52,28,100,0.16)_100%)]",
-      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_20px_rgba(76,29,149,0.16)]",
+      "border-[color-mix(in_srgb,var(--rootsy-cielo-300)_26%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-cielo-300)_14%,transparent)_0%,color-mix(in_srgb,var(--rootsy-cielo-600)_11%,transparent)_46%,color-mix(in_srgb,var(--rootsy-cielo-900)_16%,transparent)_100%)]",
+      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_20px_color-mix(in_srgb,var(--rootsy-cielo-800)_16%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
     overlay: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.34]",
-      "border-[rgba(196,181,253,0.34)]",
-      "bg-[linear-gradient(168deg,rgba(196,181,253,0.19)_0%,rgba(124,58,237,0.15)_46%,rgba(52,28,100,0.26)_100%)]",
-      "shadow-[0_4px_8px_rgba(0,0,0,0.1),0_12px_28px_rgba(76,29,149,0.26)]",
+      "border-[color-mix(in_srgb,var(--rootsy-cielo-200)_34%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-cielo-200)_19%,transparent)_0%,color-mix(in_srgb,var(--rootsy-cielo-600)_15%,transparent)_46%,color-mix(in_srgb,var(--rootsy-cielo-900)_26%,transparent)_100%)]",
+      "shadow-[0_4px_8px_rgba(0,0,0,0.1),0_12px_28px_color-mix(in_srgb,var(--rootsy-cielo-800)_26%,transparent)]",
+      menuHoloPlanetShellDepthClass,
+    ),
+  },
+  lava: {
+    default: cn(
+      menuHoloGlassBase,
+      "backdrop-saturate-[1.36]",
+      "border-[color-mix(in_srgb,var(--rootsy-lava-300)_28%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-lava-300)_22%,transparent)_0%,color-mix(in_srgb,var(--rootsy-lava-600)_16%,transparent)_46%,color-mix(in_srgb,var(--rootsy-lava-900)_24%,transparent)_100%)]",
+      "shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_color-mix(in_srgb,var(--rootsy-lava-800)_22%,transparent),0_0_20px_color-mix(in_srgb,var(--rootsy-lava-500)_14%,transparent),0_0_36px_color-mix(in_srgb,var(--rootsy-lava-500)_7%,transparent)]",
+      menuHoloPlanetShellDepthClass,
+    ),
+    dock: cn(
+      menuHoloGlassBase,
+      "backdrop-saturate-[1.26]",
+      "border-[color-mix(in_srgb,var(--rootsy-lava-300)_24%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-lava-300)_13%,transparent)_0%,color-mix(in_srgb,var(--rootsy-lava-600)_10%,transparent)_46%,color-mix(in_srgb,var(--rootsy-lava-900)_18%,transparent)_100%)]",
+      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_color-mix(in_srgb,var(--rootsy-lava-800)_20%,transparent),0_0_16px_color-mix(in_srgb,var(--rootsy-lava-500)_10%,transparent)]",
+      menuHoloPlanetShellDepthClass,
+    ),
+    muted: cn(
+      menuHoloGlassBase,
+      "backdrop-saturate-[1.1]",
+      "border-[color-mix(in_srgb,var(--rootsy-lava-300)_14%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-lava-900)_10%,transparent)]",
+      "backdrop-blur-[2px]",
+      "shadow-none",
+    ),
+    placed: cn(
+      menuHoloGlassBase,
+      "backdrop-saturate-[1.28]",
+      "border-[color-mix(in_srgb,var(--rootsy-lava-300)_26%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-lava-300)_14%,transparent)_0%,color-mix(in_srgb,var(--rootsy-lava-600)_11%,transparent)_46%,color-mix(in_srgb,var(--rootsy-lava-900)_16%,transparent)_100%)]",
+      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_20px_color-mix(in_srgb,var(--rootsy-lava-800)_16%,transparent)]",
+      menuHoloPlanetShellDepthClass,
+    ),
+    overlay: cn(
+      menuHoloGlassBase,
+      "backdrop-saturate-[1.36]",
+      "border-[color-mix(in_srgb,var(--rootsy-lava-200)_34%,transparent)]",
+      "bg-[linear-gradient(168deg,color-mix(in_srgb,var(--rootsy-lava-200)_19%,transparent)_0%,color-mix(in_srgb,var(--rootsy-lava-600)_15%,transparent)_46%,color-mix(in_srgb,var(--rootsy-lava-900)_26%,transparent)_100%)]",
+      "shadow-[0_4px_8px_rgba(0,0,0,0.1),0_12px_28px_color-mix(in_srgb,var(--rootsy-lava-800)_26%,transparent)]",
       menuHoloPlanetShellDepthClass,
     ),
   },
 }
 
 export function menuHoloIconShellForSection(
-  section: MenuSectionKey,
+  section: MenuPlanetRealm,
   variant: MenuHoloIconVariant = "default",
 ): string {
   return menuHoloShellBySection[section][variant]
@@ -203,22 +248,26 @@ export function menuHoloIconShellForVariant(
   return menuHoloIconShellForSection("operar", variant)
 }
 
-const menuHoloHoverBySection: Record<MenuSectionKey, string> = {
+const menuHoloHoverBySection: Record<MenuPlanetRealm, string> = {
   operar: cn(
-    "group-hover:border-[rgba(111,216,156,0.36)]",
-    "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.16)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_rgba(14,87,57,0.26),0_0_24px_rgba(36,173,106,0.18),0_0_40px_rgba(36,173,106,0.09),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
+    "group-hover:border-[color-mix(in_srgb,var(--rootsy-savia-300)_36%,transparent)]",
+    "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.16)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_color-mix(in_srgb,var(--rootsy-savia-800)_26%,transparent),0_0_24px_color-mix(in_srgb,var(--rootsy-savia-500)_18%,transparent),0_0_40px_color-mix(in_srgb,var(--rootsy-savia-500)_9%,transparent),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
   ),
   administrar: cn(
-    "group-hover:border-[rgba(125,211,252,0.36)]",
-    "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.16)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_rgba(14,78,99,0.26),0_0_24px_rgba(8,145,178,0.18),0_0_40px_rgba(8,145,178,0.09),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
+    "group-hover:border-[color-mix(in_srgb,var(--rootsy-sol-300)_36%,transparent)]",
+    "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.16)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_color-mix(in_srgb,var(--rootsy-sol-800)_26%,transparent),0_0_24px_color-mix(in_srgb,var(--rootsy-sol-500)_18%,transparent),0_0_40px_color-mix(in_srgb,var(--rootsy-sol-500)_9%,transparent),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
   ),
   configurar: cn(
-    "group-hover:border-[rgba(167,139,250,0.36)]",
-    "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.16)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_rgba(76,29,149,0.26),0_0_24px_rgba(124,58,237,0.18),0_0_40px_rgba(124,58,237,0.09),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
+    "group-hover:border-[color-mix(in_srgb,var(--rootsy-cielo-300)_36%,transparent)]",
+    "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.16)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_color-mix(in_srgb,var(--rootsy-cielo-800)_26%,transparent),0_0_24px_color-mix(in_srgb,var(--rootsy-cielo-500)_18%,transparent),0_0_40px_color-mix(in_srgb,var(--rootsy-cielo-500)_9%,transparent),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
+  ),
+  lava: cn(
+    "group-hover:border-[color-mix(in_srgb,var(--rootsy-lava-300)_36%,transparent)]",
+    "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.16)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_color-mix(in_srgb,var(--rootsy-lava-800)_26%,transparent),0_0_24px_color-mix(in_srgb,var(--rootsy-lava-500)_18%,transparent),0_0_40px_color-mix(in_srgb,var(--rootsy-lava-500)_9%,transparent),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
   ),
 }
 
-export function menuHoloIconHoverForSection(section: MenuSectionKey): string {
+export function menuHoloIconHoverForSection(section: MenuPlanetRealm): string {
   return menuHoloHoverBySection[section]
 }
 
@@ -230,44 +279,50 @@ export const menuHoloChromeVeilClass =
   "bg-[linear-gradient(168deg,rgba(255,255,255,0.13)_0%,rgba(255,255,255,0.04)_34%,transparent_66%)]"
 
 /** Núcleo planetario — corazón del color, bajo el velo. */
-const menuHoloChromeCoreBySection: Record<MenuSectionKey, string> = {
+const menuHoloChromeCoreBySection: Record<MenuPlanetRealm, string> = {
   operar:
-    "bg-[radial-gradient(circle_at_50%_62%,rgba(63,200,126,0.22)_0%,rgba(36,173,106,0.1)_40%,transparent_66%)]",
+    "bg-[radial-gradient(circle_at_50%_62%,color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)_0%,color-mix(in_srgb,var(--rootsy-savia-600)_10%,transparent)_40%,transparent_66%)]",
   administrar:
-    "bg-[radial-gradient(circle_at_50%_62%,rgba(103,232,249,0.22)_0%,rgba(8,145,178,0.1)_40%,transparent_66%)]",
+    "bg-[radial-gradient(circle_at_50%_62%,color-mix(in_srgb,var(--rootsy-sol-400)_22%,transparent)_0%,color-mix(in_srgb,var(--rootsy-sol-600)_10%,transparent)_40%,transparent_66%)]",
   configurar:
-    "bg-[radial-gradient(circle_at_50%_62%,rgba(167,139,250,0.22)_0%,rgba(124,58,237,0.1)_40%,transparent_66%)]",
+    "bg-[radial-gradient(circle_at_50%_62%,color-mix(in_srgb,var(--rootsy-cielo-400)_22%,transparent)_0%,color-mix(in_srgb,var(--rootsy-cielo-600)_10%,transparent)_40%,transparent_66%)]",
+  lava:
+    "bg-[radial-gradient(circle_at_50%_62%,color-mix(in_srgb,var(--rootsy-lava-400)_22%,transparent)_0%,color-mix(in_srgb,var(--rootsy-lava-600)_10%,transparent)_40%,transparent_66%)]",
 }
 
 /** Luz del cielo — reflejo que ilumina, no que tapa. */
-const menuHoloChromeSkyBySection: Record<MenuSectionKey, string> = {
+const menuHoloChromeSkyBySection: Record<MenuPlanetRealm, string> = {
   operar:
-    "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.24)_0%,rgba(168,235,196,0.16)_30%,transparent_58%)]",
+    "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.24)_0%,color-mix(in_srgb,var(--rootsy-savia-200)_16%,transparent)_30%,transparent_58%)]",
   administrar:
-    "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.24)_0%,rgba(186,230,253,0.16)_30%,transparent_58%)]",
+    "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.24)_0%,color-mix(in_srgb,var(--rootsy-sol-200)_16%,transparent)_30%,transparent_58%)]",
   configurar:
-    "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.24)_0%,rgba(221,214,254,0.16)_30%,transparent_58%)]",
+    "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.24)_0%,color-mix(in_srgb,var(--rootsy-cielo-200)_16%,transparent)_30%,transparent_58%)]",
+  lava:
+    "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.24)_0%,color-mix(in_srgb,var(--rootsy-lava-200)_16%,transparent)_30%,transparent_58%)]",
 }
 
 /** Peso al suelo — ancla el planeta sin apagar su color. */
-const menuHoloChromeWeightBySection: Record<MenuSectionKey, string> = {
+const menuHoloChromeWeightBySection: Record<MenuPlanetRealm, string> = {
   operar:
     "bg-[linear-gradient(to_bottom,transparent_58%,rgba(0,0,0,0.14)_100%)]",
   administrar:
     "bg-[linear-gradient(to_bottom,transparent_58%,rgba(0,0,0,0.14)_100%)]",
   configurar:
     "bg-[linear-gradient(to_bottom,transparent_58%,rgba(0,0,0,0.14)_100%)]",
+  lava:
+    "bg-[linear-gradient(to_bottom,transparent_58%,rgba(0,0,0,0.14)_100%)]",
 }
 
-export function menuHoloChromeCoreClass(section: MenuSectionKey): string {
+export function menuHoloChromeCoreClass(section: MenuPlanetRealm): string {
   return menuHoloChromeCoreBySection[section]
 }
 
-export function menuHoloChromeSkyClass(section: MenuSectionKey): string {
+export function menuHoloChromeSkyClass(section: MenuPlanetRealm): string {
   return menuHoloChromeSkyBySection[section]
 }
 
-export function menuHoloChromeWeightClass(section: MenuSectionKey): string {
+export function menuHoloChromeWeightClass(section: MenuPlanetRealm): string {
   return menuHoloChromeWeightBySection[section]
 }
 
@@ -336,16 +391,16 @@ export function menuSectionPlanetDotClass(
 ): string {
   const planetDot: Record<MenuSectionKey, { on: string; off: string }> = {
     operar: {
-      on: "size-2 bg-[rgba(111,216,156,0.95)] shadow-[0_0_10px_rgba(36,173,106,0.42)]",
-      off: "size-1.5 bg-[rgba(111,216,156,0.38)]",
+      on: "size-2 bg-[color-mix(in_srgb,var(--rootsy-savia-300)_95%,transparent)] shadow-[0_0_10px_color-mix(in_srgb,var(--rootsy-savia-500)_42%,transparent)]",
+      off: "size-1.5 bg-[color-mix(in_srgb,var(--rootsy-savia-300)_38%,transparent)]",
     },
     administrar: {
-      on: "size-2 bg-[rgba(103,232,249,0.95)] shadow-[0_0_10px_rgba(8,145,178,0.42)]",
-      off: "size-1.5 bg-[rgba(103,232,249,0.38)]",
+      on: "size-2 bg-[color-mix(in_srgb,var(--rootsy-sol-300)_95%,transparent)] shadow-[0_0_10px_color-mix(in_srgb,var(--rootsy-sol-500)_42%,transparent)]",
+      off: "size-1.5 bg-[color-mix(in_srgb,var(--rootsy-sol-300)_38%,transparent)]",
     },
     configurar: {
-      on: "size-2 bg-[rgba(167,139,250,0.95)] shadow-[0_0_10px_rgba(124,58,237,0.42)]",
-      off: "size-1.5 bg-[rgba(167,139,250,0.38)]",
+      on: "size-2 bg-[color-mix(in_srgb,var(--rootsy-cielo-300)_95%,transparent)] shadow-[0_0_10px_color-mix(in_srgb,var(--rootsy-cielo-500)_42%,transparent)]",
+      off: "size-1.5 bg-[color-mix(in_srgb,var(--rootsy-cielo-300)_38%,transparent)]",
     },
   }
   return cn(
@@ -391,19 +446,19 @@ export const menuHoloLabelDockPlacedClass = cn(
 
 const menuHoloSkeletonIconBySection: Record<MenuSectionKey, string> = {
   operar: cn(
-    "size-[72px] rounded-[20px] border border-[rgba(111,216,156,0.18)]",
-    "bg-[linear-gradient(165deg,rgba(111,216,156,0.1)_0%,rgba(10,64,48,0.16)_100%)]",
-    "backdrop-blur-[3px] animate-pulse shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(14,87,57,0.14)]",
+    "size-[72px] rounded-[20px] border border-[color-mix(in_srgb,var(--rootsy-savia-300)_18%,transparent)]",
+    "bg-[linear-gradient(165deg,color-mix(in_srgb,var(--rootsy-savia-300)_10%,transparent)_0%,color-mix(in_srgb,var(--rootsy-savia-900)_16%,transparent)_100%)]",
+    "backdrop-blur-[3px] animate-pulse shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_color-mix(in_srgb,var(--rootsy-savia-800)_14%,transparent)]",
   ),
   administrar: cn(
-    "size-[72px] rounded-[20px] border border-[rgba(125,211,252,0.18)]",
-    "bg-[linear-gradient(165deg,rgba(186,230,253,0.1)_0%,rgba(21,94,117,0.16)_100%)]",
-    "backdrop-blur-[3px] animate-pulse shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(14,78,99,0.14)]",
+    "size-[72px] rounded-[20px] border border-[color-mix(in_srgb,var(--rootsy-sol-300)_18%,transparent)]",
+    "bg-[linear-gradient(165deg,color-mix(in_srgb,var(--rootsy-sol-300)_10%,transparent)_0%,color-mix(in_srgb,var(--rootsy-sol-900)_16%,transparent)_100%)]",
+    "backdrop-blur-[3px] animate-pulse shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_color-mix(in_srgb,var(--rootsy-sol-800)_14%,transparent)]",
   ),
   configurar: cn(
-    "size-[72px] rounded-[20px] border border-[rgba(167,139,250,0.18)]",
-    "bg-[linear-gradient(165deg,rgba(196,181,253,0.1)_0%,rgba(52,28,100,0.16)_100%)]",
-    "backdrop-blur-[3px] animate-pulse shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(76,29,149,0.14)]",
+    "size-[72px] rounded-[20px] border border-[color-mix(in_srgb,var(--rootsy-cielo-300)_18%,transparent)]",
+    "bg-[linear-gradient(165deg,color-mix(in_srgb,var(--rootsy-cielo-300)_10%,transparent)_0%,color-mix(in_srgb,var(--rootsy-cielo-900)_16%,transparent)_100%)]",
+    "backdrop-blur-[3px] animate-pulse shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_color-mix(in_srgb,var(--rootsy-cielo-800)_14%,transparent)]",
   ),
 }
 
@@ -422,16 +477,18 @@ export const menuHoloTileSkeletonLabelClass = cn(
   "bg-[rgba(8,28,38,0.05)] animate-pulse",
 )
 
-const menuHoloFocusRingBySection: Record<MenuSectionKey, string> = {
+const menuHoloFocusRingBySection: Record<MenuPlanetRealm, string> = {
   operar:
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(111,216,156,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-300)_42%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
   administrar:
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(103,232,249,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-sol-300)_42%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
   configurar:
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(167,139,250,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-cielo-300)_42%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+  lava:
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-lava-300)_42%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
 }
 
-export function menuHoloFocusRingForSection(section: MenuSectionKey): string {
+export function menuHoloFocusRingForSection(section: MenuPlanetRealm): string {
   return menuHoloFocusRingBySection[section]
 }
 
@@ -441,7 +498,7 @@ export const menuHoloFocusRingClass = menuHoloFocusRingBySection.operar
 export const menuHoloTileMotionClass = cn(
   "transition-transform",
   menuHoloEase,
-  "hover:scale-[1.015] active:scale-[0.992]",
+  "group-hover:scale-[1.015] group-active:scale-[0.992]",
 )
 
 /** Ritmo de vida único por ser — lento y delicado. */
@@ -462,18 +519,21 @@ export const menuHoloPlanetLifeClass = cn(
 
 export const menuHoloChromeCoreLifeClass = "menu-planet-core-life"
 
-const MENU_CORE_LIFE_DURATION: Record<MenuSectionKey, string> = {
+const MENU_CORE_LIFE_DURATION: Record<MenuPlanetRealm, string> = {
   operar: "7.8s",
   administrar: "7.2s",
   configurar: "8.4s",
+  lava: "7.4s",
 }
 
 /** Pulso del núcleo — desfasado del cuerpo, como un corazón planetario. */
-export function menuPlanetCoreLifeStyle(section: MenuSectionKey): {
+export function menuPlanetCoreLifeStyle(section: MenuPlanetRealm): {
   animationDelay: string
   animationDuration: string
 } {
-  const sectionOffset = { operar: 0, administrar: 1.1, configurar: 2.3 }[section]
+  const sectionOffset = { operar: 0, administrar: 1.1, configurar: 2.3, lava: 0.7 }[
+    section
+  ]
   return {
     animationDelay: `${-sectionOffset}s`,
     animationDuration: MENU_CORE_LIFE_DURATION[section],

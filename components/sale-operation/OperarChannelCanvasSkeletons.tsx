@@ -9,7 +9,7 @@ import { OperarCanvasToolbarColumnHeaderRow } from "@/components/sale-operation/
 import { operarCanvasToolbarShellClass } from "@/components/sale-operation/operarCanvasToolbarStyles"
 import { cn } from "@/lib/utils"
 
-/** Skeleton canvas oscuro — bajo contraste sobre sombra-800. */
+/** Skeleton canvas oscuro — bajo contraste sobre sombra-950. */
 const operarCanvasSkeletonPulseClass = "animate-pulse"
 
 const operarCanvasSkeletonBlockClass = cn(

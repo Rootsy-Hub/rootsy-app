@@ -1,6 +1,6 @@
 "use client"
 
-import { EterIconButton } from "@/components/eter/EterIconButton"
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   Sheet,
   SheetContent,
@@ -9,29 +9,39 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { isDevModeEnabled } from "@/lib/devmode"
-import {
-  SALE_QUERY_SPEC,
-  type SaleQuerySpecCall,
-  type SaleQuerySpecDomain,
-  type SaleQuerySpecMoment,
-  type SaleQuerySpecPlace,
-} from "@/lib/devmode/saleQuerySpec"
+import type {
+  QuerySpecCall,
+  QuerySpecDomain,
+  QuerySpecMoment,
+  QuerySpecPlace,
+} from "@/lib/devmode/querySpec"
+import { SALE_QUERY_SPEC } from "@/lib/devmode/saleQuerySpec"
 import { Bug, ChevronDown } from "lucide-react"
 import { useState } from "react"
 
-export function SaleDevtoolsPanel() {
+type OperateQueryDevtoolsPanelProps = {
+  title: string
+  spec: readonly QuerySpecPlace[]
+}
+
+export function OperateQueryDevtoolsPanel({
+  title,
+  spec,
+}: OperateQueryDevtoolsPanelProps) {
   const [open, setOpen] = useState(false)
 
   if (!isDevModeEnabled()) return null
 
   return (
     <>
-      <EterIconButton
+      <RootsIconButton
         label="Devmode"
+        semantic="tertiary"
+        atmosphere="eter"
         onClick={() => setOpen(true)}
       >
         <Bug aria-hidden />
-      </EterIconButton>
+      </RootsIconButton>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="right"
@@ -39,7 +49,7 @@ export function SaleDevtoolsPanel() {
         >
           <SheetHeader className="border-b border-[var(--rootsy-bruma-100)]">
             <SheetTitle className="font-canopy text-sm font-bold text-[var(--rootsy-bruma-900)]">
-              Devmode · Vender
+              Devmode · {title}
             </SheetTitle>
             <SheetDescription className="font-canopy text-xs text-[var(--rootsy-bruma-600)]">
               Flujo de solicitudes a la API
@@ -47,7 +57,7 @@ export function SaleDevtoolsPanel() {
           </SheetHeader>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
             <ol className="space-y-2 pb-4">
-              {SALE_QUERY_SPEC.map((place) => (
+              {spec.map((place) => (
                 <SaleQuerySpecPlaceBlock
                   key={place.place}
                   place={place}
@@ -61,10 +71,14 @@ export function SaleDevtoolsPanel() {
   )
 }
 
+export function SaleDevtoolsPanel() {
+  return <OperateQueryDevtoolsPanel title="Vender" spec={SALE_QUERY_SPEC} />
+}
+
 function SaleQuerySpecPlaceBlock({
   place,
 }: {
-  place: SaleQuerySpecPlace
+  place: QuerySpecPlace
 }) {
   return (
     <li>
@@ -95,7 +109,7 @@ function SaleQuerySpecPlaceBlock({
 function SaleQuerySpecDomainBlock({
   domain,
 }: {
-  domain: SaleQuerySpecDomain
+  domain: QuerySpecDomain
 }) {
   return (
     <li>
@@ -123,7 +137,7 @@ function SaleQuerySpecDomainBlock({
 function SaleQuerySpecMomentBlock({
   moment,
 }: {
-  moment: SaleQuerySpecMoment
+  moment: QuerySpecMoment
 }) {
   return (
     <li>
@@ -142,7 +156,7 @@ function SaleQuerySpecMomentBlock({
   )
 }
 
-function SaleQuerySpecCallBlock({ call }: { call: SaleQuerySpecCall }) {
+function SaleQuerySpecCallBlock({ call }: { call: QuerySpecCall }) {
   return (
     <li>
       <details className="group/call">

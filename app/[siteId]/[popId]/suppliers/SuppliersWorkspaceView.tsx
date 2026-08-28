@@ -1,6 +1,7 @@
 "use client"
 
 import "@/app/library/color/rootsyNaturePalette.css"
+import { RootsIconButton } from "@/components/rootsy-button"
 import type {
   SupplierTableRow,
   UpsertPopSupplierInput,
@@ -26,12 +27,11 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListShell,
   tableListInfiniteFromQuery,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
-  DataWorkspaceTableIconAction,
   WorkspaceTableStatusBadge,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
@@ -62,7 +62,6 @@ import {
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { RootsNaturePill } from "@/components/rootsy-pill"
 import {
   TableBody,
@@ -104,7 +103,7 @@ import {
   usePathname,
   useRouter,
   useSearchParams,
-} from "next/navigation"
+} from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,
@@ -607,14 +606,15 @@ export function SuppliersWorkspaceView() {
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
         headerActions: canCreate ? (
-          <DataWorkspaceHeaderIconButton
+          <RootsIconButton
             label="Nuevo proveedor"
-            headerVariant={dataWorkspaceTableListHeaderVariant}
-            primary
+            semantic="primary"
+            atmosphere="eter"
+            size="default"
             onClick={openCreate}
           >
             <Plus className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
+          </RootsIconButton>
         ) : null,
       }}
       error={error}
@@ -682,6 +682,7 @@ export function SuppliersWorkspaceView() {
           />
 
         <DataWorkspaceTableListShell
+          lockScroll={listFetching}
           activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -756,6 +757,18 @@ export function SuppliersWorkspaceView() {
               />
             ) : null
           }
+            footerFloating
+            footerFloatingCentered
+            scrollResetKey={workspaceParsed.page}
+            footer={
+              <DataWorkspaceTableListPageDock
+                listFetching={listFetching}
+                loadedCount={rows.length}
+                totalCount={totalCount}
+                page={workspaceParsed.page}
+                onPageJump={(nextPage) => replaceWorkspaceQuery({ page: nextPage })}
+              />
+            }
             infinite={tableListInfiniteFromQuery(suppliersQuery, "suppliers")}
         >
           <DataWorkspaceListTableFrame>
@@ -972,19 +985,28 @@ export function SuppliersWorkspaceView() {
                         <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
                           <div className="flex items-center justify-end gap-1">
                             {canUpdate ? (
-                              <DataWorkspaceTableIconAction
+                              <RootsIconButton
+                                type="button"
                                 label={`Editar ${r.name || "proveedor"}`}
-                                icon={Pencil}
+                                tone="action"
+                                intent="edit"
+                                size="compact"
                                 onClick={() => openEdit(r)}
-                              />
+                              >
+                                <Pencil />
+                              </RootsIconButton>
                             ) : null}
                             {canDelete ? (
-                              <DataWorkspaceTableIconAction
+                              <RootsIconButton
+                                type="button"
                                 label={`Eliminar ${r.name || "proveedor"}`}
-                                icon={Trash2}
-                                destructive
+                                tone="action"
+                                intent="destructive"
+                                size="compact"
                                 onClick={() => openDelete(r)}
-                              />
+                              >
+                                <Trash2 />
+                              </RootsIconButton>
                             ) : null}
                           </div>
                         </TableCell>

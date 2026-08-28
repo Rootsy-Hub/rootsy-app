@@ -1,6 +1,7 @@
 "use client"
 
 import "@/app/library/color/rootsyNaturePalette.css"
+import { RootsIconButton } from "@/components/rootsy-button"
 import type {
   ClientTableRow,
   UpsertPopClientInput,
@@ -30,12 +31,11 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListShell,
   tableListInfiniteFromQuery,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
-  DataWorkspaceTableIconAction,
   WorkspaceTableStatusBadge,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
@@ -71,7 +71,6 @@ import {
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   TableBody,
   TableCell,
@@ -112,7 +111,7 @@ import {
   usePathname,
   useRouter,
   useSearchParams,
-} from "next/navigation"
+} from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,
@@ -681,14 +680,15 @@ export function ClientsWorkspaceView() {
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "CRM",
         headerActions: canCreate ? (
-          <DataWorkspaceHeaderIconButton
+          <RootsIconButton
             label="Nuevo cliente"
-            headerVariant={dataWorkspaceTableListHeaderVariant}
-            primary
+            semantic="primary"
+            atmosphere="eter"
+            size="default"
             onClick={openCreate}
           >
             <Plus className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
+          </RootsIconButton>
         ) : null,
       }}
       error={error}
@@ -754,6 +754,7 @@ export function ClientsWorkspaceView() {
           />
 
         <DataWorkspaceTableListShell
+          lockScroll={listFetching}
           activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -823,6 +824,18 @@ export function ClientsWorkspaceView() {
               !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
               ) : null
+            }
+            footerFloating
+            footerFloatingCentered
+            scrollResetKey={workspaceParsed.page}
+            footer={
+              <DataWorkspaceTableListPageDock
+                listFetching={listFetching}
+                loadedCount={rows.length}
+                totalCount={totalCount}
+                page={workspaceParsed.page}
+                onPageJump={(nextPage) => replaceWorkspaceQuery({ page: nextPage })}
+              />
             }
             infinite={tableListInfiniteFromQuery(clientsTableQuery, "clients")}
         >
@@ -1104,19 +1117,28 @@ export function ClientsWorkspaceView() {
                           <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
                             <div className="flex items-center justify-end gap-1">
                               {canUpdate ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label={`Editar ${r.name || "cliente"}`}
-                                  icon={Pencil}
+                                  tone="action"
+                                  intent="edit"
+                                  size="compact"
                                   onClick={() => openEdit(r)}
-                                />
+                                >
+                                  <Pencil />
+                                </RootsIconButton>
                               ) : null}
                               {canDelete ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label={`Eliminar ${r.name || "cliente"}`}
-                                  icon={Trash2}
-                                  destructive
+                                  tone="action"
+                                  intent="destructive"
+                                  size="compact"
                                   onClick={() => openDelete(r)}
-                                />
+                                >
+                                  <Trash2 />
+                                </RootsIconButton>
                               ) : null}
                             </div>
                           </TableCell>

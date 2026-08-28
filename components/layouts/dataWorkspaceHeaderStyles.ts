@@ -23,7 +23,11 @@ import {
 } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import { cn } from "@/lib/utils"
 import { popHeaderGlassBorderClass } from "@/components/layouts/popHeaderBackdropStyles"
-import { eterHeaderDropdownSurfaceClass } from "@/lib/eter/eterChrome"
+import {
+  eterHeaderBodyClass,
+  eterHeaderDropdownSurfaceClass,
+  eterHeaderMutedClass,
+} from "@/lib/eter/eterChrome"
 
 export type DataWorkspaceHeaderVariant = "default" | "dark" | "night" | "tables"
 export const nightForestSurfaceClass =
@@ -133,46 +137,6 @@ export function dataWorkspaceHeaderChromeButtonClass(
     dataWorkspaceHeaderButtonFocusClass,
     dataWorkspaceHeaderButtonOpenClass(headerVariant),
     "border-foreground/10 bg-secondary text-foreground/70 hover:border-primary/25 hover:bg-muted hover:text-foreground",
-  )
-}
-
-export function dataWorkspaceHeaderIconButtonClass(
-  headerVariant: DataWorkspaceHeaderVariant = "default",
-  options?: { primary?: boolean },
-): string {
-  const primary = options?.primary ?? false
-  if (isLayoutsTablesHeader(headerVariant)) {
-    return cn(
-      "group",
-      layoutsTablesChromeIconButtonClass,
-      dataWorkspaceHeaderButtonFocusClass,
-      dataWorkspaceHeaderButtonOpenClass(headerVariant),
-      "disabled:pointer-events-none disabled:opacity-40",
-    )
-  }
-  if (isNightForestHeader(headerVariant)) {
-    return cn(
-      "group inline-flex size-10 shrink-0 items-center justify-center rounded-xl border transition-all",
-      dataWorkspaceHeaderButtonFocusClass,
-      dataWorkspaceHeaderButtonOpenClass(headerVariant),
-      nightForestIconButtonStarSkinClass,
-      "disabled:pointer-events-none disabled:opacity-40",
-    )
-  }
-  if (primary) {
-    return cn(
-      "group inline-flex size-10 shrink-0 items-center justify-center rounded-xl border transition-all",
-      "border-primary/30 bg-primary/10 text-primary",
-      "hover:border-primary/40 hover:bg-primary/15",
-      "disabled:pointer-events-none disabled:opacity-40",
-    )
-  }
-  return cn(
-    "group inline-flex size-10 shrink-0 items-center justify-center rounded-xl border transition-all",
-    dataWorkspaceHeaderButtonFocusClass,
-    dataWorkspaceHeaderButtonOpenClass(headerVariant),
-    "border-foreground/10 bg-secondary text-muted-foreground hover:border-primary/25 hover:bg-muted hover:text-foreground",
-    "disabled:pointer-events-none disabled:opacity-40",
   )
 }
 
@@ -434,6 +398,26 @@ export function dataWorkspaceHeaderEdgeToggleClass(
     )
   }
   return "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+}
+
+export function dataWorkspaceHeaderIdentityNameClass(
+  headerVariant: DataWorkspaceHeaderVariant = "default",
+): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return "antialiased text-[var(--rootsy-sombra-50)]"
+  }
+  if (isNightForestHeader(headerVariant)) return eterHeaderBodyClass
+  return "antialiased text-[var(--rootsy-bruma-950)]"
+}
+
+export function dataWorkspaceHeaderIdentityMutedClass(
+  headerVariant: DataWorkspaceHeaderVariant = "default",
+): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return "text-[var(--rootsy-sombra-300)]"
+  }
+  if (isNightForestHeader(headerVariant)) return eterHeaderMutedClass
+  return "text-[var(--rootsy-bruma-700)]"
 }
 
 export function dataWorkspaceHeaderRoleLabelClass(

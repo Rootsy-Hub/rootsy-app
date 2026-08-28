@@ -11,9 +11,10 @@ import {
   type SaleCatalogClient,
   type SaleCatalogPaymentOption,
 } from "@/app/[siteId]/[popId]/sale/actions"
+import { useCajasRealtime } from "@/hooks/useCajasRealtime"
 import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
+import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
 import { useSaleCatalogLoader } from "@/hooks/useSaleCatalogLoader"
-import { usePopCatalogRealtime } from "@/hooks/usePopCatalogRealtime"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -92,7 +93,7 @@ import type {
 } from "@/lib/operationPartyPicker"
 import { buildOperationPartyManualSelection } from "@/lib/operationPartyPicker"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,
@@ -221,7 +222,6 @@ export function SaleWorkspaceView() {
   const searchParams = useSearchParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
-  usePopCatalogRealtime(popId)
   const queryClient = useQueryClient()
   const quoteIdFromUrl = searchParams.get("quoteId")
   const fiscalBootstrap = usePopSaleComprobanteFiscalContext()
@@ -237,9 +237,6 @@ export function SaleWorkspaceView() {
   )
 
   const {
-    catalogArticles,
-    catalogPromotions,
-    catalogQuantityDeals,
     treasuryPaymentContext,
     canReadClients,
     canReadPaymentMethods,
@@ -252,13 +249,17 @@ export function SaleWorkspaceView() {
     hasValidPopFiscalCuit: apiHasValidPopFiscalCuit,
     popEmisorIvaCondition: apiPopEmisorIvaCondition,
     comprobanteOptions,
+    comprobanteEmitter,
     comprobantesLoaded,
     mergeCatalogArticles,
-    ensureCatalogArticles,
     catalogLoading: catalogQueryLoading,
     catalogError: catalogQueryError,
   } = useSaleCatalogLoader(popId, { enabled: Boolean(popId && siteId) })
+  const saleBoardPromotions = useSaleBoardPromotions(popId, {
+    enabled: Boolean(popId && siteId),
+  })
   const catalogLoading = !popId || !siteId ? false : catalogQueryLoading
+  useCajasRealtime(popId, user?.id)
   useSaleOpenCashSessionToasts(
     siteId,
     popId,
@@ -276,7 +277,7 @@ export function SaleWorkspaceView() {
   const bootstrapLoaded =
     comprobantesLoaded || fiscalBootstrap.bootstrapLoaded
 
-  const cartScrollHighlight = useCartListScrollHighlight()
+  const cartScrollHighlight = useCartListScrollHighlight(quoteIdFromUrl)
 
   const {
     carrito,
@@ -300,20 +301,13 @@ export function SaleWorkspaceView() {
     promoWizardTarget,
     confirmarPromoWizard,
     restaurarDesdeCheckout,
+    cartReady,
   } = useSaleTicketCart({
-    menuArticles: catalogArticles,
-    menuPromotions: catalogPromotions,
-    menuQuantityDeals: catalogQuantityDeals,
+    popId,
+    menuPromotions: saleBoardPromotions.combos,
+    menuQuantityDeals: saleBoardPromotions.quantityDeals,
     onCartLineAdded: cartScrollHighlight.notifyLineAdded,
   })
-
-  useEffect(() => {
-    void ensureCatalogArticles(
-      carrito
-        .filter((item) => (item.kind ?? "article") !== "promotion")
-        .map((item) => item.productoId),
-    )
-  }, [carrito, ensureCatalogArticles])
 
   const [clienteSeleccionado, setClienteSeleccionado] =
     useState<ClienteVentaSeleccionado | null>(null)
@@ -426,6 +420,7 @@ export function SaleWorkspaceView() {
 
   const quoteLoadRef = useRef<string | null>(null)
   const quoteLoadingRef = useRef<string | null>(null)
+  const saleIdempotencyKeyRef = useRef(crypto.randomUUID())
   const [quoteRestorePending, setQuoteRestorePending] = useState(
     () => Boolean(quoteIdFromUrl),
   )
@@ -601,6 +596,7 @@ export function SaleWorkspaceView() {
       const res = await completeSale(popId, {
         siteId,
         priceListId: getSalePriceListSession(popId),
+        idempotencyKey: saleIdempotencyKeyRef.current,
         lines: buildCompleteSaleLinesFromCart({
           carrito,
           quantityDealApplications,
@@ -635,6 +631,7 @@ export function SaleWorkspaceView() {
         setVentaError(res.error)
         return
       }
+      saleIdempotencyKeyRef.current = crypto.randomUUID()
       setVenderConfirmOpen(false)
       limpiarVenta()
       if (popId) invalidatePopOperateCatalogs(queryClient, popId)
@@ -948,7 +945,7 @@ export function SaleWorkspaceView() {
   ])
 
   useEffect(() => {
-    if (!quoteIdFromUrl || !popId || catalogLoading || !bootstrapLoaded) return
+    if (!quoteIdFromUrl || !popId || catalogLoading || !bootstrapLoaded || !cartReady) return
     if (quoteLoadRef.current === quoteIdFromUrl) return
     if (quoteLoadingRef.current === quoteIdFromUrl) return
 
@@ -974,6 +971,7 @@ export function SaleWorkspaceView() {
   }, [
     aplicarPresupuestoEnVenta,
     bootstrapLoaded,
+    cartReady,
     catalogLoading,
     popId,
     quoteIdFromUrl,
@@ -1069,7 +1067,7 @@ export function SaleWorkspaceView() {
   ])
 
   const onClienteToolbarClick = () => {
-    if (!canReadClients) return
+    if (!canReadClients || !openCashSession) return
     setClienteModalAbierto(true)
   }
 
@@ -1251,6 +1249,7 @@ export function SaleWorkspaceView() {
                 loading={catalogLoading}
                 error={catalogError}
                 onAddProduct={handleAddProduct}
+                addDisabled={!cartReady || ventaSubmitting}
                 catalogSidebarOpen={catalogSidebarOpen}
                 onCatalogSidebarOpenChange={setCatalogSidebarOpen}
                 catalogScope="sale"
@@ -1266,9 +1265,10 @@ export function SaleWorkspaceView() {
                     ? "Sin permiso"
                     : (clienteSeleccionado?.name ?? "Elegir cliente")
                 }
-                clienteIvaLabel={ventaIvaLabel}
-                clienteDisabled={!canReadClients}
-                clienteConfigurado={Boolean(clienteSeleccionado)}
+                clienteIvaLabel={openCashSession ? ventaIvaLabel : null}
+                clienteDisabled={!canReadClients || !openCashSession}
+                clienteConfigurado={Boolean(clienteSeleccionado) && Boolean(openCashSession)}
+                toolbarDisabled={!openCashSession}
                 comprobanteLabel={comprobanteDisplayLabel}
                 pagoLabel={
                   openCashSession
@@ -1281,17 +1281,23 @@ export function SaleWorkspaceView() {
                 pagoIcon={
                   openCashSession ? toolboxPaymentDisplay.pagoIcon : undefined
                 }
-                pagoConfigurado={pagoConfigurado}
+                pagoConfigurado={pagoConfigurado && Boolean(openCashSession)}
                 pagoDisabled={!openCashSession}
                 descuentoLabel={descuentoToolboxLabel}
-                hayDescuento={hayDescuento}
+                hayDescuento={hayDescuento && Boolean(openCashSession)}
                 onClienteClick={onClienteToolbarClick}
-                onComprobanteClick={() => setComprobanteModalAbierto(true)}
+                onComprobanteClick={() => {
+                  if (!openCashSession) return
+                  setComprobanteModalAbierto(true)
+                }}
                 onPagoClick={() => {
                   if (!openCashSession) return
                   setPagoModalAbierto(true)
                 }}
-                onDescuentoClick={abrirModalDescuento}
+                onDescuentoClick={() => {
+                  if (!openCashSession) return
+                  abrirModalDescuento()
+                }}
               />
             }
             ticket={
@@ -1311,10 +1317,16 @@ export function SaleWorkspaceView() {
                   listTitle="Pedido"
                   cartScrollHighlight={cartScrollHighlight}
                   actions={{
-                    discardDisabled: !hayItemsEnPedido,
+                    discardDisabled: !hayItemsEnPedido || !openCashSession,
+                    discardTitle: !openCashSession
+                      ? "Requiere caja abierta"
+                      : undefined,
                     confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,
                     confirmLoading: ventaSubmitting,
-                    onDiscard: () => setDescartarConfirmOpen(true),
+                    onDiscard: () => {
+                      if (!openCashSession || !hayItemsEnPedido) return
+                      setDescartarConfirmOpen(true)
+                    },
                     onConfirm: () => {
                       setVentaError(null)
                       setVenderConfirmOpen(true)
@@ -1420,7 +1432,7 @@ export function SaleWorkspaceView() {
           if (popId) writeSavedSaleComprobante(popId, value)
         }}
         previewInput={comprobantePreviewInput}
-        cashRegisterId={openCashSession?.cashRegisterId ?? null}
+        emitter={comprobanteEmitter}
       />
 
       <SalePaymentMethodDialog

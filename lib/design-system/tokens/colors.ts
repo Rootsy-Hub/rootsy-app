@@ -1,129 +1,218 @@
 /**
- * Tokens de color Rootsy — fuente de verdad (TS).
+ * Paleta de color Rootsy — fuente de verdad.
  * Espejo de styles/rootsy/tokens/colors.css
  *
- * Tres familias de marca: sombra · bruma · savia
- * Suelo = chrome de piso (footer + toolbox). No es una cuarta familia de marca.
- * Cielo / sol = climas complementarios (comandas, mundos). No son marca.
- * Éter = chrome del header (espacio fuera del planeta). No es cielo de día.
- * Atmósfera = efectos decorativos de marketing (no familia aplicable a UI).
+ * Once pasos (50–950) en siete familias, más --rootsy-blanco y --rootsy-negro fuera de rampa.
+ * Éter suma un clima de paint (glow / void), no una octava familia.
+ * Si un hex no está acá, no entra.
+ *
+ * Atmósferas: éter · bruma (Sotobosque · Luz filtrada) · sombra (Sotobosque · Sombra)
+ * Funcionales: savia · cielo · sol · lava
  */
 
-export type RootsyColorFamily = "sombra" | "bruma" | "savia"
+export const ROOTSY_COLOR_STEPS = [
+  "50",
+  "100",
+  "200",
+  "300",
+  "400",
+  "500",
+  "600",
+  "700",
+  "800",
+  "900",
+  "950",
+] as const
 
-/** @deprecated Alias de migración — ceniza → sombra, landing/marketing → sombra/savia/atmosphere */
-export type LegacyRootsyColorFamily = RootsyColorFamily | "ceniza" | "landing" | "marketing" | "atmosphere"
+export type RootsyColorStepId = (typeof ROOTSY_COLOR_STEPS)[number]
 
-export const ROOTSY_COLOR_RAMPS = {
-  sombra: {
-    "950": "#050807",
-    "900": "#080C0B",
-    "800": "#0E1311",
-    "700": "#151C19",
-    "600": "#1B2420",
-    "500": "#222B27",
-    "400": "#5A6B63",
-    "300": "#8FA396",
-    border: "#2A3530",
+export type RootsyColorFamily =
+  | "eter"
+  | "bruma"
+  | "sombra"
+  | "savia"
+  | "cielo"
+  | "sol"
+  | "lava"
+
+export type RootsyAtmosphereFamily = "eter" | "bruma" | "sombra"
+export type RootsyFunctionalFamily = "savia" | "cielo" | "sol" | "lava"
+
+/** @deprecated Alias de migración — no son familias de paleta. */
+export type LegacyRootsyColorFamily =
+  | RootsyColorFamily
+  | "ceniza"
+  | "landing"
+  | "marketing"
+  | "atmosphere"
+  | "suelo"
+  | "cielo-de-dia"
+
+export type RootsyColorRamp = Record<RootsyColorStepId, string>
+
+/** Luz de Bruma clara. No es un paso de rampa. No pinta éter ni sombra. */
+export const ROOTSY_BLANCO = "#FFFFFF"
+
+/** Tope de oscuridad de Sotobosque · Sombra. No es un paso de rampa. */
+export const ROOTSY_NEGRO = "#000000"
+
+export const ROOTSY_COLOR_RAMPS: Record<RootsyColorFamily, RootsyColorRamp> = {
+  eter: {
+    "50": "#F4F5F7",
+    "100": "#E6E8EB",
+    "200": "#C9CDD2",
+    "300": "#9A9FA6",
+    "400": "#6B7178",
+    "500": "#43484E",
+    "600": "#2B2F34",
+    "700": "#191C1F",
+    "800": "#101214",
+    "900": "#08090B",
+    "950": "#040506",
   },
   bruma: {
-    "50": "#F4F6F9",
-    "100": "#EEF1F5",
-    "200": "#DFE4EA",
-    "300": "#CBD5E1",
-    "400": "#94A3B8",
-    "500": "#64748B",
-    "600": "#475569",
-    "700": "#334155",
-    "900": "#121417",
+    "50": "#F8FAF5",
+    "100": "#F3F5EF",
+    "200": "#E5EEE2",
+    "300": "#CBDCCC",
+    "400": "#A8BBA9",
+    "500": "#8A988C",
+    "600": "#6A776C",
+    "700": "#4A554C",
+    "800": "#2D352F",
+    "900": "#1C231E",
+    "950": "#0A0F0C",
+  },
+  sombra: {
+    "50": "#E8F4EC",
+    "100": "#C8DFD2",
+    "200": "#9DC4B0",
+    "300": "#6F9A86",
+    "400": "#4A7D62",
+    "500": "#2E5446",
+    "600": "#243F36",
+    "700": "#1B2E28",
+    "800": "#131E1A",
+    "900": "#0D1513",
+    "950": "#080C0B",
   },
   savia: {
-    "990": "#061009",
-    "975": "#07120E",
-    "960": "#0C1F17",
-    "950": "#022C22",
-    "900": "#064E3B",
-    "800": "#065F46",
-    "700": "#047857",
-    "600": "#059669",
-    "500": "#10B981",
-    "400": "#34D399",
-    "300": "#6EE7B7",
-    "200": "#A7F3D0",
-    "100": "#D1FAE5",
-    "50": "#ECFDF5",
-    /** Extensión promocional — gradiente CTA hero (savia → teal). */
-    teal: "#14B8A6",
+    "50": "#E8FFF3",
+    "100": "#C4FEE4",
+    "200": "#8AFDCA",
+    "300": "#4FFCB0",
+    "400": "#1EFE98",
+    "500": "#02FE85",
+    "600": "#00BC66",
+    "700": "#05713F",
+    "800": "#0A482B",
+    "900": "#0A2C1B",
+    "950": "#07120C",
+  },
+  cielo: {
+    "50": "#E7F5FF",
+    "100": "#D4ECFF",
+    "200": "#B1DCFC",
+    "300": "#8DCBF8",
+    "400": "#60BAF8",
+    "500": "#48AEF1",
+    "600": "#3391D1",
+    "700": "#176EAA",
+    "800": "#104A73",
+    "900": "#0B314C",
+    "950": "#061A29",
+  },
+  sol: {
+    "50": "#FCF6E6",
+    "100": "#FBF0D5",
+    "200": "#F8E4B5",
+    "300": "#F6D893",
+    "400": "#F5CB67",
+    "500": "#F1C452",
+    "600": "#C79832",
+    "700": "#956600",
+    "800": "#644706",
+    "900": "#423007",
+    "950": "#241B06",
+  },
+  lava: {
+    "50": "#FFEBE7",
+    "100": "#FFD9D3",
+    "200": "#FFB9AE",
+    "300": "#FD978A",
+    "400": "#FA7061",
+    "500": "#F05B4D",
+    "600": "#D54D42",
+    "700": "#B53D34",
+    "800": "#7A2821",
+    "900": "#501914",
+    "950": "#2A0B08",
   },
 } as const
 
+/** Roles de acento: vivo 500 · profundo 700 · texto sobre vivo 950. */
+export const ROOTSY_FUNCTIONAL_ROLES = {
+  vivo: "500",
+  profundo: "700",
+  on: "950",
+} as const
+
+export const ROOTSY_ETER = ROOTSY_COLOR_RAMPS.eter
+
 /**
- * Tierra mojada — humus oliva bajo el dosel.
- * No es el stone Tailwind (#292524) ni sombra sola: dialoga con sombra (bosque)
- * y savia (humedad). Solo footer de tablas y toolbox de operar.
+ * Éter clima — paint del vacío. No es rampa ni cielo.
+ * Glow = horizonte. Void = noche del fondo. No pinta botones ni --color-*.
+ */
+export const ROOTSY_ETER_CLIMA = {
+  glow: {
+    "100": "#E4F2F8",
+    "200": "#C8DCE8",
+  },
+  void: {
+    "800": "#040A0E",
+    "900": "#02060A",
+    "950": "#010306",
+  },
+} as const
+
+export const ROOTSY_CIELO = ROOTSY_COLOR_RAMPS.cielo
+export const ROOTSY_SOL = ROOTSY_COLOR_RAMPS.sol
+export const ROOTSY_LAVA = ROOTSY_COLOR_RAMPS.lava
+
+/**
+ * @deprecated El piso usa sombra. Se mantiene el nombre para no romper callers.
  */
 export const ROOTSY_SUELO = {
-  "950": "#0A0C08",
-  "900": "#151810",
-  "800": "#24291E",
-  "700": "#353B2C",
-  "600": "#464D3A",
-  "400": "#8F9782",
-  "300": "#B6BDA8",
-  "50": "#F1F2EB",
+  "50": ROOTSY_COLOR_RAMPS.sombra["50"],
+  "300": ROOTSY_COLOR_RAMPS.sombra["300"],
+  "400": ROOTSY_COLOR_RAMPS.sombra["400"],
+  "600": ROOTSY_COLOR_RAMPS.sombra["600"],
+  "700": ROOTSY_COLOR_RAMPS.sombra["700"],
+  "800": ROOTSY_COLOR_RAMPS.sombra["800"],
+  "900": ROOTSY_COLOR_RAMPS.sombra["900"],
+  "950": ROOTSY_COLOR_RAMPS.sombra["950"],
 } as const
 
 /**
- * Cielo — azul de naturaleza vivo (cerúleo de siesta, no Tailwind sky ni teal).
- * Dialoga con savia sin competir: más azul, más croma. Headers “enviada”, info de mundo.
+ * @deprecated Auroras de marketing. Usar savia 400 / 500.
  */
-export const ROOTSY_CIELO = {
-  "800": "#0A4574",
-  "700": "#0B5A98",
-  "600": "#0C72C2",
-  "500": "#1286E8",
-  "400": "#45A6F2",
-  "200": "#A8D6FA",
-  "100": "#D4ECFC",
-  "50": "#EAF6FE",
-} as const
-
-/**
- * Sol — amarillo sol a través del dosel.
- * No es el ámbar de aviso (#D97706) ni otoño Tailwind. Calor vivo para “preparando”.
- */
-export const ROOTSY_SOL = {
-  "800": "#7A4E08",
-  "700": "#9C640A",
-  "600": "#C98C0D",
-  "500": "#E8B10F",
-  "400": "#F3C62E",
-  "200": "#F8E17A",
-  "100": "#FBF3C6",
-  "50": "#FDF8E8",
-} as const
-
-/**
- * Éter — espacio fuera del planeta.
- * Noche profunda, estrellas y horizonte de luz fría. Header reutilizable.
- * No es sombra (bosque) ni cielo (día).
- */
-export const ROOTSY_ETER = {
-  "950": "#010306",
-  "900": "#02060A",
-  "800": "#040A0E",
-  "700": "#0B1824",
-  "200": "#C8DCE8",
-  "100": "#E4F2F8",
-} as const
-
-/** Auroras y glow — solo blur/atmosphere en marketing. Nunca texto, borde ni botón sólido. */
 export const ROOTSY_ATMOSPHERE = {
-  neon: "#25FE02",
-  "neon-2": "#02FE85",
+  neon: ROOTSY_COLOR_RAMPS.savia["400"],
+  "neon-2": ROOTSY_COLOR_RAMPS.savia["500"],
 } as const
 
-const LANDING_ALIAS: Record<string, { family: RootsyColorFamily | "atmosphere"; step: string }> = {
+const FAMILY_ALIASES: Record<string, RootsyColorFamily> = {
+  ceniza: "sombra",
+  suelo: "sombra",
+  "cielo-de-dia": "cielo",
+}
+
+const STEP_ALIASES: Partial<Record<RootsyColorFamily, Record<string, RootsyColorStepId>>> = {
+  sombra: { border: "400" },
+  savia: { teal: "500", "990": "950", "975": "950", "960": "950" },
+}
+
+const LANDING_ALIAS: Record<string, { family: RootsyColorFamily; step: RootsyColorStepId }> = {
   "950": { family: "sombra", step: "900" },
   "900": { family: "sombra", step: "950" },
   "800": { family: "sombra", step: "800" },
@@ -131,24 +220,29 @@ const LANDING_ALIAS: Record<string, { family: RootsyColorFamily | "atmosphere"; 
   "400": { family: "savia", step: "400" },
   "300": { family: "savia", step: "300" },
   "200": { family: "savia", step: "200" },
-  teal: { family: "savia", step: "teal" },
-  neon: { family: "atmosphere", step: "neon" },
-  "neon-2": { family: "atmosphere", step: "neon-2" },
+  teal: { family: "savia", step: "500" },
+  neon: { family: "savia", step: "400" },
+  "neon-2": { family: "savia", step: "500" },
 }
 
 function resolveLegacyColor(
   family: LegacyRootsyColorFamily,
   step: string | number,
-): { family: RootsyColorFamily | "atmosphere"; step: string } {
+): { family: RootsyColorFamily; step: RootsyColorStepId | string } {
   const key = String(step)
-  if (family === "ceniza") return { family: "sombra", step: key }
+  if (family === "atmosphere") {
+    if (key === "neon") return { family: "savia", step: "400" }
+    if (key === "neon-2") return { family: "savia", step: "500" }
+    return { family: "savia", step: key }
+  }
   if (family === "marketing" || family === "landing") {
     const mapped = LANDING_ALIAS[key]
     if (mapped) return mapped
     throw new Error(`Unknown landing color alias: landing.${key}`)
   }
-  if (family === "atmosphere") return { family: "atmosphere", step: key }
-  return { family, step: key }
+  const resolvedFamily = FAMILY_ALIASES[family] ?? (family as RootsyColorFamily)
+  const resolvedStep = STEP_ALIASES[resolvedFamily]?.[key] ?? key
+  return { family: resolvedFamily, step: resolvedStep }
 }
 
 /** Referencia CSS: var(--rootsy-bruma-100) */
@@ -157,9 +251,6 @@ export function rootsyColorVar(
   step: string | number,
 ): string {
   const resolved = resolveLegacyColor(family, step)
-  if (resolved.family === "atmosphere") {
-    return `var(--rootsy-atmosphere-${resolved.step})`
-  }
   return `var(--rootsy-${resolved.family}-${resolved.step})`
 }
 
@@ -169,30 +260,61 @@ export function rootsyColorHex(
   step: string | number,
 ): string {
   const resolved = resolveLegacyColor(family, step)
-  if (resolved.family === "atmosphere") {
-    const hex = ROOTSY_ATMOSPHERE[resolved.step as keyof typeof ROOTSY_ATMOSPHERE]
-    if (!hex) throw new Error(`Unknown atmosphere color: ${resolved.step}`)
-    return hex
-  }
-  const ramp = ROOTSY_COLOR_RAMPS[resolved.family] as Record<string, string>
-  const hex = ramp[resolved.step]
+  const ramp = ROOTSY_COLOR_RAMPS[resolved.family]
+  const hex = ramp[resolved.step as RootsyColorStepId]
   if (!hex) {
     throw new Error(`Unknown rootsy color: ${resolved.family}.${resolved.step}`)
   }
   return hex
 }
 
-/** Atajos semánticos usados en demos y componentes. */
+/**
+ * Tokens de propósito. El hex sale de la paleta, salvo elevada en Bruma clara (blanco).
+ * Atmósfera por defecto: bruma clara (workspace).
+ */
 export const ROOTSY_COLOR_SEMANTIC = {
-  white: "#FFFFFF",
-  textOnDark: "#F4F8F6",
-  action: rootsyColorHex("savia", "600"),
-  actionHover: rootsyColorHex("savia", "700"),
+  fondo: rootsyColorHex("bruma", "100"),
+  superficie: rootsyColorHex("bruma", "50"),
+  elevada: ROOTSY_BLANCO,
+  borde: rootsyColorHex("bruma", "200"),
+  texto: rootsyColorHex("bruma", "950"),
+  textoMuted: rootsyColorHex("bruma", "700"),
+  accion: rootsyColorHex("savia", "500"),
+  accionHover: rootsyColorHex("savia", "600"),
+  accionTexto: rootsyColorHex("savia", "950"),
+  accionProfundo: rootsyColorHex("savia", "700"),
+  foco: rootsyColorHex("savia", "400"),
+  exito: rootsyColorHex("savia", "500"),
+  informacion: rootsyColorHex("cielo", "500"),
+  informacionTexto: rootsyColorHex("cielo", "950"),
+  informacionProfundo: rootsyColorHex("cielo", "700"),
+  atencion: rootsyColorHex("sol", "500"),
+  atencionTexto: rootsyColorHex("sol", "950"),
+  atencionProfundo: rootsyColorHex("sol", "700"),
+  peligro: rootsyColorHex("lava", "500"),
+  peligroTexto: rootsyColorHex("lava", "950"),
+  peligroProfundo: rootsyColorHex("lava", "700"),
+
+  /** Papel de Bruma. Alias de ROOTSY_BLANCO. Inverso de CTA: savia 50. Sobre dosel: sombra 50. */
+  white: ROOTSY_BLANCO,
+  /** @deprecated Usar sombra 50. */
+  textOnDark: rootsyColorHex("sombra", "50"),
+  /** @deprecated Usar accion. */
+  action: rootsyColorHex("savia", "500"),
+  /** @deprecated Usar accionHover. */
+  actionHover: rootsyColorHex("savia", "600"),
+  /** @deprecated Usar foco. */
   accent: rootsyColorHex("savia", "400"),
-  promoGradientEnd: rootsyColorHex("savia", "teal"),
-  warning: "#D97706",
-  warningText: "#78350F",
-  warningSoft: "#FEF3C7",
-  danger: "#DC2626",
-  dangerDark: "#B91C1C",
+  /** @deprecated Usar savia 500. */
+  promoGradientEnd: rootsyColorHex("savia", "500"),
+  /** @deprecated Usar atencion / sol 500. */
+  warning: rootsyColorHex("sol", "500"),
+  /** @deprecated Usar sol 900. */
+  warningText: rootsyColorHex("sol", "900"),
+  /** @deprecated Usar sol 50. */
+  warningSoft: rootsyColorHex("sol", "50"),
+  /** @deprecated Usar peligro / lava 500. */
+  danger: rootsyColorHex("lava", "500"),
+  /** @deprecated Usar lava 700. */
+  dangerDark: rootsyColorHex("lava", "700"),
 } as const

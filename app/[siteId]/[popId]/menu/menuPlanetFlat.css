@@ -1,0 +1,140 @@
+/**
+ * Tecla flat — opaca, sin blur ni halo.
+ * Relieve de 1px tipo teclado: highlight arriba, sombra abajo, caída corta.
+ */
+
+.menu-planet-flat {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  border-width: 1px;
+  border-style: solid;
+  top: 0;
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition:
+    top 150ms ease-out,
+    box-shadow 150ms ease-out,
+    background-color 150ms ease-out,
+    border-color 150ms ease-out;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-blanco) 22%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--rootsy-negro) 34%, transparent),
+    0 1px 0 color-mix(in srgb, var(--rootsy-negro) 58%, transparent),
+    0 2px 3px color-mix(in srgb, var(--rootsy-negro) 30%, transparent);
+}
+
+.menu-planet-flat--operar {
+  background-color: var(--rootsy-savia-700);
+  border-color: var(--rootsy-savia-800);
+}
+
+.menu-planet-flat--administrar {
+  background-color: var(--rootsy-sol-700);
+  border-color: var(--rootsy-sol-800);
+}
+
+.menu-planet-flat--configurar {
+  background-color: var(--rootsy-cielo-700);
+  border-color: var(--rootsy-cielo-800);
+}
+
+.menu-planet-flat--lava {
+  background-color: var(--rootsy-lava-700);
+  border-color: var(--rootsy-lava-800);
+}
+
+.menu-planet-flat--placed.menu-planet-flat--operar,
+.menu-planet-flat--muted.menu-planet-flat--operar {
+  background-color: var(--rootsy-savia-800);
+  border-color: var(--rootsy-savia-900);
+}
+
+.menu-planet-flat--placed.menu-planet-flat--administrar,
+.menu-planet-flat--muted.menu-planet-flat--administrar {
+  background-color: var(--rootsy-sol-800);
+  border-color: var(--rootsy-sol-900);
+}
+
+.menu-planet-flat--placed.menu-planet-flat--configurar,
+.menu-planet-flat--muted.menu-planet-flat--configurar {
+  background-color: var(--rootsy-cielo-800);
+  border-color: var(--rootsy-cielo-900);
+}
+
+.menu-planet-flat--placed.menu-planet-flat--lava,
+.menu-planet-flat--muted.menu-planet-flat--lava {
+  background-color: var(--rootsy-lava-800);
+  border-color: var(--rootsy-lava-900);
+}
+
+.menu-planet-flat--overlay.menu-planet-flat--operar {
+  background-color: var(--rootsy-savia-600);
+  border-color: var(--rootsy-savia-700);
+}
+
+.menu-planet-flat--overlay.menu-planet-flat--administrar {
+  background-color: var(--rootsy-sol-600);
+  border-color: var(--rootsy-sol-700);
+}
+
+.menu-planet-flat--overlay.menu-planet-flat--configurar {
+  background-color: var(--rootsy-cielo-600);
+  border-color: var(--rootsy-cielo-700);
+}
+
+.menu-planet-flat--overlay.menu-planet-flat--lava {
+  background-color: var(--rootsy-lava-600);
+  border-color: var(--rootsy-lava-700);
+}
+
+.menu-planet-flat--interactive.menu-planet-flat--operar {
+  --menu-planet-flat-hover-bg: var(--rootsy-savia-600);
+  --menu-planet-flat-hover-border: var(--rootsy-savia-700);
+  --menu-planet-flat-active-bg: var(--rootsy-savia-800);
+}
+
+.menu-planet-flat--interactive.menu-planet-flat--administrar {
+  --menu-planet-flat-hover-bg: var(--rootsy-sol-600);
+  --menu-planet-flat-hover-border: var(--rootsy-sol-700);
+  --menu-planet-flat-active-bg: var(--rootsy-sol-800);
+}
+
+.menu-planet-flat--interactive.menu-planet-flat--configurar {
+  --menu-planet-flat-hover-bg: var(--rootsy-cielo-600);
+  --menu-planet-flat-hover-border: var(--rootsy-cielo-700);
+  --menu-planet-flat-active-bg: var(--rootsy-cielo-800);
+}
+
+.menu-planet-flat--interactive.menu-planet-flat--lava {
+  --menu-planet-flat-hover-bg: var(--rootsy-lava-600);
+  --menu-planet-flat-hover-border: var(--rootsy-lava-700);
+  --menu-planet-flat-active-bg: var(--rootsy-lava-800);
+}
+
+.group:hover .menu-planet-flat--interactive {
+  top: -1px;
+  background-color: var(--menu-planet-flat-hover-bg);
+  border-color: var(--menu-planet-flat-hover-border);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-blanco) 26%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--rootsy-negro) 28%, transparent),
+    0 2px 0 color-mix(in srgb, var(--rootsy-negro) 52%, transparent),
+    0 3px 4px color-mix(in srgb, var(--rootsy-negro) 28%, transparent);
+}
+
+.group:active .menu-planet-flat--interactive {
+  top: 1px;
+  background-color: var(--menu-planet-flat-active-bg);
+  box-shadow:
+    inset 0 2px 3px color-mix(in srgb, var(--rootsy-negro) 40%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-negro) 24%, transparent),
+    0 0 0 transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-planet-flat {
+    transition: none;
+  }
+}

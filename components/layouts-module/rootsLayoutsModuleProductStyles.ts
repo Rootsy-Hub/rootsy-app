@@ -3,6 +3,7 @@
  * Espejo Tailwind de rootsyLayoutsModuleSystem + layoutsModuleHardcodedSpec.
  */
 
+import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
 import { layoutsTablesChromeIconButtonClass } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import { cn } from "@/lib/utils"
 
@@ -32,9 +33,11 @@ export const layoutsModuleHeaderUserNameClass = cn(
   layoutsModuleHeaderChromeTextClass,
 )
 
-/** Row de contenido del módulo — bruma-50 + tokens light (layout.module.content). */
-export const layoutsModuleContentShellClass =
-  "rootsy-app-light bg-[var(--rootsy-bruma-50)] text-foreground"
+/** Row de contenido del módulo — sotobosque luz (layout.module.content). */
+export const layoutsModuleContentShellClass = cn(
+  "rootsy-app-light text-foreground",
+  "data-workspace-blocks-atmosphere--sotobosque-luz",
+)
 
 /** Variante de header para módulos POP — chrome sombra · savia. */
 export const layoutsModuleHeaderVariant = "tables" as const

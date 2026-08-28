@@ -24,7 +24,7 @@ import {
 } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams } from "@/lib/pop-spa/navigation"
 import type { DateRange } from "react-day-picker"
 
 type Props = {

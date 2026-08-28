@@ -1,0 +1,15 @@
+/**
+ * Aire de bloques — bruma de noche, lienzo plano.
+ * El lienzo es bruma-950, no sombra-950. Sin planeta detrás.
+ */
+
+.data-workspace-blocks-atmosphere-bruma-oscura {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--rootsy-bruma-950);
+}
+
+.data-workspace-blocks-atmosphere-bruma-oscura > * {
+  position: relative;
+  z-index: 1;
+}

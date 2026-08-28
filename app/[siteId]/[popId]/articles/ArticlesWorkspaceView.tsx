@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   defaultArticleCatalogExtraFormState,
   type ArticleCatalogExtraFormState,
@@ -61,13 +62,11 @@ import {
   DataWorkspaceTableListPage,
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
-import { DataWorkspaceTableInfiniteEndRow } from "@/components/data-workspace/DataWorkspaceTableInfiniteEndRow"
+import { DataWorkspaceTableInfinitePageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
-  DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   workspaceTableLayoutClassName,
@@ -98,7 +97,6 @@ import {
   WorkspaceTableSkeletonRows,
 } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   TableBody,
   TableCell,
@@ -106,12 +104,13 @@ import {
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopArticleCategories } from "@/hooks/usePopArticleCategories"
-import { usePopCatalogRealtime } from "@/hooks/usePopCatalogRealtime"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { usePopArticlesTable } from "@/hooks/usePopArticlesTable"
 import { usePopPriceLists } from "@/hooks/usePopPriceLists"
-import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
 import {
+  DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  dataWorkspaceTableLoadedPageSet,
+  dataWorkspaceTableStartPage,
   invalidateDataWorkspaceTableInfinite,
   uniqueTableRowsById,
 } from "@/lib/dataWorkspaceTableInfinite"
@@ -179,7 +178,7 @@ import {
   usePathname,
   useRouter,
   useSearchParams,
-} from "next/navigation"
+} from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,
@@ -286,7 +285,6 @@ function parseCatalogFieldsForSubmit(form: ArticleFormState):
   }
 }
 
-
 function defaultItemFormFields(kind: ArticleItemKind): ArticleItemFormState {
   return {
     unitOfMeasure: defaultUnitForKind(kind),
@@ -305,7 +303,6 @@ export function ArticlesWorkspaceView() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
-  usePopCatalogRealtime(popId)
   const queryClient = useQueryClient()
 
   const { bootstrap, loading: bootstrapLoading, hasPermission } =
@@ -491,6 +488,14 @@ export function ArticlesWorkspaceView() {
 
   const articles = uniqueTableRowsById(articlesTableQuery.data?.articles ?? [])
   const totalCount = articlesTableQuery.data?.totalCount ?? 0
+  const pageSize = DATA_WORKSPACE_TABLE_PAGE_SIZE
+  const startPage = dataWorkspaceTableStartPage(workspaceParsed.page)
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const loadedPages = dataWorkspaceTableLoadedPageSet(
+    startPage,
+    articles.length,
+    pageSize,
+  )
   const articlePerm = useCallback(
     (perm: { resource: string; action: string }) =>
       afterHydration &&
@@ -526,7 +531,6 @@ export function ArticlesWorkspaceView() {
 
   const refreshArticlesList = useCallback(async () => {
     if (!popId) return
-    invalidatePopOperateCatalogs(queryClient, popId)
     await invalidateDataWorkspaceTableInfinite(
       queryClient,
       popArticlesQueryRoot(popId),
@@ -757,7 +761,6 @@ export function ArticlesWorkspaceView() {
       }
       await refreshArticleCategories()
       setCategoriesBoardKey((k) => k + 1)
-      invalidatePopOperateCatalogs(queryClient, popId)
     } finally {
       setNewCategorySaving(false)
       setPendingCategoryCreate(null)
@@ -789,7 +792,6 @@ export function ArticlesWorkspaceView() {
     }
     cancelEditCategory()
     await refreshArticleCategories()
-    invalidatePopOperateCatalogs(queryClient, popId)
   }
 
   const saveCategoryLayout = async (updates: CategoryLayoutUpdate[]) => {
@@ -816,7 +818,6 @@ export function ArticlesWorkspaceView() {
       setCategoriesBoardKey((k) => k + 1)
       return
     }
-    invalidatePopOperateCatalogs(queryClient, popId)
   }
 
   const removeCategory = (id: string, label: string) => {
@@ -860,7 +861,6 @@ export function ArticlesWorkspaceView() {
       return
     }
     await refreshArticleCategories()
-    invalidatePopOperateCatalogs(queryClient, popId)
     setPendingCategoryDeleteId(null)
   }
 
@@ -1102,14 +1102,15 @@ export function ArticlesWorkspaceView() {
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "Catálogo",
         headerActions: canCreate ? (
-          <DataWorkspaceHeaderIconButton
+          <RootsIconButton
             label="Nuevo artículo"
-            headerVariant={dataWorkspaceTableListHeaderVariant}
-            primary
+            semantic="primary"
+            atmosphere="eter"
+            size="default"
             onClick={openCreate}
           >
             <Plus className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
+          </RootsIconButton>
         ) : null,
         headerMoreActions: [
           {
@@ -1204,6 +1205,7 @@ export function ArticlesWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
             <DataWorkspaceTableListShell
+              lockScroll={listFetching}
               activeFiltersBar={
                 hasFilterChips ? (
                   <DataWorkspaceListActiveFiltersBar
@@ -1367,7 +1369,21 @@ export function ArticlesWorkspaceView() {
                   <DataWorkspaceTableEmptyMascot />
                 ) : null
               }
-            infinite={tableListInfiniteFromQuery(articlesTableQuery, "articles")}
+              footerFloating
+              footerFloatingCentered
+              scrollResetKey={startPage}
+              footer={
+                <DataWorkspaceTableInfinitePageDock
+                  listFetching={listFetching}
+                  loadedCount={articles.length}
+                  totalCount={totalCount}
+                  startPage={startPage}
+                  totalPages={totalPages}
+                  loadedPages={loadedPages}
+                  onPageJump={(page) => replaceWorkspaceQuery({ page })}
+                />
+              }
+              infinite={tableListInfiniteFromQuery(articlesTableQuery, "articles")}
             >
               <DataWorkspaceListTableFrame>
               <table
@@ -1614,19 +1630,28 @@ export function ArticlesWorkspaceView() {
                           <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
                             <div className="flex items-center justify-end gap-0.5">
                               {canUpdate ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label={`Editar ${a.name || "artículo"}`}
-                                  icon={Pencil}
+                                  tone="action"
+                                  intent="edit"
+                                  size="compact"
                                   onClick={() => void openEdit(a)}
-                                />
+                                >
+                                  <Pencil />
+                                </RootsIconButton>
                               ) : null}
                               {canDelete ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label={`Eliminar ${a.name || "artículo"}`}
-                                  icon={Trash2}
-                                  destructive
+                                  tone="action"
+                                  intent="destructive"
+                                  size="compact"
                                   onClick={() => openDelete(a)}
-                                />
+                                >
+                                  <Trash2 />
+                                </RootsIconButton>
                               ) : null}
                             </div>
                           </TableCell>
@@ -1634,14 +1659,6 @@ export function ArticlesWorkspaceView() {
                       </WorkspaceTableBodyRow>
                     )})
                   )}
-                  {!listFetching ? (
-                    <DataWorkspaceTableInfiniteEndRow
-                      world="articles"
-                      colSpan={8 + (canUpdate || canDelete ? 1 : 0)}
-                      loadedCount={pageRows.length}
-                      totalCount={totalCount}
-                    />
-                  ) : null}
                 </TableBody>
               </table>
               {!listFetching && totalCount === 0 ? (

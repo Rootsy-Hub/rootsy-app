@@ -1,7 +1,7 @@
 "use client"
 
+import { Avatar } from "@/components/Avatar"
 import { RootsImageLightbox } from "@/components/rootsy-lightbox/RootsImageLightbox"
-import { cn } from "@/lib/utils"
 import { useState } from "react"
 
 type Props = {
@@ -15,21 +15,20 @@ export function PopLogoLightboxButton({ src, name, className }: Props) {
   const image = src.trim()
   if (!image) return null
 
+  const initials = name.trim().slice(0, 2).toUpperCase() || "·"
+
   return (
     <>
-      <button
-        type="button"
-        className={cn(
-          "shrink-0 cursor-pointer overflow-hidden rounded-lg",
-          "transition-opacity hover:opacity-90",
-          className,
-        )}
-        aria-label={`Ver logo de ${name}`}
+      <Avatar
+        imageUrl={image}
+        initials={initials}
+        size="md"
+        shape="square"
+        tone="dark"
+        ariaLabel={`Ver logo de ${name}`}
         onClick={() => setOpen(true)}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={image} alt="" className="size-full object-cover" />
-      </button>
+        className={className}
+      />
       <RootsImageLightbox
         open={open}
         onOpenChange={setOpen}

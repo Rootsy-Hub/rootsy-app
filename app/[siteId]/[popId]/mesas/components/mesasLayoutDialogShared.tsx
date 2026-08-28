@@ -1,7 +1,7 @@
 "use client"
 
 import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   RootsPrimaryButton,
   RootsProgressButton,
@@ -221,20 +221,28 @@ export function MesasLayoutDialogRowActions({
 }) {
   return (
     <div className="flex items-center justify-end gap-1">
-      <DataWorkspaceTableIconAction
+            <RootsIconButton
+        type="button"
         label={editLabel}
-        icon={Pencil}
-        variant="edit"
+        tone="action"
+        intent="edit"
+        size="compact"
         disabled={disabled}
         onClick={onEdit}
-      />
-      <DataWorkspaceTableIconAction
+      >
+        <Pencil />
+      </RootsIconButton>
+            <RootsIconButton
+        type="button"
         label={deleteLabel}
-        icon={Trash2}
-        variant="destructive"
+        tone="action"
+        intent="destructive"
+        size="compact"
         disabled={disabled}
         onClick={onDelete}
-      />
+      >
+        <Trash2 />
+      </RootsIconButton>
     </div>
   )
 }

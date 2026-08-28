@@ -4,6 +4,7 @@ import {
   getFormSwitchThumbStyle,
   getFormSwitchTrackStyle,
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import { cn } from "@/lib/utils"
 import * as SwitchPrimitive from "@radix-ui/react-switch"
@@ -36,8 +37,9 @@ export const RootsFormSwitch = forwardRef<
     invalid,
   })
   const isOn = checked === true
-  const trackStyle = getFormSwitchTrackStyle(state, isOn)
-  const thumbStyle = getFormSwitchThumbStyle(isOn)
+  const tone = useRootsFormControlTone()
+  const trackStyle = getFormSwitchTrackStyle(state, isOn, { tone })
+  const thumbStyle = getFormSwitchThumbStyle(isOn, { tone })
 
   return (
     <SwitchPrimitive.Root

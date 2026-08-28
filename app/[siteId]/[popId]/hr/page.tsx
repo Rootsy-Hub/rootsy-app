@@ -1,5 +1,4 @@
-import { HrWorkspaceView } from "@/app/[siteId]/[popId]/hr/HrWorkspaceView"
-
+import { HrWorkspaceView } from "./HrWorkspaceView"
 export default function HrPage() {
   return <HrWorkspaceView />
 }

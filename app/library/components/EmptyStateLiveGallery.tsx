@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils"
 import { ListPlus, Package } from "lucide-react"
 import "@/app/library/mundos/mundosHerramientas.css"
 import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
+import "@/components/data-workspace/dataWorkspaceBlocksAtmosphereBrumaOscura.css"
 import type { ReactNode } from "react"
 
 const DEMO_TITLE = ROOTSY_EMPTY_STATE_COPY.catalog.idle.title
@@ -54,6 +55,13 @@ function WorldCanvas({ world }: { world: RootsyEmptyStateWorld }) {
     return (
       <div className="absolute inset-0 overflow-hidden">
         <div className="data-workspace-blocks-atmosphere h-full" />
+      </div>
+    )
+  }
+  if (world === "bruma-oscura") {
+    return (
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="data-workspace-blocks-atmosphere-bruma-oscura h-full" />
       </div>
     )
   }

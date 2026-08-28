@@ -2,35 +2,56 @@
 
 import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import { menuModuleHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
-import {
-  DataWorkspaceHeaderMoreMenu,
-  type DataWorkspaceHeaderMoreAction,
-} from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { WorkspaceMobileAccountCluster } from "@/components/layouts/WorkspaceMobileAccountCluster"
 import {
   dataWorkspaceHeaderToolbarClass,
+  isDarkChromeHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { EterIconButton } from "@/components/eter/EterIconButton"
+import {
+  moduleWorkspaceHeaderDividerClass,
+  moduleWorkspaceHeaderIdentityTone,
+  moduleWorkspaceHeaderIconProps,
+  moduleWorkspaceHeaderMutedClass,
+  moduleWorkspaceHeaderTitleClass,
+  moduleWorkspaceHeaderVariant,
+} from "@/components/layouts-module/moduleWorkspaceHeaderChrome"
+import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
+import { RootsIconButton } from "@/components/rootsy-button"
+import {
+  RootsDropdownContent,
+  RootsDropdownItem,
+  RootsDropdownMenu,
+  RootsDropdownTrigger,
+} from "@/components/rootsy-dropdown"
 import { PopIdentityHeaderCompact } from "@/components/pop-identity/PopIdentityHeaderCompact"
 import {
   menuGhostBarClass,
 } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
 import {
-  eterHeaderDividerClass,
-  eterHeaderMutedClass,
-  eterHeaderTitleClass,
-} from "@/lib/eter/eterChrome"
+  getMenuCatalogItemByName,
+  getMenuCatalogItemForModule,
+} from "@/lib/menuCatalog"
+import { popModuleKeyFromPath } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
+import { usePathname } from "next/navigation"
 import {
   ArrowLeft,
+  EllipsisVertical,
   Maximize2,
   Minimize2,
   PanelLeftClose,
   PanelLeftOpen,
+  type LucideIcon,
 } from "lucide-react"
 import type { ReactNode } from "react"
+
+export type DataWorkspaceHeaderMoreAction = {
+  label: string
+  onClick: () => void
+  icon: LucideIcon
+}
 
 export type ModuleWorkspaceHeaderProps = {
   backHref?: string
@@ -39,11 +60,17 @@ export type ModuleWorkspaceHeaderProps = {
   popName?: string
   popStreetAddress?: string | null
   title?: string
+  /** Ícono del módulo. Si no se pasa, se resuelve por ruta o por el título. */
+  titleIcon?: LucideIcon
+  /** Muestra el ícono junto al título. Apagado por defecto. */
+  showTitleIcon?: boolean
   loading?: boolean
   brandPending?: boolean
   userPending?: boolean
   rolePending?: boolean
   headerVariant?: DataWorkspaceHeaderVariant
+  /** Superficie del chrome. Si no se pasa, el header queda en éter. */
+  atmosphere?: RootsButtonAtmosphere
   titleAdornment?: ReactNode
   headerActions?: ReactNode
   headerMoreActions?: readonly DataWorkspaceHeaderMoreAction[]
@@ -73,11 +100,14 @@ export function ModuleWorkspaceHeader({
   popLogoSrc,
   popName,
   title,
+  titleIcon,
+  showTitleIcon = false,
   loading = false,
   brandPending: brandPendingProp = false,
   userPending: userPendingProp = false,
   rolePending = false,
   headerVariant = "dark",
+  atmosphere,
   titleAdornment,
   headerActions,
   headerMoreActions,
@@ -98,7 +128,14 @@ export function ModuleWorkspaceHeader({
   sidebarOpen = true,
   onToggleSidebar,
 }: ModuleWorkspaceHeaderProps) {
+  const pathname = usePathname()
   const resolvedTitle = title?.trim() || null
+  const TitleIcon = showTitleIcon
+    ? titleIcon ??
+      getMenuCatalogItemForModule(popModuleKeyFromPath(pathname ?? ""))?.icon ??
+      getMenuCatalogItemByName(resolvedTitle ?? "")?.icon ??
+      null
+    : null
   const showBack = Boolean(backHref)
   const showFullscreenButton = showFullscreen && Boolean(onToggleFullscreen)
   const showSidebarToggle = canCollapseSidebar && Boolean(onToggleSidebar)
@@ -118,37 +155,96 @@ export function ModuleWorkspaceHeader({
   const showActions = Boolean(
     headerActions || hasMoreActions || hasMobileMoreActions || sectionMenu,
   )
+  const resolvedAtmosphere = atmosphere ?? "eter"
+  const resolvedHeaderVariant = atmosphere
+    ? moduleWorkspaceHeaderVariant(atmosphere)
+    : headerVariant
+  const iconProps = moduleWorkspaceHeaderIconProps(resolvedAtmosphere)
+  const titleClass = moduleWorkspaceHeaderTitleClass(resolvedAtmosphere)
+  const dividerClass = moduleWorkspaceHeaderDividerClass(resolvedAtmosphere)
+  const identityTone = moduleWorkspaceHeaderIdentityTone(resolvedAtmosphere)
   const renderMoreMenu = (presentation: "icons" | "menu") => {
     const actions =
       presentation === "menu" ? mobileMoreActions : desktopMoreActions
     if (actions.length === 0) return null
+    const dark = isDarkChromeHeader(resolvedHeaderVariant)
+    const moreIconProps = dark
+      ? iconProps
+      : ({ theme: "workspace", emphasis: "ghost", size: "default" } as const)
+    const dropdownAtmosphere = resolvedAtmosphere
+
+    if (presentation === "menu") {
+      return (
+        <RootsDropdownMenu>
+          <RootsDropdownTrigger asChild>
+            <RootsIconButton label="Más acciones" {...moreIconProps}>
+              <EllipsisVertical aria-hidden />
+            </RootsIconButton>
+          </RootsDropdownTrigger>
+          <RootsDropdownContent
+            atmosphere={dropdownAtmosphere}
+            align="end"
+            side="bottom"
+            sideOffset={8}
+          >
+            {actions.map((action) => {
+              const Icon = action.icon
+              return (
+                <RootsDropdownItem
+                  key={action.label}
+                  atmosphere={dropdownAtmosphere}
+                  className="gap-2"
+                  onSelect={action.onClick}
+                >
+                  <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate">{action.label}</span>
+                </RootsDropdownItem>
+              )
+            })}
+          </RootsDropdownContent>
+        </RootsDropdownMenu>
+      )
+    }
+
     return (
-      <DataWorkspaceHeaderMoreMenu
-        actions={actions}
-        headerVariant={headerVariant}
-        presentation={presentation}
-      />
+      <div className="flex items-center gap-1">
+        {actions.map((action) => {
+          const Icon = action.icon
+          return (
+            <RootsIconButton
+              key={action.label}
+              label={action.label}
+              onClick={action.onClick}
+              {...moreIconProps}
+            >
+              <Icon aria-hidden />
+            </RootsIconButton>
+          )
+        })}
+      </div>
     )
   }
 
   return (
     <>
-      <MenuHeaderEntity size="module">
+      <MenuHeaderEntity size="module" atmosphere={resolvedAtmosphere}>
         <div className="flex h-full min-w-0 items-center gap-1.5 px-2 md:hidden">
           {showBack ? (
-            <EterIconButton
+            <RootsIconButton
               size="default"
               href={backHref}
               label="Volver al menú"
+              {...iconProps}
             >
               <ArrowLeft aria-hidden />
-            </EterIconButton>
+            </RootsIconButton>
           ) : null}
 
           {showSidebarToggle && !hideSidebarToggleOnMobile ? (
-            <EterIconButton
+            <RootsIconButton
               size="default"
-              intent={sidebarOpen ? "subtle" : "danger"}
+              semantic={sidebarOpen ? "tertiary" : "destructive"}
+              atmosphere={resolvedAtmosphere}
               onClick={onToggleSidebar}
               aria-expanded={sidebarOpen}
               aria-controls="data-workspace-sidebar"
@@ -163,13 +259,15 @@ export function ModuleWorkspaceHeader({
               ) : (
                 <PanelLeftOpen aria-hidden />
               )}
-            </EterIconButton>
+            </RootsIconButton>
           ) : null}
 
           <ModuleWorkspaceMobileTitle
             popName={popName}
             title={resolvedTitle}
+            titleIcon={TitleIcon}
             pending={brandPending}
+            atmosphere={resolvedAtmosphere}
           />
 
           <div className="ml-auto flex shrink-0 items-center gap-0.5">
@@ -193,17 +291,19 @@ export function ModuleWorkspaceHeader({
             {showBack || showFullscreenButton || showSidebarToggle ? (
               <div className="flex items-center gap-0.5">
                 {showBack ? (
-                  <EterIconButton
+                  <RootsIconButton
                     size="default"
                     href={backHref}
                     label="Volver al menú"
+                    {...iconProps}
                   >
                     <ArrowLeft aria-hidden />
-                  </EterIconButton>
+                  </RootsIconButton>
                 ) : null}
                 {showFullscreenButton ? (
-                  <EterIconButton
+                  <RootsIconButton
                     size="default"
+                    {...iconProps}
                     label={
                       isFullscreen
                         ? "Salir de pantalla completa"
@@ -216,12 +316,13 @@ export function ModuleWorkspaceHeader({
                     ) : (
                       <Maximize2 aria-hidden />
                     )}
-                  </EterIconButton>
+                  </RootsIconButton>
                 ) : null}
                 {showSidebarToggle ? (
-                  <EterIconButton
+                  <RootsIconButton
                     size="default"
-                    intent={sidebarOpen ? "subtle" : "danger"}
+                    semantic={sidebarOpen ? "tertiary" : "destructive"}
+                    atmosphere={resolvedAtmosphere}
                     onClick={onToggleSidebar}
                     aria-expanded={sidebarOpen}
                     aria-controls="data-workspace-sidebar"
@@ -236,7 +337,7 @@ export function ModuleWorkspaceHeader({
                     ) : (
                       <PanelLeftOpen aria-hidden />
                     )}
-                  </EterIconButton>
+                  </RootsIconButton>
                 ) : null}
               </div>
             ) : null}
@@ -246,7 +347,7 @@ export function ModuleWorkspaceHeader({
                 name={popName || "—"}
                 imageUrl={popLogoSrc}
                 fallbackSeed={popName || "pop"}
-                tone="dark"
+                tone={identityTone}
                 pending={brandPending}
               />
             ) : null}
@@ -254,14 +355,23 @@ export function ModuleWorkspaceHeader({
 
           <div className="flex min-w-0 items-center justify-center gap-2">
             {resolvedTitle ? (
-              <h1
-                className={cn(
-                  "truncate text-xl tracking-tight",
-                  eterHeaderTitleClass,
-                )}
-              >
-                {resolvedTitle}
-              </h1>
+              <>
+                {TitleIcon ? (
+                  <TitleIcon
+                    aria-hidden
+                    className={cn("size-5 shrink-0", titleClass)}
+                    strokeWidth={1.75}
+                  />
+                ) : null}
+                <h1
+                  className={cn(
+                    "rootsy-text-section-title truncate",
+                    titleClass,
+                  )}
+                >
+                  {resolvedTitle}
+                </h1>
+              </>
             ) : null}
             {titleAdornment}
           </div>
@@ -276,14 +386,14 @@ export function ModuleWorkspaceHeader({
               </div>
             ) : null}
             {showActions && showUser ? (
-              <div className={cn("h-6 w-px", eterHeaderDividerClass)} aria-hidden />
+              <div className={cn("h-6 w-px", dividerClass)} aria-hidden />
             ) : null}
             {showUser ? (
               <DataWorkspaceHeaderUserMenu
                 userName={userName ?? ""}
                 userAvatarSrc={userAvatarSrc}
                 isOnline={isOnline}
-                headerVariant="dark"
+                headerVariant={resolvedHeaderVariant}
                 size="compact"
                 roleLabel={subline}
                 hasResolvedRole={hasResolvedRole}
@@ -299,7 +409,7 @@ export function ModuleWorkspaceHeader({
         <div
           className={cn(
             "relative z-10 border-t px-3 py-2 md:px-6",
-            dataWorkspaceHeaderToolbarClass(headerVariant),
+            dataWorkspaceHeaderToolbarClass(resolvedHeaderVariant),
           )}
         >
           <div className={cn("mx-auto w-full", mainMaxWidthClass)}>{toolbar}</div>
@@ -312,13 +422,19 @@ export function ModuleWorkspaceHeader({
 function ModuleWorkspaceMobileTitle({
   popName,
   title,
+  titleIcon: TitleIcon,
   pending,
+  atmosphere,
 }: {
   popName?: string
   title: string | null
+  titleIcon: LucideIcon | null
   pending: boolean
+  atmosphere: RootsButtonAtmosphere
 }) {
   const resolvedPopName = popName?.trim() || null
+  const titleClass = moduleWorkspaceHeaderTitleClass(atmosphere)
+  const mutedClass = moduleWorkspaceHeaderMutedClass(atmosphere)
 
   if (pending && !title && !resolvedPopName) {
     return (
@@ -338,19 +454,28 @@ function ModuleWorkspaceMobileTitle({
       {pending && !resolvedPopName ? (
         <span className={cn(menuGhostBarClass, "mb-0.5 block h-2.5 w-20")} aria-hidden />
       ) : resolvedPopName ? (
-        <p className={cn("truncate text-[11px] font-medium", eterHeaderMutedClass)}>
+        <p className={cn("rootsy-text-meta truncate font-medium", mutedClass)}>
           {resolvedPopName}
         </p>
       ) : null}
       {title ? (
-        <h1
-          className={cn(
-            "truncate text-base tracking-tight",
-            eterHeaderTitleClass,
-          )}
-        >
-          {title}
-        </h1>
+        <div className="flex min-w-0 items-center gap-1.5">
+          {TitleIcon ? (
+            <TitleIcon
+              aria-hidden
+              className={cn("size-4 shrink-0", titleClass)}
+              strokeWidth={1.75}
+            />
+          ) : null}
+          <h1
+            className={cn(
+              "rootsy-text-heading-small truncate",
+              titleClass,
+            )}
+          >
+            {title}
+          </h1>
+        </div>
       ) : null}
     </div>
   )

@@ -1,12 +1,14 @@
 /**
- * Aire de tablas — lienzo bruma. El planeta no se pinta: la hoja es opaca.
+ * Aire de tablas — lienzo bruma (fondo 100).
+ * Filtros: superficie 50. El footer es sombra y vive fuera de este lienzo.
  */
 
 .data-workspace-tables-atmosphere {
   position: relative;
   isolation: isolate;
-  overflow-x: hidden;
-  background-color: var(--rootsy-bruma-50);
+  overflow: hidden;
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
 }
 
 .data-workspace-tables-atmosphere > * {
@@ -15,7 +17,7 @@
 }
 
 /**
- * Umbral de filtros — alba opaca entre el cielo del módulo y el claro.
+ * Umbral de filtros — sotobosque luz, gradiente suave bruma.
  */
 .data-workspace-tables-filters-dawn {
   position: relative;
@@ -33,14 +35,8 @@
   pointer-events: none;
   position: absolute;
   z-index: 1;
-  inset-inline: 10%;
+  inset-inline: 0;
   bottom: 0;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--rootsy-savia-400) 22%, var(--rootsy-bruma-200)) 50%,
-    transparent 100%
-  );
-  opacity: 0.55;
+  background: var(--color-borde);
 }

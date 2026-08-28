@@ -1,8 +1,11 @@
 /**
- * Sistema tipográfico Rootsy — fuente de verdad del design system.
- * UI (Nunito Sans) · Lectura (Source Sans 3) · Números (Inter)
- * Escala minor third · base 16px · unidades rem.
+ * Docs de librería — consume lib/design-system/tokens/typography.ts.
+ * No definir familias ni tamaños acá.
  */
+
+import {
+  ROOTSY_FONT_FAMILIES,
+} from "@/lib/design-system/tokens/typography"
 
 export type TypographyStyle = {
   id: string
@@ -31,23 +34,20 @@ export type RootsyTypeface = {
 }
 
 export const ROOTSY_TYPOGRAPHY_MANIFESTO =
-  "La tipografía de Rootsy se lee sin esfuerzo: tamaños con ritmo natural, pesos con intención clara y tres voces que hacen una sola cosa cada una. El texto guía — no compite con la interfaz."
+  "La tipografía se lee sin esfuerzo. El texto guía; no compite con la interfaz. Inter para la UI y los números. Nunito Sans para la prosa."
 
 export const ROOTSY_TYPOGRAPHY_PRINCIPLES = [
   {
     title: "Se lee solo",
-    detail:
-      "Jerarquía obvia: título, contexto, cuerpo, dato. Sin saltos de tamaño ni pesos al azar.",
+    detail: "Título, contexto, cuerpo, dato. Si hay que explicar la jerarquía, está mal armada.",
   },
   {
-    title: "Tres voces",
-    detail:
-      "UI en pantallas, lectura en prosa, números en montos — cada fuente en su lugar.",
+    title: "Dos familias",
+    detail: "Inter en chrome y montos. Nunito Sans en la prosa. No se mezclan en la misma línea.",
   },
   {
-    title: "Pocos tamaños",
-    detail:
-      "Escala acotada sobre 16px. Si dudás, subí o bajá un nivel — no inventes valores sueltos.",
+    title: "La escala alcanza",
+    detail: "Si dudás, subí o bajá un nivel. Un px suelto no entra.",
   },
 ] as const
 
@@ -60,51 +60,39 @@ export type RootsyTypefaceSpec = RootsyTypeface & {
 export const ROOTSY_TYPEFACE_SPECS: RootsyTypefaceSpec[] = [
   {
     id: "ui",
-    label: "UI",
-    family: "Nunito Sans",
-    cssVar: "--font-nunito-sans",
-    tokenRole: "font.sans",
-    role: "Headings y body de componentes — UI principal.",
-    description: "Redondeada y clara — la voz principal del producto.",
-    sample: "Confirmar venta",
-    weights: ["400 Regular", "500 Medium", "600 Semibold", "700 Bold", "800 ExtraBold"],
-    features: ["UI optimizada", "Headings y labels", "Botones y formularios"],
+    label: ROOTSY_FONT_FAMILIES.ui.label,
+    family: ROOTSY_FONT_FAMILIES.ui.family,
+    cssVar: "--font-inter",
+    tokenRole: ROOTSY_FONT_FAMILIES.ui.token,
+    role: ROOTSY_FONT_FAMILIES.ui.role,
+    description: ROOTSY_FONT_FAMILIES.ui.description,
+    sample: ROOTSY_FONT_FAMILIES.ui.sample,
+    weights: ["400 Regular", "500 Medium", "600 Semibold", "700 Bold"],
+    features: [...ROOTSY_FONT_FAMILIES.ui.features],
   },
   {
     id: "reading",
-    label: "Lectura",
-    family: "Source Sans 3",
-    cssVar: "--font-source-sans",
-    tokenRole: "font.secondary",
-    role: "Prosa, artículos y descripciones largas.",
-    description: "Fluida en bloques de texto — cómoda para leer de corrido.",
-    sample: "Rootsy conecta inventario, ventas y tesorería en un solo lugar.",
+    label: ROOTSY_FONT_FAMILIES.reading.label,
+    family: ROOTSY_FONT_FAMILIES.reading.family,
+    cssVar: "--font-nunito-sans",
+    tokenRole: ROOTSY_FONT_FAMILIES.reading.token,
+    role: ROOTSY_FONT_FAMILIES.reading.role,
+    description: ROOTSY_FONT_FAMILIES.reading.description,
+    sample: ROOTSY_FONT_FAMILIES.reading.sample,
     weights: ["400 Regular", "500 Medium", "600 Semibold", "700 Bold"],
-    features: ["Long-form", "Documentación", "Subtítulos descriptivos"],
+    features: [...ROOTSY_FONT_FAMILIES.reading.features],
   },
   {
     id: "numeric",
-    label: "Números",
-    family: "Inter",
+    label: ROOTSY_FONT_FAMILIES.numeric.label,
+    family: ROOTSY_FONT_FAMILIES.numeric.family,
     cssVar: "--font-inter",
-    tokenRole: "font.numeric",
-    role: "Montos, cantidades, tablas numéricas y KPIs.",
-    description: "Cifras tabulares alineadas — precisa sin ser fría.",
-    sample: "$ 124.580,00",
+    tokenRole: ROOTSY_FONT_FAMILIES.numeric.token,
+    role: ROOTSY_FONT_FAMILIES.numeric.role,
+    description: ROOTSY_FONT_FAMILIES.numeric.description,
+    sample: ROOTSY_FONT_FAMILIES.numeric.sample,
     weights: ["400 Regular", "500 Medium", "600 Semibold", "700 Bold"],
-    features: ["tabular-nums", "Importes y stock", "Tiles de métrica"],
-  },
-  {
-    id: "code",
-    label: "Código",
-    family: "JetBrains Mono",
-    cssVar: "--font-code",
-    tokenRole: "font.code",
-    role: "Bloques de código y snippets técnicos.",
-    description: "Monoespaciada — solo en docs y referencias, no en UI general.",
-    sample: "font.heading.large",
-    weights: ["400 Regular", "500 Medium"],
-    features: ["Code blocks", "Tokens en documentación", "No ligatures en UI"],
+    features: [...ROOTSY_FONT_FAMILIES.numeric.features],
   },
 ]
 
@@ -349,7 +337,7 @@ export const ROOTSY_BODY_STYLES: TypographyStyle[] = [
     token: "font.body.large",
     category: "body",
     preview: "Aa",
-    fontFamily: "ui",
+    fontFamily: "reading",
     fontWeight: 400,
     fontWeightLabel: "Regular",
     fontSizeRem: "1rem",
@@ -448,7 +436,7 @@ export const ROOTSY_CODE_STYLE: TypographyStyle = {
   fontSizePx: 12,
   lineHeightRem: "1.25rem",
   lineHeightPx: 20,
-  usage: "Bloques de código — JetBrains Mono.",
+  usage: "Bloques de código — mono del sistema.",
 }
 
 export const TYPE_SCALE_STEPS = [

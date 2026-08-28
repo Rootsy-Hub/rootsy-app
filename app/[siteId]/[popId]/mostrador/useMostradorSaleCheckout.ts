@@ -11,19 +11,27 @@ import {
   healCartLinesAlreadySent,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
+import { applyMostradorCheckoutToOrderCache } from "@/app/[siteId]/[popId]/mostrador/mostradorQueryCache"
 import { saveCounterOrderCheckoutApi, closeCounterOrderCheckoutApi } from "@/lib/rootsyApi/mostradorClient"
+import { useQueryClient } from "@tanstack/react-query"
 import {
+  checkoutPersistFingerprint,
   emptyTableSessionCheckout,
   type MesasCartItem,
   type MesasClienteSeleccionado,
   type TableSessionCheckoutSnapshot,
 } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
+import { resolveDefaultSaleComprobante } from "@/lib/saleCheckoutDefaults"
 import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import type { SaleCatalogClient, SaleCatalogPaymentOption, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
 import { useMenuCatalogLoader } from "@/hooks/useMenuCatalogLoader"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
+import {
+  clientsAccessFromKeys,
+  saleCatalogAccessFromKeys,
+} from "@/lib/popWorkspaceAccess"
 import {
   buildOperationPartyManualSelection,
   type OperationPartyManualConfirmOptions,
@@ -157,30 +165,6 @@ function normalizarBusqueda(s: string) {
   return s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
 }
 
-function defaultComprobanteForPop(
-  popId: string | undefined,
-  invoiceTypeSiteId: string,
-  popEmisorIvaCondition: ReturnType<
-    typeof usePopSaleComprobanteFiscalContext
-  >["popEmisorIvaCondition"],
-  hasValidPopFiscalCuit: boolean,
-): string | null {
-  if (!popId) return null
-  const persisted = readSavedSaleComprobante(popId)
-  if (
-    persisted !== undefined &&
-    isAllowedSaleComprobanteLabel(
-      invoiceTypeSiteId,
-      persisted,
-      popEmisorIvaCondition,
-      hasValidPopFiscalCuit,
-    )
-  ) {
-    return persisted
-  }
-  return null
-}
-
 export function useMostradorSaleCheckout(
   popId: string | undefined,
   siteId: string,
@@ -193,11 +177,13 @@ export function useMostradorSaleCheckout(
     catalogLoadEnabled?: boolean
     toolboxLoadEnabled?: boolean
     onCartLineAdded?: (lineId: string) => void
+    remoteTicketPending?: boolean
   },
 ) {
   const isPaid = options?.isPaid === true
   const onSaleComplete = options?.onSaleComplete
   const onCartLineAdded = options?.onCartLineAdded
+  const remoteTicketPending = options?.remoteTicketPending === true
   const catalogEnabled =
     options?.catalogLoadEnabled ??
     (Boolean(counterOrderId) || Boolean(options?.catalogSidebarOpen))
@@ -207,16 +193,17 @@ export function useMostradorSaleCheckout(
     menuCategorySections,
     menuRecipes,
     menuArticles,
-    menuPromotions,
-    menuQuantityDeals,
+    menuPromotions: apiMenuPromotions,
+    menuQuantityDeals: apiMenuQuantityDeals,
     treasuryPaymentContext,
-    canReadClients,
-    canCreateSale,
-    canReadCashRegisters,
+    canReadClients: apiCanReadClients,
+    canCreateSale: apiCanCreateSale,
+    canReadCashRegisters: apiCanReadCashRegisters,
     openCashSession,
     invoiceTypeSiteId,
     hasValidPopFiscalCuit: apiHasValidPopFiscalCuit,
     popEmisorIvaCondition: apiPopEmisorIvaCondition,
+    comprobanteEmitter,
     comprobantesLoaded,
     catalogLoading,
     catalogItemsEnsuring,
@@ -227,7 +214,7 @@ export function useMostradorSaleCheckout(
     mergeCatalogRecipes,
     ensureCatalogItems,
   } = useMenuCatalogLoader(popId, {
-    enabled: catalogEnabled,
+    enabled: false,
     toolboxEnabled,
   })
 
@@ -241,7 +228,32 @@ export function useMostradorSaleCheckout(
   const bootstrapLoaded =
     comprobantesLoaded || fiscalBootstrap.bootstrapLoaded
 
+  const localPromotions = useSaleBoardPromotions(popId, {
+    enabled: Boolean(popId),
+    scope: "menu",
+  })
+  const menuPromotions = catalogLoadAttempted
+    ? apiMenuPromotions
+    : localPromotions.combos
+  const menuQuantityDeals = catalogLoadAttempted
+    ? apiMenuQuantityDeals
+    : localPromotions.quantityDeals
+
   const { bootstrap } = usePopWorkspace()
+  const queryClient = useQueryClient()
+  const saleAccess = useMemo(
+    () => saleCatalogAccessFromKeys(bootstrap?.permissionKeys ?? []),
+    [bootstrap?.permissionKeys],
+  )
+  const canReadClients = catalogLoadAttempted
+    ? apiCanReadClients
+    : saleAccess.canReadClients
+  const canCreateSale = catalogLoadAttempted
+    ? apiCanCreateSale
+    : saleAccess.canCreateSale
+  const canReadCashRegisters = catalogLoadAttempted
+    ? apiCanReadCashRegisters
+    : saleAccess.canReadCashRegisters
   const canCreateClient = useMemo(
     () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canCreate,
     [bootstrap?.permissionKeys],
@@ -320,9 +332,22 @@ export function useMostradorSaleCheckout(
     emptyTableSessionCheckout(),
   )
   const skipNextPersistRef = useRef(false)
+  const skipPersistUntilNextCommitRef = useRef(false)
+  const lastPristineFingerprintRef = useRef<string | null>(null)
+  const hydrateGenerationRef = useRef(0)
+  const persistFlushedGenerationRef = useRef(0)
+  const healPersistAfterFlushRef = useRef(false)
+  const markCheckoutDefaultsHydrate = (next: TableSessionCheckoutSnapshot) => {
+    lastPristineFingerprintRef.current = checkoutPersistFingerprint(next)
+    hydrateGenerationRef.current += 1
+    skipPersistUntilNextCommitRef.current = true
+    skipNextPersistRef.current = true
+  }
   const lastSavedUpdatedAtRef = useRef<string | null>(null)
   const lastAppliedRemoteUpdatedAtRef = useRef<string | null>(null)
+  const checkoutDirtyRef = useRef(false)
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const saleIdempotencyKeyRef = useRef(crypto.randomUUID())
 
   checkoutStateRef.current = {
     carrito,
@@ -353,6 +378,7 @@ export function useMostradorSaleCheckout(
         healed.valorDescuentoPorcentaje !== snap.valorDescuentoPorcentaje ||
         healed.valorDescuentoFijo !== snap.valorDescuentoFijo)
     skipNextPersistRef.current = !shouldPersistHealedDiscount
+    healPersistAfterFlushRef.current = shouldPersistHealedDiscount
     if (healed.comprobante != null) {
       comprobanteInitRef.current = true
     }
@@ -396,6 +422,28 @@ export function useMostradorSaleCheckout(
     setDescartarConfirmOpen(false)
     setConfirmOpen(false)
     setSubmitError(null)
+    lastPristineFingerprintRef.current = checkoutPersistFingerprint({
+      carrito: materialized.carrito,
+      clienteSeleccionado: snap.clienteSeleccionado,
+      manualNombreCliente: snap.manualNombreCliente,
+      fiscalDocVenta: snap.fiscalDocVenta,
+      ventaIvaCondition: snap.ventaIvaCondition,
+      comprobante: snap.comprobante,
+      metodoPagoSeleccionado: snap.metodoPagoSeleccionado,
+      payOnClientAccount: snap.payOnClientAccount,
+      modoDescuento: healed.modoDescuento,
+      valorDescuentoPorcentaje: healed.valorDescuentoPorcentaje,
+      valorDescuentoFijo: healed.valorDescuentoFijo,
+      itemDescuentoModo: snap.itemDescuentoModo ?? {},
+      itemDescuentoDraft: snap.itemDescuentoDraft ?? {},
+      itemDescuentoSuprimido: snap.itemDescuentoSuprimido ?? {},
+      itemComentarios: snap.itemComentarios ?? {},
+      paidPartialUnits: materialized.paidPartialUnits,
+      totalPagadoAcumulado: snap.totalPagadoAcumulado ?? 0,
+      descuentoGeneralBloqueado: healed.descuentoGeneralBloqueado === true,
+    })
+    hydrateGenerationRef.current += 1
+    skipPersistUntilNextCommitRef.current = true
   }, [])
 
   const flushCheckoutPersist = useCallback(
@@ -405,9 +453,18 @@ export function useMostradorSaleCheckout(
       if (res.success) {
         lastSavedUpdatedAtRef.current = res.updatedAt
         lastAppliedRemoteUpdatedAtRef.current = res.updatedAt
+        lastPristineFingerprintRef.current = checkoutPersistFingerprint(snap)
+        checkoutDirtyRef.current = false
+        applyMostradorCheckoutToOrderCache(
+          queryClient,
+          popId,
+          sessionId,
+          res.updatedAt,
+          snap,
+        )
       }
     },
-    [popId],
+    [popId, queryClient],
   )
 
   useEffect(() => {
@@ -417,48 +474,120 @@ export function useMostradorSaleCheckout(
         clearTimeout(persistTimerRef.current)
         persistTimerRef.current = null
       }
-      void flushCheckoutPersist(prevId, checkoutStateRef.current)
+      if (checkoutDirtyRef.current) {
+        void flushCheckoutPersist(prevId, checkoutStateRef.current)
+      }
     }
 
+    if (prevId !== counterOrderId) {
+      saleIdempotencyKeyRef.current = crypto.randomUUID()
+    }
     loadedSessionIdRef.current = counterOrderId
     lastSavedUpdatedAtRef.current = null
     lastAppliedRemoteUpdatedAtRef.current = null
+    checkoutDirtyRef.current = false
     comprobanteInitRef.current = false
 
-    if (counterOrderId && remoteOrder) {
+    if (!counterOrderId) {
+      applySessionSnapshot(
+        emptyTableSessionCheckout(
+          resolveDefaultSaleComprobante(popId, {
+          invoiceTypeSiteId,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        }),
+        ),
+      )
+      return
+    }
+
+    if (remoteTicketPending) {
+      applySessionSnapshot(
+        emptyTableSessionCheckout(
+          resolveDefaultSaleComprobante(popId, {
+          invoiceTypeSiteId,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        }),
+        ),
+      )
+      return
+    }
+
+    if (remoteOrder) {
       const snap =
         remoteOrder.checkout ??
         emptyTableSessionCheckout(
-          defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit),
+          resolveDefaultSaleComprobante(popId, {
+          invoiceTypeSiteId,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        }),
         )
       applySessionSnapshot(snap)
       lastAppliedRemoteUpdatedAtRef.current = remoteOrder.updatedAt
-    } else if (counterOrderId) {
-      applySessionSnapshot(
-        emptyTableSessionCheckout(
-          defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit),
-        ),
-      )
-    } else {
-      applySessionSnapshot(
-        emptyTableSessionCheckout(
-          defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit),
-        ),
-      )
+      return
     }
-    // Solo al cambiar de sesión de mesa; el snapshot remoto se sincroniza aparte.
+
+    applySessionSnapshot(
+      emptyTableSessionCheckout(
+        resolveDefaultSaleComprobante(popId, {
+          invoiceTypeSiteId,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        }),
+      ),
+    )
+    // Solo al cambiar de pedido; el snapshot remoto se sincroniza aparte.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [counterOrderId, applySessionSnapshot])
+  }, [counterOrderId, remoteTicketPending, applySessionSnapshot])
 
   useEffect(() => {
     if (!counterOrderId || !remoteOrder) return
     const { updatedAt, checkout } = remoteOrder
-    if (updatedAt === lastSavedUpdatedAtRef.current) return
-    if (updatedAt === lastAppliedRemoteUpdatedAtRef.current) return
-
     const snap =
       checkout ??
-      emptyTableSessionCheckout(defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit))
+      emptyTableSessionCheckout(resolveDefaultSaleComprobante(popId, {
+          invoiceTypeSiteId,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        }))
+    const remoteFp = checkoutPersistFingerprint(snap)
+    const localFp = checkoutPersistFingerprint(checkoutStateRef.current)
+    if (updatedAt === lastSavedUpdatedAtRef.current && remoteFp === localFp) {
+      return
+    }
+    if (updatedAt === lastAppliedRemoteUpdatedAtRef.current && remoteFp === localFp) {
+      return
+    }
+
+    const localPristine =
+      lastPristineFingerprintRef.current != null &&
+      localFp === lastPristineFingerprintRef.current
+
+    if (checkoutDirtyRef.current && !localPristine) {
+      if (checkout?.carrito?.length) {
+        skipNextPersistRef.current = true
+        setCarrito((prev) =>
+          prev.map((item) => {
+            const remote = checkout.carrito.find(
+              (row) => resolveCartLineId(row) === resolveCartLineId(item),
+            )
+            if (!remote?.comandaStatus || remote.comandaStatus === item.comandaStatus) {
+              return item
+            }
+            return { ...item, comandaStatus: remote.comandaStatus }
+          }),
+        )
+      }
+      return
+    }
+
+    if (persistTimerRef.current) {
+      clearTimeout(persistTimerRef.current)
+      persistTimerRef.current = null
+    }
+    checkoutDirtyRef.current = false
     applySessionSnapshot(snap)
     lastAppliedRemoteUpdatedAtRef.current = updatedAt
   }, [
@@ -472,8 +601,28 @@ export function useMostradorSaleCheckout(
 
   useEffect(() => {
     if (!popId || !counterOrderId) return
-    if (skipNextPersistRef.current) {
+    if (remoteTicketPending) return
+
+    if (skipPersistUntilNextCommitRef.current) {
+      skipPersistUntilNextCommitRef.current = false
+      return
+    }
+
+    const fingerprint = checkoutPersistFingerprint(checkoutStateRef.current)
+    if (hydrateGenerationRef.current !== persistFlushedGenerationRef.current) {
+      lastPristineFingerprintRef.current = fingerprint
+      persistFlushedGenerationRef.current = hydrateGenerationRef.current
       skipNextPersistRef.current = false
+      if (!healPersistAfterFlushRef.current) return
+      healPersistAfterFlushRef.current = false
+    } else if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false
+      lastPristineFingerprintRef.current = fingerprint
+      return
+    } else if (
+      lastPristineFingerprintRef.current != null &&
+      fingerprint === lastPristineFingerprintRef.current
+    ) {
       return
     }
 
@@ -481,6 +630,7 @@ export function useMostradorSaleCheckout(
       clearTimeout(persistTimerRef.current)
     }
 
+    checkoutDirtyRef.current = true
     persistTimerRef.current = setTimeout(() => {
       persistTimerRef.current = null
       void flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
@@ -490,6 +640,7 @@ export function useMostradorSaleCheckout(
       if (persistTimerRef.current) {
         clearTimeout(persistTimerRef.current)
         persistTimerRef.current = null
+        checkoutDirtyRef.current = false
       }
     }
   }, [
@@ -515,12 +666,13 @@ export function useMostradorSaleCheckout(
     totalPagadoAcumulado,
     descuentoGeneralBloqueado,
     flushCheckoutPersist,
+    remoteTicketPending,
   ])
 
   useEffect(() => {
     return () => {
       const sessionId = loadedSessionIdRef.current
-      if (sessionId && popId) {
+      if (sessionId && popId && checkoutDirtyRef.current) {
         if (persistTimerRef.current) {
           clearTimeout(persistTimerRef.current)
           persistTimerRef.current = null
@@ -549,7 +701,15 @@ export function useMostradorSaleCheckout(
       ) {
         return prev
       }
-      return defaultCheckoutPaymentSelection(openCashSession.cashTreasuryAccountId)
+      const next = defaultCheckoutPaymentSelection(
+        openCashSession.cashTreasuryAccountId,
+      )
+      if (!next) return prev
+      markCheckoutDefaultsHydrate({
+        ...checkoutStateRef.current,
+        metodoPagoSeleccionado: next,
+      })
+      return next
     })
   }, [openCashSession, counterOrderId])
 
@@ -558,16 +718,21 @@ export function useMostradorSaleCheckout(
     comprobanteInitRef.current = true
     const saved = readSavedSaleComprobante(popId)
     if (saved !== undefined) {
-      setComprobante(
-        isAllowedSaleComprobanteLabel(
-          invoiceTypeSiteId,
-          saved,
-          popEmisorIvaCondition,
-          hasValidPopFiscalCuit,
-        )
-          ? saved
-          : null,
+      const next = isAllowedSaleComprobanteLabel(
+        invoiceTypeSiteId,
+        saved,
+        popEmisorIvaCondition,
+        hasValidPopFiscalCuit,
       )
+        ? saved
+        : null
+      if (next !== checkoutStateRef.current.comprobante) {
+        markCheckoutDefaultsHydrate({
+          ...checkoutStateRef.current,
+          comprobante: next,
+        })
+      }
+      setComprobante(next)
     }
   }, [
     popId,
@@ -582,7 +747,7 @@ export function useMostradorSaleCheckout(
     if (!bootstrapLoaded) return
     setComprobante((current) => {
       if (current == null) return current
-      return isAllowedSaleComprobanteLabel(
+      const next = isAllowedSaleComprobanteLabel(
         invoiceTypeSiteId,
         current,
         popEmisorIvaCondition,
@@ -590,6 +755,12 @@ export function useMostradorSaleCheckout(
       )
         ? current
         : null
+      if (next === current) return current
+      markCheckoutDefaultsHydrate({
+        ...checkoutStateRef.current,
+        comprobante: next,
+      })
+      return next
     })
   }, [
     bootstrapLoaded,
@@ -631,9 +802,17 @@ export function useMostradorSaleCheckout(
         changed = true
         return { ...item, snapshot: snapshotFromCatalogProduct(producto) }
       })
-      return changed ? next : prev
+      const withSnap = changed ? next : prev
+      const withStatus = ensureCartLineComandaStatuses(withSnap, productosByKey)
+      if (withStatus === prev) return prev
+      lastPristineFingerprintRef.current = checkoutPersistFingerprint({
+        ...checkoutStateRef.current,
+        carrito: withStatus,
+      })
+      hydrateGenerationRef.current += 1
+      skipNextPersistRef.current = true
+      return withStatus
     })
-    setCarrito((prev) => ensureCartLineComandaStatuses(prev, productosByKey))
   }, [productosByKey])
 
   const overrideSnapshot = useMemo(
@@ -701,8 +880,7 @@ export function useMostradorSaleCheckout(
     [unpaidCarrito, mapCarritoToDetallados],
   )
 
-  const orderPanelLoading =
-    carrito.length > 0 && (catalogLoading || catalogItemsEnsuring)
+  const orderPanelLoading = remoteTicketPending
 
   const cartDisplayRows = useMemo(
     () =>
@@ -867,14 +1045,18 @@ export function useMostradorSaleCheckout(
           setItemComentarios,
         })
       }
-      setCarrito((prev) =>
-        applyComandaSendToCart(
-          prev,
-          res.sentCartLineIds,
-          res.peels,
-          productosByKey,
-        ),
+      const nextCart = applyComandaSendToCart(
+        checkoutStateRef.current.carrito,
+        res.sentCartLineIds,
+        res.peels,
+        productosByKey,
       )
+      setCarrito(nextCart)
+      checkoutStateRef.current = {
+        ...checkoutStateRef.current,
+        carrito: nextCart,
+      }
+      await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
       setComandasOpen(false)
     },
     [counterOrderId, flushCheckoutPersist, popId, productosByKey, siteId],
@@ -1542,6 +1724,7 @@ export function useMostradorSaleCheckout(
         const res = await completeSale(popId, {
           siteId,
           priceListId: getSalePriceListSession(popId),
+          idempotencyKey: saleIdempotencyKeyRef.current,
           lines: buildCompleteSaleLinesFromCart({
             carrito: carritoToSell,
             quantityDealApplications:
@@ -1588,6 +1771,7 @@ export function useMostradorSaleCheckout(
           setSubmitError(res.error)
           return false
         }
+        saleIdempotencyKeyRef.current = crypto.randomUUID()
 
         setConfirmOpen(false)
         setPartialPayment(false)
@@ -1819,6 +2003,8 @@ export function useMostradorSaleCheckout(
   }, [canReadClients, clienteSeleccionado?.name, manualNombreCliente])
 
   const pedidoToolbarDisabled = counterOrderId == null
+  const requiereCajaAbierta = openCashSession == null
+  const cajaRequiredTitle = "Requiere caja abierta"
 
   return {
     catalogLoading,
@@ -1878,10 +2064,10 @@ export function useMostradorSaleCheckout(
     // Toolbox
     toolbox: {
       clienteLabel: clienteToolbarLabel,
-      clienteIvaLabel: pedidoToolbarDisabled ? null : ventaIvaLabel,
-      clienteDisabled: !canReadClients || pedidoToolbarDisabled,
-      clienteConfigurado: Boolean(clienteSeleccionado) && !pedidoToolbarDisabled,
-      toolbarDisabled: pedidoToolbarDisabled,
+      clienteIvaLabel: pedidoToolbarDisabled || requiereCajaAbierta ? null : ventaIvaLabel,
+      clienteDisabled: !canReadClients || pedidoToolbarDisabled || requiereCajaAbierta,
+      clienteConfigurado: Boolean(clienteSeleccionado) && !pedidoToolbarDisabled && !requiereCajaAbierta,
+      toolbarDisabled: pedidoToolbarDisabled || requiereCajaAbierta,
       comprobanteLabel: pedidoToolbarDisabled
         ? "Sin comprobante"
         : comprobanteDisplayLabel,
@@ -1900,31 +2086,32 @@ export function useMostradorSaleCheckout(
           : toolboxPaymentDisplay.pagoIcon,
       pagoConfigurado: pagoConfigurado && !pedidoToolbarDisabled && openCashSession != null,
       descuentoLabel: pedidoToolbarDisabled ? "Sin descuento" : descuentoToolbarLabel,
-      hayDescuento: hayDescuento && !pedidoToolbarDisabled,
+      hayDescuento: hayDescuento && !pedidoToolbarDisabled && !requiereCajaAbierta,
       descuentoDisabled: descuentoGeneralEditBlocked && !pedidoToolbarDisabled,
       onClienteClick: () => {
-        if (!canReadClients || pedidoToolbarDisabled) return
+        if (!canReadClients || pedidoToolbarDisabled || requiereCajaAbierta) return
         setClienteModalAbierto(true)
       },
       onComprobanteClick: () => {
-        if (pedidoToolbarDisabled) return
+        if (pedidoToolbarDisabled || requiereCajaAbierta) return
         setComprobanteModalAbierto(true)
       },
       onPagoClick: () => {
-        if (!openCashSession || pedidoToolbarDisabled) return
+        if (requiereCajaAbierta || pedidoToolbarDisabled) return
         setPagoModalAbierto(true)
       },
       onDescuentoClick: () => {
-        if (pedidoToolbarDisabled || descuentoGeneralEditBlocked) return
+        if (pedidoToolbarDisabled || requiereCajaAbierta || descuentoGeneralEditBlocked) return
         abrirModalDescuento()
       },
     },
     actions: {
-      discardDisabled: !puedeDescartarPedido,
+      discardDisabled: !puedeDescartarPedido || requiereCajaAbierta,
+      discardTitle: requiereCajaAbierta ? cajaRequiredTitle : undefined,
       confirmDisabled: !puedeRegistrar,
       confirmLoading: submitting,
       onDiscard: () => {
-        if (!puedeDescartarPedido) return
+        if (requiereCajaAbierta || !puedeDescartarPedido) return
         setDescartarConfirmOpen(true)
       },
       onConfirm: () => {
@@ -1936,9 +2123,11 @@ export function useMostradorSaleCheckout(
         setConfirmOpen(true)
       },
       onComandas: () => {
+        if (requiereCajaAbierta) return
         void abrirComandas()
       },
-      comandasDisabled: !hayPendingComandas,
+      comandasDisabled: !hayPendingComandas || requiereCajaAbierta,
+      comandasTitle: requiereCajaAbierta ? cajaRequiredTitle : undefined,
     },
     modals: {
       popId: popId ?? "",
@@ -2001,6 +2190,7 @@ export function useMostradorSaleCheckout(
       descuentoMonto,
       checkoutTotal: total,
       elegirComprobante,
+      comprobanteEmitter,
       treasuryPaymentContext,
       openCashSession,
       payOnClientAccount,

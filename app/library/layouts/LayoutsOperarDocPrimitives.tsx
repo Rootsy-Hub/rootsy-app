@@ -6,8 +6,8 @@ import {
   LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
   LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX,
   layoutsOperarBodyMainGridClass,
-  layoutsOperarBodyScopeClass,
   layoutsOperarBodyShellClass,
+  layoutsOperarModuleBodyClass,
   layoutsOperarBodyWireframeClass,
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
@@ -71,6 +71,7 @@ import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/r
 import { LayoutsModuleShellWithContent } from "@/app/library/layouts/LayoutsModuleDocPrimitives"
 import { ROOTSY_LAYOUTS_MODULE_HEADER } from "@/app/library/layouts/rootsyLayoutsModuleSystem"
 import { OperarTicketEmptyState } from "@/components/layouts-module/OperarTicketEmptyState"
+import { MenuSidebar } from "@/components/MenuSidebar"
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
 import {
@@ -81,7 +82,7 @@ import {
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
 import { SALE_CATALOG_DEFAULT_PRICE_LIST_ID } from "@/components/sale-operation/saleCatalogPriceLists"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar } from "@/components/Avatar"
 import { cn } from "@/lib/utils"
 import {
   ArrowLeft,
@@ -210,8 +211,6 @@ function LayoutsOperarHeaderPopProfile() {
 }
 
 function LayoutsOperarHeaderUserProfile() {
-  const chromeButtonClass = useOperationsHeaderChromeButtonClass()
-
   return (
     <>
       <div className="hidden min-w-0 flex-col leading-tight sm:flex">
@@ -225,23 +224,12 @@ function LayoutsOperarHeaderUserProfile() {
           {DEMO_USER_ROLE}
         </span>
       </div>
-      <button
-        type="button"
-        className={cn(chromeButtonClass, "relative overflow-hidden p-0")}
-        tabIndex={-1}
-        aria-hidden
-      >
-        <Avatar className="size-full rounded-[inherit]">
-          <AvatarImage src={DEMO_USER_AVATAR} alt="" className="object-cover" />
-          <AvatarFallback className="rounded-[inherit] bg-[#1c2824] text-[11px] font-semibold text-emerald-200">
-            {DEMO_USER_INITIALS}
-          </AvatarFallback>
-        </Avatar>
-        <span
-          className="absolute bottom-1 right-1 size-2.5 rounded-full bg-emerald-500 ring-2 ring-[#0c1210]"
-          aria-hidden
-        />
-      </button>
+      <Avatar
+        imageUrl={DEMO_USER_AVATAR}
+        initials={DEMO_USER_INITIALS}
+        size="lg"
+        isOnline
+      />
     </>
   )
 }
@@ -365,8 +353,15 @@ function LayoutsOperarCatalogColumn({
 }) {
   return (
     <div className={inMainGrid ? layoutsOperarCatalogColumnClass : layoutsOperarCatalogColumnClass}>
-      <aside
-        className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass, wireframe && "relative")}
+      <MenuSidebar
+        collapseBelow={false}
+        padded={false}
+        fixedWidth={false}
+        className={cn(
+          layoutsOperarCatalogSidebarClass,
+          layoutsOperarCatalogSidebarOpenClass,
+          wireframe && "relative",
+        )}
         aria-label="Filtros del catálogo"
       >
         {wireframe ? (
@@ -374,11 +369,11 @@ function LayoutsOperarCatalogColumn({
         ) : composed ? (
           <LayoutsOperarCatalogRailProposal />
         ) : null}
-      </aside>
+      </MenuSidebar>
       <section className={cn(layoutsOperarCatalogCanvasClass, wireframe && "relative")}>
         {composed ? <LayoutsOperarCatalogToolbar /> : null}
         {wireframe ? (
-          <LayoutHeightBadge label="canvas · sombra-800 · scroll" onDark />
+          <LayoutHeightBadge label="canvas · negro · scroll" onDark />
         ) : composed ? (
           <LayoutsOperarProductCatalog />
         ) : null}
@@ -422,7 +417,7 @@ function LayoutsOperarSummaryPanel({
       aria-label="Carrito de la venta"
     >
       {wireframe ? (
-        <LayoutHeightBadge label={`${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px · bruma-50`} />
+          <LayoutHeightBadge label={`${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px · lienzo 100 · papel blanco`} />
       ) : null}
       {showDraftCart ? (
         <>
@@ -456,8 +451,7 @@ export function LayoutsOperarBody({
   return (
     <div
       className={cn(
-        "rootsy-theme-pos",
-        layoutsOperarBodyScopeClass,
+        layoutsOperarModuleBodyClass,
         layoutsOperarBodyShellClass,
         wireframe && layoutsOperarBodyWireframeClass,
       )}
@@ -742,9 +736,15 @@ export function LayoutsOperarCatalogSectionDemo() {
           className={cn("rootsy-theme-pos rootsy-radius-system", layoutsOperarCatalogSectionShellClass)}
         >
             <div className={cn(layoutsOperarCatalogColumnClass, "min-h-0 flex-1")}>
-              <aside className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass)}>
+              <MenuSidebar
+                collapseBelow={false}
+                padded={false}
+                fixedWidth={false}
+                className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass)}
+                aria-label="Filtros del catálogo"
+              >
                 <LayoutsOperarCatalogRailProposal />
-              </aside>
+              </MenuSidebar>
               <section className={layoutsOperarCatalogCanvasClass}>
                 <LayoutsOperarCatalogToolbar />
                 <LayoutsOperarProductCatalog />
@@ -831,7 +831,7 @@ export function LayoutsOperarToolboxSectionDemo() {
       >
           <LayoutsOperarToolboxProposalStrip
             proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
-            canvasLabel="canvas · sombra-800 · referencia dosel denso"
+            canvasLabel="canvas · negro · referencia dosel denso"
             measureBadge={
               <LayoutHeightBadge
                 label={`${LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx}px · dosel continuo`}

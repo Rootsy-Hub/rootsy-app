@@ -7,7 +7,7 @@
 export const LAYOUTS_BLOCKS_GRID_EMPTY_STATE_SPEC = {
   token: "layout.blocks.empty.grid",
   className: "dataWorkspaceBlocksEmptyStateClass",
-  surface: "bg-white",
+  surface: "bg-[var(--color-elevada)]",
   border: "border dashed · bruma-300",
   radius: "rounded-xl",
   typography: "font-canopy text-sm · bruma-500",

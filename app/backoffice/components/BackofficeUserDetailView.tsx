@@ -11,7 +11,7 @@ import {
   formatBackofficeDate,
   formatBackofficeMoney,
 } from "@/app/backoffice/components/BackofficeSection"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar } from "@/components/Avatar"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -51,12 +51,14 @@ function InfoRow({
 function PopNameCell({ pop }: { pop: BackofficeUserPopSummary }) {
   return (
     <div className="flex items-center gap-3">
-      <Avatar className="size-9 rounded-lg border border-border/70">
-        <AvatarImage src={pop.imageUrl ?? undefined} alt="" />
-        <AvatarFallback className="rounded-lg text-xs">
-          {initials(pop.name)}
-        </AvatarFallback>
-      </Avatar>
+      <Avatar
+        imageUrl={pop.imageUrl}
+        initials={initials(pop.name)}
+        size="md"
+        shape="square"
+        tone="light"
+        className="size-9"
+      />
       <div>
         <div className="font-medium">{pop.name}</div>
         <div className="font-mono text-[10px] text-muted-foreground">
@@ -170,12 +172,13 @@ export function BackofficeUserDetailView({
         </Button>
 
         <div className="flex flex-wrap items-start gap-4">
-          <Avatar className="size-16 border border-border/80">
-            <AvatarImage src={detail.imageUrl ?? undefined} alt="" />
-            <AvatarFallback className="bg-primary/10 text-lg font-semibold text-primary">
-              {initials(detail.fullName)}
-            </AvatarFallback>
-          </Avatar>
+          <Avatar
+            imageUrl={detail.imageUrl}
+            initials={initials(detail.fullName)}
+            size="2xl"
+            shape="circle"
+            tone="light"
+          />
           <div className="min-w-0 flex-1">
             <h2 className="text-2xl font-bold tracking-tight">
               {detail.fullName}

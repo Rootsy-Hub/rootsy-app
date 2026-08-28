@@ -2,7 +2,11 @@ import {
   layoutsOperarProductCardAddClass,
   layoutsOperarProductCardClass,
   layoutsOperarProductCardDescClass,
+  layoutsOperarProductCardGridInnerClass,
   layoutsOperarProductCardGridBodyClass,
+  layoutsOperarProductCardTriggerClass,
+  layoutsOperarProductCardGridPriceRowClass,
+  layoutsOperarProductCardGridTextClass,
   layoutsOperarProductCardListBodyClass,
   layoutsOperarProductCardListClass,
   layoutsOperarProductCardListMediaClass,
@@ -73,6 +77,7 @@ export function getLayoutsOperarGridCssVariables(): CSSProperties {
     ["--layouts-operar-catalog-sidebar-w" as string]: `${a.catalogSidebarWidthPx}px`,
     ["--layouts-operar-catalog-card-min" as string]: `${a.catalogCardMinWidthPx}px`,
     ["--layouts-operar-catalog-card-max" as string]: `${a.catalogCardMaxWidthPx}px`,
+    ["--layouts-operar-grid-gap" as string]: `${a.catalogGridGapPx}px`,
     ["--layouts-operar-catalog-grid-gap" as string]: `${a.catalogGridGapPx}px`,
     ["--layouts-operar-toolbox-min-h" as string]: `${a.toolboxRowMinHeightPx}px`,
     ["--layouts-operar-toolbox-min-h-sm" as string]: `${a.toolboxRowMinHeightSmPx}px`,
@@ -210,13 +215,13 @@ export function getLayoutsOperarWireframeZoneStyle(zone: LayoutsOperarWireframeZ
       return { backgroundColor: surfaces.lightContent.css }
     case "ticket-actions":
       return {
-        backgroundColor: surfaces.lightPanel.css,
+        backgroundColor: surfaces.lightActions.css,
         borderTop: `1px solid ${border("lightHairline")}`,
         borderBottom: `1px solid ${border("lightHairline")}`,
       }
     case "ticket-total":
       return {
-        backgroundColor: surfaces.lightPanel.css,
+        backgroundColor: surfaces.lightTotals.css,
         borderTop: `1px solid ${border("lightHairline")}`,
       }
   }
@@ -293,7 +298,7 @@ export function getLayoutsOperarToolboxProposalBandStyle(
       return {
         background: getLayoutsOperarDoselContinuoToolboxBandBackground(),
         borderTop: ROOTSY_LAYOUTS_EARTH_FLOOR.borderTop,
-        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.mutedColor} 14%, transparent), inset 0 18px 36px color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.moistureColor} 18%, transparent)`,
+        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.mutedColor} 22%, transparent)`,
       }
     case "cubiertas-sombra":
       return {
@@ -387,7 +392,7 @@ export function getLayoutsOperarToolboxProposalBarGridClass(
   return cn(
     layoutsOperarToolboxProposalBarGridBaseClass,
     "h-full min-h-0",
-    "gap-2 p-[var(--layouts-operar-toolbox-band-py)] sm:gap-2.5 sm:p-[var(--layouts-operar-toolbox-band-py-sm)]",
+    "gap-[var(--layouts-operar-grid-gap,1rem)] p-[var(--layouts-operar-grid-gap,1rem)]",
   )
 }
 
@@ -411,7 +416,7 @@ export function layoutsOperarToolboxProposalSlotClass(
       focusRing,
       !isLast && "border-r border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)]",
       configured
-        ? "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_52%,transparent)] text-[#f4f8f6] shadow-[inset_3px_0_0_0_var(--rootsy-savia-400)]"
+        ? "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_52%,transparent)] text-[var(--rootsy-sombra-50)] shadow-[inset_3px_0_0_0_var(--rootsy-savia-400)]"
         : "bg-transparent text-[color-mix(in_srgb,var(--rootsy-sombra-300)_78%,transparent)] hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_38%,transparent)]",
     )
   }
@@ -471,14 +476,14 @@ export function layoutsOperarToolboxProposalIconWrapClass(
 
 export function layoutsOperarToolboxProposalSlotLabelClass(id: LayoutsOperarToolboxProposalId) {
   if (id === "bruma-ascendente") {
-    return "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-bruma-300)_72%,transparent)]"
+    return "mb-0.5 block rootsy-text-label text-[color-mix(in_srgb,var(--rootsy-bruma-300)_72%,transparent)]"
   }
   if (id === "cubiertas-sombra") {
-    return "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-sombra-400)_82%,transparent)]"
+    return "mb-0.5 block rootsy-text-label text-[color-mix(in_srgb,var(--rootsy-sombra-400)_82%,transparent)]"
   }
   return cn(
     rootsyLayoutsEarthFloorSlotLabelClass,
-    "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em]",
+    "mb-0.5 block rootsy-text-label",
   )
 }
 
@@ -488,7 +493,7 @@ export function layoutsOperarToolboxProposalSlotValueClass(
 ) {
   if (id === "bruma-ascendente") {
     return cn(
-      "block truncate text-sm font-semibold leading-snug",
+      "block truncate rootsy-text-heading-xsmall",
       configured
         ? "text-[color-mix(in_srgb,var(--rootsy-bruma-100)_94%,white)]"
         : "text-[color-mix(in_srgb,var(--rootsy-sombra-400)_72%,transparent)]",
@@ -496,13 +501,13 @@ export function layoutsOperarToolboxProposalSlotValueClass(
   }
   if (id === "cubiertas-sombra") {
     return cn(
-      "block truncate text-sm font-semibold leading-snug",
-      configured ? "text-[#f4f8f6]" : "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]",
+      "block truncate rootsy-text-heading-xsmall",
+      configured ? "text-[var(--rootsy-sombra-50)]" : "text-[var(--rootsy-sombra-300)]",
     )
   }
   return cn(
     rootsyLayoutsEarthFloorSlotValueClass,
-    "block truncate text-sm font-semibold leading-snug",
+    "block truncate rootsy-text-heading-xsmall",
   )
 }
 
@@ -521,20 +526,22 @@ export function layoutsOperarProductCardProposalGridShellClass(id: LayoutsOperar
 
   if (id === "losa-sombra") {
     return cn(
-      "layouts-operar-product-card group relative grid h-[256px] w-full grid-rows-[120px_1fr] overflow-hidden rounded-xl text-left",
-      "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-700)]",
+      "layouts-operar-product-card group relative box-border grid h-[256px] w-full",
+      "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip rounded-[12px] p-0 text-left",
+      "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-800)]",
       "shadow-none transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_38%,var(--rootsy-sombra-700))]",
     )
   }
 
   return cn(
-    "layouts-operar-product-card group relative grid h-[256px] w-full grid-rows-[120px_1fr] overflow-hidden rounded-2xl text-left",
-    "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_65%,transparent)] bg-[var(--rootsy-sombra-600)]",
-    "shadow-[inset_0_1px_0_color-mix(in_srgb,#ffffff_6%,transparent)]",
+    "layouts-operar-product-card group relative box-border grid h-[256px] w-full",
+    "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip rounded-[16px] p-0 text-left",
+    "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
+    "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_28%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
-    "transition-[box-shadow,transform,ring-color] duration-200 ease-out hover:-translate-y-0.5",
+    "transition-[box-shadow,ring-color] duration-200 ease-out",
     "hover:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_32%,transparent)]",
-    "hover:shadow-[inset_0_1px_0_color-mix(in_srgb,#ffffff_9%,transparent),0_8px_22px_color-mix(in_srgb,var(--rootsy-sombra-950)_36%,transparent)]",
+    "hover:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-400)_40%,transparent)]",
   )
 }
 
@@ -543,18 +550,20 @@ export function layoutsOperarProductCardProposalListShellClass(id: LayoutsOperar
 
   if (id === "losa-sombra") {
     return cn(
-      "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-xl text-left",
-      "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-700)]",
+      "layouts-operar-product-card group relative box-border flex min-h-[80px] w-full items-stretch",
+      "overflow-clip rounded-[12px] p-0 text-left",
+      "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-800)]",
       "shadow-none transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_38%,var(--rootsy-sombra-700))]",
     )
   }
 
   return cn(
-    "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-2xl text-left",
-    "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_65%,transparent)] bg-[var(--rootsy-sombra-600)]",
-    "shadow-[inset_0_1px_0_color-mix(in_srgb,#ffffff_6%,transparent)]",
+    "layouts-operar-product-card group relative box-border flex min-h-[80px] w-full items-stretch",
+    "overflow-clip rounded-[16px] p-0 text-left",
+    "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
+    "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_28%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
-    "transition-[box-shadow,transform,ring-color] duration-200 ease-out hover:-translate-y-0.5",
+    "transition-[box-shadow,ring-color] duration-200 ease-out",
     "hover:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_32%,transparent)]",
   )
 }
@@ -567,7 +576,7 @@ export function layoutsOperarProductCardProposalMediaClass(
     return variant === "grid" ? layoutsOperarProductCardMediaClass : layoutsOperarProductCardListMediaClass
   }
 
-  const base = "relative shrink-0 overflow-hidden"
+  const base = "relative shrink-0 overflow-clip"
 
   if (variant === "list") {
     return cn(base, "h-20 w-20")
@@ -589,9 +598,37 @@ export function layoutsOperarProductCardProposalMediaStyle(
   }
 
   return {
-    backgroundColor: toolboxHx("sombra", "600"),
+    backgroundColor: toolboxHx("sombra", "500"),
     boxShadow: `inset 0 0 0 1px ${getLayoutsOperarBorderCss("darkHairline")}`,
   }
+}
+
+export function layoutsOperarProductCardProposalTriggerClass(
+  id: LayoutsOperarProductCardProposalId,
+) {
+  void id
+  return layoutsOperarProductCardTriggerClass
+}
+
+export function layoutsOperarProductCardProposalGridInnerClass(
+  id: LayoutsOperarProductCardProposalId,
+) {
+  void id
+  return layoutsOperarProductCardGridInnerClass
+}
+
+export function layoutsOperarProductCardProposalTextClass(
+  id: LayoutsOperarProductCardProposalId,
+) {
+  void id
+  return layoutsOperarProductCardGridTextClass
+}
+
+export function layoutsOperarProductCardProposalPriceRowClass(
+  id: LayoutsOperarProductCardProposalId,
+) {
+  void id
+  return layoutsOperarProductCardGridPriceRowClass
 }
 
 export function layoutsOperarProductCardProposalBodyClass(
@@ -615,30 +652,30 @@ export function layoutsOperarProductCardProposalTitleClass(id: LayoutsOperarProd
   if (id === "plano-dosel") return layoutsOperarProductCardTitleClass
 
   if (id === "losa-sombra") {
-    return "line-clamp-2 text-sm font-semibold leading-tight text-[#f4f8f6]"
+    return "line-clamp-2 text-sm font-semibold leading-tight text-[var(--rootsy-sombra-50)]"
   }
 
-  return "line-clamp-2 text-sm font-bold leading-tight text-[color-mix(in_srgb,var(--rootsy-bruma-100)_94%,white)]"
+  return "line-clamp-2 text-sm font-bold leading-tight text-[var(--rootsy-sombra-50)]"
 }
 
 export function layoutsOperarProductCardProposalDescClass(id: LayoutsOperarProductCardProposalId) {
   if (id === "plano-dosel") return layoutsOperarProductCardDescClass
 
   if (id === "losa-sombra") {
-    return "line-clamp-2 text-xs leading-relaxed text-[color-mix(in_srgb,var(--rootsy-sombra-400)_82%,transparent)]"
+    return "line-clamp-2 text-xs leading-relaxed text-[var(--rootsy-sombra-300)]"
   }
 
-  return "line-clamp-2 text-xs leading-relaxed text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]"
+  return "line-clamp-2 text-xs leading-relaxed text-[var(--rootsy-sombra-300)]"
 }
 
 export function layoutsOperarProductCardProposalPriceClass(id: LayoutsOperarProductCardProposalId) {
   if (id === "plano-dosel") return layoutsOperarProductCardPriceClass
 
   if (id === "losa-sombra") {
-    return "text-lg font-semibold tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-300)_88%,white)]"
+    return "text-lg font-semibold tabular-nums text-[var(--layouts-operar-product-card-desc)]"
   }
 
-  return "text-lg font-bold tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]"
+  return "text-lg font-bold tabular-nums text-[var(--layouts-operar-product-card-desc)]"
 }
 
 export function layoutsOperarProductCardMediaEmptyStateShellClass(
@@ -679,14 +716,14 @@ export function layoutsOperarProductCardProposalAddClass(id: LayoutsOperarProduc
       "border border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
       "bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_55%,transparent)]",
       "text-[color-mix(in_srgb,var(--rootsy-savia-300)_92%,white)]",
-      "opacity-100 transition-colors duration-200 group-hover:bg-[var(--rootsy-savia-500)] group-hover:text-[var(--rootsy-savia-950)]",
+      "opacity-100 transition-colors duration-200 group-hover:bg-[var(--rootsy-savia-600)] group-hover:text-[var(--rootsy-savia-950)]",
     )
   }
 
   return cn(
     "pointer-events-none absolute right-2 bottom-2 z-10 flex size-8 items-center justify-center rounded-full",
     "border border-[color-mix(in_srgb,var(--rootsy-savia-300)_45%,transparent)]",
-    "bg-[var(--rootsy-savia-500)] text-[var(--rootsy-savia-950)]",
+    "bg-[var(--rootsy-savia-600)] text-[var(--rootsy-savia-950)]",
     "opacity-60 transition-[opacity,transform] duration-200",
     "group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100",
   )
@@ -718,22 +755,25 @@ export function layoutsOperarTicketProposalPanelClass(
 }
 
 export function layoutsOperarTicketProposalHeaderClass(id: LayoutsOperarTicketProposalId) {
+  const frost = "layouts-operar-ticket-header-frost"
+
   if (id === "bruma-ascendente") {
     return cn(
       layoutsOperarSummaryHeaderRowClass,
-      "relative border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_85%,transparent)]",
-      "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--rootsy-bruma-50)_92%,white)_0%,var(--rootsy-bruma-100)_100%)]",
+      frost,
+      "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_55%,transparent)]",
     )
   }
 
   if (id === "bruma-plana") {
     return cn(
       layoutsOperarSummaryHeaderRowClass,
-      "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_90%,transparent)] bg-[var(--rootsy-bruma-50)]",
+      frost,
+      "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_55%,transparent)]",
     )
   }
 
-  return layoutsOperarSummaryHeaderRowClass
+  return cn(layoutsOperarSummaryHeaderRowClass, frost)
 }
 
 export function layoutsOperarTicketProposalCartRowClass(id: LayoutsOperarTicketProposalId) {
@@ -803,7 +843,7 @@ export function layoutsOperarTicketProposalLineCommentClass(id: LayoutsOperarTic
   }
 
   return cn(
-    "border-t border-[var(--layouts-operar-light-cart-divider)] bg-[color-mix(in_srgb,var(--rootsy-bruma-50)_65%,white)] px-3 py-2",
+    "border-t border-[var(--layouts-operar-light-cart-divider)] bg-[color-mix(in_srgb,var(--rootsy-bruma-50)_28%,var(--rootsy-blanco))] px-3 py-2",
     "text-[11px] leading-snug text-[var(--layouts-operar-light-cart-line-meta)]",
   )
 }
@@ -951,14 +991,14 @@ export function layoutsOperarTicketProposalTotalsBreakdownLabelClass(
   id: LayoutsOperarTicketProposalId,
 ) {
   if (id === "bruma-plana") {
-    return "self-center text-[10px] font-medium uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-savia-200)_62%,transparent)]"
+    return "self-center rootsy-text-label text-[color-mix(in_srgb,var(--rootsy-savia-200)_62%,transparent)]"
   }
 
   if (id === "bruma-savia") {
     return "self-center text-sm font-normal text-[var(--rootsy-bruma-700)]"
   }
 
-  return "self-center text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--layouts-operar-light-totals-breakdown-label)]"
+  return "self-center rootsy-text-label text-[var(--layouts-operar-light-totals-breakdown-label)]"
 }
 
 export function layoutsOperarTicketProposalTotalsBreakdownAmountClass(
@@ -1002,7 +1042,7 @@ export function layoutsOperarTicketProposalTotalsMainLabelClass(id: LayoutsOpera
 
 export function layoutsOperarTicketProposalTotalsMainAmountClass(id: LayoutsOperarTicketProposalId) {
   if (id === "bruma-savia") {
-    return "m-0 self-center min-w-[6.5rem] text-right text-sm font-bold tabular-nums leading-none text-[var(--rootsy-bruma-900)]"
+    return "m-0 self-center min-w-[6.5rem] text-right rootsy-text-metric-medium text-[var(--rootsy-bruma-900)]"
   }
 
   return cn(

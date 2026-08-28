@@ -3,7 +3,14 @@
 import {
   getIconButtonSpecStyle,
   resolveLegacyIconButtonSpec,
+  resolveSemanticAppearance,
+  type RootsButtonSpecShape,
 } from "@/components/rootsy-button/rootsButtonSpecRuntime"
+import {
+  resolveRootsButtonAtmosphere,
+  type RootsButtonAtmosphere,
+} from "@/components/rootsy-button/rootsButtonAtmosphere"
+import { useRootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphereContext"
 import {
   iconButtonSize,
   type IconButtonEmphasisId,
@@ -12,6 +19,7 @@ import {
   type IconButtonThemeId,
 } from "@/app/library/ui-components/buttonsUiHardcodedSpec"
 import type {
+  RootsButtonSemanticVariant,
   RootsIconButtonActionIntent,
   RootsIconButtonSize,
   RootsIconButtonSurface,
@@ -20,7 +28,7 @@ import type {
 import { useRootsButtonInteraction } from "@/components/rootsy-button/useRootsButtonInteraction"
 import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import {
   Children,
   cloneElement,
@@ -39,10 +47,17 @@ import {
 
 export type RootsIconButtonProps = {
   label: string
+  /** Misma semántica que RootsSemanticButton. Si viene, manda sobre tone/emphasis. */
+  semantic?: RootsButtonSemanticVariant
+  /** default = radio del tamaño · pill = círculo. */
+  shape?: RootsButtonSpecShape
+  /** Luz del handbook. Si no viene, hereda del provider o de `theme`. */
+  atmosphere?: RootsButtonAtmosphere
   tone?: RootsIconButtonTone
   intent?: RootsIconButtonActionIntent
   surface?: RootsIconButtonSurface
   size?: RootsIconButtonSize
+  /** @deprecated Preferí `atmosphere`. workspace = bruma · pos = sombra. */
   theme?: IconButtonThemeId
   emphasis?: IconButtonEmphasisId
   rowIntent?: IconButtonRowIntentId
@@ -90,6 +105,9 @@ export const RootsIconButton = forwardRef<
   function RootsIconButton(
     {
       label,
+      semantic,
+      shape = "default",
+      atmosphere,
       tone = "light",
       intent = "edit",
       surface = "light",
@@ -120,31 +138,53 @@ export const RootsIconButton = forwardRef<
     },
     ref,
   ) {
+    const inheritedAtmosphere = useRootsButtonAtmosphere(atmosphere)
+    const resolvedAtmosphere = resolveRootsButtonAtmosphere({
+      atmosphere: inheritedAtmosphere,
+      theme,
+    })
     const { state, interactionHandlers } = useRootsButtonInteraction({
       disabled,
       loading,
     })
 
+    const appearance = semantic ? resolveSemanticAppearance(semantic) : undefined
     const spec =
-      theme && emphasis
-        ? { kind: "theme" as const, theme, emphasis }
-        : rowIntent
-          ? { kind: "row" as const, rowIntent }
-          : resolveLegacyIconButtonSpec({ tone, surface, intent })
+      appearance
+        ? { kind: "appearance" as const }
+        : theme && emphasis
+          ? { kind: "theme" as const, theme, emphasis }
+          : rowIntent
+            ? { kind: "row" as const, rowIntent }
+            : resolveLegacyIconButtonSpec({ tone, surface, intent })
 
     const buttonStyle =
-      spec.kind === "row"
+      spec.kind === "appearance"
         ? getIconButtonSpecStyle({
-            rowIntent: spec.rowIntent,
+            appearance: appearance!,
             sizeId: size as IconButtonSizeId,
             state,
+            shape,
+            atmosphere: resolvedAtmosphere,
+            theme,
           })
-        : getIconButtonSpecStyle({
-            theme: spec.theme,
-            emphasis: spec.emphasis,
-            sizeId: size as IconButtonSizeId,
-            state,
-          })
+        : spec.kind === "row"
+          ? getIconButtonSpecStyle({
+              rowIntent: spec.rowIntent,
+              sizeId: size as IconButtonSizeId,
+              state,
+              shape,
+              atmosphere: resolvedAtmosphere,
+              theme,
+            })
+          : getIconButtonSpecStyle({
+              theme: spec.theme,
+              emphasis: spec.emphasis,
+              sizeId: size as IconButtonSizeId,
+              state,
+              shape,
+              atmosphere: resolvedAtmosphere,
+            })
 
     const iconPx = iconButtonSize(size as IconButtonSizeId).iconPx
     const isDisabled = Boolean(disabled || loading)
@@ -170,6 +210,9 @@ export const RootsIconButton = forwardRef<
     const interactionProps = {
       className: chromeClassName,
       style: chromeStyle,
+      "data-rootsy-appearance": appearance,
+      "data-rootsy-atmosphere": resolvedAtmosphere,
+      "data-rootsy-shape": shape,
       onMouseEnter: (event: MouseEvent<HTMLElement>) => {
         interactionHandlers.onMouseEnter()
         onMouseEnter?.(event as MouseEvent<HTMLButtonElement>)

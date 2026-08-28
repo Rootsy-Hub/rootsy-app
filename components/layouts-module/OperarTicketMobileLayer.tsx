@@ -48,7 +48,7 @@ export function OperarTicketMobileLayer({
           className={cn(
             "gap-0 p-0 sm:max-w-none",
             "h-[min(88dvh,44rem)] max-h-[88dvh]",
-            "bg-[var(--rootsy-bruma-50)] [&>button.absolute]:hidden",
+            "bg-[var(--rootsy-bruma-100)] [&>button.absolute]:hidden",
           )}
         >
           <SheetHeader className="sr-only">

@@ -236,6 +236,23 @@ export async function saveMesasLayoutPositionsApi(
   return { success: true as const }
 }
 
+export async function fetchTableSession(
+  popId: string,
+  sessionId: string,
+): Promise<
+  | { success: true; session: MesaSessionRow | null }
+  | { success: false; error: string }
+> {
+  const res = await apiGet(popId, `sessions/${sessionId}`)
+  const json = await readJson(res)
+  if (!res.ok || !json || json.success !== true) return fail(json, res.status)
+  const row = json.session as SessionApi | null
+  return {
+    success: true,
+    session: row ? mapSession(row) : null,
+  }
+}
+
 export async function fetchOpenTableSessions(
   popId: string,
 ): Promise<

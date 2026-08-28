@@ -1,0 +1,346 @@
+/**
+ * Planeta piedra — canto rodado, pulido y mojado.
+ * Opaco, con masa. Sin blur, sin halo, sin vidrio.
+ *
+ * El reinado pinta el mineral. El corte (cut) da la silueta del lecho.
+ *
+ * Capas:
+ *   fondo  → cara, vena, lecho
+ *   ::before → grano
+ *   ::after  → sheen alargado (agua)
+ *   ícono    → z-1, tinta en el mineral
+ *   grano    → z-2, cubre el tatuaje
+ *   sheen    → z-3, agua encima
+ */
+
+.menu-planet-piedra {
+  --piedra-sheen: 0.78;
+  --piedra-grain: 0.46;
+  --piedra-ink: color-mix(in srgb, var(--rootsy-negro) 52%, transparent);
+  --piedra-tilt: -3deg;
+  --piedra-squash-x: 1;
+  --piedra-squash-y: 0.88;
+  --piedra-sheen-x: 18%;
+  --piedra-sheen-y: 16%;
+  --piedra-sheen-w: 46%;
+  --piedra-sheen-h: 13%;
+
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  top: 0;
+  rotate: var(--piedra-tilt);
+  scale: var(--piedra-squash-x) var(--piedra-squash-y);
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 58% 42% 54% 46% / 48% 56% 40% 60% !important;
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition:
+    top 180ms cubic-bezier(0.33, 1, 0.68, 1),
+    rotate 180ms cubic-bezier(0.33, 1, 0.68, 1),
+    box-shadow 180ms cubic-bezier(0.33, 1, 0.68, 1);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-blanco) 10%, transparent),
+    inset 0 -3px 5px color-mix(in srgb, var(--rootsy-negro) 7%, transparent),
+    0 1px 0 color-mix(in srgb, var(--rootsy-negro) 16%, transparent),
+    0 3px 6px -1px color-mix(in srgb, var(--rootsy-negro) 16%, transparent);
+}
+
+.menu-planet-piedra::before,
+.menu-planet-piedra::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.menu-planet-piedra::before {
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  opacity: var(--piedra-grain);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140% 140%;
+  background-position: center;
+}
+
+/* Hilera de agua — elipse baja, no orbe. */
+.menu-planet-piedra::after {
+  z-index: 3;
+  left: var(--piedra-sheen-x);
+  top: var(--piedra-sheen-y);
+  width: var(--piedra-sheen-w);
+  height: var(--piedra-sheen-h);
+  border-radius: 50%;
+  opacity: var(--piedra-sheen);
+  background: radial-gradient(
+    ellipse at 40% 40%,
+    color-mix(in srgb, var(--rootsy-blanco) 70%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-blanco) 16%, transparent) 42%,
+    transparent 74%
+  );
+  box-shadow: 14px 4px 0 -5px color-mix(in srgb, var(--rootsy-blanco) 28%, transparent);
+}
+
+/* Tinta absorbida — mancha el mineral, el grano la cubre. */
+.menu-planet-piedra-glyph {
+  color: var(--piedra-ink);
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+}
+
+/* ——— Cortes del lecho ——— */
+.menu-planet-piedra--cut-a {
+  --piedra-tilt: -7deg;
+  --piedra-squash-x: 1.08;
+  --piedra-squash-y: 0.82;
+  --piedra-sheen-x: 16%;
+  --piedra-sheen-y: 18%;
+  --piedra-sheen-w: 50%;
+  border-radius: 64% 36% 58% 42% / 46% 58% 38% 62% !important;
+}
+
+.menu-planet-piedra--cut-b {
+  --piedra-tilt: 5deg;
+  --piedra-squash-x: 0.86;
+  --piedra-squash-y: 1.04;
+  --piedra-sheen-x: 24%;
+  --piedra-sheen-y: 14%;
+  --piedra-sheen-w: 38%;
+  --piedra-sheen-h: 15%;
+  border-radius: 40% 60% 44% 56% / 62% 36% 60% 40% !important;
+}
+
+.menu-planet-piedra--cut-c {
+  --piedra-tilt: -2deg;
+  --piedra-squash-x: 1.02;
+  --piedra-squash-y: 0.9;
+  --piedra-sheen-x: 22%;
+  --piedra-sheen-y: 15%;
+  border-radius: 48% 70% 38% 55% / 58% 42% 62% 36% !important;
+}
+
+.menu-planet-piedra--cut-d {
+  --piedra-tilt: 6deg;
+  --piedra-squash-x: 1.06;
+  --piedra-squash-y: 0.86;
+  --piedra-sheen-x: 14%;
+  --piedra-sheen-y: 20%;
+  --piedra-sheen-w: 44%;
+  border-radius: 70% 32% 62% 40% / 40% 64% 36% 58% !important;
+}
+
+.menu-planet-piedra--cut-e {
+  --piedra-tilt: -5deg;
+  --piedra-squash-x: 0.92;
+  --piedra-squash-y: 0.98;
+  --piedra-sheen-x: 28%;
+  --piedra-sheen-y: 13%;
+  --piedra-sheen-w: 40%;
+  --piedra-sheen-h: 12%;
+  border-radius: 36% 58% 48% 52% / 54% 40% 66% 44% !important;
+}
+
+.menu-planet-piedra--cut-f {
+  --piedra-tilt: 3deg;
+  --piedra-squash-x: 1.04;
+  --piedra-squash-y: 0.84;
+  --piedra-sheen-x: 20%;
+  --piedra-sheen-y: 17%;
+  --piedra-sheen-w: 48%;
+  border-radius: 55% 45% 68% 32% / 42% 60% 34% 66% !important;
+}
+
+/* ——— Savia · jade de río ——— */
+.menu-planet-piedra--operar {
+  --piedra-ink: color-mix(in srgb, var(--rootsy-savia-950) 70%, var(--rootsy-negro));
+  border-color: color-mix(in srgb, var(--rootsy-savia-950) 82%, var(--rootsy-negro));
+  background-color: var(--rootsy-savia-800);
+  background-image:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--rootsy-negro) 14%, var(--rootsy-savia-950)) 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      ellipse 78% 48% at 64% 92%,
+      color-mix(in srgb, var(--rootsy-savia-950) 28%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 80% 55% at 32% 22%,
+      color-mix(in srgb, var(--rootsy-savia-500) 20%, var(--rootsy-savia-700)) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      162deg,
+      var(--rootsy-savia-600) 0%,
+      var(--rootsy-savia-700) 40%,
+      var(--rootsy-savia-800) 74%,
+      var(--rootsy-savia-950) 100%
+    );
+}
+
+/* ——— Sol · arenisca mojada ——— */
+.menu-planet-piedra--administrar {
+  --piedra-ink: color-mix(in srgb, var(--rootsy-sol-950) 70%, var(--rootsy-negro));
+  border-color: color-mix(in srgb, var(--rootsy-sol-950) 84%, var(--rootsy-negro));
+  background-color: var(--rootsy-sol-800);
+  background-image:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--rootsy-negro) 14%, var(--rootsy-sol-950)) 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      ellipse 78% 48% at 64% 92%,
+      color-mix(in srgb, var(--rootsy-sol-950) 28%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 80% 55% at 32% 22%,
+      color-mix(in srgb, var(--rootsy-sol-400) 22%, var(--rootsy-sol-700)) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      162deg,
+      var(--rootsy-sol-600) 0%,
+      var(--rootsy-sol-700) 40%,
+      var(--rootsy-sol-800) 74%,
+      var(--rootsy-sol-950) 100%
+    );
+}
+
+/* ——— Cielo · pizarra de río ——— */
+.menu-planet-piedra--configurar {
+  --piedra-ink: color-mix(in srgb, var(--rootsy-cielo-950) 70%, var(--rootsy-negro));
+  border-color: color-mix(in srgb, var(--rootsy-cielo-950) 86%, var(--rootsy-negro));
+  background-color: var(--rootsy-cielo-800);
+  background-image:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--rootsy-negro) 14%, var(--rootsy-cielo-950)) 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      ellipse 78% 48% at 64% 92%,
+      color-mix(in srgb, var(--rootsy-cielo-950) 30%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 80% 55% at 32% 22%,
+      color-mix(in srgb, var(--rootsy-cielo-300) 18%, var(--rootsy-cielo-700)) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      162deg,
+      var(--rootsy-cielo-600) 0%,
+      var(--rootsy-cielo-700) 40%,
+      var(--rootsy-cielo-800) 74%,
+      var(--rootsy-cielo-950) 100%
+    );
+}
+
+/* ——— Lava · jaspe húmedo ——— */
+.menu-planet-piedra--lava {
+  --piedra-ink: color-mix(in srgb, var(--rootsy-lava-950) 70%, var(--rootsy-negro));
+  border-color: color-mix(in srgb, var(--rootsy-lava-950) 84%, var(--rootsy-negro));
+  background-color: var(--rootsy-lava-800);
+  background-image:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--rootsy-negro) 14%, var(--rootsy-lava-950)) 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      ellipse 78% 48% at 64% 92%,
+      color-mix(in srgb, var(--rootsy-lava-950) 28%, transparent) 0%,
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 80% 55% at 32% 22%,
+      color-mix(in srgb, var(--rootsy-lava-400) 20%, var(--rootsy-lava-700)) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      162deg,
+      var(--rootsy-lava-600) 0%,
+      var(--rootsy-lava-700) 40%,
+      var(--rootsy-lava-800) 74%,
+      var(--rootsy-lava-950) 100%
+    );
+}
+
+.menu-planet-piedra--placed,
+.menu-planet-piedra--muted {
+  --piedra-sheen: 0.22;
+  --piedra-grain: 0.2;
+}
+
+.menu-planet-piedra--placed.menu-planet-piedra--operar,
+.menu-planet-piedra--muted.menu-planet-piedra--operar {
+  background-color: var(--rootsy-savia-900);
+  border-color: var(--rootsy-savia-950);
+}
+
+.menu-planet-piedra--placed.menu-planet-piedra--administrar,
+.menu-planet-piedra--muted.menu-planet-piedra--administrar {
+  background-color: var(--rootsy-sol-900);
+  border-color: var(--rootsy-sol-950);
+}
+
+.menu-planet-piedra--placed.menu-planet-piedra--configurar,
+.menu-planet-piedra--muted.menu-planet-piedra--configurar {
+  background-color: var(--rootsy-cielo-900);
+  border-color: var(--rootsy-cielo-950);
+}
+
+.menu-planet-piedra--placed.menu-planet-piedra--lava,
+.menu-planet-piedra--muted.menu-planet-piedra--lava {
+  background-color: var(--rootsy-lava-900);
+  border-color: var(--rootsy-lava-950);
+}
+
+.menu-planet-piedra--overlay.menu-planet-piedra--operar {
+  background-color: var(--rootsy-savia-700);
+}
+
+.menu-planet-piedra--overlay.menu-planet-piedra--administrar {
+  background-color: var(--rootsy-sol-700);
+}
+
+.menu-planet-piedra--overlay.menu-planet-piedra--configurar {
+  background-color: var(--rootsy-cielo-700);
+}
+
+.menu-planet-piedra--overlay.menu-planet-piedra--lava {
+  background-color: var(--rootsy-lava-700);
+}
+
+.group:hover .menu-planet-piedra--interactive {
+  --piedra-sheen: 0.95;
+  --piedra-grain: 0.32;
+  top: -2px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-blanco) 18%, transparent),
+    inset 0 -3px 6px color-mix(in srgb, var(--rootsy-negro) 8%, transparent),
+    0 2px 0 color-mix(in srgb, var(--rootsy-negro) 14%, transparent),
+    0 5px 8px -2px color-mix(in srgb, var(--rootsy-negro) 18%, transparent);
+}
+
+.group:active .menu-planet-piedra--interactive {
+  --piedra-sheen: 0.3;
+  top: 2px;
+  box-shadow:
+    inset 0 2px 4px color-mix(in srgb, var(--rootsy-negro) 20%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-negro) 12%, transparent),
+    0 1px 0 color-mix(in srgb, var(--rootsy-negro) 22%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-planet-piedra {
+    transition: none;
+  }
+}

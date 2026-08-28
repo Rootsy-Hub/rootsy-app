@@ -2,19 +2,8 @@
 
 import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
 import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-catalog/actions"
-import { libraryNavItemLabelClass } from "@/app/library/libraryColorTheme"
+import { OperarSectionRail } from "@/components/layouts-module/OperarSectionRail"
 import type { SaleCatalogViewPersisted } from "@/lib/saleCatalogPreference"
-import {
-  layoutsOperarCatalogRailItemClass,
-  layoutsOperarCatalogRailItemSelectedClass,
-  layoutsOperarCatalogRailListClass,
-  layoutsOperarCatalogRailListItemClass,
-  layoutsOperarCatalogRailNavClass,
-  layoutsOperarCatalogRailSectionGroupClass,
-  layoutsOperarCatalogRailSectionGroupDividerClass,
-  layoutsOperarCatalogRailSectionLabelClass,
-} from "@/app/library/layouts/layoutsOperarStyles"
-import { cn } from "@/lib/utils"
 
 type Props = {
   categories: SaleCatalogCategory[]
@@ -32,72 +21,35 @@ export function SaleCatalogSidebarNav({
   onVistaChange,
   density = "default",
 }: Props) {
-  const comfortable = density === "comfortable"
+  const groups = categorySections?.length
+    ? categorySections.map((section) => ({
+        id: section.id,
+        label: section.label,
+        items: section.categories.map((cat) => ({
+          id: `${section.id}:${cat.id}`,
+          label: cat.name,
+        })),
+      }))
+    : undefined
+
+  const items = groups
+    ? undefined
+    : categories.map((cat) => ({
+        id: cat.name,
+        label: cat.name,
+      }))
+
+  const activeId =
+    vistaCatalogo.modo === "categoria" ? vistaCatalogo.categoria : ""
+
   return (
-    <nav
-      className={cn(
-        layoutsOperarCatalogRailNavClass,
-        comfortable && "p-3 [&_button]:min-h-12 [&_button]:px-3 [&_button]:text-base",
-      )}
-      aria-label="Filtros del catálogo"
-    >
-      {!categorySections?.length ? (
-        <ul className={layoutsOperarCatalogRailListClass} role="list">
-          {categories.map((cat) => {
-            const seleccionado =
-              vistaCatalogo.modo === "categoria" && vistaCatalogo.categoria === cat.name
-            return (
-              <li key={cat.id} className={layoutsOperarCatalogRailListItemClass}>
-                <button
-                  type="button"
-                  aria-pressed={seleccionado}
-                  onClick={() => onVistaChange({ modo: "categoria", categoria: cat.name })}
-                  className={cn(
-                    layoutsOperarCatalogRailItemClass,
-                    seleccionado && layoutsOperarCatalogRailItemSelectedClass,
-                  )}
-                >
-                  <span className={libraryNavItemLabelClass}>{cat.name}</span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        categorySections.map((section, sectionIndex) => (
-          <div
-            key={section.id}
-            className={cn(
-              layoutsOperarCatalogRailSectionGroupClass,
-              sectionIndex > 0 && layoutsOperarCatalogRailSectionGroupDividerClass,
-            )}
-          >
-            <p className={layoutsOperarCatalogRailSectionLabelClass}>{section.label}</p>
-            <ul className={layoutsOperarCatalogRailListClass} role="list">
-              {section.categories.map((cat) => {
-                const filtroKey = `${section.id}:${cat.id}`
-                const seleccionado =
-                  vistaCatalogo.modo === "categoria" && vistaCatalogo.categoria === filtroKey
-                return (
-                  <li key={filtroKey} className={layoutsOperarCatalogRailListItemClass}>
-                    <button
-                      type="button"
-                      aria-pressed={seleccionado}
-                      onClick={() => onVistaChange({ modo: "categoria", categoria: filtroKey })}
-                      className={cn(
-                        layoutsOperarCatalogRailItemClass,
-                        seleccionado && layoutsOperarCatalogRailItemSelectedClass,
-                      )}
-                    >
-                      <span className={libraryNavItemLabelClass}>{cat.name}</span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ))
-      )}
-    </nav>
+    <OperarSectionRail
+      ariaLabel="Filtros del catálogo"
+      activeId={activeId}
+      density={density}
+      groups={groups}
+      items={items}
+      onSelect={(id) => onVistaChange({ modo: "categoria", categoria: id })}
+    />
   )
 }

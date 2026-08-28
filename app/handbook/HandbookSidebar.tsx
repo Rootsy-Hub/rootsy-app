@@ -1,30 +1,44 @@
-import { HandbookNav } from "@/app/handbook/layoutHandbookShared"
+import { HandbookDesignSystemNav } from "@/app/handbook/HandbookDesignSystemNav"
 import {
-  libraryScrollDarkClass,
-  librarySidebarClass,
-} from "@/app/library/libraryColorTheme"
-import { cn } from "@/lib/utils"
+  HANDBOOK_DESIGN_SYSTEM_BACK_HREF,
+} from "@/app/handbook/handbookDesignSystem"
+import { HandbookNav } from "@/app/handbook/layoutHandbookShared"
+import { MenuSidebar } from "@/components/MenuSidebar"
 import Image from "next/image"
 import Link from "next/link"
 
 export function HandbookSidebar({
   activeSectionId,
+  designSystemPageId,
+  isDesignSystem,
+  onSelectSection,
+  onSelectDesignSystemPage,
 }: {
   activeSectionId: string
+  designSystemPageId?: string
+  isDesignSystem?: boolean
+  onSelectSection?: (sectionId: string) => void
+  onSelectDesignSystemPage?: (pageId: string) => void
 }) {
-  return (
-    <aside
-      className={cn(
-        "hidden min-h-0 w-64 shrink-0 flex-col overflow-hidden border-r lg:flex",
-        librarySidebarClass,
-      )}
-    >
-      <div
-        className={cn(
-          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4",
-          libraryScrollDarkClass,
-        )}
+  if (isDesignSystem) {
+    return (
+      <MenuSidebar
+        backHref={HANDBOOK_DESIGN_SYSTEM_BACK_HREF}
+        backLabel="Volver"
+        onBack={() => onSelectSection?.("producto")}
+        eyebrow="Sistema de diseño"
       >
+        <HandbookDesignSystemNav
+          activePageId={designSystemPageId ?? "overview"}
+          onSelectPage={onSelectDesignSystemPage}
+        />
+      </MenuSidebar>
+    )
+  }
+
+  return (
+    <MenuSidebar
+      brand={
         <Link
           href="/"
           aria-label="Rootsy — landing"
@@ -39,8 +53,9 @@ export function HandbookSidebar({
             className="h-7 w-auto"
           />
         </Link>
-        <HandbookNav activeSectionId={activeSectionId} />
-      </div>
-    </aside>
+      }
+    >
+      <HandbookNav activeSectionId={activeSectionId} onSelectSection={onSelectSection} />
+    </MenuSidebar>
   )
 }

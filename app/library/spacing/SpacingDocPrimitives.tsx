@@ -163,14 +163,10 @@ export function SpacingScaleTable() {
 export function NatureRhythmTiersGrid() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {NATURE_RHYTHM_TIERS.map((tier, index) => (
+      {NATURE_RHYTHM_TIERS.map((tier) => (
         <div
           key={tier.id}
           className="library-doc-card rounded-xl p-4"
-          style={{
-            borderLeftWidth: 3,
-            borderLeftColor: `color-mix(in srgb, ${CONCEPT_TOKENS.savia600} ${40 + index * 10}%, ${CONCEPT_TOKENS.savia100})`,
-          }}
         >
           <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{tier.title}</p>
           <p className="text-xs font-medium" style={{ color: CONCEPT_TOKENS.savia800 }}>

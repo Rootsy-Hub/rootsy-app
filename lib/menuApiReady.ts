@@ -39,5 +39,5 @@ export const SHOW_MENU_API_READY_BADGE = true
 export function shouldShowMenuApiReadyBadge(
   id: string | null | undefined,
 ): boolean {
-  return SHOW_MENU_API_READY_BADGE && isMenuApiReady(id)
+  return SHOW_MENU_API_READY_BADGE && id === "sale"
 }

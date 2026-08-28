@@ -10,7 +10,8 @@ import {
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import { dataWorkspaceHeaderEdgeToggleClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
-import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts/DataWorkspaceHeaderMoreMenu"
+import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts-module/ModuleWorkspaceHeader"
+import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
 import {
   ModuleWorkspaceBackdropFallback,
   moduleWorkspaceFallbackSurfaceClass,
@@ -23,7 +24,7 @@ import { LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX } from "@/app/library/layouts/l
 import { cn } from "@/lib/utils"
 import { RootsIconButton } from "@/components/rootsy-button"
 import { popMenuHref } from "@/lib/popRoutes"
-import { Minimize2, PanelLeftOpen } from "lucide-react"
+import { Minimize2, PanelLeftOpen, type LucideIcon } from "lucide-react"
 import {
   useCallback,
   useEffect,
@@ -41,6 +42,8 @@ export type DataWorkspaceLayoutProps = {
   /** Isotipo a la izquierda del nombre. Si no se pasa, usa la foto del POP. */
   popLogoSrc?: string
   title?: string
+  titleIcon?: LucideIcon
+  showTitleIcon?: boolean
   /** Segunda línea bajo el nombre, solo si el rol del POP ya está. Mientras carga, hay esqueleto. */
   pillLabel?: string
   /** Respaldo opcional si el bootstrap del POP aún no tiene rol. */
@@ -48,6 +51,8 @@ export type DataWorkspaceLayoutProps = {
   loading?: boolean
   /** Cabecera clara o bosque nocturno (`dark` / `night`, equivalentes). */
   headerVariant?: DataWorkspaceHeaderVariant
+  /** Superficie del header. Si no se pasa, el chrome queda en éter. */
+  atmosphere?: RootsButtonAtmosphere
   /** Cabecera cristal — siempre `ModuleWorkspaceHeader`. */
   showFullscreen?: boolean
   /** En pantalla completa oculta el chrome (estación de fichaje). */
@@ -66,7 +71,7 @@ export type DataWorkspaceLayoutProps = {
   hideSidebarToggleOnMobile?: boolean
   /** Fila opcional bajo el header (filtros, período, búsqueda). */
   toolbar?: ReactNode
-  /** Barra lateral opcional (p. ej. `DataWorkspaceSidebar`) para varias vistas en la misma sección. */
+  /** Barra lateral opcional para varias vistas en la misma sección. */
   sidebar?: ReactNode
   /** Permite colapsar la barra lateral (persiste por POP en `localStorage`). */
   sidebarCollapsible?: boolean
@@ -86,13 +91,13 @@ export type DataWorkspaceLayoutProps = {
   contentFlush?: boolean
   /** Clases extra en el `<main>`. */
   mainClassName?: string
-  /** Fondo fotográfico del POP. No elige el header. */
+  /** Fondo fotográfico del POP. Apagado en módulos: el cuerpo no lleva foto. */
   usePopBackdrop?: boolean
-  /** Fondo de /home cuando no hay foto de POP (Librería, Backoffice). */
+  /** Fondo de /home (estrellas). No usar detrás del contenido de un módulo. */
   useHomeBackdrop?: boolean
   /**
    * Capas de fondo (foto POP, home o fallback).
-   * `false` = superficie plana. El layout de tablas no admite foto de POP.
+   * `false` = superficie plana. Default de los módulos con header reutilizable.
    */
   useBackdrop?: boolean
   /** Sesión actual (opcional: si no se pasa, se oculta el bloque usuario a la derecha). */
@@ -108,10 +113,13 @@ export function DataWorkspaceLayout({
   popName,
   popLogoSrc: popLogoSrcProp,
   title,
+  titleIcon,
+  showTitleIcon = false,
   pillLabel = "Listados",
   userRoleLabel,
   loading = false,
   headerVariant = "default",
+  atmosphere,
   showFullscreen = true,
   hideHeaderInFullscreen = false,
   stationLocked = false,
@@ -349,11 +357,14 @@ export function DataWorkspaceLayout({
             popName={resolvedPopName}
             popStreetAddress={popStreetAddress}
             title={title}
+            titleIcon={titleIcon}
+            showTitleIcon={showTitleIcon}
             loading={loading}
             brandPending={brandPending}
             userPending={userPending}
             rolePending={rolePending}
             headerVariant={headerVariant}
+            atmosphere={atmosphere}
             titleAdornment={titleAdornment}
             headerActions={headerActions}
             headerMoreActions={headerMoreActions}
@@ -416,10 +427,13 @@ export function DataWorkspaceLayout({
                 contentFlush
                   ? cn(
                       "min-h-0 p-0",
-                      fillViewport ? "overflow-y-auto" : "overflow-hidden",
+                      fillViewport && !loading
+                        ? "overflow-y-auto"
+                        : "overflow-hidden",
                     )
                   : cn(
-                      "overflow-y-auto px-3 py-4 sm:px-6 sm:py-8 sm:pl-5 sm:pr-8",
+                      loading ? "overflow-hidden" : "overflow-y-auto",
+                      "px-3 py-4 sm:px-6 sm:py-8 sm:pl-5 sm:pr-8",
                       mainMaxWidthClass,
                       "mx-auto w-full max-w-none",
                     ),
@@ -437,10 +451,13 @@ export function DataWorkspaceLayout({
               contentFlush
                 ? cn(
                     "min-h-0 p-0",
-                    fillViewport ? "overflow-y-auto" : "overflow-hidden",
+                    fillViewport && !loading
+                      ? "overflow-y-auto"
+                      : "overflow-hidden",
                   )
                 : cn(
-                    "mx-auto overflow-y-auto px-3 py-4 sm:px-6 sm:py-8",
+                    "mx-auto px-3 py-4 sm:px-6 sm:py-8",
+                    loading ? "overflow-hidden" : "overflow-y-auto",
                     mainMaxWidthClass,
                   ),
               mainClassName,

@@ -15,7 +15,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Shell",
     component: "OperationsModuleBody",
-    token: "layouts-operar-body · .rootsy-theme-pos · sombra-950",
+    token: "layouts-operar-body · .rootsy-theme-pos · negro",
     source: "DataWorkspaceOperationsLayout",
   },
   {
@@ -63,7 +63,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Toolbox",
     component: "Slots Cliente / Comprobante / Pago / Descuento",
-    token: "min-h space.1000 · gap-2.5 sm:gap-3",
+    token: "min-h space.1000 · gap space.200",
     source: "sale/page.tsx · row-start-2",
   },
   {

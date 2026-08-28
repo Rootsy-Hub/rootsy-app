@@ -27,6 +27,7 @@ import {
   purchaseCatalogViewToItemsFilter,
 } from "@/lib/operateCatalogPage"
 import { resolveCatalogProductImage } from "@/lib/menuCatalogProduct"
+import { MenuSidebar } from "@/components/MenuSidebar"
 import {
   layoutsOperarCatalogCanvasBodyClass,
   layoutsOperarCatalogCanvasClass,
@@ -35,7 +36,6 @@ import {
   layoutsOperarCatalogEmptyCanvasClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
-  layoutsOperarCatalogSidebarInnerClass,
   layoutsOperarCatalogSidebarOpenClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
@@ -213,8 +213,11 @@ export function PurchaseCatalogBrowser({
 
   return (
     <div className={cn(layoutsOperarCatalogColumnClass, className)}>
-      <aside
+      <MenuSidebar
         id="data-workspace-sidebar"
+        collapseBelow={false}
+        padded={false}
+        fixedWidth={false}
         className={cn(
           "max-md:hidden",
           layoutsOperarCatalogSidebarClass,
@@ -223,21 +226,19 @@ export function PurchaseCatalogBrowser({
             : layoutsOperarCatalogSidebarClosedClass,
         )}
         aria-hidden={!catalogSidebarOpen}
-        {...(!catalogSidebarOpen ? { inert: true } : {})}
+        inert={!catalogSidebarOpen}
         aria-label="Filtros del catálogo"
       >
-        <div className={layoutsOperarCatalogSidebarInnerClass}>
-          {loading && !error ? (
-            <SaleCatalogSidebarNavSkeleton />
-          ) : (
-            <PurchaseCatalogSidebarNav
-              categorySections={categorySections}
-              vistaCatalogo={vistaCatalogo}
-              onVistaChange={setVistaCatalogo}
-            />
-          )}
-        </div>
-      </aside>
+        {loading && !error ? (
+          <SaleCatalogSidebarNavSkeleton />
+        ) : (
+          <PurchaseCatalogSidebarNav
+            categorySections={categorySections}
+            vistaCatalogo={vistaCatalogo}
+            onVistaChange={setVistaCatalogo}
+          />
+        )}
+      </MenuSidebar>
 
       <section
         className={cn(
@@ -258,7 +259,7 @@ export function PurchaseCatalogBrowser({
           <div
             className={cn(
               "absolute z-30 overflow-hidden md:hidden",
-              "bg-[var(--rootsy-sombra-800)]",
+              "bg-[var(--rootsy-sombra-950)]",
               "[&_button]:min-h-12 [&_button]:px-3 [&_button]:text-base",
               usesMobileStage
                 ? "inset-0"

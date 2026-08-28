@@ -5,8 +5,8 @@ import "@/app/library/layouts/layoutsOperarTheme.css"
 import "@/app/library/libraryColorTheme.css"
 import { getLayoutsOperarGridCssVariables } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import {
-  layoutsOperationsBodyScopeClass,
-  layoutsOperationsBodyShellClass,
+  layoutsOperarBodyShellClass,
+  layoutsOperarModuleBodyClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   OperarCatalogMobileChromeProvider,
@@ -27,7 +27,7 @@ export type DataWorkspaceOperationsLayoutProps = DataWorkspaceModuleLayoutProps
 
 /**
  * Shell módulo POP + cuerpo operaciones (layout · operaciones).
- * Fondo POP + header reutilizable + fila bruma + canvas `--op-dark-shell`.
+ * Header reutilizable + fila bruma + canvas `--op-dark-shell`. Sin fondo decorativo.
  */
 export function DataWorkspaceOperationsLayout({
   children,
@@ -94,10 +94,8 @@ export function OperationsModuleBody({
   return (
     <div
       className={cn(
-        "rootsy-theme-pos rootsy-radius-system",
-        layoutsOperationsBodyScopeClass,
-        layoutsOperationsBodyShellClass,
-        "dark relative flex min-h-0 flex-1 flex-col overflow-hidden text-white",
+        layoutsOperarModuleBodyClass,
+        layoutsOperarBodyShellClass,
         className,
       )}
       style={getLayoutsOperarGridCssVariables()}
@@ -107,12 +105,7 @@ export function OperationsModuleBody({
   )
 }
 
-/** Ambiente decorativo compartido — ventas · mostrador · mesas · compras. */
+/** @deprecated El cuerpo de operar ya no lleva fondo decorativo. */
 export function OperationsModuleBackdrop() {
-  return (
-    <div className="pointer-events-none absolute inset-0" aria-hidden>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.14),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.1),transparent_36%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
-    </div>
-  )
+  return null
 }

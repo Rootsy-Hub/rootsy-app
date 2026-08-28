@@ -1,5 +1,4 @@
-import { ServicesWorkspaceView } from "@/app/[siteId]/[popId]/services/ServicesWorkspaceView"
-
+import { ServicesWorkspaceView } from "./ServicesWorkspaceView"
 export default function ServicesPage() {
   return <ServicesWorkspaceView />
 }

@@ -64,7 +64,7 @@ export function SaleOperationPanelTabs<T extends string>({
     <div
       ref={containerRef}
       className={cn(
-        "relative flex w-full min-w-0 shrink-0 overflow-hidden border-b",
+        "relative flex w-full min-w-0 shrink-0 overflow-x-hidden border-b",
         SALE_OPERATION_TAB_BAR_HEIGHT_CLASS,
         isOperar
           ? "border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-100)]"
@@ -106,7 +106,7 @@ export function SaleOperationPanelTabs<T extends string>({
             }}
             onClick={() => !disabled && onChange(id)}
             className={cn(
-              "relative z-10 flex h-full min-w-0 flex-1 items-center justify-center gap-1.5 px-4 text-sm font-semibold leading-none",
+              "relative z-10 flex h-full min-w-0 flex-1 items-center justify-center gap-1.5 px-4 text-sm font-semibold leading-5",
               "transition-colors duration-200",
               "outline-none ring-0",
               "focus:outline-none focus:ring-0 focus:shadow-none",
@@ -126,7 +126,7 @@ export function SaleOperationPanelTabs<T extends string>({
             )}
           >
             <Icon className="size-3.5 shrink-0" aria-hidden />
-            <span className="min-w-0 truncate">
+            <span className="min-w-0">
               {label}
               {suffix ? (
                 <span className="font-ledger font-bold tabular-nums"> {suffix}</span>

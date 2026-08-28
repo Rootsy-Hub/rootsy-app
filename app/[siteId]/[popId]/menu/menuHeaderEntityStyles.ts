@@ -15,12 +15,26 @@ export const menuHeaderEntityClass = cn(
 
 const menuUniverseEntityBodySurfaceClass = cn(
   "menu-header-entity-body relative w-full overflow-hidden",
-  "bg-[linear-gradient(168deg,var(--rootsy-eter-800)_0%,var(--rootsy-eter-900)_52%,var(--rootsy-eter-950)_100%)]",
+  "bg-[linear-gradient(168deg,var(--rootsy-eter-void-800)_0%,var(--rootsy-eter-void-900)_52%,var(--rootsy-eter-void-950)_100%)]",
 )
 
 export const menuHeaderEntityBodyClass = cn(
   menuUniverseEntityBodySurfaceClass,
-  "border-b border-[color-mix(in_srgb,var(--rootsy-eter-100)_10%,transparent)]",
+  "border-b border-transparent",
+)
+
+/** Sotobosque · Sombra — dosel, sin estrellas. */
+export const menuHeaderEntityBodySombraClass = cn(
+  "menu-header-entity-body menu-header-entity-body--sombra relative w-full overflow-hidden",
+  "bg-[linear-gradient(180deg,var(--rootsy-sombra-900)_0%,var(--rootsy-negro)_100%)]",
+  "border-b border-[var(--rootsy-sombra-700)]",
+)
+
+/** Sotobosque · Luz filtrada — papel, sin estrellas. */
+export const menuHeaderEntityBodyLuzClass = cn(
+  "menu-header-entity-body menu-header-entity-body--luz relative w-full overflow-hidden",
+  "bg-[var(--rootsy-blanco)]",
+  "border-b border-[var(--rootsy-bruma-200)]",
 )
 
 /** Tierra mojada — humus oliva, humedad de savia. */

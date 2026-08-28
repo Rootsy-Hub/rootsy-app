@@ -38,12 +38,12 @@
 
 @keyframes cart-line-added-pulse {
   0% {
-    background-color: rgb(110 231 183 / 0.72);
-    box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.45);
+    background-color: color-mix(in srgb, var(--rootsy-savia-300) 72%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rootsy-savia-400) 45%, transparent);
   }
   55% {
-    background-color: rgb(167 243 208 / 0.42);
-    box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.2);
+    background-color: color-mix(in srgb, var(--rootsy-savia-200) 42%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rootsy-savia-400) 20%, transparent);
   }
   100% {
     background-color: transparent;
@@ -58,192 +58,205 @@
 @media (prefers-reduced-motion: reduce) {
   .cart-line-added-pulse {
     animation: none;
-    background-color: rgb(167 243 208 / 0.35);
+    background-color: color-mix(in srgb, var(--rootsy-savia-200) 35%, transparent);
   }
 }
 
 :root {
-  --background: var(--rootsy-bruma-50);
-  --foreground: var(--rootsy-bruma-900);
-  --card: var(--rootsy-white);
-  --card-foreground: var(--rootsy-bruma-900);
-  --popover: var(--rootsy-white);
-  --popover-foreground: var(--rootsy-bruma-900);
-  --primary: var(--rootsy-savia-600);
-  --primary-foreground: var(--rootsy-white);
-  --secondary: var(--rootsy-bruma-100);
-  --secondary-foreground: var(--rootsy-bruma-900);
-  --muted: var(--rootsy-bruma-100);
-  --muted-foreground: var(--rootsy-bruma-500);
+  --background: var(--color-fondo);
+  --foreground: var(--color-texto);
+  --card: var(--color-elevada);
+  --card-foreground: var(--color-texto);
+  --popover: var(--color-elevada);
+  --popover-foreground: var(--color-texto);
+  --primary: var(--color-accion);
+  --primary-foreground: var(--color-action-text);
+  --secondary: var(--color-superficie);
+  --secondary-foreground: var(--color-texto);
+  --muted: var(--color-superficie);
+  --muted-foreground: var(--color-texto-muted);
   --accent: var(--rootsy-savia-100);
-  --accent-foreground: var(--rootsy-savia-900);
-  --destructive: var(--rootsy-danger);
-  --destructive-foreground: var(--rootsy-white);
-  --border: var(--rootsy-bruma-200);
-  --input: var(--rootsy-bruma-200);
-  --ring: var(--rootsy-savia-700);
+  --accent-foreground: var(--rootsy-savia-800);
+  --destructive: var(--color-peligro);
+  --destructive-foreground: var(--rootsy-savia-50);
+  --border: var(--color-borde);
+  --input: var(--color-borde);
+  --ring: var(--color-foco);
   --chart-1: var(--rootsy-savia-600);
-  --chart-2: var(--rootsy-savia-400);
-  --chart-3: var(--rootsy-savia-teal);
+  --chart-2: var(--rootsy-cielo-500);
+  --chart-3: var(--rootsy-sol-500);
   --chart-4: var(--rootsy-bruma-600);
-  --chart-5: var(--rootsy-savia-500);
+  --chart-5: var(--rootsy-lava-600);
   --radius: 0.75rem;
   --sidebar: var(--rootsy-sombra-700);
-  --sidebar-foreground: var(--rootsy-bruma-50);
-  --sidebar-primary: var(--rootsy-savia-400);
+  --sidebar-foreground: var(--rootsy-sombra-50);
+  --sidebar-primary: var(--color-foco);
   --sidebar-primary-foreground: var(--rootsy-sombra-950);
   --sidebar-accent: var(--rootsy-sombra-600);
-  --sidebar-accent-foreground: var(--rootsy-bruma-50);
-  --sidebar-border: var(--rootsy-sombra-border);
-  --sidebar-ring: var(--rootsy-savia-400);
-  /* Utilidades Tailwind (landing) — apuntan a savia, no a Paradise Park */
+  --sidebar-accent-foreground: var(--rootsy-sombra-50);
+  --sidebar-border: var(--rootsy-sombra-400);
+  --sidebar-ring: var(--color-foco);
   --forest: var(--rootsy-savia-600);
   --meadow: var(--rootsy-savia-400);
-  --amber: var(--rootsy-warning);
+  --amber: var(--rootsy-sol-500);
   --bark: var(--rootsy-bruma-500);
   --cream: var(--rootsy-bruma-50);
+  --rootsy-hairline: var(--color-borde);
+  --rootsy-particle: var(--color-foco);
+  --rootsy-section-alt: var(--color-elevada);
+  --rootsy-footer: var(--color-superficie);
 }
 
 .dark {
-  /* App shell — valores tomados de app/[pop]/menu/page.tsx (fuente de verdad visual) */
-  --background: #070a09;
-  --foreground: #ffffff;
-  --card: #0c0f0e;
-  --card-foreground: #ffffff;
-  --popover: #0c0f0e;
-  --popover-foreground: #ffffff;
-  --primary: #10b981;
-  --primary-foreground: #ffffff;
-  --secondary: rgb(255 255 255 / 0.04);
-  --secondary-foreground: #ffffff;
-  --muted: rgb(255 255 255 / 0.06);
-  --muted-foreground: rgb(255 255 255 / 0.45);
-  --accent: rgb(255 255 255 / 0.06);
-  --accent-foreground: #ffffff;
-  --destructive: var(--rootsy-danger);
-  --destructive-foreground: var(--rootsy-white);
-  --border: rgb(255 255 255 / 0.08);
-  --input: rgb(255 255 255 / 0.08);
-  --ring: rgb(16 185 129 / 0.45);
-  --rootsy-hairline: rgb(255 255 255 / 0.04);
-  --rootsy-particle: #34d399;
-  --rootsy-section-alt: rgb(8 12 11 / 0.8);
-  --rootsy-footer: rgb(5 8 7 / 0.9);
-  --chart-1: #34d399;
-  --chart-2: #fbbf24;
-  --chart-3: #2dd4bf;
-  --chart-4: #f97316;
-  --chart-5: #6ee7b7;
-  --sidebar: #0c0f0e;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #10b981;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgb(255 255 255 / 0.06);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgb(255 255 255 / 0.08);
-  --sidebar-ring: rgb(16 185 129 / 0.45);
+  --color-fondo: var(--rootsy-sombra-950);
+  --color-superficie: var(--rootsy-sombra-600);
+  --color-elevada: var(--rootsy-sombra-500);
+  --color-borde: var(--rootsy-sombra-400);
+  --color-texto: var(--rootsy-sombra-50);
+  --color-texto-muted: var(--rootsy-sombra-300);
+
+  --background: var(--color-fondo);
+  --foreground: var(--color-texto);
+  --card: var(--color-elevada);
+  --card-foreground: var(--color-texto);
+  --popover: var(--color-elevada);
+  --popover-foreground: var(--color-texto);
+  --primary: var(--color-accion);
+  --primary-foreground: var(--color-action-text);
+  --secondary: var(--rootsy-sombra-800);
+  --secondary-foreground: var(--color-texto);
+  --muted: var(--color-elevada);
+  --muted-foreground: var(--color-texto-muted);
+  --accent: var(--rootsy-sombra-800);
+  --accent-foreground: var(--color-texto);
+  --destructive: var(--color-peligro);
+  --destructive-foreground: var(--rootsy-savia-50);
+  --border: var(--color-borde);
+  --input: var(--color-borde);
+  --ring: var(--color-foco);
+  --rootsy-hairline: color-mix(in srgb, var(--rootsy-sombra-50) 8%, transparent);
+  --rootsy-particle: var(--color-foco);
+  --rootsy-section-alt: var(--rootsy-sombra-900);
+  --rootsy-footer: var(--rootsy-sombra-950);
+  --chart-1: var(--rootsy-savia-400);
+  --chart-2: var(--rootsy-sol-500);
+  --chart-3: var(--rootsy-cielo-400);
+  --chart-4: var(--rootsy-lava-500);
+  --chart-5: var(--rootsy-savia-300);
+  --sidebar: var(--rootsy-sombra-800);
+  --sidebar-foreground: var(--rootsy-sombra-50);
+  --sidebar-primary: var(--color-accion);
+  --sidebar-primary-foreground: var(--rootsy-savia-50);
+  --sidebar-accent: var(--rootsy-sombra-700);
+  --sidebar-accent-foreground: var(--rootsy-sombra-50);
+  --sidebar-border: var(--rootsy-sombra-400);
+  --sidebar-ring: var(--color-foco);
   --forest: var(--rootsy-savia-500);
   --meadow: var(--rootsy-savia-400);
-  --amber: var(--rootsy-warning);
+  --amber: var(--rootsy-sol-500);
   --bark: var(--rootsy-bruma-500);
   --cream: var(--rootsy-bruma-50);
 }
 
 .rootsy-app-light,
 [data-rootsy-light-shell="true"] {
-  --background: var(--rootsy-bruma-50);
-  --foreground: var(--rootsy-bruma-900);
-  --card: var(--rootsy-white);
-  --card-foreground: var(--rootsy-bruma-900);
-  --popover: var(--rootsy-white);
-  --popover-foreground: var(--rootsy-bruma-900);
-  --primary: var(--rootsy-savia-600);
-  --primary-foreground: var(--rootsy-white);
-  --secondary: var(--rootsy-bruma-100);
-  --secondary-foreground: var(--rootsy-bruma-900);
-  --muted: var(--rootsy-bruma-100);
-  --muted-foreground: var(--rootsy-bruma-500);
+  --color-fondo: var(--rootsy-bruma-100);
+  --color-superficie: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-blanco);
+  --color-borde: var(--rootsy-bruma-200);
+  --color-texto: var(--rootsy-bruma-900);
+  --color-texto-muted: var(--rootsy-bruma-700);
+
+  --background: var(--color-fondo);
+  --foreground: var(--color-texto);
+  --card: var(--color-elevada);
+  --card-foreground: var(--color-texto);
+  --popover: var(--color-elevada);
+  --popover-foreground: var(--color-texto);
+  --primary: var(--color-accion);
+  --primary-foreground: var(--color-action-text);
+  --secondary: var(--color-superficie);
+  --secondary-foreground: var(--color-texto);
+  --muted: var(--color-superficie);
+  --muted-foreground: var(--color-texto-muted);
   --accent: var(--rootsy-savia-100);
-  --accent-foreground: var(--rootsy-savia-900);
-  --destructive: var(--rootsy-danger);
-  --destructive-foreground: var(--rootsy-white);
-  --border: var(--rootsy-bruma-200);
-  --input: var(--rootsy-bruma-200);
-  --ring: var(--rootsy-savia-700);
+  --accent-foreground: var(--rootsy-savia-800);
+  --destructive: var(--color-peligro);
+  --destructive-foreground: var(--rootsy-savia-50);
+  --border: var(--color-borde);
+  --input: var(--color-borde);
+  --ring: var(--color-foco);
   --chart-1: var(--rootsy-savia-600);
-  --chart-2: var(--rootsy-savia-400);
-  --chart-3: var(--rootsy-savia-teal);
+  --chart-2: var(--rootsy-cielo-500);
+  --chart-3: var(--rootsy-sol-500);
   --chart-4: var(--rootsy-bruma-600);
-  --chart-5: var(--rootsy-savia-500);
+  --chart-5: var(--rootsy-lava-600);
   --sidebar: var(--rootsy-sombra-700);
-  --sidebar-foreground: var(--rootsy-bruma-50);
-  --sidebar-primary: var(--rootsy-savia-400);
+  --sidebar-foreground: var(--rootsy-sombra-50);
+  --sidebar-primary: var(--color-foco);
   --sidebar-primary-foreground: var(--rootsy-sombra-950);
   --sidebar-accent: var(--rootsy-sombra-600);
-  --sidebar-accent-foreground: var(--rootsy-bruma-50);
-  --sidebar-border: var(--rootsy-sombra-border);
-  --sidebar-ring: var(--rootsy-savia-400);
+  --sidebar-accent-foreground: var(--rootsy-sombra-50);
+  --sidebar-border: var(--rootsy-sombra-400);
+  --sidebar-ring: var(--color-foco);
   --forest: var(--rootsy-savia-600);
   --meadow: var(--rootsy-savia-400);
-  --amber: var(--rootsy-warning);
+  --amber: var(--rootsy-sol-500);
   --bark: var(--rootsy-bruma-500);
   --cream: var(--rootsy-bruma-50);
-  --rootsy-hairline: var(--rootsy-bruma-200);
-  --rootsy-particle: var(--rootsy-savia-600);
-  --rootsy-section-alt: var(--rootsy-bruma-50);
-  --rootsy-footer: var(--rootsy-bruma-100);
+  --rootsy-hairline: var(--color-borde);
+  --rootsy-particle: var(--color-foco);
+  --rootsy-section-alt: var(--color-elevada);
+  --rootsy-footer: var(--color-superficie);
 }
 
 /* Librería — ancla workspace de docs a bruma (mayor especificidad). */
 .rootsy-theme-library.rootsy-app-light,
 .rootsy-library-shell.rootsy-theme-library {
-  --background: var(--rootsy-bruma-100);
-  --foreground: var(--rootsy-bruma-900);
-  --card: var(--rootsy-white);
-  --card-foreground: var(--rootsy-bruma-900);
-  --popover: var(--rootsy-white);
-  --popover-foreground: var(--rootsy-bruma-900);
-  --secondary: var(--rootsy-bruma-50);
-  --secondary-foreground: var(--rootsy-bruma-900);
-  --muted: var(--rootsy-bruma-50);
-  --muted-foreground: var(--rootsy-bruma-500);
+  --color-fondo: var(--rootsy-bruma-100);
+  --color-superficie: var(--rootsy-bruma-50);
+  --color-elevada: var(--rootsy-blanco);
+  --color-borde: var(--rootsy-bruma-200);
+  --color-texto: var(--rootsy-bruma-900);
+  --color-texto-muted: var(--rootsy-bruma-700);
+  --background: var(--color-fondo);
+  --foreground: var(--color-texto);
+  --card: var(--color-elevada);
+  --card-foreground: var(--color-texto);
+  --popover: var(--color-elevada);
+  --popover-foreground: var(--color-texto);
+  --secondary: var(--color-superficie);
+  --secondary-foreground: var(--color-texto);
+  --muted: var(--color-superficie);
+  --muted-foreground: var(--color-texto-muted);
   --accent: var(--rootsy-savia-100);
-  --accent-foreground: var(--rootsy-savia-900);
-  --primary: var(--rootsy-savia-600);
-  --primary-foreground: var(--rootsy-white);
-  --destructive: #dc2626;
-  --destructive-foreground: var(--rootsy-white);
-  --border: var(--rootsy-bruma-200);
-  --input: var(--rootsy-bruma-200);
-  --ring: var(--rootsy-savia-700);
+  --accent-foreground: var(--rootsy-savia-800);
+  --primary: var(--color-accion);
+  --primary-foreground: var(--color-action-text);
+  --destructive: var(--color-peligro);
+  --destructive-foreground: var(--rootsy-savia-50);
+  --border: var(--color-borde);
+  --input: var(--color-borde);
+  --ring: var(--color-foco);
   --chart-1: var(--rootsy-savia-600);
-  --chart-2: var(--rootsy-savia-400);
-  --chart-3: var(--rootsy-savia-teal);
+  --chart-2: var(--rootsy-cielo-500);
+  --chart-3: var(--rootsy-sol-500);
   --chart-4: var(--rootsy-bruma-600);
-  --chart-5: var(--rootsy-savia-500);
+  --chart-5: var(--rootsy-lava-600);
   --forest: var(--rootsy-savia-600);
   --meadow: var(--rootsy-savia-400);
-  --rootsy-hairline: var(--rootsy-bruma-200);
-  --rootsy-particle: var(--rootsy-savia-600);
-  --rootsy-section-alt: var(--rootsy-bruma-50);
-  --rootsy-footer: var(--rootsy-bruma-100);
+  --rootsy-hairline: var(--color-borde);
+  --rootsy-particle: var(--color-foco);
+  --rootsy-section-alt: var(--color-elevada);
+  --rootsy-footer: var(--color-superficie);
 }
 
 @theme inline {
   --font-sans: var(--rootsy-font-ui);
   --font-secondary: var(--rootsy-font-reading);
   --font-numeric: var(--rootsy-font-numeric);
-  --font-mono: var(--rootsy-font-code);
   --color-rootsy-ceniza-700: var(--rootsy-ceniza-700);
   --color-rootsy-ceniza-600: var(--rootsy-ceniza-600);
-  --color-rootsy-bruma-100: var(--rootsy-bruma-100);
-  --color-rootsy-bruma-200: var(--rootsy-bruma-200);
-  --color-rootsy-bruma-500: var(--rootsy-bruma-500);
-  --color-rootsy-bruma-900: var(--rootsy-bruma-900);
-  --color-rootsy-savia-600: var(--rootsy-savia-600);
-  --color-rootsy-savia-400: var(--rootsy-savia-400);
-  --color-rootsy-savia-50: var(--rootsy-savia-50);
-  --color-rootsy-savia-800: var(--rootsy-savia-800);
   --color-rootsy-hairline: var(--rootsy-hairline);
   --color-rootsy-particle: var(--rootsy-particle);
   --color-rootsy-section-alt: var(--rootsy-section-alt);
@@ -389,7 +402,7 @@
   /* Scrollbar styling */
   .game-scroll {
     scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.38) transparent;
+    scrollbar-color: color-mix(in srgb, var(--rootsy-bruma-400) 38%, transparent) transparent;
   }
 
   .game-scroll::-webkit-scrollbar {
@@ -403,13 +416,13 @@
   
   .game-scroll::-webkit-scrollbar-thumb {
     border-radius: 9999px;
-    background: rgba(148, 163, 184, 0.38);
+    background: color-mix(in srgb, var(--rootsy-bruma-400) 38%, transparent);
     border: 1px solid transparent;
     background-clip: padding-box;
   }
   
   .game-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgba(148, 163, 184, 0.55);
+    background: color-mix(in srgb, var(--rootsy-bruma-400) 55%, transparent);
     border: 1px solid transparent;
     background-clip: padding-box;
   }
@@ -588,11 +601,11 @@
   .rootsy-chrome-accent {
     background: linear-gradient(
       100deg,
-      #047857 0%,
-      #34d399 30%,
-      #5eead4 50%,
-      #34d399 70%,
-      #047857 100%
+      var(--rootsy-savia-700) 0%,
+      var(--rootsy-savia-400) 30%,
+      var(--rootsy-savia-300) 50%,
+      var(--rootsy-savia-400) 70%,
+      var(--rootsy-savia-700) 100%
     );
     background-size: 220% 100%;
     -webkit-background-clip: text;

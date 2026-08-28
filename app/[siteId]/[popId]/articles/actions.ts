@@ -85,6 +85,8 @@ export type GetPopArticlesTableInput = {
   sinStock: boolean
   stockNegativo: boolean
   ventaSinStock: boolean
+  /** Ausente = true. false salta inventory_on_hand. */
+  includeStock?: boolean
   categoryId: string
   /** Vacío o los tres tipos = sin filtrar por tipo. */
   itemKinds: ArticleItemKind[]

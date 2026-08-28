@@ -88,7 +88,7 @@ export function OperarMobileToolboxIcons({
       aria-label="Configuración de la operación"
       className={cn(
         "grid shrink-0 grid-cols-4 gap-2 border-t border-[var(--rootsy-bruma-200)] px-3 py-2.5",
-        "bg-[var(--rootsy-bruma-50)]",
+        "bg-[var(--rootsy-bruma-100)]",
         "md:hidden",
         className,
       )}

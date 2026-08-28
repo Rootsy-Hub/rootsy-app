@@ -1,5 +1,4 @@
-import { OperationsWorkspaceView } from "@/app/[siteId]/[popId]/operations/OperationsWorkspaceView"
-
+import { OperationsWorkspaceView } from "./OperationsWorkspaceView"
 export default function OperationsPage() {
   return <OperationsWorkspaceView />
 }

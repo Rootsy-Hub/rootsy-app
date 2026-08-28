@@ -18,7 +18,7 @@ export const ICONOGRAPHY_PAGE_META: Record<string, IconographyPageMeta> = {
     id: "iconography",
     title: "Iconografía",
     description:
-      "Señales SaaS — Iconsax Linear/Bold, savia en brand, tokens de tamaño y color.",
+      "Estilo, tamaños, uso y estados. Señales claras — nunca adorno.",
   },
 }
 

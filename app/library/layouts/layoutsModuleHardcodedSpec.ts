@@ -98,9 +98,9 @@ export function getLayoutsModuleContentRowFrameStyle() {
 export const LAYOUTS_MODULE_BACKDROP_SPEC_ROWS = [
   { token: "scope", value: "menu-nature-shell · menuNaturePalette.css" },
   { token: "pop.backgroundImage", value: "cover · center · opacity 40%" },
-  { token: "backdrop.scrim", value: "background / 32% (éter-950)" },
-  { token: "backdrop.ambient", value: "éter-100 / 6% · blur 120px" },
-  { token: "backdrop.vignette", value: "éter-950 / 62% radial" },
+  { token: "backdrop.scrim", value: "background / 32% (éter rampa 950)" },
+  { token: "backdrop.ambient", value: "éter-glow-100 / 6% · blur 120px" },
+  { token: "backdrop.vignette", value: "éter-void-950 / 62% radial" },
 ] as const
 
 export const LAYOUTS_MODULE_BACKDROP_FALLBACK_SPEC_ROWS = [

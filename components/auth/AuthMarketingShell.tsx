@@ -42,10 +42,6 @@ export function AuthMarketingShell({
   return (
     <div
       className="rootsy-theme-landing relative h-dvh overflow-hidden font-sans text-white"
-      style={{
-        ["--font-canopy" as string]:
-          "var(--font-nunito-sans), 'Nunito Sans', sans-serif",
-      }}
     >
       <AuthMarketingBackdrop />
 

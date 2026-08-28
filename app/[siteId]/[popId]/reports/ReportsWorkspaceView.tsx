@@ -29,7 +29,7 @@ import {
   type DataWorkspaceDatePreset,
 } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "@/lib/pop-spa/navigation"
 import type { DateRange } from "react-day-picker"
 import { useCallback, useMemo } from "react"
 

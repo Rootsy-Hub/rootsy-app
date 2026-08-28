@@ -23,10 +23,12 @@ import {
   ChannelDataFormSelectItem,
   ChannelDataFormTextareaField,
 } from "@/components/sale-operation/ChannelDataFormFields"
+import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import { Link2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 const MESA_GUEST_MAX = 50
+const EMPTY_MERGE_TABLES: MesaTable[] = []
 
 type Props = {
   primaryTable: MesaTable
@@ -34,6 +36,7 @@ type Props = {
   blockedMergeTables?: MesaTable[]
   blockedMergeWarning?: string | null
   waiters: MesaWaiter[]
+  waitersLoading?: boolean
   initial?: Partial<MesaOpenSessionInput>
   submitLabel?: string
   onSubmit: (input: MesaOpenSessionInput) => void | Promise<void>
@@ -45,9 +48,10 @@ type Props = {
 export function MesaOpenForm({
   primaryTable,
   mergeCandidates,
-  blockedMergeTables = [],
+  blockedMergeTables = EMPTY_MERGE_TABLES,
   blockedMergeWarning = null,
   waiters,
+  waitersLoading = false,
   initial,
   submitLabel = "Abrir mesa",
   onSubmit,
@@ -64,6 +68,12 @@ export function MesaOpenForm({
     () => new Set(blockedMergeTables.map((table) => table.id)),
     [blockedMergeTables],
   )
+  const initialWaiterId = initial?.waiterId ?? ""
+  const initialGuestCount =
+    initial?.guestCount != null ? String(initial.guestCount) : ""
+  const initialNote = initial?.note ?? ""
+  const initialTableIdsKey = (initial?.tableIds ?? [primaryTable.id]).join("\0")
+  const blockedMergeIdsKey = [...blockedMergeIds].sort().join("\0")
 
   const [mergedIds, setMergedIds] = useState<string[]>(() => {
     const ids = initial?.tableIds ?? [primaryTable.id]
@@ -74,16 +84,24 @@ export function MesaOpenForm({
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    setWaiterId(initial?.waiterId ?? "")
-    setGuestCountRaw(
-      initial?.guestCount != null ? String(initial.guestCount) : "",
+    setWaiterId(initialWaiterId)
+    setGuestCountRaw(initialGuestCount)
+    setNote(initialNote)
+    const ids = initialTableIdsKey ? initialTableIdsKey.split("\0") : [primaryTable.id]
+    const blocked = new Set(
+      blockedMergeIdsKey ? blockedMergeIdsKey.split("\0") : [],
     )
-    setNote(initial?.note ?? "")
-    const ids = initial?.tableIds ?? [primaryTable.id]
     setMergedIds(
-      ids.filter((id) => id !== primaryTable.id && !blockedMergeIds.has(id)),
+      ids.filter((id) => id !== primaryTable.id && !blocked.has(id)),
     )
-  }, [primaryTable.id, initial, blockedMergeIds])
+  }, [
+    primaryTable.id,
+    initialWaiterId,
+    initialGuestCount,
+    initialNote,
+    initialTableIdsKey,
+    blockedMergeIdsKey,
+  ])
 
   const tableIds = useMemo(
     () => [primaryTable.id, ...mergedIds],
@@ -131,21 +149,38 @@ export function MesaOpenForm({
       <ChannelDataPanel className="flex-1">
         <ChannelDataFormSection>
           <ChannelDataFormGrid>
-            <ChannelDataFormSelectField
-              label="Mozo"
-              id="mesa-waiter"
-              value={waiterId}
-              onValueChange={setWaiterId}
-              disabled={waiters.length === 0}
-              placeholder={waiters.length === 0 ? "Sin mozos" : "Seleccionar mozo"}
-              labelInfo="Asigná usuarios al rol Mozo en RRHH para poder seleccionarlos."
-            >
-              {waiters.map((w) => (
-                <ChannelDataFormSelectItem key={w.id} value={w.id}>
-                  {w.name}
-                </ChannelDataFormSelectItem>
-              ))}
-            </ChannelDataFormSelectField>
+            {waitersLoading ? (
+              <RootsFormField
+                label="Mozo"
+                htmlFor="mesa-waiter"
+                labelInfo="Asigná usuarios al rol Mozo en RRHH para poder seleccionarlos."
+              >
+                <div
+                  id="mesa-waiter"
+                  aria-busy="true"
+                  aria-label="Cargando mozos"
+                  className="h-9 w-full animate-pulse rounded-md bg-[color-mix(in_srgb,var(--rootsy-sombra-400)_18%,transparent)]"
+                />
+              </RootsFormField>
+            ) : (
+              <ChannelDataFormSelectField
+                label="Mozo"
+                id="mesa-waiter"
+                value={waiterId}
+                onValueChange={setWaiterId}
+                disabled={waiters.length === 0}
+                placeholder={
+                  waiters.length === 0 ? "Sin mozos" : "Seleccionar mozo"
+                }
+                labelInfo="Asigná usuarios al rol Mozo en RRHH para poder seleccionarlos."
+              >
+                {waiters.map((w) => (
+                  <ChannelDataFormSelectItem key={w.id} value={w.id}>
+                    {w.name}
+                  </ChannelDataFormSelectItem>
+                ))}
+              </ChannelDataFormSelectField>
+            )}
 
             <ChannelDataFormIntegerField
               label="Comensales"

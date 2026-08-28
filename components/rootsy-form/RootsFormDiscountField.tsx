@@ -12,9 +12,9 @@ import {
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import {
   rootsFormAffixClearButtonClassForTone,
-  rootsFormControlSelectionClass,
+  rootsFormControlSelectionClassForTone,
+  rootsFormPlaceholderClassForTone,
 } from "@/components/rootsy-form/rootsFormStyles"
-import { layoutsOperarFormDarkPlaceholderClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { useMoneyInputField } from "@/components/rootsy-form/useMoneyInputField"
 import { usePatternInputHandlers } from "@/components/rootsy-form/usePatternInputHandlers"
 import {
@@ -226,10 +226,8 @@ export function RootsFormDiscountField({
             placeholder={isPercent ? "0" : "0,00"}
             className={cn(
               "font-canopy disabled:cursor-not-allowed",
-              tone === "dark"
-                ? layoutsOperarFormDarkPlaceholderClass
-                : "placeholder:text-[var(--rootsy-bruma-500)]",
-              rootsFormControlSelectionClass,
+              rootsFormPlaceholderClassForTone(tone),
+              rootsFormControlSelectionClassForTone(tone),
               showClear && "pr-10",
               inputClassName,
             )}

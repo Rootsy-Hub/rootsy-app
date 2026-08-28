@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import { ManufacturingDialog } from "@/app/[siteId]/[popId]/manufacturing/ManufacturingDialog"
 import {
   formatInventoryMoney,
@@ -14,8 +15,8 @@ import {
   DataWorkspaceTableListNatureShell,
   DataWorkspaceTableListPage,
   DataWorkspaceTableListShell,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -45,7 +46,6 @@ import {
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Table, TableBody, TableCell } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import {
@@ -68,7 +68,7 @@ import { useDataWorkspaceClientInfiniteSlice } from "@/hooks/useDataWorkspaceCli
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useParams } from "next/navigation"
+import { useParams } from "@/lib/pop-spa/navigation"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import type { DateRange } from "react-day-picker"
 
@@ -231,17 +231,18 @@ export function ManufacturingWorkspaceView() {
           userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
           userRoleLabel: bootstrap?.roleLabel || undefined,
           headerActions: canCreateFromApi ? (
-            <DataWorkspaceHeaderIconButton
+            <RootsIconButton
               label="Fabricar"
-              headerVariant={dataWorkspaceTableListHeaderVariant}
-              primary
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
               onClick={() => {
                 setDialogError(null)
                 setDialogOpen(true)
               }}
             >
               <Plus className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
+            </RootsIconButton>
           ) : null,
         }}
         error={error}
@@ -287,6 +288,7 @@ export function ManufacturingWorkspaceView() {
           </DataWorkspaceTableListFiltersBar>
 
           <DataWorkspaceTableListShell
+            lockScroll={listFetching}
             activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -324,6 +326,18 @@ export function ManufacturingWorkspaceView() {
               !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
               ) : null
+            }
+            footerFloating
+            footerFloatingCentered
+            scrollResetKey={sliceResetKey}
+            footer={
+              <DataWorkspaceTableListPageDock
+                listFetching={listFetching}
+                loadedCount={pageRows.length}
+                totalCount={totalCount}
+                page={1}
+                onPageJump={slice.revealUpToPage}
+              />
             }
             infinite={{
               world: "manufacturing",

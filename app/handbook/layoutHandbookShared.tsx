@@ -21,7 +21,7 @@ export type HandbookNavGroup = {
   items: HandbookNavItem[]
 }
 
-/** Navegación agrupada — títulos de grupo no clickeables. */
+/** Navegación agrupada — títulos de grupo no clickeables. Mundo de Rootsy, no Universo. */
 export const HANDBOOK_NAV_GROUPS: HandbookNavGroup[] = [
   {
     id: "inicio",
@@ -47,8 +47,8 @@ export const HANDBOOK_NAV_GROUPS: HandbookNavGroup[] = [
     ],
   },
   {
-    id: "universo",
-    label: "Universo",
+    id: "mundo-de-rootsy",
+    label: "Mundo de Rootsy",
     items: [
       { id: "territorio", label: "Territorio" },
       { id: "comunidad", label: "Comunidad" },
@@ -114,9 +114,11 @@ export function getHandbookNavGroup(
 function HandbookNavItemLink({
   item,
   activeSectionId,
+  onSelectSection,
 }: {
   item: HandbookNavItem
   activeSectionId: string
+  onSelectSection?: (sectionId: string) => void
 }) {
   const isActive = item.id === activeSectionId
   const Icon = getHandbookNavIcon(item.id)
@@ -124,8 +126,11 @@ function HandbookNavItemLink({
   return (
     <Link
       href={handbookSectionHref(item.id)}
+      scroll={false}
+      prefetch
       aria-current={isActive ? "page" : undefined}
       className={cn(libraryNavItemClass, isActive && libraryNavItemActiveClass)}
+      onClick={() => onSelectSection?.(item.id)}
     >
       {Icon ? <Icon className={libraryNavItemIconClass} aria-hidden /> : null}
       <span className={libraryNavItemLabelClass}>{item.label}</span>
@@ -136,9 +141,11 @@ function HandbookNavItemLink({
 export function HandbookNav({
   activeSectionId,
   className,
+  onSelectSection,
 }: {
   activeSectionId: string
   className?: string
+  onSelectSection?: (sectionId: string) => void
 }) {
   return (
     <nav className={cn("library-nav", className)} aria-label="Secciones del handbook">
@@ -151,7 +158,11 @@ export function HandbookNav({
           <ul className="library-nav-list">
             {group.items.map((item) => (
               <li key={item.id}>
-                <HandbookNavItemLink item={item} activeSectionId={activeSectionId} />
+                <HandbookNavItemLink
+                  item={item}
+                  activeSectionId={activeSectionId}
+                  onSelectSection={onSelectSection}
+                />
               </li>
             ))}
           </ul>

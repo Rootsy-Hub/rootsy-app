@@ -1,26 +1,17 @@
+import { ROOTSY_TEXT_ROLE_CLASS } from "@/lib/design-system/tokens/typography"
 import { cn } from "@/lib/utils"
 
 /**
- * Tipografía para importes y columnas numéricas.
- * Fuentes: lib/design-system/tokens/typography.ts · --rootsy-font-numeric
+ * Importes. Inter + tabular. Los tamaños son roles de métrica, no la escala de Tailwind.
  */
-export const importeBaseClass = "font-numeric tabular-nums tracking-tight"
+export const importeBaseClass = "font-numeric tabular-nums"
 
 export const importeSmClass = cn(importeBaseClass, "text-sm font-semibold")
 
-export const importeMdClass = cn(importeBaseClass, "text-base font-semibold")
+export const importeMdClass = ROOTSY_TEXT_ROLE_CLASS.metricSmall
 
-export const importeLgClass = cn(
-  importeBaseClass,
-  "text-lg font-semibold tracking-tight",
-)
+export const importeLgClass = ROOTSY_TEXT_ROLE_CLASS.metricSmall
 
-export const importeXlClass = cn(
-  importeBaseClass,
-  "text-2xl font-bold tracking-tight",
-)
+export const importeXlClass = ROOTSY_TEXT_ROLE_CLASS.metricMedium
 
-export const importe2xlClass = cn(
-  importeBaseClass,
-  "text-3xl font-bold tracking-tight",
-)
+export const importe2xlClass = ROOTSY_TEXT_ROLE_CLASS.metric

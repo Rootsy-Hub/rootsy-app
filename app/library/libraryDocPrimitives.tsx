@@ -60,6 +60,25 @@ export function LibraryDocLead({
   )
 }
 
+/** El handbook fija el criterio. La librería especifica tokens y uso. */
+export function LibraryHandbookSource({
+  href,
+  label,
+}: {
+  href: string
+  label: string
+}) {
+  return (
+    <p className={cn(libraryDocBodyClass, "rounded-xl border px-4 py-3")}>
+      El criterio vive en el{" "}
+      <Link href={href} className="font-semibold text-[var(--rootsy-savia-700)] underline-offset-2 hover:underline">
+        Handbook · {label}
+      </Link>
+      . Acá están las rampas, los tokens y los ejemplos vivos.
+    </p>
+  )
+}
+
 export function LibraryDocSection({
   id,
   title,

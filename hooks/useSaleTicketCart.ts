@@ -1,9 +1,6 @@
 "use client"
 
-import type {
-  MenuCatalogArticle,
-  MenuCatalogPromotion,
-} from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import {
   clearCartLineOverrides,
   type OperationCartLineOverrideActions,
@@ -32,11 +29,23 @@ import {
   mapMenuCartToDetallados,
 } from "@/lib/menuSaleTicketCart"
 import {
-  cartLinesMatchPromotion,
   ensureCartLineIds,
   type MostradorCartLineEditInput,
 } from "@/lib/menuCartLineMerge"
-import { menuArticleToProduct } from "@/lib/menuCatalogProduct"
+import {
+  catalogProductFromCartSnapshot,
+  menuArticleToProduct,
+  snapshotFromCatalogProduct,
+} from "@/lib/menuCatalogProduct"
+import { usePopLocalDb } from "@/hooks/usePopLocalDb"
+import {
+  getArticleById,
+  listSaleCart,
+  openPopLocalDb,
+  replaceSaleCart,
+} from "@/lib/popLocalDb"
+import { articleSnapshotToSaleCatalogArticle } from "@/lib/saleCatalogArticleMap"
+import { useSalePriceListId } from "@/lib/salePriceListSession"
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import {
@@ -45,16 +54,19 @@ import {
   type MenuCartItem,
   type MenuCartItemKind,
 } from "@/lib/menuCart"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 export function useSaleTicketCart(input: {
-  menuArticles: MenuCatalogArticle[]
+  popId: string | undefined
   menuPromotions: MenuCatalogPromotion[]
   menuQuantityDeals: MenuCatalogPromotion[]
   onCartLineAdded?: (lineId: string) => void
 }) {
-  const { menuArticles, menuPromotions, menuQuantityDeals, onCartLineAdded } =
-    input
+  const { popId, menuPromotions, menuQuantityDeals, onCartLineAdded } = input
+  const localStatus = usePopLocalDb(popId)
+  const sqliteReady = localStatus === "ready"
+  const priceListId = useSalePriceListId(popId)
+  const skipPersistRef = useRef(true)
 
   const [carrito, setCarrito] = useState<MenuCartItem[]>([])
   const [itemDetalleAbiertoId, setItemDetalleAbiertoId] = useState<string | null>(
@@ -75,23 +87,20 @@ export function useSaleTicketCart(input: {
   const [promoWizardOpen, setPromoWizardOpen] = useState(false)
   const [promoWizardTarget, setPromoWizardTarget] =
     useState<MenuCatalogPromotion | null>(null)
+  const [cartHydrated, setCartHydrated] = useState(false)
 
   useEffect(() => {
-    setCarrito((prev) => ensureCartLineIds(prev))
-  }, [])
-
-  const productosCatalogo = useMemo(
-    () => [
-      ...menuPromotions.map(menuPromotionToProduct),
-      ...menuArticles.map(menuArticleToProduct),
-    ],
-    [menuPromotions, menuArticles],
-  )
-
-  const productosByKey = useMemo(
-    () => buildMenuProductMap(productosCatalogo),
-    [productosCatalogo],
-  )
+    skipPersistRef.current = true
+    setCartHydrated(false)
+    setCarrito([])
+    setItemDetalleAbiertoId(null)
+    setItemDescuentoModo({})
+    setItemDescuentoDraft({})
+    setItemDescuentoSuprimido({})
+    setItemComentarios({})
+    setPromoWizardOpen(false)
+    setPromoWizardTarget(null)
+  }, [popId])
 
   const overrideSnapshot = useMemo(
     () => ({
@@ -107,6 +116,60 @@ export function useSaleTicketCart(input: {
       itemComentarios,
     ],
   )
+
+  useEffect(() => {
+    if (localStatus === "fallback") {
+      skipPersistRef.current = true
+      setCartHydrated(true)
+    }
+  }, [localStatus])
+
+  useEffect(() => {
+    if (!popId || !sqliteReady) return
+    let cancelled = false
+    skipPersistRef.current = true
+    void openPopLocalDb(popId).then((handle) => {
+      if (cancelled) return
+      const loaded = listSaleCart(handle.database)
+      setCarrito(ensureCartLineIds(loaded.carrito))
+      setItemDescuentoModo(loaded.overrides.itemDescuentoModo)
+      setItemDescuentoDraft(loaded.overrides.itemDescuentoDraft)
+      setItemDescuentoSuprimido(loaded.overrides.itemDescuentoSuprimido)
+      setItemComentarios(loaded.overrides.itemComentarios)
+      setCartHydrated(true)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [popId, sqliteReady])
+
+  useEffect(() => {
+    if (!popId || !sqliteReady || !cartHydrated) return
+    if (skipPersistRef.current) {
+      skipPersistRef.current = false
+      return
+    }
+    void openPopLocalDb(popId).then((handle) => {
+      replaceSaleCart(handle.database, carrito, overrideSnapshot)
+      handle.markDirty()
+    })
+  }, [carrito, cartHydrated, overrideSnapshot, popId, sqliteReady])
+
+  const productosCatalogo = useMemo(
+    () => menuPromotions.map(menuPromotionToProduct),
+    [menuPromotions],
+  )
+
+  const productosByKey = useMemo(() => {
+    const fromPromos = buildMenuProductMap(productosCatalogo)
+    for (const item of carrito) {
+      const product = catalogProductFromCartSnapshot(item)
+      if (!product) continue
+      const key = `${normalizeCartItemKind(item.kind)}:${item.productoId}`
+      if (!fromPromos.has(key)) fromPromos.set(key, product)
+    }
+    return fromPromos
+  }, [carrito, productosCatalogo])
 
   const quantityDealApplications = useMemo(
     () =>
@@ -237,19 +300,23 @@ export function useSaleTicketCart(input: {
 
   const agregarPromoAlCarrito = useCallback(
     (promotionId: string, selections: PromotionCartSelection[]) => {
+      const product = productosByKey.get(`promotion:${promotionId}`)
       let affectedLineId: string | null = null
       setCarrito((prev) => {
         const result = addPromotionToTicketCart({
           carrito: prev,
           promotionId,
           selections,
+          snapshot: product
+            ? snapshotFromCatalogProduct(product)
+            : undefined,
         })
         affectedLineId = result.affectedLineId
         return result.carrito
       })
       if (affectedLineId) onCartLineAdded?.(affectedLineId)
     },
-    [onCartLineAdded],
+    [onCartLineAdded, productosByKey],
   )
 
   const confirmarPromoWizard = useCallback(
@@ -262,63 +329,82 @@ export function useSaleTicketCart(input: {
 
   const agregarAlCarrito = useCallback(
     (productoId: string, kindHint?: MenuCartItemKind, quantity = 1) => {
-      const product =
-        (kindHint
-          ? productosByKey.get(`${kindHint}:${productoId}`)
-          : null) ??
-        productosByKey.get(`promotion:${productoId}`) ??
-        productosByKey.get(`article:${productoId}`)
-
-      const kind = product?.kind ?? kindHint ?? "article"
-
-      if (kind === "promotion" && product?.promotionMeta) {
-        const auto = tryAutoComboSelections(product.promotionMeta)
-        if (auto) {
-          agregarPromoAlCarrito(productoId, auto)
+      if (!cartHydrated) return
+      const promotion =
+        (kindHint === "promotion"
+          ? productosByKey.get(`promotion:${productoId}`)
+          : null) ?? productosByKey.get(`promotion:${productoId}`)
+      if (kindHint === "promotion" || (promotion && kindHint !== "article")) {
+        if (promotion?.promotionMeta) {
+          const auto = tryAutoComboSelections(promotion.promotionMeta)
+          if (auto) {
+            agregarPromoAlCarrito(productoId, auto)
+            return
+          }
+          setPromoWizardTarget(promotion.promotionMeta)
+          setPromoWizardOpen(true)
           return
         }
-        setPromoWizardTarget(product.promotionMeta)
-        setPromoWizardOpen(true)
-        return
       }
 
-      let affectedLineId: string | null = null
-      setCarrito((prev) => {
-        const result = addProductToTicketCart({
-          carrito: prev,
-          productoId,
-          kindHint: kind,
-          productosByKey,
-          quantity,
-          overrides: {
-            itemDescuentoModo,
-            itemDescuentoDraft,
-            itemDescuentoSuprimido,
-            itemComentarios,
-          },
-          overrideActions: cartLineOverrideActions,
+      void (async () => {
+        if (!popId) return
+        const handle = await openPopLocalDb(popId)
+        const row = getArticleById(handle.database, productoId)
+        if (
+          !row ||
+          !row.isActive ||
+          !row.isSellable ||
+          row.itemKind !== "merchandise"
+        ) {
+          return
+        }
+        const product = menuArticleToProduct(
+          articleSnapshotToSaleCatalogArticle(row, priceListId),
+        )
+        const map = new Map(productosByKey)
+        map.set(`article:${product.id}`, product)
+        let affectedLineId: string | null = null
+        setCarrito((prev) => {
+          const result = addProductToTicketCart({
+            carrito: prev,
+            productoId,
+            kindHint: "article",
+            productosByKey: map,
+            quantity,
+            overrides: {
+              itemDescuentoModo,
+              itemDescuentoDraft,
+              itemDescuentoSuprimido,
+              itemComentarios,
+            },
+            overrideActions: cartLineOverrideActions,
+          })
+          affectedLineId = result.affectedLineId
+          return result.carrito
         })
-        affectedLineId = result.affectedLineId
-        return result.carrito
-      })
-      if (affectedLineId) onCartLineAdded?.(affectedLineId)
+        if (affectedLineId) onCartLineAdded?.(affectedLineId)
+      })()
     },
     [
-      productosByKey,
-      itemDescuentoModo,
-      itemDescuentoDraft,
-      itemDescuentoSuprimido,
-      itemComentarios,
-      cartLineOverrideActions,
       agregarPromoAlCarrito,
+      cartHydrated,
+      cartLineOverrideActions,
+      itemComentarios,
+      itemDescuentoDraft,
+      itemDescuentoModo,
+      itemDescuentoSuprimido,
       onCartLineAdded,
+      popId,
+      priceListId,
+      productosByKey,
     ],
   )
 
   const aplicarEdicionLineaTicket = useCallback(
-    (input: MostradorCartLineEditInput) => {
+    (edit: MostradorCartLineEditInput) => {
       applyTicketLineEdit({
-        edit: input,
+        edit,
         carrito,
         setCarrito,
         setters: {
@@ -416,6 +502,7 @@ export function useSaleTicketCart(input: {
     quitarQuantityDealApplication,
     limpiarCarrito,
     restaurarDesdeCheckout,
+    cartReady: cartHydrated,
     promoWizardOpen,
     setPromoWizardOpen,
     promoWizardTarget,

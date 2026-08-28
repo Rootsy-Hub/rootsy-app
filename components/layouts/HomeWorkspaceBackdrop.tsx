@@ -6,7 +6,7 @@ type HomeWorkspaceBackdropProps = {
   className?: string
 }
 
-/** Éter a pantalla — noche sideral, un layer estático. Sin planetas. */
+/** Éter a pantalla — clima del vacío, un layer estático. Sin planetas. */
 export function HomeWorkspaceBackdrop({ className }: HomeWorkspaceBackdropProps) {
   return (
     <div
@@ -21,4 +21,4 @@ export function HomeWorkspaceBackdrop({ className }: HomeWorkspaceBackdropProps)
 }
 
 /** @deprecated Usar menuNatureShellClass en el shell raíz */
-export const homeWorkspaceSurfaceClass = "bg-[var(--rootsy-eter-950)]"
+export const homeWorkspaceSurfaceClass = "bg-[var(--rootsy-eter-void-950)]"

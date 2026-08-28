@@ -7,6 +7,7 @@ import { RootsFormSelectContent } from "@/components/rootsy-form/RootsFormSelect
 import { RootsFormSelectTrigger } from "@/components/rootsy-form/RootsFormSelectTrigger"
 import { RootsFormSelectValue } from "@/components/rootsy-form/RootsFormSelectValue"
 import { Select } from "@/components/ui/select"
+import type { RootsFormTone } from "@/app/library/ui-components/formsUiHardcodedSpec"
 import { useId, type ReactNode } from "react"
 
 type Props = {
@@ -23,7 +24,7 @@ type Props = {
   className?: string
   triggerClassName?: string
   contentClassName?: string
-  tone?: "light" | "dark"
+  tone?: RootsFormTone
   /** Texto forzado en el trigger (p. ej. rango custom dinámico). */
   valueLabel?: ReactNode
   onOpenChange?: (open: boolean) => void

@@ -6,6 +6,9 @@ import {
   layoutsOperarProductCardProposalDescClass,
   layoutsOperarProductCardProposalGridShellClass,
   layoutsOperarProductCardProposalListShellClass,
+  layoutsOperarProductCardProposalPriceRowClass,
+  layoutsOperarProductCardProposalTextClass,
+  layoutsOperarProductCardProposalTriggerClass,
   layoutsOperarProductCardProposalMediaClass,
   layoutsOperarProductCardProposalMediaStyle,
   layoutsOperarProductCardProposalPriceClass,
@@ -44,6 +47,73 @@ export function ServiceOperateServiceCard({
   const layoutVariant = isList ? "list" : "grid"
   const mediaStyle = layoutsOperarProductCardProposalMediaStyle(proposalId)
 
+  const media = (
+    <div
+      className={layoutsOperarProductCardProposalMediaClass(proposalId, layoutVariant)}
+      style={mediaStyle}
+    >
+      <LayoutsOperarProductCardMediaEmptyState
+        proposalId={proposalId}
+        seed={service.id}
+      />
+      {!disabled ? (
+        <span
+          className={cn(
+            selected
+              ? layoutsOperarProductCardSelectedAddClass
+              : layoutsOperarProductCardProposalAddClass(proposalId),
+          )}
+          aria-hidden
+        >
+          {selected ? (
+            <Check className="size-4" strokeWidth={2.5} aria-hidden />
+          ) : (
+            <Plus className="size-4" strokeWidth={2.5} aria-hidden />
+          )}
+        </span>
+      ) : null}
+    </div>
+  )
+
+  const copy = (
+    <>
+      <h3 className={layoutsOperarProductCardProposalTitleClass(proposalId)}>
+        {service.name}
+      </h3>
+      <p className={layoutsOperarProductCardProposalDescClass(proposalId)}>
+        {service.billingLabel}
+      </p>
+    </>
+  )
+
+  if (isList) {
+    return (
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        data-selected={selected || undefined}
+        data-proposal={proposalId}
+        aria-pressed={selected}
+        className={cn(
+          layoutsOperarProductCardProposalListShellClass(proposalId),
+          selected && layoutsOperarProductCardSelectedClass,
+          disabled && "cursor-not-allowed opacity-50",
+        )}
+      >
+        {media}
+        <div className={layoutsOperarProductCardProposalBodyClass(proposalId, layoutVariant)}>
+          <div className="min-h-0 self-start">{copy}</div>
+          <div className="shrink-0">
+            <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
+              {saleOpFmt.format(service.price)}
+            </span>
+          </div>
+        </div>
+      </button>
+    )
+  }
+
   return (
     <button
       type="button"
@@ -53,48 +123,23 @@ export function ServiceOperateServiceCard({
       data-proposal={proposalId}
       aria-pressed={selected}
       className={cn(
-        isList
-          ? layoutsOperarProductCardProposalListShellClass(proposalId)
-          : layoutsOperarProductCardProposalGridShellClass(proposalId),
-        selected && layoutsOperarProductCardSelectedClass,
+        layoutsOperarProductCardProposalTriggerClass(proposalId),
         disabled && "cursor-not-allowed opacity-50",
       )}
     >
       <div
-        className={layoutsOperarProductCardProposalMediaClass(proposalId, layoutVariant)}
-        style={mediaStyle}
+        className={cn(
+          layoutsOperarProductCardProposalGridShellClass(proposalId),
+          selected && layoutsOperarProductCardSelectedClass,
+        )}
+        data-proposal={proposalId}
+        data-selected={selected || undefined}
       >
-        <LayoutsOperarProductCardMediaEmptyState
-          proposalId={proposalId}
-          seed={service.id}
-        />
-        {!disabled ? (
-          <span
-            className={cn(
-              selected
-                ? layoutsOperarProductCardSelectedAddClass
-                : layoutsOperarProductCardProposalAddClass(proposalId),
-            )}
-            aria-hidden
-          >
-            {selected ? (
-              <Check className="size-4" strokeWidth={2.5} aria-hidden />
-            ) : (
-              <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-            )}
-          </span>
-        ) : null}
-      </div>
-      <div className={layoutsOperarProductCardProposalBodyClass(proposalId, layoutVariant)}>
-        <div className="min-h-0 self-start">
-          <h3 className={layoutsOperarProductCardProposalTitleClass(proposalId)}>
-            {service.name}
-          </h3>
-          <p className={layoutsOperarProductCardProposalDescClass(proposalId)}>
-            {service.billingLabel}
-          </p>
+        {media}
+        <div className={layoutsOperarProductCardProposalTextClass(proposalId)}>
+          {copy}
         </div>
-        <div className={isList ? "shrink-0" : "self-end"}>
+        <div className={layoutsOperarProductCardProposalPriceRowClass(proposalId)}>
           <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
             {saleOpFmt.format(service.price)}
           </span>

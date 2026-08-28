@@ -1,7 +1,7 @@
 import { layoutsOperarCatalogToolbarClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 
-/** Shell toolbar — mismo umbral que el catálogo (sombra-700 sobre canvas sombra-800). */
+/** Shell toolbar — mismo 950 que el canvas. */
 export const operarCanvasToolbarShellClass = layoutsOperarCatalogToolbarClass
 
 /** Tipografía unificada — tabs de salón y headers de columnas Kanban. */
@@ -9,7 +9,7 @@ export const operarCanvasToolbarLabelClass =
   "text-sm font-semibold leading-none tracking-tight"
 
 export const operarCanvasToolbarTabActiveClass =
-  "text-[color-mix(in_srgb,var(--rootsy-bruma-50)_92%,white)]"
+  "text-[var(--rootsy-sombra-50)]"
 
 export const operarCanvasToolbarTabIdleClass = cn(
   "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]",
@@ -24,7 +24,7 @@ export const operarCanvasToolbarIconClass =
 
 /** Ícono en headers Kanban — siempre legible (no hay estado apagado). */
 export const operarCanvasToolbarColumnIconClass =
-  "text-[color-mix(in_srgb,var(--rootsy-bruma-100)_82%,white)]"
+  "text-[var(--rootsy-sombra-50)]"
 
 export const operarCanvasToolbarCountPillOpenClass = cn(
   "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_18%,transparent)]",

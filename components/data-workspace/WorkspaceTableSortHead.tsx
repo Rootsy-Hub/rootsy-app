@@ -36,7 +36,7 @@ function sortButtonClass(direction: WorkspaceTableSortDisplayDirection) {
     "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
     active
       ? "text-[var(--rootsy-savia-600)] hover:bg-[var(--rootsy-savia-50)]"
-      : "text-[var(--rootsy-bruma-500)] hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
+      : "text-[var(--color-texto-muted)] hover:bg-[var(--color-superficie)] hover:text-[var(--color-texto)]",
   )
 }
 
@@ -44,7 +44,7 @@ function sortLabelClass(direction: WorkspaceTableSortDisplayDirection) {
   return cn(
     "truncate text-sm font-medium leading-5",
     direction === "none"
-      ? "text-[var(--rootsy-bruma-500)]"
+      ? "text-[var(--color-texto-muted)]"
       : "text-[var(--rootsy-bruma-700)]",
   )
 }

@@ -7,6 +7,7 @@ import {
 } from "@/hooks/useDataWorkspaceInfiniteTableQuery"
 import {
   DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  dataWorkspaceTableStartPage,
   pinDataWorkspaceTableInfiniteParams,
 } from "@/lib/dataWorkspaceTableInfinite"
 import {
@@ -25,11 +26,16 @@ export function usePopArticlesTable(
   options?: UsePopArticlesTableOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
+  const startPage = dataWorkspaceTableStartPage(params.page)
   const infiniteParams = pinDataWorkspaceTableInfiniteParams(params)
 
   return useDataWorkspaceInfiniteTableQuery<PopArticlesTableResult>({
-    queryKey: popArticlesQueryKey(popId ?? "", infiniteParams),
+    queryKey: popArticlesQueryKey(popId ?? "", {
+      ...infiniteParams,
+      page: startPage,
+    }),
     enabled,
+    initialPageParam: startPage,
     queryFn: (page) =>
       fetchPopArticlesTable(popId!, {
         page,

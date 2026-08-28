@@ -19,6 +19,8 @@ import {
   ROOTSY_SPACING_MANIFESTO,
   ROOTSY_SPACING_PRINCIPLES,
 } from "@/app/library/spacing/rootsySpacingScale"
+import { HANDBOOK_DESIGN_SYSTEM_ROOT } from "@/app/handbook/handbookDesignSystem"
+import { LibraryHandbookSource } from "@/app/library/libraryDocPrimitives"
 import { LibrarySection } from "@/app/library/layoutLibraryShared"
 
 export function SpacingOverviewSection() {
@@ -28,13 +30,17 @@ export function SpacingOverviewSection() {
     <LibrarySection id="spacing" title={meta.title} description={meta.description}>
       <div className="space-y-10">
         <SpacingSystemHero />
+        <LibraryHandbookSource
+          href={`${HANDBOOK_DESIGN_SYSTEM_ROOT}/espaciado-y-proporciones`}
+          label="Espaciado y proporciones"
+        />
         <SpacingDocLead className="font-canopy">{ROOTSY_SPACING_MANIFESTO}</SpacingDocLead>
         <SpacingPrinciplesGrid principles={[...ROOTSY_SPACING_PRINCIPLES]} />
 
         <SpacingDocSection
           id="nature-rhythm"
           title="Capas nature"
-          description="Seis distancias con alma de bosque — cada una con su territorio en la UI."
+          description="Seis nombres del ritmo de espaciado. No es un diseño de tarjeta."
         >
           <NatureRhythmTiersGrid />
         </SpacingDocSection>

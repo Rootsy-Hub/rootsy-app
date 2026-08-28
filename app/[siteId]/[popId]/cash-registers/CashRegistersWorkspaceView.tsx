@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import type {
   ArcaSalePointOption,
   CashRegisterRow,
@@ -26,12 +27,11 @@ import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { RootsBanner } from "@/components/rootsy-banner"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
-  dataWorkspaceBlocksPageMainClass,
+  dataWorkspaceCashRegistersPageMainClass,
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -58,7 +58,7 @@ import {
   type CashRegisterOpenTotals,
 } from "@/lib/rootsyApi/cashRegistersClient"
 import { Plus } from "lucide-react"
-import { useParams } from "next/navigation"
+import { useParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,
@@ -420,19 +420,20 @@ export function CashRegistersWorkspaceView() {
         userRoleLabel={bootstrap?.roleLabel}
         headerActions={
           canCreate ? (
-            <DataWorkspaceHeaderTooltipIconButton
+            <RootsIconButton
               label="Nueva caja"
-              headerVariant={dataWorkspaceModuleHeaderVariant}
-              primary
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
               onClick={() => openCreate()}
             >
               <Plus className="size-5" aria-hidden />
-            </DataWorkspaceHeaderTooltipIconButton>
+            </RootsIconButton>
           ) : null
         }
         contentFlush
         mainMaxWidthClass="max-w-none"
-        mainClassName={dataWorkspaceBlocksPageMainClass}
+        mainClassName={dataWorkspaceCashRegistersPageMainClass}
       >
         <div className={dataWorkspaceBlocksPageContentClass}>
           {headerError ? (

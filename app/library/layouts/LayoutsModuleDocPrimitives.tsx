@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   menuNatureShellClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
@@ -17,7 +18,6 @@ import {
 } from "@/app/library/layouts/layoutsModuleHardcodedSpec"
 import { layoutsModuleHeaderGlassClass } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import {
   ROOTSY_LAYOUTS_MODULE_CONTENT_TYPES,
@@ -66,12 +66,24 @@ function ModulePopWorkspaceHeaderDemo() {
         hasResolvedRole
         headerActions={
           <div className="flex items-center gap-1.5">
-            <DataWorkspaceHeaderIconButton label="Nuevo" headerVariant="dark" primary tabIndex={-1}>
+            <RootsIconButton
+              label="Nuevo"
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
+              tabIndex={-1}
+            >
               <Plus aria-hidden />
-            </DataWorkspaceHeaderIconButton>
-            <DataWorkspaceHeaderIconButton label="Categorías" headerVariant="dark" tabIndex={-1}>
+            </RootsIconButton>
+            <RootsIconButton
+              label="Categorías"
+              semantic="tertiary"
+              atmosphere="eter"
+              size="default"
+              tabIndex={-1}
+            >
               <FolderTree aria-hidden />
-            </DataWorkspaceHeaderIconButton>
+            </RootsIconButton>
           </div>
         }
       />

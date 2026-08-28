@@ -35,7 +35,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import {
   DoorClosed,
   DoorOpen,
@@ -514,7 +514,7 @@ export function HrPersonCard({
             {showClock ? (
               <RootsDefaultButton
                 type="button"
-                size="sm"
+                size="compact"
                 disabled={clockBusy}
                 className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
                 onClick={onClock}
@@ -529,7 +529,7 @@ export function HrPersonCard({
             ) : showReturn ? (
               <RootsDefaultButton
                 type="button"
-                size="sm"
+                size="compact"
                 className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
                 onClick={() => onReturn?.()}
               >

@@ -1,9 +1,7 @@
 "use client"
 
 import { ChatAvatarLightbox } from "@/app/[siteId]/[popId]/chat/ChatAvatarLightbox"
-import "@/app/[siteId]/[popId]/chat/chatRootsy.css"
-import { dataWorkspaceEntityCardIsotypeClass } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { cn } from "@/lib/utils"
+import { Avatar } from "@/components/Avatar"
 import { useState } from "react"
 
 const ROOTSY_AVATAR_SRC = "/logos/rootsy/rootsy-perfil.png"
@@ -18,31 +16,16 @@ export function ChatRootsyAvatar({ className, size = "list" }: Props) {
 
   return (
     <>
-      <button
-        type="button"
-        className="shrink-0 overflow-hidden rounded-full"
-        aria-label="Ver foto de Rootsy"
-        onClick={(event) => {
-          event.stopPropagation()
-          setOpen(true)
-        }}
-      >
-        <span
-          className={cn(
-            dataWorkspaceEntityCardIsotypeClass,
-            "chat-rootsy-avatar overflow-hidden rounded-full p-0",
-            size === "header" && "size-11",
-            className,
-          )}
-          aria-hidden
-        >
-          <img
-            src={ROOTSY_AVATAR_SRC}
-            alt=""
-            className="size-full object-cover"
-          />
-        </span>
-      </button>
+      <Avatar
+        imageUrl={ROOTSY_AVATAR_SRC}
+        initials="R"
+        size={size === "header" ? "xl" : "xl"}
+        shape="circle"
+        tone="light"
+        className={className}
+        ariaLabel="Ver foto de Rootsy"
+        onClick={() => setOpen(true)}
+      />
       <ChatAvatarLightbox
         open={open}
         onOpenChange={setOpen}

@@ -48,11 +48,12 @@ export const menuSectionRealmDividerClass =
 
 export function menuSectionRealmIndicatorClass(section: MenuSectionKey): string {
   const tone: Record<MenuSectionKey, string> = {
-    operar: "bg-[rgba(111,216,156,0.88)] shadow-[0_0_10px_rgba(36,173,106,0.22)]",
+    operar:
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-300)_88%,transparent)] shadow-[0_0_10px_color-mix(in_srgb,var(--rootsy-savia-500)_22%,transparent)]",
     administrar:
-      "bg-[rgba(103,232,249,0.88)] shadow-[0_0_10px_rgba(8,145,178,0.22)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-sol-300)_88%,transparent)] shadow-[0_0_10px_color-mix(in_srgb,var(--rootsy-sol-500)_22%,transparent)]",
     configurar:
-      "bg-[rgba(167,139,250,0.88)] shadow-[0_0_10px_rgba(124,58,237,0.22)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-cielo-300)_88%,transparent)] shadow-[0_0_10px_color-mix(in_srgb,var(--rootsy-cielo-500)_22%,transparent)]",
   }
 
   return cn(

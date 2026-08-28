@@ -1,5 +1,5 @@
-/** Concepto de marca y diseño — entrada de la librería. */
-export const CONCEPT_LIBRARY_ROOT = { id: "concept", label: "Concepto" } as const
+/** Overview de la librería — el criterio vive en el handbook. */
+export const CONCEPT_LIBRARY_ROOT = { id: "concept", label: "Overview" } as const
 
 export const CONCEPT_SECTION_IDS = [CONCEPT_LIBRARY_ROOT.id] as const
 
@@ -16,9 +16,9 @@ export type ConceptPageMeta = {
 export const CONCEPT_PAGE_META: Record<string, ConceptPageMeta> = {
   concept: {
     id: "concept",
-    title: "Concepto",
+    title: "Overview",
     description:
-      "Rootsy — sistema de gestión online para cualquier negocio. Marca, diseño y principios del producto.",
+      "La librería especifica cómo se dibuja lo que el Handbook decide. Tokens, componentes y patrones vivos.",
   },
 }
 
@@ -27,9 +27,9 @@ export function getConceptPageMeta(sectionId: string): ConceptPageMeta | undefin
 }
 
 export const CONCEPT_RELATED_LINKS = [
-  { sectionId: "colors-new", label: "Color", hint: "Sombra, bruma y savia en producto." },
-  { sectionId: "mundos", label: "Mundos", hint: "Hábitats de producto: éter, bruma, suelo, sombra." },
-  { sectionId: "motion", label: "Movimiento", hint: "Animaciones con inercia natural." },
-  { sectionId: "logos", label: "Logos", hint: "Identidad visual de la marca." },
-  { sectionId: "spacing", label: "Espaciado", hint: "Proporciones y ritmo entre elementos." },
+  { sectionId: "colors-new", label: "Color", hint: "Atmósferas y funcionales." },
+  { sectionId: "typography", label: "Tipografía", hint: "Familias, escala y jerarquías." },
+  { sectionId: "spacing", label: "Espaciado", hint: "Escala, densidad y proporciones." },
+  { sectionId: "mundos", label: "Mundos", hint: "Superficies habitadas." },
+  { sectionId: "grid", label: "Layout", hint: "Grillas, contenedores y breakpoints." },
 ] as const

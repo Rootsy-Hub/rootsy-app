@@ -1,5 +1,6 @@
 "use client"
 
+import { isRootsFormToneDark } from "@/app/library/ui-components/rootsFormAtmosphere"
 import { layoutsOperarFormDarkMutedTextClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { RootsFormCheckbox } from "@/components/rootsy-form/RootsFormCheckbox"
 import {
@@ -47,7 +48,7 @@ export function RootsFormCheckboxChoiceRow({
   const checkboxId = id ?? autoId
   const checkboxRef = useRef<HTMLButtonElement>(null)
   const tone = useRootsFormControlTone()
-  const isDark = tone === "dark"
+  const isDark = isRootsFormToneDark(tone)
   const styleOptions = { tone }
   const labelStyle = getFormChoiceLabelStyle("checkbox", styleOptions)
   const descriptionStyle = getFormChoiceDescriptionStyle(styleOptions)

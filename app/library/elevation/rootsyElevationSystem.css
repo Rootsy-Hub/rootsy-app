@@ -1,8 +1,8 @@
 .rootsy-elevation-system {
   --elevation-surface-sunken: var(--rootsy-bruma-50, #f4f6f9);
-  --elevation-surface: var(--rootsy-bruma-100, #eef1f5);
-  --elevation-surface-raised: #ffffff;
-  --elevation-surface-overlay: #ffffff;
+  --elevation-surface: var(--rootsy-bruma-100, #f3f5ef);
+  --elevation-surface-raised: var(--rootsy-blanco);
+  --elevation-surface-overlay: var(--rootsy-blanco);
   --elevation-surface-hovered: var(--rootsy-bruma-50, #f4f6f9);
   --elevation-surface-pressed: var(--rootsy-bruma-200, #dfe4ea);
   --elevation-border: var(--rootsy-bruma-200, #dfe4ea);

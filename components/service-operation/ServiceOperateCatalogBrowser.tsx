@@ -2,6 +2,7 @@
 
 import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
 import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
+import { MenuSidebar } from "@/components/MenuSidebar"
 import {
   layoutsOperarCatalogCanvasBodyClass,
   layoutsOperarCatalogCanvasClass,
@@ -11,7 +12,6 @@ import {
   layoutsOperarCatalogGridStyle,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
-  layoutsOperarCatalogSidebarInnerClass,
   layoutsOperarCatalogSidebarOpenClass,
   layoutsOperarFormDarkMutedTextClass,
   layoutsOperarScrollMinimalClass,
@@ -148,8 +148,11 @@ export function ServiceOperateCatalogBrowser({
     <>
       <div className={layoutsOperarCatalogColumnClass}>
         {showSelectedDetail ? null : (
-          <aside
+          <MenuSidebar
             id="data-workspace-sidebar"
+            collapseBelow={false}
+            padded={false}
+            fixedWidth={false}
             className={cn(
               "max-md:hidden",
               layoutsOperarCatalogSidebarClass,
@@ -158,21 +161,19 @@ export function ServiceOperateCatalogBrowser({
                 : layoutsOperarCatalogSidebarClosedClass,
             )}
             aria-hidden={!catalogSidebarOpen}
-            {...(!catalogSidebarOpen ? { inert: true } : {})}
+            inert={!catalogSidebarOpen}
             aria-label="Categorías de servicios"
           >
-            <div className={layoutsOperarCatalogSidebarInnerClass}>
-              {loading && !error ? (
-                <SaleCatalogSidebarNavSkeleton />
-              ) : (
-                <SaleCatalogSidebarNav
-                  categories={saleCategories}
-                  vistaCatalogo={vistaCatalogo}
-                  onVistaChange={setVistaCatalogo}
-                />
-              )}
-            </div>
-          </aside>
+            {loading && !error ? (
+              <SaleCatalogSidebarNavSkeleton />
+            ) : (
+              <SaleCatalogSidebarNav
+                categories={saleCategories}
+                vistaCatalogo={vistaCatalogo}
+                onVistaChange={setVistaCatalogo}
+              />
+            )}
+          </MenuSidebar>
         )}
 
         <section
@@ -230,7 +231,7 @@ export function ServiceOperateCatalogBrowser({
                 <div
                   className={cn(
                     "absolute z-30 overflow-hidden md:hidden",
-                    "bg-[var(--rootsy-sombra-800)]",
+                    "bg-[var(--rootsy-sombra-950)]",
                     usesMobileStage
                       ? "inset-0"
                       : "inset-x-0 bottom-0 top-[var(--layouts-operar-catalog-toolbar-h)] max-md:col-start-1 max-md:row-start-1",

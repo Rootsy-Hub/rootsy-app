@@ -1,0 +1,13 @@
+/**
+ * Tema Bruma oscura — misma familia bruma, invertida.
+ * Fondo 950 · superficie 800 · elevada 700 · borde 700 · texto 50 · muted 400.
+ */
+
+.rootsy-theme-bruma-oscura {
+  --color-fondo: var(--rootsy-bruma-950);
+  --color-superficie: var(--rootsy-bruma-800);
+  --color-elevada: var(--rootsy-bruma-700);
+  --color-borde: var(--rootsy-bruma-700);
+  --color-texto: var(--rootsy-bruma-50);
+  --color-texto-muted: var(--rootsy-bruma-400);
+}

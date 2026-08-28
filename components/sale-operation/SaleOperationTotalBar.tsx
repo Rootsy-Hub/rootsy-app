@@ -54,10 +54,10 @@ export type SaleOperationTotalBarProps = {
 }
 
 const breakdownLabelPosClass =
-  "text-[10px] font-medium uppercase tracking-[0.12em] text-white/42"
+  "rootsy-text-label text-white/42"
 
 const breakdownLabelModalClass =
-  "text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground"
+  "rootsy-text-label text-muted-foreground"
 
 const amountColumnClass = "min-w-[6.5rem] text-right"
 const modalAmountCellClass = cn(

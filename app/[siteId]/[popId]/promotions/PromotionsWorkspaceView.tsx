@@ -1,6 +1,7 @@
 "use client"
 
 import type { PromotionTableRow } from "@/app/[siteId]/[popId]/promotions/actions"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { PromotionDeleteDialog } from "@/app/[siteId]/[popId]/promotions/PromotionDeleteDialog"
 import { PromotionUpsertDialog } from "@/app/[siteId]/[popId]/promotions/PromotionUpsertDialog"
 import {
@@ -57,12 +58,11 @@ import {
   DataWorkspaceTableListPage,
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
-  DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   workspaceTableLayoutClassName,
@@ -88,7 +88,6 @@ import {
   WorkspaceTableSkeletonRows,
 } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { promotionsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -137,7 +136,7 @@ import {
   usePathname,
   useRouter,
   useSearchParams,
-} from "next/navigation"
+} from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,
@@ -525,14 +524,15 @@ export function PromotionsWorkspaceView() {
         userRoleLabel: bootstrap?.roleLabel ?? undefined,
         pillLabel: "Menú",
         headerActions: canCreate ? (
-          <DataWorkspaceHeaderIconButton
+          <RootsIconButton
             label="Nueva promoción"
-            headerVariant={dataWorkspaceTableListHeaderVariant}
-            primary
+            semantic="primary"
+            atmosphere="eter"
+            size="default"
             onClick={openCreate}
           >
             <Plus className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
+          </RootsIconButton>
         ) : null,
       }}
       error={error}
@@ -583,6 +583,7 @@ export function PromotionsWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
         <DataWorkspaceTableListShell
+          lockScroll={loading}
           activeFiltersBar={
             hasFilterChips ? (
               <DataWorkspaceListActiveFiltersBar
@@ -617,6 +618,18 @@ export function PromotionsWorkspaceView() {
             !loading && totalCount === 0 ? (
               <DataWorkspaceTableEmptyMascot />
             ) : null
+          }
+          footerFloating
+          footerFloatingCentered
+          scrollResetKey={ws.page}
+          footer={
+            <DataWorkspaceTableListPageDock
+              listFetching={loading}
+              loadedCount={promotions.length}
+              totalCount={totalCount}
+              page={ws.page}
+              onPageJump={(nextPage) => pushWs({ page: nextPage })}
+            />
           }
             infinite={tableListInfiniteFromQuery(promotionsQuery, "promotions")}
         >
@@ -784,19 +797,28 @@ export function PromotionsWorkspaceView() {
                         <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
                           <div className="flex items-center justify-end gap-0.5">
                             {canUpdate ? (
-                              <DataWorkspaceTableIconAction
+                              <RootsIconButton
+                                type="button"
                                 label={`Editar ${row.name}`}
-                                icon={Pencil}
+                                tone="action"
+                                intent="edit"
+                                size="compact"
                                 onClick={() => void openEdit(row)}
-                              />
+                              >
+                                <Pencil />
+                              </RootsIconButton>
                             ) : null}
                             {canDelete ? (
-                              <DataWorkspaceTableIconAction
+                              <RootsIconButton
+                                type="button"
                                 label={`Eliminar ${row.name}`}
-                                variant="destructive"
-                                icon={Trash2}
-                              onClick={() => openDelete(row)}
-                              />
+                                tone="action"
+                                intent="destructive"
+                                size="compact"
+                                onClick={() => openDelete(row)}
+                              >
+                                <Trash2 />
+                              </RootsIconButton>
                             ) : null}
                           </div>
                         </TableCell>

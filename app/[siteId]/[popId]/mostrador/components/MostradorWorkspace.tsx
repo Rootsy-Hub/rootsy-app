@@ -23,9 +23,18 @@ import {
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
+import { useCajasRealtime } from "@/hooks/useCajasRealtime"
+import { useMostradorRealtime } from "@/hooks/useMostradorRealtime"
+import { useOperateCatalogHydrate } from "@/hooks/useOperateCatalogHydrate"
 import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
+import {
+  readMostradorWorkspacePreference,
+  reconcileMostradorWorkspaceView,
+  writeMostradorWorkspacePreference,
+} from "@/lib/mostradorWorkspacePreference"
+import { useAuth } from "@/context/AuthContextSupabase"
 import { cn } from "@/lib/utils"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 
 type Props = {
   siteId: string
@@ -42,25 +51,32 @@ export function MostradorWorkspace({
   onCatalogSidebarOpenChange,
   onRegisterStartCreateOrder,
 }: Props) {
+  useOperateCatalogHydrate(popId)
+  const { user } = useAuth()
   const {
     orders,
     loading,
     orderError,
     selectedOrderId,
     selectedOrder,
+    orderTicketReady,
     selectOrder,
     createOrder,
     patchOrder,
     moveOrderStatus,
     cancelOrder,
-    reloadOrders,
+    removeOrder,
   } = useMostradorState(popId, siteId)
+  useMostradorRealtime(popId, selectedOrderId)
+  useCajasRealtime(popId, user?.id)
 
   const mobileStage = useOperarMobileStage()
   const [rightView, setRightView] = useState<MostradorRightPanelView>("detail")
+  const [workspaceReady, setWorkspaceReady] = useState(false)
+  const pendingCatalogStageRef = useRef(false)
   const [creating, setCreating] = useState(false)
   const showCatalog = rightView === "cart"
-  const cartScrollHighlight = useCartListScrollHighlight()
+  const cartScrollHighlight = useCartListScrollHighlight(selectedOrderId)
 
   const handleCartLineAdded = useCallback(
     (lineId: string) => {
@@ -74,7 +90,7 @@ export function MostradorWorkspace({
     popId,
     siteId,
     selectedOrderId,
-    selectedOrder
+    selectedOrder && orderTicketReady
       ? {
           checkout: selectedOrder.checkout,
           updatedAt: selectedOrder.updatedAt,
@@ -82,13 +98,12 @@ export function MostradorWorkspace({
       : null,
     {
       isPaid: selectedOrder?.isPaid,
-      onSaleComplete: () => void reloadOrders(),
-      catalogLoadEnabled:
-        showCatalog || mobileStage?.stage === "catalog",
-      toolboxLoadEnabled:
-        showCatalog ||
-        (mobileStage?.stage === "ticket" &&
-          (selectedOrderId != null || creating)),
+      remoteTicketPending: Boolean(selectedOrderId && !orderTicketReady),
+      onSaleComplete: () => {
+        if (selectedOrderId) removeOrder(selectedOrderId)
+      },
+      catalogLoadEnabled: Boolean(selectedOrder) || creating,
+      toolboxLoadEnabled: Boolean(selectedOrder) || creating,
       onCartLineAdded: handleCartLineAdded,
     },
   )
@@ -101,14 +116,61 @@ export function MostradorWorkspace({
   )
 
   useEffect(() => {
-    if (!selectedOrder) {
+    setWorkspaceReady(false)
+    pendingCatalogStageRef.current = false
+  }, [popId])
+
+  useEffect(() => {
+    if (loading || workspaceReady || creating) return
+    const saved = readMostradorWorkspacePreference(popId)
+    if (saved) {
+      const reconciled = reconcileMostradorWorkspaceView({
+        rightView: saved.rightView,
+        mobileStage: saved.mobileStage,
+        orderExists: selectedOrder != null,
+      })
+      setRightView(reconciled.rightView)
+      if (reconciled.mobileStage === "catalog" && selectedOrder) {
+        pendingCatalogStageRef.current = true
+      } else if (reconciled.mobileStage) {
+        mobileStage?.setStage(reconciled.mobileStage)
+      }
+    }
+    setWorkspaceReady(true)
+  }, [loading, workspaceReady, creating, popId, selectedOrder, mobileStage])
+
+  useEffect(() => {
+    if (!workspaceReady || !pendingCatalogStageRef.current) return
+    if (!selectedOrder) return
+    pendingCatalogStageRef.current = false
+    mobileStage?.setStage("catalog")
+  }, [workspaceReady, selectedOrder, mobileStage])
+
+  useEffect(() => {
+    if (!workspaceReady || creating) return
+    if (rightView === "cart" && !selectedOrder) {
       setRightView("detail")
-      return
     }
-    if (!creating) {
-      setRightView("cart")
+    if (mobileStage?.stage === "catalog" && !selectedOrder) {
+      mobileStage.setStage("ticket")
     }
-  }, [selectedOrder?.id, creating])
+  }, [workspaceReady, creating, rightView, selectedOrder, mobileStage])
+
+  useEffect(() => {
+    if (!workspaceReady || creating) return
+    writeMostradorWorkspacePreference(popId, {
+      orderId: selectedOrderId,
+      rightView,
+      ...(mobileStage?.stage ? { mobileStage: mobileStage.stage } : {}),
+    })
+  }, [
+    workspaceReady,
+    creating,
+    popId,
+    selectedOrderId,
+    rightView,
+    mobileStage?.stage,
+  ])
 
   useEffect(() => {
     if (!onRegisterStartCreateOrder) return
@@ -145,6 +207,7 @@ export function MostradorWorkspace({
           onSelectOrder={(id) => {
             selectOrder(id)
             setCreating(false)
+            setRightView("cart")
             mobileStage?.setStage("ticket")
           }}
           onMoveOrder={moveOrderStatus}
@@ -205,7 +268,10 @@ export function MostradorWorkspace({
                   onCancelCreate={() => setCreating(false)}
                   onCreateOrder={async (input) => {
                     const ok = await createOrder(input)
-                    if (ok) setCreating(false)
+                    if (ok) {
+                      setCreating(false)
+                      setRightView("cart")
+                    }
                     return ok
                   }}
                   onUpdateOrder={patchOrder}

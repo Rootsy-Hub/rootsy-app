@@ -11,20 +11,28 @@ import {
   healCartLinesAlreadySent,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
+import { applyMesasCheckoutToSessionCache } from "@/app/[siteId]/[popId]/mesas/mesasQueryCache"
 import { saveTableSessionCheckoutApi, closeTableSessionCheckoutApi } from "@/lib/rootsyApi/mesasClient"
+import { useQueryClient } from "@tanstack/react-query"
 import {
+  checkoutPersistFingerprint,
   emptyTableSessionCheckout,
   type MesasCartItem,
   type MesasClienteSeleccionado,
   type TableSessionCheckoutSnapshot,
 } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
+import { resolveDefaultSaleComprobante } from "@/lib/saleCheckoutDefaults"
 import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import type { MesaReservation } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import type { SaleCatalogClient, SaleCatalogPaymentOption, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
 import { useMenuCatalogLoader } from "@/hooks/useMenuCatalogLoader"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
+import {
+  clientsAccessFromKeys,
+  saleCatalogAccessFromKeys,
+} from "@/lib/popWorkspaceAccess"
 import {
   buildOperationPartyManualSelection,
   type OperationPartyManualConfirmOptions,
@@ -158,30 +166,6 @@ function normalizarBusqueda(s: string) {
   return s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
 }
 
-function defaultComprobanteForPop(
-  popId: string | undefined,
-  invoiceTypeSiteId: string,
-  popEmisorIvaCondition: ReturnType<
-    typeof usePopSaleComprobanteFiscalContext
-  >["popEmisorIvaCondition"],
-  hasValidPopFiscalCuit: boolean,
-): string | null {
-  if (!popId) return null
-  const persisted = readSavedSaleComprobante(popId)
-  if (
-    persisted !== undefined &&
-    isAllowedSaleComprobanteLabel(
-      invoiceTypeSiteId,
-      persisted,
-      popEmisorIvaCondition,
-      hasValidPopFiscalCuit,
-    )
-  ) {
-    return persisted
-  }
-  return null
-}
-
 export function useMesasSaleCheckout(
   popId: string | undefined,
   siteId: string,
@@ -193,28 +177,35 @@ export function useMesasSaleCheckout(
     catalogLoadEnabled?: boolean
     toolboxLoadEnabled?: boolean
     onCartLineAdded?: (lineId: string) => void
+    remoteTicketPending?: boolean
   },
 ) {
   const onSessionClose = options?.onSessionClose
   const onCartLineAdded = options?.onCartLineAdded
+  const remoteTicketPending = options?.remoteTicketPending === true
   const catalogEnabled =
     options?.catalogLoadEnabled ?? Boolean(tableSessionId)
-  const toolboxEnabled = options?.toolboxLoadEnabled ?? catalogEnabled
+  const [httpMetaNeeded, setHttpMetaNeeded] = useState(
+    () => (remoteSession?.checkout?.carrito.length ?? 0) > 0,
+  )
+  const toolboxEnabled =
+    (options?.toolboxLoadEnabled ?? catalogEnabled) || httpMetaNeeded
 
   const {
     menuCategorySections,
     menuRecipes,
     menuArticles,
-    menuPromotions,
-    menuQuantityDeals,
+    menuPromotions: apiMenuPromotions,
+    menuQuantityDeals: apiMenuQuantityDeals,
     treasuryPaymentContext,
-    canReadClients,
-    canCreateSale,
-    canReadCashRegisters,
+    canReadClients: apiCanReadClients,
+    canCreateSale: apiCanCreateSale,
+    canReadCashRegisters: apiCanReadCashRegisters,
     openCashSession,
     invoiceTypeSiteId,
     hasValidPopFiscalCuit: apiHasValidPopFiscalCuit,
     popEmisorIvaCondition: apiPopEmisorIvaCondition,
+    comprobanteEmitter,
     comprobantesLoaded,
     catalogLoading,
     catalogItemsEnsuring,
@@ -225,9 +216,20 @@ export function useMesasSaleCheckout(
     mergeCatalogRecipes,
     ensureCatalogItems,
   } = useMenuCatalogLoader(popId, {
-    enabled: catalogEnabled,
+    enabled: false,
     toolboxEnabled,
   })
+
+  const localPromotions = useSaleBoardPromotions(popId, {
+    enabled: Boolean(popId),
+    scope: "menu",
+  })
+  const menuPromotions = catalogLoadAttempted
+    ? apiMenuPromotions
+    : localPromotions.combos
+  const menuQuantityDeals = catalogLoadAttempted
+    ? apiMenuQuantityDeals
+    : localPromotions.quantityDeals
 
   const fiscalBootstrap = usePopSaleComprobanteFiscalContext()
   const hasValidPopFiscalCuit = comprobantesLoaded
@@ -240,12 +242,29 @@ export function useMesasSaleCheckout(
     comprobantesLoaded || fiscalBootstrap.bootstrapLoaded
 
   const { bootstrap } = usePopWorkspace()
+  const queryClient = useQueryClient()
+  const saleAccess = useMemo(
+    () => saleCatalogAccessFromKeys(bootstrap?.permissionKeys ?? []),
+    [bootstrap?.permissionKeys],
+  )
+  const canReadClients = catalogLoadAttempted
+    ? apiCanReadClients
+    : saleAccess.canReadClients
+  const canCreateSale = catalogLoadAttempted
+    ? apiCanCreateSale
+    : saleAccess.canCreateSale
+  const canReadCashRegisters = catalogLoadAttempted
+    ? apiCanReadCashRegisters
+    : saleAccess.canReadCashRegisters
   const canCreateClient = useMemo(
     () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canCreate,
     [bootstrap?.permissionKeys],
   )
 
   const [carrito, setCarrito] = useState<MesasCartItem[]>([])
+  useEffect(() => {
+    if (carrito.length > 0) setHttpMetaNeeded(true)
+  }, [carrito.length])
   const [clienteSeleccionado, setClienteSeleccionado] =
     useState<MesasClienteSeleccionado | null>(null)
   const [manualNombreCliente, setManualNombreCliente] = useState("")
@@ -318,9 +337,22 @@ export function useMesasSaleCheckout(
     emptyTableSessionCheckout(),
   )
   const skipNextPersistRef = useRef(false)
+  const skipPersistUntilNextCommitRef = useRef(false)
+  const lastPristineFingerprintRef = useRef<string | null>(null)
+  const hydrateGenerationRef = useRef(0)
+  const persistFlushedGenerationRef = useRef(0)
+  const healPersistAfterFlushRef = useRef(false)
+  const markCheckoutDefaultsHydrate = (next: TableSessionCheckoutSnapshot) => {
+    lastPristineFingerprintRef.current = checkoutPersistFingerprint(next)
+    hydrateGenerationRef.current += 1
+    skipPersistUntilNextCommitRef.current = true
+    skipNextPersistRef.current = true
+  }
   const lastSavedUpdatedAtRef = useRef<string | null>(null)
   const lastAppliedRemoteUpdatedAtRef = useRef<string | null>(null)
+  const checkoutDirtyRef = useRef(false)
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const saleIdempotencyKeyRef = useRef(crypto.randomUUID())
 
   checkoutStateRef.current = {
     carrito,
@@ -351,6 +383,7 @@ export function useMesasSaleCheckout(
         healed.valorDescuentoPorcentaje !== snap.valorDescuentoPorcentaje ||
         healed.valorDescuentoFijo !== snap.valorDescuentoFijo)
     skipNextPersistRef.current = !shouldPersistHealedDiscount
+    healPersistAfterFlushRef.current = shouldPersistHealedDiscount
     if (healed.comprobante != null) {
       comprobanteInitRef.current = true
     }
@@ -394,6 +427,28 @@ export function useMesasSaleCheckout(
     setDescartarConfirmOpen(false)
     setConfirmOpen(false)
     setSubmitError(null)
+    lastPristineFingerprintRef.current = checkoutPersistFingerprint({
+      carrito: materialized.carrito,
+      clienteSeleccionado: snap.clienteSeleccionado,
+      manualNombreCliente: snap.manualNombreCliente,
+      fiscalDocVenta: snap.fiscalDocVenta,
+      ventaIvaCondition: snap.ventaIvaCondition,
+      comprobante: snap.comprobante,
+      metodoPagoSeleccionado: snap.metodoPagoSeleccionado,
+      payOnClientAccount: snap.payOnClientAccount,
+      modoDescuento: healed.modoDescuento,
+      valorDescuentoPorcentaje: healed.valorDescuentoPorcentaje,
+      valorDescuentoFijo: healed.valorDescuentoFijo,
+      itemDescuentoModo: snap.itemDescuentoModo ?? {},
+      itemDescuentoDraft: snap.itemDescuentoDraft ?? {},
+      itemDescuentoSuprimido: snap.itemDescuentoSuprimido ?? {},
+      itemComentarios: snap.itemComentarios ?? {},
+      paidPartialUnits: materialized.paidPartialUnits,
+      totalPagadoAcumulado: snap.totalPagadoAcumulado ?? 0,
+      descuentoGeneralBloqueado: healed.descuentoGeneralBloqueado === true,
+    })
+    hydrateGenerationRef.current += 1
+    skipPersistUntilNextCommitRef.current = true
   }, [])
 
   const flushCheckoutPersist = useCallback(
@@ -403,9 +458,18 @@ export function useMesasSaleCheckout(
       if (res.success) {
         lastSavedUpdatedAtRef.current = res.updatedAt
         lastAppliedRemoteUpdatedAtRef.current = res.updatedAt
+        lastPristineFingerprintRef.current = checkoutPersistFingerprint(snap)
+        checkoutDirtyRef.current = false
+        applyMesasCheckoutToSessionCache(
+          queryClient,
+          popId,
+          sessionId,
+          res.updatedAt,
+          snap,
+        )
       }
     },
-    [popId, siteId],
+    [popId, queryClient, siteId],
   )
 
   useEffect(() => {
@@ -415,48 +479,120 @@ export function useMesasSaleCheckout(
         clearTimeout(persistTimerRef.current)
         persistTimerRef.current = null
       }
-      void flushCheckoutPersist(prevId, checkoutStateRef.current)
+      if (checkoutDirtyRef.current) {
+        void flushCheckoutPersist(prevId, checkoutStateRef.current)
+      }
     }
 
+    if (prevId !== tableSessionId) {
+      saleIdempotencyKeyRef.current = crypto.randomUUID()
+    }
     loadedSessionIdRef.current = tableSessionId
     lastSavedUpdatedAtRef.current = null
     lastAppliedRemoteUpdatedAtRef.current = null
+    checkoutDirtyRef.current = false
     comprobanteInitRef.current = false
 
-    if (tableSessionId && remoteSession) {
+    if (!tableSessionId) {
+      applySessionSnapshot(
+        emptyTableSessionCheckout(
+          resolveDefaultSaleComprobante(popId, {
+          invoiceTypeSiteId,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        }),
+        ),
+      )
+      return
+    }
+
+    if (remoteTicketPending) {
+      applySessionSnapshot(
+        emptyTableSessionCheckout(
+          resolveDefaultSaleComprobante(popId, {
+          invoiceTypeSiteId,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        }),
+        ),
+      )
+      return
+    }
+
+    if (remoteSession) {
       const snap =
         remoteSession.checkout ??
         emptyTableSessionCheckout(
-          defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit),
+          resolveDefaultSaleComprobante(popId, {
+          invoiceTypeSiteId,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        }),
         )
       applySessionSnapshot(snap)
       lastAppliedRemoteUpdatedAtRef.current = remoteSession.updatedAt
-    } else if (tableSessionId) {
-      applySessionSnapshot(
-        emptyTableSessionCheckout(
-          defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit),
-        ),
-      )
-    } else {
-      applySessionSnapshot(
-        emptyTableSessionCheckout(
-          defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit),
-        ),
-      )
+      return
     }
+
+    applySessionSnapshot(
+      emptyTableSessionCheckout(
+        resolveDefaultSaleComprobante(popId, {
+          invoiceTypeSiteId,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        }),
+      ),
+    )
     // Solo al cambiar de sesión de mesa; el snapshot remoto se sincroniza aparte.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tableSessionId, applySessionSnapshot])
+  }, [tableSessionId, remoteTicketPending, applySessionSnapshot])
 
   useEffect(() => {
     if (!tableSessionId || !remoteSession) return
     const { updatedAt, checkout } = remoteSession
-    if (updatedAt === lastSavedUpdatedAtRef.current) return
-    if (updatedAt === lastAppliedRemoteUpdatedAtRef.current) return
-
     const snap =
       checkout ??
-      emptyTableSessionCheckout(defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit))
+      emptyTableSessionCheckout(resolveDefaultSaleComprobante(popId, {
+          invoiceTypeSiteId,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        }))
+    const remoteFp = checkoutPersistFingerprint(snap)
+    const localFp = checkoutPersistFingerprint(checkoutStateRef.current)
+    if (updatedAt === lastSavedUpdatedAtRef.current && remoteFp === localFp) {
+      return
+    }
+    if (updatedAt === lastAppliedRemoteUpdatedAtRef.current && remoteFp === localFp) {
+      return
+    }
+
+    const localPristine =
+      lastPristineFingerprintRef.current != null &&
+      localFp === lastPristineFingerprintRef.current
+
+    if (checkoutDirtyRef.current && !localPristine) {
+      if (checkout?.carrito?.length) {
+        skipNextPersistRef.current = true
+        setCarrito((prev) =>
+          prev.map((item) => {
+            const remote = checkout.carrito.find(
+              (row) => resolveCartLineId(row) === resolveCartLineId(item),
+            )
+            if (!remote?.comandaStatus || remote.comandaStatus === item.comandaStatus) {
+              return item
+            }
+            return { ...item, comandaStatus: remote.comandaStatus }
+          }),
+        )
+      }
+      return
+    }
+
+    if (persistTimerRef.current) {
+      clearTimeout(persistTimerRef.current)
+      persistTimerRef.current = null
+    }
+    checkoutDirtyRef.current = false
     applySessionSnapshot(snap)
     lastAppliedRemoteUpdatedAtRef.current = updatedAt
   }, [
@@ -470,8 +606,28 @@ export function useMesasSaleCheckout(
 
   useEffect(() => {
     if (!popId || !tableSessionId) return
-    if (skipNextPersistRef.current) {
+    if (remoteTicketPending) return
+
+    if (skipPersistUntilNextCommitRef.current) {
+      skipPersistUntilNextCommitRef.current = false
+      return
+    }
+
+    const fingerprint = checkoutPersistFingerprint(checkoutStateRef.current)
+    if (hydrateGenerationRef.current !== persistFlushedGenerationRef.current) {
+      lastPristineFingerprintRef.current = fingerprint
+      persistFlushedGenerationRef.current = hydrateGenerationRef.current
       skipNextPersistRef.current = false
+      if (!healPersistAfterFlushRef.current) return
+      healPersistAfterFlushRef.current = false
+    } else if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false
+      lastPristineFingerprintRef.current = fingerprint
+      return
+    } else if (
+      lastPristineFingerprintRef.current != null &&
+      fingerprint === lastPristineFingerprintRef.current
+    ) {
       return
     }
 
@@ -479,6 +635,7 @@ export function useMesasSaleCheckout(
       clearTimeout(persistTimerRef.current)
     }
 
+    checkoutDirtyRef.current = true
     persistTimerRef.current = setTimeout(() => {
       persistTimerRef.current = null
       void flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
@@ -488,6 +645,7 @@ export function useMesasSaleCheckout(
       if (persistTimerRef.current) {
         clearTimeout(persistTimerRef.current)
         persistTimerRef.current = null
+        checkoutDirtyRef.current = false
       }
     }
   }, [
@@ -511,12 +669,13 @@ export function useMesasSaleCheckout(
     totalPagadoAcumulado,
     descuentoGeneralBloqueado,
     flushCheckoutPersist,
+    remoteTicketPending,
   ])
 
   useEffect(() => {
     return () => {
       const sessionId = loadedSessionIdRef.current
-      if (sessionId && popId) {
+      if (sessionId && popId && checkoutDirtyRef.current) {
         if (persistTimerRef.current) {
           clearTimeout(persistTimerRef.current)
           persistTimerRef.current = null
@@ -545,7 +704,15 @@ export function useMesasSaleCheckout(
       ) {
         return prev
       }
-      return defaultCheckoutPaymentSelection(openCashSession.cashTreasuryAccountId)
+      const next = defaultCheckoutPaymentSelection(
+        openCashSession.cashTreasuryAccountId,
+      )
+      if (!next) return prev
+      markCheckoutDefaultsHydrate({
+        ...checkoutStateRef.current,
+        metodoPagoSeleccionado: next,
+      })
+      return next
     })
   }, [openCashSession, tableSessionId])
 
@@ -554,16 +721,21 @@ export function useMesasSaleCheckout(
     comprobanteInitRef.current = true
     const saved = readSavedSaleComprobante(popId)
     if (saved !== undefined) {
-      setComprobante(
-        isAllowedSaleComprobanteLabel(
-          invoiceTypeSiteId,
-          saved,
-          popEmisorIvaCondition,
-          hasValidPopFiscalCuit,
-        )
-          ? saved
-          : null,
+      const next = isAllowedSaleComprobanteLabel(
+        invoiceTypeSiteId,
+        saved,
+        popEmisorIvaCondition,
+        hasValidPopFiscalCuit,
       )
+        ? saved
+        : null
+      if (next !== checkoutStateRef.current.comprobante) {
+        markCheckoutDefaultsHydrate({
+          ...checkoutStateRef.current,
+          comprobante: next,
+        })
+      }
+      setComprobante(next)
     }
   }, [
     popId,
@@ -578,7 +750,7 @@ export function useMesasSaleCheckout(
     if (!bootstrapLoaded) return
     setComprobante((current) => {
       if (current == null) return current
-      return isAllowedSaleComprobanteLabel(
+      const next = isAllowedSaleComprobanteLabel(
         invoiceTypeSiteId,
         current,
         popEmisorIvaCondition,
@@ -586,6 +758,12 @@ export function useMesasSaleCheckout(
       )
         ? current
         : null
+      if (next === current) return current
+      markCheckoutDefaultsHydrate({
+        ...checkoutStateRef.current,
+        comprobante: next,
+      })
+      return next
     })
   }, [
     bootstrapLoaded,
@@ -627,9 +805,17 @@ export function useMesasSaleCheckout(
         changed = true
         return { ...item, snapshot: snapshotFromCatalogProduct(producto) }
       })
-      return changed ? next : prev
+      const withSnap = changed ? next : prev
+      const withStatus = ensureCartLineComandaStatuses(withSnap, productosByKey)
+      if (withStatus === prev) return prev
+      lastPristineFingerprintRef.current = checkoutPersistFingerprint({
+        ...checkoutStateRef.current,
+        carrito: withStatus,
+      })
+      hydrateGenerationRef.current += 1
+      skipNextPersistRef.current = true
+      return withStatus
     })
-    setCarrito((prev) => ensureCartLineComandaStatuses(prev, productosByKey))
   }, [productosByKey])
 
   const overrideSnapshot = useMemo(
@@ -708,8 +894,7 @@ export function useMesasSaleCheckout(
     [itemsDetallados, quantityDealApplications, overrideSnapshot, productosByKey],
   )
 
-  const orderPanelLoading =
-    carrito.length > 0 && (catalogLoading || catalogItemsEnsuring)
+  const orderPanelLoading = remoteTicketPending
 
   const comboPromoLineCount = useMemo(
     () =>
@@ -862,14 +1047,18 @@ export function useMesasSaleCheckout(
           setItemComentarios,
         })
       }
-      setCarrito((prev) =>
-        applyComandaSendToCart(
-          prev,
-          res.sentCartLineIds,
-          res.peels,
-          productosByKey,
-        ),
+      const nextCart = applyComandaSendToCart(
+        checkoutStateRef.current.carrito,
+        res.sentCartLineIds,
+        res.peels,
+        productosByKey,
       )
+      setCarrito(nextCart)
+      checkoutStateRef.current = {
+        ...checkoutStateRef.current,
+        carrito: nextCart,
+      }
+      await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
       setComandasOpen(false)
     },
     [flushCheckoutPersist, popId, productosByKey, siteId, tableSessionId],
@@ -1570,6 +1759,7 @@ export function useMesasSaleCheckout(
         const res = await completeSale(popId, {
           siteId,
           priceListId: getSalePriceListSession(popId),
+          idempotencyKey: saleIdempotencyKeyRef.current,
           lines: buildCompleteSaleLinesFromCart({
             carrito: carritoToSell,
             quantityDealApplications:
@@ -1616,6 +1806,7 @@ export function useMesasSaleCheckout(
           setSubmitError(res.error)
           return false
         }
+        saleIdempotencyKeyRef.current = crypto.randomUUID()
 
         setConfirmOpen(false)
         setPartialPayment(false)
@@ -1844,6 +2035,8 @@ export function useMesasSaleCheckout(
   }, [canReadClients, clienteSeleccionado?.name, manualNombreCliente])
 
   const mesaToolbarDisabled = tableSessionId == null
+  const requiereCajaAbierta = openCashSession == null
+  const cajaRequiredTitle = "Requiere caja abierta"
 
   return {
     catalogLoading,
@@ -1904,10 +2097,10 @@ export function useMesasSaleCheckout(
     // Toolbox
     toolbox: {
       clienteLabel: clienteToolbarLabel,
-      clienteIvaLabel: mesaToolbarDisabled ? null : ventaIvaLabel,
-      clienteDisabled: !canReadClients || mesaToolbarDisabled,
-      clienteConfigurado: Boolean(clienteSeleccionado) && !mesaToolbarDisabled,
-      toolbarDisabled: mesaToolbarDisabled,
+      clienteIvaLabel: mesaToolbarDisabled || requiereCajaAbierta ? null : ventaIvaLabel,
+      clienteDisabled: !canReadClients || mesaToolbarDisabled || requiereCajaAbierta,
+      clienteConfigurado: Boolean(clienteSeleccionado) && !mesaToolbarDisabled && !requiereCajaAbierta,
+      toolbarDisabled: mesaToolbarDisabled || requiereCajaAbierta,
       comprobanteLabel: mesaToolbarDisabled
         ? "Sin comprobante"
         : comprobanteDisplayLabel,
@@ -1926,31 +2119,32 @@ export function useMesasSaleCheckout(
           : toolboxPaymentDisplay.pagoIcon,
       pagoConfigurado: pagoConfigurado && !mesaToolbarDisabled && openCashSession != null,
       descuentoLabel: mesaToolbarDisabled ? "Sin descuento" : descuentoToolbarLabel,
-      hayDescuento: hayDescuento && !mesaToolbarDisabled,
+      hayDescuento: hayDescuento && !mesaToolbarDisabled && !requiereCajaAbierta,
       descuentoDisabled: descuentoGeneralEditBlocked && !mesaToolbarDisabled,
       onClienteClick: () => {
-        if (!canReadClients || mesaToolbarDisabled) return
+        if (!canReadClients || mesaToolbarDisabled || requiereCajaAbierta) return
         setClienteModalAbierto(true)
       },
       onComprobanteClick: () => {
-        if (mesaToolbarDisabled) return
+        if (mesaToolbarDisabled || requiereCajaAbierta) return
         setComprobanteModalAbierto(true)
       },
       onPagoClick: () => {
-        if (!openCashSession || mesaToolbarDisabled) return
+        if (requiereCajaAbierta || mesaToolbarDisabled) return
         setPagoModalAbierto(true)
       },
       onDescuentoClick: () => {
-        if (mesaToolbarDisabled || descuentoGeneralEditBlocked) return
+        if (mesaToolbarDisabled || requiereCajaAbierta || descuentoGeneralEditBlocked) return
         abrirModalDescuento()
       },
     },
     actions: {
-      discardDisabled: !puedeDescartarPedido,
+      discardDisabled: !puedeDescartarPedido || requiereCajaAbierta,
+      discardTitle: requiereCajaAbierta ? cajaRequiredTitle : undefined,
       confirmDisabled: !puedeRegistrar,
       confirmLoading: submitting,
       onDiscard: () => {
-        if (!puedeDescartarPedido) return
+        if (requiereCajaAbierta || !puedeDescartarPedido) return
         setDescartarConfirmOpen(true)
       },
       onConfirm: () => {
@@ -1962,9 +2156,11 @@ export function useMesasSaleCheckout(
         setConfirmOpen(true)
       },
       onComandas: () => {
+        if (requiereCajaAbierta) return
         void abrirComandas()
       },
-      comandasDisabled: !hayPendingComandas,
+      comandasDisabled: !hayPendingComandas || requiereCajaAbierta,
+      comandasTitle: requiereCajaAbierta ? cajaRequiredTitle : undefined,
     },
     modals: {
       popId: popId ?? "",
@@ -2027,6 +2223,7 @@ export function useMesasSaleCheckout(
       descuentoMonto,
       checkoutTotal: total,
       elegirComprobante,
+      comprobanteEmitter,
       treasuryPaymentContext,
       openCashSession,
       payOnClientAccount,

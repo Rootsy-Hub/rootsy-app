@@ -1,5 +1,4 @@
-import { PrintersWorkspaceView } from "@/app/[siteId]/[popId]/printers/PrintersWorkspaceView"
-
+import { PrintersWorkspaceView } from "./PrintersWorkspaceView"
 export default function PrintersPage() {
   return <PrintersWorkspaceView />
 }

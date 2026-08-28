@@ -1,26 +1,13 @@
 /**
- * Tema POS — sombra bajo el dosel + bruma en ticket + acciones savia.
+ * Tema POS — Sotobosque · Sombra.
+ * Fondo negro · hoja 800 · borde 700 · texto 50 · muted 300. El 950 es aire, no vacío.
  */
 
 .rootsy-theme-pos {
-  --color-shell: var(--rootsy-sombra-950);
-  --color-surface: var(--rootsy-sombra-600);
-  --color-elevated: var(--rootsy-sombra-500);
-  --color-border: var(--rootsy-sombra-border);
-  --color-text-primary: #f4f8f6;
-  --color-text-secondary: var(--rootsy-sombra-300);
-  --color-action: var(--rootsy-savia-600);
-  --color-action-text: var(--rootsy-white);
-  --color-accent: var(--rootsy-savia-400);
-
-  --background: var(--color-shell);
-  --foreground: var(--color-text-primary);
-  --card: var(--color-elevated);
-  --card-foreground: var(--color-text-primary);
-  --primary: var(--color-action);
-  --primary-foreground: var(--color-action-text);
-  --muted: var(--rootsy-sombra-500);
-  --muted-foreground: var(--color-text-secondary);
-  --border: var(--color-border);
-  --ring: var(--rootsy-savia-400);
+  --color-fondo: var(--rootsy-negro);
+  --color-superficie: var(--rootsy-sombra-800);
+  --color-elevada: var(--rootsy-sombra-800);
+  --color-borde: var(--rootsy-sombra-700);
+  --color-texto: var(--rootsy-sombra-50);
+  --color-texto-muted: var(--rootsy-sombra-300);
 }

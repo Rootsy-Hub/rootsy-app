@@ -1,11 +1,11 @@
 "use client"
 
-import { RootsyThinkingHalo, useRootsyThinkingPresence } from "@/components/rootsy-thinking/RootsyThinkingHalo"
-import { dataWorkspaceTableInfiniteCopy } from "@/components/data-workspace/dataWorkspaceTableInfiniteCopy"
 import { cn } from "@/lib/utils"
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import {
   dataWorkspaceShellCard,
+  dataWorkspaceTableBodyScrollClass,
+  dataWorkspaceTableBodyScrollHiddenClass,
   listTableChromeStackClass,
   listTableChromeStackFollowRowClass,
   workspaceTableListBodyScopeClass,
@@ -26,6 +26,14 @@ export type DataWorkspaceListTableShellProps = {
   variant?: "default" | "flush"
   /** Pie con cristal POP — cuerpo opaco; solo el footer deja ver el fondo de página. */
   glassFooter?: boolean
+  /** Pie suelo flotante sobre el listado, sin comer altura. */
+  footerFloating?: boolean
+  /** Dock compacto centrado (no estira a todo el ancho). */
+  footerFloatingCentered?: boolean
+  /** Al cambiar, el scroll del listado vuelve arriba. */
+  scrollResetKey?: string | number
+  /** Sin barras — p. ej. esqueleto de carga. */
+  lockScroll?: boolean
   className?: string
   infinite?: DataWorkspaceTableListInfinite
 }
@@ -38,6 +46,10 @@ export function DataWorkspaceListTableShell({
   overlay,
   variant = "default",
   glassFooter = false,
+  footerFloating = false,
+  footerFloatingCentered = false,
+  scrollResetKey,
+  lockScroll = false,
   className,
   infinite,
 }: DataWorkspaceListTableShellProps) {
@@ -46,7 +58,12 @@ export function DataWorkspaceListTableShell({
   const useChromeStack = activeFiltersBar != null
   const bodySurfaceClass = isFlush ? workspaceTableSurfaceClass : dataWorkspaceShellCard
   const resolvedBodySurface = className ? undefined : bodySurfaceClass
-  const floorHalo = useRootsyThinkingPresence(Boolean(infinite?.isFetchingMore))
+  const fetchingMore = Boolean(infinite?.isFetchingMore)
+
+  useEffect(() => {
+    if (!scrollRoot) return
+    scrollRoot.scrollTop = 0
+  }, [scrollRoot, scrollResetKey])
 
   return (
     <div
@@ -84,7 +101,9 @@ export function DataWorkspaceListTableShell({
           <div
             ref={setScrollRoot}
             className={cn(
-              "rootsy-scroll-minimal absolute inset-0 overflow-auto",
+              lockScroll
+                ? dataWorkspaceTableBodyScrollHiddenClass
+                : dataWorkspaceTableBodyScrollClass,
               workspaceTableListBodyScopeClass,
               workspaceTableLayoutListBodyScopeClass,
             )}
@@ -97,27 +116,45 @@ export function DataWorkspaceListTableShell({
                   root={scrollRoot}
                 />
               ) : null}
+              {footer &&
+              footerFloating &&
+              infinite &&
+              !infinite.hasMore &&
+              infinite.hasItems ? (
+                <div className="h-16 w-full shrink-0" aria-hidden />
+              ) : null}
             </div>
           </div>
-          {floorHalo.visible && infinite ? (
-            <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
-              <RootsyThinkingHalo
-                className="rootsy-thinking--floor"
-                label={dataWorkspaceTableInfiniteCopy(infinite.world)}
-                showDots={false}
-                exiting={floorHalo.exiting}
-              />
-            </div>
-          ) : null}
           {overlay ? (
             <div className="pointer-events-none absolute inset-0 z-10 overflow-visible">
               {overlay}
             </div>
           ) : null}
+          {footer && footerFloating ? (
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-x-0 bottom-0 z-30 flex pb-[max(0.75rem,env(safe-area-inset-bottom))]",
+                footerFloatingCentered ? "justify-center px-3" : "justify-end px-3",
+              )}
+            >
+              <div
+                className={cn(
+                  "pointer-events-auto",
+                  footerFloatingCentered ? "w-auto" : "w-full",
+                )}
+                data-fetching-more={fetchingMore ? "" : undefined}
+              >
+                {footer}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
-      {footer ? (
-        <div className={cn("relative z-20 shrink-0", glassFooter && "bg-transparent")}>
+      {footer && !footerFloating ? (
+        <div
+          className={cn("relative z-20 shrink-0", glassFooter && "bg-transparent")}
+          data-fetching-more={fetchingMore ? "" : undefined}
+        >
           {footer}
         </div>
       ) : null}

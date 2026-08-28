@@ -4,8 +4,8 @@
   --border-width-focused: 2px;
   --border-color: var(--rootsy-bruma-200, #dfe4ea);
   --border-color-dark: var(--rootsy-sombra-border, #2a3530);
-  --border-color-selected: var(--rootsy-savia-600, #059669);
-  --border-color-focused: var(--rootsy-savia-400, #34d399);
+  --border-color-selected: var(--rootsy-savia-600, #01c96a);
+  --border-color-focused: var(--rootsy-savia-400, #1efe98);
   --border-color-danger: #dc2626;
 }
 
@@ -46,7 +46,7 @@
 .rootsy-border-demo-hairline {
   border: var(--border-width) solid var(--rootsy-bruma-200, #dfe4ea);
   border-radius: 0.75rem;
-  background: var(--rootsy-bruma-100, #eef1f5);
+  background: var(--rootsy-bruma-100, #f3f5ef);
 }
 
 .rootsy-border-segment-demo {

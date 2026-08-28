@@ -4,22 +4,19 @@ import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeHeaderAccountSheet } from "@/app/home/HomeHeaderAccountSheet"
 import { HomeUserPhotoDialog } from "@/app/home/HomeUserPhotoDialog"
 import { HomeLogoutButton, HomeSubtleButton } from "@/app/home/HomeSubtleButton"
+import { Avatar } from "@/components/Avatar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useHomePageData } from "@/hooks/useHomePageData"
-import { menuRealmLightStaticClass } from "@/lib/menu/menuHoloStyles"
-import { cn } from "@/lib/utils"
 import { LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
-/** Tile del logomark: 29×29 rx 9.95 → ~34% · mismo bloque que el icon button del header. */
-const ISOLOGO_TILE_CLASS = "size-10 overflow-hidden rounded-[34%]"
-
 type HomeHeaderUserClusterProps = {
   userId?: string
+  loading?: boolean
 }
 
-export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
+export function HomeHeaderUserCluster({ userId, loading }: HomeHeaderUserClusterProps) {
   const { logOut } = useAuth()
   const router = useRouter()
   const { profile, profileFullName, profilePending, pops } = useHomePageData(userId ?? "")
@@ -57,9 +54,11 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
     setPhotoOpen(true)
   }
 
+  const pending = loading ?? (profilePending || !userId)
+
   const avatar = (
-    <HomeHeaderAvatar
-      pending={profilePending || !userId}
+    <Avatar
+      pending={pending}
       imageUrl={imageUrl}
       initials={initials}
       isOnline={isOnline}
@@ -95,8 +94,8 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
       </div>
 
       <div className="md:hidden">
-        <HomeHeaderAvatar
-          pending={profilePending || !userId}
+        <Avatar
+          pending={pending}
           imageUrl={imageUrl}
           initials={initials}
           isOnline={isOnline}
@@ -132,67 +131,5 @@ export function HomeHeaderUserCluster({ userId }: HomeHeaderUserClusterProps) {
         initials={initials}
       />
     </>
-  )
-}
-
-export function HomeHeaderAvatar({
-  pending,
-  imageUrl,
-  initials,
-  isOnline,
-  ariaLabel,
-  onClick,
-}: {
-  pending: boolean
-  imageUrl: string | null
-  initials: string
-  isOnline: boolean
-  ariaLabel: string
-  onClick: () => void
-}) {
-  return (
-    <span className="relative inline-flex size-10 shrink-0">
-      {pending ? (
-        <span
-          className={cn(ISOLOGO_TILE_CLASS, "animate-pulse bg-white/12")}
-          aria-hidden
-        />
-      ) : (
-        <button
-          type="button"
-          className={cn(
-            ISOLOGO_TILE_CLASS,
-            "cursor-pointer bg-white/10 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
-          )}
-          aria-label={ariaLabel}
-          onClick={onClick}
-        >
-          {imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="" className="size-full object-cover" />
-          ) : (
-            <span
-              className={cn(
-                "flex size-full items-center justify-center text-[11px] font-semibold",
-                menuRealmLightStaticClass,
-              )}
-            >
-              {initials}
-            </span>
-          )}
-        </button>
-      )}
-      {pending ? null : (
-        <span
-          role="status"
-          aria-label={isOnline ? HOME_COPY.online : HOME_COPY.offline}
-          title={isOnline ? HOME_COPY.online : HOME_COPY.offline}
-          className={cn(
-            "pointer-events-none absolute bottom-1 right-1 size-2.5 rounded-full ring-2 ring-[var(--rootsy-sombra-950)]",
-            isOnline ? "bg-emerald-500" : "bg-red-500",
-          )}
-        />
-      )}
-    </span>
   )
 }

@@ -36,7 +36,7 @@ import {
 import { ChannelDataFormSegmentField } from "@/components/sale-operation/ChannelDataFormFields"
 import { saleOpChannelStatusBadge } from "@/components/sale-operation/saleOperationStyles"
 import type { ChannelCloseMode } from "@/lib/channelCheckoutClose"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { ChevronRight, Clock, Pencil, UtensilsCrossed } from "lucide-react"
@@ -50,6 +50,7 @@ type Props = {
   sessionTables: MesaTable[]
   tables: MesaTable[]
   waiters: MesaWaiter[]
+  waitersLoading?: boolean
   mergeCandidates: MesaTable[]
   sessionError?: string | null
   onOpenSession: (input: MesaOpenSessionInput) => Promise<boolean> | boolean
@@ -87,6 +88,7 @@ export function MesaSessionPanel({
   sessionTables,
   tables,
   waiters,
+  waitersLoading = false,
   mergeCandidates,
   sessionError,
   onOpenSession,
@@ -218,17 +220,31 @@ export function MesaSessionPanel({
                   </ChannelDataStatusBadge>
                 }
                 actions={
-                  <DataWorkspaceTableIconAction
+                  <RootsIconButton
+                    type="button"
                     label="Editar mesa"
-                    icon={Pencil}
-                    variant="edit"
+                    tone="action"
+                    intent="edit"
+                    size="compact"
                     onClick={() => setEditing(true)}
-                  />
+                  >
+                    <Pencil />
+                  </RootsIconButton>
                 }
               />
 
               <ChannelDataFields>
-                <ChannelDataField label="Mozo">{waiter?.name ?? "—"}</ChannelDataField>
+                <ChannelDataField label="Mozo">
+                  {waitersLoading && session?.waiterId && !waiter ? (
+                    <span
+                      aria-busy="true"
+                      aria-label="Cargando mozo"
+                      className="mt-1 inline-block h-3 w-20 animate-pulse rounded-sm bg-[color-mix(in_srgb,var(--rootsy-sombra-400)_22%,transparent)]"
+                    />
+                  ) : (
+                    waiter?.name ?? "—"
+                  )}
+                </ChannelDataField>
                 <ChannelDataField label="Cliente">
                   {clientLabel?.trim() || "Sin asignar"}
                 </ChannelDataField>
@@ -344,12 +360,16 @@ export function MesaSessionPanel({
                 }
                 actions={
                   isReserved && floorReservation && onOpenReservationDetail ? (
-                    <DataWorkspaceTableIconAction
+                    <RootsIconButton
+                      type="button"
                       label="Ver reserva"
-                      icon={ChevronRight}
-                      variant="neutral"
+                      tone="action"
+                      intent="neutral"
+                      size="compact"
                       onClick={() => onOpenReservationDetail(floorReservation)}
-                    />
+                    >
+                      <ChevronRight />
+                    </RootsIconButton>
                   ) : undefined
                 }
               />
@@ -362,6 +382,7 @@ export function MesaSessionPanel({
             blockedMergeTables={blockedMergeTables}
             blockedMergeWarning={blockedMergeWarning}
             waiters={waiters}
+            waitersLoading={waitersLoading}
             initial={
               floorReservation
                 ? mesaOpenInitialFromReservation(
@@ -384,6 +405,7 @@ export function MesaSessionPanel({
           primaryTable={table}
           mergeCandidates={mergeCandidates}
           waiters={waiters}
+          waitersLoading={waitersLoading}
           initial={{
             tableIds: session.tableIds,
             waiterId: session.waiterId,

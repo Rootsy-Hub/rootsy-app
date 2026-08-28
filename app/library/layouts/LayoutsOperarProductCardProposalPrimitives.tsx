@@ -9,17 +9,21 @@ import {
   layoutsOperarProductCardProposalDescClass,
   layoutsOperarProductCardProposalGridShellClass,
   layoutsOperarProductCardProposalListShellClass,
+  layoutsOperarProductCardProposalTriggerClass,
   layoutsOperarProductCardProposalMediaClass,
   layoutsOperarProductCardProposalMediaStyle,
   layoutsOperarProductCardProposalOfferClass,
   layoutsOperarProductCardMediaEmptyStateShellClass,
   layoutsOperarProductCardProposalPriceClass,
+  layoutsOperarProductCardProposalPriceRowClass,
+  layoutsOperarProductCardProposalTextClass,
   layoutsOperarProductCardProposalTitleClass,
   type LayoutsOperarProductCardProposalId,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import {
   layoutsOperarCatalogArticleDemoScopeClass,
   layoutsOperarProductCardMediaEmptyStateIconClass,
+  layoutsOperarProductCardMediaPhotoClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { SaleCatalogProductOfferOverlay } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
@@ -139,7 +143,7 @@ function LayoutsOperarProductCardProposalMedia({
           src={product.image ?? undefined}
           alt=""
           onError={() => setImageFailed(true)}
-          className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+          className={layoutsOperarProductCardMediaPhotoClass}
         />
       )}
       {showOfferOverlay ? (
@@ -160,41 +164,34 @@ function LayoutsOperarProductCardProposalMedia({
   )
 }
 
-function LayoutsOperarProductCardProposalBody({
+function LayoutsOperarProductCardProposalCopy({
   product,
-  variant,
   proposalId,
+  compact = false,
 }: {
   product: LayoutsOperarDemoProduct
-  variant: "grid" | "list"
   proposalId: LayoutsOperarProductCardProposalId
+  compact?: boolean
 }) {
   return (
-    <div className={layoutsOperarProductCardProposalBodyClass(proposalId, variant)}>
-      <div className={cn("min-h-0 min-w-0", variant === "grid" && "self-start")}>
-        <h3
-          className={cn(
-            layoutsOperarProductCardProposalTitleClass(proposalId),
-            variant === "list" && "line-clamp-1",
-          )}
-        >
-          {product.name}
-        </h3>
-        <p
-          className={cn(
-            layoutsOperarProductCardProposalDescClass(proposalId),
-            variant === "list" && "line-clamp-1",
-          )}
-        >
-          {product.description}
-        </p>
-      </div>
-      <div className={variant === "grid" ? "self-end" : "shrink-0"}>
-        <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
-          {formatDemoPrice(product.price)}
-        </span>
-      </div>
-    </div>
+    <>
+      <h3
+        className={cn(
+          layoutsOperarProductCardProposalTitleClass(proposalId),
+          compact && "line-clamp-1",
+        )}
+      >
+        {product.name}
+      </h3>
+      <p
+        className={cn(
+          layoutsOperarProductCardProposalDescClass(proposalId),
+          compact && "line-clamp-1",
+        )}
+      >
+        {product.description}
+      </p>
+    </>
   )
 }
 
@@ -211,10 +208,22 @@ export function LayoutsOperarProductCardProposalGrid({
       tabIndex={-1}
       aria-hidden
       data-proposal={proposalId}
-      className={layoutsOperarProductCardProposalGridShellClass(proposalId)}
+      className={layoutsOperarProductCardProposalTriggerClass(proposalId)}
     >
-      <LayoutsOperarProductCardProposalMedia product={product} variant="grid" proposalId={proposalId} />
-      <LayoutsOperarProductCardProposalBody product={product} variant="grid" proposalId={proposalId} />
+      <div
+        className={layoutsOperarProductCardProposalGridShellClass(proposalId)}
+        data-proposal={proposalId}
+      >
+        <LayoutsOperarProductCardProposalMedia product={product} variant="grid" proposalId={proposalId} />
+        <div className={layoutsOperarProductCardProposalTextClass(proposalId)}>
+          <LayoutsOperarProductCardProposalCopy product={product} proposalId={proposalId} />
+        </div>
+        <div className={layoutsOperarProductCardProposalPriceRowClass(proposalId)}>
+          <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
+            {formatDemoPrice(product.price)}
+          </span>
+        </div>
+      </div>
     </button>
   )
 }
@@ -235,7 +244,20 @@ export function LayoutsOperarProductCardProposalList({
       className={layoutsOperarProductCardProposalListShellClass(proposalId)}
     >
       <LayoutsOperarProductCardProposalMedia product={product} variant="list" proposalId={proposalId} />
-      <LayoutsOperarProductCardProposalBody product={product} variant="list" proposalId={proposalId} />
+      <div className={layoutsOperarProductCardProposalBodyClass(proposalId, "list")}>
+        <div className="min-h-0 min-w-0">
+          <LayoutsOperarProductCardProposalCopy
+            product={product}
+            proposalId={proposalId}
+            compact
+          />
+        </div>
+        <div className="shrink-0">
+          <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
+            {formatDemoPrice(product.price)}
+          </span>
+        </div>
+      </div>
     </button>
   )
 }

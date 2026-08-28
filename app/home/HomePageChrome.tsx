@@ -1,5 +1,3 @@
-import Link from "next/link"
-import Image from "next/image"
 import { Download } from "lucide-react"
 import {
   HomeWorkspaceBackdrop,
@@ -10,7 +8,7 @@ import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { HOME_COPY } from "@/app/home/homeCopy"
 import { HomeGreeting } from "@/app/home/HomeGreeting"
 import { HomeSaludoHoverProvider } from "@/app/home/HomeSaludoHover"
-import { HomeHeaderUserCluster } from "@/app/home/HomeHeaderUserCluster"
+import { HomePageHeader } from "@/app/home/HomePageHeader"
 import { HomeSubtleButton } from "@/app/home/HomeSubtleButton"
 import { menuRealmLightMutedClass } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
@@ -19,6 +17,7 @@ import type { ReactNode } from "react"
 type HomePageChromeProps = {
   displayName: string
   userId?: string
+  loading?: boolean
   namePending?: boolean
   children: ReactNode
 }
@@ -26,6 +25,7 @@ type HomePageChromeProps = {
 export function HomePageChrome({
   displayName,
   userId,
+  loading,
   namePending = false,
   children,
 }: HomePageChromeProps) {
@@ -39,26 +39,7 @@ export function HomePageChrome({
     >
       <HomeWorkspaceBackdrop />
 
-      <header className="relative z-20 w-full shrink-0 pt-[env(safe-area-inset-top)]">
-        <div className="flex h-16 min-h-0 items-center justify-between px-4 md:h-20 md:px-8">
-          <Link
-            href="/"
-            aria-label="Rootsy — landing"
-            className="inline-flex shrink-0 items-center rounded-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,255,255,0.22)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-          >
-            <Image
-              src="/rootsy-logo.svg"
-              alt="Rootsy"
-              width={90}
-              height={29}
-              priority
-              className="h-8 w-auto md:h-10"
-            />
-          </Link>
-
-          <HomeHeaderUserCluster userId={userId} />
-        </div>
-      </header>
+      <HomePageHeader userId={userId} loading={loading} />
 
       <main className="relative z-10 flex min-h-0 w-full flex-1 flex-col overflow-x-hidden overflow-y-auto">
         <section className="mx-auto flex min-h-0 w-full max-w-[81rem] flex-1 flex-col items-center justify-center px-4 py-5 sm:px-8 sm:py-8">

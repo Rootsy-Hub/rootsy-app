@@ -18,7 +18,7 @@ export const BORDER_PAGE_META: Record<string, BorderPageMeta> = {
     id: "border",
     title: "Borde",
     description:
-      "Ancho + color — hairline bruma, sombra-border en POS, savia en foco y selección.",
+      "Anchos, colores y estados. Hairline en luz filtrada, trazo 700 en sombra, savia en foco.",
   },
 }
 

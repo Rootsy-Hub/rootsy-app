@@ -128,7 +128,7 @@ export function MesasCheckoutModals({
         value={m.comprobante}
         onSelect={m.elegirComprobante}
         previewInput={comprobantePreviewInput}
-        cashRegisterId={m.openCashSession?.cashRegisterId ?? null}
+        emitter={m.comprobanteEmitter}
       />
 
       <SalePaymentMethodDialog

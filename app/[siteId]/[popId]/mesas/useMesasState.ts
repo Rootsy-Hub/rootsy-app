@@ -3,10 +3,8 @@
 import {
   cancelTableReservationApi,
   closeTableSessionApi,
-  fetchMesasLayout,
-  fetchMesasReservationSettings,
-  fetchOpenTableSessions,
-  fetchTableReservations,
+  fetchMesasWaiters,
+  fetchTableSession,
   openTableSessionApi,
   saveMesasLayoutPositionsApi,
   setTableSessionFloorStatusApi,
@@ -15,11 +13,6 @@ import {
   updateMesasReservationSettingsApi,
   upsertTableReservationApi,
 } from "@/lib/rootsyApi/mesasClient"
-import type {
-  MesasLayoutData,
-  MesaReservationRow,
-  MesaSessionRow,
-} from "@/app/[siteId]/[popId]/mesas/actions"
 import {
   isMesaOccupiedNow,
   pickFloorReservation,
@@ -33,17 +26,58 @@ import {
 import { DEFAULT_OPERATIONAL_DAY_CLOSE_TIME } from "@/lib/popOperationalDay"
 import { timezoneForSiteId } from "@/lib/popTimezone"
 import type {
-  MesaFloorDecor,
   MesaOpenSessionInput,
   MesaReservation,
   MesaReservationInput,
-  MesaSalon,
   MesaSession,
   MesaTable,
+  MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import {
+  mapLayoutToState,
+  mapReservationRow,
+  mapSessionRow,
+  markMesasReservationCancelledCache,
+  moveMesasLayoutDecorCache,
+  moveMesasLayoutTableCache,
+  patchMesasReservationSettingsCache,
+  patchMesasSessionCache,
+  removeMesasSessionCache,
+  rotateMesasLayoutItemCache,
+  setMesasSessionDetailCache,
+  upsertMesasReservationCache,
+  upsertMesasSessionCache,
+  type MesasReservationSettingsCache,
+} from "@/app/[siteId]/[popId]/mesas/mesasQueryCache"
+import {
+  popMesasLayoutQueryKey,
+  popMesasReservationSettingsQueryKey,
+  popMesasReservationsQueryKey,
+  popMesasSessionQueryKey,
+  popMesasSessionsQueryKey,
+  popMesasWaitersQueryKey,
+} from "@/lib/queryKeys"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { useMesasFloorHydrate } from "@/hooks/useMesasFloorHydrate"
+import {
+  readMesasLayoutLocalOrFetch,
+  readMesasReservationsLocalOrFetch,
+  readMesasReservationSettingsLocalOrFetch,
+  readMesasSessionsLocalOrFetch,
+  refreshMesasLayoutFromNetwork,
+  refreshMesasReservationsFromNetwork,
+  refreshMesasReservationSettingsFromNetwork,
+  refreshMesasSessionsFromNetwork,
+} from "@/lib/popLocalDb/hydrateMesasFloor"
+import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
+import { readMesasWorkspacePreference } from "@/lib/mesasWorkspacePreference"
+import { readInitialSaleCheckoutFromCache } from "@/lib/saleCheckoutDefaults"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-function firstActiveSalonId(salons: MesaSalon[]): string {
+function firstActiveSalonId(
+  salons: { id: string; isActive?: boolean }[],
+): string {
   const active = salons.filter((s) => s.isActive !== false)
   return active[0]?.id ?? salons[0]?.id ?? ""
 }
@@ -99,82 +133,6 @@ function applyTableOccupancy(
   })
 }
 
-function mapSessionRow(row: MesaSessionRow): MesaSession {
-  return {
-    id: row.id,
-    tableIds: row.tableIds,
-    waiterId: row.waiterId,
-    guestCount: row.guestCount,
-    note: row.note,
-    openedAt: row.openedAt,
-    updatedAt: row.updatedAt,
-    checkout: row.checkout,
-    floorStatus: row.floorStatus,
-  }
-}
-
-function mapReservationRow(row: MesaReservationRow): MesaReservation {
-  return {
-    id: row.id,
-    tableId: row.tableId,
-    tableIds: row.tableIds,
-    clientId: row.clientId,
-    clientName: row.clientName,
-    guestCount: row.guestCount,
-    arrivalAt: row.arrivalAt,
-    status: row.status,
-    note: row.note,
-    updatedAt: row.updatedAt,
-  }
-}
-
-function mapLayoutToState(data: MesasLayoutData): {
-  salons: MesaSalon[]
-  layoutTables: MesaTable[]
-  decors: MesaFloorDecor[]
-} {
-  const salons: MesaSalon[] = data.salons
-    .filter((s) => s.isActive)
-    .map((s) => ({
-      id: s.id,
-      name: s.name,
-      sortOrder: s.sortOrder,
-      isActive: s.isActive,
-    }))
-
-  const layoutTables: MesaTable[] = data.tables
-    .filter((t) => t.isActive)
-    .map((t) => ({
-      id: t.id,
-      salonId: t.salonId,
-      label: t.label,
-      shape: t.shape,
-      x: t.x,
-      y: t.y,
-      rotation: t.rotation ?? 0,
-      seats: t.seats,
-      status: "free" as const,
-      sessionId: null,
-      reservationId: null,
-    }))
-
-  const decors: MesaFloorDecor[] = data.decors
-    .filter((d) => d.isActive)
-    .map((d) => ({
-      id: d.id,
-      salonId: d.salonId,
-      kind: d.kind,
-      x: d.x,
-      y: d.y,
-      width: d.width,
-      height: d.height,
-      rotation: d.rotation ?? 0,
-      label: d.label || undefined,
-    }))
-
-  return { salons, layoutTables, decors }
-}
-
 function toSessionInput(input: MesaOpenSessionInput) {
   return {
     tableIds: input.tableIds,
@@ -186,11 +144,12 @@ function toSessionInput(input: MesaOpenSessionInput) {
 }
 
 export function useMesasState(popId: string, siteId: string) {
-  const [salons, setSalons] = useState<MesaSalon[]>([])
-  const [layoutTables, setLayoutTables] = useState<MesaTable[]>([])
-  const [decors, setDecors] = useState<MesaFloorDecor[]>([])
-  const [sessions, setSessions] = useState<MesaSession[]>([])
-  const [reservations, setReservations] = useState<MesaReservation[]>([])
+  const queryClient = useQueryClient()
+  const fiscal = usePopSaleComprobanteFiscalContext()
+  const floorHydrate = useMesasFloorHydrate(popId)
+  const enabled = Boolean(popId && siteId)
+  const floorEnabled = enabled && floorHydrate.canReadFloor
+
   const [activeSalonId, setActiveSalonId] = useState("")
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [layoutEditMode, setLayoutEditMode] = useState(false)
@@ -198,25 +157,90 @@ export function useMesasState(popId: string, siteId: string) {
     kind: "table" | "decor"
     id: string
   } | null>(null)
-  const [layoutLoading, setLayoutLoading] = useState(true)
-  const [occupancyLoading, setOccupancyLoading] = useState(true)
-  const initialOccupancyLoadedRef = useRef(false)
   const [layoutError, setLayoutError] = useState<string | null>(null)
   const [sessionError, setSessionError] = useState<string | null>(null)
-  const [layoutData, setLayoutData] = useState<MesasLayoutData | null>(null)
   const [floorNow, setFloorNow] = useState(() => new Date())
-  const [reservationSettings, setReservationSettings] =
-    useState<MesasReservationSettings>(() =>
-      readMesasReservationSettings(null),
-    )
-  const [operationalDayCloseTime, setOperationalDayCloseTime] = useState(
-    DEFAULT_OPERATIONAL_DAY_CLOSE_TIME,
+  const tableRestoredRef = useRef(false)
+
+  const layoutQuery = useQuery({
+    queryKey: popMesasLayoutQueryKey(popId),
+    queryFn: () => readMesasLayoutLocalOrFetch(popId),
+    enabled: floorEnabled,
+    ...sessionListQueryOptions,
+  })
+
+  const sessionsQuery = useQuery({
+    queryKey: popMesasSessionsQueryKey(popId),
+    queryFn: () => readMesasSessionsLocalOrFetch(popId),
+    enabled: floorEnabled,
+    ...sessionListQueryOptions,
+  })
+
+  const reservationsQuery = useQuery({
+    queryKey: popMesasReservationsQueryKey(popId),
+    queryFn: () => readMesasReservationsLocalOrFetch(popId),
+    enabled: floorEnabled,
+    ...sessionListQueryOptions,
+  })
+
+  const settingsQuery = useQuery({
+    queryKey: popMesasReservationSettingsQueryKey(popId),
+    queryFn: () => readMesasReservationSettingsLocalOrFetch(popId),
+    enabled: floorEnabled,
+    ...sessionListQueryOptions,
+  })
+
+  const waitersQuery = useQuery({
+    queryKey: popMesasWaitersQueryKey(popId),
+    queryFn: async (): Promise<MesaWaiter[]> => {
+      const res = await fetchMesasWaiters(popId)
+      if (!res.success) throw new Error(res.error)
+      return res.waiters
+    },
+    enabled,
+    ...sessionListQueryOptions,
+  })
+
+  const layoutData = layoutQuery.data ?? null
+  const mappedLayout = useMemo(
+    () =>
+      layoutData
+        ? mapLayoutToState(layoutData)
+        : { salons: [], layoutTables: [], decors: [] },
+    [layoutData],
   )
+  const salons = mappedLayout.salons
+  const layoutTables = mappedLayout.layoutTables
+  const decors = mappedLayout.decors
+  const sessions = sessionsQuery.data ?? []
+  const reservations = reservationsQuery.data ?? []
+  const reservationSettings =
+    settingsQuery.data?.settings ?? readMesasReservationSettings(null)
+  const operationalDayCloseTime =
+    settingsQuery.data?.operationalDayCloseTime ??
+    DEFAULT_OPERATIONAL_DAY_CLOSE_TIME
+
+  const layoutLoading = layoutQuery.isLoading || !floorHydrate.canReadFloor
+  const occupancyLoading =
+    !floorHydrate.canReadFloor || sessionsQuery.isLoading
+  const waitersLoading = waitersQuery.isLoading
 
   useEffect(() => {
     const id = window.setInterval(() => setFloorNow(new Date()), 60_000)
     return () => window.clearInterval(id)
   }, [])
+
+  useEffect(() => {
+    setActiveSalonId((prev) => {
+      if (prev && salons.some((s) => s.id === prev)) return prev
+      if (prev && salons.length === 0) return prev
+      return firstActiveSalonId(salons)
+    })
+  }, [salons])
+
+  useEffect(() => {
+    tableRestoredRef.current = false
+  }, [popId])
 
   const visibleReservations = useMemo(
     () =>
@@ -243,6 +267,31 @@ export function useMesasState(popId: string, siteId: string) {
     [layoutTables, sessions, visibleReservations, reservationSettings, floorNow],
   )
 
+  useEffect(() => {
+    if (!popId || tableRestoredRef.current) return
+    if (!floorHydrate.canReadFloor) return
+    if (layoutQuery.isLoading || sessionsQuery.isLoading) return
+    tableRestoredRef.current = true
+    const saved = readMesasWorkspacePreference(popId)
+    if (!saved) return
+    if (saved.tableId && tables.some((table) => table.id === saved.tableId)) {
+      const table = tables.find((item) => item.id === saved.tableId)
+      if (table) setActiveSalonId(table.salonId)
+      setSelectedTableId(saved.tableId)
+      return
+    }
+    if (saved.salonId && salons.some((salon) => salon.id === saved.salonId)) {
+      setActiveSalonId(saved.salonId)
+    }
+  }, [
+    popId,
+    floorHydrate.canReadFloor,
+    layoutQuery.isLoading,
+    sessionsQuery.isLoading,
+    tables,
+    salons,
+  ])
+
   const todayAgenda = useMemo(
     () =>
       reservationsForAgendaDay(visibleReservations, floorNow, {
@@ -252,91 +301,31 @@ export function useMesasState(popId: string, siteId: string) {
     [visibleReservations, floorNow, siteId, operationalDayCloseTime],
   )
 
-  const removeSession = useCallback((sessionId: string) => {
-    setSessions((prev) => prev.filter((session) => session.id !== sessionId))
-  }, [])
-
-  const upsertSession = useCallback((row: MesaSessionRow) => {
-    const mapped = mapSessionRow(row)
-    setSessions((prev) => {
-      const index = prev.findIndex((session) => session.id === mapped.id)
-      if (index < 0) return [...prev, mapped]
-      const next = [...prev]
-      next[index] = mapped
-      return next
-    })
-  }, [])
+  const removeSession = useCallback(
+    (sessionId: string) => {
+      if (!popId) return
+      removeMesasSessionCache(queryClient, popId, sessionId)
+    },
+    [popId, queryClient],
+  )
 
   const reloadSessions = useCallback(async () => {
-    if (!popId || !siteId) return
-
-    const res = await fetchOpenTableSessions(popId)
-    if (!res.success) {
-      setSessionError(res.error)
-      return
-    }
-
-    setSessionError(null)
-    setSessions(res.sessions.map(mapSessionRow))
-  }, [popId, siteId])
+    if (!popId) return
+    const sessions = await refreshMesasSessionsFromNetwork(popId)
+    queryClient.setQueryData(popMesasSessionsQueryKey(popId), sessions)
+  }, [popId, queryClient])
 
   const reloadReservations = useCallback(async () => {
-    if (!popId || !siteId) return
-
-    const res = await fetchTableReservations(popId)
-    if (!res.success) {
-      setSessionError(res.error)
-      return
-    }
-
-    setSessionError(null)
-    setReservations(res.reservations.map(mapReservationRow))
-  }, [popId, siteId])
+    if (!popId) return
+    const reservations = await refreshMesasReservationsFromNetwork(popId)
+    queryClient.setQueryData(popMesasReservationsQueryKey(popId), reservations)
+  }, [popId, queryClient])
 
   const reloadReservationSettings = useCallback(async () => {
-    if (!popId || !siteId) return
-
-    const res = await fetchMesasReservationSettings(popId)
-    if (!res.success) {
-      setSessionError(res.error)
-      return
-    }
-
-    setSessionError(null)
-    setReservationSettings(res.settings)
-    setOperationalDayCloseTime(res.operationalDayCloseTime)
-  }, [popId, siteId])
-
-  const reloadOccupancy = useCallback(async () => {
-    if (!popId || !siteId) {
-      setOccupancyLoading(false)
-      return
-    }
-
-    if (!initialOccupancyLoadedRef.current) {
-      setOccupancyLoading(true)
-    }
-
-    await Promise.all([
-      reloadSessions(),
-      reloadReservations(),
-      reloadReservationSettings(),
-    ])
-
-    initialOccupancyLoadedRef.current = true
-    setOccupancyLoading(false)
-  }, [
-    popId,
-    siteId,
-    reloadSessions,
-    reloadReservations,
-    reloadReservationSettings,
-  ])
-
-  useEffect(() => {
-    initialOccupancyLoadedRef.current = false
-    setOccupancyLoading(true)
-  }, [popId, siteId])
+    if (!popId) return
+    const settings = await refreshMesasReservationSettingsFromNetwork(popId)
+    queryClient.setQueryData(popMesasReservationSettingsQueryKey(popId), settings)
+  }, [popId, queryClient])
 
   const saveReservationSettings = useCallback(
     async (input: MesasReservationSettings): Promise<boolean> => {
@@ -352,54 +341,23 @@ export function useMesasState(popId: string, siteId: string) {
       }
 
       setSessionError(null)
-      setReservationSettings(input)
+      patchMesasReservationSettingsCache(queryClient, popId, input)
       return true
     },
-    [popId, siteId],
+    [popId, queryClient, siteId],
   )
 
   const reloadLayout = useCallback(async () => {
-    if (!popId || !siteId) {
-      setLayoutLoading(false)
-      return
-    }
-
-    setLayoutLoading(true)
-    setLayoutError(null)
-
-    const res = await fetchMesasLayout(popId)
-    setLayoutLoading(false)
-
-    if (!res.success) {
-      setLayoutError(res.error)
-      setLayoutData(null)
-      return
-    }
-
-    setLayoutData(res.data)
-    const mapped = mapLayoutToState(res.data)
-    setSalons(mapped.salons)
-    setLayoutTables(mapped.layoutTables)
-    setDecors(mapped.decors)
-
-    setActiveSalonId((prev) => {
-      if (prev && mapped.salons.some((s) => s.id === prev)) return prev
-      return firstActiveSalonId(mapped.salons)
-    })
-  }, [popId, siteId])
+    if (!popId) return
+    const layout = await refreshMesasLayoutFromNetwork(popId)
+    queryClient.setQueryData(popMesasLayoutQueryKey(popId), layout)
+  }, [popId, queryClient])
 
   useEffect(() => {
-    void reloadLayout()
-    void reloadOccupancy()
-  }, [reloadLayout, reloadOccupancy])
-
-  useEffect(() => {
-    if (!activeSalonId) {
-      setSelectedTableId(null)
-      return
-    }
+    if (!activeSalonId || tables.length === 0) return
     setSelectedTableId((prev) => {
-      if (prev && tables.some((t) => t.id === prev && t.salonId === activeSalonId)) {
+      if (!prev) return prev
+      if (tables.some((t) => t.id === prev && t.salonId === activeSalonId)) {
         return prev
       }
       return null
@@ -411,10 +369,15 @@ export function useMesasState(popId: string, siteId: string) {
     [tables, activeSalonId],
   )
 
-  const selectTable = useCallback((tableId: string) => {
-    if (!tableId) return
-    setSelectedTableId(tableId)
-  }, [])
+  const selectTable = useCallback(
+    (tableId: string) => {
+      if (!tableId) return
+      const table = tables.find((item) => item.id === tableId)
+      if (table) setActiveSalonId(table.salonId)
+      setSelectedTableId(tableId)
+    },
+    [tables],
+  )
 
   const salonDecors = useMemo(
     () => decors.filter((d) => d.salonId === activeSalonId),
@@ -426,10 +389,55 @@ export function useMesasState(popId: string, siteId: string) {
     [tables, selectedTableId],
   )
 
+  const selectedSessionId = selectedTable?.sessionId ?? null
+  const sessionDetailIdRef = useRef<string | null>(null)
+  if (selectedSessionId) sessionDetailIdRef.current = selectedSessionId
+  const sessionDetailId = selectedSessionId ?? sessionDetailIdRef.current
+
+  const sessionDetailQuery = useQuery({
+    queryKey: popMesasSessionQueryKey(popId, sessionDetailId ?? ""),
+    queryFn: async ({ queryKey }) => {
+      const sessionId = queryKey[3]
+      if (!sessionId) return null
+      const res = await fetchTableSession(popId, sessionId)
+      if (!res.success) throw new Error(res.error)
+      if (!res.session) {
+        removeMesasSessionCache(queryClient, popId, sessionId)
+        return null
+      }
+      const session = mapSessionRow(res.session)
+      upsertMesasSessionCache(queryClient, popId, session)
+      setMesasSessionDetailCache(queryClient, popId, session)
+      return session
+    },
+    enabled: enabled && Boolean(selectedSessionId && sessionDetailId),
+    ...sessionListQueryOptions,
+  })
+
+  const sessionTicketReady =
+    !selectedSessionId ||
+    sessionDetailQuery.data != null ||
+    sessionDetailQuery.isFetched
+
   const selectedSession = useMemo(() => {
-    if (!selectedTable?.sessionId) return null
-    return sessions.find((s) => s.id === selectedTable.sessionId) ?? null
-  }, [selectedTable, sessions])
+    if (!selectedSessionId) return null
+    const floor = sessions.find((s) => s.id === selectedSessionId) ?? null
+    if (!floor) return null
+    return {
+      ...floor,
+      updatedAt: sessionDetailQuery.data?.updatedAt ?? floor.updatedAt,
+      checkout: sessionTicketReady
+        ? sessionDetailQuery.data?.checkout ?? null
+        : null,
+    }
+  }, [
+    selectedSessionId,
+    sessions,
+    sessionTicketReady,
+    sessionDetailQuery.data,
+    sessionDetailQuery.data?.updatedAt,
+    sessionDetailQuery.data?.checkout,
+  ])
 
   const selectedReservation = useMemo(() => {
     if (!selectedTable?.reservationId) return null
@@ -480,34 +488,19 @@ export function useMesasState(popId: string, siteId: string) {
 
   const moveTable = useCallback(
     (tableId: string, dx: number, dy: number) => {
-      let result: { x: number; y: number } | null = null
-      setLayoutTables((prev) =>
-        prev.map((t) => {
-          if (t.id !== tableId) return t
-          const x = Math.max(8, t.x + dx)
-          const y = Math.max(8, t.y + dy)
-          result = { x, y }
-          return { ...t, x, y }
-        }),
-      )
-      return result
+      if (!popId) return null
+      return moveMesasLayoutTableCache(queryClient, popId, tableId, dx, dy)
     },
-    [],
+    [popId, queryClient],
   )
 
-  const moveDecor = useCallback((decorId: string, dx: number, dy: number) => {
-    let result: { x: number; y: number } | null = null
-    setDecors((prev) =>
-      prev.map((d) => {
-        if (d.id !== decorId) return d
-        const x = Math.max(8, d.x + dx)
-        const y = Math.max(8, d.y + dy)
-        result = { x, y }
-        return { ...d, x, y }
-      }),
-    )
-    return result
-  }, [])
+  const moveDecor = useCallback(
+    (decorId: string, dx: number, dy: number) => {
+      if (!popId) return null
+      return moveMesasLayoutDecorCache(queryClient, popId, decorId, dx, dy)
+    },
+    [popId, queryClient],
+  )
 
   const persistLayoutItem = useCallback(
     async (
@@ -536,57 +529,64 @@ export function useMesasState(popId: string, siteId: string) {
     if (!layoutSelection || !popId || !siteId) return
 
     const { kind, id } = layoutSelection
+    const rotated = rotateMesasLayoutItemCache(queryClient, popId, kind, id)
+    if (!rotated) return
+
     if (kind === "table") {
-      setLayoutTables((prev) => {
-        const table = prev.find((t) => t.id === id)
-        if (!table) return prev
-        const rotation = (table.rotation + 45) % 360
-        void saveMesasLayoutPositionsApi(popId, {
-          tables: [{ id, x: table.x, y: table.y, rotation }],
-        })
-        return prev.map((t) => (t.id === id ? { ...t, rotation } : t))
+      void saveMesasLayoutPositionsApi(popId, {
+        tables: [{ id, x: rotated.x, y: rotated.y, rotation: rotated.rotation }],
       })
       return
     }
 
-    setDecors((prev) => {
-      const decor = prev.find((d) => d.id === id)
-      if (!decor) return prev
-      const rotation = (decor.rotation + 45) % 360
-      void saveMesasLayoutPositionsApi(popId, {
-        decors: [{ id, x: decor.x, y: decor.y, rotation }],
-      })
-      return prev.map((d) => (d.id === id ? { ...d, rotation } : d))
+    void saveMesasLayoutPositionsApi(popId, {
+      decors: [{ id, x: rotated.x, y: rotated.y, rotation: rotated.rotation }],
     })
-  }, [layoutSelection, popId, siteId])
+  }, [layoutSelection, popId, queryClient, siteId])
 
   const openSession = useCallback(
     async (input: MesaOpenSessionInput) => {
       if (!popId || !siteId) return false
 
       setSessionError(null)
-      const res = await openTableSessionApi(popId, toSessionInput(input))
+      const res = await openTableSessionApi(popId, {
+        ...toSessionInput(input),
+        checkout: readInitialSaleCheckoutFromCache(queryClient, popId, {
+          popEmisorIvaCondition: fiscal.popEmisorIvaCondition,
+          hasValidPopFiscalCuit: fiscal.hasValidPopFiscalCuit,
+        }),
+      })
       if (!res.success) {
         setSessionError(res.error)
         return false
       }
 
-      upsertSession(res.session)
+      const mapped = mapSessionRow(res.session)
+      upsertMesasSessionCache(queryClient, popId, mapped)
+      setMesasSessionDetailCache(queryClient, popId, mapped)
       if (input.reservationId) {
         const seatedId = input.reservationId
-        setReservations((prev) =>
-          prev.map((r) =>
-            r.id === seatedId &&
-            (r.status === "pending" || r.status === "confirmed")
-              ? { ...r, status: "seated" as const }
-              : r,
-          ),
+        queryClient.setQueryData<MesaReservation[]>(
+          popMesasReservationsQueryKey(popId),
+          (prev) =>
+            (prev ?? []).map((r) =>
+              r.id === seatedId &&
+              (r.status === "pending" || r.status === "confirmed")
+                ? { ...r, status: "seated" as const }
+                : r,
+            ),
         )
       }
       setSelectedTableId(input.tableIds[0] ?? null)
       return true
     },
-    [popId, siteId, upsertSession],
+    [
+      fiscal.hasValidPopFiscalCuit,
+      fiscal.popEmisorIvaCondition,
+      popId,
+      queryClient,
+      siteId,
+    ],
   )
 
   const updateSession = useCallback(
@@ -604,10 +604,12 @@ export function useMesasState(popId: string, siteId: string) {
         return false
       }
 
-      upsertSession(res.session)
+      const mapped = mapSessionRow(res.session)
+      upsertMesasSessionCache(queryClient, popId, mapped)
+      setMesasSessionDetailCache(queryClient, popId, mapped)
       return true
     },
-    [popId, siteId, upsertSession],
+    [popId, queryClient, siteId],
   )
 
   const closeSession = useCallback(
@@ -639,16 +641,13 @@ export function useMesasState(popId: string, siteId: string) {
         return false
       }
 
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === sessionId
-            ? { ...session, floorStatus: res.floorStatus, updatedAt: res.updatedAt }
-            : session,
-        ),
-      )
+      patchMesasSessionCache(queryClient, popId, sessionId, {
+        floorStatus: res.floorStatus,
+        updatedAt: res.updatedAt,
+      })
       return true
     },
-    [popId, siteId],
+    [popId, queryClient, siteId],
   )
 
   const saveReservation = useCallback(
@@ -662,17 +661,14 @@ export function useMesasState(popId: string, siteId: string) {
         return false
       }
 
-      const mapped = mapReservationRow(res.reservation)
-      setReservations((prev) => {
-        const index = prev.findIndex((r) => r.id === mapped.id)
-        if (index < 0) return [...prev, mapped]
-        const next = [...prev]
-        next[index] = mapped
-        return next
-      })
+      upsertMesasReservationCache(
+        queryClient,
+        popId,
+        mapReservationRow(res.reservation),
+      )
       return true
     },
-    [popId, siteId],
+    [popId, queryClient, siteId],
   )
 
   const removeReservation = useCallback(
@@ -686,14 +682,10 @@ export function useMesasState(popId: string, siteId: string) {
         return false
       }
 
-      setReservations((prev) =>
-        prev.map((r) =>
-          r.id === reservationId ? { ...r, status: "cancelled" as const } : r,
-        ),
-      )
+      markMesasReservationCancelledCache(queryClient, popId, reservationId)
       return true
     },
-    [popId, siteId],
+    [popId, queryClient, siteId],
   )
 
   const freeTablesInSalon = useCallback(
@@ -724,17 +716,14 @@ export function useMesasState(popId: string, siteId: string) {
         return false
       }
 
-      const mapped = mapReservationRow(res.reservation)
-      setReservations((prev) => {
-        const index = prev.findIndex((r) => r.id === mapped.id)
-        if (index < 0) return [...prev, mapped]
-        const next = [...prev]
-        next[index] = mapped
-        return next
-      })
+      upsertMesasReservationCache(
+        queryClient,
+        popId,
+        mapReservationRow(res.reservation),
+      )
       return true
     },
-    [popId, siteId],
+    [popId, queryClient, siteId],
   )
 
   const checkInReservation = useCallback(
@@ -786,6 +775,8 @@ export function useMesasState(popId: string, siteId: string) {
     salons,
     tables,
     sessions,
+    waiters: waitersQuery.data ?? [],
+    waitersLoading,
     reservations: visibleReservations,
     decors,
     activeSalonId,
@@ -795,6 +786,7 @@ export function useMesasState(popId: string, siteId: string) {
     selectTable,
     selectedTable,
     selectedSession,
+    sessionTicketReady,
     selectedReservation,
     selectedTableReservationWarning,
     reservationSettings,
@@ -811,12 +803,19 @@ export function useMesasState(popId: string, siteId: string) {
     layoutLoading,
     occupancyLoading,
     floorLoading: layoutLoading || occupancyLoading,
-    layoutError,
-    sessionError,
+    layoutError: layoutError ?? layoutQuery.error?.message ?? null,
+    sessionError:
+      sessionError ??
+      sessionsQuery.error?.message ??
+      sessionDetailQuery.error?.message ??
+      reservationsQuery.error?.message ??
+      settingsQuery.error?.message ??
+      null,
     layoutData,
     reloadLayout,
     reloadSessions,
     reloadReservations,
+    reloadReservationSettings,
     moveTable,
     moveDecor,
     persistLayoutItem,

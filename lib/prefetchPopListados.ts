@@ -5,6 +5,7 @@ import { articlesModalFiltersFromWorkspace } from "@/app/[siteId]/[popId]/articl
 import type { ArticlesWorkspaceUrlState } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
 import {
   DATA_WORKSPACE_TABLE_PAGE_SIZE,
+  dataWorkspaceTableStartPage,
   pinDataWorkspaceTableInfiniteParams,
 } from "@/lib/dataWorkspaceTableInfinite"
 import { prefetchPopInfiniteListQuery } from "@/lib/prefetchPopListQuery"
@@ -15,6 +16,7 @@ export async function prefetchPopArticlesTable(
   popId: string,
   url: ArticlesWorkspaceUrlState,
 ): Promise<DehydratedState | null> {
+  const startPage = dataWorkspaceTableStartPage(url.page)
   const params = pinDataWorkspaceTableInfiniteParams({
     page: url.page,
     pageSize: url.pageSize,
@@ -25,8 +27,10 @@ export async function prefetchPopArticlesTable(
     sort: url.sort,
     ord: url.ord,
   })
+  const keyParams = { ...params, page: startPage }
   return prefetchPopInfiniteListQuery({
-    queryKey: popArticlesQueryKey(popId, params),
+    queryKey: popArticlesQueryKey(popId, keyParams),
+    initialPageParam: startPage,
     queryFn: (page) =>
       fetchPopArticlesTableServer(popId, {
         ...params,

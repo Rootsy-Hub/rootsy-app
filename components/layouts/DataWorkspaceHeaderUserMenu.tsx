@@ -2,22 +2,19 @@
 
 import {
   menuGhostBarClass,
-  menuGhostCircleClass,
 } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar } from "@/components/Avatar"
 import {
   dataWorkspaceHeaderDropdownLogoutItemClass,
   dataWorkspaceHeaderDropdownSeparatorClassForVariant,
+  dataWorkspaceHeaderIdentityMutedClass,
+  dataWorkspaceHeaderIdentityNameClass,
   dataWorkspaceHeaderUserDropdownContentClassForVariant,
   isDarkChromeHeader,
   isDataWorkspaceTintedHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import type { RootsIconButtonSize } from "@/components/rootsy-button/rootsButtonStyles"
-import {
-  eterHeaderBodyClass,
-  eterHeaderMutedClass,
-} from "@/lib/eter/eterChrome"
 import { initialsFromPopName } from "@/lib/popIdentityDisplay"
 import {
   RootsDropdownContent,
@@ -32,9 +29,9 @@ import { ApprovalCodeDialog } from "@/components/pop-workspace/ApprovalCodeDialo
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import { ImageIcon, KeyRound, LogOut, UserCog } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
+import { useRouter } from "@/lib/pop-spa/navigation"
+import { useState } from "react"
 
 export type DataWorkspaceHeaderUserMenuProps = {
   userName: string
@@ -51,9 +48,6 @@ export type DataWorkspaceHeaderUserMenuProps = {
   showIdentity?: boolean
   pending?: boolean
 }
-
-const userAvatarFallbackClass =
-  "bg-linear-to-br from-[var(--rootsy-savia-500)] to-[var(--rootsy-savia-700)] text-xs font-semibold tracking-tight text-white"
 
 export function DataWorkspaceHeaderUserMenu({
   userName,
@@ -76,28 +70,11 @@ export function DataWorkspaceHeaderUserMenu({
   const [approvalOpen, setApprovalOpen] = useState(false)
 
   const profileAvatarSrc = userAvatarSrc?.trim() || null
-  const [profileImageFailed, setProfileImageFailed] = useState(false)
   const [photoOpen, setPhotoOpen] = useState(false)
-  const identityQuery =
-    size === "compact" ? "(min-width: 1024px)" : "(min-width: 640px)"
-  const [identityVisible, setIdentityVisible] = useState(false)
-
-  useEffect(() => {
-    setProfileImageFailed(false)
-  }, [profileAvatarSrc])
-
-  useEffect(() => {
-    const media = window.matchMedia(identityQuery)
-    const sync = () => setIdentityVisible(media.matches)
-    sync()
-    media.addEventListener("change", sync)
-    return () => media.removeEventListener("change", sync)
-  }, [identityQuery])
-
-  const showPhoto = Boolean(profileAvatarSrc) && !profileImageFailed
+  const showPhoto = Boolean(profileAvatarSrc)
   const initials = initialsFromPopName(userName)
   const resolvedRoleLabel = roleLabel?.trim() || ""
-  const avatarSizeClass = size === "compact" ? "size-8" : "size-10"
+  const avatarSize = size === "compact" ? "md" : "lg"
   /** Compact (módulo): el nombre espera a `lg` para no pisar las acciones. */
   const identityClass =
     size === "compact" ? "hidden lg:flex" : "hidden sm:flex"
@@ -111,7 +88,7 @@ export function DataWorkspaceHeaderUserMenu({
             <span className={cn(menuGhostBarClass, "h-2.5 w-16")} />
           </div>
         ) : null}
-        <span className={cn(avatarSizeClass, menuGhostCircleClass)} />
+        <Avatar pending initials={initials} size={avatarSize} tone={theme} />
       </div>
     )
   }
@@ -134,10 +111,22 @@ export function DataWorkspaceHeaderUserMenu({
           aria-label={`Menú de ${userName}`}
           aria-haspopup="menu"
           className={cn(
-            "group flex min-w-0 items-center gap-3 text-left",
-            "outline-none focus:outline-none focus:ring-0",
-            "data-[state=open]:ring-0",
-            "focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-white/22",
+            "flex min-w-0 items-center gap-3 rounded-[8px] border border-transparent px-2 py-1 text-left",
+            "transition-[background-color,box-shadow] duration-150",
+            "outline-none focus:outline-none focus:ring-0 data-[state=open]:ring-0",
+            isTinted
+              ? cn(
+                  "hover:bg-[rgba(255,255,255,0.08)]",
+                  "data-[state=open]:bg-[rgba(255,255,255,0.08)]",
+                  "active:bg-[rgba(255,255,255,0.12)]",
+                  "focus-visible:ring-2 focus-visible:ring-white/22",
+                )
+              : cn(
+                  "hover:bg-black/5",
+                  "data-[state=open]:bg-black/5",
+                  "active:bg-black/8",
+                  "focus-visible:ring-2 focus-visible:ring-primary/15",
+                ),
           )}
         >
           <div
@@ -147,17 +136,19 @@ export function DataWorkspaceHeaderUserMenu({
               showIdentity ? identityClass : "hidden",
             )}
           >
-            <span className={cn("truncate text-sm", eterHeaderBodyClass)}>
+            <span
+              className={cn(
+                "truncate text-sm font-semibold",
+                dataWorkspaceHeaderIdentityNameClass(headerVariant),
+              )}
+            >
               {userName}
             </span>
             {resolvedRoleLabel ? (
               <span
                 className={cn(
                   "truncate text-xs font-normal",
-                  eterHeaderMutedClass,
-                  "transition-colors duration-[50ms]",
-                  "group-hover:text-[color-mix(in_srgb,var(--rootsy-eter-100)_78%,transparent)]",
-                  "group-data-[state=open]:text-[color-mix(in_srgb,var(--rootsy-eter-100)_78%,transparent)]",
+                  dataWorkspaceHeaderIdentityMutedClass(headerVariant),
                 )}
               >
                 {resolvedRoleLabel}
@@ -169,69 +160,13 @@ export function DataWorkspaceHeaderUserMenu({
               />
             ) : null}
           </div>
-          <span
-            className={cn(
-              "relative shrink-0",
-              avatarSizeClass,
-              showPhoto && showIdentity && identityVisible && "cursor-pointer",
-            )}
-            onClick={
-              showPhoto && showIdentity && identityVisible
-                ? (event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    setPhotoOpen(true)
-                  }
-                : undefined
-            }
-            onPointerDown={
-              showPhoto && showIdentity && identityVisible
-                ? (event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                  }
-                : undefined
-            }
-          >
-            <span className="block size-full overflow-hidden rounded-full">
-              <Avatar className="size-full rounded-full">
-                {showPhoto ? (
-                  <AvatarImage
-                    src={profileAvatarSrc!}
-                    alt=""
-                    className="object-cover"
-                    onLoadingStatusChange={(status) => {
-                      if (status === "error" && profileAvatarSrc && !profileImageFailed) {
-                        setProfileImageFailed(true)
-                      }
-                    }}
-                  />
-                ) : null}
-                <AvatarFallback className={cn("rounded-full", userAvatarFallbackClass)}>
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            </span>
-            <span
-              aria-hidden
-              className={cn(
-                "pointer-events-none absolute inset-0 rounded-full",
-                "ring-1 ring-transparent",
-                "transition-[box-shadow] duration-[50ms]",
-                "group-hover:ring-[color-mix(in_srgb,var(--rootsy-eter-100)_18%,transparent)]",
-                "group-data-[state=open]:ring-[color-mix(in_srgb,var(--rootsy-eter-100)_18%,transparent)]",
-              )}
-            />
-            <span
-              role="status"
-              aria-label={isOnline ? "En línea" : "Sin conexión"}
-              title={isOnline ? "En línea" : "Sin conexión"}
-              className={cn(
-                "pointer-events-none absolute right-0 bottom-0 size-2 rounded-full ring-1 ring-[var(--rootsy-eter-950)]",
-                isOnline
-                  ? "bg-[var(--rootsy-savia-500)]"
-                  : "bg-[var(--rootsy-danger)]",
-              )}
+          <span className="relative shrink-0">
+            <Avatar
+              imageUrl={profileAvatarSrc}
+              initials={initials}
+              size={avatarSize}
+              tone={theme}
+              isOnline={isOnline}
             />
           </span>
         </button>

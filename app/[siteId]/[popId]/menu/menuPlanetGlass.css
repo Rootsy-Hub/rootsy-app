@@ -1,0 +1,229 @@
+/**
+ * Planeta glass — cristal del mundo Herramientas (card de tarea del chat).
+ * Frost en la placa, rim con máscara, sheen a 23°. El reinado tiñe el mineral.
+ */
+
+.menu-planet-glass {
+  --glass-frost: blur(20px) saturate(1.25);
+  --glass-ink: #e0feff;
+  --glass-wash-a: rgb(220 255 255 / 0.2);
+  --glass-wash-b: rgb(76 184 221 / 0.12);
+  --glass-wash-c: rgb(7 59 96 / 0.22);
+  --glass-rim-a: rgb(230 255 255 / 0.96);
+  --glass-rim-b: rgb(142 238 250 / 0.38);
+  --glass-rim-c: rgb(51 167 198 / 0.18);
+  --glass-rim-d: rgb(163 246 255 / 0.78);
+  --glass-inset-bottom: rgb(62 169 196 / 0.42);
+  --glass-inset-glow: rgb(224 255 255 / 0.09);
+  --glass-depth: rgb(0 11 21 / 0.22);
+  --glass-rim-pad: 0.5px 0.75px 1px;
+  --glass-rim-glow-outset: -2px;
+  --glass-rim-glow-blur: 1.5px;
+  --glass-rim-glow-opacity: 0.55;
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  top: 0;
+  background: transparent;
+  -webkit-backdrop-filter: var(--glass-frost);
+  backdrop-filter: var(--glass-frost);
+  box-shadow:
+    0 6px 14px var(--glass-depth),
+    inset 0 1px rgb(255 255 255 / 0.72),
+    inset 0 -1px var(--glass-inset-bottom),
+    inset 0 0 10px var(--glass-inset-glow);
+  transition:
+    top 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.menu-planet-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: linear-gradient(
+    125deg,
+    var(--glass-wash-a),
+    var(--glass-wash-b) 48%,
+    var(--glass-wash-c)
+  );
+}
+
+.menu-planet-glass__rim {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: var(--glass-rim-pad);
+  background: linear-gradient(
+    145deg,
+    var(--glass-rim-a),
+    var(--glass-rim-b) 28%,
+    var(--glass-rim-c) 60%,
+    var(--glass-rim-d)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+.menu-planet-glass__rim--glow {
+  inset: var(--glass-rim-glow-outset);
+  z-index: 0;
+  padding: var(--glass-rim-pad);
+  opacity: var(--glass-rim-glow-opacity);
+  filter: blur(var(--glass-rim-glow-blur));
+}
+
+.menu-planet-glass__sheen {
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+  top: -50%;
+  left: -18%;
+  width: 58%;
+  height: 110%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.14),
+    transparent
+  );
+  transform: rotate(23deg);
+}
+
+/* ——— Savia ——— */
+.menu-planet-glass--operar {
+  --glass-ink: var(--rootsy-savia-50);
+  --glass-wash-a: color-mix(in srgb, var(--rootsy-savia-100) 22%, transparent);
+  --glass-wash-b: color-mix(in srgb, var(--rootsy-savia-500) 14%, transparent);
+  --glass-wash-c: color-mix(in srgb, var(--rootsy-savia-950) 26%, transparent);
+  --glass-rim-a: color-mix(in srgb, var(--rootsy-savia-50) 94%, transparent);
+  --glass-rim-b: color-mix(in srgb, var(--rootsy-savia-300) 40%, transparent);
+  --glass-rim-c: color-mix(in srgb, var(--rootsy-savia-600) 20%, transparent);
+  --glass-rim-d: color-mix(in srgb, var(--rootsy-savia-200) 76%, transparent);
+  --glass-inset-bottom: color-mix(in srgb, var(--rootsy-savia-600) 42%, transparent);
+  --glass-inset-glow: color-mix(in srgb, var(--rootsy-savia-100) 10%, transparent);
+}
+
+/* ——— Sol ——— */
+.menu-planet-glass--administrar {
+  --glass-ink: var(--rootsy-sol-50);
+  --glass-wash-a: color-mix(in srgb, var(--rootsy-sol-100) 24%, transparent);
+  --glass-wash-b: color-mix(in srgb, var(--rootsy-sol-400) 16%, transparent);
+  --glass-wash-c: color-mix(in srgb, var(--rootsy-sol-950) 26%, transparent);
+  --glass-rim-a: color-mix(in srgb, var(--rootsy-sol-50) 94%, transparent);
+  --glass-rim-b: color-mix(in srgb, var(--rootsy-sol-300) 42%, transparent);
+  --glass-rim-c: color-mix(in srgb, var(--rootsy-sol-600) 22%, transparent);
+  --glass-rim-d: color-mix(in srgb, var(--rootsy-sol-200) 76%, transparent);
+  --glass-inset-bottom: color-mix(in srgb, var(--rootsy-sol-600) 42%, transparent);
+  --glass-inset-glow: color-mix(in srgb, var(--rootsy-sol-100) 12%, transparent);
+}
+
+/* ——— Cielo — el cristal del chat, en el mundo del cielo ——— */
+.menu-planet-glass--configurar {
+  --glass-ink: #e0feff;
+  --glass-wash-a: color-mix(in srgb, var(--rootsy-cielo-100) 22%, transparent);
+  --glass-wash-b: color-mix(in srgb, var(--rootsy-cielo-400) 14%, transparent);
+  --glass-wash-c: color-mix(in srgb, var(--rootsy-cielo-950) 24%, transparent);
+  --glass-rim-a: color-mix(in srgb, var(--rootsy-cielo-50) 96%, transparent);
+  --glass-rim-b: color-mix(in srgb, var(--rootsy-cielo-300) 38%, transparent);
+  --glass-rim-c: color-mix(in srgb, var(--rootsy-cielo-600) 18%, transparent);
+  --glass-rim-d: color-mix(in srgb, var(--rootsy-cielo-200) 78%, transparent);
+  --glass-inset-bottom: color-mix(in srgb, var(--rootsy-cielo-500) 42%, transparent);
+  --glass-inset-glow: color-mix(in srgb, var(--rootsy-cielo-100) 10%, transparent);
+}
+
+/* ——— Lava ——— */
+.menu-planet-glass--lava {
+  --glass-ink: var(--rootsy-lava-50);
+  --glass-wash-a: color-mix(in srgb, var(--rootsy-lava-100) 22%, transparent);
+  --glass-wash-b: color-mix(in srgb, var(--rootsy-lava-400) 14%, transparent);
+  --glass-wash-c: color-mix(in srgb, var(--rootsy-lava-950) 26%, transparent);
+  --glass-rim-a: color-mix(in srgb, var(--rootsy-lava-50) 94%, transparent);
+  --glass-rim-b: color-mix(in srgb, var(--rootsy-lava-300) 40%, transparent);
+  --glass-rim-c: color-mix(in srgb, var(--rootsy-lava-600) 20%, transparent);
+  --glass-rim-d: color-mix(in srgb, var(--rootsy-lava-200) 76%, transparent);
+  --glass-inset-bottom: color-mix(in srgb, var(--rootsy-lava-600) 42%, transparent);
+  --glass-inset-glow: color-mix(in srgb, var(--rootsy-lava-100) 10%, transparent);
+}
+
+.menu-planet-glass--dock {
+  --glass-rim-pad: 0.5px 0.5px 0.75px;
+  --glass-rim-glow-outset: -1.5px;
+  --glass-rim-glow-blur: 1.25px;
+  --glass-rim-glow-opacity: 0.5;
+}
+
+.menu-planet-glass--placed,
+.menu-planet-glass--muted {
+  --glass-frost: blur(14px) saturate(1.1);
+  opacity: 0.72;
+}
+
+.menu-planet-glass--overlay {
+  --glass-frost: blur(16px) saturate(1.2);
+}
+
+.group:hover .menu-planet-glass--interactive {
+  top: -1px;
+  box-shadow:
+    0 8px 16px var(--glass-depth),
+    inset 0 1px rgb(255 255 255 / 0.82),
+    inset 0 -1px var(--glass-inset-bottom),
+    inset 0 0 12px var(--glass-inset-glow);
+}
+
+.group:hover .menu-planet-glass--interactive .menu-planet-glass__sheen {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.2),
+    transparent
+  );
+}
+
+.group:active .menu-planet-glass--interactive {
+  top: 1px;
+  box-shadow:
+    0 3px 8px var(--glass-depth),
+    inset 0 1px rgb(255 255 255 / 0.5),
+    inset 0 -1px var(--glass-inset-bottom),
+    inset 0 0 12px var(--glass-inset-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-planet-glass {
+    --glass-frost: blur(12px) saturate(1.12);
+    transition: none;
+  }
+}
+
+@supports not (
+  (-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))
+) {
+  .menu-planet-glass--operar {
+    background: color-mix(in srgb, var(--rootsy-savia-950) 52%, transparent);
+  }
+
+  .menu-planet-glass--administrar {
+    background: color-mix(in srgb, var(--rootsy-sol-950) 52%, transparent);
+  }
+
+  .menu-planet-glass--configurar {
+    background: color-mix(in srgb, var(--rootsy-cielo-950) 52%, transparent);
+  }
+
+  .menu-planet-glass--lava {
+    background: color-mix(in srgb, var(--rootsy-lava-950) 52%, transparent);
+  }
+}

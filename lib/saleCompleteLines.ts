@@ -7,6 +7,53 @@ import {
   type MenuCartItem,
 } from "@/lib/menuCart"
 
+function cartLineSnapshot(
+  item: MenuCartItem,
+  quantity: number,
+): CompleteSaleLineInput["snapshot"] {
+  const snap = item.snapshot
+  const name = snap?.nombre?.trim() || "Ítem"
+  const listPrice = Number(snap?.precioOriginal)
+  const salePrice = Number(snap?.precio)
+  const hasList = Number.isFinite(listPrice) && listPrice >= 0
+  const isPromo = normalizeCartItemKind(item.kind) === "promotion"
+  const unitPrice = isPromo
+    ? Number.isFinite(salePrice)
+      ? salePrice
+      : 0
+    : hasList
+      ? listPrice
+      : Number.isFinite(salePrice)
+        ? salePrice
+        : 0
+  return {
+    name,
+    unitPrice: unitPrice < 0 ? 0 : unitPrice,
+    ...(snap?.iva != null ? { iva: snap.iva } : {}),
+    catalogDiscountMode: !isPromo && hasList ? snap?.discountMode ?? null : null,
+    catalogDiscountValue:
+      !isPromo && hasList ? snap?.discountValue ?? null : null,
+    ...(isPromo && hasList
+      ? { listTotal: Math.max(0, listPrice) * quantity }
+      : {}),
+  }
+}
+
+function cartPromotionSelections(
+  item: MenuCartItem,
+): CompleteSaleLineInput["promotionSelections"] {
+  return (item.promotionSelections ?? []).map((selection) => ({
+    slotId: selection.slotId,
+    kind: selection.kind,
+    refId: selection.refId,
+    name: selection.name,
+    slotLabel: selection.slotLabel,
+    listUnitPrice: selection.listUnitPrice,
+    slotQuantity: selection.slotQuantity,
+    iva: selection.iva,
+  }))
+}
+
 export function buildCompleteSaleLinesFromCart(input: {
   carrito: MenuCartItem[]
   quantityDealApplications: QuantityDealApplication[]
@@ -41,12 +88,9 @@ export function buildCompleteSaleLinesFromCart(input: {
     if (kind === "promotion") {
       lines.push({
         promotionId: item.productoId,
-        promotionSelections: (item.promotionSelections ?? []).map((s) => ({
-          slotId: s.slotId,
-          kind: s.kind,
-          refId: s.refId,
-        })),
+        promotionSelections: cartPromotionSelections(item),
         quantity: item.cantidad,
+        snapshot: cartLineSnapshot(item, item.cantidad),
         itemDiscountMode,
         itemDiscountDraft: draft,
         suppressCatalogDiscount: suprimido,
@@ -64,6 +108,7 @@ export function buildCompleteSaleLinesFromCart(input: {
           ? { recipeId: item.productoId }
           : { articleId: item.productoId }),
         quantity: dealUnits,
+        snapshot: cartLineSnapshot(item, dealUnits),
         itemDiscountMode: "porcentaje",
         itemDiscountDraft: "",
         suppressCatalogDiscount: true,
@@ -81,6 +126,7 @@ export function buildCompleteSaleLinesFromCart(input: {
           ? { recipeId: item.productoId }
           : { articleId: item.productoId }),
         quantity: regularUnits,
+        snapshot: cartLineSnapshot(item, regularUnits),
         itemDiscountMode,
         itemDiscountDraft: draft,
         suppressCatalogDiscount: suprimido,

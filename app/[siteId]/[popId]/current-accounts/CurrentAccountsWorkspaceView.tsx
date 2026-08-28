@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import { CurrentAccountAgingToolbarFilter } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountAgingToolbarFilter"
 import { CurrentAccountApplyDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountApplyDialog"
 import { CurrentAccountDetailView } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountDetailView"
@@ -45,8 +46,8 @@ import {
   DataWorkspaceTableListPage,
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -78,7 +79,6 @@ import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { TableBody } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
@@ -111,7 +111,7 @@ import {
   nextWorkspaceTableSortState,
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "@/lib/pop-spa/navigation"
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 
 export function CurrentAccountsWorkspaceView() {
@@ -448,22 +448,24 @@ export function CurrentAccountsWorkspaceView() {
         userRoleLabel: bootstrap?.roleLabel,
         headerActions: canCreate ? (
           <>
-            <DataWorkspaceHeaderTooltipIconButton
+            <RootsIconButton
               label="Dar de alta un cliente"
-              headerVariant={dataWorkspaceTableListHeaderVariant}
-              primary
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
               onClick={() => openEnroll("receivable")}
             >
               <UserPlus className="size-5" aria-hidden />
-            </DataWorkspaceHeaderTooltipIconButton>
-            <DataWorkspaceHeaderTooltipIconButton
+            </RootsIconButton>
+            <RootsIconButton
               label="Dar de alta un proveedor"
-              headerVariant={dataWorkspaceTableListHeaderVariant}
-              primary
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
               onClick={() => openEnroll("payable")}
             >
               <Truck className="size-5" aria-hidden />
-            </DataWorkspaceHeaderTooltipIconButton>
+            </RootsIconButton>
           </>
         ) : null,
       }}
@@ -502,6 +504,7 @@ export function CurrentAccountsWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
         <DataWorkspaceTableListShell
+          lockScroll={loading}
           activeFiltersBar={
             hasFilterChips ? (
               <DataWorkspaceListActiveFiltersBar
@@ -534,6 +537,18 @@ export function CurrentAccountsWorkspaceView() {
           }
           overlay={
             !loading && totalCount === 0 ? <DataWorkspaceTableEmptyMascot /> : null
+          }
+          footerFloating
+          footerFloatingCentered
+          scrollResetKey={ws.page}
+          footer={
+            <DataWorkspaceTableListPageDock
+              listFetching={loading}
+              loadedCount={parties.length}
+              totalCount={totalCount}
+              page={ws.page}
+              onPageJump={(nextPage) => pushWs({ page: nextPage })}
+            />
           }
             infinite={tableListInfiniteFromQuery(partiesQuery, "current-accounts")}
         >
@@ -625,7 +640,6 @@ export function CurrentAccountsWorkspaceView() {
                     <WorkspaceTableBodyRow
                       key={row.partyId}
                       index={index}
-                      noHover={false}
                       role="button"
                       tabIndex={0}
                       aria-label={`Ver cuenta de ${row.partyName}`}

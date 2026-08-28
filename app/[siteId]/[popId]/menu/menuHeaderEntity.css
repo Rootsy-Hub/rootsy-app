@@ -16,9 +16,8 @@
     radial-gradient(circle at 27% 58%, rgba(255, 255, 255, 0.7) 0 0.45px, transparent 1.2px),
     radial-gradient(circle at 41% 24%, rgba(255, 255, 255, 0.9) 0 0.65px, transparent 1.55px),
     radial-gradient(circle at 56% 48%, rgba(255, 255, 255, 0.68) 0 0.45px, transparent 1.2px),
-    radial-gradient(circle at 69% 34%, rgba(255, 255, 255, 0.88) 0 0.65px, transparent 1.55px),
-    radial-gradient(circle at 83% 62%, rgba(255, 255, 255, 0.66) 0 0.45px, transparent 1.2px),
-    radial-gradient(circle at 93% 28%, rgba(255, 255, 255, 0.92) 0 0.65px, transparent 1.55px),
+    radial-gradient(circle at 72% 36%, rgba(255, 255, 255, 0.7) 0 0.55px, transparent 1.4px),
+    radial-gradient(circle at 91% 58%, rgba(255, 255, 255, 0.42) 0 0.4px, transparent 1.1px),
     radial-gradient(circle at 6% 36%, rgba(255, 255, 255, 0.75) 0 0.5px, transparent 1.2px),
     radial-gradient(circle at 14% 62%, rgba(255, 255, 255, 0.45) 0 0.5px, transparent 1.2px),
     radial-gradient(circle at 24% 28%, rgba(255, 255, 255, 0.55) 0 0.5px, transparent 1.2px),
@@ -26,11 +25,6 @@
     radial-gradient(circle at 44% 44%, rgba(255, 255, 255, 0.5) 0 0.5px, transparent 1.2px),
     radial-gradient(circle at 52% 22%, rgba(255, 255, 255, 0.42) 0 0.5px, transparent 1.2px),
     radial-gradient(circle at 58% 66%, rgba(255, 255, 255, 0.48) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 66% 38%, rgba(255, 255, 255, 0.52) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 74% 58%, rgba(255, 255, 255, 0.44) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 82% 30%, rgba(255, 255, 255, 0.58) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 88% 70%, rgba(255, 255, 255, 0.46) 0 0.5px, transparent 1.2px),
-    radial-gradient(circle at 96% 46%, rgba(255, 255, 255, 0.5) 0 0.5px, transparent 1.2px),
     radial-gradient(
       ellipse 90% 55% at 50% -30%,
       rgba(255, 255, 255, 0.05) 0%,
@@ -150,16 +144,28 @@
   inset-inline: 0;
   bottom: 0;
   z-index: 2;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent) 24%,
-    color-mix(in srgb, var(--rootsy-eter-100) 42%, transparent) 50%,
-    color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent) 76%,
-    transparent 100%
-  );
-  opacity: 0.75;
+  height: 2px;
+  pointer-events: none;
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 38%,
+      color-mix(in srgb, var(--rootsy-eter-glow-100) 24%, transparent) 45%,
+      color-mix(in srgb, var(--rootsy-eter-glow-100) 86%, transparent) 50%,
+      color-mix(in srgb, var(--rootsy-eter-glow-100) 24%, transparent) 55%,
+      transparent 62%,
+      transparent 100%
+    ),
+    radial-gradient(
+      ellipse 20% 160% at 50% 100%,
+      color-mix(in srgb, var(--rootsy-eter-glow-100) 36%, transparent) 0%,
+      transparent 72%
+    );
+  background-repeat: no-repeat;
+  background-size: 100% 1px, 100% 100%;
+  background-position: center bottom, center bottom;
+  opacity: 0.95;
 }
 
 .menu-header-entity-bridge {
@@ -171,8 +177,46 @@
   pointer-events: none;
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--rootsy-eter-950) 72%, transparent) 0%,
-    color-mix(in srgb, var(--rootsy-eter-900) 34%, transparent) 42%,
+    color-mix(in srgb, var(--rootsy-eter-void-950) 72%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-eter-void-900) 34%, transparent) 42%,
     transparent 100%
   );
+}
+
+.menu-header-entity-body--sombra .menu-header-entity-atmosphere {
+  display: none;
+}
+
+.menu-header-entity-body--sombra .menu-header-entity-horizon {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--rootsy-savia-800) 18%, var(--rootsy-sombra-700)) 28%,
+    color-mix(in srgb, var(--rootsy-savia-700) 22%, var(--rootsy-sombra-600)) 50%,
+    color-mix(in srgb, var(--rootsy-savia-800) 18%, var(--rootsy-sombra-700)) 72%,
+    transparent 100%
+  );
+  opacity: 0.7;
+}
+
+.menu-header-entity-body--sombra .menu-header-entity-bridge {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--rootsy-sombra-950) 72%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-sombra-900) 34%, transparent) 42%,
+    transparent 100%
+  );
+}
+
+.menu-header-entity-body--luz .menu-header-entity-atmosphere {
+  display: none;
+}
+
+.menu-header-entity-body--luz .menu-header-entity-horizon {
+  background: var(--rootsy-bruma-200);
+  opacity: 1;
+}
+
+.menu-header-entity-body--luz .menu-header-entity-bridge {
+  display: none;
 }

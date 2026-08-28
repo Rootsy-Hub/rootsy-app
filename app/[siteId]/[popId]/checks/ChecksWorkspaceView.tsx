@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import type { CheckTableRow } from "@/app/[siteId]/[popId]/checks/actions"
 import { CheckLifecycleDialog } from "@/app/[siteId]/[popId]/checks/CheckLifecycleDialog"
 import {
@@ -47,8 +48,8 @@ import {
   DataWorkspaceTableListPage,
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
-  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -72,7 +73,6 @@ import {
   WorkspaceTableSkeletonRows,
 } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { checksSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { TableBody } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
@@ -103,7 +103,7 @@ import {
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,
@@ -393,21 +393,24 @@ export function ChecksWorkspaceView() {
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         headerActions: canCreate ? (
           <div className="flex items-center gap-2">
-            <DataWorkspaceHeaderIconButton
+            <RootsIconButton
               label="Recibir cheque"
-              headerVariant={dataWorkspaceTableListHeaderVariant}
-              primary
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
               onClick={() => openCreate("received")}
             >
               <ArrowDownLeft className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
-            <DataWorkspaceHeaderIconButton
+            </RootsIconButton>
+            <RootsIconButton
               label="Emitir cheque"
-              headerVariant={dataWorkspaceTableListHeaderVariant}
+              semantic="tertiary"
+              atmosphere="eter"
+              size="default"
               onClick={() => openCreate("issued")}
             >
               <ArrowUpRight className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
+            </RootsIconButton>
           </div>
         ) : null,
       }}
@@ -456,6 +459,7 @@ export function ChecksWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
         <DataWorkspaceTableListShell
+          lockScroll={loading}
           activeFiltersBar={
             hasFilterChips ? (
               <DataWorkspaceListActiveFiltersBar
@@ -495,6 +499,18 @@ export function ChecksWorkspaceView() {
           }
           overlay={
             !loading && totalCount === 0 ? <DataWorkspaceTableEmptyMascot /> : null
+          }
+          footerFloating
+          footerFloatingCentered
+          scrollResetKey={ws.page}
+          footer={
+            <DataWorkspaceTableListPageDock
+              listFetching={loading}
+              loadedCount={checks.length}
+              totalCount={totalCount}
+              page={ws.page}
+              onPageJump={(nextPage) => pushWs({ page: nextPage })}
+            />
           }
             infinite={tableListInfiniteFromQuery(checksQuery, "checks")}
         >

@@ -1,8 +1,8 @@
 /** Raíz y subsecciones de grilla. */
-export const GRID_LIBRARY_ROOT = { id: "grid", label: "Grilla" } as const
+export const GRID_LIBRARY_ROOT = { id: "grid", label: "Layout" } as const
 
 export const GRID_LIBRARY_SUBITEMS = [
-  { id: "grid-responsive", label: "Breakpoints y tipos" },
+  { id: "grid-responsive", label: "Breakpoints" },
 ] as const
 
 export const GRID_LIBRARY_ITEMS = [GRID_LIBRARY_ROOT, ...GRID_LIBRARY_SUBITEMS] as const
@@ -22,15 +22,15 @@ export type GridPageMeta = {
 export const GRID_PAGE_META: Record<string, GridPageMeta> = {
   grid: {
     id: "grid",
-    title: "Grilla",
+    title: "Layout",
     description:
-      "Doce surcos en el claro — sendas, orillas y alineación sin rigidez innecesaria.",
+      "Grillas, contenedores y breakpoints. Doce surcos en desktop, seis en tablet, dos en móvil.",
   },
   "grid-responsive": {
     id: "grid-responsive",
-    title: "Breakpoints y tipos",
+    title: "Breakpoints",
     description:
-      "De bosque denso en móvil a pradera de 12 columnas en desktop — fixed-wide, narrow y fluid.",
+      "12 · 6 · 2. Fixed-wide por defecto. Fluid solo cuando el contenido no tiene techo.",
   },
 }
 
@@ -41,13 +41,13 @@ export function getGridPageMeta(sectionId: string): GridPageMeta | undefined {
 export const GRID_RELATED_LINKS = [
   {
     sectionId: "grid-responsive",
-    label: "Breakpoints y tipos",
+    label: "Breakpoints",
     hint: "Viewport, columnas, fixed vs fluid.",
   },
   {
     sectionId: "grid",
-    label: "Grilla",
-    hint: "Anatomía, alineación y grillas anidadas.",
+    label: "Layout",
+    hint: "Grillas, contenedores y alineación.",
   },
   {
     sectionId: "spacing",
@@ -56,7 +56,7 @@ export const GRID_RELATED_LINKS = [
   },
   {
     sectionId: "spacing-primitives",
-    label: "Primitivos de layout",
+    label: "Proporciones",
     hint: "Box, Inline y Stack en código.",
   },
 ] as const

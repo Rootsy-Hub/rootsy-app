@@ -23,11 +23,8 @@ import { PopSettingsSectionLoading } from "@/components/settings/PopSettingsSect
 import { PopSettingsSectionNav } from "@/components/settings/PopSettingsSectionNav"
 import { reportHubGridClass } from "@/components/reports/ReportHubCard"
 import { StatisticsModulePageSkeleton as StatisticsModulePageSkeletonView } from "@/components/statistics/StatisticsModulePageSkeleton"
-import {
-  statisticsMainContentClass,
-  statisticsNavAsideClass,
-  statisticsNavScrollClass,
-} from "@/components/statistics/statisticsWorkspaceStyles"
+import { MenuSidebar } from "@/components/MenuSidebar"
+import { statisticsMainContentClass } from "@/components/statistics/statisticsWorkspaceStyles"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
@@ -45,7 +42,6 @@ import {
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
   layoutsOperarCatalogSidebarClass,
-  layoutsOperarCatalogSidebarInnerClass,
   layoutsOperarCatalogSidebarOpenClass,
   layoutsOperarSummaryPanelClass,
   layoutsOperarSummaryPanelMobileStackClass,
@@ -90,18 +86,19 @@ function TicketPanelSkeleton({ listTitle }: { listTitle: string }) {
 function OperarCatalogColumnSkeleton() {
   return (
     <div className={layoutsOperarCatalogColumnClass}>
-      <aside
+      <MenuSidebar
+        collapseBelow={false}
+        padded={false}
+        fixedWidth={false}
         className={cn(
+          "max-md:hidden",
           layoutsOperarCatalogSidebarClass,
           layoutsOperarCatalogSidebarOpenClass,
-          "max-md:hidden",
         )}
         aria-hidden
       >
-        <div className={layoutsOperarCatalogSidebarInnerClass}>
-          <SaleCatalogSidebarNavSkeleton />
-        </div>
-      </aside>
+        <SaleCatalogSidebarNavSkeleton />
+      </MenuSidebar>
       <section className={cn(layoutsOperarCatalogCanvasClass, "relative")}>
         <SaleCatalogToolbarSkeleton />
         <div className={layoutsOperarCatalogCanvasBodyClass}>
@@ -178,15 +175,13 @@ export function SettingsModulePageSkeleton(layout: PopModuleSkeletonLayout) {
       contentClassName={null}
     >
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:overflow-hidden">
-        <aside className={statisticsNavAsideClass}>
-          <div className={statisticsNavScrollClass}>
-            <PopSettingsSectionNav
-              sections={POP_SETTINGS_SECTIONS}
-              activeSectionId="business"
-              onSectionSelect={() => {}}
-            />
-          </div>
-        </aside>
+        <MenuSidebar layout="strip" aria-label="Secciones de ajustes">
+          <PopSettingsSectionNav
+            sections={POP_SETTINGS_SECTIONS}
+            activeSectionId="business"
+            onSectionSelect={() => {}}
+          />
+        </MenuSidebar>
         <div
           className={cn(
             statisticsMainContentClass,

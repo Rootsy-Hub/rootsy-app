@@ -65,6 +65,7 @@ export type RecipeTableRow = {
   ingredientCount: number
   isActive: boolean
   allowNegativeStock: boolean
+  stationId: string | null
   outputArticleId: string | null
   outputArticleName: string | null
 }

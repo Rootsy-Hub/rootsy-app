@@ -73,7 +73,9 @@ export async function fetchCounterOrder(
 
 export async function createCounterOrderApi(
   popId: string,
-  input: CreateCounterOrderInput,
+  input: CreateCounterOrderInput & {
+    checkout?: TableSessionCheckoutSnapshot
+  },
 ): Promise<
   | { success: true; order: CounterOrder }
   | { success: false; error: string }

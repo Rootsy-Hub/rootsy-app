@@ -62,6 +62,7 @@ export function buildPromotionsListSearch(
   const q = input.q?.trim() ?? ""
   if (q) params.set("q", q)
   if (input.soloActivos) params.set("soloActivos", "true")
+  if (input.includeSlots) params.set("includeSlots", "true")
   if (input.promotionType) params.set("promotionType", input.promotionType)
   if (input.sort) params.set("sort", input.sort)
   if (input.ord && input.ord !== "asc") params.set("ord", input.ord)

@@ -72,11 +72,18 @@ export function useDataWorkspaceInfiniteTableQuery<
   enabled: boolean
   queryFn: (page: number) => Promise<TPage>
   concat: (acc: TPage, page: TPage) => TPage
+  /** Primera página del tramo actual. El scroll infinito sigue hacia abajo. */
+  initialPageParam?: number
 }) {
+  const initialPageParam =
+    Number.isFinite(options.initialPageParam) && (options.initialPageParam ?? 0) > 0
+      ? Math.floor(options.initialPageParam as number)
+      : 1
+
   return useInfiniteQuery<TPage, Error, TPage, QueryKey, number>({
     queryKey: options.queryKey,
     enabled: options.enabled,
-    initialPageParam: 1,
+    initialPageParam,
     queryFn: ({ pageParam }) => options.queryFn(pageParam),
     getNextPageParam: getDataWorkspaceTableNextPageParam<TPage>,
     select: (data) => flattenDataWorkspaceTablePages(data, options.concat),

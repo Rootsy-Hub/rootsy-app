@@ -8,7 +8,7 @@ import {
   useQueryClient,
   type DehydratedState,
 } from "@tanstack/react-query"
-import { useParams, usePathname } from "next/navigation"
+import { useParams, usePathname } from "@/lib/pop-spa/navigation"
 import { Suspense, use, type ReactNode } from "react"
 
 export function PopListHydrationPage({

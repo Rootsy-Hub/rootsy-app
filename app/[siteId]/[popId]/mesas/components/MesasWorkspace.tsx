@@ -9,12 +9,10 @@ import { MesasTablePickerList } from "@/app/[siteId]/[popId]/mesas/components/Me
 import { MesasOrderPanel } from "@/app/[siteId]/[popId]/mesas/components/MesasOrderPanel"
 import { MesasRightPanelTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasRightPanelTabs"
 import { MesasSalonTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasSalonTabs"
-import { fetchMesasWaiters } from "@/lib/rootsyApi/mesasClient"
 import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
 import type {
   MesaOpenSessionInput,
   MesaReservation,
-  MesaWaiter,
   MesasRightPanelView,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
@@ -42,11 +40,21 @@ import {
   MesasTablePickerListSkeleton,
 } from "@/components/sale-operation/OperarChannelCanvasSkeletons"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
+import { useCajasRealtime } from "@/hooks/useCajasRealtime"
+import { useMesasRealtime } from "@/hooks/useMesasRealtime"
+import { useOperateCatalogHydrate } from "@/hooks/useOperateCatalogHydrate"
 import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
 import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import { useAuth } from "@/context/AuthContextSupabase"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
-import { useMemo, useState, useEffect, useCallback } from "react"
+import {
+  readMesasWorkspacePreference,
+  reconcileMesasWorkspaceView,
+  tableHasOpenSession,
+  writeMesasWorkspacePreference,
+} from "@/lib/mesasWorkspacePreference"
+import { useMemo, useState, useEffect, useCallback, useRef } from "react"
 
 type Props = {
   siteId: string
@@ -75,6 +83,8 @@ export function MesasWorkspace({
   onRegisterReload,
   onRegisterLayoutData,
 }: Props) {
+  useOperateCatalogHydrate(popId)
+  const { user } = useAuth()
   const { bootstrap } = usePopWorkspace()
   const clientsAccess = useMemo(
     () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []),
@@ -87,6 +97,8 @@ export function MesasWorkspace({
     salons,
     tables,
     sessions,
+    waiters,
+    waitersLoading,
     activeSalonId,
     setActiveSalonId,
     selectedTableId,
@@ -94,6 +106,7 @@ export function MesasWorkspace({
     selectTable,
     selectedTable,
     selectedSession,
+    sessionTicketReady,
     selectedReservation,
     selectedTableReservationWarning,
     reservationSettings,
@@ -117,8 +130,6 @@ export function MesasWorkspace({
     persistLayoutItem,
     openSession,
     updateSession,
-    reloadSessions,
-    reloadReservations,
     setSessionFloorStatus,
     saveReservation,
     removeReservation,
@@ -127,19 +138,24 @@ export function MesasWorkspace({
     freeTablesInSalon,
     removeSession,
   } = useMesasState(popId, siteId)
+  useMesasRealtime(popId, selectedTable?.sessionId ?? null)
+  useCajasRealtime(popId, user?.id)
 
   const mobileStage = useOperarMobileStage()
   const [rightView, setRightView] = useState<MesasRightPanelView>("session")
+  const [workspaceReady, setWorkspaceReady] = useState(false)
+  const pendingCatalogStageRef = useRef(false)
   const [agendaReservationId, setAgendaReservationId] = useState<string | null>(
     null,
   )
-  const [waiters, setWaiters] = useState<MesaWaiter[]>([])
   const showCatalog = rightView === "cart"
-  const cartScrollHighlight = useCartListScrollHighlight()
+  const hasTicketItems =
+    (selectedSession?.checkout?.carrito.length ?? 0) > 0
+  const cartScrollHighlight = useCartListScrollHighlight(selectedSession?.id ?? null)
 
   const remoteSession = useMemo(
     () =>
-      selectedSession
+      selectedSession && sessionTicketReady
         ? {
             checkout: selectedSession.checkout,
             updatedAt: selectedSession.updatedAt,
@@ -149,13 +165,13 @@ export function MesasWorkspace({
       selectedSession?.checkout,
       selectedSession?.id,
       selectedSession?.updatedAt,
+      sessionTicketReady,
     ],
   )
 
   const handleSessionClose = useCallback(async () => {
     if (selectedSession?.id) removeSession(selectedSession.id)
-    void Promise.all([reloadSessions(), reloadReservations()])
-  }, [reloadSessions, reloadReservations, removeSession, selectedSession?.id])
+  }, [removeSession, selectedSession?.id])
 
   const handleCartLineAdded = useCallback(
     (lineId: string) => {
@@ -172,11 +188,9 @@ export function MesasWorkspace({
     remoteSession,
     {
       onSessionClose: handleSessionClose,
-      catalogLoadEnabled:
-        showCatalog || mobileStage?.stage === "catalog",
-      toolboxLoadEnabled:
-        showCatalog ||
-        (mobileStage?.stage === "ticket" && selectedSession != null),
+      remoteTicketPending: Boolean(selectedSession && !sessionTicketReady),
+      catalogLoadEnabled: Boolean(selectedSession),
+      toolboxLoadEnabled: Boolean(selectedSession) || hasTicketItems,
       onCartLineAdded: handleCartLineAdded,
     },
   )
@@ -189,24 +203,69 @@ export function MesasWorkspace({
   )
 
   useEffect(() => {
-    if (!popId || !siteId) return
-    void (async () => {
-      const res = await fetchMesasWaiters(popId)
-      if (res.success) {
-        setWaiters(res.waiters)
-      } else {
-        setWaiters([])
-      }
-    })()
-  }, [popId, siteId])
+    setWorkspaceReady(false)
+    pendingCatalogStageRef.current = false
+  }, [popId])
 
   useEffect(() => {
-    if (!selectedSession) {
-      setRightView("session")
-      return
+    if (floorLoading || workspaceReady) return
+    const saved = readMesasWorkspacePreference(popId)
+    if (saved) {
+      const reconciled = reconcileMesasWorkspaceView({
+        rightView: saved.rightView,
+        mobileStage: saved.mobileStage,
+        tableExists: selectedTable != null,
+        tableHasOpenSession: tableHasOpenSession(selectedTable),
+      })
+      setRightView(reconciled.rightView)
+      if (reconciled.mobileStage === "catalog" && tableHasOpenSession(selectedTable)) {
+        pendingCatalogStageRef.current = true
+      } else if (reconciled.mobileStage) {
+        mobileStage?.setStage(reconciled.mobileStage)
+      }
     }
-    setRightView("cart")
-  }, [selectedSession?.id])
+    setWorkspaceReady(true)
+  }, [
+    floorLoading,
+    workspaceReady,
+    popId,
+    selectedTable,
+    mobileStage,
+  ])
+
+  useEffect(() => {
+    if (!workspaceReady || !pendingCatalogStageRef.current) return
+    if (!selectedSession) return
+    pendingCatalogStageRef.current = false
+    mobileStage?.setStage("catalog")
+  }, [workspaceReady, selectedSession, mobileStage])
+
+  useEffect(() => {
+    if (!workspaceReady) return
+    if (rightView === "cart" && !selectedSession) {
+      setRightView("session")
+    }
+    if (mobileStage?.stage === "catalog" && !selectedSession) {
+      mobileStage.setStage("ticket")
+    }
+  }, [workspaceReady, rightView, selectedSession, mobileStage])
+
+  useEffect(() => {
+    if (!workspaceReady) return
+    writeMesasWorkspacePreference(popId, {
+      tableId: selectedTableId,
+      salonId: activeSalonId || null,
+      rightView,
+      ...(mobileStage?.stage ? { mobileStage: mobileStage.stage } : {}),
+    })
+  }, [
+    workspaceReady,
+    popId,
+    selectedTableId,
+    activeSalonId,
+    rightView,
+    mobileStage?.stage,
+  ])
 
   useEffect(() => {
     if (!canUpdateLayout && layoutEditMode) {
@@ -322,11 +381,15 @@ export function MesasWorkspace({
 
   const handleOpenSession = useCallback(
     async (input: MesaOpenSessionInput) => {
+      let ok: boolean
       if (selectedReservation && selectedTable?.status === "reserved") {
         checkout.applyClientFromReservation(selectedReservation)
-        return checkInReservation(selectedReservation, input)
+        ok = await checkInReservation(selectedReservation, input)
+      } else {
+        ok = await openSession(input)
       }
-      return openSession(input)
+      if (ok) setRightView("cart")
+      return ok
     },
     [
       selectedReservation,
@@ -517,7 +580,6 @@ export function MesasWorkspace({
                 setRightView(view)
               }}
               pedidoDisabled={!selectedSession}
-              tableLabel={mesaLabel}
             />
 
             {rightView === "session" ? (
@@ -532,6 +594,7 @@ export function MesasWorkspace({
                   sessionTables={sessionTables}
                   tables={tables}
                   waiters={waiters}
+                  waitersLoading={waitersLoading}
                   mergeCandidates={mergeCandidates}
                   sessionError={sessionError}
                   onOpenSession={handleOpenSession}
@@ -566,6 +629,7 @@ export function MesasWorkspace({
                   reservationSettings={reservationSettings}
                   onSaveReservationSettings={saveReservationSettings}
                   waiters={waiters}
+                  waitersLoading={waitersLoading}
                   sessionError={sessionError}
                   onSaveReservation={saveReservation}
                   onCancelReservation={removeReservation}

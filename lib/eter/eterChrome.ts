@@ -9,13 +9,13 @@ export type EterSubtleSurface = {
   opacity?: number
 }
 
-/** Receta subtle de /home — luz del cristal, no chrome POS ni sombra. */
+/** Receta subtle de /home — rampa éter, no chrome POS ni sombra. */
 export function getEterSubtleSurface(
   state: ButtonsUiInteractionState,
 ): EterSubtleSurface {
   const base: EterSubtleSurface = {
     backgroundColor: "transparent",
-    color: "rgba(255,255,255,0.72)",
+    color: "var(--rootsy-eter-300)",
     border: "1px solid transparent",
   }
 
@@ -25,19 +25,19 @@ export function getEterSubtleSurface(
     case "hover":
       return {
         ...base,
-        backgroundColor: "rgba(255,255,255,0.08)",
-        color: "rgba(255,255,255,0.96)",
+        backgroundColor: "var(--rootsy-eter-800)",
+        color: "var(--rootsy-eter-50)",
       }
     case "active":
       return {
         ...base,
-        backgroundColor: "rgba(255,255,255,0.12)",
-        color: "#ffffff",
+        backgroundColor: "var(--rootsy-eter-700)",
+        color: "var(--rootsy-eter-50)",
       }
     case "focus":
       return {
         ...base,
-        boxShadow: "0 0 0 2px rgba(255,255,255,0.22)",
+        boxShadow: "0 0 0 2px color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent)",
       }
     case "disabled":
       return { ...base, opacity: 0.5 }
@@ -74,7 +74,7 @@ export function getEterPrimarySurface(
     case "focus":
       return {
         ...base,
-        boxShadow: "0 0 0 2px rgba(255,255,255,0.22)",
+        boxShadow: "0 0 0 2px color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent)",
       }
     case "disabled":
       return { ...base, opacity: 0.5 }
@@ -83,9 +83,9 @@ export function getEterPrimarySurface(
   }
 }
 
-const ETER_DANGER = "#DC2626"
-const ETER_DANGER_HOVER = "#EF4444"
-const ETER_DANGER_ACTIVE = "#B91C1C"
+const ETER_DANGER = "var(--rootsy-lava-600)"
+const ETER_DANGER_HOVER = "var(--rootsy-lava-500)"
+const ETER_DANGER_ACTIVE = "var(--rootsy-lava-700)"
 
 export function getEterDangerSurface(
   state: ButtonsUiInteractionState,
@@ -114,7 +114,7 @@ export function getEterDangerSurface(
     case "focus":
       return {
         ...base,
-        boxShadow: "0 0 0 2px rgba(255,255,255,0.22)",
+        boxShadow: "0 0 0 2px color-mix(in srgb, var(--rootsy-eter-100) 22%, transparent)",
       }
     case "disabled":
       return { ...base, opacity: 0.5 }
@@ -126,7 +126,7 @@ export function getEterDangerSurface(
 export const eterHeaderTextShadow = "0 1px 2px rgba(0,0,0,0.38)"
 
 export const eterHeaderTitleClass = cn(
-  "font-semibold tracking-[0.02em] antialiased text-white/96",
+  "antialiased text-white/96",
   "drop-shadow-[0_1px_2px_rgba(0,0,0,0.38)]",
 )
 
@@ -145,14 +145,14 @@ export const eterHeaderHairlineClass =
   "ring-1 ring-[color-mix(in_srgb,var(--rootsy-eter-100)_16%,transparent)]"
 
 export const eterHeaderFocusRingClass =
-  "focus-visible:ring-2 focus-visible:ring-white/22"
+  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-eter-100)_22%,transparent)]"
 
 /** Overlay del header éter — mismo vacío y hairline, no el panel sombra. */
 export const eterHeaderDropdownSurfaceClass = cn(
   "!border-[color-mix(in_srgb,var(--rootsy-eter-100)_16%,transparent)]",
   "!bg-[var(--rootsy-eter-950)]",
   "text-white/96",
-  "!shadow-[0_24px_64px_-18px_rgb(1_3_6/0.72)]",
+  "!shadow-[0_24px_64px_-18px_rgb(4_5_6/0.72)]",
   "[&_[data-slot=dropdown-menu-item]:not([data-variant=destructive])]:text-white/96",
   "[&_[data-slot=dropdown-menu-item]:not([data-variant=destructive])]:data-[highlighted]:bg-[color-mix(in_srgb,var(--rootsy-eter-100)_8%,transparent)]",
   "[&_[data-slot=dropdown-menu-item]:not([data-variant=destructive])]:data-[highlighted]:text-white",

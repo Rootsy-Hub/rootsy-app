@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils"
 /** Canvas del tablero — mismo dosel que plano de mesas. */
 export const mostradorBoardCanvasBg = MESAS_FLOOR_PLAN_CANVAS_BG
 
-/** Superficie del tablero — mismo canvas que plano de mesas (sombra-800). */
+/** Superficie del tablero — mismo fondo 950 que el plano de mesas. */
 export const mostradorBoardColumnBodyBg = MESAS_FLOOR_PLAN_CANVAS_BG
 
 /** @deprecated Usar OperarCanvasToolbarColumnHeader. */

@@ -17,10 +17,10 @@
   --border: color-mix(in srgb, var(--rootsy-bruma-300) 72%, transparent);
   --input: var(--rootsy-bruma-200);
   --primary: var(--rootsy-savia-600);
-  --primary-foreground: var(--rootsy-white);
+  --primary-foreground: var(--rootsy-savia-50);
   --ring: var(--rootsy-savia-700);
   --destructive: var(--rootsy-danger);
-  --destructive-foreground: var(--rootsy-white);
+  --destructive-foreground: var(--rootsy-lava-50);
   --accent: var(--rootsy-savia-100);
   --accent-foreground: var(--rootsy-savia-900);
   --forest: var(--rootsy-savia-600);

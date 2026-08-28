@@ -34,12 +34,12 @@ export const operateCatalogQueryOptions = {
 
 /**
  * Turno de caja del usuario en operar (Vender / Mostrador / Mesas).
- * 24 h; al montar refetch si está stale (p. ej. tras invalidar un cobro rechazado).
+ * 24 h; refetch solo al invalidar (p. ej. cobro rechazado), no al reentrar.
  */
 export const operateOpenSessionQueryOptions = {
   staleTime: ONE_DAY_MS,
   gcTime: ONE_DAY_MS,
-  refetchOnMount: true,
+  refetchOnMount: false,
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
 } as const

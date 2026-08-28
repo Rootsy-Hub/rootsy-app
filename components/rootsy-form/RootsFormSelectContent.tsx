@@ -1,12 +1,13 @@
 "use client"
 
+import { isRootsFormToneDark } from "@/app/library/ui-components/rootsFormAtmosphere"
 import {
   rootsFormControlTypographyClass,
+  rootsFormMutedIconClassForTone,
   rootsFormPortalZClass,
   rootsFormSelectContentClassForTone,
   type RootsFormSelectTone,
 } from "@/components/rootsy-form/rootsFormStyles"
-import { layoutsOperarFormDarkIconClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
@@ -17,12 +18,11 @@ type Props = ComponentProps<typeof SelectPrimitive.Content> & {
 }
 
 function RootsFormSelectScrollUpButton({ tone = "light" }: { tone?: RootsFormSelectTone }) {
-  const isDark = tone === "dark"
   return (
     <SelectPrimitive.ScrollUpButton
       className={cn(
         "flex cursor-default items-center justify-center py-1",
-        isDark ? layoutsOperarFormDarkIconClass : "text-[var(--rootsy-bruma-500)]",
+        rootsFormMutedIconClassForTone(tone),
       )}
     >
       <ChevronUpIcon className="size-4" aria-hidden />
@@ -31,12 +31,11 @@ function RootsFormSelectScrollUpButton({ tone = "light" }: { tone?: RootsFormSel
 }
 
 function RootsFormSelectScrollDownButton({ tone = "light" }: { tone?: RootsFormSelectTone }) {
-  const isDark = tone === "dark"
   return (
     <SelectPrimitive.ScrollDownButton
       className={cn(
         "flex cursor-default items-center justify-center py-1",
-        isDark ? layoutsOperarFormDarkIconClass : "text-[var(--rootsy-bruma-500)]",
+        rootsFormMutedIconClassForTone(tone),
       )}
     >
       <ChevronDownIcon className="size-4" aria-hidden />
@@ -54,7 +53,7 @@ export function RootsFormSelectContent({
   tone = "light",
   ...props
 }: Props) {
-  const isDark = tone === "dark"
+  const isDark = isRootsFormToneDark(tone)
 
   return (
     <SelectPrimitive.Portal>
@@ -65,7 +64,9 @@ export function RootsFormSelectContent({
           "relative max-h-(--radix-select-content-available-height) overflow-x-hidden overflow-y-auto",
           rootsFormPortalZClass,
           !isDark && "bg-white dark:bg-white",
-          isDark && "text-[#f4f8f6]",
+          tone === "dark" && "text-[#f4f8f6]",
+          tone === "sombra" && "text-[var(--rootsy-sombra-50)]",
+          tone === "eter" && "text-[var(--rootsy-eter-50)]",
           position === "popper" && "data-[side=bottom]:translate-y-1",
           !isDark && rootsFormControlTypographyClass,
           rootsFormSelectContentClassForTone(tone),

@@ -502,9 +502,18 @@ export function menuCartOrderTotals(lines: MenuCartTotalsLine[]) {
         item.promotionSelections,
         item.cantidad,
       )
-      subtotal += priced.precioFinal
-      subtotalOriginal += priced.precioBase
-      descuentoPromoMonto += priced.itemDiscountAmount
+      const frozenUnit = item.producto?.precio
+      const promoTotal =
+        frozenUnit != null && Number.isFinite(frozenUnit)
+          ? roundSaleMoney(frozenUnit * item.cantidad)
+          : priced.precioFinal
+      const listTotal =
+        item.producto?.precioOriginal != null
+          ? roundSaleMoney(item.producto.precioOriginal * item.cantidad)
+          : priced.precioBase
+      subtotal += promoTotal
+      subtotalOriginal += listTotal
+      descuentoPromoMonto += roundSaleMoney(Math.max(0, listTotal - promoTotal))
       continue
     }
 

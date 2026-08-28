@@ -110,13 +110,14 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
   type ReactNode,
 } from "react"
 import type { DateRange } from "react-day-picker"
-import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
+import { useSearchParams } from "@/lib/pop-spa/navigation"
 
 const shellCard = dataWorkspaceDetailPanelClass
 
@@ -352,6 +353,12 @@ export function TreasuryAccountDetailView({
     if (updated) setSelectedIntegrationChild(updated)
   }, [children, selectedIntegrationChild?.id])
 
+  const childrenRef = useRef(children)
+  const isMotherRef = useRef(isMother)
+  const detailRequestIdRef = useRef(0)
+  childrenRef.current = children
+  isMotherRef.current = isMother
+
   const loadPage = useCallback(async () => {
     if (!popId || !accountId) return null
     const res = await fetchTreasuryAccountPage(popId, accountId)
@@ -372,14 +379,15 @@ export function TreasuryAccountDetailView({
   const loadDetail = useCallback(
     async (pageData?: Awaited<ReturnType<typeof loadPage>>) => {
       if (!popId || !accountId) return
+      const requestId = ++detailRequestIdRef.current
       setDetailLoading(true)
       setDetailError(null)
 
       let childIds: string[] = []
       if (pageData?.isMother) {
         childIds = pageData.children.map((c) => c.id)
-      } else if (isMother && children.length > 0) {
-        childIds = children.map((c) => c.id)
+      } else if (isMotherRef.current && childrenRef.current.length > 0) {
+        childIds = childrenRef.current.map((c) => c.id)
       }
 
       const [totalsRes, movementsRes] = await Promise.all([
@@ -397,34 +405,51 @@ export function TreasuryAccountDetailView({
           childIds,
         ),
       ])
+      if (requestId !== detailRequestIdRef.current) return
       setDetailLoading(false)
 
       if (totalsRes.success) {
-        setAccount((current) =>
-          current
-            ? {
-                ...current,
-                ledgerBalance: totalsRes.data.ledgerBalance,
-                toLiquidateBalance: totalsRes.data.toLiquidateBalance,
-                toPayBalance: totalsRes.data.toPayBalance,
-              }
-            : current,
-        )
+        setAccount((current) => {
+          if (!current) return current
+          if (
+            current.ledgerBalance === totalsRes.data.ledgerBalance &&
+            current.toLiquidateBalance === totalsRes.data.toLiquidateBalance &&
+            current.toPayBalance === totalsRes.data.toPayBalance
+          ) {
+            return current
+          }
+          return {
+            ...current,
+            ledgerBalance: totalsRes.data.ledgerBalance,
+            toLiquidateBalance: totalsRes.data.toLiquidateBalance,
+            toPayBalance: totalsRes.data.toPayBalance,
+          }
+        })
         const byId = new Map(
           totalsRes.data.children.map((child) => [child.id, child]),
         )
-        setChildren((current) =>
-          current.map((child) => {
+        setChildren((current) => {
+          let changed = false
+          const next = current.map((child) => {
             const extra = byId.get(child.id)
             if (!extra) return child
+            if (
+              child.ledgerBalance === extra.ledgerBalance &&
+              child.outstandingBalance === extra.outstandingBalance &&
+              child.settledTotal === extra.settledTotal
+            ) {
+              return child
+            }
+            changed = true
             return {
               ...child,
               ledgerBalance: extra.ledgerBalance,
               outstandingBalance: extra.outstandingBalance,
               settledTotal: extra.settledTotal,
             }
-          }),
-        )
+          })
+          return changed ? next : current
+        })
       }
 
       if (!movementsRes.success) {
@@ -449,8 +474,11 @@ export function TreasuryAccountDetailView({
           : movementsRes.data.movementTotals,
       })
     },
-    [popId, accountId, dateBounds.from, dateBounds.to, isMother, children],
+    [popId, accountId, dateBounds.from, dateBounds.to],
   )
+
+  const accountReadyId =
+    !loading && account?.id === accountId ? account.id : null
 
   useEffect(() => {
     if (!popId || !accountId) {
@@ -459,6 +487,7 @@ export function TreasuryAccountDetailView({
       return
     }
     let cancelled = false
+    detailRequestIdRef.current += 1
     ;(async () => {
       setLoading(true)
       setSection("resumen")
@@ -477,31 +506,25 @@ export function TreasuryAccountDetailView({
   }, [popId, accountId, loadPage])
 
   useLayoutEffect(() => {
-    if (!popId || !accountId || loading || !account) return
+    if (!popId || !accountId || !accountReadyId) return
     setDetailLoading(true)
-  }, [popId, accountId, loading, account, dateBounds.from, dateBounds.to])
+  }, [popId, accountId, accountReadyId, dateBounds.from, dateBounds.to])
 
   useEffect(() => {
-    if (!popId || !accountId || loading || !account) return
+    if (!popId || !accountId || !accountReadyId) return
     void loadDetail()
   }, [
     popId,
     accountId,
-    loading,
-    account,
+    accountReadyId,
     dateBounds.from,
     dateBounds.to,
     loadDetail,
   ])
 
   const reloadAll = useCallback(async () => {
-    setLoading(true)
-    try {
-      const pageRes = await loadPage()
-      if (pageRes) await loadDetail(pageRes)
-    } finally {
-      setLoading(false)
-    }
+    const pageRes = await loadPage()
+    if (pageRes) await loadDetail(pageRes)
   }, [loadPage, loadDetail])
 
   const handleImportCsv = async () => {

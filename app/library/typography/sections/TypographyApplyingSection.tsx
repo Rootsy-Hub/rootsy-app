@@ -40,7 +40,7 @@ export function TypographyApplyingSection() {
         <TypographyDocSection
           id="apply-reading"
           title="Lectura larga"
-          description="Source Sans 3 solo cuando hay prosa — no en controles."
+          description="Nunito Sans a 16px / 1.5 cuando hay prosa — cambia la familia y el ritmo."
         >
           <TypographyReadingDemo />
         </TypographyDocSection>

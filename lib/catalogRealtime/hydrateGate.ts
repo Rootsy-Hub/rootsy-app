@@ -1,10 +1,17 @@
-import type { DomainEvent } from "@/lib/realtime/protocol"
+import type { DomainEvent } from "../realtime/protocol"
+import { RealtimeHydrateSupersededError } from "../realtime/durableEventPipeline"
 
 type CatalogEventHandler = (event: DomainEvent) => void | Promise<void>
 
+type QueuedCatalogEvent = {
+  event: DomainEvent
+  resolve: () => void
+  reject: (error: unknown) => void
+}
+
 let epoch = 0
 let depth = 0
-const queue: DomainEvent[] = []
+const queue: QueuedCatalogEvent[] = []
 let applyQueued: CatalogEventHandler | null = null
 let applyChain: Promise<void> = Promise.resolve()
 
@@ -27,7 +34,9 @@ export function endCatalogArticleHydrate(startedEpoch: number) {
 export function bumpCatalogHydrateEpoch() {
   epoch += 1
   depth = 0
-  queue.length = 0
+  const pending = queue.splice(0)
+  const error = new RealtimeHydrateSupersededError()
+  for (const item of pending) item.reject(error)
 }
 
 export function setCatalogArticleEventApplier(
@@ -36,27 +45,42 @@ export function setCatalogArticleEventApplier(
   applyQueued = handler
 }
 
-export function enqueueOrApplyCatalogArticleEvent(event: DomainEvent) {
-  if (depth > 0) {
-    queue.push(event)
-    return
-  }
-  runApply(event)
+/** Si hay un GET de hidratación, re-aplica después para que no pise el aviso. */
+export function scheduleCatalogArticleReplayIfHydrating(event: DomainEvent) {
+  if (depth <= 0) return
+  queue.push({
+    event,
+    resolve: () => undefined,
+    reject: (error) => {
+      if (error instanceof RealtimeHydrateSupersededError) return
+    },
+  })
 }
 
-function runApply(event: DomainEvent) {
+export function enqueueOrApplyCatalogArticleEvent(
+  event: DomainEvent,
+): Promise<void> {
+  const applied = runApply(event)
+  scheduleCatalogArticleReplayIfHydrating(event)
+  return applied
+}
+
+function runApply(event: DomainEvent): Promise<void> {
   const handler = applyQueued
-  if (!handler) return
-  applyChain = applyChain
-    .then(() => handler(event))
-    .then(() => undefined)
-    .catch(() => undefined)
+  if (!handler) return Promise.resolve()
+  const job = applyChain.then(
+    () => Promise.resolve(handler(event)).then(() => undefined),
+    () => Promise.resolve(handler(event)).then(() => undefined),
+  )
+  applyChain = job.catch(() => undefined)
+  return job
 }
 
 function flushQueuedCatalogArticleEvents() {
   const pending = queue.splice(0)
-  if (!applyQueued) return
-  for (const event of pending) runApply(event)
+  for (const item of pending) {
+    void runApply(item.event).then(item.resolve, item.reject)
+  }
 }
 
 export function waitCatalogArticleApplies(): Promise<void> {

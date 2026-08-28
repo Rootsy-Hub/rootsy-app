@@ -9,10 +9,10 @@ import { getFormUiInlineIconShellStyle } from "@/app/library/ui-components/forms
 import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
   rootsFormAffixClearButtonClassForTone,
-  rootsFormControlSelectionClass,
+  rootsFormControlSelectionClassForTone,
   rootsFormInlineIconPrefixClass,
+  rootsFormPlaceholderClassForTone,
 } from "@/components/rootsy-form/rootsFormStyles"
-import { layoutsOperarFormDarkPlaceholderClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import { cn } from "@/lib/utils"
 import { Search, X } from "lucide-react"
@@ -32,11 +32,14 @@ type Props = {
   disabled?: boolean
   resultsSummary?: ReactNode
   className?: string
+  /** `ghost` deja el cascarón sin relleno — borde e ícono siguen. */
+  surface?: "solid" | "ghost"
   inputRef?: RefObject<HTMLInputElement | null>
   inputProps?: Omit<
     ComponentProps<"input">,
     "id" | "value" | "onChange" | "placeholder" | "ref" | "type" | "disabled"
   >
+  clearButtonProps?: Omit<ComponentProps<"button">, "type" | "onClick" | "children">
 }
 
 export function RootsFormSearchField({
@@ -50,8 +53,10 @@ export function RootsFormSearchField({
   disabled,
   resultsSummary,
   className,
+  surface = "solid",
   inputRef,
   inputProps,
+  clearButtonProps,
 }: Props) {
   const autoId = useId()
   const fieldId = id ?? autoId
@@ -61,7 +66,12 @@ export function RootsFormSearchField({
   })
   const tone = useRootsFormControlTone()
   const styleOptions = { tone }
-  const searchShellStyle = getFormInlineIconSearchShellStyle(state, styleOptions)
+  const searchShellStyle = {
+    ...getFormInlineIconSearchShellStyle(state, styleOptions),
+    ...(surface === "ghost"
+      ? { backgroundColor: "transparent", boxShadow: "none" }
+      : {}),
+  }
   const searchInputStyle = getFormInlineIconSearchInputStyle(state, styleOptions)
   const { iconColor } = getFormUiInlineIconShellStyle(state, styleOptions)
 
@@ -104,27 +114,37 @@ export function RootsFormSearchField({
             aria-label={hideLabel ? label : undefined}
             className={cn(
               "min-w-0 flex-1 bg-transparent font-canopy outline-none",
-              tone === "dark"
-                ? layoutsOperarFormDarkPlaceholderClass
-                : "placeholder:text-[var(--rootsy-bruma-500)]",
-              rootsFormControlSelectionClass,
+              rootsFormPlaceholderClassForTone(tone),
+              rootsFormControlSelectionClassForTone(tone),
               searchInputWithoutNativeClearClass,
               hasValue && onClear && "pr-8",
             )}
             style={searchInputStyle}
-            onFocus={interactionHandlers.onFocus}
-            onBlur={interactionHandlers.onBlur}
             {...inputProps}
+            onFocus={(event) => {
+              interactionHandlers.onFocus()
+              inputProps?.onFocus?.(event)
+            }}
+            onBlur={(event) => {
+              interactionHandlers.onBlur()
+              inputProps?.onBlur?.(event)
+            }}
           />
         </div>
         {hasValue && onClear && !disabled ? (
           <button
             type="button"
             aria-label="Limpiar búsqueda"
+            {...clearButtonProps}
             className={cn(
               rootsFormAffixClearButtonClassForTone(tone),
               "absolute right-1 top-1/2 -translate-y-1/2",
+              clearButtonProps?.className,
             )}
+            onMouseDown={(event) => {
+              event.preventDefault()
+              clearButtonProps?.onMouseDown?.(event)
+            }}
             onClick={onClear}
           >
             <X className="size-3.5" aria-hidden />

@@ -22,9 +22,9 @@ const hx = rootsyColorHex
 
 const POS_TOTALS_GRADIENT = COLOR_NEW_GRADIENTS.find((g) => g.id === "pos-totals")!
 
-/** Toolbox + totales — slot space.1000 · padding vertical space.150 (base) / space.200 (sm). */
+/** Toolbox + totales — slot space.1000 · inset space.200, el mismo gap que el catálogo. */
 const OPERAR_FOOTER_SLOT_MIN_PX = rootsySpacePx("1000")
-const OPERAR_FOOTER_BAND_PAD_Y_PX = rootsySpacePx("150")
+const OPERAR_FOOTER_BAND_PAD_Y_PX = rootsySpacePx("200")
 const OPERAR_FOOTER_SLOT_MIN_SM_PX = rootsySpacePx("1000") + rootsySpacePx("050")
 const OPERAR_FOOTER_BAND_PAD_Y_SM_PX = rootsySpacePx("200")
 const OPERAR_FOOTER_BAND_MIN_PX = OPERAR_FOOTER_SLOT_MIN_PX + OPERAR_FOOTER_BAND_PAD_Y_PX * 2
@@ -47,12 +47,12 @@ export const ROOTSY_LAYOUTS_OPERAR_PRINCIPLES = [
   {
     title: "Catálogo · dosel denso",
     detail:
-      "Sidebar w-64 (256px) · library-sidebar + library-nav (paridad Library / Estadísticas / Ajustes) · canvas sombra-800 · cards sombra-600 · toolbox tierra empapada · hairline sombra-border · pairing pos-core.",
+      "Sidebar w-64 (256px) · library-sidebar 800 + library-nav · canvas negro · cards y slots 800 · toolbox banda 950 · savia solo en oficio (nav, + , ícono) · pairing pos-core.",
   },
   {
-    title: "Ticket · bruma-50",
+    title: "Ticket · lienzo 100 · papel blanco",
     detail:
-      "Panel, carrito y total bruma-50 (mismo piso que cuentas/cajas) · hairline bruma-200 · split sombra-700 · el total solo aparece con ítems.",
+      "Lienzo bruma-100 · líneas y total en blanco · bruma-50 solo como aire o velo · hairline bruma-200 · split sombra-700 · el total solo aparece con ítems.",
   },
 ] as const
 
@@ -77,12 +77,12 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
   toolboxSlotMinHeightSmToken: "space.1000 + space.050",
   toolboxBandPaddingYPx: OPERAR_FOOTER_BAND_PAD_Y_PX,
   toolboxBandPaddingYSmPx: OPERAR_FOOTER_BAND_PAD_Y_SM_PX,
-  toolboxBandPaddingYToken: "space.150",
+  toolboxBandPaddingYToken: "space.200",
   toolboxBandPaddingYSmToken: "space.200",
   /** Banda toolbox fila 2 — alineada con barra de totales del ticket. */
   toolboxRowMinHeightPx: OPERAR_FOOTER_BAND_MIN_PX,
   toolboxRowMinHeightSmPx: OPERAR_FOOTER_BAND_MIN_SM_PX,
-  toolboxRowMinHeightToken: "space.1000 + 2× space.150",
+  toolboxRowMinHeightToken: "space.1000 + 2× space.200",
   toolboxRowMinHeightSmToken: "space.1000 + space.050 + 2× space.200",
   toolboxMinHeightClass: `min-h-[${OPERAR_FOOTER_BAND_MIN_PX}px] sm:min-h-[${OPERAR_FOOTER_BAND_MIN_SM_PX}px]`,
   toolboxMinHeightSmClass: `sm:min-h-[${OPERAR_FOOTER_BAND_MIN_SM_PX}px]`,
@@ -107,19 +107,19 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
  * Catálogo plano bajo el dosel; savia reservada para acciones y totales.
  */
 export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
-  shell: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
+  shell: { token: "negro", css: "var(--rootsy-negro)" },
   header: { token: "sombra-950→900", css: "linear-gradient chrome" },
-  rail: { token: "sombra-700 · library-sidebar", css: "var(--rootsy-sombra-700)" },
-  canvas: { token: "sombra-800", css: "var(--rootsy-sombra-800)" },
-  productCard: { token: "sombra-600", css: "var(--rootsy-sombra-600)" },
+  rail: { token: "sombra-800 · library-sidebar", css: "var(--rootsy-sombra-800)" },
+  canvas: { token: "negro", css: "var(--rootsy-negro)" },
+  productCard: { token: "sombra-800", css: "var(--rootsy-sombra-800)" },
   footer: {
     token: ROOTSY_LAYOUTS_EARTH_FLOOR.chromeToken,
     css: ROOTSY_LAYOUTS_EARTH_FLOOR.background,
   },
-  lightPanel: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
-  lightContent: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
-  lightActions: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
-  lightTotals: { token: "bruma-50", css: "var(--rootsy-bruma-50)" },
+  lightPanel: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
+  lightContent: { token: "blanco", css: "var(--rootsy-blanco)" },
+  lightActions: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
+  lightTotals: { token: "blanco", css: "var(--rootsy-blanco)" },
 } as const
 
 /**
@@ -127,20 +127,20 @@ export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
  * Dosel denso: hairlines sutiles dentro del catálogo; sombra-700 en split bruma; bruma-200 en ticket.
  */
 export const ROOTSY_LAYOUTS_OPERAR_BORDERS = {
-  /** Rail ↔ canvas, toolbar, slots toolbox — mismo dosel, división mínima */
+  /** Rail 800 ↔ canvas negro · toolbar · toolbox — costura sólida. */
   darkHairline: {
-    token: "sombra-border / 55%",
-    css: `color-mix(in srgb, ${hx("sombra", "border")} 55%, transparent)`,
+    token: "sombra-800",
+    css: hx("sombra", "800"),
   },
-  /** Catálogo ↔ toolbox, header chrome — borde oscuro estándar POS */
+  /** Hover / chrome un paso más legible, todavía dosel. */
   darkDefault: {
-    token: "sombra-border / 80%",
-    css: `color-mix(in srgb, ${hx("sombra", "border")} 80%, transparent)`,
+    token: "sombra-700",
+    css: hx("sombra", "700"),
   },
-  /** Contorno card sombra-600 sobre canvas */
+  /** Contorno card 700 sobre canvas negro. */
   darkCard: {
-    token: "sombra-border",
-    css: hx("sombra", "border"),
+    token: "sombra-700",
+    css: hx("sombra", "700"),
   },
   /** Split columna sombra ↔ bruma (pos-split) */
   splitColumn: {
@@ -183,7 +183,7 @@ export function getLayoutsOperarWireframeHeaderStyle() {
   } as const
 }
 
-/** Toolbox — mismo suelo empapado que el footer de tablas. */
+/** Toolbox — banda sombra-950. */
 export function getLayoutsOperarDoselContinuoToolboxBandBackground() {
   return ROOTSY_LAYOUTS_EARTH_FLOOR.background
 }
@@ -228,9 +228,9 @@ export const ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS: LayoutsOperarToolboxPropos
     pairingId: "pos-core",
     pairingLabel: "Tierra empapada + Savia viva",
     summary:
-      "Banda inset tierra empapada · slots en relieve · savia brota al configurar.",
+      "Banda inset 950 · slots hoja 800 · savia solo en el ícono al configurar.",
     uxNote:
-      "Los slots son piedras sobre el barro. Al cargar, la savia sale como raíz y hoja — la vida del mundo, no un accent.",
+      "Los slots son la misma hoja que las cards. Al cargar, prende el ícono — no el valor ni el marco.",
     recommended: true,
     bandLayout: "inset",
     bandMinHeightPx: ROOTSY_LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx,
@@ -300,7 +300,7 @@ export const ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS: LayoutsOperarProductC
     pairingId: "pos-core",
     pairingLabel: "Sombra 600 + 900 + Savia 500",
     summary:
-      "Cuerpo sombra-600 · void foto sombra-900 · precio savia · botón + hover · sombra inset (actual producción).",
+      "Cuerpo sombra-800 · canvas negro · título heading-xsmall · precio metric-small · chip label + savia-600.",
     uxNote:
       "Tarjeta plana bajo el canvas — lectura rápida en grilla densa. Alineada al dosel denso del grid.",
     recommended: true,
@@ -367,11 +367,11 @@ export const ROOTSY_LAYOUTS_OPERAR_TICKET_PROPOSALS: LayoutsOperarTicketProposal
     letter: "A",
     title: "Bruma savia",
     pairingId: "pos-core",
-    pairingLabel: "Bruma 50 · módulo cuentas",
+    pairingLabel: "Lienzo 100 · papel blanco",
     summary:
-      "Cart bruma-50 · hairlines bruma-200 · total en el mismo piso · aparece con ítems.",
+      "Lienzo bruma-100 · líneas y total en blanco · hairlines bruma-200 · el total aparece con ítems.",
     uxNote:
-      "Canónico del grid — la columna del pedido es el mundo de cuentas/cajas. El total no es otra capa: solo se muestra cuando hay líneas.",
+      "Canónico del grid — el pedido aterriza en blanca. La bruma-50 queda como aire o velo, no como piso de la línea.",
     recommended: true,
     totalsLayout: "gradiente",
   },

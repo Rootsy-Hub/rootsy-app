@@ -18,7 +18,7 @@ export const LOGOS_PAGE_META: Record<string, LogosPageMeta> = {
     id: "logos",
     title: "Logotipos",
     description:
-      "Rootsy como plataforma, POP como avatar + nombre del negocio, y el bloque de perfil de persona en headers.",
+      "Anatomía del lockup, Rootsy, POP y persona. Acá se especifica cómo se dibuja; el handbook decide cuándo aparece.",
   },
 }
 

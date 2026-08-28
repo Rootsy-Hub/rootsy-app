@@ -4,7 +4,7 @@ import { showRootsyMensajeToast } from "@/components/rootsy-mensaje"
 import { ROOTSY_MENSAJE_DEFAULT_PORTRAIT } from "@/components/rootsy-mensaje/rootsyMensaje"
 import { useOpenCashSession } from "@/hooks/useOpenCashSession"
 import { popScopedHref } from "@/lib/popRoutes"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/lib/pop-spa/navigation"
 import { useEffect, useRef } from "react"
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -27,6 +27,7 @@ export function useSaleOpenCashSessionToasts(
   const router = useRouter()
   const { data: session, isSuccess } = useOpenCashSession(popId, { enabled })
   const shownKeyRef = useRef<string | null>(null)
+  const toastRef = useRef<{ dismiss: () => void } | null>(null)
 
   useEffect(() => {
     if (!enabled || !pageReady || !isSuccess || !siteId || !popId) return
@@ -40,7 +41,8 @@ export function useSaleOpenCashSessionToasts(
       const key = `none:${popId}`
       if (shownKeyRef.current === key) return
       shownKeyRef.current = key
-      showRootsyMensajeToast({
+      toastRef.current?.dismiss()
+      toastRef.current = showRootsyMensajeToast({
         intent: "warning",
         placement: "top-right",
         portraitSrc: ROOTSY_MENSAJE_DEFAULT_PORTRAIT,
@@ -56,6 +58,10 @@ export function useSaleOpenCashSessionToasts(
     }
 
     if (!isCashSessionOlderThanOneDay(session.openedAt)) {
+      if (shownKeyRef.current !== `fresh:${session.sessionId}`) {
+        toastRef.current?.dismiss()
+        toastRef.current = null
+      }
       shownKeyRef.current = `fresh:${session.sessionId}`
       return
     }
@@ -63,7 +69,8 @@ export function useSaleOpenCashSessionToasts(
     const key = `stale:${session.sessionId}:${session.openedAt}`
     if (shownKeyRef.current === key) return
     shownKeyRef.current = key
-    showRootsyMensajeToast({
+    toastRef.current?.dismiss()
+    toastRef.current = showRootsyMensajeToast({
       intent: "warning",
       placement: "top-right",
       portraitSrc: ROOTSY_MENSAJE_DEFAULT_PORTRAIT,

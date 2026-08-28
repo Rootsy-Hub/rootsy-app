@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams } from "next/navigation"
+import { useParams } from "@/lib/pop-spa/navigation"
 import { useMemo } from "react"
 import { timezoneForSiteId } from "@/lib/popTimezone"
 

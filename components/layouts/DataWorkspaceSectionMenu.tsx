@@ -20,7 +20,7 @@ import { ChevronDown, LayoutGrid, Sparkles } from "lucide-react"
 import type {
   DataWorkspaceSidebarCreationItem,
   DataWorkspaceSidebarViewItem,
-} from "./DataWorkspaceSidebar"
+} from "./dataWorkspaceNavItems"
 
 export type DataWorkspaceSectionMenuProps = {
   /** Acciones de creación en el menú (preferí `headerActions` con íconos). */

@@ -36,11 +36,14 @@ import {
 } from "@/components/ui/rootsyDateCalendarStyles"
 import { cn } from "@/lib/utils"
 
+/** Papel de Bruma — --color-elevada (blanco de día, bruma-700 de noche). */
+export const dataWorkspacePaperSurfaceClass = "bg-[var(--color-elevada)]"
+
 /** Superficie blanca — shell y zonas internas de tarjetas bloques. */
-export const dataWorkspaceBlocksCardSurfaceClass = "bg-white"
+export const dataWorkspaceBlocksCardSurfaceClass = dataWorkspacePaperSurfaceClass
 
 export const dataWorkspaceShellCard =
-  "rounded-2xl border border-border/80 bg-white shadow-sm"
+  "rounded-2xl border border-border/80 bg-[var(--color-elevada)] shadow-sm"
 
 /** Tarjeta workspace pegada al borde inferior del main (sin redondeo ni borde abajo). */
 export const dataWorkspaceFlushBottomShellCard = cn(
@@ -76,15 +79,30 @@ export const dataWorkspaceEntityCardsGridColumnMaxClass = "max-w-[22rem]"
 
 /** Superficie del listado flush (tablas layout workspace). */
 export const workspaceTableSurfaceClass =
-  "bg-white dark:bg-white"
+  "bg-[var(--wt-surface)]"
 
 /** Marco del listado — la tabla ocupa el claro, de lado a lado hasta el suelo. */
 export const dataWorkspaceTablesSheetFrameClass =
   "relative z-1 flex min-h-0 min-w-0 flex-1 flex-col"
 
-/** Hoja flush — tabla + pie universo, sin radio ni gutter. */
+/** Hoja flush — líneas en blanca; el piso 100 es el lienzo bajo la última fila. */
 export const dataWorkspaceTablesSheetClass = cn(
-  "flex min-h-0 flex-1 flex-col overflow-hidden bg-white",
+  "flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--wt-surface-stripe)]",
+)
+
+/** Piso del listado — lienzo bruma-100, no el papel. */
+export const dataWorkspaceTableBodyFloorClass = "bg-[var(--wt-surface-stripe)]"
+
+/** Cuerpo de tabla — mismo `game-scroll` que el body de los modales. */
+export const dataWorkspaceTableBodyScrollClass = cn(
+  "game-scroll absolute inset-0 overflow-auto overscroll-contain",
+  dataWorkspaceTableBodyFloorClass,
+)
+
+/** Cuerpo de tabla mientras carga — sin barras (el esqueleto no scrollea). */
+export const dataWorkspaceTableBodyScrollHiddenClass = cn(
+  "absolute inset-0 overflow-hidden",
+  dataWorkspaceTableBodyFloorClass,
 )
 
 /** Scope raíz — tokens --wt-* (ver rootsyNaturePalette.css). */
@@ -101,6 +119,12 @@ export const dataWorkspaceBlocksContentInnerClass =
 /** `<main>` bloques — recuadro del valle. El scroll lo hace el hijo. */
 export const dataWorkspaceBlocksPageMainClass = cn(
   "data-workspace-blocks-atmosphere rootsy-app-light min-h-0 overflow-hidden overflow-y-hidden text-foreground",
+)
+
+/** Cajas — mismo recuadro, valle sotobosque luz. */
+export const dataWorkspaceCashRegistersPageMainClass = cn(
+  dataWorkspaceBlocksPageMainClass,
+  "data-workspace-blocks-atmosphere--sotobosque-luz",
 )
 
 /** Contenedor de grid en listados cuentas / cajas. */
@@ -162,31 +186,31 @@ export const dataWorkspaceBlocksSkeletonBreathTone = {
 
 /** Eyebrow / meta de tarjeta entidad. */
 export const dataWorkspaceEntityCardEyebrowClass =
-  "font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]"
+  "rootsy-text-label text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardTitleClass =
-  "font-canopy text-base font-semibold text-[var(--rootsy-bruma-900)]"
+  "rootsy-text-heading-small text-[var(--rootsy-bruma-900)]"
 
 export const dataWorkspaceEntityCardStatLabelClass =
-  "font-canopy text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--rootsy-bruma-500)]"
+  "rootsy-text-label text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardStatValueClass =
-  "block min-w-0 truncate font-numeric font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]"
+  "block min-w-0 truncate rootsy-text-metric-small text-[var(--rootsy-bruma-900)]"
 
 export const dataWorkspaceEntityCardStatValueLargeClass =
-  "block min-w-0 truncate font-numeric text-2xl font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]"
+  "block min-w-0 truncate rootsy-text-metric-medium text-[var(--rootsy-bruma-900)]"
 
 export const dataWorkspaceEntityCardBadgeClass =
-  "inline-flex items-center gap-1.5 rounded-lg border border-[var(--rootsy-bruma-200)] bg-white px-2.5 py-1.5 font-canopy text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)] shadow-xs [&_svg]:size-3.5 [&_svg]:text-[var(--rootsy-bruma-500)]"
+  "inline-flex items-center gap-1.5 rounded-lg border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)] px-2.5 py-1.5 rootsy-text-label text-[var(--rootsy-bruma-500)] shadow-xs [&_svg]:size-3.5 [&_svg]:text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardStatusOpenClass =
-  "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] px-2.5 py-1 font-canopy text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--rootsy-savia-800)]"
+  "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,var(--rootsy-blanco))] px-2.5 py-1 rootsy-text-label text-[var(--rootsy-savia-800)]"
 
 export const dataWorkspaceEntityCardStatusClosedClass =
-  "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-white px-2.5 py-1 font-canopy text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)]"
+  "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)] px-2.5 py-1 rootsy-text-label text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardStatusInactiveClass =
-  "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-2.5 py-1 font-canopy text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)]"
+  "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-2.5 py-1 rootsy-text-label text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardMenuTriggerClass = cn(
   "inline-flex size-8 items-center justify-center rounded-lg text-[var(--rootsy-bruma-500)] transition-colors outline-none",
@@ -200,7 +224,7 @@ export const dataWorkspaceEntityCardMenuTriggerClass = cn(
  */
 export const dataWorkspaceEntityCardLosetaSurfaceClass = cn(
   "relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[1.375rem]",
-  "border border-[var(--rootsy-bruma-200)] bg-white",
+  "border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)]",
   rootsyElevationRaisedRestClass,
 )
 
@@ -225,7 +249,7 @@ export const dataWorkspaceEntityCardLosetaInactiveClass = cn(
 /** Loseta de la persona en sesión — mismo cuerpo, acento savia apenas perceptible. */
 export const dataWorkspaceEntityCardLosetaSelfClass = cn(
   "border-[color-mix(in_srgb,var(--rootsy-savia-600)_28%,var(--rootsy-bruma-200))]",
-  "bg-[color-mix(in_srgb,var(--rootsy-savia-50)_55%,white)]",
+  "bg-[color-mix(in_srgb,var(--rootsy-savia-50)_55%,var(--rootsy-blanco))]",
   "hover:border-[color-mix(in_srgb,var(--rootsy-savia-600)_42%,var(--rootsy-bruma-200))]",
 )
 
@@ -256,7 +280,7 @@ export const dataWorkspaceEntityCardLosetaGridClass =
  */
 export const dataWorkspaceEntityCardClass = cn(
   "group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[1.375rem]",
-  "border border-[var(--rootsy-bruma-200)] bg-white shadow-sm",
+  "border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)] shadow-sm",
   "transition-[border-color,box-shadow] duration-200",
   "hover:border-[var(--rootsy-bruma-300)] hover:shadow-md",
 )
@@ -273,16 +297,16 @@ export const dataWorkspaceEntityCardBodyClass = cn(
 )
 
 export const dataWorkspaceEntityCardIsotypeClass =
-  "flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-500)] shadow-xs"
+  "flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)] text-[var(--rootsy-bruma-500)] shadow-xs"
 
 /** Shell skeleton — misma superficie que la tarjeta final, sin hover. */
 export const dataWorkspaceEntityCardSkeletonShellClass = cn(
   "relative flex h-full flex-col overflow-hidden rounded-[1.375rem]",
-  "border border-[var(--rootsy-bruma-200)] bg-white shadow-sm",
+  "border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)] shadow-sm",
 )
 
 export const dataWorkspaceBlocksEmptyStateClass =
-  "rounded-xl border border-dashed border-[var(--rootsy-bruma-300)] bg-white px-4 py-10 text-center font-canopy text-sm text-[var(--rootsy-bruma-500)]"
+  "rounded-xl border border-dashed border-[var(--rootsy-bruma-300)] bg-[var(--color-elevada)] px-4 py-10 text-center font-canopy text-sm text-[var(--rootsy-bruma-500)]"
 
 /** Título de sección en layout · bloques — espejo LayoutsBlocksDocSubsection · font.heading.xsmall semibold. */
 export const dataWorkspaceBlocksSectionTitleClass =
@@ -314,7 +338,7 @@ export const dataWorkspaceBlocksPageScopeClass =
 
 /** Tarjeta / panel de detalle — radius.xxlarge · elevation.shadow.raised (paridad loseta, sin hover). */
 export const dataWorkspaceDetailCardClass = cn(
-  "overflow-hidden rounded-[1.375rem] border border-[var(--rootsy-bruma-200)] bg-white",
+  "overflow-hidden rounded-[1.375rem] border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)]",
   rootsyElevationRaisedRestClass,
 )
 
@@ -377,7 +401,7 @@ export const workspaceTableNatureHeaderCellClass = cn(
 export const workspaceTableNatureBodyRowInactiveClass = "opacity-[0.78]"
 
 export function workspaceTableNatureBodyRowClassNames(
-  index: number,
+  _index: number,
   options?: {
     selected?: boolean
     noHover?: boolean
@@ -385,14 +409,8 @@ export function workspaceTableNatureBodyRowClassNames(
     signal?: "warning" | "danger"
   },
 ): string {
-  const isEven = index % 2 === 0
-  /** Par con spec layout · tablas — even blanco · odd bruma-50. */
-  const rowSurface = isEven
-    ? "bg-[var(--wt-surface)]"
-    : "bg-[var(--wt-surface-stripe)]"
-  const rowSurfaceHover = isEven
-    ? "hover:!bg-[var(--wt-surface)]"
-    : "hover:!bg-[var(--wt-surface-stripe)]"
+  const rowSurface = "bg-[var(--wt-surface)]"
+  const rowSurfaceHover = "hover:!bg-[var(--wt-surface)]"
 
   return cn(
     "border-b border-[var(--wt-border)] transition-colors duration-150",
@@ -438,7 +456,7 @@ export const listBulkToolbarBarClass =
 
 /** Contenedor único — filtros activos + selección antes de la tabla. */
 export const listTableChromeStackClass =
-  "shrink-0 overflow-hidden border-b border-[var(--wt-border)] bg-white"
+  "shrink-0 overflow-hidden border-b border-[var(--wt-border)] bg-[var(--wt-surface)]"
 
 /** Separador interno suave entre filas del stack. */
 export const listTableChromeStackFollowRowClass =
@@ -447,7 +465,7 @@ export const listTableChromeStackFollowRowClass =
 /** Superficie compartida — barras contexto h-11 (filtros activos · selección). */
 export const listTableChromeBarSurfaceClass = cn(
   listBulkToolbarBarClass,
-  "bg-white",
+  "bg-[var(--wt-surface)]",
 )
 
 /** Fila dentro del stack — sin fondo propio ni borde inferior. */
@@ -485,30 +503,30 @@ export const workspaceTableNatureStatusBadgeClass: Record<
   string
 > = {
   activo:
-    "border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] text-[var(--rootsy-savia-800)]",
+    "border-[var(--rootsy-savia-200)] bg-[var(--rootsy-savia-50)] text-[var(--rootsy-savia-800)]",
   inactivo:
-    "border-[var(--rootsy-bruma-300)] bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-700)]",
+    "border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-700)]",
   pendiente:
-    "border-[color-mix(in_srgb,#f59e0b_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#f59e0b_10%,white)] text-[#78350f]",
+    "border-[var(--rootsy-sol-200)] bg-[var(--rootsy-sol-50)] text-[var(--rootsy-sol-900)]",
   vencido:
-    "border-[color-mix(in_srgb,#ef4444_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#ef4444_10%,white)] text-[#dc2626]",
+    "border-[var(--rootsy-lava-200)] bg-[var(--rootsy-lava-50)] text-[var(--rootsy-lava-800)]",
   info:
-    "border-[color-mix(in_srgb,var(--rootsy-cielo-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-cielo-500)_10%,white)] text-[var(--rootsy-cielo-800)]",
+    "border-[var(--rootsy-cielo-200)] bg-[var(--rootsy-cielo-50)] text-[var(--rootsy-cielo-800)]",
 }
 
 /** Fila con señal de importancia — aviso / peligro (stock, vencido). */
 export const workspaceTableNatureBodyRowSignalWarningClass =
-  "!bg-[color-mix(in_srgb,#f59e0b_7%,var(--wt-surface))] shadow-[inset_3px_0_0_#f59e0b]"
+  "!bg-[color-mix(in_srgb,var(--rootsy-sol-50)_88%,var(--wt-surface))] shadow-[inset_3px_0_0_var(--rootsy-sol-500)]"
 
 export const workspaceTableNatureBodyRowSignalDangerClass =
-  "!bg-[color-mix(in_srgb,#ef4444_8%,var(--wt-surface))] shadow-[inset_3px_0_0_#ef4444]"
+  "!bg-[color-mix(in_srgb,var(--rootsy-lava-50)_88%,var(--wt-surface))] shadow-[inset_3px_0_0_var(--rootsy-lava-600)]"
 
 export const workspaceTableNatureStockOkClass =
   "text-[var(--rootsy-savia-800)]"
 
-export const workspaceTableNatureStockWarningClass = "text-[#78350f]"
+export const workspaceTableNatureStockWarningClass = "text-[var(--rootsy-sol-900)]"
 
-export const workspaceTableNatureStockDangerClass = "text-[#dc2626]"
+export const workspaceTableNatureStockDangerClass = "text-[var(--rootsy-lava-800)]"
 
 export const workspaceTableNatureSkeletonTone = {
   bar: "animate-pulse rounded-sm bg-[var(--wt-skeleton)]",
@@ -520,12 +538,12 @@ export const workspaceTableNatureSkeletonTone = {
 /** Checkbox — borde bruma, marca savia al marcar. Aísla estilos del shell Nature (.dark). */
 export const workspaceTableNatureCheckboxClass = cn(
   "relative z-[1] shrink-0 cursor-pointer select-auto pointer-events-auto",
-  "size-4 rounded border bg-white shadow-none",
+  "size-4 rounded border bg-[var(--wt-surface)] shadow-none",
   "[&_[data-slot=checkbox-indicator]_svg]:size-3.5",
   "border-[var(--rootsy-bruma-300)]",
-  "data-[state=checked]:border-[var(--rootsy-savia-600)] data-[state=checked]:bg-[var(--rootsy-savia-600)] data-[state=checked]:text-white",
-  "data-[state=indeterminate]:border-[color-mix(in_srgb,var(--rootsy-savia-600)_50%,var(--rootsy-bruma-300))] data-[state=indeterminate]:bg-[var(--rootsy-savia-100)] data-[state=indeterminate]:text-[var(--rootsy-savia-700)]",
-  "dark:bg-white dark:data-[state=checked]:border-[var(--rootsy-savia-600)] dark:data-[state=checked]:bg-[var(--rootsy-savia-600)] dark:data-[state=checked]:text-white",
+  "data-[state=checked]:border-[var(--rootsy-savia-600)] data-[state=checked]:bg-[var(--rootsy-savia-600)] data-[state=checked]:text-[var(--rootsy-savia-50)]",
+  "data-[state=indeterminate]:border-[color-mix(in_srgb,var(--rootsy-savia-600)_50%,var(--rootsy-bruma-200))] data-[state=indeterminate]:bg-[var(--rootsy-savia-100)] data-[state=indeterminate]:text-[var(--rootsy-savia-700)]",
+  "dark:bg-[var(--wt-surface)] dark:data-[state=checked]:border-[var(--rootsy-savia-600)] dark:data-[state=checked]:bg-[var(--rootsy-savia-600)] dark:data-[state=checked]:text-[var(--rootsy-savia-50)]",
 )
 
 /** @deprecated Usar workspaceTableNatureCheckboxClass */
@@ -632,7 +650,7 @@ export const listToolbarFilterTriggerActiveClass =
 
 /** Badge de cantidad en trigger «Filtros» — círculo fijo 20×20 · acento savia-400. */
 export const listToolbarFilterCountBadgeClass =
-  "inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,transparent)] text-[10px] font-semibold tabular-nums leading-none text-[var(--rootsy-savia-400)]"
+  "inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,transparent)] text-xs font-semibold tabular-nums leading-none text-[var(--rootsy-savia-400)]"
 
 /** Barra filtros activos — h-11 · una fila con chips (fondo lo aporta el stack). */
 export const listActiveFiltersBarClass = cn(
@@ -648,12 +666,12 @@ export const listActiveFiltersCountBadgeClass = cn(
 
 /** Chip de filtro activo — pill bruma · botón × circular concéntrico. */
 export const listActiveFilterChipClass = cn(
-  "inline-flex h-7 max-w-full shrink-0 items-center gap-1 rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] py-0 pl-2.5 pr-1 text-xs text-[var(--rootsy-bruma-900)]",
+  "inline-flex h-7 max-w-full shrink-0 items-center gap-1 rounded-full border border-[var(--color-borde)] bg-[var(--color-superficie)] py-0 pl-2.5 pr-1 text-xs text-[var(--color-texto)]",
 )
 
 export const listActiveFilterChipDismissClass = cn(
-  "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[var(--rootsy-bruma-500)] transition-colors",
-  "hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
+  "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[var(--color-texto-muted)] transition-colors",
+  "hover:bg-[var(--color-fondo)] hover:text-[var(--color-texto)]",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,transparent)]",
 )
 
@@ -711,21 +729,21 @@ export const darkTableFooterTotalLabelClass = cn(
   nightForestMutedTextClass,
 )
 
-/** Pie compacto layout — tierra mojada (suelo, no bosque nocturno). */
+/** Pie compacto layout — atmósfera sombra (superficie 600). */
 export const earthTableFooterClass = cn(
-  "border-t border-[color-mix(in_srgb,var(--rootsy-suelo-600)_38%,transparent)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-suelo-800)_92%,var(--rootsy-suelo-900))]",
+  "border-t border-[color-mix(in_srgb,var(--rootsy-sombra-400)_45%,transparent)]",
+  "bg-[var(--rootsy-sombra-600)]",
 )
 
 export const earthTableFooterNavIconButtonClass = cn(
   "inline-flex size-10 shrink-0 items-center justify-center rounded-xl border outline-none transition-all",
-  "border-[color-mix(in_srgb,var(--rootsy-suelo-600)_50%,transparent)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-suelo-700)_72%,var(--rootsy-suelo-800))]",
-  "text-[var(--rootsy-suelo-400)]",
-  "hover:border-[color-mix(in_srgb,var(--rootsy-suelo-400)_55%,transparent)]",
-  "hover:bg-[color-mix(in_srgb,var(--rootsy-suelo-600)_55%,var(--rootsy-suelo-700))]",
-  "hover:text-[var(--rootsy-suelo-300)]",
-  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-suelo-400)_35%,transparent)] focus-visible:ring-offset-0",
+  "border-[color-mix(in_srgb,var(--rootsy-sombra-400)_50%,transparent)]",
+  "bg-[var(--rootsy-sombra-500)]",
+  "text-[var(--rootsy-sombra-50)]",
+  "hover:border-[var(--rootsy-sombra-400)]",
+  "hover:bg-[var(--rootsy-sombra-500)]",
+  "hover:text-[var(--rootsy-sombra-50)]",
+  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-sombra-300)_45%,transparent)] focus-visible:ring-offset-0",
   "disabled:pointer-events-none disabled:opacity-40",
   "[&_svg]:size-5",
 )
@@ -736,20 +754,20 @@ export const earthTableFooterCenterClass =
 /** Trigger compacto — tierra oscura (dropdown aparte en estilo light). */
 export const earthTableFooterSelectTriggerClass = cn(
   "!h-10 !min-h-10 !w-[4.25rem] min-w-[4.25rem] max-w-[4.25rem] justify-between gap-1 !rounded-md px-2 text-xs font-medium",
-  "!border-[color-mix(in_srgb,var(--rootsy-suelo-600)_50%,transparent)]",
-  "!bg-[color-mix(in_srgb,var(--rootsy-suelo-700)_72%,var(--rootsy-suelo-800))]",
-  "!text-[var(--rootsy-suelo-400)]",
+  "!border-[color-mix(in_srgb,var(--rootsy-sombra-400)_55%,transparent)]",
+  "!bg-[var(--rootsy-sombra-500)]",
+  "!text-[var(--rootsy-sombra-50)]",
   "shadow-none outline-none transition-all",
-  "hover:!border-[color-mix(in_srgb,var(--rootsy-suelo-400)_55%,transparent)]",
-  "hover:!bg-[color-mix(in_srgb,var(--rootsy-suelo-600)_55%,var(--rootsy-suelo-700))]",
-  "hover:!text-[var(--rootsy-suelo-300)]",
-  "data-[state=open]:!border-[color-mix(in_srgb,var(--rootsy-suelo-400)_55%,transparent)]",
-  "data-[state=closed]:focus:!border-[color-mix(in_srgb,var(--rootsy-suelo-600)_50%,transparent)] data-[state=closed]:focus:!ring-0",
-  "focus-visible:!ring-2 focus-visible:!ring-[color-mix(in_srgb,var(--rootsy-suelo-400)_35%,transparent)] focus-visible:!ring-offset-0",
+  "hover:!border-[var(--rootsy-sombra-400)]",
+  "hover:!bg-[var(--rootsy-sombra-500)]",
+  "hover:!text-[var(--rootsy-sombra-50)]",
+  "data-[state=open]:!border-[var(--rootsy-sombra-400)]",
+  "data-[state=closed]:focus:!border-[color-mix(in_srgb,var(--rootsy-sombra-400)_55%,transparent)] data-[state=closed]:focus:!ring-0",
+  "focus-visible:!ring-2 focus-visible:!ring-[color-mix(in_srgb,var(--rootsy-sombra-300)_45%,transparent)] focus-visible:!ring-offset-0",
   "disabled:pointer-events-none disabled:opacity-40",
   "[&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:truncate [&_[data-slot=select-value]]:text-left",
-  "[&_[data-slot=select-value][data-placeholder]]:!text-[var(--rootsy-suelo-400)]",
-  "[&_svg]:!size-3.5 [&_svg]:!text-[var(--rootsy-suelo-400)]",
+  "[&_[data-slot=select-value][data-placeholder]]:!text-[var(--rootsy-sombra-300)]",
+  "[&_svg]:!size-3.5 [&_svg]:!text-[var(--rootsy-sombra-300)]",
 )
 
 export const earthTableFooterSelectItemClass = "py-1.5 text-xs"
@@ -757,10 +775,10 @@ export const earthTableFooterSelectItemClass = "py-1.5 text-xs"
 export const earthTableFooterTotalLabelClass = cn(
   workspaceTableLayoutMetaLabelClass,
   "font-bold",
-  "text-[var(--rootsy-suelo-400)]",
+  "text-[var(--rootsy-sombra-300)]",
 )
 
-export const earthTableFooterDotClass = "text-[var(--rootsy-suelo-600)]"
+export const earthTableFooterDotClass = "text-[var(--rootsy-sombra-400)]"
 
 /** @deprecated Usar darkTableFooterTotalLabelClass */
 export const darkTableFooterCenterMutedClass = darkTableFooterTotalLabelClass
@@ -878,7 +896,7 @@ export const workspaceTableSkeletonTone = {
 /** Filas de carga / vacío / mensajes (sin hover). */
 export const workspaceTablePlaceholderRowClass = cn(
   workspaceTableRowBorderClass,
-  "bg-white hover:bg-white pointer-events-none dark:bg-white",
+  "bg-[var(--color-elevada)] hover:bg-[var(--color-elevada)] pointer-events-none",
 )
 
 /** Filas de detalle expandido o contenido anidado (sin hover). */
@@ -896,7 +914,7 @@ export function workspaceTableBodyRowClassNames(
     workspaceTableRowBorderClass,
     "transition-colors duration-150",
     workspaceTableRowHoverClass,
-    index % 2 === 0 ? "bg-white dark:bg-white" : workspaceTableRowStripeClass,
+    index % 2 === 0 ? "bg-[var(--color-elevada)]" : workspaceTableRowStripeClass,
     options?.selected &&
       "bg-emerald-50/90 hover:bg-emerald-50 ring-1 ring-inset ring-emerald-600/12",
   )

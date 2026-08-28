@@ -734,7 +734,7 @@ export const CHAT_ROOTSY_API_GROUPS: readonly ChatRootsyApiGroup[] = [
         id: "articles",
         method: "GET",
         path: "/v1/pops/:popId/articles",
-        solves: "Listado de artículos con stockOnHand, costs y listPrices por fila.",
+        solves: "Listado de artículos con costs y listPrices por fila. includeStock=false omite inventory y anula conStock/sinStock/stockNegativo.",
         returns: "filas paginadas.",
         filters: [
           PAGE,
@@ -748,6 +748,7 @@ export const CHAT_ROOTSY_API_GROUPS: readonly ChatRootsyApiGroup[] = [
           { name: "sinStock", values: "true" },
           { name: "stockNegativo", values: "true" },
           { name: "ventaSinStock", values: "true" },
+          { name: "includeStock", values: "true|false" },
           { name: "categoryId" },
           { name: "itemKinds", values: "merchandise|…" },
           { name: "sort", values: "name|…" },

@@ -17,6 +17,7 @@ import {
   ROOTSY_PRODUCT_EMPHASIS,
   ROOTSY_THEMES,
 } from "@/app/library/color/rootsyColorSystem"
+import { rootsyColorHex } from "@/lib/design-system/tokens/colors"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -75,10 +76,17 @@ function ColorExampleLabel({ children }: { children: ReactNode }) {
   )
 }
 
-const FAMILY_ARCHITECTURE = [
-  { label: "Sombra", hex: COLOR_TOKENS.sombra600, sub: "Bajo el dosel · catálogo" },
-  { label: "Bruma", hex: COLOR_TOKENS.bruma100, sub: "Neblina · ticket · tablas", text: COLOR_TOKENS.bruma900 },
-  { label: "Savia", hex: COLOR_TOKENS.savia600, sub: "Vida · acción · foco" },
+const ATMOSPHERE_ARCHITECTURE = [
+  { label: "Éter", hex: rootsyColorHex("eter", "900"), sub: "El afuera · header y vacío" },
+  { label: "Luz filtrada", hex: COLOR_TOKENS.bruma100, sub: "El claro para leer", text: COLOR_TOKENS.bruma900 },
+  { label: "Sombra", hex: COLOR_TOKENS.sombra600, sub: "El dosel para operar" },
+] as const
+
+const FUNCTIONAL_ARCHITECTURE = [
+  { label: "Savia", hex: COLOR_TOKENS.savia500, sub: "Acción y foco" },
+  { label: "Cielo", hex: rootsyColorHex("cielo", "500"), sub: "Información" },
+  { label: "Sol", hex: rootsyColorHex("sol", "500"), sub: "Atención" },
+  { label: "Lava", hex: rootsyColorHex("lava", "500"), sub: "Riesgo" },
 ] as const
 
 const ON_DARK_PREVIEW = "#F4F8F6"
@@ -255,10 +263,14 @@ export function ColorSystemHero() {
   )
 }
 
-export function ColorFamiliesRow() {
+function ColorFamilySwatches({
+  items,
+}: {
+  items: ReadonlyArray<{ label: string; hex: string; sub: string; text?: string }>
+}) {
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {FAMILY_ARCHITECTURE.map((layer) => (
+    <div className={cn("grid gap-3", items.length === 4 ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3")}>
+      {items.map((layer) => (
         <ColorWhiteCard key={layer.label} className="space-y-2 p-4">
           <div
             className="h-12 rounded-lg"
@@ -275,6 +287,31 @@ export function ColorFamiliesRow() {
           </p>
         </ColorWhiteCard>
       ))}
+    </div>
+  )
+}
+
+export function ColorFamiliesRow() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <p
+          className="font-canopy text-xs font-semibold uppercase tracking-wide"
+          style={{ color: COLOR_TOKENS.bruma500 }}
+        >
+          Atmósferas
+        </p>
+        <ColorFamilySwatches items={ATMOSPHERE_ARCHITECTURE} />
+      </div>
+      <div className="space-y-3">
+        <p
+          className="font-canopy text-xs font-semibold uppercase tracking-wide"
+          style={{ color: COLOR_TOKENS.bruma500 }}
+        >
+          Funcionales
+        </p>
+        <ColorFamilySwatches items={FUNCTIONAL_ARCHITECTURE} />
+      </div>
     </div>
   )
 }

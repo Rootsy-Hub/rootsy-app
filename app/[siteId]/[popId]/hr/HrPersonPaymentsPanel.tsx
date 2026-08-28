@@ -83,7 +83,7 @@ export function HrPersonPaymentsPanel({
           {canManagePeople && onPay ? (
             <RootsDefaultButton
               type="button"
-              size="sm"
+              size="compact"
               className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
               onClick={onPay}
             >

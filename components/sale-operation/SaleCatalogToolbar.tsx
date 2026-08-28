@@ -23,6 +23,7 @@ import {
   layoutsOperarCatalogToolbarViewToggleButtonClass,
   layoutsOperarCatalogToolbarViewToggleButtonIdleClass,
   layoutsOperarCatalogToolbarViewToggleShellClass,
+  layoutsOperarHelpPopoverContentClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { Input } from "@/components/ui/input"
 import {
@@ -32,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import {
@@ -178,17 +179,17 @@ function priceListHelpButtonClass(variant: ToolbarVariant) {
     return cn(
       "inline-flex size-8 shrink-0 items-center justify-center rounded-md transition-colors",
       layoutsOperarCatalogToolbarIconMutedClass,
-      "hover:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)] hover:text-[var(--rootsy-bruma-50)]",
+      "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_55%,transparent)] hover:text-[var(--rootsy-sombra-50)]",
       "focus-visible:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[color-mix(in_srgb,var(--rootsy-savia-500)_45%,transparent)]",
     )
   }
   return "inline-flex size-8 shrink-0 items-center justify-center rounded-md text-white/45 transition-colors hover:bg-white/8 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
 }
 
-function PriceListHelpTooltip({ variant }: { variant: ToolbarVariant }) {
+function PriceListHelpPopover({ variant }: { variant: ToolbarVariant }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
+    <Popover>
+      <PopoverTrigger asChild>
         <button
           type="button"
           className={priceListHelpButtonClass(variant)}
@@ -196,17 +197,20 @@ function PriceListHelpTooltip({ variant }: { variant: ToolbarVariant }) {
         >
           <CircleHelp className="size-3.5" aria-hidden />
         </button>
-      </TooltipTrigger>
-      <TooltipContent
-        variant="dark"
+      </PopoverTrigger>
+      <PopoverContent
         side="top"
         align="end"
         sideOffset={6}
-        className="max-w-[17rem] text-left leading-snug"
+        className={
+          variant === "operar"
+            ? layoutsOperarHelpPopoverContentClass
+            : "max-w-[17rem] text-left text-sm leading-snug"
+        }
       >
         {SALE_CATALOG_PRICE_LIST_HELP}
-      </TooltipContent>
-    </Tooltip>
+      </PopoverContent>
+    </Popover>
   )
 }
 
@@ -357,7 +361,7 @@ export function SaleCatalogToolbar({
               variant === "operar"
                 ? cn(
                     layoutsOperarCatalogToolbarIconMutedClass,
-                    "hover:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)] hover:text-[var(--rootsy-bruma-50)]",
+                    "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_55%,transparent)] hover:text-[var(--rootsy-sombra-50)]",
                   )
                 : "text-white/50 hover:bg-white/[0.07] hover:text-white/90 focus-visible:ring-emerald-300/70",
             )}
@@ -450,7 +454,7 @@ export function SaleCatalogToolbar({
               </SelectContent>
             </Select>
           )}
-          <PriceListHelpTooltip variant={variant} />
+          <PriceListHelpPopover variant={variant} />
         </div>
       ) : null}
 

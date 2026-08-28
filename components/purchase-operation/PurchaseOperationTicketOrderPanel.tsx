@@ -4,6 +4,7 @@ import {
   layoutsOperarSummaryCartListSurfaceClass,
   layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
+  layoutsOperarTicketBlocksFloorClass,
   layoutsOperarTicketScrollColumnClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
@@ -74,7 +75,12 @@ export function PurchaseOperationTicketOrderPanel({
         aria-label="Pedido"
       >
         {hasTicketItems ? (
-          <div className={layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL)}>
+          <div
+            className={cn(
+              layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL),
+              "sticky top-0 z-20",
+            )}
+          >
             <div className="min-w-0">
               <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
             </div>
@@ -88,31 +94,30 @@ export function PurchaseOperationTicketOrderPanel({
             description={emptyDescription}
           />
         ) : (
-          <div
-            className={cn(
-              layoutsOperarSummaryCartListSurfaceClass,
-              layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
-              "shrink-0",
-            )}
-          >
-            {lines.map((line) => (
-              <PurchaseCartLineCard
-                key={line.lineId}
-                line={line}
-                overrides={overrides}
-                canUpdateArticles={canUpdateArticles}
-                onApplyEdits={onApplyLineEdits}
-                onRemove={() => onRemoveLine(line.lineId)}
-              />
-            ))}
+          <div className={layoutsOperarTicketBlocksFloorClass}>
+            <div
+              className={cn(
+                layoutsOperarSummaryCartListSurfaceClass,
+                layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+                "shrink-0",
+              )}
+            >
+              {lines.map((line) => (
+                <PurchaseCartLineCard
+                  key={line.lineId}
+                  line={line}
+                  overrides={overrides}
+                  canUpdateArticles={canUpdateArticles}
+                  onApplyEdits={onApplyLineEdits}
+                  onRemove={() => onRemoveLine(line.lineId)}
+                />
+              ))}
+            </div>
+            <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
+              <SaleOperationTotalBar {...totalBar} tone="operar" className="w-full" />
+            </div>
           </div>
         )}
-
-        {hasTicketItems ? (
-          <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
-            <SaleOperationTotalBar {...totalBar} tone="operar" className="w-full" />
-          </div>
-        ) : null}
       </div>
 
       <OperarMobileToolboxIcons />

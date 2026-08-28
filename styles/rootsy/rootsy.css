@@ -8,5 +8,7 @@
 @import "./tokens/spacing.css";
 @import "./themes/pos.css";
 @import "./themes/workspace.css";
+@import "./themes/bruma-oscura.css";
 @import "./themes/landing.css";
 @import "./themes/library.css";
+@import "./themes/theme-bridge.css";

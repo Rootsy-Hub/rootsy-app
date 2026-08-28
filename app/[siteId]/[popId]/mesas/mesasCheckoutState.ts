@@ -73,6 +73,32 @@ export function emptyTableSessionCheckout(
   }
 }
 
+/** Firma estable del ticket para no PATCHear de nuevo al hidratar / enriquecer. */
+export function checkoutPersistFingerprint(
+  snap: TableSessionCheckoutSnapshot,
+): string {
+  return JSON.stringify({
+    carrito: snap.carrito,
+    clienteSeleccionado: snap.clienteSeleccionado,
+    manualNombreCliente: snap.manualNombreCliente,
+    fiscalDocVenta: snap.fiscalDocVenta,
+    ventaIvaCondition: snap.ventaIvaCondition,
+    comprobante: snap.comprobante,
+    metodoPagoSeleccionado: snap.metodoPagoSeleccionado,
+    payOnClientAccount: snap.payOnClientAccount,
+    modoDescuento: snap.modoDescuento,
+    valorDescuentoPorcentaje: snap.valorDescuentoPorcentaje,
+    valorDescuentoFijo: snap.valorDescuentoFijo,
+    itemDescuentoModo: snap.itemDescuentoModo ?? {},
+    itemDescuentoDraft: snap.itemDescuentoDraft ?? {},
+    itemDescuentoSuprimido: snap.itemDescuentoSuprimido ?? {},
+    itemComentarios: snap.itemComentarios ?? {},
+    paidPartialUnits: snap.paidPartialUnits ?? {},
+    totalPagadoAcumulado: snap.totalPagadoAcumulado ?? 0,
+    descuentoGeneralBloqueado: snap.descuentoGeneralBloqueado === true,
+  })
+}
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v != null && !Array.isArray(v)
 }

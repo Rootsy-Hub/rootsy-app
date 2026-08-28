@@ -1,6 +1,7 @@
 "use client"
 
 import { LayoutsOperarProductCardMediaEmptyState } from "@/app/library/layouts/LayoutsOperarProductCardProposalPrimitives"
+import { layoutsOperarProductCardMediaPhotoClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import type { LayoutsOperarProductCardProposalId } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import { isCatalogProductPhotoUrl } from "@/lib/catalogProductImageCache"
@@ -48,7 +49,7 @@ export function CatalogProductCardMediaPhoto({
           onLoad={() => setRevealed(true)}
           onError={() => setFailed(true)}
           className={cn(
-            "object-cover transition-[opacity,transform] duration-200 ease-out group-hover:scale-[1.03]",
+            layoutsOperarProductCardMediaPhotoClass,
             revealed ? "opacity-100" : "opacity-0",
           )}
         />

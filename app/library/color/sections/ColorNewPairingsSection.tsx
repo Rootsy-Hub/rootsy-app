@@ -22,8 +22,8 @@ export function ColorNewPairingsSection() {
       <div className="space-y-10">
         <ColorDocLead>
           Complementarios derivados de pantallas reales — no teoría cromática abstracta.
-          Cada par resuelve un layout concreto: split POS, workspace claro, climas de
-          mundo (cielo / sol) y hero de marketing.
+          Cada par resuelve un layout concreto: split POS, workspace claro, bruma oscura,
+          climas de mundo (cielo / sol) y hero de marketing.
         </ColorDocLead>
 
         <ColorDocSection
@@ -33,7 +33,7 @@ export function ColorNewPairingsSection() {
         >
           <div className="grid gap-4 lg:grid-cols-2">
             {ROOTSY_COMPLEMENTARY_PAIRINGS.filter((p) =>
-              ["pos-core", "pos-split", "pos-focus", "workspace-bruma", "workspace-header"].includes(
+              ["pos-core", "pos-split", "pos-focus", "workspace-bruma", "workspace-bruma-oscura", "workspace-header"].includes(
                 p.id,
               ),
             ).map((pairing) => (

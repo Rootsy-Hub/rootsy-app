@@ -1,32 +1,21 @@
-export type SaleQuerySpecCall = {
-  endpoint: string
-  detail: string
-  cache: string
-}
-
-export type SaleQuerySpecMoment = {
-  title: string
-  calls: SaleQuerySpecCall[]
-}
-
-export type SaleQuerySpecDomain = {
-  domain: string
-  moments: SaleQuerySpecMoment[]
-}
-
-export type SaleQuerySpecPlace = {
-  place: string
-  domains: SaleQuerySpecDomain[]
-}
-
-const CACHE_TANSTACK_24H = "TanStack · 24 h"
-const CACHE_TANSTACK_24H_REFETCH_MOUNT = "TanStack · 24 h · refetch al montar"
-const CACHE_TANSTACK_SESSION_REFETCH = "TanStack · sesión · refetch al montar"
-const CACHE_SQLITE_OPFS = "SQLite · OPFS · por pop"
-const CACHE_NONE = "No"
+export type {
+  QuerySpecCall as SaleQuerySpecCall,
+  QuerySpecDomain as SaleQuerySpecDomain,
+  QuerySpecMoment as SaleQuerySpecMoment,
+  QuerySpecPlace as SaleQuerySpecPlace,
+} from "@/lib/devmode/querySpec"
+import type { QuerySpecPlace } from "@/lib/devmode/querySpec"
+import {
+  CACHE_NONE,
+  CACHE_SQLITE_OPFS,
+  CACHE_TANSTACK_24H,
+  CACHE_TANSTACK_24H_REFETCH_MOUNT,
+  CACHE_TANSTACK_SESSION,
+  CACHE_WS_DO,
+} from "@/lib/devmode/querySpec"
 
 /** Spec de consultas de Vender. Se completa a mano; el panel solo la muestra. */
-export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
+export const SALE_QUERY_SPEC: readonly QuerySpecPlace[] = [
   {
     place: "Página",
     domains: [
@@ -39,8 +28,14 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "GET /v1/pops/:popId/cash-registers/open-session",
                 detail:
-                  "Turno de caja abierto por el usuario. En paralelo con categories, payment-context y comprobantes. El GET de articles no sale acá: espera categoryId de localStorage o la primera categoría del rail. Si no hay turno propio, session es null. No cae a cajas de otros. Tras un cobro rechazado por caja cerrada se invalida.",
+                  "Turno de caja abierto por el usuario. En paralelo con categories, articles, payment-context y comprobantes. El GET de articles pagina todo merchandise al entrar, sin esperar categoryId. Si no hay turno propio, session es null. No cae a cajas de otros. El socket resource:cajas:{userId} parchea esta cache; un cobro rechazado también la invalida.",
                 cache: CACHE_TANSTACK_24H_REFETCH_MOUNT,
+              },
+              {
+                endpoint: "WS resource:cajas:{userId}",
+                detail:
+                  "Listener al entrar a Vender. Apertura/cierre del turno propio (aunque lo cierre un supervisor). Cierre: setQueryData null, apaga Cobrar y muestra el toast. Apertura: parchea el GET y cierra el toast. Gap invalida open-session.",
+                cache: CACHE_WS_DO,
               },
             ],
           },
@@ -79,11 +74,10 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             title: "Al entrar",
             calls: [
               {
-                endpoint:
-                  "GET /v1/pops/:popId/categories?itemKind=merchandise&showInSale=true",
+                endpoint: "GET /v1/pops/:popId/categories",
                 detail:
-                  "Rail de categorías de producto visibles en venta. En paralelo con payment-context, comprobantes y open-session. Si Vender ya tiene categoryId en localStorage, el GET de articles sale en paralelo; si no, articles espera este listado y usa la primera categoría.",
-                cache: CACHE_TANSTACK_SESSION_REFETCH,
+                  "Si las categorías ya están en SQLite (OPFS), solo SELECT local del rail (merchandise + show_in_sale). Si no hay marca de hidratación, un GET sin filtros (todas las categorías). Fallback HTTP: GET sin filtros y el rail filtra en cliente.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },
@@ -93,8 +87,8 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "WS domain:categories",
                 detail:
-                  "Parche del rail (nombre, orden, showInSale). Si el aviso no trae name y la categoría no está en cache, GET de categories. El reorder emite categories.updated, no un evento layout.",
-                cache: CACHE_TANSTACK_SESSION_REFETCH,
+                  "Upsert/delete en SQLite y re-SELECT del rail, también si Vender no está abierto. Rename actualiza category_name en artículos locales. Gap borra la marca y un GET.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },
@@ -108,9 +102,9 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             calls: [
               {
                 endpoint:
-                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&soloActivos=true&categoryId=:id&page=1&pageSize=100",
+                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&includeStock=false&page=1&pageSize=100",
                 detail:
-                  "Si esa categoría ya está en SQLite (OPFS), solo SELECT local: no hay GET. Si no está, GET con categoryId de localStorage o la primera del rail, hidrata y marca la categoría. Sin categoryId no hay GET. Fallback HTTP si SQLite no carga.",
+                  "Al entrar, si no hay marca global de hidratación: pagina todo merchandise sin soloActivos ni categoryId. includeStock=false: no consulta inventory. Persiste activos e inactivos. El tablero filtra en SELECT local (activo + vendible + categoría). Fallback HTTP: el mismo GET y filtra en cliente.",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],
@@ -143,7 +137,7 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "SELECT articles WHERE category_id",
                 detail:
-                  "Guarda el categoryId en localStorage y lee SQLite. GET a articles solo si esa categoría nunca se hidrató (o se invalidó el catálogo). Si ya está en OPFS, no hay red.",
+                  "Guarda el categoryId en localStorage y lee SQLite. No hay GET: el dump de mercadería ya está en OPFS (o se está hidratando al entrar).",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],
@@ -154,7 +148,7 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "WS domain:articles",
                 detail:
-                  "Parche en SQLite (upsert/delete) sin borrar la marca de hidratado. Si hay GET en curso, los avisos se encolan y se aplican al terminar. lastSeq vive en SQLite. Resync (gap/empty) borra marcas y vuelve a hidratar.",
+                  "Parche en SQLite (upsert/delete) sin borrar la marca de hidratado. lastSeq solo se persiste cuando el parche ya está en OPFS, o tras rehidratar si el write falla. Si hay GET en curso, los avisos se encolan y el seq no avanza hasta aplicarlos. Resync (gap) borra marcas y vuelve a hidratar.",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],
@@ -179,10 +173,10 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             title: "Al escanear",
             calls: [
               {
-                endpoint: "GET /v1/pops/:popId/sale/catalog/scan",
+                endpoint: "SELECT articles WHERE barcode|sku|name",
                 detail:
-                  "Enter en el input. Si el código ya está en lo visible, cero red. Si no, una pegada por Enter.",
-                cache: CACHE_NONE,
+                  "Enter en el input. Busca en SQLite del pop (barcode/sku exacto o nombre único). Sin GET. Si no está, toast y no agrega.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },
@@ -218,14 +212,14 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
               {
                 endpoint: "GET /v1/pops/:popId/sale/payment-context",
                 detail:
-                  "En paralelo con categories, articles, comprobantes y open-session. Alimenta el slot de pago.",
-                cache: CACHE_TANSTACK_24H,
+                  "Al entrar, en paralelo con categories, articles, comprobantes y open-session. El modal de Pago no vuelve a pegar: lee esta cache.",
+                cache: CACHE_TANSTACK_SESSION,
               },
               {
                 endpoint: "GET /v1/pops/:popId/sale/comprobantes",
                 detail:
-                  "En paralelo con categories, articles, payment-context y open-session. Trae las opciones del picker; no espera un click.",
-                cache: CACHE_TANSTACK_24H,
+                  "Al entrar, en paralelo con categories, articles, payment-context y open-session. Trae opciones y datos fiscales del emisor. El modal de Comprobante no vuelve a pegar: lista y vista previa leen esta cache.",
+                cache: CACHE_TANSTACK_SESSION,
               },
             ],
           },
@@ -243,10 +237,10 @@ export const SALE_QUERY_SPEC: readonly SaleQuerySpecPlace[] = [
             title: "Al armar el carrito",
             calls: [
               {
-                endpoint: "GET /v1/pops/:popId/sale/catalog/articles",
+                endpoint: "SELECT/REPLACE sale_cart_lines",
                 detail:
-                  "Cuando el pedido tiene ids que no están en cache. Carrito vacío o artículo recién escaneado: no pega.",
-                cache: CACHE_TANSTACK_24H,
+                  "El ticket es un SELECT de líneas persistidas en SQLite. Agregar copia snapshot desde articles locales. Un UPDATE del artículo no reescribe la línea abierta.",
+                cache: CACHE_SQLITE_OPFS,
               },
             ],
           },

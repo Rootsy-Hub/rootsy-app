@@ -1,5 +1,6 @@
 import type { ArticleCategoryOption } from "@/app/[siteId]/[popId]/articles/actions"
 import { isArticleItemKind } from "@/lib/articleItemKind"
+import type { CategorySnapshot } from "@/lib/popLocalDb/types"
 
 export type CategoryRealtimePatch = {
   id: string
@@ -7,6 +8,8 @@ export type CategoryRealtimePatch = {
   itemKind?: string
   sortOrder?: number
   showInSale?: boolean
+  visible?: boolean
+  showInMenu?: boolean
 }
 
 export function categoryPatchFromRealtimePayload(
@@ -31,6 +34,28 @@ export function categoryPatchFromRealtimePayload(
         ? row.sortOrder
         : undefined,
     showInSale: typeof row.showInSale === "boolean" ? row.showInSale : undefined,
+    visible: typeof row.visible === "boolean" ? row.visible : undefined,
+    showInMenu: typeof row.showInMenu === "boolean" ? row.showInMenu : undefined,
+  }
+}
+
+export function categorySnapshotFromPatch(
+  patch: CategoryRealtimePatch,
+  existing: CategorySnapshot | null,
+): CategorySnapshot | null {
+  const name = patch.name?.trim() || existing?.name.trim() || ""
+  if (!name) return null
+  const itemKindRaw = patch.itemKind ?? existing?.itemKind ?? "merchandise"
+  return {
+    id: patch.id,
+    name,
+    itemKind: isArticleItemKind(itemKindRaw)
+      ? itemKindRaw
+      : (existing?.itemKind ?? "merchandise"),
+    sortOrder: patch.sortOrder ?? existing?.sortOrder ?? 0,
+    showInSale: patch.showInSale ?? existing?.showInSale ?? true,
+    visible: patch.visible ?? existing?.visible ?? true,
+    showInMenu: patch.showInMenu ?? existing?.showInMenu ?? true,
   }
 }
 

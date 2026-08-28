@@ -1,10 +1,11 @@
 /**
- * Scope layout · tablas — tokens --wt-* sobre bruma · savia · sombra.
- * Reemplaza la paleta Nature en listados densos (clientes, artículos, etc.).
+ * Scope layout · tablas — tokens --wt-* sobre bruma (handbook).
+ * Fondo 100 · líneas blanca · header 100 · borde 200 · texto 900 · muted 700.
+ * El footer es sombra y no vive en este scope.
  */
 
 .workspace-layouts-tables {
-  --wt-surface: var(--rootsy-white);
+  --wt-surface: var(--rootsy-blanco);
   --wt-surface-stripe: var(--rootsy-bruma-100);
   --wt-surface-hover: var(--rootsy-savia-50);
   --wt-surface-selected: var(--rootsy-savia-100);
@@ -14,18 +15,18 @@
     transparent
   );
   --wt-header-bg: var(--rootsy-bruma-100);
-  --wt-header-bg-glass: color-mix(in srgb, var(--wt-header-bg) 82%, white);
-  --wt-header-text: var(--rootsy-bruma-700);
-  --wt-border: var(--rootsy-bruma-300);
+  --wt-header-bg-glass: var(--rootsy-bruma-100);
+  --wt-header-text: var(--color-texto-muted);
+  --wt-border: var(--color-borde);
   --wt-border-strong: var(--rootsy-bruma-300);
-  --wt-text-primary: var(--rootsy-bruma-900);
-  --wt-text-secondary: var(--rootsy-bruma-600);
-  --wt-text-tertiary: var(--rootsy-bruma-500);
+  --wt-text-primary: var(--color-texto);
+  --wt-text-secondary: var(--color-texto-muted);
+  --wt-text-tertiary: var(--color-texto-muted);
   --wt-link: var(--rootsy-savia-700);
   --wt-link-hover: var(--rootsy-savia-800);
-  --wt-money: var(--rootsy-bruma-900);
-  --wt-money-negative: #78350f;
-  --wt-bulk-bg: var(--rootsy-bruma-50);
+  --wt-money: var(--color-texto);
+  --wt-money-negative: var(--rootsy-sol-900);
+  --wt-bulk-bg: var(--color-superficie);
   --wt-skeleton: color-mix(in srgb, var(--rootsy-bruma-300) 32%, transparent);
-  --wt-skeleton-soft: color-mix(in srgb, var(--rootsy-bruma-300) 20%, transparent);
+  --wt-skeleton-soft: color-mix(in srgb, var(--rootsy-bruma-200) 55%, transparent);
 }

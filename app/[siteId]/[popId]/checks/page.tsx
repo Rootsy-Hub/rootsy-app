@@ -1,5 +1,4 @@
-import { ChecksWorkspaceView } from "@/app/[siteId]/[popId]/checks/ChecksWorkspaceView"
-
+import { ChecksWorkspaceView } from "./ChecksWorkspaceView"
 export default function ChecksPage() {
   return <ChecksWorkspaceView />
 }

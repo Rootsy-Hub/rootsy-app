@@ -18,7 +18,6 @@ import {
   workspaceTableRowHoverClass,
   workspaceTableSurfaceClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -27,7 +26,7 @@ import { RootsBanner } from "@/components/rootsy-banner"
 import {
   RootsDangerSubtleButton,
   RootsLinkButton,
-} from "@/components/rootsy-button"
+  RootsIconButton,} from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import {
   Table,
@@ -50,7 +49,7 @@ import {
 } from "@/lib/rootsyApi/printersClient"
 import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
-import { useParams } from "next/navigation"
+import { useParams } from "@/lib/pop-spa/navigation"
 import { useCallback, useEffect, useState } from "react"
 
 export function PrintersWorkspaceView() {
@@ -208,14 +207,15 @@ export function PrintersWorkspaceView() {
         userRoleLabel={bootstrap?.roleLabel}
         headerActions={
           canCreate ? (
-            <DataWorkspaceHeaderTooltipIconButton
+            <RootsIconButton
               label="Nueva impresora"
-              headerVariant={dataWorkspaceModuleHeaderVariant}
-              primary
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
               onClick={() => openCreate()}
             >
               <Plus className="size-5" aria-hidden />
-            </DataWorkspaceHeaderTooltipIconButton>
+            </RootsIconButton>
           ) : null
         }
         contentFlush

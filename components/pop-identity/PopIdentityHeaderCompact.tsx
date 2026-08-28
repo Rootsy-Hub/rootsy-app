@@ -1,8 +1,8 @@
 "use client"
 
+import { Avatar } from "@/components/Avatar"
 import {
   menuGhostBarClass,
-  menuGhostTileClass,
 } from "@/app/[siteId]/[popId]/menu/menuDormantStyles"
 import { PopLogoLightboxButton } from "@/components/pop-identity/PopLogoLightboxButton"
 import {
@@ -39,7 +39,7 @@ export function PopIdentityHeaderCompact({
   if (pending) {
     return (
       <div className={cn("flex min-w-0 items-center gap-2.5", className)} aria-hidden>
-        <div className={cn("size-8 shrink-0 rounded-lg", menuGhostTileClass)} />
+        <Avatar pending initials={trimmedName.slice(0, 2).toUpperCase() || "·"} size="md" shape="square" />
         <span className={cn(menuGhostBarClass, "h-3.5 w-24")} />
       </div>
     )

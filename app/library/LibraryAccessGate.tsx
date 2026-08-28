@@ -11,25 +11,36 @@ type LibraryAccessGateProps = {
   children: ReactNode
 }
 
+let libraryAccessCache: { userId: string; allowed: boolean } | null = null
+
 function LibraryAccessGateInner({ children }: LibraryAccessGateProps) {
   const { loading, user } = useAuth()
-  const [allowed, setAllowed] = useState<boolean | null>(null)
+  const userId = user?.id ?? null
+  const [allowed, setAllowed] = useState<boolean | null>(() =>
+    userId && libraryAccessCache?.userId === userId ? libraryAccessCache.allowed : null,
+  )
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setAllowed(null)
+      return
+    }
+
+    if (libraryAccessCache?.userId === userId) {
+      setAllowed(libraryAccessCache.allowed)
       return
     }
 
     let cancelled = false
     void getLibraryAccessForSession().then((access) => {
+      libraryAccessCache = { userId, allowed: access.allowed }
       if (!cancelled) setAllowed(access.allowed)
     })
 
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [userId])
 
   if (loading || (user && allowed === null)) {
     return (

@@ -43,7 +43,7 @@ export const saleOpImporteCartClass = cn(
 
 export const saleOpImporteCartMutedClass = cn(
   saleOpImporteBaseClass,
-  "text-[11px] text-slate-400",
+  "text-xs text-slate-400",
 )
 
 export const cartListHeaderRowClass =
@@ -151,17 +151,17 @@ export const saleOpActionIconWrapConfirmDisabledClass =
 
 export const saleOpImporteTotalClass = cn(
   saleOpImporteBaseClass,
-  "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",
+  "rootsy-text-metric whitespace-nowrap text-white/90",
 )
 
 export const saleOpImporteTotalMutedClass = cn(
   saleOpImporteBaseClass,
-  "text-[11px] line-through decoration-white/25 text-white/38",
+  "text-xs line-through decoration-white/25 text-white/38",
 )
 
 export const saleOpImporteTotalDiscountClass = cn(
   saleOpImporteBaseClass,
-  "text-[11px] font-medium text-emerald-300/95",
+  "text-xs font-medium text-emerald-300/95",
 )
 
 export const saleOpToolboxBarClass =

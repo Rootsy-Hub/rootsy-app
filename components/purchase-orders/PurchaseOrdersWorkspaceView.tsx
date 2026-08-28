@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsIconButton } from "@/components/rootsy-button"
 import {
   mergePurchaseOrdersWorkspaceUrl,
   parsePurchaseOrdersWorkspaceUrl,
@@ -16,10 +17,10 @@ import {
   tableListInfiniteFromQuery,
   DataWorkspaceTableListShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListPageDock } from "@/components/data-workspace/DataWorkspaceTableInfinitePageDock"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
-  DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import {
@@ -81,7 +82,7 @@ import type {
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { Download, Eye, Printer, Trash2, Truck } from "lucide-react"
-import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useParams, usePathname, useRouter, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
   useEffect,
@@ -512,6 +513,7 @@ export function PurchaseOrdersWorkspaceView() {
           </DataWorkspaceTableListFiltersBar>
 
           <DataWorkspaceTableListShell
+            lockScroll={listFetching}
             activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -539,6 +541,18 @@ export function PurchaseOrdersWorkspaceView() {
               !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
               ) : null
+            }
+            footerFloating
+            footerFloatingCentered
+            scrollResetKey={ws.page}
+            footer={
+              <DataWorkspaceTableListPageDock
+                listFetching={listFetching}
+                loadedCount={rows.length}
+                totalCount={totalCount}
+                page={ws.page}
+                onPageJump={(nextPage) => pushWs({ page: nextPage })}
+              />
             }
             infinite={tableListInfiniteFromQuery(ordersQuery, "purchase-orders")}
           >
@@ -620,46 +634,66 @@ export function PurchaseOrdersWorkspaceView() {
                             )}
                           >
                             <div className="flex justify-end gap-1">
-                              <DataWorkspaceTableIconAction
+                              <RootsIconButton
+                                type="button"
                                 label="Ver"
+                                tone="action"
+                                intent="neutral"
+                                size="compact"
                                 disabled={busy}
-                                icon={Eye}
-                                variant="neutral"
                                 onClick={() => openView(row)}
-                              />
-                              <DataWorkspaceTableIconAction
+                              >
+                                <Eye />
+                              </RootsIconButton>
+                              <RootsIconButton
+                                type="button"
                                 label="Descargar PDF"
+                                tone="action"
+                                intent="neutral"
+                                size="compact"
                                 disabled={busy}
-                                icon={Download}
-                                variant="neutral"
                                 onClick={() => void runPdfAction(row.id, "download")}
-                              />
-                              <DataWorkspaceTableIconAction
+                              >
+                                <Download />
+                              </RootsIconButton>
+                              <RootsIconButton
+                                type="button"
                                 label="Imprimir"
+                                tone="action"
+                                intent="neutral"
+                                size="compact"
                                 disabled={busy}
-                                icon={Printer}
-                                variant="neutral"
                                 onClick={() => void runPdfAction(row.id, "print")}
-                              />
-                              <DataWorkspaceTableIconAction
+                              >
+                                <Printer />
+                              </RootsIconButton>
+                              <RootsIconButton
+                                type="button"
                                 label="Comprar"
+                                tone="action"
+                                intent="edit"
+                                size="compact"
                                 disabled={busy}
-                                icon={Truck}
-                                variant="edit"
                                 onClick={() => {
                                   router.push(
                                     `${popScopedHref(siteId, popId, "purchases")}?orderId=${row.id}`,
                                   )
                                 }}
-                              />
+                              >
+                                <Truck />
+                              </RootsIconButton>
                               {canDelete ? (
-                                <DataWorkspaceTableIconAction
+                                <RootsIconButton
+                                  type="button"
                                   label="Eliminar"
+                                  tone="action"
+                                  intent="destructive"
+                                  size="compact"
                                   disabled={busy}
-                                  icon={Trash2}
-                                  variant="destructive"
                                   onClick={() => setDeleteTarget(row)}
-                                />
+                                >
+                                  <Trash2 />
+                                </RootsIconButton>
                               ) : null}
                             </div>
                           </TableCell>

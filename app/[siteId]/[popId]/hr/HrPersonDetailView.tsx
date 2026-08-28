@@ -431,7 +431,7 @@ export function HrPersonDetailView({ siteId, popId, employeeId }: Props) {
                 {showClock ? (
                   <RootsDefaultButton
                     type="button"
-                    size="sm"
+                    size="compact"
                     disabled={clockBusy}
                     className={cn(
                       rootsButtonCompactSizeClass,

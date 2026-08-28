@@ -14,6 +14,7 @@ import {
   getDropdownItemLabelHex,
   getDropdownLabelHex,
   getDropdownPanelBackground,
+  getDropdownPanelBorder,
   getDropdownPanelShadow,
   getDropdownSeparatorColor,
   type DropdownDensityId,
@@ -21,6 +22,7 @@ import {
   type DropdownThemeId,
   type DropdownTriggerId,
 } from "@/app/library/dropdown/rootsyDropdownSystem"
+import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
 import { rootsyColorHex } from "@/lib/design-system"
 import { ROOTSY_FONT_WEIGHTS, ROOTSY_TEXT_STYLES } from "@/lib/design-system/tokens/typography"
 
@@ -80,12 +82,13 @@ export type DropdownItemUiStyle = {
 export function getDropdownPanelUiSurface(
   theme: DropdownThemeId = "light",
   density: DropdownDensityId = "default",
+  atmosphere?: RootsButtonAtmosphere,
 ): DropdownPanelUiSurface {
   const densitySpec = getDropdownDensitySpec(density)
 
   return {
-    backgroundColor: getDropdownPanelBackground(theme),
-    border: ROOTSY_DROPDOWN_ANATOMY.panelBorder,
+    backgroundColor: getDropdownPanelBackground(theme, atmosphere),
+    border: getDropdownPanelBorder(theme, atmosphere),
     boxShadow: getDropdownPanelShadow(),
     borderRadiusPx: ROOTSY_DROPDOWN_ANATOMY.panelRadiusPx,
     minWidthPx: densitySpec.minWidthPx,
@@ -100,9 +103,9 @@ export function getDropdownPanelUiSurface(
 export function getDropdownPanelShellUiStyle(
   theme: DropdownThemeId = "light",
   density: DropdownDensityId = "default",
-  options?: { width?: string },
+  options?: { width?: string; atmosphere?: RootsButtonAtmosphere },
 ) {
-  const panel = getDropdownPanelUiSurface(theme, density)
+  const panel = getDropdownPanelUiSurface(theme, density, options?.atmosphere)
 
   return {
     backgroundColor: panel.backgroundColor,
@@ -122,13 +125,16 @@ export function getDropdownPanelShellUiStyle(
   }
 }
 
-export function getDropdownLabelUiStyle(theme: DropdownThemeId = "light") {
+export function getDropdownLabelUiStyle(
+  theme: DropdownThemeId = "light",
+  atmosphere?: RootsButtonAtmosphere,
+) {
   return {
     fontFamily: "var(--rootsy-font-ui)",
     fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
     lineHeight: ROOTSY_TEXT_STYLES["body.small"].lineHeight,
     fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
-    color: getDropdownLabelHex(theme),
+    color: getDropdownLabelHex(theme, atmosphere),
     paddingLeft: ROOTSY_DROPDOWN_ANATOMY.labelPaddingXPx,
     paddingRight: ROOTSY_DROPDOWN_ANATOMY.labelPaddingXPx,
     paddingTop: ROOTSY_DROPDOWN_ANATOMY.labelPaddingTopPx,
@@ -140,13 +146,14 @@ export function getDropdownItemUiStyle(
   theme: DropdownThemeId = "light",
   state: DropdownItemStateId = "default",
   density: DropdownDensityId = "default",
+  atmosphere?: RootsButtonAtmosphere,
 ): DropdownItemUiStyle {
   const densitySpec = getDropdownDensitySpec(density)
   const isSelected = state === "selected"
 
   return {
-    backgroundColor: getDropdownItemBackground(theme, state),
-    color: getDropdownItemLabelHex(theme, state),
+    backgroundColor: getDropdownItemBackground(theme, state, atmosphere),
+    color: getDropdownItemLabelHex(theme, state, atmosphere),
     fontFamily: "var(--rootsy-font-ui)",
     fontSize: ROOTSY_TEXT_STYLES.body.fontSize,
     lineHeight: ROOTSY_TEXT_STYLES.body.lineHeight,
@@ -155,7 +162,7 @@ export function getDropdownItemUiStyle(
     paddingLeft: ROOTSY_DROPDOWN_ANATOMY.itemPaddingXPx,
     paddingRight: ROOTSY_DROPDOWN_ANATOMY.itemPaddingXPx,
     opacity: state === "disabled" ? 0.55 : undefined,
-    borderRadiusPx: 0,
+    borderRadiusPx: ROOTSY_DROPDOWN_ANATOMY.itemRadiusPx,
   }
 }
 
@@ -169,6 +176,7 @@ export function getDropdownItemInteractiveLayoutStyle(
     minHeight: style.minHeightPx,
     paddingLeft: style.paddingLeft,
     paddingRight: style.paddingRight,
+    borderRadius: `${style.borderRadiusPx}px`,
     display: "flex" as const,
     alignItems: "center" as const,
     boxSizing: "border-box" as const,
@@ -178,13 +186,14 @@ export function getDropdownItemInteractiveLayoutStyle(
   }
 }
 
-/** Ítem CSS — hover rectangular a todo el ancho del panel. */
+/** Ítem CSS — hover inset · radius.large a juego con el panel xlarge. */
 export function getDropdownItemShellUiStyle(
   theme: DropdownThemeId = "light",
   state: DropdownItemStateId = "default",
   density: DropdownDensityId = "default",
+  atmosphere?: RootsButtonAtmosphere,
 ) {
-  const style = getDropdownItemUiStyle(theme, state, density)
+  const style = getDropdownItemUiStyle(theme, state, density, atmosphere)
 
   return {
     backgroundColor: style.backgroundColor,
@@ -208,10 +217,13 @@ export function getDropdownItemShellUiStyle(
   }
 }
 
-export function getDropdownSeparatorUiStyle(theme: DropdownThemeId = "light") {
+export function getDropdownSeparatorUiStyle(
+  theme: DropdownThemeId = "light",
+  atmosphere?: RootsButtonAtmosphere,
+) {
   return {
     height: ROOTSY_DROPDOWN_ANATOMY.separatorHeightPx,
-    backgroundColor: getDropdownSeparatorColor(theme),
+    backgroundColor: getDropdownSeparatorColor(theme, atmosphere),
     marginTop: ROOTSY_DROPDOWN_ANATOMY.separatorMarginYPx,
     marginBottom: ROOTSY_DROPDOWN_ANATOMY.separatorMarginYPx,
     marginLeft: ROOTSY_DROPDOWN_ANATOMY.separatorInsetXPx,
@@ -219,11 +231,14 @@ export function getDropdownSeparatorUiStyle(theme: DropdownThemeId = "light") {
   }
 }
 
-export function getDropdownCheckUiStyle(theme: DropdownThemeId = "light") {
+export function getDropdownCheckUiStyle(
+  theme: DropdownThemeId = "light",
+  atmosphere?: RootsButtonAtmosphere,
+) {
   return {
     width: ROOTSY_DROPDOWN_ANATOMY.checkSlotPx,
     height: ROOTSY_DROPDOWN_ANATOMY.checkSlotPx,
-    color: getDropdownCheckHex(theme),
+    color: getDropdownCheckHex(theme, atmosphere),
     flexShrink: 0,
   }
 }

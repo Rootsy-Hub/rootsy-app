@@ -35,6 +35,17 @@ export function menuCatalogQueryKey(popId: string) {
   return ["menu-catalog", popId] as const
 }
 
+export function menuCatalogSectionsQueryRoot(popId: string) {
+  return ["menu-catalog", popId, "sections"] as const
+}
+
+export function menuCatalogSectionsQueryKey(
+  popId: string,
+  source: "local" | "http" = "local",
+) {
+  return [...menuCatalogSectionsQueryRoot(popId), source] as const
+}
+
 export function saleCatalogQueryKey(popId: string) {
   return ["sale-catalog", popId] as const
 }
@@ -78,6 +89,46 @@ export function saleCatalogCategoryItemsQueryKey(
 
 export function menuCatalogItemsQueryKey(popId: string, filterKey: string) {
   return ["menu-catalog", popId, "items", filterKey] as const
+}
+
+export function menuBoardItemsQueryRoot(popId: string) {
+  return ["menu-catalog", popId, "board"] as const
+}
+
+export function menuBoardArticlesQueryKey(
+  popId: string,
+  categoryId: string,
+  search = "",
+  source: "local" | "http" = "local",
+) {
+  return [...menuBoardItemsQueryRoot(popId), "articles", categoryId, search.trim(), source] as const
+}
+
+export function menuBoardRecipesQueryKey(
+  popId: string,
+  categoryId: string,
+  search = "",
+  source: "local" | "http" = "local",
+) {
+  return [...menuBoardItemsQueryRoot(popId), "recipes", categoryId, search.trim(), source] as const
+}
+
+export function menuBoardPromotionsQueryKey(
+  popId: string,
+  source: "local" | "http" = "local",
+) {
+  return [...menuBoardItemsQueryRoot(popId), "promotions", source] as const
+}
+
+export function menuBoardPromotionSplitQueryRoot(popId: string) {
+  return [...menuBoardItemsQueryRoot(popId), "promotion-split"] as const
+}
+
+export function menuBoardPromotionSplitQueryKey(
+  popId: string,
+  source: "local" | "http" = "local",
+) {
+  return [...menuBoardPromotionSplitQueryRoot(popId), source] as const
 }
 
 export function purchaseCatalogItemsQueryKey(
@@ -227,6 +278,62 @@ export function popArticlesQueryRoot(popId: string) {
   return ["pop-articles", popId] as const
 }
 
+export function popMesasQueryRoot(popId: string) {
+  return ["pop-mesas", popId] as const
+}
+
+export function popMesasLayoutQueryKey(popId: string) {
+  return ["pop-mesas", popId, "layout"] as const
+}
+
+export function popMesasSessionsQueryKey(popId: string) {
+  return ["pop-mesas", popId, "sessions"] as const
+}
+
+export function popMesasSessionQueryKey(popId: string, sessionId: string) {
+  return ["pop-mesas", popId, "session", sessionId] as const
+}
+
+export function popMesasReservationsQueryKey(popId: string) {
+  return ["pop-mesas", popId, "reservations"] as const
+}
+
+export function popMesasReservationSettingsQueryKey(popId: string) {
+  return ["pop-mesas", popId, "reservation-settings"] as const
+}
+
+export function popMesasWaitersQueryKey(popId: string) {
+  return ["pop-mesas", popId, "waiters"] as const
+}
+
+export function popMostradorQueryRoot(popId: string) {
+  return ["pop-mostrador", popId] as const
+}
+
+export function popMostradorOrdersQueryKey(popId: string) {
+  return ["pop-mostrador", popId, "orders"] as const
+}
+
+export function popMostradorOrderQueryKey(popId: string, orderId: string) {
+  return ["pop-mostrador", popId, "order", orderId] as const
+}
+
+export function popComandasQueryRoot(popId: string) {
+  return ["pop-comandas", popId] as const
+}
+
+export function popComandasStationsQueryKey(popId: string) {
+  return ["pop-comandas", popId, "stations"] as const
+}
+
+export function popComandasTicketsQueryRoot(popId: string) {
+  return ["pop-comandas", popId, "tickets"] as const
+}
+
+export function popComandasTicketsQueryKey(popId: string, stationId: string) {
+  return ["pop-comandas", popId, "tickets", stationId] as const
+}
+
 export function popChatQueryRoot(popId: string) {
   return ["pop-chat", popId] as const
 }
@@ -247,12 +354,26 @@ export function popArticleQueryKey(popId: string, articleId: string) {
   return ["pop-article", popId, articleId] as const
 }
 
-export function popArticleCategoriesQueryKey(popId: string) {
+export function popArticleCategoriesQueryRoot(popId: string) {
   return ["pop-article-categories", popId] as const
 }
 
-export function saleBoardCategoriesQueryKey(popId: string) {
+export function popArticleCategoriesQueryKey(
+  popId: string,
+  source: "local" | "http" = "local",
+) {
+  return [...popArticleCategoriesQueryRoot(popId), source] as const
+}
+
+export function saleBoardCategoriesQueryRoot(popId: string) {
   return ["categories", popId, "sale-board"] as const
+}
+
+export function saleBoardCategoriesQueryKey(
+  popId: string,
+  source: "local" | "http" = "local",
+) {
+  return [...saleBoardCategoriesQueryRoot(popId), source] as const
 }
 
 export function saleBoardArticlesQueryRoot(popId: string) {
@@ -281,11 +402,47 @@ export function popLocalArticlesHydrateQueryRoot(popId: string) {
   return [...popLocalDbQueryRoot(popId), "hydrate", "articles"] as const
 }
 
-export function popLocalArticlesHydrateQueryKey(
+export function popLocalArticlesHydrateQueryKey(popId: string) {
+  return popLocalArticlesHydrateQueryRoot(popId)
+}
+
+export function popLocalCategoriesHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "categories"] as const
+}
+
+export function popLocalPromotionsHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "promotions"] as const
+}
+
+export function popLocalRecipesHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "recipes"] as const
+}
+
+export function popLocalRecipeCategoriesHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "recipe-categories"] as const
+}
+
+export function popLocalMesasFloorHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "mesas-floor"] as const
+}
+
+export function popLocalMostradorBoardHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "mostrador-board"] as const
+}
+
+export function popLocalComandasBoardHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "comandas-board"] as const
+}
+
+export function saleBoardPromotionsQueryRoot(popId: string) {
+  return ["promotions", popId, "sale-board"] as const
+}
+
+export function saleBoardPromotionsQueryKey(
   popId: string,
-  categoryId: string,
+  source: "local" | "http" = "local",
 ) {
-  return [...popLocalArticlesHydrateQueryRoot(popId), categoryId] as const
+  return [...saleBoardPromotionsQueryRoot(popId), source] as const
 }
 
 export function popPriceListsQueryKey(popId: string) {

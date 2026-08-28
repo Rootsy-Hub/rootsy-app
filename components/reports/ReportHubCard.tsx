@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { ArrowRight } from "lucide-react"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import "./reportHubCard.css"
 
 type SharedProps = {

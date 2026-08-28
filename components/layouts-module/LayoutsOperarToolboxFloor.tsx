@@ -10,7 +10,7 @@ type Props = {
 }
 
 /**
- * Bloque de fondo del toolbox — mundo Sombra (canvas del catálogo).
+ * Bloque de fondo del toolbox — banda sombra-900.
  */
 export function LayoutsOperarToolboxFloor({ children, className }: Props) {
   return <div className={cn(layoutsOperarToolboxFloorClass, className)}>{children}</div>

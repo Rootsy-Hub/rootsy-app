@@ -10,9 +10,9 @@ const LIST_CARD_COUNT = 4
 const CARD_RADIUS_PX = 16
 
 const cardSurfaceStyle = {
-  overflow: "hidden" as const,
+  overflow: "clip" as const,
   borderRadius: CARD_RADIUS_PX,
-  background: "var(--rootsy-sombra-700)",
+  background: "var(--rootsy-sombra-800)",
   borderColor: "var(--layouts-operar-border-dark-card)",
 }
 
@@ -46,18 +46,32 @@ function SaleCatalogProductCardGridSkeleton() {
   return (
     <article
       aria-hidden
-      className="pointer-events-none relative grid h-64 w-full border text-left"
-      style={{
-        ...cardSurfaceStyle,
-        gridTemplateRows: "120px 1fr",
-      }}
+      className="pointer-events-none relative h-64 w-full overflow-hidden border text-left"
+      style={cardSurfaceStyle}
     >
-      <div className="animate-pulse" style={ghostStyle} />
       <div
-        className="grid h-full min-h-0 gap-1.5 p-3"
-        style={{ gridTemplateRows: "minmax(0, 1fr) auto" }}
+        className="grid h-full w-full"
+        style={{ gridTemplateRows: "120px minmax(0, 1fr) auto" }}
       >
-        <SaleCatalogSkeletonBody />
+        <div className="animate-pulse" style={ghostStyle} />
+        <div className="min-h-0 px-3 pt-3">
+          <div className="space-y-2">
+            <div
+              className="h-3.5 animate-pulse rounded-sm"
+              style={{ ...ghostStyle, width: "72%" }}
+            />
+            <div
+              className="h-3 animate-pulse rounded-sm"
+              style={{ ...ghostStyle, width: "46%" }}
+            />
+          </div>
+        </div>
+        <div className="px-3 pb-3 pt-1.5">
+          <div
+            className="h-4 w-20 animate-pulse rounded-sm"
+            style={ghostStyle}
+          />
+        </div>
       </div>
     </article>
   )

@@ -16,7 +16,7 @@ export function DataWorkspaceHeaderTitle({
   if (isDarkChrome) {
     return (
       <h1 className="inline-flex flex-col items-center">
-        <span className="text-[1.65rem] font-black tracking-tight text-zinc-50">
+        <span className="text-[1.65rem] font-bold tracking-tight text-zinc-50">
           {title}
         </span>
       </h1>
@@ -25,7 +25,7 @@ export function DataWorkspaceHeaderTitle({
 
   return (
     <h1 className="relative inline-flex flex-col items-center">
-      <span className="relative inline-block text-[1.65rem] font-black tracking-tight">
+      <span className="relative inline-block text-[1.65rem] font-bold tracking-tight">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 translate-y-px select-none text-foreground/20 blur-[0.35px]"

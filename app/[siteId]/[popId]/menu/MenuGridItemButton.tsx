@@ -6,6 +6,26 @@ import {
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
+import "@/app/[siteId]/[popId]/menu/menuPlanetFlat.css"
+import "@/app/[siteId]/[popId]/menu/menuPlanetPiedra.css"
+import "@/app/[siteId]/[popId]/menu/menuPlanetGlass.css"
+import { MenuPlanetGlassLayers } from "@/app/[siteId]/[popId]/menu/MenuPlanetGlassLayers"
+import {
+  menuFlatGlyphClass,
+  menuFlatIconShellForSection,
+  menuFlatLabelClass,
+  type MenuPlanetFinish,
+} from "@/lib/menu/menuFlatStyles"
+import {
+  menuGlassGlyphClass,
+  menuGlassIconShellForSection,
+  menuGlassLabelClass,
+} from "@/lib/menu/menuGlassStyles"
+import {
+  menuPiedraGlyphClass,
+  menuPiedraIconShellForSection,
+  menuPiedraLabelClass,
+} from "@/lib/menu/menuPiedraStyles"
 import {
   menuHoloFloatLiftClass,
   menuHoloFocusRingForSection,
@@ -27,16 +47,11 @@ import {
 } from "@/app/[siteId]/[popId]/menu/menuPlanetGridStyles"
 import { MenuApiReadyBadge } from "@/app/[siteId]/[popId]/menu/MenuApiReadyBadge"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
-import {
-  isOptimisticNavTarget,
-  usePopOptimisticNav,
-} from "@/context/PopOptimisticNavContext"
-import { RootsSpinner } from "@/components/rootsy-spinner"
 import { shouldShowMenuApiReadyBadge } from "@/lib/menuApiReady"
 import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 
 function MenuPlanetTileLabel({
@@ -90,6 +105,8 @@ type Props = {
   disabled?: boolean
   href?: string | null
   onActivate?: () => void
+  /** Acabado — `holo` vidrio, `flat` tecla, `piedra` canto, `glass` cristal Herramientas. */
+  finish?: MenuPlanetFinish
 }
 
 export function MenuGridItemButton({
@@ -98,9 +115,8 @@ export function MenuGridItemButton({
   disabled,
   href,
   onActivate,
+  finish = "holo",
 }: Props) {
-  const { pending, start: startOptimisticNav } = usePopOptimisticNav()
-  const isLeaving = isOptimisticNavTarget(href, pending)
   const {
     editing,
     canDragMenuItem,
@@ -139,46 +155,83 @@ export function MenuGridItemButton({
   const shellVariant = showDockPlacedStyle || isDragGhost ? "placed" : "default"
 
   const Icon = item.icon
-  const tileClassName = cn(
-    menuPlanetTileClass,
-    !editing && menuHoloTileMotionClass,
-  )
+  const tileClassName = menuPlanetTileClass
+  const isHolo = finish === "holo"
+  const isFlat = finish === "flat"
+  const isPiedra = finish === "piedra"
+  const isGlass = finish === "glass"
+  const isInteractive =
+    !editing && !showDockPlacedStyle && !isDragGhost && !disabled
+
+  const finishShellClass = isGlass
+    ? menuGlassIconShellForSection(sectionKey, shellVariant, isInteractive)
+    : isPiedra
+      ? menuPiedraIconShellForSection(
+          sectionKey,
+          shellVariant,
+          isInteractive,
+          `${item.link}-${item.name}`,
+        )
+      : isFlat
+        ? menuFlatIconShellForSection(sectionKey, shellVariant, isInteractive)
+        : menuHoloIconShellForSection(sectionKey, shellVariant)
+
+  const finishGlyphClass = isGlass
+    ? menuGlassGlyphClass
+    : isPiedra
+      ? menuPiedraGlyphClass
+      : isFlat
+        ? menuFlatGlyphClass
+        : menuHoloGlyphClass
+
+  const finishLabelClass = isGlass
+    ? menuGlassLabelClass
+    : isPiedra
+      ? menuPiedraLabelClass
+      : isFlat
+        ? menuFlatLabelClass
+        : menuHoloLabelClass
 
   const tileInner = (
     <>
       <div
         className={cn(
           "relative overflow-visible p-1 -m-1",
-          isAlive && menuHoloPlanetLifeClass,
+          isHolo && isAlive && menuHoloPlanetLifeClass,
         )}
-        style={isAlive ? lifeStyle : undefined}
+        style={isHolo && isAlive ? lifeStyle : undefined}
       >
         <div
           className={cn(
             menuPlanetIconShellClass,
-            menuHoloIconShellForSection(sectionKey, shellVariant),
-            !isDragGhost &&
-              menuHoloRealmWorldRimClass(sectionKey, showDockPlacedStyle),
-            !showDockPlacedStyle &&
+            finishShellClass,
+            isHolo &&
               !isDragGhost &&
-              cn(menuHoloFloatLiftClass, menuHoloIconHoverForSection(sectionKey)),
+              menuHoloRealmWorldRimClass(sectionKey, showDockPlacedStyle),
+            editing && draggable && "animate-dock-wiggle",
+            isHolo &&
+              isInteractive &&
+              cn(
+                menuHoloFloatLiftClass,
+                menuHoloTileMotionClass,
+                menuHoloIconHoverForSection(sectionKey),
+              ),
           )}
+          style={
+            editing && draggable
+              ? { animationDelay: `${(item.name.length % 5) * 45}ms` }
+              : undefined
+          }
         >
-          {!isDragGhost ? (
+          {isHolo && !isDragGhost ? (
             <MenuIconChrome sectionKey={sectionKey} alive={isAlive} />
           ) : null}
-          {isLeaving ? (
-            <RootsSpinner
-              size="default"
-              tone="dark"
-              className={menuPlanetIconGlyphClass}
-              label={`Abriendo ${item.name}`}
-            />
-          ) : (
-            <Icon className={cn(menuPlanetIconGlyphClass, menuHoloGlyphClass)} />
-          )}
+          {isGlass && !isDragGhost ? <MenuPlanetGlassLayers /> : null}
+          <Icon
+            className={cn(menuPlanetIconGlyphClass, finishGlyphClass)}
+          />
         </div>
-        {!isDragGhost && !isLeaving && shouldShowMenuApiReadyBadge(item.link) ? (
+        {!isDragGhost && shouldShowMenuApiReadyBadge(item.link) ? (
           <MenuApiReadyBadge />
         ) : null}
       </div>
@@ -189,7 +242,7 @@ export function MenuGridItemButton({
           menuPlanetTileLabelClass,
           showDockPlacedStyle || isDragGhost
             ? menuHoloLabelDockPlacedClass
-            : menuHoloLabelClass,
+            : finishLabelClass,
           "max-md:!text-[11px] max-md:leading-tight",
         )}
       >
@@ -203,12 +256,6 @@ export function MenuGridItemButton({
       ref={setNodeRef}
       {...(draggable ? listeners : {})}
       {...(draggable ? attributes : {})}
-      style={{
-        animationDelay:
-          editing && draggable
-            ? `${(item.name.length % 5) * 45}ms`
-            : undefined,
-      }}
       onContextMenu={(event) => {
         if (draggable) event.preventDefault()
       }}
@@ -216,7 +263,6 @@ export function MenuGridItemButton({
         "justify-self-center transition-[opacity,transform] duration-200",
         draggable && "select-none [-webkit-touch-callout:none]",
         (editing || isDragging) && draggable && "touch-none",
-        editing && draggable && "animate-dock-wiggle",
         showDockPlacedStyle && "scale-[0.985]",
         isDragGhost && "scale-[0.96] opacity-55",
         editing && draggable && "cursor-grab active:cursor-grabbing",
@@ -233,23 +279,8 @@ export function MenuGridItemButton({
             if (skipClickAfterDrag.current) {
               event.preventDefault()
               skipClickAfterDrag.current = false
-              return
             }
-            if (
-              event.metaKey ||
-              event.ctrlKey ||
-              event.shiftKey ||
-              event.altKey
-            ) {
-              return
-            }
-            if (pending && !isLeaving) {
-              event.preventDefault()
-              return
-            }
-            startOptimisticNav({ href, title: item.name })
           }}
-          aria-busy={isLeaving || undefined}
           className={cn(tileClassName, menuHoloFocusRingForSection(sectionKey))}
         >
           {tileInner}

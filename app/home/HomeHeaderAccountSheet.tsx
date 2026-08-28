@@ -1,10 +1,10 @@
 "use client"
 
 import { HOME_COPY } from "@/app/home/homeCopy"
+import { Avatar } from "@/components/Avatar"
 import {
   menuRealmChromeShellClass,
   menuRealmLightMutedClass,
-  menuRealmLightStaticClass,
   menuRealmTitleClass,
 } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
@@ -16,8 +16,6 @@ import {
 } from "@/components/ui/sheet"
 import { CreditCard, LogOut, UserCog } from "lucide-react"
 import type { ReactNode } from "react"
-
-const ISOLOGO_TILE_CLASS = "overflow-hidden rounded-[34%]"
 
 type HomeHeaderAccountSheetProps = {
   open: boolean
@@ -69,37 +67,14 @@ export function HomeHeaderAccountSheet({
         <SheetDescription className="sr-only">{name || HOME_COPY.accountMenu}</SheetDescription>
 
         <div className="flex flex-col items-center gap-3 px-2 pb-5">
-          <button
-            type="button"
-            className={cn(
-              ISOLOGO_TILE_CLASS,
-              "relative size-20 bg-white/10",
-              "transition-opacity hover:opacity-90",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40",
-            )}
-            aria-label={HOME_COPY.photoModalTitle}
+          <Avatar
+            imageUrl={imageUrl}
+            initials={initials}
+            size="sheet"
+            isOnline={isOnline}
+            ariaLabel={HOME_COPY.photoModalTitle}
             onClick={onOpenPhoto}
-          >
-            {imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={imageUrl} alt="" className="size-full object-cover" />
-            ) : (
-              <span
-                className={cn(
-                  "flex size-full items-center justify-center text-xl font-semibold",
-                  menuRealmLightStaticClass,
-                )}
-              >
-                {initials}
-              </span>
-            )}
-            <span
-              className={cn(
-                "pointer-events-none absolute bottom-1.5 right-1.5 size-3 rounded-full ring-2 ring-[var(--rootsy-eter-950)]",
-                isOnline ? "bg-emerald-500" : "bg-red-500",
-              )}
-            />
-          </button>
+          />
 
           {name ? (
             <p className={cn("text-center text-lg", menuRealmTitleClass)}>{name}</p>

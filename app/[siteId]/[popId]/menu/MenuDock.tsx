@@ -4,7 +4,6 @@ import {
   DOCK_BAR_DROP_ID,
   DOCK_EDIT_DIVIDER_HEIGHT_PX,
   DOCK_ICON_SIZE_PX,
-  DOCK_CHROME_INSET_PX,
   DOCK_SHELL_PADDING_X_PX,
   DOCK_SHELL_PADDING_Y_PX,
   DOCK_SLOT_INSET_X_PX,
@@ -20,18 +19,19 @@ import {
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
 import { shouldShowMenuApiReadyBadge } from "@/lib/menuApiReady"
-import {
-  isOptimisticNavTarget,
-  usePopOptimisticNav,
-} from "@/context/PopOptimisticNavContext"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { menuDockEditBadgeClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { menuRealmDividerClass } from "@/lib/menu/menuHoloStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
 import { Check, Minus, Pencil } from "lucide-react"
-import Link from "next/link"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import { useEffect, useRef } from "react"
 
 type Props = {
@@ -106,8 +106,6 @@ function DockSlotItem({
   href: string | null
   onRemove: () => void
 }) {
-  const { pending, start: startOptimisticNav } = usePopOptimisticNav()
-  const isLeaving = isOptimisticNavTarget(href, pending)
   const {
     attributes,
     listeners,
@@ -143,7 +141,7 @@ function DockSlotItem({
       style={{
         bottom: DOCK_TRACK_INSET_Y_PX,
         left: index * DOCK_SLOT_SHIFT_PX,
-        width: DOCK_SLOT_SHIFT_PX,
+        width: DOCK_ICON_SIZE_PX,
         transform:
           rearranging && !isDragging ? `translateX(${shiftX}px)` : undefined,
         transition: rearranging && dragAnimating ? DOCK_LAYOUT_TRANSITION : undefined,
@@ -174,73 +172,49 @@ function DockSlotItem({
           </button>
         ) : (
           <div
-            className="group/dock-tip relative"
+            className="relative"
             {...(rearranging ? listeners : {})}
             {...(rearranging ? attributes : {})}
           >
-            {href ? (
-              <Link
-                href={href}
-                draggable={false}
-                onContextMenu={(event) => event.preventDefault()}
-                onClick={(event) => {
-                  if (skipClickAfterDrag.current) {
-                    event.preventDefault()
-                    skipClickAfterDrag.current = false
-                    return
-                  }
-                  if (
-                    href === "/home" ||
-                    event.metaKey ||
-                    event.ctrlKey ||
-                    event.shiftKey ||
-                    event.altKey
-                  ) {
-                    return
-                  }
-                  if (pending && !isLeaving) {
-                    event.preventDefault()
-                    return
-                  }
-                  startOptimisticNav({ href, title: item.name })
-                }}
-                className="relative block transition-transform duration-200 hover:scale-110 active:scale-95"
-                aria-label={item.name}
-                aria-busy={isLeaving || undefined}
-              >
-                <DockIconVisual
-                  icon={item.icon}
-                  sectionKey={item.sectionKey}
-                  apiReady={shouldShowMenuApiReadyBadge(item.id)}
-                  busy={isLeaving}
-                  busyLabel={`Abriendo ${item.name}`}
-                />
-              </Link>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="relative cursor-default opacity-70"
-                aria-label={item.name}
-              >
-                <DockIconVisual
-                  icon={item.icon}
-                  sectionKey={item.sectionKey}
-                  apiReady={shouldShowMenuApiReadyBadge(item.id)}
-                />
-              </button>
-            )}
-            <span
-              role="tooltip"
-              className={cn(
-                "pointer-events-none absolute bottom-full left-1/2 z-50 mb-2.5 -translate-x-1/2 whitespace-nowrap",
-                "rounded-lg bg-foreground/90 px-2.5 py-1 text-[11px] font-medium text-background",
-                "shadow-lg shadow-black/20 opacity-0",
-                "transition-opacity duration-150 group-hover/dock-tip:opacity-100",
-              )}
-            >
-              {item.name}
-            </span>
+            <Tooltip delayDuration={200}>
+              <TooltipTrigger asChild>
+                {href ? (
+                  <Link
+                    href={href}
+                    draggable={false}
+                    onContextMenu={(event) => event.preventDefault()}
+                    onClick={(event) => {
+                      if (skipClickAfterDrag.current) {
+                        event.preventDefault()
+                        skipClickAfterDrag.current = false
+                      }
+                    }}
+                    className="relative block transition-transform duration-200 hover:scale-110 active:scale-95"
+                    aria-label={item.name}
+                  >
+                    <DockIconVisual
+                      icon={item.icon}
+                      sectionKey={item.sectionKey}
+                      apiReady={shouldShowMenuApiReadyBadge(item.id)}
+                    />
+                  </Link>
+                ) : (
+                  <span
+                    className="relative inline-flex cursor-default opacity-70"
+                    aria-label={item.name}
+                  >
+                    <DockIconVisual
+                      icon={item.icon}
+                      sectionKey={item.sectionKey}
+                      apiReady={shouldShowMenuApiReadyBadge(item.id)}
+                    />
+                  </span>
+                )}
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={10} atmosphere="eter">
+                {item.name}
+              </TooltipContent>
+            </Tooltip>
           </div>
         )}
 
@@ -306,7 +280,10 @@ function DockIconsTrack({
     disabled: !dragAnimating,
   })
 
-  const rowWidth = slotCount * DOCK_SLOT_SHIFT_PX
+  const rowWidth =
+    slotCount > 0
+      ? (slotCount - 1) * DOCK_SLOT_SHIFT_PX + DOCK_ICON_SIZE_PX
+      : 0
   const insertZoneCount = dockItems.length + 1
 
   return (
@@ -394,7 +371,7 @@ export function MenuDock({ siteId, popId }: Props) {
   )
 
   return (
-    <div className="flex w-full max-w-full justify-center overflow-x-auto overflow-y-visible overscroll-x-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex w-full max-w-full justify-center overflow-x-auto overflow-y-visible overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div
         className={cn(
           "flex items-end overflow-visible",
@@ -405,9 +382,7 @@ export function MenuDock({ siteId, popId }: Props) {
           paddingTop: DOCK_SHELL_PADDING_Y_PX,
           paddingBottom: DOCK_SHELL_PADDING_Y_PX,
           paddingLeft: DOCK_SHELL_PADDING_X_PX,
-          paddingRight: isCompactDock
-            ? DOCK_SHELL_PADDING_X_PX
-            : DOCK_CHROME_INSET_PX,
+          paddingRight: DOCK_SHELL_PADDING_X_PX,
           gap: DOCK_SHELL_PADDING_X_PX,
         }}
       >
@@ -444,8 +419,8 @@ export function MenuDock({ siteId, popId }: Props) {
             aria-hidden
           />
           <RootsIconButton
-            tone="ghost"
-            surface="dark"
+            semantic="tertiary"
+            atmosphere="eter"
             size="compact"
             label={editing ? "Listo" : "Editar accesos directos"}
             onClick={() => setEditing(!editing)}

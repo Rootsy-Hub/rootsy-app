@@ -21,7 +21,8 @@ import {
   ROOTSY_COMPLEMENTARY_PAIRINGS,
 } from "@/app/library/color/rootsyColorSystem"
 import { COLOR_NEW_GRADIENTS } from "@/app/library/color/rootsyNaturePalette"
-import { LibraryPrinciplesGrid } from "@/app/library/libraryDocPrimitives"
+import { LibraryHandbookSource, LibraryPrinciplesGrid } from "@/app/library/libraryDocPrimitives"
+import { HANDBOOK_DESIGN_SYSTEM_ROOT } from "@/app/handbook/handbookDesignSystem"
 import { LibrarySection } from "@/app/library/layoutLibraryShared"
 
 export function ColorNewOverviewSection() {
@@ -31,13 +32,17 @@ export function ColorNewOverviewSection() {
     <LibrarySection id="colors-new" title={meta.title} description={meta.description}>
       <div className="space-y-10">
         <ColorSystemHero />
+        <LibraryHandbookSource
+          href={`${HANDBOOK_DESIGN_SYSTEM_ROOT}/color`}
+          label="Color"
+        />
         <ColorDocLead>{ROOTSY_COLOR_MANIFESTO}</ColorDocLead>
         <LibraryPrinciplesGrid principles={[...ROOTSY_COLOR_PRINCIPLES]} />
 
         <ColorDocSection
           id="colors-new-architecture"
-          title="Las tres familias"
-          description="Todo el producto se reduce a sombra, bruma y savia — tres familias naturales."
+          title="Atmósferas y funcionales"
+          description="Éter, luz filtrada y sombra pintan el aire. Savia, cielo, sol y lava dicen qué ocurre."
         >
           <ColorFamiliesRow />
         </ColorDocSection>
@@ -53,7 +58,7 @@ export function ColorNewOverviewSection() {
         <ColorDocSection
           id="colors-new-themes-preview"
           title="Contextos de producto"
-          description="POS, workspace, marketing y librería — composiciones de las tres familias."
+          description="POS, workspace, bruma oscura, marketing y librería — composiciones de las atmósferas."
         >
           <ThemeGallery />
         </ColorDocSection>
@@ -79,8 +84,8 @@ export function ColorNewOverviewSection() {
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Usá savia 600 para toda acción; bruma 100 para todo ticket; sombra 600 para todo catálogo bajo el dosel."
-          dontText="No uses grises slate de dashboard — sombra tiene matiz bosque; bruma es neblina, no gris neutro."
+          doText="Una atmósfera por pantalla. Savia para acción. Cielo, sol o lava solo cuando hay que decir qué ocurre."
+          dontText="No mezcles éter con sombra. No pintes superficies con savia. No inventes un gris o un verde suelto."
         />
 
         <ColorDocSection

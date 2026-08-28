@@ -17,8 +17,8 @@ import {
 import { cn } from "@/lib/utils"
 import type { CSSProperties } from "react"
 
-/** Canvas exterior del plano — alineado con catálogo operar (sombra-800). */
-export const MESAS_FLOOR_PLAN_CANVAS_BG = "var(--rootsy-sombra-800)"
+/** Canvas exterior del plano — mismo fondo 950 que el catálogo. */
+export const MESAS_FLOOR_PLAN_CANVAS_BG = "var(--rootsy-sombra-950)"
 
 /** Superficie interior del plano — un tono más claro para profundidad. */
 export const MESAS_FLOOR_PLAN_SURFACE_BG = "var(--rootsy-sombra-700)"

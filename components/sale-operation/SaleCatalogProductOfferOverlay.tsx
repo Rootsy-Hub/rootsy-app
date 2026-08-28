@@ -1,8 +1,7 @@
 "use client"
 
-import { saleOpFmt, saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { RootsNaturePill } from "@/components/rootsy-pill"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 
 export function saleCatalogDiscountPercent(
   precioOriginal: number | null | undefined,
@@ -30,34 +29,24 @@ export function SaleCatalogProductOfferOverlay({
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 top-0 z-15 bg-linear-to-b from-black/55 via-black/20 to-transparent p-2.5 pb-6"
+      className="pointer-events-none absolute inset-x-0 top-0 z-15 p-2.5"
       aria-hidden
     >
       {descuentoPct != null ? (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span
-            className={cn(
-              saleOpImporteBaseClass,
-              "inline-flex h-6 items-center justify-center rounded-md border border-emerald-400/45 bg-emerald-950/90 px-2 text-[10px] leading-none font-bold tracking-wider text-emerald-100 uppercase shadow-sm backdrop-blur-sm",
-            )}
-          >
+          <RootsNaturePill variant="sombra" atmosphere="sombra">
             −{descuentoPct}%
-          </span>
+          </RootsNaturePill>
           {precioOriginal != null ? (
-            <span
-              className={cn(
-                saleOpImporteBaseClass,
-                "rounded-md border border-white/10 bg-black/50 px-1.5 py-0.5 text-xs font-semibold text-white/65 line-through backdrop-blur-sm",
-              )}
-            >
+            <RootsNaturePill variant="sombraMuted" atmosphere="sombra" strike>
               {saleOpFmt.format(precioOriginal)}
-            </span>
+            </RootsNaturePill>
           ) : null}
         </div>
       ) : (
-        <Badge className="w-fit border border-emerald-400/40 bg-emerald-950/85 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-100 shadow-sm backdrop-blur-sm">
+        <RootsNaturePill variant="sombra" atmosphere="sombra">
           OFERTA
-        </Badge>
+        </RootsNaturePill>
       )}
     </div>
   )

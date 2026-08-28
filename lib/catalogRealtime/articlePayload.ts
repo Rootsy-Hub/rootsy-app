@@ -69,7 +69,7 @@ export function articleSnapshotFromRealtimePayload(
     isSellable: asBool(row.isSellable, true),
     isActive: asBool(row.isActive, true),
     allowNegativeStock: asBool(row.allowNegativeStock, false),
-    stockOnHand: asNumber(row.stockOnHand),
+    stockOnHand: 0,
     listPrices: parseListPrices(row.listPrices),
   }
 }

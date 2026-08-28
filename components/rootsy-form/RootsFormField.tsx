@@ -8,9 +8,8 @@ import {
 } from "@/components/rootsy-form/rootsFormFieldAssist"
 import { RootsFormFieldContext } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
-  FORM_UI_LABEL_STYLE,
-  FORM_UI_LABEL_STYLE_DARK,
   getFormFieldStackStyle,
+  getFormLabelUiStyle,
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
 import { useAmbientRootsFormTone } from "@/components/rootsy-form/rootsFormToneContext"
 import { cn } from "@/lib/utils"
@@ -45,8 +44,7 @@ export function RootsFormField({
   const isInvalid = invalid ?? Boolean(error)
   const inheritedTone = useAmbientRootsFormTone()
   const resolvedTone = tone ?? inheritedTone
-  const labelStyle =
-    resolvedTone === "dark" ? FORM_UI_LABEL_STYLE_DARK : FORM_UI_LABEL_STYLE
+  const labelStyle = getFormLabelUiStyle({ tone: resolvedTone })
 
   const labelNode = (
     <>

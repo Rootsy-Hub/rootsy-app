@@ -15,7 +15,7 @@ export const ROOTSY_TEXT_COMPONENT_PRINCIPLES = [
   {
     title: "UI por defecto",
     detail:
-      "Nunito Sans en casi todo. Source Sans 3 solo en prosa; Inter solo en números.",
+      "Inter en chrome. Nunito Sans en prosa. Inter tabular en números.",
   },
   {
     title: "12px con criterio",

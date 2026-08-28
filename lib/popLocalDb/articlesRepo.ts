@@ -27,7 +27,6 @@ const SALE_BOARD_WHERE = `
   is_active = 1
   AND is_sellable = 1
   AND item_kind = 'merchandise'
-  AND stock_on_hand > 0
 `
 
 function saleBoardFilters(input: ListSaleBoardArticlesInput): {
@@ -41,6 +40,12 @@ function saleBoardFilters(input: ListSaleBoardArticlesInput): {
     const like = `%${search.replace(/[%_]/g, "")}%`
     clauses.push("(name LIKE ? COLLATE NOCASE OR IFNULL(barcode, '') LIKE ? OR IFNULL(sku, '') LIKE ?)")
     params.push(like, like, like)
+    if (input.categoryIds && input.categoryIds.length > 0) {
+      clauses.push(
+        `category_id IN (${input.categoryIds.map(() => "?").join(",")})`,
+      )
+      params.push(...input.categoryIds)
+    }
   } else if (input.categoryId) {
     clauses.push("category_id = ?")
     params.push(input.categoryId)
@@ -140,6 +145,80 @@ export function listSaleBoardArticles(
 
 export function deleteArticleById(db: PopLocalDatabase, articleId: string) {
   db.run("DELETE FROM articles WHERE id = ?", [articleId])
+}
+
+export function getArticleById(
+  db: PopLocalDatabase,
+  articleId: string,
+): ArticleSnapshot | null {
+  const id = articleId.trim()
+  if (!id) return null
+  const row = db.get("SELECT * FROM articles WHERE id = ?", [id])
+  return row ? sqlArticleRowToSnapshot(row) : null
+}
+
+/** Scan de Vender: barcode o sku exacto, o nombre único. Solo merchandise vendible. */
+export function findSaleBoardArticleByScan(
+  db: PopLocalDatabase,
+  rawQuery: string,
+): ArticleSnapshot | null {
+  const query = rawQuery.trim()
+  if (!query) return null
+
+  const barcodeRows = db.all(
+    `SELECT * FROM articles
+     WHERE ${SALE_BOARD_WHERE}
+       AND IFNULL(barcode, '') = ?
+     ORDER BY name COLLATE NOCASE`,
+    [query],
+  )
+  if (barcodeRows.length === 1) {
+    return sqlArticleRowToSnapshot(barcodeRows[0]!) ?? null
+  }
+  if (barcodeRows.length > 1) return null
+
+  const skuRows = db.all(
+    `SELECT * FROM articles
+     WHERE ${SALE_BOARD_WHERE}
+       AND IFNULL(sku, '') = ?
+     ORDER BY name COLLATE NOCASE`,
+    [query],
+  )
+  if (skuRows.length === 1) {
+    return sqlArticleRowToSnapshot(skuRows[0]!) ?? null
+  }
+  if (skuRows.length > 1) return null
+
+  const nameRows = db.all(
+    `SELECT * FROM articles
+     WHERE ${SALE_BOARD_WHERE}
+       AND name = ? COLLATE NOCASE
+     ORDER BY name COLLATE NOCASE`,
+    [query],
+  )
+  if (nameRows.length !== 1) return null
+  return sqlArticleRowToSnapshot(nameRows[0]!) ?? null
+}
+
+/** Renombra la categoría denormalizada en artículos locales. Sin rehidratar. */
+export function renameArticlesCategory(
+  db: PopLocalDatabase,
+  categoryId: string,
+  name: string,
+): boolean {
+  const id = categoryId.trim()
+  const next = name.trim()
+  if (!id || !next) return false
+  const row = db.get<{ total: number }>(
+    `SELECT COUNT(*) AS total FROM articles WHERE category_id = ?`,
+    [id],
+  )
+  if (Number(row?.total ?? 0) === 0) return false
+  db.run(`UPDATE articles SET category_name = ? WHERE category_id = ?`, [
+    next,
+    id,
+  ])
+  return true
 }
 
 export function countLocalArticles(db: PopLocalDatabase): number {

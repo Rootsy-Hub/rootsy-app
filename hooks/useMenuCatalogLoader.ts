@@ -5,6 +5,17 @@ import type {
   MenuCatalogRecipe,
 } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import { useCatalogItemCache } from "@/hooks/useCatalogItemCache"
+import { useOpenCashSession } from "@/hooks/useOpenCashSession"
+import { resolveOperateOpenCashSession } from "@/lib/saleOpenCashSession"
+import {
+  catalogEnsureInflightKey,
+  missingCatalogIds,
+  resolveCatalogItemsFromLocalDb,
+} from "@/lib/menuCatalogEnsureFromLocal"
+import {
+  getOpenedPopLocalDb,
+  peekPopLocalDb,
+} from "@/lib/popLocalDb/store"
 import {
   menuCatalogKnownArticlesQueryKey,
   menuCatalogKnownRecipesQueryKey,
@@ -23,8 +34,10 @@ import {
 } from "@/lib/rootsyApi/saleClient"
 import { DEFAULT_SALE_SITE_ID } from "@/lib/saleInvoiceTypes"
 import { useSalePriceListId } from "@/lib/salePriceListSession"
-import { useQuery } from "@tanstack/react-query"
-import { useCallback, useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useCallback, useMemo, useRef, useState } from "react"
+
+const catalogEnsureInflight = new Map<string, Promise<void>>()
 
 type UseMenuCatalogLoaderOptions = {
   /** Catálogo (categorías, promos, caps, caja). */
@@ -75,6 +88,23 @@ export function useMenuCatalogLoader(
   })
 
   const data = catalogQuery.data
+  const operateCash = useOpenCashSession(popId, { enabled: Boolean(popId) })
+  const openCashSession = useMemo(
+    () =>
+      resolveOperateOpenCashSession(
+        operateCash.isSuccess,
+        operateCash.data,
+        data?.openCashSession ?? null,
+        paymentQuery.data?.defaultCashTreasuryAccountId,
+      ),
+    [
+      data?.openCashSession,
+      operateCash.data,
+      operateCash.isSuccess,
+      paymentQuery.data,
+    ],
+  )
+  const queryClient = useQueryClient()
   const priceListId = useSalePriceListId(popId)
   const articleCache = useCatalogItemCache<MenuCatalogArticle>(
     menuCatalogKnownArticlesQueryKey(popId ?? "", priceListId),
@@ -83,6 +113,7 @@ export function useMenuCatalogLoader(
     menuCatalogKnownRecipesQueryKey(popId ?? "", priceListId),
   )
   const [catalogItemsEnsuring, setCatalogItemsEnsuring] = useState(false)
+  const ensuringCountRef = useRef(0)
 
   const reloadCatalog = useCallback(async () => {
     await Promise.all([
@@ -94,44 +125,97 @@ export function useMenuCatalogLoader(
 
   const mergeArticles = articleCache.merge
   const mergeRecipes = recipeCache.merge
-  const knownArticles = articleCache.items
-  const knownRecipes = recipeCache.items
 
   const ensureCatalogItems = useCallback(
     async (articleIds: string[], recipeIds: string[]) => {
       if (!popId) return
-      const knownArticleSet = new Set(knownArticles.map((row) => row.id))
-      const knownRecipeSet = new Set(knownRecipes.map((row) => row.id))
-      const missingArticles = [...new Set(articleIds.filter(Boolean))].filter(
-        (id) => !knownArticleSet.has(id),
-      )
-      const missingRecipes = [...new Set(recipeIds.filter(Boolean))].filter(
-        (id) => !knownRecipeSet.has(id),
-      )
-      if (missingArticles.length === 0 && missingRecipes.length === 0) return
+      const uniqueArticles = [...new Set(articleIds.filter(Boolean))]
+      const uniqueRecipes = [...new Set(recipeIds.filter(Boolean))]
+      if (uniqueArticles.length === 0 && uniqueRecipes.length === 0) return
 
-      setCatalogItemsEnsuring(true)
-      try {
-        const res = await fetchMenuCatalogItemsByIds(
-          popId,
-          missingArticles,
-          missingRecipes,
-          priceListId,
+      const inflightKey = catalogEnsureInflightKey(
+        popId,
+        priceListId,
+        uniqueArticles,
+        uniqueRecipes,
+      )
+      const existing = catalogEnsureInflight.get(inflightKey)
+      if (existing) {
+        await existing
+        return
+      }
+
+      const work = (async () => {
+        const knownArticles =
+          queryClient.getQueryData<MenuCatalogArticle[]>(
+            menuCatalogKnownArticlesQueryKey(popId, priceListId),
+          ) ?? []
+        const knownRecipes =
+          queryClient.getQueryData<MenuCatalogRecipe[]>(
+            menuCatalogKnownRecipesQueryKey(popId, priceListId),
+          ) ?? []
+        let missingArticles = missingCatalogIds(
+          uniqueArticles,
+          knownArticles.map((row) => row.id),
         )
-        if (!res.success) return
-        mergeArticles(res.articles)
-        mergeRecipes(res.recipes)
+        let missingRecipes = missingCatalogIds(
+          uniqueRecipes,
+          knownRecipes.map((row) => row.id),
+        )
+        if (missingArticles.length === 0 && missingRecipes.length === 0) return
+
+        const handlePromise = peekPopLocalDb(popId) ?? getOpenedPopLocalDb(popId)
+        try {
+          const handle = await handlePromise
+          const local = resolveCatalogItemsFromLocalDb(
+            handle.database,
+            missingArticles,
+            missingRecipes,
+            priceListId,
+          )
+          if (local.articles.length) mergeArticles(local.articles)
+          if (local.recipes.length) mergeRecipes(local.recipes)
+          const localArticleIds = new Set(local.articles.map((row) => row.id))
+          const localRecipeIds = new Set(local.recipes.map((row) => row.id))
+          missingArticles = missingArticles.filter((id) => !localArticleIds.has(id))
+          missingRecipes = missingRecipes.filter((id) => !localRecipeIds.has(id))
+        } catch {
+          // OPFS no disponible: seguir con HTTP solo si falta de verdad.
+        }
+
+        if (missingArticles.length === 0 && missingRecipes.length === 0) return
+
+        ensuringCountRef.current += 1
+        setCatalogItemsEnsuring(true)
+        try {
+          const res = await fetchMenuCatalogItemsByIds(
+            popId,
+            missingArticles,
+            missingRecipes,
+            priceListId,
+          )
+          if (!res.success) return
+          mergeArticles(res.articles)
+          mergeRecipes(res.recipes)
+        } finally {
+          ensuringCountRef.current = Math.max(0, ensuringCountRef.current - 1)
+          setCatalogItemsEnsuring(ensuringCountRef.current > 0)
+        }
+      })()
+
+      catalogEnsureInflight.set(inflightKey, work)
+      try {
+        await work
       } finally {
-        setCatalogItemsEnsuring(false)
+        catalogEnsureInflight.delete(inflightKey)
       }
     },
     [
-      knownArticles,
-      knownRecipes,
       mergeArticles,
       mergeRecipes,
       popId,
       priceListId,
+      queryClient,
     ],
   )
 
@@ -148,7 +232,7 @@ export function useMenuCatalogLoader(
     canReadClients: data?.canReadClients ?? false,
     canCreateSale: data?.canCreateSale ?? false,
     canReadCashRegisters: data?.canReadCashRegisters ?? false,
-    openCashSession: data?.openCashSession ?? null,
+    openCashSession,
     invoiceTypeSiteId:
       comprobantesQuery.data?.invoiceTypeSiteId ??
       data?.invoiceTypeSiteId ??
@@ -158,6 +242,7 @@ export function useMenuCatalogLoader(
     popEmisorIvaCondition:
       comprobantesQuery.data?.emisorIvaCondition ?? "responsable_inscripto",
     comprobanteOptions: comprobantesQuery.data?.options ?? [],
+    comprobanteEmitter: comprobantesQuery.data?.emitter ?? null,
     comprobantesLoaded: comprobantesQuery.isSuccess,
     catalogLoading: catalogQuery.isLoading,
     catalogItemsEnsuring,

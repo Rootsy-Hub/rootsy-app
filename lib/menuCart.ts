@@ -11,6 +11,8 @@ export type MenuCartItemSnapshot = {
   descripcion?: string
   iva?: number
   categoria?: string
+  discountMode?: "porcentaje" | "fijo" | null
+  discountValue?: number | null
 }
 
 export type MenuCartItem = {

@@ -1,5 +1,4 @@
-import { AuditWorkspaceView } from "@/app/[siteId]/[popId]/audit/AuditWorkspaceView"
-
+import { AuditWorkspaceView } from "./AuditWorkspaceView"
 export default function AuditPage() {
   return <AuditWorkspaceView />
 }

@@ -8,20 +8,20 @@ import { cn } from "@/lib/utils"
 /** radius.large — 12px en controles de formulario. */
 export const rootsFormUiControlRadiusClass = "rounded-[12px]"
 
-/** Selección de texto — bruma-100 · bruma-900 (paleta formulario). */
+/** Selección de texto — bruma-100 · bruma-950. */
 export const rootsFormControlSelectionClass =
-  "selection:bg-[var(--rootsy-bruma-100)] selection:text-[var(--rootsy-bruma-900)]"
+  "selection:bg-[var(--rootsy-bruma-100)] selection:text-[var(--rootsy-bruma-950)]"
 
 /** field-stack · space.100 (8px) entre label, control y assist. */
 export const rootsFormUiFieldStackClass = "flex w-full min-w-0 flex-col gap-2"
 
 /** form.field.label · font.body medium · bruma-700. */
 export const rootsFormUiLabelClass =
-  "font-canopy text-sm font-medium leading-5 text-[var(--rootsy-bruma-700)]"
+  "rootsy-text-body font-medium text-[var(--rootsy-bruma-700)]"
 
-/** Tipografía de control · font.body regular · bruma-900. */
+/** Tipografía de control · font.body regular · bruma-950. */
 export const rootsFormUiControlTypographyClass =
-  "font-canopy text-sm font-normal leading-5 text-[var(--rootsy-bruma-900)]"
+  "rootsy-text-body text-[var(--rootsy-bruma-950)]"
 
 /** Hover reposo — bruma-300 · sin ring. Solo cuando el control no tiene foco. */
 const rootsFormUiControlHoverClass =
@@ -35,9 +35,9 @@ export const rootsFormUiControlBaseClass = cn(
   "w-full min-w-0 border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] shadow-none outline-none transition-[color,box-shadow,border-color]",
   rootsFormUiControlRadiusClass,
   rootsFormUiControlHoverClass,
-  "placeholder:text-[var(--rootsy-bruma-500)]",
+  "placeholder:text-[var(--rootsy-bruma-700)]",
   "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-  "aria-invalid:border-[#dc2626] aria-invalid:shadow-[0_0_0_2px_color-mix(in_srgb,#dc2626_25%,transparent)]",
+  "aria-invalid:border-[var(--rootsy-lava-500)] aria-invalid:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-lava-500)_25%,transparent)]",
   "focus-visible:border-[var(--rootsy-savia-400)] focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] focus-visible:ring-0",
   rootsFormUiControlTypographyClass,
 )
@@ -57,22 +57,18 @@ export const rootsFormUiAffixShellClass = cn(
   rootsFormUiControlRadiusClass,
   rootsFormUiAffixShellHoverClass,
   "focus-within:border-[var(--rootsy-savia-400)] focus-within:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] focus-within:ring-0",
-  "aria-invalid:border-[#dc2626] aria-invalid:shadow-[0_0_0_2px_color-mix(in_srgb,#dc2626_25%,transparent)]",
+  "aria-invalid:border-[var(--rootsy-lava-500)] aria-invalid:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-lava-500)_25%,transparent)]",
 )
 
-/** Slot leading — divider sincronizado: hover bruma-300 · focus savia-400. */
+/** Slot leading — sin divisor. El prefijo es tinta dentro del mismo campo. */
 export const rootsFormUiAffixPrefixSunkenClass = cn(
-  "inline-flex w-10 shrink-0 items-center justify-center self-stretch border-r border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] font-canopy text-sm font-medium leading-none text-[var(--rootsy-bruma-500)] transition-[border-color]",
-  "group-hover:border-[var(--rootsy-bruma-300)]",
-  "group-focus-within:border-[var(--rootsy-savia-400)]",
-  "group-focus-within:group-hover:border-[var(--rootsy-savia-400)]",
-  "group-aria-invalid:border-[#dc2626] group-aria-invalid:group-hover:border-[#dc2626]",
+  "inline-flex w-10 shrink-0 items-center justify-center self-stretch bg-transparent rootsy-text-body font-medium leading-none text-[var(--rootsy-bruma-700)]",
   "[&_svg]:size-4 [&_svg]:shrink-0",
 )
 
 export const rootsFormUiAffixInputClass = cn(
   rootsFormUiControlTypographyClass,
-  "h-full min-w-0 flex-1 bg-transparent px-3 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed placeholder:text-[var(--rootsy-bruma-500)]",
+  "h-full min-w-0 flex-1 bg-transparent px-3 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 disabled:cursor-not-allowed placeholder:text-[var(--rootsy-bruma-700)]",
 )
 
 export const rootsFormUiSelectTriggerClass = cn(
@@ -80,7 +76,7 @@ export const rootsFormUiSelectTriggerClass = cn(
   "flex h-10 items-center justify-between gap-2 px-3",
   "data-[state=closed]:focus:!border-[var(--rootsy-bruma-200)] data-[state=closed]:focus:!shadow-none",
   "[&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:truncate [&_[data-slot=select-value]]:text-left",
-  "[&_[data-slot=select-value][data-placeholder]]:text-[var(--rootsy-bruma-500)]",
+  "[&_[data-slot=select-value][data-placeholder]]:text-[var(--rootsy-bruma-700)]",
 )
 
 export const rootsFormUiPrefixedSelectTriggerClass = cn(
@@ -90,7 +86,7 @@ export const rootsFormUiPrefixedSelectTriggerClass = cn(
   "data-[state=closed]:focus:!border-[var(--rootsy-bruma-200)] data-[state=closed]:focus:!shadow-none",
   "data-[state=closed]:focus-within:!border-[var(--rootsy-bruma-200)] data-[state=closed]:focus-within:!shadow-none",
   "[&_[data-slot=select-value]]:flex [&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:items-center [&_[data-slot=select-value]]:px-3",
-  "[&_[data-slot=select-value][data-placeholder]]:text-[var(--rootsy-bruma-500)]",
+  "[&_[data-slot=select-value][data-placeholder]]:text-[var(--rootsy-bruma-700)]",
 )
 
 /** form.control.shell.inline-icon — fondo blanco · ícono inline · space.100 gap. */
@@ -107,18 +103,18 @@ export const rootsFormUiInlineIconPrefixedSelectTriggerClass = cn(
   "justify-between gap-2 p-0 pl-3",
   "data-[state=closed]:focus:!border-[var(--rootsy-bruma-200)] data-[state=closed]:focus:!shadow-none",
   "[&_[data-slot=select-value]]:flex [&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:items-center",
-  "[&_[data-slot=select-value][data-placeholder]]:text-[var(--rootsy-bruma-500)]",
+  "[&_[data-slot=select-value][data-placeholder]]:text-[var(--rootsy-bruma-700)]",
 )
 
 export const rootsFormUiInlineIconPrefixClass =
-  "inline-flex shrink-0 items-center text-[var(--rootsy-bruma-500)] [&_svg]:size-4 [&_svg]:shrink-0"
+  "inline-flex shrink-0 items-center text-[var(--rootsy-bruma-700)] [&_svg]:size-4 [&_svg]:shrink-0"
 
 export const rootsFormUiDateTriggerClass = cn(
   rootsFormUiControlBaseClass,
   "flex h-10 items-center px-3 text-left",
   "data-[state=closed]:focus:!border-[var(--rootsy-bruma-200)] data-[state=closed]:focus:!shadow-none",
   "[&_[data-slot=date-value]]:min-w-0 [&_[data-slot=date-value]]:flex-1 [&_[data-slot=date-value]]:truncate",
-  "[&_[data-slot=date-value][data-placeholder]]:text-[var(--rootsy-bruma-500)]",
+  "[&_[data-slot=date-value][data-placeholder]]:text-[var(--rootsy-bruma-700)]",
 )
 
 export const rootsFormUiPrefixedDateTriggerClass = cn(
@@ -128,23 +124,25 @@ export const rootsFormUiPrefixedDateTriggerClass = cn(
   "data-[state=closed]:focus:!border-[var(--rootsy-bruma-200)] data-[state=closed]:focus:!shadow-none",
   "data-[state=closed]:focus-within:!border-[var(--rootsy-bruma-200)] data-[state=closed]:focus-within:!shadow-none",
   "[&_[data-slot=date-value]]:flex [&_[data-slot=date-value]]:min-w-0 [&_[data-slot=date-value]]:flex-1 [&_[data-slot=date-value]]:items-center [&_[data-slot=date-value]]:px-3 [&_[data-slot=date-value]]:truncate",
-  "[&_[data-slot=date-value][data-placeholder]]:text-[var(--rootsy-bruma-500)]",
+  "[&_[data-slot=date-value][data-placeholder]]:text-[var(--rootsy-bruma-700)]",
 )
 
 /** form.assist.* · body.small. */
 export const rootsFormUiFieldHintClass =
-  "block font-canopy text-xs leading-4 text-[var(--rootsy-bruma-500)]"
+  "block font-canopy text-xs leading-4 text-[var(--rootsy-bruma-700)]"
 
-export const rootsFormUiFieldErrorClass = "block font-canopy text-xs leading-4 text-[#dc2626]"
+export const rootsFormUiFieldErrorClass =
+  "block font-canopy text-xs leading-4 text-[var(--rootsy-lava-700)]"
 
-export const rootsFormUiFieldWarningClass = "block font-canopy text-xs leading-4 text-[#d97706]"
+export const rootsFormUiFieldWarningClass =
+  "block font-canopy text-xs leading-4 text-[var(--rootsy-sol-700)]"
 
 export const rootsFormUiFieldSuccessClass =
-  "block font-canopy text-xs leading-4 text-[var(--rootsy-savia-600)]"
+  "block font-canopy text-xs leading-4 text-[var(--rootsy-savia-700)]"
 
 export const rootsFormUiCheckboxClass = cn(
   "size-4 shrink-0 rounded-[4px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] shadow-none [&_[data-slot=checkbox-indicator]_svg]:size-3.5",
-  "data-[state=checked]:border-[var(--rootsy-savia-600)] data-[state=checked]:bg-[var(--rootsy-savia-600)] data-[state=checked]:text-white",
+  "data-[state=checked]:border-[var(--rootsy-savia-500)] data-[state=checked]:bg-[var(--rootsy-savia-500)] data-[state=checked]:text-[var(--rootsy-savia-950)]",
   "focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] focus-visible:ring-0",
   "disabled:cursor-not-allowed disabled:opacity-50",
 )
@@ -156,14 +154,14 @@ export const rootsFormUiChoiceRowClass =
 export const rootsFormUiChoiceTextWrapClass = "flex min-w-0 flex-1 items-center"
 
 export const rootsFormUiChoiceLabelClass =
-  "font-canopy text-sm font-normal text-[var(--rootsy-bruma-900)]"
+  "font-canopy text-sm font-normal text-[var(--rootsy-bruma-950)]"
 
 export const rootsFormUiChoiceDescriptionClass =
-  "mt-0.5 block font-canopy text-xs leading-4 text-[var(--rootsy-bruma-500)]"
+  "mt-0.5 block font-canopy text-xs leading-4 text-[var(--rootsy-bruma-700)]"
 
 export const rootsFormUiSwitchTrackClass = cn(
   "inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 outline-none transition-colors duration-200 ease-out",
-  "data-[state=unchecked]:bg-[var(--rootsy-bruma-200)] data-[state=checked]:bg-[var(--rootsy-savia-600)]",
+  "data-[state=unchecked]:bg-[var(--rootsy-bruma-200)] data-[state=checked]:bg-[var(--rootsy-savia-500)]",
   "focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] focus-visible:ring-0",
   "disabled:cursor-not-allowed disabled:opacity-50",
 )
@@ -189,31 +187,68 @@ export const rootsFormUiImageUploadShellEmptyClass = cn(
 export const rootsFormUiImageUploadThumbClass =
   "relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]"
 
-/** form.control.segment — pill inset h-10 · bruma track · indicador blanco. */
+/**
+ * form.control.segment — default claro = bruma + pastilla blanca.
+ * No usa --color-* en light: el html lleva .dark y esos tokens se vuelven sombra.
+ */
 export const rootsFormUiSegmentGroupClass = cn(
   "relative grid h-10 w-full gap-1 rounded-[12px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] p-1 shadow-none",
 )
 
-export const rootsFormUiSegmentIndicatorClass =
-  "pointer-events-none absolute bg-[var(--rootsy-white)] shadow-sm transition-transform duration-200 ease-out"
+export const rootsFormUiSegmentGroupDarkClass = cn(
+  "relative grid h-10 w-full gap-1 rounded-[12px] border border-[var(--color-borde)] bg-[var(--color-superficie)] p-1 shadow-none",
+)
+
+/** Filtro en línea — sin track; la pastilla activa es bruma 50. */
+export const rootsFormUiSegmentGroupInlineClass = cn(
+  "relative flex h-10 w-full gap-1 rounded-[12px] border-0 bg-transparent p-1 shadow-none",
+)
+
+/** Default claro — pastilla blanca (alias savia 50). */
+export const rootsFormUiSegmentSelectedSurfaceLightClass =
+  "bg-[var(--rootsy-white)] shadow-sm"
+
+/** Filtro inline — activo blanco sobre el aire bruma-50 de bloques. */
+export const rootsFormUiSegmentSelectedSurfaceFilterLightClass =
+  "bg-[var(--rootsy-white)] shadow-sm ring-1 ring-[var(--rootsy-bruma-200)]"
+
+/** Oscuro — foco sobre elevada de la atmósfera. */
+export const rootsFormUiSegmentSelectedSurfaceDarkClass =
+  "bg-[color-mix(in_srgb,var(--color-foco)_18%,var(--color-elevada))] shadow-sm"
+
+export const rootsFormUiSegmentSelectedSurfaceClass =
+  rootsFormUiSegmentSelectedSurfaceLightClass
+
+export const rootsFormUiSegmentIndicatorClass = cn(
+  "pointer-events-none absolute transition-transform duration-200 ease-out",
+  rootsFormUiSegmentSelectedSurfaceLightClass,
+)
 
 export function rootsFormUiSegmentOptionClass(selected: boolean, disabled?: boolean) {
   return cn(
-    rootsFormUiControlTypographyClass,
-    "relative z-[1] inline-flex h-full min-w-0 items-center justify-center gap-2 rounded-[8px] px-3 font-medium transition-colors duration-150",
+    "rootsy-text-body relative z-[1] inline-flex h-full min-w-0 items-center justify-center gap-2 rounded-[8px] px-3 font-medium transition-colors duration-150",
     "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
     disabled && "pointer-events-none opacity-50",
     selected
-      ? "text-[var(--rootsy-bruma-900)]"
-      : "text-[var(--rootsy-bruma-400)] hover:text-[var(--rootsy-bruma-500)]",
+      ? "text-[var(--rootsy-bruma-950)]"
+      : "text-[var(--rootsy-bruma-700)] hover:text-[var(--rootsy-bruma-950)]",
   )
 }
 
-/** Prefijo dual %/$ en descuento — slot leading ancho · bruma/savia. */
+export function rootsFormUiSegmentOptionDarkClass(selected: boolean, disabled?: boolean) {
+  return cn(
+    "rootsy-text-body relative z-[1] inline-flex h-full min-w-0 items-center justify-center gap-2 rounded-[8px] px-3 font-medium transition-colors duration-150",
+    "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--color-foco)_45%,transparent)]",
+    disabled && "pointer-events-none opacity-50",
+    selected
+      ? "text-[var(--color-texto)]"
+      : "text-[var(--color-texto-muted)] hover:text-[var(--color-texto)]",
+  )
+}
+
+/** Prefijo dual %/$ en descuento — sin divisor hacia el valor. */
 export const rootsFormUiDiscountModePrefixClass = cn(
-  "flex w-[4.75rem] shrink-0 self-stretch overflow-hidden border-r border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] transition-[border-color]",
-  "group-hover:border-[var(--rootsy-bruma-300)]",
-  "group-focus-within:border-[var(--rootsy-savia-400)]",
+  "flex w-[4.75rem] shrink-0 self-stretch overflow-hidden bg-transparent",
   "[&>button:first-child]:border-r [&>button:first-child]:border-[var(--rootsy-bruma-200)] [&>button:first-child]:transition-[border-color]",
   "group-hover:[&>button:first-child]:border-[var(--rootsy-bruma-300)]",
   "group-focus-within:[&>button:first-child]:border-[var(--rootsy-savia-400)]",
@@ -229,13 +264,13 @@ export function rootsFormUiDiscountModeButtonClass(
     optionDisabled && "opacity-45",
     selected
       ? "bg-[var(--rootsy-bruma-50)] font-semibold text-[var(--rootsy-bruma-600)]"
-      : "bg-[var(--rootsy-white)] text-[var(--rootsy-bruma-400)] hover:text-[var(--rootsy-bruma-500)]",
+      : "bg-[var(--rootsy-blanco)] text-[var(--rootsy-bruma-700)] hover:text-[var(--rootsy-bruma-950)]",
   )
 }
 
 /** Botón borrar en shells affix (descuento, búsqueda). */
 export const rootsFormUiAffixClearButtonClass = cn(
-  "absolute right-1 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-[var(--rootsy-bruma-500)] transition-[color,background-color] duration-150",
+  "absolute right-1 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-[var(--rootsy-bruma-700)] transition-[color,background-color] duration-150",
   "hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
   "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
 )
