@@ -84,7 +84,7 @@ function ComandasDialogBody({
             stations={comandas.stations}
             stationId={comandas.stationId}
             onChange={comandas.setStationId}
-            headerVariant="default"
+            tone="light"
           />
         </div>
       </div>

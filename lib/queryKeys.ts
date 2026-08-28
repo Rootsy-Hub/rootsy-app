@@ -334,6 +334,26 @@ export function popComandasTicketsQueryKey(popId: string, stationId: string) {
   return ["pop-comandas", popId, "tickets", stationId] as const
 }
 
+export function popHrQueryRoot(popId: string) {
+  return ["pop-hr", popId] as const
+}
+
+export function popHrDashboardQueryKey(popId: string) {
+  return ["pop-hr", popId, "dashboard"] as const
+}
+
+export function popCashRegistersQueryRoot(popId: string) {
+  return ["pop-cash-registers", popId] as const
+}
+
+export function popCashRegistersListQueryKey(popId: string) {
+  return ["pop-cash-registers", popId, "list"] as const
+}
+
+export function popCashRegistersFormContextQueryKey(popId: string) {
+  return ["pop-cash-registers", popId, "form-context"] as const
+}
+
 export function popChatQueryRoot(popId: string) {
   return ["pop-chat", popId] as const
 }

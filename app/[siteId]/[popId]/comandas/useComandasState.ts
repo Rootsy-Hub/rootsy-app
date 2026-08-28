@@ -1,6 +1,9 @@
 "use client"
 
-import { canMoveComandaTo } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import {
+  canAckComandaVoid,
+  canMoveComandaTo,
+} from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import {
   overlayComandasInFlight,
   replaceComandaTicketCache,
@@ -109,7 +112,12 @@ export function useComandasState(popId: string, _siteId: string) {
         ) ?? tickets
       ).find((ticket) => ticket.id === ticketId)
       if (!current) return false
-      if (!canMoveComandaTo(current.status, status)) return false
+      const isAckVoid = canAckComandaVoid(current.sendKind, current.status)
+      if (status === "voided") {
+        if (!isAckVoid) return false
+      } else if (!canMoveComandaTo(current.status, status)) {
+        return false
+      }
       if (current.status === status) return true
 
       const now = new Date().toISOString()

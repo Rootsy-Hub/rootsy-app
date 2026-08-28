@@ -17,7 +17,6 @@ import {
   deleteInactivePopMember,
   reactivatePopMember,
   deletePopRole,
-  fetchHrDashboard,
   getRolePermissionsEditorData,
   inviteUserToPop,
   markEmployeeLeft,
@@ -28,9 +27,22 @@ import {
   updatePopMemberRole,
   upsertPopEmployee,
 } from "@/lib/rootsyApi/hrClient"
+import {
+  HR_PEOPLE_FILTERS,
+  type PeopleFilter,
+} from "@/app/[siteId]/[popId]/hr/hrPeopleFilter"
+import {
+  hrPeopleFilterFieldClass,
+  hrPeopleFilterGroupClass,
+  hrPeopleFilterShellClass,
+  hrPeoplePaneClass,
+  hrRolesBodyGridClass,
+  hrRolesOperativeSpanClass,
+  hrRolesPaneClass,
+  hrSplitGridClass,
+} from "@/app/[siteId]/[popId]/hr/hrWorkspaceLayout"
 import { HrChangeRoleDialog } from "@/app/[siteId]/[popId]/hr/HrChangeRoleDialog"
 import { HrInviteDialog, type HrInviteResult } from "@/app/[siteId]/[popId]/hr/HrInviteDialog"
-import { HrPageSkeleton } from "@/app/[siteId]/[popId]/hr/HrPageSkeleton"
 import { HrPersonCard } from "@/app/[siteId]/[popId]/hr/HrPersonCard"
 import { HrPersonDialog } from "@/app/[siteId]/[popId]/hr/HrPersonDialog"
 import { HrRolePermissionsDialog } from "@/app/[siteId]/[popId]/hr/HrRolePermissionsDialog"
@@ -41,10 +53,6 @@ import {
   dataWorkspaceBlocksPageMainClass,
   dataWorkspaceBlocksSplitBannerClass,
   dataWorkspaceBlocksSplitFrameClass,
-  dataWorkspaceBlocksSplitGridClass,
-  dataWorkspaceBlocksSplitPaneBodyGridClass,
-  dataWorkspaceBlocksSplitPaneClass,
-  dataWorkspaceBlocksSplitPaneRuleClass,
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
@@ -57,14 +65,19 @@ import { RootsDefaultButton,
   RootsIconButton} from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
+import {
+  hrDashboardQueryOptions,
+  invalidateHrDashboardQuery,
+  patchHrDashboardRoleGrants,
+} from "@/lib/hrDashboardQuery"
 import { cn } from "@/lib/utils"
 import { KeyRound, Plus } from "lucide-react"
 import { useParams, useRouter } from "@/lib/pop-spa/navigation"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-
-type PeopleFilter = "negocio" | "local" | "acceso" | "invitadas" | "baja"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 function pendingInviteForPerson(
   person: EmployeeRow,
@@ -119,17 +132,33 @@ function personForCard(
 }
 
 export function HrWorkspaceView() {
-  const router = useRouter()
-  const routerRef = useRef(router)
-  routerRef.current = router
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
+  if (!popId || !siteId) {
+    return (
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <p className="text-sm">ID de POP no encontrado</p>
+      </div>
+    )
+  }
+
+  return <HrWorkspaceReady siteId={siteId} popId={popId} />
+}
+
+function HrWorkspaceReady({
+  siteId,
+  popId,
+}: {
+  siteId: string
+  popId: string
+}) {
+  const router = useRouter()
+
   const {
     bootstrap,
     popAccess,
-    loading: bootstrapLoading,
     error: bootstrapError,
     refresh,
   } = usePopWorkspace()
@@ -152,14 +181,16 @@ export function HrWorkspaceView() {
     [hrSections],
   )
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [canManageInvites, setCanManageInvites] = useState(false)
-  const [canManagePeople, setCanManagePeople] = useState(false)
-  const [roles, setRoles] = useState<PopRoleRow[]>([])
-  const [members, setMembers] = useState<MemberRow[]>([])
-  const [employees, setEmployees] = useState<EmployeeRow[]>([])
-  const [pending, setPending] = useState<PendingInviteRow[]>([])
+  const queryClient = useQueryClient()
+  const dashboardQuery = useQuery(hrDashboardQueryOptions(popId))
+  const dashboard = dashboardQuery.data
+  const canManageInvites = dashboard?.ok ? dashboard.canManageInvites : false
+  const canManagePeople = dashboard?.ok ? dashboard.canManagePeople : false
+  const roles = dashboard?.ok ? dashboard.roles : []
+  const members = dashboard?.ok ? dashboard.members : []
+  const employees = dashboard?.ok ? dashboard.employees : []
+  const pending = dashboard?.ok ? dashboard.pendingInvites : []
+  const error = dashboard && !dashboard.ok ? dashboard.error : null
   const [peopleFilter, setPeopleFilter] = useState<PeopleFilter>("negocio")
   const [banner, setBanner] = useState<{
     type: "ok" | "err" | "info"
@@ -200,78 +231,30 @@ export function HrWorkspaceView() {
   const [permModalSaving, setPermModalSaving] = useState(false)
   const [permModalError, setPermModalError] = useState<string | null>(null)
   const [permModalCanApprove, setPermModalCanApprove] = useState(false)
-  const [roleGrantKeys, setRoleGrantKeys] = useState<Record<string, string[]>>(
-    {},
-  )
 
-  const loadDashboard = useCallback(async () => {
-    if (!popId || !siteId) return
-    const res = await fetchHrDashboard(popId)
-    if (!res.success) {
-      setError(res.error)
-      if (res.redirect) {
-        setTimeout(() => routerRef.current.push(res.redirect!), 1600)
-      }
-      return
-    }
-    setError(null)
-    setCanManageInvites(res.canManageInvites)
-    setCanManagePeople(res.canManagePeople)
-    setRoles(res.roles)
-    setMembers(res.members)
-    setEmployees(res.employees)
-    setPending(res.pendingInvites)
-  }, [popId, siteId])
+  const reloadDashboard = useCallback(async () => {
+    await invalidateHrDashboardQuery(queryClient, popId)
+  }, [queryClient, popId])
 
   useEffect(() => {
-    if (!popId || !siteId) {
-      setLoading(false)
-      setError("ID de POP no encontrado")
-      return
-    }
-    let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        await loadDashboard()
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [popId, siteId, loadDashboard])
+    if (!dashboard || dashboard.ok || !dashboard.redirect) return
+    const timer = window.setTimeout(() => {
+      router.push(dashboard.redirect!)
+    }, 1600)
+    return () => window.clearTimeout(timer)
+  }, [dashboard, router])
 
-  useEffect(() => {
-    if (!popId) return
-    const editable = roles.filter((role) => role.popId)
-    if (editable.length === 0) {
-      setRoleGrantKeys({})
-      return
-    }
-    let cancelled = false
+  const roleGrantKeys = useMemo(() => {
+    if (!dashboard?.ok) return {}
     const catalogKeySet = new Set(hrCatalogRows.map((row) => row.key))
-    void (async () => {
-      const entries = await Promise.all(
-        editable.map(async (role) => {
-          const res = await getRolePermissionsEditorData(popId, role.id)
-          if (!res.success) return [role.id, [] as string[]] as const
-          return [
-            role.id,
-            res.selectedGrantKeys.filter((key) => catalogKeySet.has(key)),
-          ] as const
-        }),
-      )
-      if (!cancelled) setRoleGrantKeys(Object.fromEntries(entries))
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [popId, roles, hrCatalogRows])
+    return Object.fromEntries(
+      Object.entries(dashboard.roleGrantKeys).map(([roleId, keys]) => [
+        roleId,
+        keys.filter((key) => catalogKeySet.has(key)),
+      ]),
+    )
+  }, [dashboard, hrCatalogRows])
 
-  const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
 
   const activePeople = useMemo(
@@ -544,12 +527,9 @@ export function HrWorkspaceView() {
         return
       }
       setBanner({ type: "ok", text: "Rol creado correctamente." })
-      setRoleGrantKeys((prev) => ({
-        ...prev,
-        [res.roleId]: permModalSelected,
-      }))
+      patchHrDashboardRoleGrants(queryClient, popId, res.roleId, permModalSelected)
       closePermModal()
-      await loadDashboard()
+      await reloadDashboard()
       return
     }
 
@@ -570,12 +550,14 @@ export function HrWorkspaceView() {
       return
     }
     setBanner({ type: "ok", text: "Permisos del rol actualizados." })
-    setRoleGrantKeys((prev) => ({
-      ...prev,
-      [permModalRole.id]: permModalSelected,
-    }))
+    patchHrDashboardRoleGrants(
+      queryClient,
+      popId,
+      permModalRole.id,
+      permModalSelected,
+    )
     closePermModal()
-    await Promise.all([loadDashboard(), refresh()])
+    await Promise.all([reloadDashboard(), refresh()])
   }
 
   const openInvite = (person: {
@@ -616,7 +598,7 @@ export function HrWorkspaceView() {
       emailError: res.emailError,
       resendConfigured: res.resendConfigured,
     })
-    await loadDashboard()
+    await reloadDashboard()
   }
 
   const openChangeRole = (member: MemberRow) => {
@@ -636,7 +618,7 @@ export function HrWorkspaceView() {
     }
     setRoleMember(null)
     setBanner({ type: "ok", text: "Rol de Rootsy actualizado." })
-    await Promise.all([loadDashboard(), refresh()])
+    await Promise.all([reloadDashboard(), refresh()])
   }
 
   const openNewPerson = () => {
@@ -661,7 +643,7 @@ export function HrWorkspaceView() {
       type: "ok",
       text: input.id ? "Persona actualizada." : "Persona cargada en el negocio.",
     })
-    await loadDashboard()
+    await reloadDashboard()
     const createdEmail = input.email.trim()
     if (!input.id && createdEmail && canManageInvites) {
       openInvite({
@@ -690,7 +672,7 @@ export function HrWorkspaceView() {
         ? `${personDisplayName(person)} salió del local.`
         : `${personDisplayName(person)} entró al local.`,
     })
-    await loadDashboard()
+    await reloadDashboard()
     return true
   }
 
@@ -711,7 +693,7 @@ export function HrWorkspaceView() {
     }
     setConfirmAction(null)
     setBanner({ type: "ok", text: "Invitación revocada." })
-    await loadDashboard()
+    await reloadDashboard()
   }
 
   const handleRenewInvite = async (invite: PendingInviteRow) => {
@@ -727,7 +709,7 @@ export function HrWorkspaceView() {
       type: "ok",
       text: "Invitación renovada. El enlace sirve 7 días más.",
     })
-    await loadDashboard()
+    await reloadDashboard()
   }
 
   const runConfirmAction = async () => {
@@ -760,7 +742,7 @@ export function HrWorkspaceView() {
           ? "Volvió al equipo. Si tiene que entrar a Rootsy, restaurá el acceso desde la ficha."
           : "Volvió al equipo. El acceso a Rootsy se da aparte.",
       })
-      await loadDashboard()
+      await reloadDashboard()
       return
     }
 
@@ -777,7 +759,7 @@ export function HrWorkspaceView() {
         type: "ok",
         text: "Quedó en el historial. Ya no trabaja acá.",
       })
-      await loadDashboard()
+      await reloadDashboard()
       return
     }
 
@@ -792,7 +774,7 @@ export function HrWorkspaceView() {
       setConfirmAction(null)
       setBanner({ type: "ok", text: "Rol eliminado." })
       if (permModalRole?.id === confirmAction.role.id) closePermModal()
-      await loadDashboard()
+      await reloadDashboard()
       return
     }
 
@@ -806,7 +788,7 @@ export function HrWorkspaceView() {
       }
       setConfirmAction(null)
       setBanner({ type: "ok", text: "Ya no entra a Rootsy. Sigue en el equipo." })
-      await loadDashboard()
+      await reloadDashboard()
       return
     }
 
@@ -823,7 +805,7 @@ export function HrWorkspaceView() {
       }
       setConfirmAction(null)
       setBanner({ type: "ok", text: "Ya puede entrar al pop de nuevo." })
-      await loadDashboard()
+      await reloadDashboard()
       return
     }
 
@@ -836,24 +818,12 @@ export function HrWorkspaceView() {
     }
     setConfirmAction(null)
     setBanner({ type: "ok", text: "Usuario eliminado del equipo." })
-    await loadDashboard()
+    await reloadDashboard()
   }
 
-  if (!popId || !siteId) {
-    return (
-      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
-        <p className="text-sm">ID de POP no encontrado</p>
-      </div>
-    )
+  if (!dashboard) {
+    return <PopModuleLoading moduleKey="hr" />
   }
-
-  const peopleFilterOptions = [
-    { value: "negocio", label: "Todas" },
-    { value: "local", label: "En el local" },
-    { value: "acceso", label: "Con Rootsy" },
-    { value: "invitadas", label: "Invitadas" },
-    { value: "baja", label: "Ya no" },
-  ]
 
   return (
     <>
@@ -864,7 +834,7 @@ export function HrWorkspaceView() {
         title="Personal"
         headerVariant={dataWorkspaceModuleHeaderVariant}
         contentFlush
-        loading={pageLoading}
+        loading={!popName}
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel || undefined}
@@ -930,24 +900,23 @@ export function HrWorkspaceView() {
             </div>
           ) : null}
 
-          {pageLoading ? (
-            <HrPageSkeleton />
-          ) : (
-            <div className={dataWorkspaceBlocksSplitGridClass}>
-              <section className={cn(dataWorkspaceBlocksSplitPaneClass, "lg:col-span-9")}>
+          <div className={hrSplitGridClass}>
+              <section className={hrPeoplePaneClass}>
                 <DataWorkspaceBlocksSection>
+                  <div className={hrPeopleFilterShellClass}>
                   <RootsFormSegmentField
                     label="Ver personas"
                     aria-label="Filtrar personas"
                     layout="inline"
-                    className="[&>span:first-child]:sr-only"
-                    groupClassName="border-0"
+                    className={hrPeopleFilterFieldClass}
+                    groupClassName={hrPeopleFilterGroupClass}
                     value={peopleFilter}
                     onValueChange={(value) =>
                       setPeopleFilter(value as PeopleFilter)
                     }
-                    options={peopleFilterOptions}
+                    options={HR_PEOPLE_FILTERS}
                   />
+                  </div>
                   {visiblePeople.length === 0 ? (
                     <p className={dataWorkspaceBlocksEmptyStateClass}>
                       {peopleFilter === "local"
@@ -1070,16 +1039,10 @@ export function HrWorkspaceView() {
                 </DataWorkspaceBlocksSection>
               </section>
 
-              <aside
-                className={cn(
-                  dataWorkspaceBlocksSplitPaneClass,
-                  dataWorkspaceBlocksSplitPaneRuleClass,
-                  "lg:col-span-3",
-                )}
-              >
+              <aside className={hrRolesPaneClass}>
                 <DataWorkspaceBlocksSection
                   title="Roles en Rootsy"
-                  description="Qué puede hacer en el sistema."
+                  description="Qué puede hacer."
                   action={
                     canManageInvites ? (
                       <RootsDefaultButton
@@ -1095,7 +1058,8 @@ export function HrWorkspaceView() {
                     ) : null
                   }
                 >
-                  <div className={dataWorkspaceBlocksSplitPaneBodyGridClass}>
+                  <div className={hrRolesBodyGridClass}>
+                    <div className={hrRolesOperativeSpanClass}>
                     <HrRolesOperativeCard
                       roles={operativeRoles}
                       canManage={canManageInvites}
@@ -1106,6 +1070,7 @@ export function HrWorkspaceView() {
                         setConfirmAction({ kind: "delete-role", role })
                       }
                     />
+                    </div>
                     {roles.length === 0 ? (
                       <p className={dataWorkspaceBlocksEmptyStateClass}>
                         Cuando haya roles, acá se ve quién entra y qué puesto
@@ -1134,7 +1099,6 @@ export function HrWorkspaceView() {
                 </DataWorkspaceBlocksSection>
               </aside>
             </div>
-          )}
         </div>
       </DataWorkspaceModuleLayout>
 

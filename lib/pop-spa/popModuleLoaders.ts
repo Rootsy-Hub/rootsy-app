@@ -5,6 +5,8 @@ import {
   type ComponentType,
   type LazyExoticComponent,
 } from "react"
+import { prefetchCashRegistersListQuery } from "@/lib/cashRegistersListQuery"
+import { prefetchHrDashboardQuery } from "@/lib/hrDashboardQuery"
 import type { PopViewKey } from "@/lib/pop-spa/matchPopRoute"
 import { matchPopRoute } from "@/lib/pop-spa/matchPopRoute"
 import { bindPopSpaPreload } from "@/lib/pop-spa/preload"
@@ -26,7 +28,15 @@ const LOADERS: Record<PopViewKey, Loader> = {
   suppliers: () => import("./chunks/suppliers").then((m) => m.default()),
   invoices: () => import("./chunks/invoices").then((m) => m.default()),
   settings: () => import("./chunks/settings").then((m) => m.default()),
-  hr: () => import("./chunks/hr").then((m) => m.default()),
+  hr: () =>
+    Promise.all([
+      import("./chunks/hr").then((m) => m.default()),
+      prefetchHrDashboardQuery(
+        typeof window === "undefined"
+          ? ""
+          : matchPopRoute(window.location.pathname).params.popId,
+      ),
+    ]).then(([mod]) => mod),
   "hr-fichar": () => import("./chunks/hr-fichar").then((m) => m.default()),
   "hr-person": () => import("./chunks/hr-person").then((m) => m.default()),
   articles: () => import("./chunks/articles").then((m) => m.default()),
@@ -36,7 +46,14 @@ const LOADERS: Record<PopViewKey, Loader> = {
     import("./chunks/account-detail").then((m) => m.default()),
   printers: () => import("./chunks/printers").then((m) => m.default()),
   "cash-registers": () =>
-    import("./chunks/cash-registers").then((m) => m.default()),
+    Promise.all([
+      import("./chunks/cash-registers").then((m) => m.default()),
+      prefetchCashRegistersListQuery(
+        typeof window === "undefined"
+          ? ""
+          : matchPopRoute(window.location.pathname).params.popId,
+      ),
+    ]).then(([mod]) => mod),
   "cash-register-detail": () =>
     import("./chunks/cash-register-detail").then((m) => m.default()),
   inventory: () => import("./chunks/inventory").then((m) => m.default()),
@@ -86,6 +103,12 @@ export function preloadPopViewFromHref(href: string) {
   const match = matchPopRoute(path)
   if (match.redirectTo) return
   preloadPopView(match.view)
+  if (match.view === "hr") {
+    void prefetchHrDashboardQuery(match.params.popId)
+  }
+  if (match.view === "cash-registers") {
+    void prefetchCashRegistersListQuery(match.params.popId)
+  }
 }
 
 export const POP_IDLE_PRELOAD_VIEWS: readonly PopViewKey[] = [

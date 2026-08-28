@@ -2,9 +2,7 @@
 
 import { RootsIconButton } from "@/components/rootsy-button"
 import type {
-  ArcaSalePointOption,
   CashRegisterRow,
-  CashTreasuryAccountOption,
   ClosingSnapshot,
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import { CashRegisterCard } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterCard"
@@ -21,7 +19,6 @@ import { CashRegisterDeleteBlockedDialog } from "@/app/[siteId]/[popId]/cash-reg
 import { CashRegisterDeleteDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDeleteDialog"
 import { CashRegisterMoveDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterMoveDialog"
 import { CashRegisterOpenDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterOpenDialog"
-import { CashRegistersGridSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegistersGridSkeleton"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
   DataWorkspaceModuleLayout,
@@ -34,9 +31,15 @@ import {
   dataWorkspaceCashRegistersPageMainClass,
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import {
+  cashRegistersFormContextQueryOptions,
+  cashRegistersListQueryOptions,
+  invalidateCashRegistersListQuery,
+} from "@/lib/cashRegistersListQuery"
 import {
   formatMoneyInputForField,
   parseMoneyInput,
@@ -48,21 +51,15 @@ import {
   closeCashSession,
   createCashRegister,
   deleteCashRegister,
-  fetchCashRegisters,
-  fetchCashRegistersFormContext,
-  fetchCashRegistersOpenTotals,
-  mergeCashRegisterRow,
   openCashSession,
   updateCashRegister,
-  type CashRegisterListRow,
-  type CashRegisterOpenTotals,
 } from "@/lib/rootsyApi/cashRegistersClient"
 import { Plus } from "lucide-react"
 import { useParams } from "@/lib/pop-spa/navigation"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   useCallback,
   useEffect,
-  useMemo,
   useState,
   type FormEvent,
 } from "react"
@@ -72,10 +69,30 @@ export function CashRegistersWorkspaceView() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const { bootstrap, loading: bootstrapLoading, error: bootstrapError, hasPermission } =
-    usePopWorkspace()
+  if (!popId || !siteId) {
+    return (
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <p className="text-sm">Punto de venta no encontrado.</p>
+      </div>
+    )
+  }
+
+  return <CashRegistersWorkspaceReady siteId={siteId} popId={popId} />
+}
+
+function CashRegistersWorkspaceReady({
+  siteId,
+  popId,
+}: {
+  siteId: string
+  popId: string
+}) {
+  const { bootstrap, error: bootstrapError, hasPermission } = usePopWorkspace()
   const afterHydration = useAfterHydration()
-  const menuCache = usePopMenuCache(popId ?? "")
+  const menuCache = usePopMenuCache(popId)
+  const queryClient = useQueryClient()
+  const listQuery = useQuery(cashRegistersListQueryOptions(popId))
+  const formQuery = useQuery(cashRegistersFormContextQueryOptions(popId))
 
   const checkPerm = useCallback(
     (perm: { resource: string; action: string }) =>
@@ -94,16 +111,11 @@ export function CashRegistersWorkspaceView() {
   const canUpdate = checkPerm(POP_PERMS.CASH_REGISTER_UPDATE)
   const canDelete = checkPerm(POP_PERMS.CASH_REGISTER_DELETE)
 
-  const [listRows, setListRows] = useState<CashRegisterListRow[]>([])
-  const [openTotals, setOpenTotals] = useState<
-    Record<string, CashRegisterOpenTotals>
-  >({})
-  const [cashTreasuryAccounts, setCashTreasuryAccounts] = useState<
-    CashTreasuryAccountOption[]
-  >([])
-  const [salePoints, setSalePoints] = useState<ArcaSalePointOption[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const list = listQuery.data
+  const registers = list?.ok ? list.registers : []
+  const error = list && !list.ok ? list.error : null
+  const cashTreasuryAccounts = formQuery.data?.cashTreasuryAccounts ?? []
+  const salePoints = formQuery.data?.salePoints ?? []
   const cashRegistersBasePath = `/${siteId}/${popId}/cash-registers`
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -144,76 +156,10 @@ export function CashRegistersWorkspaceView() {
   const [moveAmount, setMoveAmount] = useState("")
   const [moveNote, setMoveNote] = useState("")
 
-  const registers = useMemo(
-    () => listRows.map((row) => mergeCashRegisterRow(row, openTotals[row.id])),
-    [listRows, openTotals],
-  )
-
-  const loadList = useCallback(async () => {
-    if (!popId) return
-    const res = await fetchCashRegisters(popId)
-    if (!res.success) {
-      setError(res.error || "Error")
-      setListRows([])
-      return
-    }
-    setListRows(res.registers)
-    setError(null)
-  }, [popId])
-
-  const loadOpenTotals = useCallback(async () => {
-    if (!popId) return
-    const res = await fetchCashRegistersOpenTotals(popId)
-    if (!res.success) {
-      setOpenTotals({})
-      return
-    }
-    setOpenTotals(res.byRegisterId)
-  }, [popId])
-
-  const loadFormContext = useCallback(async () => {
-    if (!popId) return
-    const res = await fetchCashRegistersFormContext(popId)
-    if (!res.success) return
-    setCashTreasuryAccounts(res.data.cashTreasuryAccounts)
-    setSalePoints(res.data.salePoints)
-  }, [popId])
-
   const reload = useCallback(async () => {
-    await loadList()
-    void loadOpenTotals()
-  }, [loadList, loadOpenTotals])
+    await invalidateCashRegistersListQuery(queryClient, popId)
+  }, [popId, queryClient])
 
-  useEffect(() => {
-    if (!popId || !siteId) {
-      setLoading(false)
-      setError("Punto de venta no encontrado.")
-      return
-    }
-    let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        await loadList()
-      } catch {
-        if (!cancelled) setError("Error inesperado")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [loadList, popId, siteId])
-
-  useEffect(() => {
-    if (!popId || !siteId) return
-    void loadOpenTotals()
-    void loadFormContext()
-  }, [loadFormContext, loadOpenTotals, popId, siteId])
-
-  const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
   const headerError = bootstrapError
 
@@ -223,7 +169,6 @@ export function CashRegistersWorkspaceView() {
   }
 
   const submitCreate = async (input: CashRegisterCreateInput) => {
-    if (!popId) return
     setCreateSaving(true)
     setCreateBanner(null)
     const res = await createCashRegister(popId, {
@@ -248,7 +193,7 @@ export function CashRegistersWorkspaceView() {
   }
 
   const submitEdit = async (payload: CashRegisterEditSubmitPayload) => {
-    if (!popId || !editRow) return
+    if (!editRow) return
     setEditSaving(true)
     setEditBanner(null)
     const res = await updateCashRegister(popId, editRow.id, {
@@ -278,7 +223,7 @@ export function CashRegistersWorkspaceView() {
   }
 
   const submitDelete = async () => {
-    if (!popId || !deleteRow) return
+    if (!deleteRow) return
     setDeleteBusy(true)
     setDeleteBanner(null)
     const res = await deleteCashRegister(popId, deleteRow.id)
@@ -301,7 +246,7 @@ export function CashRegistersWorkspaceView() {
 
   const submitOpen = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId || !openRow) return
+    if (!openRow) return
     setOpenSaving(true)
     setOpenBanner(null)
     const res = await openCashSession(
@@ -335,7 +280,7 @@ export function CashRegistersWorkspaceView() {
 
   const submitClose = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId || !closeRow?.openSessionId) return
+    if (!closeRow?.openSessionId) return
     setCloseSaving(true)
     setCloseBanner(null)
     const treasuryLines: Record<string, number> = {}
@@ -368,7 +313,7 @@ export function CashRegistersWorkspaceView() {
 
   const submitMove = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId || !moveRow?.openSessionId) return
+    if (!moveRow?.openSessionId) return
     setMoveSaving(true)
     setMoveBanner(null)
     const res = await addCashMovement(popId, moveRow.openSessionId, {
@@ -398,12 +343,8 @@ export function CashRegistersWorkspaceView() {
     })
   }, [closeRow])
 
-  if (!popId || !siteId) {
-    return (
-      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
-        <p className="text-sm">Punto de venta no encontrado.</p>
-      </div>
-    )
+  if (!list) {
+    return <PopModuleLoading moduleKey="cash-registers" />
   }
 
   return (
@@ -414,17 +355,18 @@ export function CashRegistersWorkspaceView() {
         popName={popName}
         title="Cajas"
         headerVariant={dataWorkspaceModuleHeaderVariant}
-        loading={pageLoading}
+        loading={!popName}
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel}
         headerActions={
-          canCreate ? (
+          !afterHydration || canCreate ? (
             <RootsIconButton
               label="Nueva caja"
               semantic="primary"
               atmosphere="eter"
               size="default"
+              disabled={!canCreate}
               onClick={() => openCreate()}
             >
               <Plus className="size-5" aria-hidden />
@@ -444,9 +386,7 @@ export function CashRegistersWorkspaceView() {
             />
           ) : null}
 
-          {pageLoading ? (
-            <CashRegistersGridSkeleton />
-          ) : error ? (
+          {error ? (
             <RootsBanner intent="danger" layout="message" message={error} />
           ) : (
             <DataWorkspaceBlocksSection>

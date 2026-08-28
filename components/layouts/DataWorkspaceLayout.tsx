@@ -55,7 +55,7 @@ export type DataWorkspaceLayoutProps = {
   atmosphere?: RootsButtonAtmosphere
   /** Cabecera cristal — siempre `ModuleWorkspaceHeader`. */
   showFullscreen?: boolean
-  /** En pantalla completa oculta el chrome (estación de fichaje). */
+  /** En pantalla completa oculta el chrome (comandas, estación de fichaje). */
   hideHeaderInFullscreen?: boolean
   /** Estación trabada: el header no vuelve hasta destrabar. */
   stationLocked?: boolean
@@ -349,7 +349,7 @@ export function DataWorkspaceLayout({
               <Minimize2 aria-hidden />
             </RootsIconButton>
           </div>
-        ) : (
+        ) : hideHeaderInFullscreen && isFullscreen ? null : (
           <ModuleWorkspaceHeader
             backHref={backHref}
             showFullscreen={showFullscreen}

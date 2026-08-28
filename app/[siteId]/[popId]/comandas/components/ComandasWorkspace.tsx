@@ -13,11 +13,15 @@ type Props = {
 export function ComandasWorkspace({ state, canUpdate }: Props) {
   const {
     stations,
+    stationId,
     tickets,
     loading,
     error,
     moveTicket,
   } = state
+
+  const stationName =
+    stations.find((station) => station.id === stationId)?.name.trim() ?? ""
 
   return (
     <div className="relative z-1 flex h-full min-h-0 w-full flex-col overflow-hidden">
@@ -33,6 +37,7 @@ export function ComandasWorkspace({ state, canUpdate }: Props) {
           loading={loading}
           error={error}
           canUpdate={canUpdate}
+          stationName={stationName}
           onMoveTicket={moveTicket}
         />
       )}

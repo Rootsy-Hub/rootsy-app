@@ -5,13 +5,16 @@ import { InventoryHomeSkeleton } from "@/app/[siteId]/[popId]/inventory/Inventor
 import { ExpensePageSkeleton } from "@/app/[siteId]/[popId]/expenses/ExpensePageSkeleton"
 import { HrPageSkeleton } from "@/app/[siteId]/[popId]/hr/HrPageSkeleton"
 import { PrintersPageSkeleton } from "@/app/[siteId]/[popId]/printers/PrintersPageSkeleton"
-import { CashRegistersGridSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegistersGridSkeleton"
+import { CashRegistersPageSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegistersGridSkeleton"
+import { RootsIconButton } from "@/components/rootsy-button"
+import { Plus } from "lucide-react"
 import { TreasuryAccountsGridSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountsGridSkeleton"
 import { ComandasBoardSkeleton } from "@/app/[siteId]/[popId]/comandas/components/ComandasBoard"
 import { comandasBrisaPageMainClass } from "@/app/[siteId]/[popId]/comandas/comandasBrisaStyles"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksSkeletonTone,
+  dataWorkspaceCashRegistersPageMainClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
@@ -118,7 +121,12 @@ function OperarCatalogColumnSkeleton() {
 
 export function HrModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
-    <BlocksModulePageSkeleton layout={layout} title="Personal">
+    <BlocksModulePageSkeleton
+      layout={layout}
+      title="Personal"
+      mainClassName="flex min-h-0 flex-1 flex-col overflow-hidden"
+      contentClassName={null}
+    >
       <HrPageSkeleton />
     </BlocksModulePageSkeleton>
   )
@@ -142,8 +150,24 @@ export function InventoryModulePageSkeleton(layout: PopModuleSkeletonLayout) {
 
 export function CashRegistersModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
-    <BlocksModulePageSkeleton layout={layout} title="Cajas">
-      <CashRegistersGridSkeleton />
+    <BlocksModulePageSkeleton
+      layout={layout}
+      title="Cajas"
+      mainClassName={dataWorkspaceCashRegistersPageMainClass}
+      contentClassName={null}
+      headerActions={
+        <RootsIconButton
+          label="Nueva caja"
+          semantic="primary"
+          atmosphere="eter"
+          size="default"
+          disabled
+        >
+          <Plus className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
+    >
+      <CashRegistersPageSkeleton />
     </BlocksModulePageSkeleton>
   )
 }

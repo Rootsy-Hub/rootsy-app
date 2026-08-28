@@ -1,7 +1,7 @@
 import type { ComandaStatus } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
-import { cn } from "@/lib/utils"
+import type { RootsNaturePillVariant } from "@/components/rootsy-pill/rootsyNaturePillStyles"
 
-/** Mundos de estado — comandas y, después, listado de pedidos. */
+/** Mundos de estado — receta tint del handbook: 50 / 200 / 700. */
 export type ComandaStatusWorldId = Exclude<ComandaStatus, "pending" | "voided">
 
 export const COMANDA_STATUS_WORLDS: Record<
@@ -10,70 +10,61 @@ export const COMANDA_STATUS_WORLDS: Record<
     id: ComandaStatusWorldId
     climate: string
     headerClass: string
+    railClass: string
     titleClass: string
     iconClass: string
-    pillClass: string
+    bodyClass: string
+    dropOverClass: string
+    pillVariant: RootsNaturePillVariant
   }
 > = {
   sent: {
     id: "sent",
     climate: "Cielo",
-    headerClass: cn(
-      "bg-[var(--rootsy-cielo-100)]",
-      "before:bg-[radial-gradient(ellipse_80%_90%_at_16%_-12%,var(--rootsy-cielo-200)_0%,transparent_70%)]",
-    ),
-    titleClass: "text-[var(--rootsy-cielo-800)]",
-    iconClass: "text-[var(--rootsy-cielo-500)]",
-    pillClass: cn(
-      "border-[var(--rootsy-cielo-200)]",
-      "bg-[color-mix(in_srgb,var(--rootsy-white)_55%,var(--rootsy-cielo-200))]",
-      "text-[var(--rootsy-cielo-800)]",
-    ),
+    headerClass: "bg-[var(--rootsy-cielo-50)]",
+    railClass: "before:bg-[var(--rootsy-cielo-500)]",
+    titleClass: "text-[var(--rootsy-cielo-700)]",
+    iconClass: "text-[var(--rootsy-cielo-700)]",
+    bodyClass: "",
+    dropOverClass:
+      "bg-[linear-gradient(180deg,var(--rootsy-cielo-50)_0%,var(--rootsy-cielo-200)_100%)]",
+    pillVariant: "info",
   },
   preparing: {
     id: "preparing",
     climate: "Sol",
-    headerClass: cn(
-      "bg-[var(--rootsy-sol-100)]",
-      "before:bg-[radial-gradient(ellipse_80%_90%_at_16%_-12%,var(--rootsy-sol-200)_0%,transparent_70%)]",
-    ),
-    titleClass: "text-[var(--rootsy-sol-800)]",
-    iconClass: "text-[var(--rootsy-sol-500)]",
-    pillClass: cn(
-      "border-[var(--rootsy-sol-200)]",
-      "bg-[color-mix(in_srgb,var(--rootsy-white)_50%,var(--rootsy-sol-200))]",
-      "text-[var(--rootsy-sol-800)]",
-    ),
+    headerClass: "bg-[var(--rootsy-sol-50)]",
+    railClass: "before:bg-[var(--rootsy-sol-500)]",
+    titleClass: "text-[var(--rootsy-sol-700)]",
+    iconClass: "text-[var(--rootsy-sol-700)]",
+    bodyClass: "",
+    dropOverClass:
+      "bg-[linear-gradient(180deg,var(--rootsy-sol-50)_0%,var(--rootsy-sol-200)_100%)]",
+    pillVariant: "warning",
   },
   ready: {
     id: "ready",
-    climate: "Savia clara",
-    headerClass: cn(
-      "bg-[var(--rootsy-savia-50)]",
-      "before:bg-[radial-gradient(ellipse_80%_90%_at_16%_-12%,var(--rootsy-savia-100)_0%,transparent_70%)]",
-    ),
-    titleClass: "text-[var(--rootsy-savia-800)]",
-    iconClass: "text-[var(--rootsy-savia-600)]",
-    pillClass: cn(
-      "border-[color-mix(in_srgb,var(--rootsy-savia-600)_22%,var(--rootsy-savia-100))]",
-      "bg-[color-mix(in_srgb,var(--rootsy-white)_55%,var(--rootsy-savia-100))]",
-      "text-[var(--rootsy-savia-800)]",
-    ),
+    climate: "Savia",
+    headerClass: "bg-[var(--rootsy-savia-50)]",
+    railClass: "before:bg-[var(--rootsy-savia-500)]",
+    titleClass: "text-[var(--rootsy-savia-700)]",
+    iconClass: "text-[var(--rootsy-savia-700)]",
+    bodyClass: "",
+    dropOverClass:
+      "bg-[linear-gradient(180deg,var(--rootsy-savia-50)_0%,var(--rootsy-savia-200)_100%)]",
+    pillVariant: "savia",
   },
   delivered: {
     id: "delivered",
-    climate: "Savia",
-    headerClass: cn(
-      "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,var(--rootsy-savia-50))]",
-      "before:bg-[radial-gradient(ellipse_80%_90%_at_16%_-12%,var(--rootsy-savia-200)_0%,transparent_68%)]",
-    ),
-    titleClass: "text-[var(--rootsy-savia-950)]",
-    iconClass: "text-[var(--rootsy-savia-700)]",
-    pillClass: cn(
-      "border-[color-mix(in_srgb,var(--rootsy-savia-700)_28%,var(--rootsy-savia-200))]",
-      "bg-[color-mix(in_srgb,var(--rootsy-savia-200)_70%,white)]",
-      "text-[var(--rootsy-savia-900)]",
-    ),
+    climate: "Bruma",
+    headerClass: "bg-[var(--rootsy-bruma-50)]",
+    railClass: "before:bg-[var(--rootsy-bruma-300)]",
+    titleClass: "text-[var(--rootsy-bruma-700)]",
+    iconClass: "text-[var(--rootsy-bruma-500)]",
+    bodyClass: "bg-[color-mix(in_srgb,var(--rootsy-bruma-100)_40%,transparent)]",
+    dropOverClass:
+      "bg-[linear-gradient(180deg,var(--rootsy-bruma-50)_0%,var(--rootsy-bruma-200)_100%)]",
+    pillVariant: "brumaMuted",
   },
 }
 
@@ -82,4 +73,12 @@ export function comandaStatusWorld(
 ): (typeof COMANDA_STATUS_WORLDS)[ComandaStatusWorldId] {
   if (status === "pending" || status === "voided") return COMANDA_STATUS_WORLDS.sent
   return COMANDA_STATUS_WORLDS[status]
+}
+
+export function comandaStatusPillVariant(
+  status: ComandaStatus,
+  count: number,
+): RootsNaturePillVariant {
+  if (count === 0) return "brumaMuted"
+  return comandaStatusWorld(status).pillVariant
 }

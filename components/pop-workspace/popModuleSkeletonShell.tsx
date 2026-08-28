@@ -30,6 +30,7 @@ type BlocksShellProps = {
   mainMaxWidthClass?: string
   /** Si es `null`, el hijo ocupa el main sin padding de bloques. */
   contentClassName?: string | null
+  headerActions?: ReactNode
 }
 
 export function BlocksModulePageSkeleton({
@@ -40,6 +41,7 @@ export function BlocksModulePageSkeleton({
   mainClassName,
   mainMaxWidthClass = "max-w-none",
   contentClassName,
+  headerActions,
 }: BlocksShellProps) {
   const wrapContent = contentClassName !== null
   return (
@@ -57,6 +59,7 @@ export function BlocksModulePageSkeleton({
       contentFlush
       mainMaxWidthClass={mainMaxWidthClass}
       mainClassName={cn(dataWorkspaceBlocksPageMainClass, mainClassName)}
+      headerActions={headerActions}
     >
       {wrapContent ? (
         <div className={contentClassName ?? dataWorkspaceBlocksPageContentClass}>

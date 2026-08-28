@@ -13,8 +13,12 @@ import { usePopAccessData } from "@/hooks/usePopAccessData"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { buildPopRoleLabel } from "@/lib/popWorkspaceFromAccess"
+import { prefetchCashRegistersListQuery } from "@/lib/cashRegistersListQuery"
+import { prefetchHrDashboardQuery } from "@/lib/hrDashboardQuery"
 import { popModuleKeyFromPath } from "@/lib/popRoutes"
 import { useParams, usePathname } from "@/lib/pop-spa/navigation"
+import { useQueryClient } from "@tanstack/react-query"
+import { useEffect } from "react"
 
 const MODULE_TITLES: Record<string, string> = {
   clients: "Clientes",
@@ -94,6 +98,18 @@ export function PopModuleLoading({
   const moduleKey = moduleKeyProp ?? moduleKeyFromPathname(pathname)
   const moduleTitle = MODULE_TITLES[moduleKey] ?? "…"
   const title = titleProp ?? moduleTitle
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    if (!popId) return
+    if (moduleKey === "hr") {
+      void prefetchHrDashboardQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "cash-registers") {
+      void prefetchCashRegistersListQuery(popId, queryClient)
+    }
+  }, [moduleKey, popId, queryClient])
 
   if (moduleKey === "menu") {
     return <MenuPageSkeleton />

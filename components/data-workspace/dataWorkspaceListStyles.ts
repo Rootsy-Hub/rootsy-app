@@ -141,14 +141,16 @@ export const dataWorkspaceBlocksSplitBannerClass =
   "shrink-0 space-y-3 px-4 pt-6 sm:px-6 lg:px-8"
 
 export const dataWorkspaceBlocksSplitGridClass = cn(
-  "game-scroll grid min-h-0 flex-1 grid-cols-1",
+  "game-scroll grid min-h-0 flex-1 grid-cols-1 content-start",
   "overflow-y-auto overscroll-contain",
   "lg:grid-cols-12 lg:overflow-hidden",
 )
 
 export const dataWorkspaceBlocksSplitPaneClass = cn(
-  "game-scroll flex min-h-0 min-w-0 flex-col",
-  "px-4 py-6 sm:px-6 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:px-8",
+  "game-scroll flex min-w-0 flex-col",
+  "px-4 py-6 sm:px-6",
+  "max-lg:min-h-min max-lg:overflow-visible",
+  "lg:min-h-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:px-8",
 )
 
 /**

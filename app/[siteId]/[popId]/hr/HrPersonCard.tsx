@@ -2,6 +2,7 @@
 
 import type { PendingInviteRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import type { EmployeeRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
+import { hrPersonCardFooterClass } from "@/app/[siteId]/[popId]/hr/hrWorkspaceLayout"
 import {
   dataWorkspaceLightDropdownContentClass,
   dataWorkspaceLightDropdownSeparatorClass,
@@ -328,21 +329,8 @@ export function HrPersonCard({
                 )}
               </span>
             )}
-            <div className="relative min-w-0 flex-1">
-              <div className="absolute right-0 top-0">
-                <PersonStatus
-                  person={person}
-                  isOwner={isOwner}
-                  pendingInvite={Boolean(pendingInvite)}
-                  hasActiveAccess={hasActiveAccess}
-                />
-              </div>
-              <p
-                className={cn(
-                  dataWorkspaceEntityCardEyebrowClass,
-                  "truncate pr-14",
-                )}
-              >
+            <div className="min-w-0 flex-1">
+              <p className={cn(dataWorkspaceEntityCardEyebrowClass, "truncate")}>
                 {isSelf ? (
                   <span className="text-[var(--rootsy-savia-800)]">Vos</span>
                 ) : null}
@@ -351,7 +339,7 @@ export function HrPersonCard({
               </p>
               <h3
                 className={cn(
-                  "mt-0.5 truncate pr-14",
+                  "mt-0.5 truncate",
                   dataWorkspaceEntityCardTitleClass,
                 )}
               >
@@ -361,6 +349,13 @@ export function HrPersonCard({
                 {metaLine}
               </p>
             </div>
+            <div className="flex shrink-0 items-start gap-0.5">
+              <PersonStatus
+                person={person}
+                isOwner={isOwner}
+                pendingInvite={Boolean(pendingInvite)}
+                hasActiveAccess={hasActiveAccess}
+              />
             {showMenu ? (
               <div
                 className="-mr-1 shrink-0"
@@ -483,6 +478,7 @@ export function HrPersonCard({
                 </RootsDropdownMenu>
               </div>
             ) : null}
+            </div>
           </div>
         </div>
 
@@ -495,7 +491,7 @@ export function HrPersonCard({
       </Link>
 
       <div className="mt-auto">
-          <div className={dataWorkspaceEntityCardActionFooterClass}>
+          <div className={cn(dataWorkspaceEntityCardActionFooterClass, hrPersonCardFooterClass)}>
             <div className="min-w-0">
               <p className={dataWorkspaceEntityCardStatLabelClass}>
                 {person.isClockedIn ? "Llegó" : "CUIL"}

@@ -5,10 +5,7 @@ import { ComandasStationMenu } from "@/app/[siteId]/[popId]/comandas/components/
 import { ComandasWorkspace } from "@/app/[siteId]/[popId]/comandas/components/ComandasWorkspace"
 import { useComandasState } from "@/app/[siteId]/[popId]/comandas/useComandasState"
 import { useComandasRealtime } from "@/hooks/useComandasRealtime"
-import {
-  DataWorkspaceModuleLayout,
-  dataWorkspaceModuleHeaderVariant,
-} from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { DataWorkspaceModuleLayout } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { comandasAccessFromKeys } from "@/lib/popWorkspaceAccess"
@@ -64,6 +61,7 @@ function ComandasPage() {
       popId={popId}
       popName={bootstrap?.popName ?? ""}
       title="Comandas"
+      hideHeaderInFullscreen
       loading={bootstrapLoading}
       userName={bootstrap?.userFullName || user?.email || ""}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
@@ -75,7 +73,6 @@ function ComandasPage() {
           stations={comandas.stations}
           stationId={comandas.stationId}
           onChange={comandas.setStationId}
-          headerVariant={dataWorkspaceModuleHeaderVariant}
         />
       }
     >

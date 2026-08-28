@@ -1,5 +1,6 @@
 import type {
   ComandaBoardCard,
+  ComandaSendKind,
   ComandaSendPeel,
   ComandaStatus,
   ComandaTicket,
@@ -47,13 +48,25 @@ export function isComandaBoardVisible(status: ComandaStatus): boolean {
   return status !== "pending" && status !== "voided"
 }
 
-export function canDragComanda(status: ComandaStatus): boolean {
+export function canDragComanda(
+  status: ComandaStatus,
+  sendKind: ComandaSendKind = "order",
+): boolean {
+  if (sendKind === "void") return false
   return (
     status === "sent" ||
     status === "preparing" ||
     status === "ready" ||
     status === "delivered"
   )
+}
+
+/** Cocina confirma que vio el aviso de anulación. El original ya está voided. */
+export function canAckComandaVoid(
+  sendKind: ComandaSendKind,
+  status: ComandaStatus,
+): boolean {
+  return sendKind === "void" && isComandaBoardVisible(status)
 }
 
 export function canMoveComandaTo(
