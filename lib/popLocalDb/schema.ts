@@ -1,4 +1,4 @@
-export const POP_LOCAL_SCHEMA_VERSION = 6
+export const POP_LOCAL_SCHEMA_VERSION = 7
 export const POP_LOCAL_DB_DIR = "rootsy-pop-db"
 
 export function popLocalDbFileName(popId: string): string {
@@ -231,9 +231,38 @@ CREATE TABLE IF NOT EXISTS mostrador_orders_slim (
 
 CREATE INDEX IF NOT EXISTS mostrador_orders_slim_status
   ON mostrador_orders_slim (status, opened_at);
+
+CREATE TABLE IF NOT EXISTS comandas_tickets (
+  id TEXT PRIMARY KEY,
+  station_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  source_kind TEXT NOT NULL,
+  source_id TEXT NOT NULL,
+  cart_line_id TEXT NOT NULL,
+  recipe_id TEXT,
+  recipe_name TEXT NOT NULL DEFAULT '',
+  quantity REAL NOT NULL DEFAULT 0,
+  comment TEXT NOT NULL DEFAULT '',
+  origin_label TEXT NOT NULL DEFAULT '',
+  customer_name TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  status_changed_at TEXT NOT NULL,
+  sent_at TEXT,
+  preparing_at TEXT,
+  ready_at TEXT,
+  delivered_at TEXT,
+  send_id TEXT,
+  send_kind TEXT NOT NULL DEFAULT 'order',
+  send_comment TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX IF NOT EXISTS comandas_tickets_station
+  ON comandas_tickets (station_id, created_at, id);
 `
 
 export const POP_LOCAL_DROP_SQL = `
+DROP TABLE IF EXISTS comandas_tickets;
 DROP TABLE IF EXISTS mostrador_orders_slim;
 DROP TABLE IF EXISTS mesas_reservation_settings;
 DROP TABLE IF EXISTS mesas_reservations_slim;

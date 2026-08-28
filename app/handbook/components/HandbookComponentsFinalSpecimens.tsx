@@ -298,7 +298,7 @@ function SidebarFinalSpecimen() {
         ]}
         variants={[{ name: "Estadísticas" }]}
         render={() => (
-          <div className="overflow-x-auto rounded-xl p-3">
+          <div className="handbook-rail overflow-x-auto rounded-xl p-3">
             <StatisticsSectionNav
               sections={STATISTICS_SECTIONS.slice(0, 4)}
               activeSectionId="sales"
@@ -325,10 +325,10 @@ function SidebarFinalSpecimen() {
 function SaleSidebarLive({ density }: { density: "default" | "comfortable" }) {
   const [vista, setVista] = useState<SaleCatalogViewPersisted>({
     modo: "categoria",
-    categoria: "A",
+    categoria: "Panadería",
   })
   return (
-    <div className="h-56 overflow-auto rounded-xl p-3">
+    <div className="handbook-rail h-56 overflow-auto rounded-xl p-3">
       <SaleCatalogSidebarNav
         density={density}
         categories={[
@@ -362,7 +362,7 @@ function SectionMenuLive({ headerVariant }: { headerVariant: "dark" | "default" 
 function PopSettingsNavLive() {
   const [id, setId] = useState(POP_SETTINGS_SECTIONS[0]!.id)
   return (
-    <div className="overflow-x-auto rounded-xl p-3">
+    <div className="handbook-rail overflow-x-auto rounded-xl p-3">
       <PopSettingsSectionNav
         sections={POP_SETTINGS_SECTIONS}
         activeSectionId={id}

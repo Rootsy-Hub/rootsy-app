@@ -1,20 +1,16 @@
 "use client"
 
-import "@/app/library/libraryColorTheme.css"
 import "@/components/statistics/statisticsNavRail.css"
+import { OperarSectionRail } from "@/components/layouts-module/OperarSectionRail"
 import {
   statisticsNavItemMobileClass,
   statisticsNavListClass,
   statisticsNavShellClass,
 } from "@/components/statistics/statisticsWorkspaceStyles"
-import type { PopSettingsSectionDef, PopSettingsSectionId } from "@/lib/popSettingsCatalog"
-import {
-  libraryNavItemActiveClass,
-  libraryNavItemClass,
-  libraryNavItemIconClass,
-  libraryNavItemLabelClass,
-} from "@/app/library/libraryColorTheme"
-import { cn } from "@/lib/utils"
+import type {
+  PopSettingsSectionDef,
+  PopSettingsSectionId,
+} from "@/lib/popSettingsCatalog"
 
 type Props = {
   sections: PopSettingsSectionDef[]
@@ -28,36 +24,20 @@ export function PopSettingsSectionNav({
   onSectionSelect,
 }: Props) {
   return (
-    <nav
+    <OperarSectionRail
+      embedded
+      ariaLabel="Secciones de ajustes"
+      activeId={activeSectionId}
       className={statisticsNavShellClass}
-      aria-label="Secciones de ajustes"
-    >
-      <ul className={statisticsNavListClass} role="list">
-        {sections.map((section) => {
-          const active = section.id === activeSectionId
-          const Icon = section.icon
-
-          return (
-            <li key={section.id} className="shrink-0 lg:shrink">
-              <button
-                type="button"
-                aria-current={active ? "page" : undefined}
-                aria-label={section.label}
-                onClick={() => onSectionSelect(section.id)}
-                className={cn(
-                  libraryNavItemClass,
-                  statisticsNavItemMobileClass,
-                  "w-full text-left",
-                  active && libraryNavItemActiveClass,
-                )}
-              >
-                <Icon className={libraryNavItemIconClass} aria-hidden />
-                <span className={libraryNavItemLabelClass}>{section.label}</span>
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-    </nav>
+      listClassName={statisticsNavListClass}
+      listItemClassName="w-auto shrink-0 lg:w-full lg:shrink"
+      itemClassName={statisticsNavItemMobileClass}
+      onSelect={(id) => onSectionSelect(id as PopSettingsSectionId)}
+      items={sections.map((section) => ({
+        id: section.id,
+        label: section.label,
+        icon: section.icon,
+      }))}
+    />
   )
 }

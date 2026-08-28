@@ -167,9 +167,9 @@ export const HANDBOOK_COMPONENT_SECTIONS: Record<
       id: "sidebar",
       title: "Sidebar",
       description:
-        "Rail de operar: categorías del catálogo. Las vistas del workspace viven en el menú del header.",
+        "OperarSectionRail: el rail de Vender es la fuente. Estadísticas y Ajustes lo reutilizan. Las vistas del workspace viven en el menú del header.",
       token: "SaleCatalogSidebarNav",
-      doText: "El rail de operar lista categorías. El activo se lee solo.",
+      doText: "El rail de operar lista categorías o secciones. El activo es la pastilla savia.",
       dontText: "No dupliques esas vistas como tabs debajo del header.",
       status: "live",
     },

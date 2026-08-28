@@ -31,7 +31,7 @@ import { RootsBanner } from "@/components/rootsy-banner"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
-  dataWorkspaceBlocksPageMainClass,
+  dataWorkspaceCashRegistersPageMainClass,
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -433,7 +433,7 @@ export function CashRegistersWorkspaceView() {
         }
         contentFlush
         mainMaxWidthClass="max-w-none"
-        mainClassName={dataWorkspaceBlocksPageMainClass}
+        mainClassName={dataWorkspaceCashRegistersPageMainClass}
       >
         <div className={dataWorkspaceBlocksPageContentClass}>
           {headerError ? (

@@ -4,14 +4,19 @@ import { canMoveComandaTo } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import {
   overlayComandasInFlight,
   replaceComandaTicketCache,
+  replaceComandasTicketsCaches,
 } from "@/app/[siteId]/[popId]/comandas/comandasQueryCache"
 import type {
   ComandaStatus,
   ComandaTicket,
 } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
+import { useComandasBoardHydrate } from "@/hooks/useComandasBoardHydrate"
+import {
+  readComandasTicketsLocalOrFetch,
+  refreshComandasTicketsFromNetwork,
+} from "@/lib/popLocalDb/hydrateComandasBoard"
 import {
   fetchComandaStations,
-  fetchComandas,
   moveComandaStatusApi,
 } from "@/lib/rootsyApi/comandasClient"
 import {
@@ -42,7 +47,9 @@ function applyStatusTimestamps(
 
 export function useComandasState(popId: string, _siteId: string) {
   const queryClient = useQueryClient()
+  const boardHydrate = useComandasBoardHydrate(popId)
   const enabled = Boolean(popId)
+  const boardEnabled = enabled && boardHydrate.canReadBoard
   const [stationId, setStationId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const inFlightMovesRef = useRef(new Map<string, ComandaTicket>())
@@ -73,26 +80,25 @@ export function useComandasState(popId: string, _siteId: string) {
     queryKey: popComandasTicketsQueryKey(popId, stationId ?? ""),
     queryFn: async () => {
       if (!stationId) return [] as ComandaTicket[]
-      const res = await fetchComandas(popId, stationId)
-      if (!res.success) throw new Error(res.error)
-      const visible = res.tickets.filter(
-        (ticket) => ticket.status !== "pending" && ticket.status !== "voided",
-      )
-      return overlayComandasInFlight(visible, inFlightMovesRef.current)
+      const tickets = await readComandasTicketsLocalOrFetch(popId, stationId)
+      return overlayComandasInFlight(tickets, inFlightMovesRef.current)
     },
-    enabled: enabled && Boolean(stationId),
+    enabled: boardEnabled && Boolean(stationId),
     ...sessionListQueryOptions,
   })
 
   const tickets = ticketsQuery.data ?? []
 
   const reloadTickets = useCallback(async () => {
-    if (!popId || !stationId) return
-    await queryClient.invalidateQueries({
-      queryKey: popComandasTicketsQueryKey(popId, stationId),
-      refetchType: "all",
-    })
-  }, [popId, queryClient, stationId])
+    if (!popId) return
+    const { stations, tickets } = await refreshComandasTicketsFromNetwork(popId)
+    replaceComandasTicketsCaches(
+      queryClient,
+      popId,
+      stations,
+      overlayComandasInFlight(tickets, inFlightMovesRef.current),
+    )
+  }, [popId, queryClient])
 
   const moveTicket = useCallback(
     async (ticketId: string, status: ComandaStatus) => {
@@ -176,7 +182,10 @@ export function useComandasState(popId: string, _siteId: string) {
     stationId,
     setStationId,
     tickets,
-    loading: stationsQuery.isLoading || ticketsQuery.isLoading,
+    loading:
+      stationsQuery.isLoading ||
+      !boardHydrate.canReadBoard ||
+      (Boolean(stationId) && ticketsQuery.isLoading),
     error:
       error ??
       stationsQuery.error?.message ??

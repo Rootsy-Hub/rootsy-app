@@ -15,3 +15,4 @@ export function writePopLocalIfOpen(
 
 export const writeMesasFloorIfOpen = writePopLocalIfOpen
 export const writeMostradorBoardIfOpen = writePopLocalIfOpen
+export const writeComandasBoardIfOpen = writePopLocalIfOpen

@@ -337,6 +337,7 @@ export function CashRegisterCard({
               {showCloseAction ? (
                 <RootsDefaultButton
                   type="button"
+                  size="compact"
                   className="shrink-0"
                   onClick={onClose}
                 >
@@ -355,6 +356,7 @@ export function CashRegisterCard({
               {canCreate ? (
                 <RootsDefaultButton
                   type="button"
+                  size="compact"
                   withIcon
                   className="shrink-0"
                   onClick={onOpen}

@@ -8,6 +8,7 @@ const RECIPES_HYDRATED_META = "recipes_hydrated"
 const RECIPE_CATEGORIES_HYDRATED_META = "recipe_categories_hydrated"
 const MESAS_FLOOR_HYDRATED_META = "mesas_floor_hydrated"
 const MOSTRADOR_BOARD_HYDRATED_META = "mostrador_board_hydrated"
+const COMANDAS_BOARD_HYDRATED_META = "comandas_board_hydrated"
 
 export function isArticlesHydrated(db: PopLocalDatabase): boolean {
   return Boolean(db.getMeta(ARTICLES_HYDRATED_META))
@@ -114,4 +115,19 @@ export function markMostradorBoardHydrated(
 
 export function clearMostradorBoardHydratedMark(db: PopLocalDatabase) {
   db.run("DELETE FROM meta WHERE key = ?", [MOSTRADOR_BOARD_HYDRATED_META])
+}
+
+export function isComandasBoardHydrated(db: PopLocalDatabase): boolean {
+  return Boolean(db.getMeta(COMANDAS_BOARD_HYDRATED_META))
+}
+
+export function markComandasBoardHydrated(
+  db: PopLocalDatabase,
+  at = new Date().toISOString(),
+) {
+  db.setMeta(COMANDAS_BOARD_HYDRATED_META, at)
+}
+
+export function clearComandasBoardHydratedMark(db: PopLocalDatabase) {
+  db.run("DELETE FROM meta WHERE key = ?", [COMANDAS_BOARD_HYDRATED_META])
 }

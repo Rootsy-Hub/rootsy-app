@@ -121,6 +121,12 @@ export const dataWorkspaceBlocksPageMainClass = cn(
   "data-workspace-blocks-atmosphere rootsy-app-light min-h-0 overflow-hidden overflow-y-hidden text-foreground",
 )
 
+/** Cajas — mismo recuadro, valle sotobosque luz. */
+export const dataWorkspaceCashRegistersPageMainClass = cn(
+  dataWorkspaceBlocksPageMainClass,
+  "data-workspace-blocks-atmosphere--sotobosque-luz",
+)
+
 /** Contenedor de grid en listados cuentas / cajas. */
 export const dataWorkspaceBlocksPageContentClass = cn(
   dataWorkspaceBlocksContentScopeClass,

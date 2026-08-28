@@ -43,6 +43,10 @@ export function checkoutCustomerName(input: {
   return input.manualName?.trim() ?? ""
 }
 
+export function isComandaBoardVisible(status: ComandaStatus): boolean {
+  return status !== "pending" && status !== "voided"
+}
+
 export function canDragComanda(status: ComandaStatus): boolean {
   return (
     status === "sent" ||
@@ -100,7 +104,7 @@ export function groupComandasForBoard(
 ): ComandaBoardCard[] {
   const groups = new Map<string, ComandaTicket[]>()
   for (const ticket of tickets) {
-    if (ticket.status === "pending" || ticket.status === "voided") continue
+    if (!isComandaBoardVisible(ticket.status)) continue
     const key = ticket.sendId ?? ticket.id
     const list = groups.get(key) ?? []
     list.push(ticket)

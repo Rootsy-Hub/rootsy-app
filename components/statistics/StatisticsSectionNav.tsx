@@ -1,26 +1,18 @@
 "use client"
 
-import "@/app/library/libraryColorTheme.css"
 import "@/components/statistics/statisticsNavRail.css"
-import type {
-  StatisticsSectionDef,
-  StatisticsSectionId,
-} from "@/lib/statisticsCatalog"
-import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
+import { OperarSectionRail } from "@/components/layouts-module/OperarSectionRail"
 import {
   statisticsNavItemMobileClass,
   statisticsNavListClass,
   statisticsNavShellClass,
   statisticsPlannedBadgeClass,
 } from "@/components/statistics/statisticsWorkspaceStyles"
-import {
-  libraryNavItemActiveClass,
-  libraryNavItemClass,
-  libraryNavItemIconClass,
-  libraryNavItemLabelClass,
-} from "@/app/library/libraryColorTheme"
-import { cn } from "@/lib/utils"
-import { PopLink as Link } from "@/lib/pop-spa/PopLink"
+import type {
+  StatisticsSectionDef,
+  StatisticsSectionId,
+} from "@/lib/statisticsCatalog"
+import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
 import { useEffect, useRef } from "react"
 
 export function StatisticsSectionNav({
@@ -53,52 +45,29 @@ export function StatisticsSectionNav({
   }, [activeSectionId])
 
   return (
-    <nav
+    <OperarSectionRail
       ref={navRef}
+      embedded
+      ariaLabel="Secciones de estadísticas"
+      activeId={activeSectionId}
       className={statisticsNavShellClass}
-      aria-label="Secciones de estadísticas"
-    >
-      <ul className={statisticsNavListClass} role="list">
-        {sections.map((section) => {
-          const active = section.id === activeSectionId
-          const Icon = getRootsModuleIcon(section.iconModuleKey)
-
-          return (
-            <li key={section.id} className="shrink-0 lg:shrink">
-              <Link
-                href={getSectionHref(section.id)}
-                scroll={false}
-                aria-current={active ? "page" : undefined}
-                aria-label={section.label}
-                onClick={(event) => {
-                  if (
-                    event.metaKey ||
-                    event.ctrlKey ||
-                    event.shiftKey ||
-                    event.altKey ||
-                    event.button !== 0
-                  ) {
-                    return
-                  }
-                  event.preventDefault()
-                  onSectionClick?.(section.id)
-                }}
-                className={cn(
-                  libraryNavItemClass,
-                  statisticsNavItemMobileClass,
-                  active && libraryNavItemActiveClass,
-                )}
-              >
-                <Icon className={libraryNavItemIconClass} aria-hidden />
-                <span className={libraryNavItemLabelClass}>{section.label}</span>
-                {section.comingSoon ? (
-                  <span className={statisticsPlannedBadgeClass}>Próx.</span>
-                ) : null}
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
-    </nav>
+      listClassName={statisticsNavListClass}
+      listItemClassName="w-auto shrink-0 lg:w-full lg:shrink"
+      itemClassName={statisticsNavItemMobileClass}
+      onSelect={
+        onSectionClick
+          ? (id) => onSectionClick(id as StatisticsSectionId)
+          : undefined
+      }
+      items={sections.map((section) => ({
+        id: section.id,
+        label: section.label,
+        href: getSectionHref(section.id),
+        icon: getRootsModuleIcon(section.iconModuleKey),
+        trailing: section.comingSoon ? (
+          <span className={statisticsPlannedBadgeClass}>Próx.</span>
+        ) : null,
+      }))}
+    />
   )
 }

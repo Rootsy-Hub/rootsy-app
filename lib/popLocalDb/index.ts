@@ -82,6 +82,7 @@ export {
   upsertMesasSessionSlim,
 } from "@/lib/popLocalDb/mesasFloorRepo"
 export {
+  writeComandasBoardIfOpen,
   writeMesasFloorIfOpen,
   writeMostradorBoardIfOpen,
   writePopLocalIfOpen,
@@ -98,6 +99,19 @@ export {
   replaceMostradorOrdersSlim,
   upsertMostradorOrderSlim,
 } from "@/lib/popLocalDb/mostradorBoardRepo"
+export {
+  clearPopLocalComandasBoardHydrateMark,
+  hydratePopComandasBoardFromNetwork,
+  readComandasTicketsLocalOrFetch,
+  refreshComandasTicketsFromNetwork,
+} from "@/lib/popLocalDb/hydrateComandasBoard"
+export {
+  deleteComandaTicket,
+  deleteComandaTicketsBySendId,
+  listComandaTicketsByStation,
+  replaceComandaTickets,
+  upsertComandaTicket,
+} from "@/lib/popLocalDb/comandasBoardRepo"
 export {
   deleteCategoryById,
   getCategoryById,

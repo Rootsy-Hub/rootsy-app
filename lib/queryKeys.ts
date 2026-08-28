@@ -430,6 +430,10 @@ export function popLocalMostradorBoardHydrateQueryKey(popId: string) {
   return [...popLocalDbQueryRoot(popId), "hydrate", "mostrador-board"] as const
 }
 
+export function popLocalComandasBoardHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "comandas-board"] as const
+}
+
 export function saleBoardPromotionsQueryRoot(popId: string) {
   return ["promotions", popId, "sale-board"] as const
 }

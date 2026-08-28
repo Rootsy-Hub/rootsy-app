@@ -15,7 +15,7 @@ export const dataWorkspaceModuleHeaderVariant =
 export type DataWorkspaceModuleLayoutProps = DataWorkspaceLayoutProps
 
 /**
- * Shell módulo POP — header éter + cuerpo plano.
+ * Shell módulo POP — header éter + cuerpo sotobosque luz.
  * Sin foto POP, sin estrellas ni fallback detrás del contenido.
  */
 export function DataWorkspaceModuleLayout({

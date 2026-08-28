@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query"
 import {
   applyComandaStatusToTicketsCache,
   invalidateComandasTicketsCache,
+  replaceComandasTicketsCaches,
   upsertComandaTicketCache,
 } from "@/app/[siteId]/[popId]/comandas/comandasQueryCache"
 import type {
@@ -10,7 +11,14 @@ import type {
   ComandaStatus,
   ComandaTicket,
 } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
-import { popComandasQueryRoot } from "@/lib/queryKeys"
+import {
+  clearPopLocalComandasBoardHydrateMark,
+  refreshComandasTicketsFromNetwork,
+} from "@/lib/popLocalDb/hydrateComandasBoard"
+import {
+  popComandasQueryRoot,
+  popLocalComandasBoardHydrateQueryKey,
+} from "@/lib/queryKeys"
 import type { DomainEvent } from "@/lib/realtime/protocol"
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -91,14 +99,32 @@ function parseTicketList(value: unknown): ComandaTicket[] {
   return tickets
 }
 
+function refreshComandasBoardCache(queryClient: QueryClient, popId: string) {
+  void refreshComandasTicketsFromNetwork(popId)
+    .then(({ stations, tickets }) => {
+      replaceComandasTicketsCaches(queryClient, popId, stations, tickets)
+    })
+    .catch(() => {
+      invalidateComandasTicketsCache(queryClient, popId)
+    })
+}
+
 export function invalidateComandasRealtimeQueries(
   queryClient: QueryClient,
   popId: string,
 ) {
-  void queryClient.invalidateQueries({
-    queryKey: popComandasQueryRoot(popId),
-    refetchType: "all",
-  })
+  void clearPopLocalComandasBoardHydrateMark(popId)
+    .catch(() => undefined)
+    .then(() => {
+      void queryClient.invalidateQueries({
+        queryKey: popLocalComandasBoardHydrateQueryKey(popId),
+        refetchType: "all",
+      })
+      void queryClient.invalidateQueries({
+        queryKey: popComandasQueryRoot(popId),
+        refetchType: "all",
+      })
+    })
 }
 
 export function applyComandasRealtimeEvent(
@@ -116,7 +142,7 @@ export function applyComandasRealtimeEvent(
       }
       return
     }
-    invalidateComandasTicketsCache(queryClient, popId)
+    refreshComandasBoardCache(queryClient, popId)
     return
   }
 
@@ -126,6 +152,6 @@ export function applyComandasRealtimeEvent(
       applyComandaStatusToTicketsCache(queryClient, popId, ticket)
       return
     }
-    invalidateComandasTicketsCache(queryClient, popId)
+    refreshComandasBoardCache(queryClient, popId)
   }
 }

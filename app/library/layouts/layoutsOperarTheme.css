@@ -377,7 +377,8 @@
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item--active,
 .rootsy-theme-pos .layouts-operar-body .library-nav-item--active,
-.rootsy-theme-pos .handbook-rail .library-nav-item--active {
+.rootsy-theme-pos .handbook-rail .library-nav-item--active,
+.handbook-rail .rootsy-theme-pos.layouts-operar-body .library-nav-item--active {
   border-color: transparent;
   background-color: var(--rootsy-savia-500);
   color: var(--rootsy-savia-950);
@@ -385,14 +386,16 @@
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item--active:hover,
 .rootsy-theme-pos .layouts-operar-body .library-nav-item--active:hover,
-.rootsy-theme-pos .handbook-rail .library-nav-item--active:hover {
+.rootsy-theme-pos .handbook-rail .library-nav-item--active:hover,
+.handbook-rail .rootsy-theme-pos.layouts-operar-body .library-nav-item--active:hover {
   background-color: var(--rootsy-savia-400);
   color: var(--rootsy-savia-950);
 }
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item--active .library-nav-item-icon,
 .rootsy-theme-pos .layouts-operar-body .library-nav-item--active .library-nav-item-icon,
-.rootsy-theme-pos .handbook-rail .library-nav-item--active .library-nav-item-icon {
+.rootsy-theme-pos .handbook-rail .library-nav-item--active .library-nav-item-icon,
+.handbook-rail .rootsy-theme-pos.layouts-operar-body .library-nav-item--active .library-nav-item-icon {
   color: inherit;
 }
 

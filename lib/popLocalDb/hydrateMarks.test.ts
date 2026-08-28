@@ -7,12 +7,14 @@ import {
   clearCategoriesHydratedMark,
   clearPromotionsHydratedMark,
   clearMesasFloorHydratedMark,
+  clearComandasBoardHydratedMark,
   clearMostradorBoardHydratedMark,
   clearRecipeCategoriesHydratedMark,
   clearRecipesHydratedMark,
   isArticlesHydrated,
   isCategoriesHydrated,
   isMesasFloorHydrated,
+  isComandasBoardHydrated,
   isMostradorBoardHydrated,
   isPromotionsHydrated,
   isRecipeCategoriesHydrated,
@@ -21,6 +23,7 @@ import {
   markCategoriesHydrated,
   markPromotionsHydrated,
   markMesasFloorHydrated,
+  markComandasBoardHydrated,
   markMostradorBoardHydrated,
   markRecipeCategoriesHydrated,
   markRecipesHydrated,
@@ -124,5 +127,14 @@ describe("hydrate marks", () => {
     assert.equal(isMostradorBoardHydrated(db), true)
     clearMostradorBoardHydratedMark(db)
     assert.equal(isMostradorBoardHydrated(db), false)
+  })
+
+  it("la marca del tablero de comandas es una sola por pop", async () => {
+    const db = await createPopLocalDatabase()
+    assert.equal(isComandasBoardHydrated(db), false)
+    markComandasBoardHydrated(db, "2026-01-01T00:00:00.000Z")
+    assert.equal(isComandasBoardHydrated(db), true)
+    clearComandasBoardHydratedMark(db)
+    assert.equal(isComandasBoardHydrated(db), false)
   })
 })
