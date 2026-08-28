@@ -67,6 +67,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
@@ -149,7 +150,7 @@ export function SuppliersWorkspaceView() {
   const routerRef = useRef(router)
   routerRef.current = router
 
-  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+  const { bootstrap, hasPermission } =
     usePopWorkspace()
   const afterHydration = useAfterHydration()
   const menuCache = usePopMenuCache(popId)
@@ -229,11 +230,8 @@ export function SuppliersWorkspaceView() {
   const canCreate = supplierPerm(POP_PERMS.SUPPLIER_CREATE)
   const canUpdate = supplierPerm(POP_PERMS.SUPPLIER_UPDATE)
   const canDelete = supplierPerm(POP_PERMS.SUPPLIER_DELETE)
-  const listFetching =
-    !popId || !siteId
-      ? false
-      : suppliersQuery.isPending ||
-        (suppliersQuery.isFetching && !suppliersQuery.isFetched)
+  const listPending = !suppliersQuery.data && suppliersQuery.isPending
+  const listFetching = !suppliersQuery.data && suppliersQuery.isPending
   const error =
     !popId || !siteId
       ? "Punto de venta no encontrado"
@@ -594,28 +592,36 @@ export function SuppliersWorkspaceView() {
     )
   }
 
+  if (listPending) {
+    return <PopModuleLoading moduleKey="suppliers" />
+  }
+
+  const popName = bootstrap?.popName ?? ""
+
   return (
     <DataWorkspaceTableListPage
       layout={{
         siteId,
         popId,
-        popName: bootstrap?.popName ?? "",
+        popName,
         title: "Proveedores",
-        loading: bootstrapLoading,
+        loading: !popName,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
-        headerActions: canCreate ? (
-          <RootsIconButton
-            label="Nuevo proveedor"
-            semantic="primary"
-            atmosphere="eter"
-            size="default"
-            onClick={openCreate}
-          >
-            <Plus className="size-5" aria-hidden />
-          </RootsIconButton>
-        ) : null,
+        headerActions:
+          !afterHydration || canCreate ? (
+            <RootsIconButton
+              label="Nuevo proveedor"
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
+              disabled={!canCreate}
+              onClick={openCreate}
+            >
+              <Plus className="size-5" aria-hidden />
+            </RootsIconButton>
+          ) : null,
       }}
       error={error}
     >

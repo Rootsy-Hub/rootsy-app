@@ -1,19 +1,14 @@
 "use client"
 
-import type { GetPopRecipesTableInput } from "@/app/[siteId]/[popId]/recipes/actions"
 import {
   concatTableRowKey,
-  useDataWorkspaceInfiniteTableQuery,
+  flattenDataWorkspaceTablePages,
 } from "@/hooks/useDataWorkspaceInfiniteTableQuery"
-import {
-  DATA_WORKSPACE_TABLE_PAGE_SIZE,
-  pinDataWorkspaceTableInfiniteParams,
-} from "@/lib/dataWorkspaceTableInfinite"
-import {
-  popRecipesQueryKey,
-  type PopRecipesQueryParams,
-} from "@/lib/queryKeys"
-import { fetchPopRecipesTable, type PopRecipesTableResult } from "@/lib/rootsyApi/recipesClient"
+import { pinDataWorkspaceTableInfiniteParams } from "@/lib/dataWorkspaceTableInfinite"
+import { recipesTableInfiniteQueryOptions } from "@/lib/recipesWorkspaceQuery"
+import type { PopRecipesQueryParams } from "@/lib/queryKeys"
+import type { PopRecipesTableResult } from "@/lib/rootsyApi/recipesClient"
+import { useInfiniteQuery } from "@tanstack/react-query"
 
 type UsePopRecipesTableOptions = {
   enabled?: boolean
@@ -26,21 +21,14 @@ export function usePopRecipesTable(
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
   const infiniteParams = pinDataWorkspaceTableInfiniteParams(params)
-  const queryParams: GetPopRecipesTableInput = {
-    q: params.q,
-    page: infiniteParams.page,
-    pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
-    soloActivos: params.soloActivos,
-    categoryId: params.categoryId,
-    sort: params.sort,
-    ord: params.ord,
-  }
 
-  return useDataWorkspaceInfiniteTableQuery<PopRecipesTableResult>({
-    queryKey: popRecipesQueryKey(popId ?? "", infiniteParams),
+  return useInfiniteQuery({
+    ...recipesTableInfiniteQueryOptions(popId ?? "", infiniteParams),
     enabled,
-    queryFn: (page) =>
-      fetchPopRecipesTable(popId!, { ...queryParams, page }),
-    concat: concatTableRowKey<PopRecipesTableResult, "recipes">("recipes"),
+    select: (data) =>
+      flattenDataWorkspaceTablePages<PopRecipesTableResult>(
+        data,
+        concatTableRowKey<PopRecipesTableResult, "recipes">("recipes"),
+      ),
   })
 }

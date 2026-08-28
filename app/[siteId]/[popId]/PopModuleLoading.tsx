@@ -18,6 +18,10 @@ import { prefetchCashRegistersListQuery } from "@/lib/cashRegistersListQuery"
 import { prefetchAuditWorkspaceQuery } from "@/lib/auditWorkspaceQuery"
 import { prefetchChatWorkspaceQuery } from "@/lib/chatWorkspaceQuery"
 import { prefetchCurrentAccountsWorkspaceQuery } from "@/lib/currentAccountsWorkspaceQuery"
+import { prefetchClientsWorkspaceQuery } from "@/lib/clientsWorkspaceQuery"
+import { prefetchSuppliersWorkspaceQuery } from "@/lib/suppliersWorkspaceQuery"
+import { prefetchArticlesWorkspaceQuery } from "@/lib/articlesWorkspaceQuery"
+import { prefetchRecipesWorkspaceQuery } from "@/lib/recipesWorkspaceQuery"
 import { prefetchPrintersWorkspaceQuery } from "@/lib/printersWorkspaceQuery"
 import { prefetchSettingsWorkspaceQuery } from "@/lib/settingsWorkspaceQuery"
 import { prefetchExpensesWorkspaceQuery } from "@/lib/expensesWorkspaceQuery"
@@ -167,6 +171,22 @@ export function PopModuleLoading({
     }
     if (moduleKey === "current-accounts") {
       void prefetchCurrentAccountsWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "clients") {
+      void prefetchClientsWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "suppliers") {
+      void prefetchSuppliersWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "articles") {
+      void prefetchArticlesWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "recipes") {
+      void prefetchRecipesWorkspaceQuery(popId, queryClient)
       return
     }
     if (moduleKey === "settings") {

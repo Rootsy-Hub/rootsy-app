@@ -1,19 +1,14 @@
 "use client"
 
-import type { GetPopClientsTableInput } from "@/app/[siteId]/[popId]/clients/actions"
 import {
   concatTableRowKey,
-  useDataWorkspaceInfiniteTableQuery,
+  flattenDataWorkspaceTablePages,
 } from "@/hooks/useDataWorkspaceInfiniteTableQuery"
-import {
-  DATA_WORKSPACE_TABLE_PAGE_SIZE,
-  pinDataWorkspaceTableInfiniteParams,
-} from "@/lib/dataWorkspaceTableInfinite"
-import {
-  popClientsQueryKey,
-  type PopClientsQueryParams,
-} from "@/lib/queryKeys"
-import { fetchPopClientsTable, type PopClientsTableResult } from "@/lib/rootsyApi/clientsClient"
+import { clientsTableInfiniteQueryOptions } from "@/lib/clientsWorkspaceQuery"
+import { pinDataWorkspaceTableInfiniteParams } from "@/lib/dataWorkspaceTableInfinite"
+import type { PopClientsQueryParams } from "@/lib/queryKeys"
+import type { PopClientsTableResult } from "@/lib/rootsyApi/clientsClient"
+import { useInfiniteQuery } from "@tanstack/react-query"
 
 type UsePopClientsTableOptions = {
   enabled?: boolean
@@ -26,22 +21,14 @@ export function usePopClientsTable(
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
   const infiniteParams = pinDataWorkspaceTableInfiniteParams(params)
-  const queryParams: GetPopClientsTableInput = {
-    page: infiniteParams.page,
-    pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
-    search: params.search,
-    soloActivos: params.soloActivos,
-    withEmail: params.withEmail,
-    withTaxId: params.withTaxId,
-    sort: params.sort,
-    ord: params.ord,
-  }
 
-  return useDataWorkspaceInfiniteTableQuery<PopClientsTableResult>({
-    queryKey: popClientsQueryKey(popId ?? "", infiniteParams),
+  return useInfiniteQuery({
+    ...clientsTableInfiniteQueryOptions(popId ?? "", infiniteParams),
     enabled,
-    queryFn: (page) =>
-      fetchPopClientsTable(popId!, { ...queryParams, page }),
-    concat: concatTableRowKey<PopClientsTableResult, "clients">("clients"),
+    select: (data) =>
+      flattenDataWorkspaceTablePages<PopClientsTableResult>(
+        data,
+        concatTableRowKey<PopClientsTableResult, "clients">("clients"),
+      ),
   })
 }

@@ -2,8 +2,10 @@ import { ChatModulePageSkeleton } from "@/app/[siteId]/[popId]/chat/ChatWorkspac
 import {
   AccountsModulePageSkeleton,
   AlertsModulePageSkeleton,
+  ArticlesModulePageSkeleton,
   AuditModulePageSkeleton,
   CashRegistersModulePageSkeleton,
+  ClientsModulePageSkeleton,
   CobrarServiciosModulePageSkeleton,
   ComandasModulePageSkeleton,
   CurrentAccountsModulePageSkeleton,
@@ -15,10 +17,12 @@ import {
   MostradorModulePageSkeleton,
   PrintersModulePageSkeleton,
   PurchasesModulePageSkeleton,
+  RecipesModulePageSkeleton,
   ReportsModulePageSkeleton,
   SaleModulePageSkeleton,
   SettingsModulePageSkeleton,
   StatisticsModulePageSkeleton,
+  SuppliersModulePageSkeleton,
 } from "@/components/pop-workspace/popModulePageSkeletons"
 import type { PopModuleSkeletonLayout } from "@/components/pop-workspace/popModuleSkeletonShell"
 import type { ReactNode } from "react"
@@ -56,6 +60,10 @@ const POP_MODULE_PAGE_SKELETONS: Record<string, PopModulePageSkeleton> = {
   inventory: page(InventoryModulePageSkeleton),
   manufacturing: page(ManufacturingModulePageSkeleton),
   "current-accounts": page(CurrentAccountsModulePageSkeleton),
+  clients: page(ClientsModulePageSkeleton),
+  suppliers: page(SuppliersModulePageSkeleton),
+  articles: page(ArticlesModulePageSkeleton),
+  recipes: page(RecipesModulePageSkeleton),
   "cash-registers": page(CashRegistersModulePageSkeleton),
   accounts: page(AccountsModulePageSkeleton),
   printers: page(PrintersModulePageSkeleton),

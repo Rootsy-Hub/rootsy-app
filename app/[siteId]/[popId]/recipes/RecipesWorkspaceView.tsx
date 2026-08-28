@@ -87,6 +87,7 @@ import {
 } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { recipesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { TableBody, TableCell } from "@/components/ui/table"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopComandaStations } from "@/hooks/usePopComandaStations"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
@@ -181,7 +182,7 @@ export function RecipesWorkspaceView() {
   const searchInputId = useId()
   const filtersButtonId = useId()
 
-  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+  const { bootstrap, hasPermission } =
     usePopWorkspace()
   const afterHydration = useAfterHydration()
   const menuCache = usePopMenuCache(popId)
@@ -351,11 +352,8 @@ export function RecipesWorkspaceView() {
   const canCreate = recipePerm(POP_PERMS.RECIPE_CREATE)
   const canUpdate = recipePerm(POP_PERMS.RECIPE_UPDATE)
   const canDelete = recipePerm(POP_PERMS.RECIPE_DELETE)
-  const loading =
-    !popId || !siteId
-      ? false
-      : recipesQuery.isPending ||
-        (recipesQuery.isFetching && !recipesQuery.isFetched)
+  const listPending = !recipesQuery.data && recipesQuery.isPending
+  const listFetching = !recipesQuery.data && recipesQuery.isPending
   const tableError =
     recipesQuery.data?.success === false
       ? recipesQuery.data.error
@@ -460,11 +458,11 @@ export function RecipesWorkspaceView() {
   }, [categories, ws.categoryId])
 
   const resultsSummary = useMemo(() => {
-    if (loading && totalCount === 0) return "…"
+    if (listFetching && totalCount === 0) return "…"
     if (totalCount === 0) return "Sin resultados"
     const noun = totalCount === 1 ? "receta" : "recetas"
     return `${totalCount.toLocaleString("es-AR")} ${noun}`
-  }, [loading, totalCount])
+  }, [listFetching, totalCount])
 
   const skeletonRowCount = DATA_WORKSPACE_TABLE_SKELETON_ROW_COUNT
 
@@ -799,31 +797,39 @@ export function RecipesWorkspaceView() {
     )
   }
 
+  if (listPending) {
+    return <PopModuleLoading moduleKey="recipes" />
+  }
+
+  const popName = bootstrap?.popName ?? ""
+
   return (
     <DataWorkspaceTableListPage
       layout={{
         siteId,
         popId,
-        popName: bootstrap?.popName ?? "",
+        popName,
         title: "Recetas",
-        loading: bootstrapLoading,
+        loading: !popName,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "Menú",
-        headerActions: canCreate ? (
-          <RootsIconButton
-            label="Nueva receta"
-            semantic="primary"
-            atmosphere="eter"
-            size="default"
-            onClick={openCreate}
-          >
-            <Plus className="size-5" aria-hidden />
-          </RootsIconButton>
-        ) : null,
+        headerActions:
+          !afterHydration || canCreate ? (
+            <RootsIconButton
+              label="Nueva receta"
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
+              disabled={!canCreate}
+              onClick={openCreate}
+            >
+              <Plus className="size-5" aria-hidden />
+            </RootsIconButton>
+          ) : null,
         headerMoreActions:
-          canUpdate || canCreate
+          !afterHydration || canUpdate || canCreate
             ? [
                 {
                   label: "Gestionar categorías",
@@ -879,7 +885,7 @@ export function RecipesWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
           <DataWorkspaceTableListShell
-            lockScroll={loading}
+            lockScroll={listFetching}
             activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -911,7 +917,7 @@ export function RecipesWorkspaceView() {
               ) : null
             }
             overlay={
-              !loading && totalCount === 0 ? (
+              !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
               ) : null
             }
@@ -920,7 +926,7 @@ export function RecipesWorkspaceView() {
             scrollResetKey={ws.page}
             footer={
               <DataWorkspaceTableListPageDock
-                listFetching={loading}
+                listFetching={listFetching}
                 loadedCount={recipes.length}
                 totalCount={totalCount}
                 page={ws.page}
@@ -932,7 +938,7 @@ export function RecipesWorkspaceView() {
             <DataWorkspaceListTableFrame>
               <table
                 className={cn(workspaceTableLayoutClassName, "min-w-[80rem]")}
-                aria-busy={loading}
+                aria-busy={listFetching}
               >
                 <WorkspaceTableHeader>
                   <WorkspaceTableHeaderRow>
@@ -958,7 +964,7 @@ export function RecipesWorkspaceView() {
                         })
                       }}
                       disabled={
-                        loading || totalCount === 0 || recipes.length === 0
+                        listFetching || totalCount === 0 || recipes.length === 0
                       }
                       ariaLabel="Seleccionar filas visibles"
                     />
@@ -1040,7 +1046,7 @@ export function RecipesWorkspaceView() {
                   </WorkspaceTableHeaderRow>
                 </WorkspaceTableHeader>
                 <TableBody>
-                  {loading ? (
+                  {listFetching ? (
                     <WorkspaceTableSkeletonRows
                       rowCount={skeletonRowCount}
                       rowKeyPrefix="recipes-sk"

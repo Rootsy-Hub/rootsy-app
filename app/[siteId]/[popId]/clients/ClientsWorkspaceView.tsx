@@ -84,6 +84,7 @@ import {
   nextWorkspaceTableSortState,
   workspaceTableSortDisplayDirection,
 } from "@/lib/workspaceTableSort"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
@@ -177,7 +178,7 @@ export function ClientsWorkspaceView() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+  const { bootstrap, hasPermission } =
     usePopWorkspace()
   const afterHydration = useAfterHydration()
   const menuCache = usePopMenuCache(popId)
@@ -282,11 +283,8 @@ export function ClientsWorkspaceView() {
   const canCreate = clientPerm(POP_PERMS.CLIENT_CREATE)
   const canUpdate = clientPerm(POP_PERMS.CLIENT_UPDATE)
   const canDelete = clientPerm(POP_PERMS.CLIENT_DELETE)
-  const listFetching =
-    !popId || !siteId
-      ? false
-      : clientsTableQuery.isPending ||
-        (clientsTableQuery.isFetching && !clientsTableQuery.isFetched)
+  const listPending = !clientsTableQuery.data && clientsTableQuery.isPending
+  const listFetching = !clientsTableQuery.data && clientsTableQuery.isPending
   const error =
     clientsTableQuery.data?.success === false
       ? clientsTableQuery.data.error || "Error"
@@ -667,29 +665,37 @@ export function ClientsWorkspaceView() {
     )
   }
 
+  if (listPending) {
+    return <PopModuleLoading moduleKey="clients" />
+  }
+
+  const popName = bootstrap?.popName ?? ""
+
   return (
     <DataWorkspaceTableListPage
       layout={{
         siteId,
         popId,
-        popName: bootstrap?.popName ?? "",
+        popName,
         title: "Clientes",
-        loading: bootstrapLoading,
+        loading: !popName,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "CRM",
-        headerActions: canCreate ? (
-          <RootsIconButton
-            label="Nuevo cliente"
-            semantic="primary"
-            atmosphere="eter"
-            size="default"
-            onClick={openCreate}
-          >
-            <Plus className="size-5" aria-hidden />
-          </RootsIconButton>
-        ) : null,
+        headerActions:
+          !afterHydration || canCreate ? (
+            <RootsIconButton
+              label="Nuevo cliente"
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
+              disabled={!canCreate}
+              onClick={openCreate}
+            >
+              <Plus className="size-5" aria-hidden />
+            </RootsIconButton>
+          ) : null,
       }}
       error={error}
     >

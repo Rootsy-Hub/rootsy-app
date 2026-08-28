@@ -20,7 +20,10 @@ import { DataWorkspaceTableListLoadingBody } from "@/components/data-workspace/D
 import { ChannelDataEmptyState } from "@/components/sale-operation/ChannelOperationDataPanel"
 import { ServiceOperateSnapshotPanelTabs } from "@/components/service-operation/ServiceOperateSnapshotPanelTabs"
 import {
+  ChefHat,
+  DollarSign,
   FileText,
+  FolderTree,
   LayoutGrid,
   MapPin,
   Minus,
@@ -232,11 +235,15 @@ function TableListModulePageSkeleton({
   title,
   moduleKey,
   headerActions,
+  headerMoreActions,
+  pillLabel,
 }: {
   layout: PopModuleSkeletonLayout
   title: string
   moduleKey: string
   headerActions?: ReactNode
+  headerMoreActions?: DataWorkspaceHeaderMoreAction[]
+  pillLabel?: string
 }) {
   return (
     <DataWorkspaceTableListPage
@@ -250,6 +257,8 @@ function TableListModulePageSkeleton({
         userAvatarSrc: layout.userAvatarSrc,
         userRoleLabel: layout.userRoleLabel,
         headerActions,
+        headerMoreActions,
+        pillLabel,
       }}
     >
       <DataWorkspaceTableListNatureShell>
@@ -276,6 +285,117 @@ export function ManufacturingModulePageSkeleton(layout: PopModuleSkeletonLayout)
           <Plus className="size-5" aria-hidden />
         </RootsIconButton>
       }
+    />
+  )
+}
+
+export function ClientsModulePageSkeleton(layout: PopModuleSkeletonLayout) {
+  return (
+    <TableListModulePageSkeleton
+      layout={layout}
+      title="Clientes"
+      moduleKey="clients"
+      pillLabel="CRM"
+      headerActions={
+        <RootsIconButton
+          label="Nuevo cliente"
+          semantic="primary"
+          atmosphere="eter"
+          size="default"
+          disabled
+        >
+          <Plus className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
+    />
+  )
+}
+
+export function SuppliersModulePageSkeleton(layout: PopModuleSkeletonLayout) {
+  return (
+    <TableListModulePageSkeleton
+      layout={layout}
+      title="Proveedores"
+      moduleKey="suppliers"
+      headerActions={
+        <RootsIconButton
+          label="Nuevo proveedor"
+          semantic="primary"
+          atmosphere="eter"
+          size="default"
+          disabled
+        >
+          <Plus className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
+    />
+  )
+}
+
+export function ArticlesModulePageSkeleton(layout: PopModuleSkeletonLayout) {
+  return (
+    <TableListModulePageSkeleton
+      layout={layout}
+      title="Artículos"
+      moduleKey="articles"
+      pillLabel="Catálogo"
+      headerActions={
+        <RootsIconButton
+          label="Nuevo artículo"
+          semantic="primary"
+          atmosphere="eter"
+          size="default"
+          disabled
+        >
+          <Plus className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
+      headerMoreActions={[
+        {
+          label: "Gestionar categorías",
+          icon: FolderTree,
+          onClick: () => undefined,
+        },
+        {
+          label: "Listas de precios",
+          icon: DollarSign,
+          onClick: () => undefined,
+        },
+      ]}
+    />
+  )
+}
+
+export function RecipesModulePageSkeleton(layout: PopModuleSkeletonLayout) {
+  return (
+    <TableListModulePageSkeleton
+      layout={layout}
+      title="Recetas"
+      moduleKey="recipes"
+      pillLabel="Menú"
+      headerActions={
+        <RootsIconButton
+          label="Nueva receta"
+          semantic="primary"
+          atmosphere="eter"
+          size="default"
+          disabled
+        >
+          <Plus className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
+      headerMoreActions={[
+        {
+          label: "Gestionar categorías",
+          icon: FolderTree,
+          onClick: () => undefined,
+        },
+        {
+          label: "Gestionar estaciones",
+          icon: ChefHat,
+          onClick: () => undefined,
+        },
+      ]}
     />
   )
 }

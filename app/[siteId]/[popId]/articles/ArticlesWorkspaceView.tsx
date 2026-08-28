@@ -101,6 +101,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopArticleCategories } from "@/hooks/usePopArticleCategories"
@@ -305,7 +306,7 @@ export function ArticlesWorkspaceView() {
   const popId = typeof params?.popId === "string" ? params.popId : undefined
   const queryClient = useQueryClient()
 
-  const { bootstrap, loading: bootstrapLoading, hasPermission } =
+  const { bootstrap, hasPermission } =
     usePopWorkspace()
   const afterHydration = useAfterHydration()
   const menuCache = usePopMenuCache(popId ?? "")
@@ -513,11 +514,8 @@ export function ArticlesWorkspaceView() {
   const canUpdate = articlePerm(POP_PERMS.ARTICLE_UPDATE)
   const canDelete = articlePerm(POP_PERMS.ARTICLE_DELETE)
   const canPostInitialStock = canCreate
-  const listFetching =
-    !popId || !siteId
-      ? false
-      : articlesTableQuery.isPending ||
-        (articlesTableQuery.isFetching && !articlesTableQuery.isFetched)
+  const listPending = !articlesTableQuery.data && articlesTableQuery.isPending
+  const listFetching = !articlesTableQuery.data && articlesTableQuery.isPending
   const error =
     !popId || !siteId
       ? "ID de POP no encontrado"
@@ -1089,29 +1087,37 @@ export function ArticlesWorkspaceView() {
     )
   }
 
+  if (listPending) {
+    return <PopModuleLoading moduleKey="articles" />
+  }
+
+  const popName = bootstrap?.popName ?? ""
+
   return (
     <DataWorkspaceTableListPage
       layout={{
         siteId,
         popId,
-        popName: bootstrap?.popName ?? "",
+        popName,
         title: "Artículos",
-        loading: bootstrapLoading && !bootstrap,
+        loading: !popName,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
         pillLabel: "Catálogo",
-        headerActions: canCreate ? (
-          <RootsIconButton
-            label="Nuevo artículo"
-            semantic="primary"
-            atmosphere="eter"
-            size="default"
-            onClick={openCreate}
-          >
-            <Plus className="size-5" aria-hidden />
-          </RootsIconButton>
-        ) : null,
+        headerActions:
+          !afterHydration || canCreate ? (
+            <RootsIconButton
+              label="Nuevo artículo"
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
+              disabled={!canCreate}
+              onClick={openCreate}
+            >
+              <Plus className="size-5" aria-hidden />
+            </RootsIconButton>
+          ) : null,
         headerMoreActions: [
           {
             label: "Gestionar categorías",
