@@ -67,13 +67,10 @@ import {
 } from "@/lib/audit/auditEventPresentation"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
-import { popAuditQueryKey } from "@/lib/queryKeys"
-import {
-  fetchPopAuditEvents,
-  type AuditEventRow,
-} from "@/lib/rootsyApi/auditClient"
-import { DATA_WORKSPACE_TABLE_PAGE_SIZE, nextDataWorkspaceTablePage } from "@/lib/dataWorkspaceTableInfinite"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
+import { auditInfiniteQueryOptions } from "@/lib/auditWorkspaceQuery"
+import { type AuditEventRow } from "@/lib/rootsyApi/auditClient"
+import { DATA_WORKSPACE_TABLE_PAGE_SIZE } from "@/lib/dataWorkspaceTableInfinite"
 import { cn } from "@/lib/utils"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { useParams } from "@/lib/pop-spa/navigation"
@@ -102,7 +99,7 @@ export function AuditWorkspaceView() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
 
-  const { bootstrap, loading: bootstrapLoading, error: bootstrapError, hasPermission } =
+  const { bootstrap, error: bootstrapError, hasPermission } =
     usePopWorkspace()
   const afterHydration = useAfterHydration()
   const menuCache = usePopMenuCache(popId)
@@ -165,36 +162,22 @@ export function AuditWorkspaceView() {
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const query = useInfiniteQuery({
-    queryKey: popAuditQueryKey(popId, {
-      page: listStartPage,
-      pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
-      q: debouncedQ,
-      from: dateBounds.from,
-      to: dateBounds.to,
-      action: appliedFilters.actions.slice().sort().join(","),
-      source: appliedFilters.sources.slice().sort().join(","),
-    }),
-    initialPageParam: listStartPage,
-    queryFn: async ({ pageParam }) => {
-      const page = typeof pageParam === "number" ? pageParam : 1
-      const res = await fetchPopAuditEvents(popId, {
-        page,
+    ...auditInfiniteQueryOptions(
+      popId,
+      {
+        page: listStartPage,
         pageSize: DATA_WORKSPACE_TABLE_PAGE_SIZE,
-        q: debouncedQ || undefined,
+        q: debouncedQ,
         from: dateBounds.from,
         to: dateBounds.to,
-        action: appliedFilters.actions,
-        source: appliedFilters.sources,
-      })
-      if (!res.success) throw new Error(res.error)
-      return res
-    },
-    getNextPageParam: (lastPage) =>
-      nextDataWorkspaceTablePage(
-        lastPage.page,
-        lastPage.total,
-        lastPage.pageSize,
-      ),
+        action: appliedFilters.actions.slice().sort().join(","),
+        source: appliedFilters.sources.slice().sort().join(","),
+      },
+      {
+        actions: appliedFilters.actions,
+        sources: appliedFilters.sources,
+      },
+    ),
     select: (data) => {
       const first = data.pages[0]
       if (!first) return first
@@ -205,16 +188,13 @@ export function AuditWorkspaceView() {
       }
     },
     enabled: Boolean(popId && siteId && canRead),
-    ...sessionListQueryOptions,
   })
 
   const events = query.data?.events ?? []
   const totalCount = query.data?.totalCount ?? query.data?.total ?? 0
-  const accessPending = !afterHydration || (bootstrapLoading && !canRead)
-  const listFetching =
-    accessPending ||
-    (canRead &&
-      (query.isPending || (query.isFetching && !query.isFetched)))
+  const listPending =
+    !query.data && (query.isPending || !afterHydration)
+  const listFetching = !query.data && query.isPending
 
   const tableError =
     query.error instanceof Error
@@ -223,7 +203,7 @@ export function AuditWorkspaceView() {
         ? String(query.error)
         : null
   const permissionError =
-    afterHydration && !bootstrapLoading && !canRead
+    afterHydration && !canRead
       ? "No tenés permiso para ver la auditoría de este local."
       : null
   const error = bootstrapError ?? permissionError ?? tableError
@@ -297,15 +277,21 @@ export function AuditWorkspaceView() {
     )
   }
 
+  if (listPending && !permissionError) {
+    return <PopModuleLoading moduleKey="audit" />
+  }
+
+  const popName = bootstrap?.popName ?? menuCache.popAccess?.pop.name ?? ""
+
   return (
     <>
       <DataWorkspaceTableListPage
         layout={{
           siteId,
           popId,
-          popName: bootstrap?.popName ?? menuCache.popAccess?.pop.name ?? "",
+          popName,
           title: "Auditoría",
-          loading: bootstrapLoading,
+          loading: !popName,
           userName: bootstrap?.userFullName,
           userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
           userRoleLabel: bootstrap?.roleLabel || undefined,

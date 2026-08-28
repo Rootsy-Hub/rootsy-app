@@ -1,37 +1,46 @@
 "use client"
 
 import type { ComandaStation } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
-import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
-import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import type { DataWorkspaceHeaderVariant } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import {
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  type RootsFormTone,
+} from "@/components/rootsy-form"
 import { ChefHat } from "lucide-react"
 
 type Props = {
   stations: ComandaStation[]
   stationId: string | null
   onChange: (stationId: string) => void
-  headerVariant?: DataWorkspaceHeaderVariant
+  /** `eter` en header de módulo; `light` en diálogo. */
+  tone?: RootsFormTone
 }
 
 export function ComandasStationMenu({
   stations,
   stationId,
   onChange,
-  headerVariant = dataWorkspaceModuleHeaderVariant,
+  tone = "eter",
 }: Props) {
   if (stations.length === 0) return null
 
   return (
-    <DataWorkspaceSectionMenu
-      viewItems={stations.map((station) => ({
-        id: station.id,
-        label: station.name,
-        icon: ChefHat,
-      }))}
-      activeId={stationId ?? stations[0]?.id ?? ""}
-      onSelect={onChange}
-      viewsSectionLabel="Estación"
-      headerVariant={headerVariant}
-    />
+    <div className="w-50 shrink-0">
+      <RootsFormSelectField
+        label="Estación"
+        tone={tone}
+        value={stationId ?? stations[0]?.id ?? ""}
+        onValueChange={onChange}
+        prefix={<ChefHat className="size-4" aria-hidden />}
+        prefixVariant="inline"
+        className="[&_label]:sr-only"
+      >
+        {stations.map((station) => (
+          <RootsFormSelectItem key={station.id} value={station.id} tone={tone}>
+            {station.name}
+          </RootsFormSelectItem>
+        ))}
+      </RootsFormSelectField>
+    </div>
   )
 }

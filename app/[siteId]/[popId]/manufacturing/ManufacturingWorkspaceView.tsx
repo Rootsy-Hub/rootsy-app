@@ -1,5 +1,6 @@
 "use client"
 
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { RootsIconButton } from "@/components/rootsy-button"
 import { ManufacturingDialog } from "@/app/[siteId]/[popId]/manufacturing/ManufacturingDialog"
 import {
@@ -48,6 +49,7 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { Table, TableBody, TableCell } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
 import {
   computeDataWorkspaceDateBounds,
   dataWorkspaceDateFilterSummary,
@@ -55,14 +57,9 @@ import {
 } from "@/lib/dataWorkspaceDateFilter"
 import { entryDateIsoInTimezone, formatPopDateShort } from "@/lib/popTimezone"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
-import {
-  popManufacturingQueryKey,
-  popManufacturingQueryRoot,
-} from "@/lib/queryKeys"
-import {
-  createManufacturingRun,
-  fetchManufacturingWorkspace,
-} from "@/lib/rootsyApi/manufacturingClient"
+import { manufacturingWorkspaceQueryOptions } from "@/lib/manufacturingWorkspaceQuery"
+import { popManufacturingQueryRoot } from "@/lib/queryKeys"
+import { createManufacturingRun } from "@/lib/rootsyApi/manufacturingClient"
 import { cn } from "@/lib/utils"
 import { useDataWorkspaceClientInfiniteSlice } from "@/hooks/useDataWorkspaceClientInfiniteSlice"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
@@ -78,8 +75,9 @@ export function ManufacturingWorkspaceView() {
   const popId = typeof params?.popId === "string" ? params.popId : ""
   const queryClient = useQueryClient()
   const tz = usePopTimeZone()
-  const { bootstrap, loading: bootstrapLoading, error: bootstrapError, hasPermission } =
+  const { bootstrap, error: bootstrapError, hasPermission } =
     usePopWorkspace()
+  const afterHydration = useAfterHydration()
 
   const [datePreset, setDatePreset] =
     useState<DataWorkspaceDatePreset>("this_month")
@@ -106,19 +104,18 @@ export function ManufacturingWorkspaceView() {
   )
 
   const query = useQuery({
-    queryKey: popManufacturingQueryKey(popId, dateBounds.from, dateBounds.to),
-    queryFn: async () => {
-      const res = await fetchManufacturingWorkspace(popId, dateBounds)
-      if (!res.success) throw new Error(res.error)
-      return res.data
-    },
+    ...manufacturingWorkspaceQueryOptions(
+      popId,
+      dateBounds.from,
+      dateBounds.to,
+    ),
     enabled: Boolean(popId && siteId),
   })
 
   const runs = query.data?.runs ?? []
   const canCreateFromApi = query.data?.canCreate ?? canCreate
-  const listFetching =
-    query.isPending || (query.isFetching && !query.isFetched)
+  const listPending = !query.data && query.isPending
+  const listFetching = listPending
   const today = entryDateIsoInTimezone(tz)
 
   const searchTrim = searchInput.trim().toLowerCase()
@@ -218,32 +215,40 @@ export function ManufacturingWorkspaceView() {
     )
   }
 
+  if (listPending) {
+    return <PopModuleLoading moduleKey="manufacturing" />
+  }
+
+  const popName = bootstrap?.popName ?? ""
+
   return (
     <>
       <DataWorkspaceTableListPage
         layout={{
           siteId,
           popId,
-          popName: bootstrap?.popName ?? "",
+          popName,
           title: "Fabricar",
-          loading: bootstrapLoading,
+          loading: !popName,
           userName: bootstrap?.userFullName,
           userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
           userRoleLabel: bootstrap?.roleLabel || undefined,
-          headerActions: canCreateFromApi ? (
-            <RootsIconButton
-              label="Fabricar"
-              semantic="primary"
-              atmosphere="eter"
-              size="default"
-              onClick={() => {
-                setDialogError(null)
-                setDialogOpen(true)
-              }}
-            >
-              <Plus className="size-5" aria-hidden />
-            </RootsIconButton>
-          ) : null,
+          headerActions:
+            !afterHydration || canCreateFromApi ? (
+              <RootsIconButton
+                label="Fabricar"
+                semantic="primary"
+                atmosphere="eter"
+                size="default"
+                disabled={!canCreateFromApi}
+                onClick={() => {
+                  setDialogError(null)
+                  setDialogOpen(true)
+                }}
+              >
+                <Plus className="size-5" aria-hidden />
+              </RootsIconButton>
+            ) : null,
         }}
         error={error}
       >

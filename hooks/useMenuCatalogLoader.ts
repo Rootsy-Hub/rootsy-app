@@ -19,19 +19,15 @@ import {
 import {
   menuCatalogKnownArticlesQueryKey,
   menuCatalogKnownRecipesQueryKey,
-  menuCatalogQueryKey,
-  saleComprobantesQueryKey,
-  salePaymentContextQueryKey,
 } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import {
-  fetchMenuCatalog,
   fetchMenuCatalogItemsByIds,
 } from "@/lib/rootsyApi/menuCatalogClient"
+import { menuCatalogQueryOptions } from "@/lib/mostradorWorkspaceQuery"
 import {
-  fetchSaleComprobantes,
-  fetchSalePaymentContext,
-} from "@/lib/rootsyApi/saleClient"
+  saleComprobantesQueryOptions,
+  salePaymentContextQueryOptions,
+} from "@/lib/saleWorkspaceQuery"
 import { DEFAULT_SALE_SITE_ID } from "@/lib/saleInvoiceTypes"
 import { useSalePriceListId } from "@/lib/salePriceListSession"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -55,36 +51,18 @@ export function useMenuCatalogLoader(
     (options?.toolboxEnabled ?? options?.enabled ?? true) && Boolean(popId)
 
   const catalogQuery = useQuery({
-    queryKey: menuCatalogQueryKey(popId ?? ""),
-    queryFn: async () => {
-      const res = await fetchMenuCatalog(popId!)
-      if (!res.success) throw new Error(res.error)
-      return res
-    },
+    ...menuCatalogQueryOptions(popId ?? ""),
     enabled: catalogEnabled,
-    ...sessionListQueryOptions,
   })
 
   const paymentQuery = useQuery({
-    queryKey: salePaymentContextQueryKey(popId ?? ""),
-    queryFn: async () => {
-      const res = await fetchSalePaymentContext(popId!)
-      if (!res.success) throw new Error(res.error)
-      return res.context
-    },
+    ...salePaymentContextQueryOptions(popId ?? ""),
     enabled: toolboxEnabled,
-    ...sessionListQueryOptions,
   })
 
   const comprobantesQuery = useQuery({
-    queryKey: saleComprobantesQueryKey(popId ?? ""),
-    queryFn: async () => {
-      const res = await fetchSaleComprobantes(popId!)
-      if (!res.success) throw new Error(res.error)
-      return res
-    },
+    ...saleComprobantesQueryOptions(popId ?? ""),
     enabled: toolboxEnabled,
-    ...sessionListQueryOptions,
   })
 
   const data = catalogQuery.data

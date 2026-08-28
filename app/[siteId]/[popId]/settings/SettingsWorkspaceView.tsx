@@ -9,7 +9,7 @@ import {
   type SettingsFormState,
 } from "@/app/[siteId]/[popId]/settings/popSettingsSnapshots"
 import { PopSettingsSectionNav } from "@/components/settings/PopSettingsSectionNav"
-import { PopSettingsSectionLoading } from "@/components/settings/PopSettingsSectionLoading"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { dataWorkspaceBlocksPageMainClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { MenuSidebar } from "@/components/MenuSidebar"
 import { statisticsMainContentClass } from "@/components/statistics/statisticsWorkspaceStyles"
@@ -33,7 +33,6 @@ import { parsePadronActividadesJson } from "@/lib/padronActividadesHelpers"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
 import {
-  popSettingsSectionById,
   visiblePopSettingsSections,
   type PopSettingsSectionId,
 } from "@/lib/popSettingsCatalog"
@@ -122,7 +121,6 @@ export function SettingsWorkspaceView() {
   const queryClient = useQueryClient()
   const {
     bootstrap,
-    loading: bootstrapLoading,
     error: bootstrapError,
     refresh: refreshBootstrap,
     hasPermission,
@@ -190,12 +188,8 @@ export function SettingsWorkspaceView() {
     setSavedSnapshots(buildInitialSnapshots(nextForm))
   }
 
-  const loading =
-    !popId || !siteId
-      ? false
-      : settingsQuery.isPending ||
-        (settingsQuery.isFetching && !settingsQuery.isFetched)
-  const pageLoading = bootstrapLoading || loading
+  const settingsPending = !settingsQuery.data && settingsQuery.isPending
+  const loading = settingsPending
   const error =
     settingsQuery.data?.success === false
       ? settingsQuery.data.error
@@ -248,14 +242,14 @@ export function SettingsWorkspaceView() {
   }, [optimisticSectionId, urlSectionId])
 
   useEffect(() => {
-    if (pageLoading) return
+    if (settingsPending) return
     if (!isPopSettingsSectionId(requestedSectionId)) return
     if (visibleSectionIds.includes(requestedSectionId)) return
 
     setOptimisticSectionId(null)
     replaceSection(urlSectionId)
   }, [
-    pageLoading,
+    settingsPending,
     replaceSection,
     requestedSectionId,
     urlSectionId,
@@ -272,19 +266,12 @@ export function SettingsWorkspaceView() {
   )
 
   const padron = usePadronAutofillRazonSocial(popId, form.fiscalCuit ?? "", {
-    enabled: Boolean(popId) && canUpdate && !pageLoading,
-    suppressClear: pageLoading,
+    enabled: Boolean(popId) && canUpdate && !settingsPending,
+    suppressClear: settingsPending,
     manual: true,
   })
 
   const popName = bootstrap?.popName ?? form.name
-
-  const loadingLabel = useMemo(() => {
-    const section = popSettingsSectionById(activeSectionId)
-    return section
-      ? `Cargando ${section.label.toLowerCase()}…`
-      : "Cargando ajustes…"
-  }, [activeSectionId])
 
   const actividadesPadronList = useMemo(
     () => parsePadronActividadesJson(form.fiscalPadronActividadesJson),
@@ -398,6 +385,10 @@ export function SettingsWorkspaceView() {
     )
   }
 
+  if (settingsPending) {
+    return <PopModuleLoading moduleKey="settings" />
+  }
+
   return (
     <DataWorkspaceModuleLayout
       siteId={siteId}
@@ -406,7 +397,7 @@ export function SettingsWorkspaceView() {
       title="Ajustes"
       pillLabel="Configuración"
       headerVariant={dataWorkspaceModuleHeaderVariant}
-      loading={pageLoading}
+      loading={!popName}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
@@ -434,11 +425,7 @@ export function SettingsWorkspaceView() {
             "min-h-0 flex-1 overflow-y-auto",
           )}
         >
-          {pageLoading ? (
-            <PopSettingsSectionLoading label={loadingLabel} />
-          ) : null}
-
-          {!pageLoading && error ? (
+          {error ? (
             <RootsBanner intent="danger" layout="message" message={error} />
           ) : null}
 
@@ -450,7 +437,7 @@ export function SettingsWorkspaceView() {
             />
           ) : null}
 
-          {!pageLoading && !error && !bootstrapError ? (
+          {!error && !bootstrapError ? (
             <PopSettingsFormFields
               popId={popId}
               form={form}

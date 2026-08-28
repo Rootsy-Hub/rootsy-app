@@ -278,6 +278,7 @@ export function MostradorWorkspace({
                   onMoveOrder={moveOrderStatus}
                   onCancelOrder={cancelOrder}
                   canCancelOrder={checkout.puedeCancelarPedido}
+                  cancelOrderTitle={checkout.cancelarPedidoTitle}
                   canCloseOrder={checkout.puedeCerrarPedido}
                   closeOrderBlockReason={checkout.cerrarPedidoBlockReason}
                   closeOrderMode={checkout.cerrarPedidoMode}

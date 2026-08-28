@@ -7,9 +7,15 @@ import {
   type MesaReservationStatus,
   type MesaTableShape,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import { sourceHasActiveComandas } from "@/app/[siteId]/[popId]/comandas/sourceHasActiveComandas"
 import { syncComandasFromTableCheckout } from "@/app/[siteId]/[popId]/comandas/syncComandasFromCheckout"
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { readCheckoutFromSessionMetadata, readFloorStatusFromSessionMetadata, floorStatusToSessionMetadataValue, type MesaSessionFloorStatus } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
+import {
+  ACTIVE_COMANDAS_DISCARD_TITLE,
+  ACTIVE_COMANDAS_RELEASE_REASON,
+  hasActiveCommandedLines,
+} from "@/lib/comandaCartLine"
 import { buildUnpaidCarrito } from "@/lib/partialCheckoutSelection"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import {
@@ -1568,6 +1574,11 @@ export async function closeTableSession(
   }
 
   const { supabase, userId } = gate
+  if (reason === "cancelled") {
+    if (await sourceHasActiveComandas(supabase, popId, "table", sessionId)) {
+      return { success: false, error: ACTIVE_COMANDAS_RELEASE_REASON }
+    }
+  }
   const { data: openSession, error: openSessionErr } = await supabase
     .from("table_sessions")
     .select("id, dining_table_id, metadata, table_session_tables ( dining_table_id )")
@@ -1661,6 +1672,16 @@ export async function closeTableSessionCheckout(
     }
   }
 
+  const billable = carrito.filter((item) => item.comandaStatus !== "voided")
+  const hasPayment =
+    (checkout?.totalPagadoAcumulado ?? 0) > 0 ||
+    Object.values(paidPartialUnits).some((value) => Number(value) > 0)
+  if (billable.length === 0 && !hasPayment) {
+    if (await sourceHasActiveComandas(supabase, popId, "table", sessionId)) {
+      return { success: false, error: ACTIVE_COMANDAS_RELEASE_REASON }
+    }
+  }
+
   return closeTableSession(popId, routeSiteId, sessionId, "closed")
 }
 
@@ -1696,6 +1717,13 @@ export async function saveTableSessionCheckout(
   }
   if (!existing) {
     return { success: false, error: "La sesión no está abierta o no existe." }
+  }
+
+  if (
+    (await sourceHasActiveComandas(supabase, popId, "table", sessionId)) &&
+    !hasActiveCommandedLines(checkout.carrito)
+  ) {
+    return { success: false, error: ACTIVE_COMANDAS_DISCARD_TITLE }
   }
 
   const metadata =

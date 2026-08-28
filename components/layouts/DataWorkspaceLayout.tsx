@@ -9,6 +9,7 @@ import {
 } from "@/components/layouts/HomeWorkspaceBackdrop"
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import { dataWorkspaceHeaderEdgeToggleClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { ModuleWorkspaceDockStrip } from "@/components/layouts-module/ModuleWorkspaceDockStrip"
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import type { RootsButtonAtmosphere } from "@/components/rootsy-button/rootsButtonAtmosphere"
@@ -55,7 +56,7 @@ export type DataWorkspaceLayoutProps = {
   atmosphere?: RootsButtonAtmosphere
   /** Cabecera cristal — siempre `ModuleWorkspaceHeader`. */
   showFullscreen?: boolean
-  /** En pantalla completa oculta el chrome (estación de fichaje). */
+  /** En pantalla completa oculta el chrome (operar, comandas, estación de fichaje). */
   hideHeaderInFullscreen?: boolean
   /** Estación trabada: el header no vuelve hasta destrabar. */
   stationLocked?: boolean
@@ -105,6 +106,8 @@ export type DataWorkspaceLayoutProps = {
   userAvatarSrc?: string | null
   /** Destino del botón volver. Por defecto menú del POP si hay site/pop. */
   backHref?: string
+  /** Tira de dock en el teléfono. Apagada en kiosko, librería y backoffice. */
+  showModuleDock?: boolean
 }
 
 export function DataWorkspaceLayout({
@@ -148,6 +151,7 @@ export function DataWorkspaceLayout({
   userName,
   userAvatarSrc,
   backHref: backHrefProp,
+  showModuleDock,
 }: DataWorkspaceLayoutProps) {
   const afterHydration = useAfterHydration()
   const popWorkspace = usePopWorkspaceOptional()
@@ -298,6 +302,9 @@ export function DataWorkspaceLayout({
     popAccess?.isOwner && siteId && popId
       ? `/${siteId}/${popId}/subscribe`
       : null
+  const kioskChrome = hideHeaderInFullscreen && (stationLocked || isFullscreen)
+  const renderModuleDock =
+    (showModuleDock ?? Boolean(siteId && popId)) && !kioskChrome
 
   return (
     <div
@@ -333,15 +340,19 @@ export function DataWorkspaceLayout({
           fillViewport ? "min-h-0 flex-1" : "h-svh",
         )}
       >
-        {hideHeaderInFullscreen && stationLocked ? (
-          <div className="absolute right-3 top-3 z-30">
+        {hideHeaderInFullscreen && (stationLocked || isFullscreen) ? (
+          <div className="absolute left-3 top-3 z-30">
             <RootsIconButton
               theme="workspace"
               emphasis="ghost"
               size="default"
-              label="Salir de la estación"
+              label={
+                stationLocked
+                  ? "Salir de la estación"
+                  : "Salir de pantalla completa"
+              }
               onClick={() =>
-                onRequestUnlockStation
+                stationLocked && onRequestUnlockStation
                   ? onRequestUnlockStation()
                   : void toggleFullscreen()
               }
@@ -466,6 +477,9 @@ export function DataWorkspaceLayout({
             {children}
           </main>
         )}
+        {renderModuleDock ? (
+          <ModuleWorkspaceDockStrip siteId={siteId} popId={popId} />
+        ) : null}
       </div>
     </div>
   )

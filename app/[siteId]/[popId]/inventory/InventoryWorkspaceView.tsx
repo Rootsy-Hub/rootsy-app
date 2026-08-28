@@ -15,18 +15,17 @@ import {
   type InventoryClearingId,
   type InventoryRedFilter,
 } from "@/app/[siteId]/[popId]/inventory/workspaceUrl"
-import { InventoryHomeSkeleton } from "@/app/[siteId]/[popId]/inventory/InventoryHomeSkeleton"
+import { InventoryHomeHub } from "@/app/[siteId]/[popId]/inventory/InventoryHomeSkeleton"
 import { InventoryAdjustmentDialog } from "@/app/[siteId]/[popId]/inventory/InventoryAdjustmentDialog"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { InventoryExpiryClearing } from "@/app/[siteId]/[popId]/inventory/InventoryExpiryClearing"
 import { InventoryLayerExpiryDialog } from "@/app/[siteId]/[popId]/inventory/InventoryLayerExpiryDialog"
 import { InventoryLocationsClearing } from "@/app/[siteId]/[popId]/inventory/InventoryLocationsClearing"
-import { InventoryOnHandKpi } from "@/app/[siteId]/[popId]/inventory/InventoryOnHandKpi"
 import { InventoryArticleRowList } from "@/app/[siteId]/[popId]/inventory/InventoryArticleRowList"
 import { InventoryDeleteMovementDialog } from "@/app/[siteId]/[popId]/inventory/InventoryDeleteMovementDialog"
 import { InventoryTransferDialog } from "@/app/[siteId]/[popId]/inventory/InventoryTransferDialog"
 import {
   formatInventoryMoney,
-  formatInventoryMoneyShort,
   formatInventoryQty,
   INVENTORY_MOVEMENT_LABELS,
   shortInventoryUserId,
@@ -39,16 +38,13 @@ import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
   dataWorkspaceBlocksPageMainClass,
-  dataWorkspaceEntityCardEyebrowClass,
   dataWorkspaceEntityCardLosetaSurfaceClass,
-  dataWorkspaceEntityCardStatValueLargeClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { ReportHubCard, reportHubGridClass } from "@/components/reports/ReportHubCard"
 import { RootsBanner } from "@/components/rootsy-banner"
 import { RootsPrimaryButton, RootsSubtleButton } from "@/components/rootsy-button"
 import { RootsFormSearchField, RootsFormSegmentField } from "@/components/rootsy-form"
@@ -94,18 +90,10 @@ import type { InventoryRowsView } from "@/lib/rootsyApi/inventoryClient"
 import {
   ArrowLeft,
   ArrowRightLeft,
-  ClipboardList,
-  Layers,
   Minus,
-  Package,
   Plus,
   Printer,
-  ShoppingCart,
-  Sparkles,
-  Timer,
   Trash2,
-  TriangleAlert,
-  Warehouse,
 } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useParams, usePathname, useRouter, useSearchParams } from "@/lib/pop-spa/navigation"
@@ -195,28 +183,6 @@ function queryFailMessage(
   return null
 }
 
-function InventoryKpiCard({
-  eyebrow,
-  value,
-  hint,
-}: {
-  eyebrow: string
-  value: string
-  hint: string
-}) {
-  return (
-    <div className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "p-5")}>
-      <p className={dataWorkspaceEntityCardEyebrowClass}>{eyebrow}</p>
-      <p className={cn(dataWorkspaceEntityCardStatValueLargeClass, "mt-3")}>
-        {value}
-      </p>
-      <p className="mt-2 font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
-        {hint}
-      </p>
-    </div>
-  )
-}
-
 export default function InventoryWorkspaceView() {
   const params = useParams()
   const pathname = usePathname()
@@ -225,7 +191,7 @@ export default function InventoryWorkspaceView() {
   const queryClient = useQueryClient()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
-  const { bootstrap, loading: bootstrapLoading, error: bootstrapError, hasPermission } =
+  const { bootstrap, error: bootstrapError, hasPermission } =
     usePopWorkspace()
   const afterHydration = useAfterHydration()
   const menuCache = usePopMenuCache(popId ?? "")
@@ -337,9 +303,8 @@ export default function InventoryWorkspaceView() {
     soonCount: 0,
     total: 0,
   }
-  const summaryLoading =
-    summaryQuery.isPending ||
-    (summaryQuery.isFetching && !summaryQuery.isFetched)
+  const homePending =
+    clearing === "home" && !summaryQuery.data && summaryQuery.isPending
   const rowsLoading = needsArticleRows && rowsQuery.isPending
   const error =
     queryFailMessage(summaryQuery) ??
@@ -426,7 +391,6 @@ export default function InventoryWorkspaceView() {
     })
   }, [popId, queryClient])
 
-  const pageLoading = bootstrapLoading || (clearing === "home" && summaryLoading)
   const popName = bootstrap?.popName ?? ""
   const stockHref = popScopedHref(siteId, popId ?? "", "articles")
   const defaultLocationId =
@@ -731,6 +695,10 @@ export default function InventoryWorkspaceView() {
     )
   }
 
+  if (homePending) {
+    return <PopModuleLoading moduleKey="inventory" />
+  }
+
   const headerTitle =
     clearing === "home" ? "Inventario" : CLEARING_COPY[clearing].title
 
@@ -742,7 +710,7 @@ export default function InventoryWorkspaceView() {
         popName={popName}
         title={headerTitle}
         headerVariant={dataWorkspaceModuleHeaderVariant}
-        loading={pageLoading}
+        loading={!popName}
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel}
@@ -773,14 +741,14 @@ export default function InventoryWorkspaceView() {
                 <ArrowRightLeft className="size-5" aria-hidden />
               </RootsIconButton>
             ) : null}
-            {canCreate ? (
+            {!afterHydration || canCreate ? (
               <>
                 <RootsIconButton
                   label="Sumar stock"
                   semantic="tertiary"
                   atmosphere="eter"
                   size="default"
-                  disabled={!canPostAdjustmentAccounting}
+                  disabled={!canCreate || !canPostAdjustmentAccounting}
                   onClick={() => openCreate(undefined, true)}
                 >
                   <Plus className="size-5" aria-hidden />
@@ -790,7 +758,7 @@ export default function InventoryWorkspaceView() {
                   semantic="tertiary"
                   atmosphere="eter"
                   size="default"
-                  disabled={!canPostAdjustmentAccounting}
+                  disabled={!canCreate || !canPostAdjustmentAccounting}
                   onClick={() => openCreate(undefined, false)}
                 >
                   <Minus className="size-5" aria-hidden />
@@ -809,9 +777,7 @@ export default function InventoryWorkspaceView() {
             />
           ) : null}
 
-          {pageLoading ? (
-            <InventoryHomeSkeleton />
-          ) : error ? (
+          {error ? (
             <RootsBanner intent="danger" layout="message" message={error} />
           ) : clearing === "home" ? (
             <div className="space-y-10">
@@ -823,124 +789,13 @@ export default function InventoryWorkspaceView() {
                 />
               ) : null}
 
-              <section className="grid gap-4 md:grid-cols-3">
-                <InventoryKpiCard
-                  eyebrow="Lo que vale"
-                  value={formatInventoryMoneyShort(metrics.inventoryValue)}
-                  hint={
-                    metrics.articlesWithStock === 1
-                      ? "1 artículo con valor"
-                      : `${metrics.articlesWithStock} artículos valorizados`
-                  }
-                />
-                <InventoryOnHandKpi
-                  units={metrics.unitsByMeasure}
-                  articleCount={metrics.articleCount}
-                />
-                <InventoryKpiCard
-                  eyebrow="Lo que pide"
-                  value={String(metrics.redCount)}
-                  hint={
-                    metrics.redCount === 0
-                      ? "Nada en falta"
-                      : metrics.redCount === 1
-                        ? "1 artículo pide reposición"
-                        : `${metrics.redCount} piden reposición`
-                  }
-                />
-              </section>
-
-              <DataWorkspaceBlocksSection
-                title="Por dónde empezar"
-                description="Listas cortas. Un sendero cada vez."
-              >
-                <div className={reportHubGridClass}>
-                  <ReportHubCard
-                    title="En rojo"
-                    description={
-                      metrics.redCount === 0
-                        ? "Nada en falta"
-                        : `${metrics.redCount} piden reposición`
-                    }
-                    icon={TriangleAlert}
-                    onSelect={() => goClearing("red")}
-                  />
-                  <ReportHubCard
-                    title="Sobre stock"
-                    description={
-                      metrics.overstockCount === 0
-                        ? "Sin excedente"
-                        : `${metrics.overstockCount} por encima del techo`
-                    }
-                    icon={Package}
-                    onSelect={() => goClearing("overstock")}
-                  />
-                  <ReportHubCard
-                    title="Para comprar"
-                    description={
-                      metrics.purchaseCount === 0
-                        ? "Nada para reponer"
-                        : `${metrics.purchaseCount} para la lista`
-                    }
-                    icon={ShoppingCart}
-                    onSelect={() => goClearing("purchase")}
-                  />
-                  <ReportHubCard
-                    title="Despensa"
-                    description="El stock de este punto"
-                    icon={Warehouse}
-                    onSelect={() => goClearing("pantry")}
-                  />
-                  <ReportHubCard
-                    title="Recomendaciones"
-                    description="Mínimos sugeridos según las ventas"
-                    icon={Sparkles}
-                    onSelect={() => goClearing("recommend")}
-                  />
-                  <ReportHubCard
-                    title="Movimientos"
-                    description="Entradas y salidas recientes"
-                    icon={ClipboardList}
-                    onSelect={() => goClearing("movements")}
-                  />
-                  <ReportHubCard
-                    title="Libro"
-                    description="Capas FIFO e imputaciones"
-                    icon={Layers}
-                    onSelect={() => goClearing("ledger")}
-                  />
-                  <ReportHubCard
-                    title="Más depósitos"
-                    description={
-                      locations.length === 1
-                        ? "Una despensa. Podés sumar otra."
-                        : `${locations.length} depósitos en este punto`
-                    }
-                    icon={Warehouse}
-                    onSelect={() => goClearing("locations")}
-                  />
-                  <ReportHubCard
-                    title="Traslados"
-                    description="Mover stock de un depósito a otro"
-                    icon={ArrowRightLeft}
-                    onSelect={openTransfer}
-                  />
-                  <ReportHubCard
-                    title="Vencimientos"
-                    description={
-                      expiryAlert.total === 0
-                        ? "Nada vence en los próximos 30 días"
-                        : expiryAlert.expiredCount > 0 && expiryAlert.soonCount > 0
-                          ? `${expiryAlert.expiredCount} vencidos · ${expiryAlert.soonCount} por vencer`
-                          : expiryAlert.expiredCount > 0
-                            ? `${expiryAlert.expiredCount} vencidos`
-                            : `${expiryAlert.soonCount} por vencer`
-                    }
-                    icon={Timer}
-                    onSelect={() => goClearing("expiry")}
-                  />
-                </div>
-              </DataWorkspaceBlocksSection>
+              <InventoryHomeHub
+                metrics={metrics}
+                locationsCount={locations.length}
+                expiry={expiryAlert}
+                onSelectClearing={goClearing}
+                onTransfer={openTransfer}
+              />
 
               {metrics.articleCount === 0 ? (
                 <DataWorkspaceBlocksSection

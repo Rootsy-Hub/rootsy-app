@@ -1,6 +1,6 @@
 "use client"
 
-import { createQueryClient } from "@/lib/queryClient"
+import { getBrowserQueryClient } from "@/lib/queryClient"
 import { clearLegacyQueryPersist } from "@/lib/queryPersist"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { useEffect, useState, type ReactNode } from "react"
@@ -11,7 +11,7 @@ export function useQueryPersistReady(): boolean {
 }
 
 export function QueryProvider({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(() => createQueryClient())
+  const [queryClient] = useState(() => getBrowserQueryClient())
 
   useEffect(() => {
     clearLegacyQueryPersist()

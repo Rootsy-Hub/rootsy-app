@@ -1,3 +1,4 @@
+import { ACTIVE_COMANDAS_RELEASE_REASON } from "./comandaCartLine"
 import type { MenuCartItem } from "@/lib/menuCart"
 import {
   hasAnyPartialPayment,
@@ -20,6 +21,7 @@ export function evaluateChannelCloseEligibility(input: {
   totalPagadoAcumulado: number
   quantityDealApplications: QuantityDealApplication[]
   isAlreadySettled?: boolean
+  hasActiveComandas?: boolean
 }): ChannelCloseEligibility {
   const {
     carrito,
@@ -27,6 +29,7 @@ export function evaluateChannelCloseEligibility(input: {
     totalPagadoAcumulado,
     quantityDealApplications,
     isAlreadySettled = false,
+    hasActiveComandas = false,
   } = input
 
   if (isAlreadySettled) {
@@ -52,6 +55,13 @@ export function evaluateChannelCloseEligibility(input: {
     })
 
   if (!hasItems && !hasPartialPayment) {
+    if (hasActiveComandas) {
+      return {
+        canClose: false,
+        mode: null,
+        blockReason: ACTIVE_COMANDAS_RELEASE_REASON,
+      }
+    }
     return { canClose: true, mode: "release", blockReason: null }
   }
 

@@ -8,6 +8,14 @@ export const ACCOUNT_FILTERS = [
 
 export type AccountFilter = (typeof ACCOUNT_FILTERS)[number]
 
+export const ACCOUNT_FILTER_OPTIONS = [
+  { value: "todas", label: "Todas" },
+  { value: "banco", label: "Banco" },
+  { value: "billetera", label: "Billetera" },
+  { value: "efectivo", label: "Efectivo" },
+  { value: "inactivas", label: "Inactivas" },
+] as const
+
 export type AccountsWorkspaceUrlState = {
   filter: AccountFilter
 }

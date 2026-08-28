@@ -23,9 +23,9 @@ export function DataWorkspaceBlocksSection({
   const showHeader = Boolean(title || description || action)
 
   return (
-    <section className="space-y-4">
+    <section className="flex flex-col gap-4">
       {showHeader ? (
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-3 max-sm:flex-wrap sm:gap-4">
           <div className="min-w-0 flex-1 space-y-1">
             {title ? (
               <h2 className={dataWorkspaceBlocksSectionTitleClass}>{title}</h2>

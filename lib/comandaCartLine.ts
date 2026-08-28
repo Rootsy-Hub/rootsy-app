@@ -79,6 +79,21 @@ export function isComandaVoidable(
   )
 }
 
+export const ACTIVE_COMANDAS_DISCARD_TITLE =
+  "Hay comandas sin anular. Anulalas antes de descartar el pedido."
+
+export const ACTIVE_COMANDAS_RELEASE_REASON =
+  "Hay comandas sin anular. Anulalas desde Comandas antes de liberar."
+
+export const ACTIVE_COMANDAS_CANCEL_TITLE =
+  "Hay comandas sin anular. Anulalas desde Comandas antes de cancelar el pedido."
+
+export function hasActiveCommandedLines(
+  carrito: ReadonlyArray<{ comandaStatus?: ComandaStatus }>,
+): boolean {
+  return carrito.some((item) => isComandaVoidable(item.comandaStatus))
+}
+
 export function voidQuantitiesForCartItem(
   item: {
     lineId?: string

@@ -1,5 +1,6 @@
 "use client"
 
+import { inventorySummaryQueryOptions } from "@/lib/inventoryWorkspaceQuery"
 import {
   popInventoryExpiryQueryKey,
   popInventoryLedgerAllocationsQueryKey,
@@ -7,7 +8,6 @@ import {
   popInventoryLocationsQueryKey,
   popInventoryMovementsQueryKey,
   popInventoryRowsQueryKey,
-  popInventorySummaryQueryKey,
   type PopInventoryExpiryQueryParams,
   type PopInventoryRowsQueryParams,
 } from "@/lib/queryKeys"
@@ -19,7 +19,6 @@ import {
   fetchPopInventoryLocations,
   fetchPopInventoryMovements,
   fetchPopInventoryRows,
-  fetchPopInventorySummary,
   type InventoryExpiryFilter,
   type InventoryRowsView,
 } from "@/lib/rootsyApi/inventoryClient"
@@ -35,10 +34,8 @@ export function usePopInventorySummary(
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
   return useQuery({
-    queryKey: popInventorySummaryQueryKey(popId ?? ""),
-    queryFn: () => fetchPopInventorySummary(popId!),
+    ...inventorySummaryQueryOptions(popId ?? ""),
     enabled,
-    ...sessionListQueryOptions,
   })
 }
 

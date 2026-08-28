@@ -308,11 +308,32 @@ export async function fetchTreasuryChildPendingBalance(
   asOfDate: string,
 ): Promise<{ success: true; balance: number } | { success: false; error: string }> {
   const params = new URLSearchParams({ asOf: asOfDate, role: childRole })
-  const res = await getJson<{ balance: number }>(
+  const res = await fetch(
     `/api/pops/${popId}/treasury/${motherAccountId}/children/${childId}/pending?${params}`,
+    { headers: { accept: "application/json" } },
   )
-  if (!res.success) return res
-  return { success: true, balance: res.data.balance }
+  const json = (await res.json().catch(() => null)) as
+    | { success: true; data?: { balance?: unknown }; balance?: unknown }
+    | { success: false; error?: string }
+    | null
+  if (!res.ok || !json || !("success" in json) || !json.success) {
+    return {
+      success: false,
+      error:
+        json && "error" in json && json.error
+          ? json.error
+          : `HTTP ${res.status}`,
+    }
+  }
+  const raw =
+    json.data && typeof json.data === "object" && "balance" in json.data
+      ? json.data.balance
+      : json.balance
+  const balance = Number(raw)
+  if (!Number.isFinite(balance)) {
+    return { success: false, error: "No se pudo leer el saldo a la fecha." }
+  }
+  return { success: true, balance }
 }
 
 export async function fetchTreasuryReconciliationHistory(

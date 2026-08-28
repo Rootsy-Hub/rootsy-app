@@ -1,5 +1,6 @@
 import type {
   ComandaBoardCard,
+  ComandaSendKind,
   ComandaSendPeel,
   ComandaStatus,
   ComandaTicket,
@@ -43,17 +44,104 @@ export function checkoutCustomerName(input: {
   return input.manualName?.trim() ?? ""
 }
 
+/** Entregado solo se muestra 2 minutos en la columna. En Supabase sigue delivered. */
+export const COMANDA_DELIVERED_COLUMN_MS = 2 * 60 * 1000
+/** Historial local + GET: últimas 24 h. */
+export const COMANDA_DELIVERED_HISTORY_MS = 24 * 60 * 60 * 1000
+export const COMANDA_DELIVERED_RETENTION_MS = COMANDA_DELIVERED_COLUMN_MS
+
+type ComandaDeliveredClock = {
+  status: ComandaStatus
+  statusChangedAt: string
+  deliveredAt: string | null
+}
+
 export function isComandaBoardVisible(status: ComandaStatus): boolean {
   return status !== "pending" && status !== "voided"
 }
 
-export function canDragComanda(status: ComandaStatus): boolean {
+function parseClock(iso: string | null | undefined): number | null {
+  if (!iso) return null
+  const ms = Date.parse(iso)
+  return Number.isFinite(ms) ? ms : null
+}
+
+function deliveredColumnEnteredAt(ticket: ComandaDeliveredClock): number | null {
+  if (ticket.status !== "delivered") return null
+  return parseClock(ticket.statusChangedAt) ?? parseClock(ticket.deliveredAt)
+}
+
+function deliveredHistoryAt(ticket: ComandaDeliveredClock): number | null {
+  if (ticket.status !== "delivered") return null
+  return parseClock(ticket.deliveredAt) ?? parseClock(ticket.statusChangedAt)
+}
+
+export function isComandaDeliveredInHistory(
+  ticket: ComandaDeliveredClock,
+  now = Date.now(),
+): boolean {
+  const at = deliveredHistoryAt(ticket)
+  if (at == null) return false
+  return now - at < COMANDA_DELIVERED_HISTORY_MS
+}
+
+/** Se guarda en SQLite / cache: abierto en tablero o entregado de las últimas 24 h. */
+export function isComandaTicketStored(
+  ticket: ComandaDeliveredClock,
+  now = Date.now(),
+): boolean {
+  if (!isComandaBoardVisible(ticket.status)) return false
+  if (ticket.status !== "delivered") return true
+  return isComandaDeliveredInHistory(ticket, now)
+}
+
+export function isComandaTicketOnBoard(
+  ticket: ComandaDeliveredClock,
+  now = Date.now(),
+): boolean {
+  if (!isComandaBoardVisible(ticket.status)) return false
+  const entered = deliveredColumnEnteredAt(ticket)
+  if (entered == null) return true
+  return now - entered < COMANDA_DELIVERED_COLUMN_MS
+}
+
+export function msUntilComandaLeavesBoard(
+  ticket: ComandaDeliveredClock,
+  now = Date.now(),
+): number | null {
+  const entered = deliveredColumnEnteredAt(ticket)
+  if (entered == null) return null
+  return Math.max(0, entered + COMANDA_DELIVERED_COLUMN_MS - now)
+}
+
+export function msUntilComandaLeavesHistory(
+  ticket: ComandaDeliveredClock,
+  now = Date.now(),
+): number | null {
+  const at = deliveredHistoryAt(ticket)
+  if (at == null) return null
+  return Math.max(0, at + COMANDA_DELIVERED_HISTORY_MS - now)
+}
+
+export function canDragComanda(
+  status: ComandaStatus,
+  sendKind: ComandaSendKind = "order",
+): boolean {
+  if (sendKind === "void") return false
   return (
     status === "sent" ||
     status === "preparing" ||
     status === "ready" ||
     status === "delivered"
   )
+}
+
+/** Cocina confirma que vio el aviso de anulación. El original ya está voided. */
+export function canAckComandaVoid(
+  sendKind: ComandaSendKind,
+  status: ComandaStatus,
+): boolean {
+  return sendKind === "void" && isComandaBoardVisible(status)
 }
 
 export function canMoveComandaTo(
@@ -104,13 +192,39 @@ export function groupComandasForBoard(
 ): ComandaBoardCard[] {
   const groups = new Map<string, ComandaTicket[]>()
   for (const ticket of tickets) {
-    if (!isComandaBoardVisible(ticket.status)) continue
+    if (!isComandaTicketOnBoard(ticket)) continue
     const key = ticket.sendId ?? ticket.id
     const list = groups.get(key) ?? []
     list.push(ticket)
     groups.set(key, list)
   }
 
+  return cardsFromTicketGroups(groups)
+}
+
+export function groupComandasDeliveredHistory(
+  tickets: ComandaTicket[],
+  now = Date.now(),
+): ComandaBoardCard[] {
+  const groups = new Map<string, ComandaTicket[]>()
+  for (const ticket of tickets) {
+    if (!isComandaDeliveredInHistory(ticket, now)) continue
+    const key = ticket.sendId ?? ticket.id
+    const list = groups.get(key) ?? []
+    list.push(ticket)
+    groups.set(key, list)
+  }
+
+  return cardsFromTicketGroups(groups).sort((left, right) => {
+    const leftMs = Date.parse(left.statusChangedAt || left.createdAt)
+    const rightMs = Date.parse(right.statusChangedAt || right.createdAt)
+    return (Number.isFinite(rightMs) ? rightMs : 0) - (Number.isFinite(leftMs) ? leftMs : 0)
+  })
+}
+
+function cardsFromTicketGroups(
+  groups: Map<string, ComandaTicket[]>,
+): ComandaBoardCard[] {
   return [...groups.entries()].map(([key, items]) => {
     const first = items[0]!
     return {

@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  dataWorkspaceBlocksEmptyStateClass,
-  dataWorkspaceBlocksPageMainClass,
-} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceBlocksEmptyState } from "@/components/data-workspace/DataWorkspaceBlocksEmptyState"
+import { dataWorkspaceBlocksPageMainClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -22,17 +20,18 @@ export function ComingSoonModuleView({
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
-  const { bootstrap, loading } = usePopWorkspace()
+  const { bootstrap } = usePopWorkspace()
+  const popName = bootstrap?.popName ?? ""
 
   return (
     <DataWorkspaceModuleLayout
       siteId={siteId}
       popId={popId}
-      popName={bootstrap?.popName ?? ""}
+      popName={popName}
       title={title}
       pillLabel="Próximamente"
       headerVariant={dataWorkspaceModuleHeaderVariant}
-      loading={loading}
+      loading={!popName}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
@@ -43,12 +42,7 @@ export function ComingSoonModuleView({
         "flex min-h-0 flex-1 flex-col overflow-hidden",
       )}
     >
-      <div className={dataWorkspaceBlocksEmptyStateClass}>
-        <p className="text-base font-medium text-foreground">{title}</p>
-        <p className="mt-2 max-w-md text-sm text-muted-foreground">
-          {description}
-        </p>
-      </div>
+      <DataWorkspaceBlocksEmptyState title={title} description={description} />
     </DataWorkspaceModuleLayout>
   )
 }

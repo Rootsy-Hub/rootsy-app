@@ -1,5 +1,6 @@
 "use client"
 
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { RootsIconButton } from "@/components/rootsy-button"
 import { CurrentAccountAgingToolbarFilter } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountAgingToolbarFilter"
 import { CurrentAccountApplyDialog } from "@/app/[siteId]/[popId]/current-accounts/CurrentAccountApplyDialog"
@@ -121,7 +122,7 @@ export function CurrentAccountsWorkspaceView() {
   const siteId = String(params.siteId ?? "")
   const popId = String(params.popId ?? "")
   const queryClient = useQueryClient()
-  const { bootstrap, loading: bootstrapLoading, popAccess, hasPermission } =
+  const { bootstrap, popAccess, hasPermission } =
     usePopWorkspace()
   const afterHydration = useAfterHydration()
   const menuCache = usePopMenuCache(popId)
@@ -216,6 +217,14 @@ export function CurrentAccountsWorkspaceView() {
 
   const parties = partiesQuery.data?.parties ?? []
   const totalCount = partiesQuery.data?.totalCount ?? 0
+  const sawListRef = useRef(false)
+  if (partiesQuery.data) sawListRef.current = true
+  const listPending =
+    !viewingParty &&
+    !partiesQuery.data &&
+    partiesQuery.isPending &&
+    !sawListRef.current
+  const listFetching = !partiesQuery.data && partiesQuery.isPending
   const checkPerm = useCallback(
     (perm: { resource: string; action: string }) =>
       afterHydration &&
@@ -230,9 +239,6 @@ export function CurrentAccountsWorkspaceView() {
     [afterHydration, hasPermission, menuCache.popAccess],
   )
   const canCreate = checkPerm(POP_PERMS.CURRENT_ACCOUNT_CREATE)
-  const loading =
-    partiesQuery.isPending ||
-    (partiesQuery.isFetching && !partiesQuery.isFetched)
   const tableError =
     partiesQuery.data?.success === false
       ? partiesQuery.data.error
@@ -289,11 +295,11 @@ export function CurrentAccountsWorkspaceView() {
     ws.direction === "payable" ? "proveedores" : "clientes"
 
   const resultsSummary = useMemo(() => {
-    if (loading && totalCount === 0) return "…"
+    if (listFetching && totalCount === 0) return "…"
     if (totalCount === 0) return "Sin resultados"
     const noun = totalCount === 1 ? partyNoun : partyNounPlural
     return `${totalCount.toLocaleString("es-AR")} ${noun}`
-  }, [loading, partyNoun, partyNounPlural, totalCount])
+  }, [listFetching, partyNoun, partyNounPlural, totalCount])
 
   const listHref = popScopedHref(siteId, popId, "current-accounts")
   const listBackHref = useMemo(() => {
@@ -398,15 +404,21 @@ export function CurrentAccountsWorkspaceView() {
     )
   }
 
+  if (listPending) {
+    return <PopModuleLoading moduleKey="current-accounts" />
+  }
+
+  const popName = bootstrap?.popName ?? ""
+
   if (viewingParty && ws.partyId) {
     return (
       <DataWorkspaceModuleLayout
         siteId={siteId}
         popId={popId}
-        popName={bootstrap?.popName ?? ""}
+        popName={popName}
         title="Cuentas corrientes"
         headerVariant={dataWorkspaceModuleHeaderVariant}
-        loading={bootstrapLoading}
+        loading={!popName}
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel}
@@ -440,34 +452,37 @@ export function CurrentAccountsWorkspaceView() {
       layout={{
         siteId,
         popId,
-        popName: bootstrap?.popName ?? "",
+        popName,
         title: "Cuentas corrientes",
-        loading: bootstrapLoading,
+        loading: !popName,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,
-        headerActions: canCreate ? (
-          <>
-            <RootsIconButton
-              label="Dar de alta un cliente"
-              semantic="primary"
-              atmosphere="eter"
-              size="default"
-              onClick={() => openEnroll("receivable")}
-            >
-              <UserPlus className="size-5" aria-hidden />
-            </RootsIconButton>
-            <RootsIconButton
-              label="Dar de alta un proveedor"
-              semantic="primary"
-              atmosphere="eter"
-              size="default"
-              onClick={() => openEnroll("payable")}
-            >
-              <Truck className="size-5" aria-hidden />
-            </RootsIconButton>
-          </>
-        ) : null,
+        headerActions:
+          !afterHydration || canCreate ? (
+            <>
+              <RootsIconButton
+                label="Dar de alta un cliente"
+                semantic="primary"
+                atmosphere="eter"
+                size="default"
+                disabled={!canCreate}
+                onClick={() => openEnroll("receivable")}
+              >
+                <UserPlus className="size-5" aria-hidden />
+              </RootsIconButton>
+              <RootsIconButton
+                label="Dar de alta un proveedor"
+                semantic="primary"
+                atmosphere="eter"
+                size="default"
+                disabled={!canCreate}
+                onClick={() => openEnroll("payable")}
+              >
+                <Truck className="size-5" aria-hidden />
+              </RootsIconButton>
+            </>
+          ) : null,
       }}
       error={error}
     >
@@ -504,7 +519,7 @@ export function CurrentAccountsWorkspaceView() {
         </DataWorkspaceTableListFiltersBar>
 
         <DataWorkspaceTableListShell
-          lockScroll={loading}
+          lockScroll={listFetching}
           activeFiltersBar={
             hasFilterChips ? (
               <DataWorkspaceListActiveFiltersBar
@@ -536,14 +551,14 @@ export function CurrentAccountsWorkspaceView() {
             ) : null
           }
           overlay={
-            !loading && totalCount === 0 ? <DataWorkspaceTableEmptyMascot /> : null
+            !listFetching && totalCount === 0 ? <DataWorkspaceTableEmptyMascot /> : null
           }
           footerFloating
           footerFloatingCentered
           scrollResetKey={ws.page}
           footer={
             <DataWorkspaceTableListPageDock
-              listFetching={loading}
+              listFetching={listFetching}
               loadedCount={parties.length}
               totalCount={totalCount}
               page={ws.page}
@@ -555,7 +570,7 @@ export function CurrentAccountsWorkspaceView() {
           <DataWorkspaceListTableFrame>
             <table
               className={cn(workspaceTableLayoutClassName, "min-w-4xl")}
-              aria-busy={loading}
+              aria-busy={listFetching}
             >
               <WorkspaceTableHeader>
                 <WorkspaceTableHeaderRow>
@@ -628,7 +643,7 @@ export function CurrentAccountsWorkspaceView() {
                 </WorkspaceTableHeaderRow>
               </WorkspaceTableHeader>
               <TableBody>
-                {loading ? (
+                {listFetching ? (
                   <WorkspaceTableSkeletonRows
                     rowCount={skeletonRowCount}
                     rowKeyPrefix="ca-parties-sk"

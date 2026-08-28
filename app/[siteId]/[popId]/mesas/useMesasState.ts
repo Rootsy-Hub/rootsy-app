@@ -3,7 +3,6 @@
 import {
   cancelTableReservationApi,
   closeTableSessionApi,
-  fetchMesasWaiters,
   fetchTableSession,
   openTableSessionApi,
   saveMesasLayoutPositionsApi,
@@ -31,7 +30,6 @@ import type {
   MesaReservationInput,
   MesaSession,
   MesaTable,
-  MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import {
   mapLayoutToState,
@@ -55,15 +53,17 @@ import {
   popMesasReservationsQueryKey,
   popMesasSessionQueryKey,
   popMesasSessionsQueryKey,
-  popMesasWaitersQueryKey,
 } from "@/lib/queryKeys"
 import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { useMesasFloorHydrate } from "@/hooks/useMesasFloorHydrate"
 import {
-  readMesasLayoutLocalOrFetch,
-  readMesasReservationsLocalOrFetch,
-  readMesasReservationSettingsLocalOrFetch,
-  readMesasSessionsLocalOrFetch,
+  mesasLayoutQueryOptions,
+  mesasReservationsQueryOptions,
+  mesasReservationSettingsQueryOptions,
+  mesasSessionsQueryOptions,
+  mesasWaitersQueryOptions,
+} from "@/lib/mesasWorkspaceQuery"
+import {
   refreshMesasLayoutFromNetwork,
   refreshMesasReservationsFromNetwork,
   refreshMesasReservationSettingsFromNetwork,
@@ -143,6 +143,41 @@ function toSessionInput(input: MesaOpenSessionInput) {
   }
 }
 
+function floorQueryPending(
+  query: { data: unknown; isPending: boolean },
+  canReadFloor: boolean,
+) {
+  return !query.data && (query.isPending || !canReadFloor)
+}
+
+export function useMesasFloorPending(popId: string | undefined) {
+  const floorHydrate = useMesasFloorHydrate(popId)
+  const canRead = Boolean(popId) && floorHydrate.canReadFloor
+  const layoutQuery = useQuery({
+    ...mesasLayoutQueryOptions(popId ?? ""),
+    enabled: canRead,
+  })
+  const sessionsQuery = useQuery({
+    ...mesasSessionsQueryOptions(popId ?? ""),
+    enabled: canRead,
+  })
+  const reservationsQuery = useQuery({
+    ...mesasReservationsQueryOptions(popId ?? ""),
+    enabled: canRead,
+  })
+  const settingsQuery = useQuery({
+    ...mesasReservationSettingsQueryOptions(popId ?? ""),
+    enabled: canRead,
+  })
+  return (
+    Boolean(popId) &&
+    (floorQueryPending(layoutQuery, canRead) ||
+      floorQueryPending(sessionsQuery, canRead) ||
+      floorQueryPending(reservationsQuery, canRead) ||
+      floorQueryPending(settingsQuery, canRead))
+  )
+}
+
 export function useMesasState(popId: string, siteId: string) {
   const queryClient = useQueryClient()
   const fiscal = usePopSaleComprobanteFiscalContext()
@@ -163,42 +198,28 @@ export function useMesasState(popId: string, siteId: string) {
   const tableRestoredRef = useRef(false)
 
   const layoutQuery = useQuery({
-    queryKey: popMesasLayoutQueryKey(popId),
-    queryFn: () => readMesasLayoutLocalOrFetch(popId),
+    ...mesasLayoutQueryOptions(popId),
     enabled: floorEnabled,
-    ...sessionListQueryOptions,
   })
 
   const sessionsQuery = useQuery({
-    queryKey: popMesasSessionsQueryKey(popId),
-    queryFn: () => readMesasSessionsLocalOrFetch(popId),
+    ...mesasSessionsQueryOptions(popId),
     enabled: floorEnabled,
-    ...sessionListQueryOptions,
   })
 
   const reservationsQuery = useQuery({
-    queryKey: popMesasReservationsQueryKey(popId),
-    queryFn: () => readMesasReservationsLocalOrFetch(popId),
+    ...mesasReservationsQueryOptions(popId),
     enabled: floorEnabled,
-    ...sessionListQueryOptions,
   })
 
   const settingsQuery = useQuery({
-    queryKey: popMesasReservationSettingsQueryKey(popId),
-    queryFn: () => readMesasReservationSettingsLocalOrFetch(popId),
+    ...mesasReservationSettingsQueryOptions(popId),
     enabled: floorEnabled,
-    ...sessionListQueryOptions,
   })
 
   const waitersQuery = useQuery({
-    queryKey: popMesasWaitersQueryKey(popId),
-    queryFn: async (): Promise<MesaWaiter[]> => {
-      const res = await fetchMesasWaiters(popId)
-      if (!res.success) throw new Error(res.error)
-      return res.waiters
-    },
+    ...mesasWaitersQueryOptions(popId),
     enabled,
-    ...sessionListQueryOptions,
   })
 
   const layoutData = layoutQuery.data ?? null

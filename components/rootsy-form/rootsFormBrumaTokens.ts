@@ -44,7 +44,7 @@ export const rootsFormBrumaActiveBgClass = "active:bg-[color:var(--rootsy-bruma-
 
 /** Superficie blanca en inputs editables (texto / textarea) — no heredar del shell. */
 export const rootsFormTextInputSurfaceClass =
-  "!bg-[var(--color-elevada)] hover:!bg-[var(--color-elevada)] focus:!bg-[var(--color-elevada)] focus-visible:!bg-[var(--color-elevada)]"
+  "!bg-[var(--rootsy-blanco)] hover:!bg-[var(--rootsy-blanco)] focus:!bg-[var(--rootsy-blanco)] focus-visible:!bg-[var(--rootsy-blanco)]"
 
 /** Label secundario — mismo rol que muted-foreground en bruma. */
 export const rootsFormBrumaLabelMutedClass = rootsFormBrumaTextSecondaryClass

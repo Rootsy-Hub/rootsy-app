@@ -53,6 +53,7 @@ function LibraryShellChromeInner({ children }: LibraryShellChromeProps) {
         popId={popContext.popId}
         popName={popWorkspace?.bootstrap?.popName ?? popContext.popName}
         title="Librería"
+        showModuleDock={false}
         contentFlush
         useBackdrop={false}
         usePopBackdrop={false}

@@ -36,14 +36,14 @@ import {
 } from "@/components/ui/rootsyDateCalendarStyles"
 import { cn } from "@/lib/utils"
 
-/** Papel de Bruma — --color-elevada (blanco de día, bruma-700 de noche). */
-export const dataWorkspacePaperSurfaceClass = "bg-[var(--color-elevada)]"
+/** Papel de valle — blanco fijo. --color-elevada cambia en POS / html.dark. */
+export const dataWorkspacePaperSurfaceClass = "bg-[var(--rootsy-blanco)]"
 
 /** Superficie blanca — shell y zonas internas de tarjetas bloques. */
 export const dataWorkspaceBlocksCardSurfaceClass = dataWorkspacePaperSurfaceClass
 
 export const dataWorkspaceShellCard =
-  "rounded-2xl border border-border/80 bg-[var(--color-elevada)] shadow-sm"
+  "rounded-2xl border border-border/80 bg-[var(--rootsy-blanco)] shadow-sm"
 
 /** Tarjeta workspace pegada al borde inferior del main (sin redondeo ni borde abajo). */
 export const dataWorkspaceFlushBottomShellCard = cn(
@@ -141,14 +141,16 @@ export const dataWorkspaceBlocksSplitBannerClass =
   "shrink-0 space-y-3 px-4 pt-6 sm:px-6 lg:px-8"
 
 export const dataWorkspaceBlocksSplitGridClass = cn(
-  "game-scroll grid min-h-0 flex-1 grid-cols-1",
+  "game-scroll grid min-h-0 flex-1 grid-cols-1 content-start",
   "overflow-y-auto overscroll-contain",
   "lg:grid-cols-12 lg:overflow-hidden",
 )
 
 export const dataWorkspaceBlocksSplitPaneClass = cn(
-  "game-scroll flex min-h-0 min-w-0 flex-col",
-  "px-4 py-6 sm:px-6 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:px-8",
+  "game-scroll flex min-w-0 flex-col",
+  "px-4 py-6 sm:px-6",
+  "max-lg:min-h-min max-lg:overflow-visible",
+  "lg:min-h-0 lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:px-8",
 )
 
 /**
@@ -201,13 +203,13 @@ export const dataWorkspaceEntityCardStatValueLargeClass =
   "block min-w-0 truncate rootsy-text-metric-medium text-[var(--rootsy-bruma-900)]"
 
 export const dataWorkspaceEntityCardBadgeClass =
-  "inline-flex items-center gap-1.5 rounded-lg border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)] px-2.5 py-1.5 rootsy-text-label text-[var(--rootsy-bruma-500)] shadow-xs [&_svg]:size-3.5 [&_svg]:text-[var(--rootsy-bruma-500)]"
+  "inline-flex items-center gap-1.5 rounded-lg border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)] px-2.5 py-1.5 rootsy-text-label text-[var(--rootsy-bruma-500)] shadow-xs [&_svg]:size-3.5 [&_svg]:text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardStatusOpenClass =
   "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,var(--rootsy-blanco))] px-2.5 py-1 rootsy-text-label text-[var(--rootsy-savia-800)]"
 
 export const dataWorkspaceEntityCardStatusClosedClass =
-  "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)] px-2.5 py-1 rootsy-text-label text-[var(--rootsy-bruma-500)]"
+  "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)] px-2.5 py-1 rootsy-text-label text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardStatusInactiveClass =
   "inline-flex shrink-0 items-center rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-2.5 py-1 rootsy-text-label text-[var(--rootsy-bruma-500)]"
@@ -224,7 +226,7 @@ export const dataWorkspaceEntityCardMenuTriggerClass = cn(
  */
 export const dataWorkspaceEntityCardLosetaSurfaceClass = cn(
   "relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[1.375rem]",
-  "border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)]",
+  "border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)]",
   rootsyElevationRaisedRestClass,
 )
 
@@ -280,7 +282,7 @@ export const dataWorkspaceEntityCardLosetaGridClass =
  */
 export const dataWorkspaceEntityCardClass = cn(
   "group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-[1.375rem]",
-  "border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)] shadow-sm",
+  "border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)] shadow-sm",
   "transition-[border-color,box-shadow] duration-200",
   "hover:border-[var(--rootsy-bruma-300)] hover:shadow-md",
 )
@@ -297,16 +299,17 @@ export const dataWorkspaceEntityCardBodyClass = cn(
 )
 
 export const dataWorkspaceEntityCardIsotypeClass =
-  "flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)] text-[var(--rootsy-bruma-500)] shadow-xs"
+  "flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)] text-[var(--rootsy-bruma-500)] shadow-xs"
 
 /** Shell skeleton — misma superficie que la tarjeta final, sin hover. */
 export const dataWorkspaceEntityCardSkeletonShellClass = cn(
   "relative flex h-full flex-col overflow-hidden rounded-[1.375rem]",
-  "border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)] shadow-sm",
+  "border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)] shadow-sm",
 )
 
+/** Empty de bloques — usar DataWorkspaceBlocksEmptyState. Tablas: DataWorkspaceTableEmptyMascot. */
 export const dataWorkspaceBlocksEmptyStateClass =
-  "rounded-xl border border-dashed border-[var(--rootsy-bruma-300)] bg-[var(--color-elevada)] px-4 py-10 text-center font-canopy text-sm text-[var(--rootsy-bruma-500)]"
+  "rounded-xl border border-dashed border-[var(--rootsy-bruma-300)] bg-[var(--rootsy-blanco)] px-4 py-10 text-center font-canopy text-sm text-[var(--rootsy-bruma-500)]"
 
 /** Título de sección en layout · bloques — espejo LayoutsBlocksDocSubsection · font.heading.xsmall semibold. */
 export const dataWorkspaceBlocksSectionTitleClass =
@@ -338,7 +341,7 @@ export const dataWorkspaceBlocksPageScopeClass =
 
 /** Tarjeta / panel de detalle — radius.xxlarge · elevation.shadow.raised (paridad loseta, sin hover). */
 export const dataWorkspaceDetailCardClass = cn(
-  "overflow-hidden rounded-[1.375rem] border border-[var(--rootsy-bruma-200)] bg-[var(--color-elevada)]",
+  "overflow-hidden rounded-[1.375rem] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)]",
   rootsyElevationRaisedRestClass,
 )
 
@@ -896,7 +899,7 @@ export const workspaceTableSkeletonTone = {
 /** Filas de carga / vacío / mensajes (sin hover). */
 export const workspaceTablePlaceholderRowClass = cn(
   workspaceTableRowBorderClass,
-  "bg-[var(--color-elevada)] hover:bg-[var(--color-elevada)] pointer-events-none",
+  "bg-[var(--rootsy-blanco)] hover:bg-[var(--rootsy-blanco)] pointer-events-none",
 )
 
 /** Filas de detalle expandido o contenido anidado (sin hover). */
@@ -914,7 +917,7 @@ export function workspaceTableBodyRowClassNames(
     workspaceTableRowBorderClass,
     "transition-colors duration-150",
     workspaceTableRowHoverClass,
-    index % 2 === 0 ? "bg-[var(--color-elevada)]" : workspaceTableRowStripeClass,
+    index % 2 === 0 ? "bg-[var(--rootsy-blanco)]" : workspaceTableRowStripeClass,
     options?.selected &&
       "bg-emerald-50/90 hover:bg-emerald-50 ring-1 ring-inset ring-emerald-600/12",
   )

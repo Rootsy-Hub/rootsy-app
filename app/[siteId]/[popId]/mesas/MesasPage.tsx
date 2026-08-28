@@ -1,9 +1,11 @@
 "use client"
 
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
+import { DataWorkspaceBlocksEmptyState } from "@/components/data-workspace/DataWorkspaceBlocksEmptyState"
 import { MesasLayoutAdmin } from "@/app/[siteId]/[popId]/mesas/components/MesasLayoutAdmin"
 import { MesasWorkspace } from "@/app/[siteId]/[popId]/mesas/components/MesasWorkspace"
 import { useMesasFloorHydrate } from "@/hooks/useMesasFloorHydrate"
-import { readMesasLayoutLocalOrFetch } from "@/lib/popLocalDb/hydrateMesasFloor"
+import { useMesasFloorPending } from "@/app/[siteId]/[popId]/mesas/useMesasState"
 import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
 import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import {
@@ -15,9 +17,8 @@ import { useAuth } from "@/context/AuthContextSupabase"
 import { OperateQueryDevtoolsPanel } from "@/components/sale-operation/SaleDevtoolsPanel"
 import { isDevModeEnabled } from "@/lib/devmode"
 import { MESAS_QUERY_SPEC } from "@/lib/devmode/mesasQuerySpec"
+import { mesasLayoutQueryOptions } from "@/lib/mesasWorkspaceQuery"
 import { mesasAccessFromKeys } from "@/lib/popWorkspaceAccess"
-import { popMesasLayoutQueryKey } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { useParams } from "@/lib/pop-spa/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { useCallback, useMemo, useRef } from "react"
@@ -43,12 +44,11 @@ function MesasPage() {
     [bootstrap?.permissionKeys],
   )
 
+  const floorPending = useMesasFloorPending(popId)
   const floorHydrate = useMesasFloorHydrate(popId)
   const layoutQuery = useQuery({
-    queryKey: popMesasLayoutQueryKey(popId ?? ""),
-    queryFn: () => readMesasLayoutLocalOrFetch(popId!),
+    ...mesasLayoutQueryOptions(popId ?? ""),
     enabled: Boolean(popId && siteId) && floorHydrate.canReadFloor,
-    ...sessionListQueryOptions,
   })
 
   const salons = useMemo<MesaSalon[]>(
@@ -72,26 +72,30 @@ function MesasPage() {
 
   if (!popId || !siteId) {
     return (
-      <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
-        Punto de venta no encontrado
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <DataWorkspaceBlocksEmptyState title="Punto de venta no encontrado" />
       </div>
     )
   }
 
   if (!bootstrapLoading && bootstrapError) {
     return (
-      <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
-        {bootstrapError}
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <DataWorkspaceBlocksEmptyState title={bootstrapError} />
       </div>
     )
   }
 
   if (!bootstrapLoading && !access.canRead) {
     return (
-      <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
-        No tenés permiso para acceder a Mesas en este punto de venta.
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <DataWorkspaceBlocksEmptyState title="No tenés permiso para acceder a Mesas en este punto de venta." />
       </div>
     )
+  }
+
+  if (floorPending) {
+    return <PopModuleLoading moduleKey="mesas" />
   }
 
   return (
@@ -109,7 +113,7 @@ function MesasPage() {
           popId={popId}
           popName={popName}
           title="Mesas"
-          loading={bootstrapLoading}
+          loading={!popName}
           userName={bootstrap?.userFullName || user?.email || ""}
           userAvatarSrc={bootstrap?.userImageUrl}
           headerActions={

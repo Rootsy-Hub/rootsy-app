@@ -53,16 +53,17 @@ import {
   RootsIconButton,
   RootsPrimaryButton,
 } from "@/components/rootsy-button"
+import {
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogErrorBanner,
+  RootsDialogForm,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -1266,130 +1267,141 @@ export function TreasuryAccountDetailView({
       ) : null}
 
       <Dialog open={settleChild !== null} onOpenChange={(o) => !o && setSettleChild(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Pagar resumen</DialogTitle>
-            <DialogDescription>
-              Registrá el pago del resumen de{" "}
-              <strong>{settleChild?.name}</strong>
-            </DialogDescription>
-          </DialogHeader>
-          {settleBanner ? (
-            <p className="text-sm text-destructive">{settleBanner}</p>
-          ) : null}
-          <form className="space-y-4" onSubmit={(e) => void submitSettle(e)}>
-            <div className="space-y-2">
-              <Label htmlFor="settle-amount">Importe</Label>
-              <Input
-                id="settle-amount"
-                type="number"
-                min={0}
-                step="0.01"
-                required
-                value={settleAmount}
-                onChange={(e) => setSettleAmount(e.target.value)}
-                className="font-numeric"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="settle-date">Fecha de pago</Label>
-              <DatePicker
-                id="settle-date"
-                value={settleDate}
-                onChange={setSettleDate}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="settle-funding">Pagado desde</Label>
-              <select
-                id="settle-funding"
-                required
-                value={settleFundingId}
-                onChange={(e) => setSettleFundingId(e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                {fundingAccounts.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="settle-notes">Notas (opcional)</Label>
-              <Input
-                id="settle-notes"
-                value={settleNotes}
-                onChange={(e) => setSettleNotes(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setSettleChild(null)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={settleSaving}>
-                {settleSaving ? "Registrando…" : "Registrar pago"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+        <RootsDialogContent>
+          <RootsDialogForm onSubmit={(e) => void submitSettle(e)}>
+            <RootsDialogHeader
+              open={settleChild !== null}
+              title="Pagar resumen"
+              description={
+                <>
+                  Registrá el pago del resumen de{" "}
+                  <strong>{settleChild?.name}</strong>
+                </>
+              }
+            />
+            <RootsDialogBody className="space-y-4">
+              {settleBanner ? (
+                <RootsDialogErrorBanner>{settleBanner}</RootsDialogErrorBanner>
+              ) : null}
+              <div className="space-y-2">
+                <Label htmlFor="settle-amount">Importe</Label>
+                <Input
+                  id="settle-amount"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  required
+                  value={settleAmount}
+                  onChange={(e) => setSettleAmount(e.target.value)}
+                  className="font-numeric"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="settle-date">Fecha de pago</Label>
+                <DatePicker
+                  id="settle-date"
+                  value={settleDate}
+                  onChange={setSettleDate}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="settle-funding">Pagado desde</Label>
+                <select
+                  id="settle-funding"
+                  required
+                  value={settleFundingId}
+                  onChange={(e) => setSettleFundingId(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  {fundingAccounts.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="settle-notes">Notas (opcional)</Label>
+                <Input
+                  id="settle-notes"
+                  value={settleNotes}
+                  onChange={(e) => setSettleNotes(e.target.value)}
+                />
+              </div>
+            </RootsDialogBody>
+            <RootsDialogDualActionFooter
+              cancelLabel="Cancelar"
+              confirmLabel={settleSaving ? "Registrando…" : "Registrar pago"}
+              onCancel={() => setSettleChild(null)}
+              confirmType="submit"
+              confirmDisabled={settleSaving}
+            />
+          </RootsDialogForm>
+        </RootsDialogContent>
       </Dialog>
 
       <Dialog open={posChild !== null} onOpenChange={(o) => !o && setPosChild(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Registrar acreditación POS</DialogTitle>
-            <DialogDescription>
-              Transferí el saldo a liquidar de{" "}
-              <strong>{posChild?.name}</strong> al saldo real de la cuenta madre.
-            </DialogDescription>
-          </DialogHeader>
-          {posBanner ? (
-            <p className="text-sm text-destructive">{posBanner}</p>
-          ) : null}
-          <form className="space-y-4" onSubmit={(e) => void submitPosAcredit(e)}>
-            <div className="space-y-2">
-              <Label htmlFor="pos-amount">Importe acreditado</Label>
-              <Input
-                id="pos-amount"
-                type="number"
-                min={0}
-                step="0.01"
-                required
-                value={posAmount}
-                onChange={(e) => setPosAmount(e.target.value)}
-                className="font-numeric"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pos-date">Fecha de acreditación</Label>
-              <DatePicker
-                id="pos-date"
-                value={posDate}
-                onChange={setPosDate}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pos-notes">Notas (opcional)</Label>
-              <Input
-                id="pos-notes"
-                value={posNotes}
-                onChange={(e) => setPosNotes(e.target.value)}
-                placeholder="Ej. Liquidación semanal Mercado Pago"
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setPosChild(null)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={posSaving}>
-                {posSaving ? "Registrando…" : "Registrar acreditación"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+        <RootsDialogContent>
+          <RootsDialogForm onSubmit={(e) => void submitPosAcredit(e)}>
+            <RootsDialogHeader
+              open={posChild !== null}
+              title="Registrar acreditación POS"
+              description={
+                <>
+                  Transferí el saldo a liquidar de{" "}
+                  <strong>{posChild?.name}</strong> al saldo real de la cuenta
+                  madre.
+                </>
+              }
+            />
+            <RootsDialogBody className="space-y-4">
+              {posBanner ? (
+                <RootsDialogErrorBanner>{posBanner}</RootsDialogErrorBanner>
+              ) : null}
+              <div className="space-y-2">
+                <Label htmlFor="pos-amount">Importe acreditado</Label>
+                <Input
+                  id="pos-amount"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  required
+                  value={posAmount}
+                  onChange={(e) => setPosAmount(e.target.value)}
+                  className="font-numeric"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pos-date">Fecha de acreditación</Label>
+                <DatePicker
+                  id="pos-date"
+                  value={posDate}
+                  onChange={setPosDate}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pos-notes">Notas (opcional)</Label>
+                <Input
+                  id="pos-notes"
+                  value={posNotes}
+                  onChange={(e) => setPosNotes(e.target.value)}
+                  placeholder="Ej. Liquidación semanal Mercado Pago"
+                />
+              </div>
+            </RootsDialogBody>
+            <RootsDialogDualActionFooter
+              cancelLabel="Cancelar"
+              confirmLabel={
+                posSaving ? "Registrando…" : "Registrar acreditación"
+              }
+              onCancel={() => setPosChild(null)}
+              confirmType="submit"
+              confirmDisabled={posSaving}
+            />
+          </RootsDialogForm>
+        </RootsDialogContent>
       </Dialog>
     </>
   )

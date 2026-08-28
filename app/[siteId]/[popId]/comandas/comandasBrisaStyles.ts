@@ -1,8 +1,9 @@
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
-import { comandaStatusWorld } from "@/app/[siteId]/[popId]/comandas/comandaStatusWorlds"
+import {
+  comandaStatusWorld,
+} from "@/app/[siteId]/[popId]/comandas/comandaStatusWorlds"
 import type { ComandaStatus } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
-import { layoutsOperarSummarySectionTitleClass } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   dataWorkspaceBlocksSkeletonBreathTone,
   dataWorkspaceEntityCardBadgeClass,
@@ -10,7 +11,6 @@ import {
   dataWorkspaceEntityCardHeaderClass,
   dataWorkspaceEntityCardLosetaClass,
   dataWorkspaceEntityCardSaldoSectionClass,
-  dataWorkspaceEntityCardStatLabelClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
@@ -24,61 +24,87 @@ export const comandasBrisaPageMainClass = cn(
 export const comandasBrisaBoardShellClass =
   "flex min-h-0 flex-1 flex-col overflow-hidden"
 
-/** Headers a todo el ancho — misma altura que toolbar operar. */
+/** Identidad del tablero — la estación es el nombre de la pantalla. */
+export const comandasBrisaBoardIdentityClass = cn(
+  "flex shrink-0 items-center justify-between gap-3",
+  "border-b border-[var(--rootsy-bruma-200)]",
+  "bg-[var(--rootsy-blanco)] px-4 py-3 sm:px-5",
+)
+
+export const comandasBrisaBoardIdentityCopyClass = "min-w-0"
+
+export const comandasBrisaBoardIdentityEyebrowClass =
+  dataWorkspaceEntityCardEyebrowClass
+
+export const comandasBrisaBoardIdentityTitleClass =
+  "rootsy-text-section-title text-[var(--rootsy-bruma-900)]"
+
+/** Tabs de estado — solo teléfono. El monitor usa las 4 columnas. */
+export const comandasBrisaMobileTabsClass =
+  "flex shrink-0 items-center gap-1 border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)] px-3 py-2 md:hidden"
+
+export const comandasBrisaMobileTabClass = (active: boolean) =>
+  cn(
+    "inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-1.5 py-2",
+    "rootsy-text-label",
+    active
+      ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,var(--rootsy-blanco))] font-semibold text-[var(--rootsy-bruma-900)]"
+      : "text-[var(--rootsy-bruma-500)]",
+  )
+
+/** Headers a todo el ancho — papel + riel de señal, sin losa pintada. */
 export const comandasBrisaHeaderRowClass = cn(
-  "rootsy-nature-palette grid shrink-0 grid-cols-4",
+  "rootsy-nature-palette hidden shrink-0 grid-cols-4 md:grid",
   "h-16 overflow-hidden",
-  "divide-x divide-[color-mix(in_srgb,var(--rootsy-white)_42%,transparent)]",
+  "divide-x divide-[var(--rootsy-bruma-200)]",
+  "border-b border-[var(--rootsy-bruma-200)]",
 )
 
 export const comandasBrisaBodyRowClass = cn(
-  "grid min-h-0 flex-1 grid-cols-4 overflow-hidden",
-  "divide-x divide-[var(--rootsy-bruma-200)]",
+  "grid min-h-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-4",
+  "md:divide-x md:divide-[var(--rootsy-bruma-200)]",
 )
+
+export function comandasBrisaColumnVisibilityClass(active: boolean): string {
+  return cn(active ? "flex" : "hidden", "md:flex")
+}
 
 export function comandasBrisaColumnHeaderClass(status: ComandaStatus): string {
   const world = comandaStatusWorld(status)
   return cn(
-    "relative isolate flex min-w-0 items-center gap-2 overflow-hidden px-4",
-    "before:pointer-events-none before:absolute before:inset-0 before:content-['']",
+    "relative isolate flex min-w-0 items-center gap-2.5 overflow-hidden px-4",
+    "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:content-['']",
     world.headerClass,
+    world.railClass,
   )
 }
 
 export function comandasBrisaColumnTitleClass(status: ComandaStatus): string {
   return cn(
-    layoutsOperarSummarySectionTitleClass,
-    "relative z-1",
+    "rootsy-text-heading-xsmall relative z-1",
     comandaStatusWorld(status).titleClass,
   )
 }
 
 export function comandasBrisaColumnIconClass(status: ComandaStatus): string {
   return cn(
-    "relative z-1 size-3.5 shrink-0",
+    "relative z-1 size-4 shrink-0",
     comandaStatusWorld(status).iconClass,
   )
 }
 
-export function comandasBrisaCountPillClass(status: ComandaStatus): string {
-  return cn(
-    "relative z-1 inline-flex size-5 shrink-0 items-center justify-center rounded-full border",
-    "font-canopy text-[10px] font-semibold tabular-nums",
-    comandaStatusWorld(status).pillClass,
-  )
+export function comandasBrisaColumnBodyClass(status: ComandaStatus): string {
+  return cn("flex min-h-0 min-w-0 flex-col", comandaStatusWorld(status).bodyClass)
 }
-
-export const comandasBrisaCountPillWideClass = "size-6 text-[9px]"
 
 export const comandasBrisaDropZoneClass = cn(
   "flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto p-4",
-  "transition-[background-color,box-shadow] duration-150 ease-[cubic-bezier(0.4,1,0.6,1)]",
+  "transition-[background] duration-150 ease-[cubic-bezier(0.4,1,0.6,1)]",
 )
 
-export const comandasBrisaDropZoneOverClass = cn(
-  "bg-[color-mix(in_srgb,var(--rootsy-savia-100)_55%,transparent)]",
-  "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-600)_22%,transparent)]",
-)
+export function comandasBrisaDropZoneOverClass(status: ComandaStatus): string {
+  return comandaStatusWorld(status).dropOverClass
+}
 
 export const comandasBrisaDropZoneBlockedClass = "opacity-50"
 
@@ -90,8 +116,13 @@ export const comandasBrisaTicketCardClass = cn(
 )
 
 export const comandasBrisaTicketCardVoidClass = cn(
-  "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-danger)_38%,transparent)]",
-  "bg-[color-mix(in_srgb,var(--rootsy-danger)_6%,white)]",
+  "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-lava-500)_38%,transparent)]",
+  "bg-[color-mix(in_srgb,var(--rootsy-lava-50)_70%,var(--rootsy-blanco))]",
+)
+
+export const comandasBrisaTicketVoidActionClass = cn(
+  "border-t border-[color-mix(in_srgb,var(--rootsy-lava-500)_18%,transparent)]",
+  "px-4 py-3",
 )
 
 export const comandasBrisaTicketCardIdleClass = "cursor-default active:cursor-default"
@@ -107,14 +138,58 @@ export const comandasBrisaTicketEyebrowClass = dataWorkspaceEntityCardEyebrowCla
 
 export const comandasBrisaTicketTitleClass = dataWorkspaceEntityCardTitleClass
 
-export const comandasBrisaTicketMetaClass = dataWorkspaceEntityCardStatLabelClass
+export const comandasBrisaTicketMetaClass =
+  "rootsy-text-body font-medium text-[var(--rootsy-bruma-900)]"
 
 export const comandasBrisaTicketDetailClass =
-  "font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-600)]"
+  "font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-700)]"
 
 export const comandasBrisaTicketBadgeClass = dataWorkspaceEntityCardBadgeClass
 
 export const comandasBrisaTicketListClass = "flex flex-col gap-4"
+
+/** Historial — archivo en papel, no loseta de tablero. */
+export const comandasBrisaHistoryDialogClass = cn(
+  "rootsy-app-light",
+  "flex max-h-[min(92vh,40rem)] flex-col",
+)
+
+export const comandasBrisaHistoryListClass = "flex flex-col gap-2.5"
+
+export const comandasBrisaHistoryRowClass = cn(
+  "relative overflow-hidden rounded-2xl",
+  "border border-[var(--rootsy-bruma-200)]",
+  "bg-[var(--rootsy-blanco)]",
+  "px-4 py-3.5",
+)
+
+export const comandasBrisaHistoryRowVoidClass = cn(
+  "border-[color-mix(in_srgb,var(--rootsy-lava-500)_28%,var(--rootsy-bruma-200))]",
+  "bg-[color-mix(in_srgb,var(--rootsy-lava-50)_65%,var(--rootsy-blanco))]",
+)
+
+export const comandasBrisaHistoryOriginClass =
+  "rootsy-text-label text-[var(--rootsy-bruma-500)]"
+
+export const comandasBrisaHistoryTitleClass =
+  "rootsy-text-heading-xsmall text-[var(--rootsy-bruma-900)]"
+
+export const comandasBrisaHistoryClockClass =
+  "rootsy-text-heading-xsmall tabular-nums text-[var(--rootsy-bruma-900)]"
+
+export const comandasBrisaHistoryRelativeClass =
+  "rootsy-text-label text-[var(--rootsy-bruma-500)]"
+
+export const comandasBrisaHistoryItemClass =
+  "rootsy-text-body text-[var(--rootsy-bruma-800)]"
+
+export const comandasBrisaHistoryNoteClass =
+  "font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-600)]"
+
+export const comandasBrisaHistoryIconClass =
+  "mt-0.5 size-4 shrink-0 text-[var(--rootsy-savia-600)]"
+
+export const comandasBrisaHistoryIconVoidClass = "text-[var(--rootsy-lava-600)]"
 
 export const comandasBrisaTicketOverlayClass = cn(
   comandasBrisaTicketCardClass,

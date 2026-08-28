@@ -1,6 +1,8 @@
 "use server"
 
 import {
+  COMANDA_DELIVERED_HISTORY_MS,
+  canAckComandaVoid,
   canMoveComandaTo,
   timestampsForStatusChange,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
@@ -49,8 +51,6 @@ const COMANDA_SELECT = `
   send_id,
   comanda_sends ( comment, kind )
 `
-
-const DELIVERED_RETENTION_HOURS = 12
 
 function isUuid(value: string): boolean {
   return UUID_RE.test(value.trim())
@@ -250,7 +250,7 @@ export async function getComandas(
   }
 
   const since = new Date(
-    Date.now() - DELIVERED_RETENTION_HOURS * 60 * 60 * 1000,
+    Date.now() - COMANDA_DELIVERED_HISTORY_MS,
   ).toISOString()
 
   const [openRes, deliveredRes] = await Promise.all([
@@ -348,8 +348,10 @@ async function applyComandaStatus(
     return { success: true, ticket: current }
   }
 
+  const isAckVoid =
+    nextStatus === "voided" && canAckComandaVoid(current.sendKind, current.status)
   const isSend = current.status === "pending" && nextStatus === "sent"
-  if (!isSend && !canMoveComandaTo(current.status, nextStatus)) {
+  if (!isSend && !isAckVoid && !canMoveComandaTo(current.status, nextStatus)) {
     return {
       success: false,
       error: "Ese cambio de estado no está permitido.",
@@ -357,29 +359,42 @@ async function applyComandaStatus(
   }
 
   const now = new Date().toISOString()
-  const patch = timestampsForStatusChange(
-    {
-      sentAt: current.sentAt,
-      preparingAt: current.preparingAt,
-      readyAt: current.readyAt,
-      deliveredAt: current.deliveredAt,
-    },
-    nextStatus,
-    now,
-  )
+  const itemPatch = isAckVoid
+    ? {
+        status: "voided" as const,
+        voided_at: now,
+        status_changed_at: now,
+      }
+    : timestampsForStatusChange(
+        {
+          sentAt: current.sentAt,
+          preparingAt: current.preparingAt,
+          readyAt: current.readyAt,
+          deliveredAt: current.deliveredAt,
+        },
+        nextStatus,
+        now,
+      )
+  const sendPatch = isAckVoid
+    ? {
+        status: "delivered" as const,
+        status_changed_at: now,
+        ...(current.deliveredAt ? {} : { delivered_at: now }),
+      }
+    : itemPatch
 
   const sendId = current.sendId
   if (sendId) {
     const { error: sendErr } = await gate.supabase
       .from("comanda_sends")
-      .update(patch)
+      .update(sendPatch)
       .eq("id", sendId)
       .eq("pop_id", popId)
     if (sendErr) return { success: false, error: sendErr.message }
 
     const { data: sendItems, error: itemsErr } = await gate.supabase
       .from("comandas")
-      .update(patch)
+      .update(itemPatch)
       .eq("send_id", sendId)
       .eq("pop_id", popId)
       .select(COMANDA_SELECT)
@@ -394,7 +409,7 @@ async function applyComandaStatus(
 
   const { data, error } = await gate.supabase
     .from("comandas")
-    .update(patch)
+    .update(itemPatch)
     .eq("id", ticketId)
     .eq("pop_id", popId)
     .select(COMANDA_SELECT)

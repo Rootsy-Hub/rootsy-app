@@ -1,5 +1,7 @@
 "use client"
 
+import { ExpensePeriodToolbar } from "@/app/[siteId]/[popId]/expenses/ExpensePeriodToolbar"
+import { ExpenseSummaryDashboard } from "@/app/[siteId]/[popId]/expenses/ExpenseSummaryDashboard"
 import {
   dataWorkspaceBlocksSkeletonBreathTone,
   dataWorkspaceEntityCardLosetaSurfaceClass,
@@ -31,20 +33,14 @@ export function ExpensePageSkeleton() {
       aria-live="polite"
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <article
-          className={cn(
-            dataWorkspaceEntityCardLosetaSurfaceClass,
-            "h-auto min-w-0 flex-1 px-5 py-4",
-          )}
-        >
-          <Bone className={cn("h-3 w-36", sk.bar)} delay={1} />
-          <Bone className={cn("mt-3 h-2 w-full", sk.pill)} delay={1} />
-          <Bone className={cn("mt-3 h-2.5 w-48", sk.pill)} delay={1} />
-        </article>
-        <div className="w-[14.5rem] shrink-0 space-y-1.5">
-          <Bone className={cn("h-3 w-16", sk.pill)} delay={2} />
-          <Bone className={cn("h-11 w-full rounded-lg", sk.box)} delay={2} />
+        <div className="min-w-0 flex-1">
+          <ExpenseSummaryDashboard totalDue={0} totalPaid={0} />
         </div>
+        <ExpensePeriodToolbar
+          year={new Date().getFullYear()}
+          month1={new Date().getMonth() + 1}
+          onChange={() => undefined}
+        />
       </div>
       <div className="grid gap-8 lg:grid-cols-2">
         {[0, 1].map((col) => (

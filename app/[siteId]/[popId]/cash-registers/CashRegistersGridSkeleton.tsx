@@ -1,19 +1,35 @@
 "use client"
 
-import { cn } from "@/lib/utils"
+import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
-  dataWorkspaceBlocksSkeletonTone,
+  dataWorkspaceBlocksPageContentClass,
+  dataWorkspaceBlocksSkeletonBreathTone,
   dataWorkspaceEntityCardActionFooterClass,
   dataWorkspaceEntityCardHeaderClass,
   dataWorkspaceEntityCardLosetaSurfaceClass,
   dataWorkspaceEntityCardSaldoSectionClass,
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { cn } from "@/lib/utils"
 
 const NAME_WIDTHS = ["w-24", "w-32", "w-28", "w-20"] as const
 const BALANCE_WIDTHS = ["w-36", "w-32", "w-40", "w-28"] as const
 
-const sk = dataWorkspaceBlocksSkeletonTone
+const sk = dataWorkspaceBlocksSkeletonBreathTone
+
+function delayStyle(index: number) {
+  return { animationDelay: `${index * 160}ms` }
+}
+
+function Bone({
+  className,
+  delay = 0,
+}: {
+  className?: string
+  delay?: number
+}) {
+  return <div className={className} style={delayStyle(delay)} />
+}
 
 function CashRegisterCardSkeleton({ index }: { index: number }) {
   const nameWidth = NAME_WIDTHS[index % NAME_WIDTHS.length]
@@ -24,27 +40,27 @@ function CashRegisterCardSkeleton({ index }: { index: number }) {
       <div className="flex min-h-0 flex-1 flex-col">
         <div className={cn(dataWorkspaceEntityCardHeaderClass, "pr-4")}>
           <div className="flex min-w-0 items-start gap-3">
-            <div className={cn("size-11 shrink-0 rounded-xl", sk.box)} />
+            <Bone className={cn("size-11 shrink-0 rounded-xl", sk.box)} delay={index} />
             <div className="relative min-w-0 flex-1 space-y-2">
-              <div className={cn("h-2.5 w-[5.5rem]", sk.pill)} />
-              <div className={cn("h-6", sk.bar, nameWidth)} />
-              <div className={cn("h-3 w-28", sk.barSm)} />
+              <Bone className={cn("h-2.5 w-[5.5rem]", sk.pill)} delay={index} />
+              <Bone className={cn("h-6", sk.bar, nameWidth)} delay={index} />
+              <Bone className={cn("h-3 w-28", sk.barSm)} delay={index} />
             </div>
-            <div className={cn("-mr-1 size-8 shrink-0 rounded-lg", sk.box)} />
+            <Bone className={cn("-mr-1 size-8 shrink-0 rounded-lg", sk.box)} delay={index} />
           </div>
         </div>
 
         <div className={dataWorkspaceEntityCardSaldoSectionClass}>
-          <div className={cn("h-2.5 w-24", sk.pill)} />
-          <div className={cn("mt-1.5 h-8", sk.bar, balanceWidth)} />
+          <Bone className={cn("h-2.5 w-24", sk.pill)} delay={index} />
+          <Bone className={cn("mt-1.5 h-8", sk.bar, balanceWidth)} delay={index} />
         </div>
 
         <div className={dataWorkspaceEntityCardActionFooterClass}>
           <div>
-            <div className={cn("h-2.5 w-20", sk.pill)} />
-            <div className={cn("mt-1 h-6 w-24", sk.bar)} />
+            <Bone className={cn("h-2.5 w-20", sk.pill)} delay={index} />
+            <Bone className={cn("mt-1 h-6 w-24", sk.bar)} delay={index} />
           </div>
-          <div className={cn("h-8 w-24 rounded-md", sk.box)} />
+          <Bone className={cn("h-8 w-24 rounded-md", sk.box)} delay={index} />
         </div>
       </div>
     </article>
@@ -63,6 +79,16 @@ export function CashRegistersGridSkeleton({ count = 4 }: { count?: number }) {
         <CashRegisterCardSkeleton key={index} index={index} />
       ))}
       <span className="sr-only">Cargando cajas…</span>
+    </div>
+  )
+}
+
+export function CashRegistersPageSkeleton() {
+  return (
+    <div className={dataWorkspaceBlocksPageContentClass}>
+      <DataWorkspaceBlocksSection>
+        <CashRegistersGridSkeleton />
+      </DataWorkspaceBlocksSection>
     </div>
   )
 }

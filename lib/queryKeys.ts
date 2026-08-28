@@ -163,6 +163,14 @@ export function purchaseCatalogKnownArticlesQueryKey(popId: string) {
   return ["purchase-catalog", popId, "known-articles"] as const
 }
 
+export function serviceOperateCatalogQueryKey(popId: string) {
+  return ["service-operate", popId, "catalog"] as const
+}
+
+export function serviceOperatePageQueryKey(popId: string) {
+  return ["service-operate", popId, "page"] as const
+}
+
 export function saleComprobanteEmitterQueryKey(
   popId: string,
   cashRegisterId?: string | null,
@@ -332,6 +340,34 @@ export function popComandasTicketsQueryRoot(popId: string) {
 
 export function popComandasTicketsQueryKey(popId: string, stationId: string) {
   return ["pop-comandas", popId, "tickets", stationId] as const
+}
+
+export function popHrQueryRoot(popId: string) {
+  return ["pop-hr", popId] as const
+}
+
+export function popHrDashboardQueryKey(popId: string) {
+  return ["pop-hr", popId, "dashboard"] as const
+}
+
+export function popCashRegistersQueryRoot(popId: string) {
+  return ["pop-cash-registers", popId] as const
+}
+
+export function popCashRegistersListQueryKey(popId: string) {
+  return ["pop-cash-registers", popId, "list"] as const
+}
+
+export function popCashRegistersFormContextQueryKey(popId: string) {
+  return ["pop-cash-registers", popId, "form-context"] as const
+}
+
+export function popAccountsQueryRoot(popId: string) {
+  return ["pop-accounts", popId] as const
+}
+
+export function popAccountsListQueryKey(popId: string) {
+  return ["pop-accounts", popId, "list"] as const
 }
 
 export function popChatQueryRoot(popId: string) {
@@ -828,6 +864,14 @@ export function popPurchaseOrderDetailQueryKey(popId: string, orderId: string) {
 
 export function popSettingsQueryKey(popId: string) {
   return ["pop-settings", popId] as const
+}
+
+export function popPrintersQueryKey(popId: string) {
+  return ["pop-printers", popId] as const
+}
+
+export function popPrintersQueryRoot(popId: string) {
+  return ["pop-printers", popId] as const
 }
 
 export function popExpensesQueryKey(

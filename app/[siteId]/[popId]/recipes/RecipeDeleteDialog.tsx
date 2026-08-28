@@ -8,12 +8,13 @@ import {
   rootsButtonClassForVariant,
   rootsButtonVariant,
 } from "@/components/rootsy-button"
-import { RootsDialogErrorBanner } from "@/components/rootsy-dialog"
+import {
+  RootsAlertDialogContent,
+  RootsDialogErrorBanner,
+} from "@/components/rootsy-dialog"
 import { rootsFormTextFieldClass } from "@/components/rootsy-form/rootsFormStyles"
-import { saleOpAlertDialogContent } from "@/components/sale-operation/saleOperationStyles"
 import {
   AlertDialog,
-  AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
@@ -72,7 +73,7 @@ export function RecipeDeleteDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className={saleOpAlertDialogContent}>
+      <RootsAlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Eliminar {name}</AlertDialogTitle>
           <AlertDialogDescription>
@@ -121,7 +122,7 @@ export function RecipeDeleteDialog({
             </RootsDangerButton>
           )}
         </AlertDialogFooter>
-      </AlertDialogContent>
+      </RootsAlertDialogContent>
     </AlertDialog>
   )
 }

@@ -95,19 +95,24 @@ export function TreasuryReconcileModal({
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return
       setBalanceLoading(true)
       setBalanceError(null)
-      const res = await fetchTreasuryChildPendingBalance(
-        popId,
-        motherAccountId,
-        child.id,
-        child.childRole,
-        date,
-      )
-      setBalanceLoading(false)
-      if (!res.success) {
-        setBalanceError(res.error)
-        return
+      try {
+        const res = await fetchTreasuryChildPendingBalance(
+          popId,
+          motherAccountId,
+          child.id,
+          child.childRole,
+          date,
+        )
+        if (!res.success) {
+          setBalanceError(res.error)
+          return
+        }
+        setBalanceAsOf(res.balance)
+      } catch {
+        setBalanceError("No se pudo leer el saldo a la fecha.")
+      } finally {
+        setBalanceLoading(false)
       }
-      setBalanceAsOf(res.balance)
     },
     [popId, motherAccountId, child.id, child.childRole],
   )

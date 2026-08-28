@@ -141,8 +141,9 @@ export const rootsFormPrefixedSelectTriggerClass = rootsFormUiPrefixedSelectTrig
 export const rootsFormPortalZClass = "z-[520]"
 
 export const rootsFormSelectContentClass = cn(
+  "rootsy-app-light",
   rootsFormPortalZClass,
-  "w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) max-w-(--radix-select-trigger-width) overflow-x-hidden overflow-y-auto rounded-[12px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] p-0 shadow-md",
+  "w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) max-w-(--radix-select-trigger-width) overflow-x-hidden overflow-y-auto rounded-[12px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)] p-0 shadow-md",
 )
 
 /** Ítem del listado — hover bruma-50 · sin radio propio. */

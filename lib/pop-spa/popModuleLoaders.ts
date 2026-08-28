@@ -52,8 +52,7 @@ const LOADERS: Record<PopViewKey, Loader> = {
     import("./chunks/current-accounts").then((m) => m.default()),
   alerts: () => import("./chunks/alerts").then((m) => m.default()),
   chat: () => import("./chunks/chat").then((m) => m.default()),
-  manufacturing: () =>
-    import("./chunks/manufacturing").then((m) => m.default()),
+  manufacturing: () => import("./chunks/manufacturing").then((m) => m.default()),
   audit: () => import("./chunks/audit").then((m) => m.default()),
 }
 

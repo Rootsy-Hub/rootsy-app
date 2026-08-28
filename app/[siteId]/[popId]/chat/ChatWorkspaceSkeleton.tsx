@@ -7,7 +7,9 @@ import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
+import { Plus } from "lucide-react"
 
 export function ChatWorkspaceSkeleton() {
   return (
@@ -55,6 +57,17 @@ export function ChatModulePageSkeleton({
       userName={userName}
       userAvatarSrc={userAvatarSrc}
       userRoleLabel={userRoleLabel}
+      headerActions={
+        <RootsIconButton
+          semantic="primary"
+          atmosphere="eter"
+          size="default"
+          label="Nuevo canal"
+          disabled
+        >
+          <Plus className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
       contentFlush
       mainMaxWidthClass="max-w-none"
       mainClassName={cn(

@@ -226,7 +226,6 @@ export function OperationSaleDetailDialog({
           ) : sale ? (
             <div
               className={cn(
-                "rootsy-theme-pos",
                 layoutsOperarBodyScopeClass,
                 "grid min-h-0 flex-1 overflow-y-auto",
                 "lg:h-0 lg:grid-cols-[minmax(17rem,1fr)_400px] lg:grid-rows-[minmax(0,1fr)] lg:overflow-hidden",

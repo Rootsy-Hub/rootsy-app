@@ -12,10 +12,8 @@ import {
   setMostradorOrderDetailCache,
 } from "@/app/[siteId]/[popId]/mostrador/mostradorQueryCache"
 import { useMostradorBoardHydrate } from "@/hooks/useMostradorBoardHydrate"
-import {
-  readMostradorOrdersLocalOrFetch,
-  refreshMostradorOrdersFromNetwork,
-} from "@/lib/popLocalDb/hydrateMostradorBoard"
+import { refreshMostradorOrdersFromNetwork } from "@/lib/popLocalDb/hydrateMostradorBoard"
+import { mostradorOrdersQueryOptions } from "@/lib/mostradorWorkspaceQuery"
 import {
   cancelCounterOrderApi,
   createCounterOrderApi,
@@ -34,6 +32,19 @@ import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobant
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
+export function useMostradorBoardPending(popId: string | undefined) {
+  const boardHydrate = useMostradorBoardHydrate(popId)
+  const ordersQuery = useQuery({
+    ...mostradorOrdersQueryOptions(popId ?? ""),
+    enabled: Boolean(popId) && boardHydrate.canReadBoard,
+  })
+  return (
+    Boolean(popId) &&
+    !ordersQuery.data &&
+    (ordersQuery.isPending || !boardHydrate.canReadBoard)
+  )
+}
+
 export function useMostradorState(popId: string, _siteId: string) {
   const queryClient = useQueryClient()
   const fiscal = usePopSaleComprobanteFiscalContext()
@@ -46,18 +57,22 @@ export function useMostradorState(popId: string, _siteId: string) {
   const orderRestoredRef = useRef(false)
   const orderDetailIdRef = useRef<string | null>(null)
 
+  const ordersOptions = mostradorOrdersQueryOptions(popId)
   const ordersQuery = useQuery({
-    queryKey: popMostradorOrdersQueryKey(popId),
-    queryFn: async () => {
-      const orders = await readMostradorOrdersLocalOrFetch(popId)
-      return overlayMostradorInFlight(orders, inFlightMovesRef.current)
-    },
+    ...ordersOptions,
+    queryFn: async () =>
+      overlayMostradorInFlight(
+        await ordersOptions.queryFn(),
+        inFlightMovesRef.current,
+      ),
     enabled: boardEnabled,
-    ...sessionListQueryOptions,
   })
 
   const orders = ordersQuery.data ?? []
   const loading = ordersQuery.isLoading || !boardHydrate.canReadBoard
+  const boardPending =
+    !ordersQuery.data &&
+    (ordersQuery.isPending || !boardHydrate.canReadBoard)
 
   useEffect(() => {
     orderRestoredRef.current = false
@@ -257,6 +272,7 @@ export function useMostradorState(popId: string, _siteId: string) {
   return {
     orders,
     loading,
+    boardPending,
     orderError:
       orderError ??
       ordersQuery.error?.message ??

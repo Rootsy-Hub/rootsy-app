@@ -1,8 +1,6 @@
 "use client"
 
-import { popSettingsQueryKey } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
-import { fetchPopSettings } from "@/lib/rootsyApi/settingsClient"
+import { settingsQueryOptions } from "@/lib/settingsWorkspaceQuery"
 import { useQuery } from "@tanstack/react-query"
 
 type UsePopSettingsOptions = {
@@ -16,9 +14,7 @@ export function usePopSettings(
   const enabled = (options?.enabled ?? true) && Boolean(popId)
 
   return useQuery({
-    queryKey: popSettingsQueryKey(popId ?? ""),
-    queryFn: () => fetchPopSettings(popId!),
+    ...settingsQueryOptions(popId ?? ""),
     enabled,
-    ...sessionListQueryOptions,
   })
 }

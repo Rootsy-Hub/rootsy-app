@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  fetchPendingComandasForSource,
   sendComandaBatchApi,
   voidComandaBatchApi,
 } from "@/lib/rootsyApi/comandasClient"
@@ -13,7 +12,12 @@ import {
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { applyMostradorCheckoutToOrderCache } from "@/app/[siteId]/[popId]/mostrador/mostradorQueryCache"
 import { saveCounterOrderCheckoutApi, closeCounterOrderCheckoutApi } from "@/lib/rootsyApi/mostradorClient"
-import { useQueryClient } from "@tanstack/react-query"
+import { comandasStationsQueryOptions } from "@/lib/comandasWorkspaceQuery"
+import {
+  pendingComandaItemsFromCart,
+  planOptimisticComandaSend,
+} from "@/lib/pendingComandasFromCart"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   checkoutPersistFingerprint,
   emptyTableSessionCheckout,
@@ -70,10 +74,12 @@ import {
   groupMostradorCartDisplayRows,
 } from "@/lib/mostradorCartDisplay"
 import {
+  ACTIVE_COMANDAS_CANCEL_TITLE,
+  ACTIVE_COMANDAS_DISCARD_TITLE,
   ensureCartLineComandaStatuses,
+  hasActiveCommandedLines,
   isComandaLocked,
   isComandaVoidable,
-  pendingComandaComment,
   promotionSelectionsAreCommandable,
   resolveVoidComandaRequest,
 } from "@/lib/comandaCartLine"
@@ -241,6 +247,17 @@ export function useMostradorSaleCheckout(
 
   const { bootstrap } = usePopWorkspace()
   const queryClient = useQueryClient()
+  const stationsQuery = useQuery({
+    ...comandasStationsQueryOptions(popId ?? ""),
+    enabled: Boolean(popId),
+  })
+  const comandaStationNames = useMemo(() => {
+    const names = new Map<string, string>()
+    for (const station of stationsQuery.data ?? []) {
+      names.set(station.id, station.name)
+    }
+    return names
+  }, [stationsQuery.data])
   const saleAccess = useMemo(
     () => saleCatalogAccessFromKeys(bootstrap?.permissionKeys ?? []),
     [bootstrap?.permissionKeys],
@@ -332,6 +349,7 @@ export function useMostradorSaleCheckout(
     emptyTableSessionCheckout(),
   )
   const skipNextPersistRef = useRef(false)
+  const comandasPrepareFlushRef = useRef<Promise<void> | null>(null)
   const skipPersistUntilNextCommitRef = useRef(false)
   const lastPristineFingerprintRef = useRef<string | null>(null)
   const hydrateGenerationRef = useRef(0)
@@ -967,12 +985,24 @@ export function useMostradorSaleCheckout(
   const hayDescuento = footerTotals.hayDescuento
   const hayItemsEnPedido = itemsDetalladosUnpaid.length > 0
 
+  const hayComandasActivas = useMemo(
+    () => hasActiveCommandedLines(carrito),
+    [carrito],
+  )
+
   const puedeDescartarPedido = useMemo(
     () =>
       hayItemsEnPedido &&
       !isPaid &&
+      !hayComandasActivas &&
       !hasAnyPartialPayment({ paidPartialUnits, totalPagadoAcumulado }),
-    [hayItemsEnPedido, isPaid, paidPartialUnits, totalPagadoAcumulado],
+    [
+      hayItemsEnPedido,
+      isPaid,
+      hayComandasActivas,
+      paidPartialUnits,
+      totalPagadoAcumulado,
+    ],
   )
 
   const hayPendingComandas = useMemo(
@@ -980,42 +1010,37 @@ export function useMostradorSaleCheckout(
     [carrito],
   )
 
-  const abrirComandas = useCallback(async () => {
+  const abrirComandas = useCallback(() => {
     if (!popId || !counterOrderId) return
+    const items = pendingComandaItemsFromCart({
+      carrito,
+      productosByKey,
+      comments: checkoutStateRef.current.itemComentarios,
+      stationNames: comandaStationNames,
+    })
     setComandasError(null)
-    setPendingComandaItems([])
-    setComandasOpen(true)
-    setComandasLoading(true)
-    await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
-    const res = await fetchPendingComandasForSource(
-      popId,
-      "counter",
-      counterOrderId,
-    )
     setComandasLoading(false)
-    if (!res.success) {
-      setComandasError(res.error)
-      setPendingComandaItems([])
-      return
-    }
-    setPendingComandaItems(
-      res.items.map((item) => ({
-        ...item,
-        comment: pendingComandaComment(
-          item.cartLineId,
-          item.comment,
-          checkoutStateRef.current.itemComentarios,
-        ),
-      })),
-    )
+    setPendingComandaItems(items)
     setCarrito((prev) =>
       healCartLinesAlreadySent(
         prev,
-        res.items.map((item) => item.cartLineId),
+        items.map((item) => item.cartLineId),
         productosByKey,
       ),
     )
-  }, [counterOrderId, flushCheckoutPersist, popId, productosByKey, siteId])
+    setComandasOpen(true)
+    comandasPrepareFlushRef.current = flushCheckoutPersist(
+      counterOrderId,
+      checkoutStateRef.current,
+    )
+  }, [
+    carrito,
+    comandaStationNames,
+    counterOrderId,
+    flushCheckoutPersist,
+    popId,
+    productosByKey,
+  ])
 
   const enviarComandas = useCallback(
     async (input: {
@@ -1023,43 +1048,116 @@ export function useMostradorSaleCheckout(
       stationComments: Record<string, string>
     }) => {
       if (!popId || !counterOrderId) return
-      setComandasSubmitting(true)
-      setComandasError(null)
-      await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
-      const res = await sendComandaBatchApi(popId, {
-        sourceKind: "counter",
-        sourceId: counterOrderId,
+      const snapshotCheckout = {
+        ...checkoutStateRef.current,
+        carrito: checkoutStateRef.current.carrito.slice(),
+      }
+      const plan = planOptimisticComandaSend({
+        items: pendingComandaItems,
         quantities: input.quantities,
-        stationComments: input.stationComments,
       })
-      setComandasSubmitting(false)
-      if (!res.success) {
-        setComandasError(res.error)
-        return
+      if (plan.sentCartLineIds.length === 0) return
+
+      const peelSetters = {
+        setItemDescuentoModo,
+        setItemDescuentoDraft,
+        setItemDescuentoSuprimido,
+        setItemComentarios,
       }
-      for (const peel of res.peels) {
-        copyTicketLineOverrides(peel.fromCartLineId, peel.sentCartLineId, {
-          setItemDescuentoModo,
-          setItemDescuentoDraft,
-          setItemDescuentoSuprimido,
-          setItemComentarios,
-        })
+      for (const peel of plan.peels) {
+        copyTicketLineOverrides(
+          peel.fromCartLineId,
+          peel.sentCartLineId,
+          peelSetters,
+        )
       }
-      const nextCart = applyComandaSendToCart(
-        checkoutStateRef.current.carrito,
-        res.sentCartLineIds,
-        res.peels,
+      const optimisticCart = applyComandaSendToCart(
+        snapshotCheckout.carrito,
+        plan.sentCartLineIds,
+        plan.peels,
         productosByKey,
       )
-      setCarrito(nextCart)
+      skipNextPersistRef.current = true
+      setCarrito(optimisticCart)
       checkoutStateRef.current = {
         ...checkoutStateRef.current,
-        carrito: nextCart,
+        carrito: optimisticCart,
       }
-      await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
+      setComandasError(null)
       setComandasOpen(false)
+      setPendingComandaItems([])
+
+      try {
+        await comandasPrepareFlushRef.current
+        await flushCheckoutPersist(counterOrderId, snapshotCheckout)
+        const res = await sendComandaBatchApi(popId, {
+          sourceKind: "counter",
+          sourceId: counterOrderId,
+          quantities: input.quantities,
+          stationComments: input.stationComments,
+        })
+        if (!res.success) {
+          skipNextPersistRef.current = true
+          setCarrito(snapshotCheckout.carrito)
+          checkoutStateRef.current = snapshotCheckout
+          setPendingComandaItems(
+            pendingComandaItemsFromCart({
+              carrito: snapshotCheckout.carrito,
+              productosByKey,
+              comments: snapshotCheckout.itemComentarios,
+              stationNames: comandaStationNames,
+            }),
+          )
+          setComandasError(res.error)
+          setComandasOpen(true)
+          return
+        }
+        for (const peel of res.peels) {
+          copyTicketLineOverrides(
+            peel.fromCartLineId,
+            peel.sentCartLineId,
+            peelSetters,
+          )
+        }
+        const nextCart = applyComandaSendToCart(
+          snapshotCheckout.carrito,
+          res.sentCartLineIds,
+          res.peels,
+          productosByKey,
+        )
+        skipNextPersistRef.current = true
+        setCarrito(nextCart)
+        checkoutStateRef.current = {
+          ...checkoutStateRef.current,
+          carrito: nextCart,
+        }
+        void flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
+      } catch (error) {
+        skipNextPersistRef.current = true
+        setCarrito(snapshotCheckout.carrito)
+        checkoutStateRef.current = snapshotCheckout
+        setPendingComandaItems(
+          pendingComandaItemsFromCart({
+            carrito: snapshotCheckout.carrito,
+            productosByKey,
+            comments: snapshotCheckout.itemComentarios,
+            stationNames: comandaStationNames,
+          }),
+        )
+        setComandasError(
+          error instanceof Error ? error.message : "No se pudo enviar la comanda.",
+        )
+        setComandasOpen(true)
+      }
     },
-    [counterOrderId, flushCheckoutPersist, popId, productosByKey, siteId],
+    [
+      comandaStationNames,
+      counterOrderId,
+      flushCheckoutPersist,
+      pendingComandaItems,
+      popId,
+      productosByKey,
+    ],
   )
 
   const anularLineaComanda = useCallback(
@@ -1142,6 +1240,7 @@ export function useMostradorSaleCheckout(
         totalPagadoAcumulado,
         quantityDealApplications,
         isAlreadySettled: isPaid,
+        hasActiveComandas: hayComandasActivas,
       }),
     [
       carrito,
@@ -1149,6 +1248,7 @@ export function useMostradorSaleCheckout(
       totalPagadoAcumulado,
       quantityDealApplications,
       isPaid,
+      hayComandasActivas,
     ],
   )
 
@@ -1159,9 +1259,14 @@ export function useMostradorSaleCheckout(
   const puedeCancelarPedido = useMemo(
     () =>
       !isPaid &&
+      !hayComandasActivas &&
       !hasAnyPartialPayment({ paidPartialUnits, totalPagadoAcumulado }),
-    [isPaid, paidPartialUnits, totalPagadoAcumulado],
+    [isPaid, hayComandasActivas, paidPartialUnits, totalPagadoAcumulado],
   )
+
+  const cancelarPedidoTitle = hayComandasActivas
+    ? ACTIVE_COMANDAS_CANCEL_TITLE
+    : undefined
 
   const partialPaymentUnits = useMemo(
     () =>
@@ -2050,6 +2155,7 @@ export function useMostradorSaleCheckout(
     cerrarPedidoMode,
     cerrarPedido,
     puedeCancelarPedido,
+    cancelarPedidoTitle,
     hayContenidoVenta,
     puedeRegistrar,
     submitting,
@@ -2107,7 +2213,11 @@ export function useMostradorSaleCheckout(
     },
     actions: {
       discardDisabled: !puedeDescartarPedido || requiereCajaAbierta,
-      discardTitle: requiereCajaAbierta ? cajaRequiredTitle : undefined,
+      discardTitle: requiereCajaAbierta
+        ? cajaRequiredTitle
+        : hayComandasActivas
+          ? ACTIVE_COMANDAS_DISCARD_TITLE
+          : undefined,
       confirmDisabled: !puedeRegistrar,
       confirmLoading: submitting,
       onDiscard: () => {

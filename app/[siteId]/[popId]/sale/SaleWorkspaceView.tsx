@@ -15,6 +15,7 @@ import { useCajasRealtime } from "@/hooks/useCajasRealtime"
 import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToasts"
 import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
 import { useSaleCatalogLoader } from "@/hooks/useSaleCatalogLoader"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -230,7 +231,7 @@ export function SaleWorkspaceView() {
     setOpen: setCatalogSidebarOpen,
   } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
   const { user } = useAuth()
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap } = usePopWorkspace()
   const canCreateClient = useMemo(
     () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canCreate,
     [bootstrap?.permissionKeys],
@@ -253,6 +254,7 @@ export function SaleWorkspaceView() {
     comprobantesLoaded,
     mergeCatalogArticles,
     catalogLoading: catalogQueryLoading,
+    catalogPending,
     catalogError: catalogQueryError,
   } = useSaleCatalogLoader(popId, { enabled: Boolean(popId && siteId) })
   const saleBoardPromotions = useSaleBoardPromotions(popId, {
@@ -1184,6 +1186,10 @@ export function SaleWorkspaceView() {
     )
   }
 
+  if (catalogPending) {
+    return <PopModuleLoading moduleKey="sale" />
+  }
+
   return (
     <SaleScanInputFocusProvider>
       <SaleScanFocusBridge
@@ -1196,7 +1202,7 @@ export function SaleWorkspaceView() {
         popId={popId}
         popName={bootstrap?.popName ?? ""}
         title="Vender"
-        loading={bootstrapLoading || quoteRestorePending}
+        loading={!bootstrap?.popName}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
         sidebarCollapsible

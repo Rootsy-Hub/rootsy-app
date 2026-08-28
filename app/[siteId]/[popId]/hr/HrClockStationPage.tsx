@@ -73,6 +73,7 @@ function HrClockStationPage() {
       popId={popId}
       popName={bootstrap?.popName ?? ""}
       title="Fichar"
+      showFullscreen
       hideHeaderInFullscreen
       stationLocked={stationLocked}
       onEnterStation={enterStation}

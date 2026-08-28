@@ -26,6 +26,7 @@ export function PopSettingsSectionNav({
   return (
     <OperarSectionRail
       embedded
+      tone="light"
       ariaLabel="Secciones de ajustes"
       activeId={activeSectionId}
       className={statisticsNavShellClass}
