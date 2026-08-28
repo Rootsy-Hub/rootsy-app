@@ -170,7 +170,6 @@ export function OperationSaleInvoiceDialog({
         size="wide"
         nested={nested}
         className={cn(
-          "rootsy-theme-pos",
           layoutsOperarBodyScopeClass,
           format === "hoja" && "max-h-[min(90vh,860px)] sm:max-w-2xl",
         )}

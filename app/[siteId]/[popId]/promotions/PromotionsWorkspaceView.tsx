@@ -11,12 +11,6 @@ import {
   type PromotionFormState,
 } from "@/app/[siteId]/[popId]/promotions/promotionFormState"
 import {
-  promotionDialogBodyClass,
-  promotionDialogFooterClass,
-  promotionDialogHeaderClass,
-  promotionDialogSurfaceClass,
-} from "@/app/[siteId]/[popId]/promotions/promotionConstants"
-import {
   PromotionTypeToolbarFilter,
   promotionTypeFilterToQuery,
   resolvePromotionTypeFilterId,
@@ -88,16 +82,14 @@ import {
   WorkspaceTableSkeletonRows,
 } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { promotionsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { RootsFormCheckboxField } from "@/components/rootsy-form"
+import { Dialog } from "@/components/ui/dialog"
 import {
   TableBody,
   TableCell,
@@ -839,50 +831,28 @@ export function PromotionsWorkspaceView() {
           setFiltersModalOpen(open)
         }}
       >
-        <DialogContent
-          className={promotionDialogSurfaceClass}
-          showCloseButton
-          data-rootsy-light-shell="true"
-        >
-          <DialogHeader className={promotionDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Filtros
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Combinan con la búsqueda y el tipo. El listado se pagina en el
-              servidor.
-            </DialogDescription>
-          </DialogHeader>
-          <div className={promotionDialogBodyClass}>
-            <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
-              <Checkbox
-                id="filter-solo-activos"
-                checked={draftSoloActivos}
-                onCheckedChange={(v) => setDraftSoloActivos(Boolean(v))}
-                aria-label="Solo promociones activas"
-              />
-              <span className="text-sm text-foreground">Solo promociones activas</span>
-            </label>
-          </div>
-          <DialogFooter className={promotionDialogFooterClass}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDraftSoloActivos(false)}
-            >
-              Restablecer
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                pushWs({ soloActivos: draftSoloActivos, page: 1 })
-                setFiltersModalOpen(false)
-              }}
-            >
-              Aplicar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        <RootsDialogContent size="default" className="sm:max-w-md">
+          <RootsDialogHeader
+            title="Filtros"
+            description="Combinan con la búsqueda y el tipo. El listado se pagina en el servidor."
+          />
+          <RootsDialogBody>
+            <RootsFormCheckboxField
+              label="Solo promociones activas"
+              checked={draftSoloActivos}
+              onCheckedChange={setDraftSoloActivos}
+            />
+          </RootsDialogBody>
+          <RootsDialogDualActionFooter
+            cancelLabel="Restablecer"
+            confirmLabel="Aplicar"
+            onCancel={() => setDraftSoloActivos(false)}
+            onConfirm={() => {
+              pushWs({ soloActivos: draftSoloActivos, page: 1 })
+              setFiltersModalOpen(false)
+            }}
+          />
+        </RootsDialogContent>
       </Dialog>
 
       <PromotionUpsertDialog

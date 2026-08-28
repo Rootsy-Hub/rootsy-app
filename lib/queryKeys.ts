@@ -866,6 +866,14 @@ export function popSettingsQueryKey(popId: string) {
   return ["pop-settings", popId] as const
 }
 
+export function popPrintersQueryKey(popId: string) {
+  return ["pop-printers", popId] as const
+}
+
+export function popPrintersQueryRoot(popId: string) {
+  return ["pop-printers", popId] as const
+}
+
 export function popExpensesQueryKey(
   popId: string,
   year: number,

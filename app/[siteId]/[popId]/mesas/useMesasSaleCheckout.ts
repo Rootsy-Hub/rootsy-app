@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  fetchPendingComandasForSource,
   sendComandaBatchApi,
   voidComandaBatchApi,
 } from "@/lib/rootsyApi/comandasClient"
@@ -13,7 +12,12 @@ import {
 import type { PendingComandaItem } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { applyMesasCheckoutToSessionCache } from "@/app/[siteId]/[popId]/mesas/mesasQueryCache"
 import { saveTableSessionCheckoutApi, closeTableSessionCheckoutApi } from "@/lib/rootsyApi/mesasClient"
-import { useQueryClient } from "@tanstack/react-query"
+import { comandasStationsQueryOptions } from "@/lib/comandasWorkspaceQuery"
+import {
+  pendingComandaItemsFromCart,
+  planOptimisticComandaSend,
+} from "@/lib/pendingComandasFromCart"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   checkoutPersistFingerprint,
   emptyTableSessionCheckout,
@@ -101,7 +105,6 @@ import {
   hasActiveCommandedLines,
   isComandaLocked,
   isComandaVoidable,
-  pendingComandaComment,
   promotionSelectionsAreCommandable,
   resolveVoidComandaRequest,
 } from "@/lib/comandaCartLine"
@@ -245,6 +248,17 @@ export function useMesasSaleCheckout(
 
   const { bootstrap } = usePopWorkspace()
   const queryClient = useQueryClient()
+  const stationsQuery = useQuery({
+    ...comandasStationsQueryOptions(popId ?? ""),
+    enabled: Boolean(popId),
+  })
+  const comandaStationNames = useMemo(() => {
+    const names = new Map<string, string>()
+    for (const station of stationsQuery.data ?? []) {
+      names.set(station.id, station.name)
+    }
+    return names
+  }, [stationsQuery.data])
   const saleAccess = useMemo(
     () => saleCatalogAccessFromKeys(bootstrap?.permissionKeys ?? []),
     [bootstrap?.permissionKeys],
@@ -339,6 +353,7 @@ export function useMesasSaleCheckout(
     emptyTableSessionCheckout(),
   )
   const skipNextPersistRef = useRef(false)
+  const comandasPrepareFlushRef = useRef<Promise<void> | null>(null)
   const skipPersistUntilNextCommitRef = useRef(false)
   const lastPristineFingerprintRef = useRef<string | null>(null)
   const hydrateGenerationRef = useRef(0)
@@ -990,42 +1005,37 @@ export function useMesasSaleCheckout(
     [carrito],
   )
 
-  const abrirComandas = useCallback(async () => {
+  const abrirComandas = useCallback(() => {
     if (!popId || !tableSessionId) return
+    const items = pendingComandaItemsFromCart({
+      carrito,
+      productosByKey,
+      comments: checkoutStateRef.current.itemComentarios,
+      stationNames: comandaStationNames,
+    })
     setComandasError(null)
-    setPendingComandaItems([])
-    setComandasOpen(true)
-    setComandasLoading(true)
-    await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
-    const res = await fetchPendingComandasForSource(
-      popId,
-      "table",
-      tableSessionId,
-    )
     setComandasLoading(false)
-    if (!res.success) {
-      setComandasError(res.error)
-      setPendingComandaItems([])
-      return
-    }
-    setPendingComandaItems(
-      res.items.map((item) => ({
-        ...item,
-        comment: pendingComandaComment(
-          item.cartLineId,
-          item.comment,
-          checkoutStateRef.current.itemComentarios,
-        ),
-      })),
-    )
+    setPendingComandaItems(items)
     setCarrito((prev) =>
       healCartLinesAlreadySent(
         prev,
-        res.items.map((item) => item.cartLineId),
+        items.map((item) => item.cartLineId),
         productosByKey,
       ),
     )
-  }, [flushCheckoutPersist, popId, productosByKey, siteId, tableSessionId])
+    setComandasOpen(true)
+    comandasPrepareFlushRef.current = flushCheckoutPersist(
+      tableSessionId,
+      checkoutStateRef.current,
+    )
+  }, [
+    carrito,
+    comandaStationNames,
+    flushCheckoutPersist,
+    popId,
+    productosByKey,
+    tableSessionId,
+  ])
 
   const enviarComandas = useCallback(
     async (input: {
@@ -1033,43 +1043,116 @@ export function useMesasSaleCheckout(
       stationComments: Record<string, string>
     }) => {
       if (!popId || !tableSessionId) return
-      setComandasSubmitting(true)
-      setComandasError(null)
-      await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
-      const res = await sendComandaBatchApi(popId, {
-        sourceKind: "table",
-        sourceId: tableSessionId,
+      const snapshotCheckout = {
+        ...checkoutStateRef.current,
+        carrito: checkoutStateRef.current.carrito.slice(),
+      }
+      const plan = planOptimisticComandaSend({
+        items: pendingComandaItems,
         quantities: input.quantities,
-        stationComments: input.stationComments,
       })
-      setComandasSubmitting(false)
-      if (!res.success) {
-        setComandasError(res.error)
-        return
+      if (plan.sentCartLineIds.length === 0) return
+
+      const peelSetters = {
+        setItemDescuentoModo,
+        setItemDescuentoDraft,
+        setItemDescuentoSuprimido,
+        setItemComentarios,
       }
-      for (const peel of res.peels) {
-        copyTicketLineOverrides(peel.fromCartLineId, peel.sentCartLineId, {
-          setItemDescuentoModo,
-          setItemDescuentoDraft,
-          setItemDescuentoSuprimido,
-          setItemComentarios,
-        })
+      for (const peel of plan.peels) {
+        copyTicketLineOverrides(
+          peel.fromCartLineId,
+          peel.sentCartLineId,
+          peelSetters,
+        )
       }
-      const nextCart = applyComandaSendToCart(
-        checkoutStateRef.current.carrito,
-        res.sentCartLineIds,
-        res.peels,
+      const optimisticCart = applyComandaSendToCart(
+        snapshotCheckout.carrito,
+        plan.sentCartLineIds,
+        plan.peels,
         productosByKey,
       )
-      setCarrito(nextCart)
+      skipNextPersistRef.current = true
+      setCarrito(optimisticCart)
       checkoutStateRef.current = {
         ...checkoutStateRef.current,
-        carrito: nextCart,
+        carrito: optimisticCart,
       }
-      await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
+      setComandasError(null)
       setComandasOpen(false)
+      setPendingComandaItems([])
+
+      try {
+        await comandasPrepareFlushRef.current
+        await flushCheckoutPersist(tableSessionId, snapshotCheckout)
+        const res = await sendComandaBatchApi(popId, {
+          sourceKind: "table",
+          sourceId: tableSessionId,
+          quantities: input.quantities,
+          stationComments: input.stationComments,
+        })
+        if (!res.success) {
+          skipNextPersistRef.current = true
+          setCarrito(snapshotCheckout.carrito)
+          checkoutStateRef.current = snapshotCheckout
+          setPendingComandaItems(
+            pendingComandaItemsFromCart({
+              carrito: snapshotCheckout.carrito,
+              productosByKey,
+              comments: snapshotCheckout.itemComentarios,
+              stationNames: comandaStationNames,
+            }),
+          )
+          setComandasError(res.error)
+          setComandasOpen(true)
+          return
+        }
+        for (const peel of res.peels) {
+          copyTicketLineOverrides(
+            peel.fromCartLineId,
+            peel.sentCartLineId,
+            peelSetters,
+          )
+        }
+        const nextCart = applyComandaSendToCart(
+          snapshotCheckout.carrito,
+          res.sentCartLineIds,
+          res.peels,
+          productosByKey,
+        )
+        skipNextPersistRef.current = true
+        setCarrito(nextCart)
+        checkoutStateRef.current = {
+          ...checkoutStateRef.current,
+          carrito: nextCart,
+        }
+        void flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
+      } catch (error) {
+        skipNextPersistRef.current = true
+        setCarrito(snapshotCheckout.carrito)
+        checkoutStateRef.current = snapshotCheckout
+        setPendingComandaItems(
+          pendingComandaItemsFromCart({
+            carrito: snapshotCheckout.carrito,
+            productosByKey,
+            comments: snapshotCheckout.itemComentarios,
+            stationNames: comandaStationNames,
+          }),
+        )
+        setComandasError(
+          error instanceof Error ? error.message : "No se pudo enviar la comanda.",
+        )
+        setComandasOpen(true)
+      }
     },
-    [flushCheckoutPersist, popId, productosByKey, siteId, tableSessionId],
+    [
+      comandaStationNames,
+      flushCheckoutPersist,
+      pendingComandaItems,
+      popId,
+      productosByKey,
+      tableSessionId,
+    ],
   )
 
   const anularLineaComanda = useCallback(

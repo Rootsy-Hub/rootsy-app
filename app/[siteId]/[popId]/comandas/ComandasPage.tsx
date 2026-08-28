@@ -72,6 +72,7 @@ function ComandasPage() {
       popId={popId}
       popName={popName}
       title="Comandas"
+      showFullscreen
       hideHeaderInFullscreen
       loading={!popName}
       userName={bootstrap?.userFullName || user?.email || ""}

@@ -12,23 +12,31 @@ import { MesasSalonTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasSal
 import { MostradorRightPanelTabs } from "@/app/[siteId]/[popId]/mostrador/components/MostradorRightPanelTabs"
 import { OperarTicketEmptyState } from "@/components/layouts-module/OperarTicketEmptyState"
 import { RootsIconButton } from "@/components/rootsy-button"
+import {
+  DataWorkspaceTableListNatureShell,
+  DataWorkspaceTableListPage,
+} from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListLoadingBody } from "@/components/data-workspace/DataWorkspaceTableListLoadingBody"
 import { ChannelDataEmptyState } from "@/components/sale-operation/ChannelOperationDataPanel"
 import { ServiceOperateSnapshotPanelTabs } from "@/components/service-operation/ServiceOperateSnapshotPanelTabs"
 import {
   FileText,
   LayoutGrid,
   MapPin,
+  Minus,
   Monitor,
   Plus,
   Shapes,
   Tags,
+  Truck,
+  UserPlus,
   UtensilsCrossed,
 } from "lucide-react"
 import { TreasuryAccountsPageSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountsGridSkeleton"
 import { ComandasBoardSkeleton } from "@/app/[siteId]/[popId]/comandas/components/ComandasBoard"
 import { comandasBrisaPageMainClass } from "@/app/[siteId]/[popId]/comandas/comandasBrisaStyles"
+import { DataWorkspaceBlocksEmptyState } from "@/components/data-workspace/DataWorkspaceBlocksEmptyState"
 import {
-  dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksSkeletonTone,
   dataWorkspaceCashRegistersPageMainClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -188,9 +196,121 @@ export function ExpenseModulePageSkeleton(layout: PopModuleSkeletonLayout) {
 
 export function InventoryModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
-    <BlocksModulePageSkeleton layout={layout} title="Inventario">
+    <BlocksModulePageSkeleton
+      layout={layout}
+      title="Inventario"
+      headerActions={
+        <>
+          <RootsIconButton
+            label="Sumar stock"
+            semantic="tertiary"
+            atmosphere="eter"
+            size="default"
+            disabled
+          >
+            <Plus className="size-5" aria-hidden />
+          </RootsIconButton>
+          <RootsIconButton
+            label="Restar stock"
+            semantic="tertiary"
+            atmosphere="eter"
+            size="default"
+            disabled
+          >
+            <Minus className="size-5" aria-hidden />
+          </RootsIconButton>
+        </>
+      }
+    >
       <InventoryHomeSkeleton />
     </BlocksModulePageSkeleton>
+  )
+}
+
+function TableListModulePageSkeleton({
+  layout,
+  title,
+  moduleKey,
+  headerActions,
+}: {
+  layout: PopModuleSkeletonLayout
+  title: string
+  moduleKey: string
+  headerActions?: ReactNode
+}) {
+  return (
+    <DataWorkspaceTableListPage
+      layout={{
+        siteId: layout.siteId,
+        popId: layout.popId,
+        popName: layout.popName,
+        title,
+        loading: layout.headerLoading,
+        userName: layout.userName,
+        userAvatarSrc: layout.userAvatarSrc,
+        userRoleLabel: layout.userRoleLabel,
+        headerActions,
+      }}
+    >
+      <DataWorkspaceTableListNatureShell>
+        <DataWorkspaceTableListLoadingBody moduleKey={moduleKey} title={title} />
+      </DataWorkspaceTableListNatureShell>
+    </DataWorkspaceTableListPage>
+  )
+}
+
+export function ManufacturingModulePageSkeleton(layout: PopModuleSkeletonLayout) {
+  return (
+    <TableListModulePageSkeleton
+      layout={layout}
+      title="Fabricar"
+      moduleKey="manufacturing"
+      headerActions={
+        <RootsIconButton
+          label="Fabricar"
+          semantic="primary"
+          atmosphere="eter"
+          size="default"
+          disabled
+        >
+          <Plus className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
+    />
+  )
+}
+
+export function CurrentAccountsModulePageSkeleton(
+  layout: PopModuleSkeletonLayout,
+) {
+  return (
+    <TableListModulePageSkeleton
+      layout={layout}
+      title="Cuentas corrientes"
+      moduleKey="current-accounts"
+      headerActions={
+        <>
+          <RootsIconButton
+            label="Dar de alta un cliente"
+            semantic="primary"
+            atmosphere="eter"
+            size="default"
+            disabled
+          >
+            <UserPlus className="size-5" aria-hidden />
+          </RootsIconButton>
+          <RootsIconButton
+            label="Dar de alta un proveedor"
+            semantic="primary"
+            atmosphere="eter"
+            size="default"
+            disabled
+          >
+            <Truck className="size-5" aria-hidden />
+          </RootsIconButton>
+        </>
+      }
+    />
   )
 }
 
@@ -243,9 +363,33 @@ export function AccountsModulePageSkeleton(layout: PopModuleSkeletonLayout) {
 
 export function PrintersModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
-    <BlocksModulePageSkeleton layout={layout} title="Impresoras">
+    <BlocksModulePageSkeleton
+      layout={layout}
+      title="Impresoras"
+      headerActions={
+        <RootsIconButton
+          label="Nueva impresora"
+          semantic="primary"
+          atmosphere="eter"
+          size="default"
+          disabled
+        >
+          <Plus className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
+    >
       <PrintersPageSkeleton />
     </BlocksModulePageSkeleton>
+  )
+}
+
+export function AuditModulePageSkeleton(layout: PopModuleSkeletonLayout) {
+  return (
+    <TableListModulePageSkeleton
+      layout={layout}
+      title="Auditoría"
+      moduleKey="audit"
+    />
   )
 }
 
@@ -323,12 +467,7 @@ function ComingSoonModulePageSkeleton({
       mainClassName="flex min-h-0 flex-1 flex-col overflow-hidden"
       contentClassName={null}
     >
-      <div className={dataWorkspaceBlocksEmptyStateClass}>
-        <p className="text-base font-medium text-foreground">{title}</p>
-        <p className="mt-2 max-w-md text-sm text-muted-foreground">
-          {description}
-        </p>
-      </div>
+      <DataWorkspaceBlocksEmptyState title={title} description={description} />
     </BlocksModulePageSkeleton>
   )
 }

@@ -2,12 +2,15 @@ import { ChatModulePageSkeleton } from "@/app/[siteId]/[popId]/chat/ChatWorkspac
 import {
   AccountsModulePageSkeleton,
   AlertsModulePageSkeleton,
+  AuditModulePageSkeleton,
   CashRegistersModulePageSkeleton,
   CobrarServiciosModulePageSkeleton,
   ComandasModulePageSkeleton,
+  CurrentAccountsModulePageSkeleton,
   ExpenseModulePageSkeleton,
   HrModulePageSkeleton,
   InventoryModulePageSkeleton,
+  ManufacturingModulePageSkeleton,
   MesasModulePageSkeleton,
   MostradorModulePageSkeleton,
   PrintersModulePageSkeleton,
@@ -51,6 +54,8 @@ const POP_MODULE_PAGE_SKELETONS: Record<string, PopModulePageSkeleton> = {
   hr: page(HrModulePageSkeleton),
   expenses: page(ExpenseModulePageSkeleton),
   inventory: page(InventoryModulePageSkeleton),
+  manufacturing: page(ManufacturingModulePageSkeleton),
+  "current-accounts": page(CurrentAccountsModulePageSkeleton),
   "cash-registers": page(CashRegistersModulePageSkeleton),
   accounts: page(AccountsModulePageSkeleton),
   printers: page(PrintersModulePageSkeleton),
@@ -64,6 +69,7 @@ const POP_MODULE_PAGE_SKELETONS: Record<string, PopModulePageSkeleton> = {
   comandas: page(ComandasModulePageSkeleton),
   mostrador: page(MostradorModulePageSkeleton),
   alerts: page(AlertsModulePageSkeleton),
+  audit: page(AuditModulePageSkeleton),
 }
 
 export function getPopModulePageSkeleton(

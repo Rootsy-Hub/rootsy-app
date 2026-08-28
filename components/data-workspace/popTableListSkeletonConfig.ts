@@ -403,7 +403,7 @@ const MODULE_SKELETON_CONFIG: Record<string, PopTableListSkeletonConfig> = {
     columns: purchaseOrdersSkeletonColumns(),
   },
   "current-accounts": {
-    filterLayout: "dual",
+    filterLayout: "triple",
     tableMinWidth: "min-w-4xl",
     columns: currentAccountsSkeletonColumns(),
     headers: [

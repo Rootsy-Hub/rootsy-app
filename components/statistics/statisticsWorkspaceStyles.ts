@@ -6,8 +6,7 @@ import {
   dataWorkspaceEntityCardLosetaSurfaceClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  libraryScrollDarkClass,
-  librarySidebarClass,
+  libraryScrollLightClass,
 } from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 
@@ -17,18 +16,18 @@ export const statisticsLosetaCardClass = cn(
   "h-auto w-full min-h-0",
 )
 
-/** Rail lateral — menú horizontal en mobile; sidecar en desktop. */
+/** Rail lateral — valle light; chips en mobile, sidecar en desktop. */
 export const statisticsNavAsideClass = [
-  "statistics-nav-aside flex shrink-0 flex-col overflow-hidden",
-  "border-b lg:min-h-0 lg:h-auto lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r",
-  librarySidebarClass,
+  "statistics-nav-aside rootsy-app-light flex shrink-0 flex-col overflow-hidden",
+  "border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]",
+  "lg:min-h-0 lg:h-auto lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r",
 ].join(" ")
 
 export const statisticsNavScrollClass = [
   "statistics-nav-scroll min-h-0 overflow-x-auto overflow-y-hidden overscroll-x-contain p-2",
   "snap-x snap-mandatory [scrollbar-width:thin]",
   "lg:min-h-0 lg:flex-1 lg:snap-none lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-x-auto lg:p-4",
-  libraryScrollDarkClass,
+  libraryScrollLightClass,
 ].join(" ")
 
 /** Nav — paridad LibraryNav / BackofficeSidebar. */
@@ -87,7 +86,7 @@ export const statisticsPanelNoteClass = cn(
 
 export const statisticsPlannedBadgeClass = cn(
   "ml-auto shrink-0 text-[10px] font-semibold uppercase tracking-wide",
-  "text-[var(--library-nav-label,var(--rootsy-sombra-300))] opacity-80",
+  "text-[var(--library-nav-label,var(--rootsy-bruma-400))] opacity-80",
 )
 
 export const statisticsDeltaPositiveClass =

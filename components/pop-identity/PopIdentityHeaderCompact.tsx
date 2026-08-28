@@ -10,6 +10,7 @@ import {
   eterHeaderTitleClass,
 } from "@/lib/eter/eterChrome"
 import { buildPopLogoFallbackUrl } from "@/lib/popIdentityDisplay"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -20,6 +21,8 @@ type Props = {
   tone?: "dark" | "light"
   pending?: boolean
   className?: string
+  /** Si hay href, isotipo y nombre van a esa ruta (menú del POP). */
+  href?: string
 }
 
 /** Header workspace · avatar cuadrado + nombre — `/library/logos` variant `header-compact`. */
@@ -30,6 +33,7 @@ export function PopIdentityHeaderCompact({
   tone = "dark",
   pending = false,
   className,
+  href,
 }: Props) {
   const trimmedName = name.trim() || "Punto de venta"
   const logoSrc =
@@ -45,16 +49,26 @@ export function PopIdentityHeaderCompact({
     )
   }
 
-  return (
-    <div className={cn("flex min-w-0 items-center gap-2.5", className)}>
-      <PopLogoLightboxButton
-        src={logoSrc}
-        name={trimmedName}
-        className={cn(
-          "size-8",
-          isDark ? eterHeaderHairlineClass : "ring-1 ring-border",
-        )}
-      />
+  const identity = (
+    <>
+      {href ? (
+        <Avatar
+          imageUrl={logoSrc}
+          initials={trimmedName.slice(0, 2).toUpperCase() || "·"}
+          size="md"
+          shape="square"
+          className={cn(isDark ? eterHeaderHairlineClass : "ring-1 ring-border")}
+        />
+      ) : (
+        <PopLogoLightboxButton
+          src={logoSrc}
+          name={trimmedName}
+          className={cn(
+            "size-8",
+            isDark ? eterHeaderHairlineClass : "ring-1 ring-border",
+          )}
+        />
+      )}
       <span
         className={cn(
           "truncate text-sm font-semibold",
@@ -65,6 +79,28 @@ export function PopIdentityHeaderCompact({
       >
         {trimmedName}
       </span>
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        aria-label={`Ir al menú de ${trimmedName}`}
+        className={cn(
+          "flex min-w-0 items-center gap-2.5 rounded-lg outline-none",
+          "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-eter-100)_22%,transparent)]",
+          className,
+        )}
+      >
+        {identity}
+      </Link>
+    )
+  }
+
+  return (
+    <div className={cn("flex min-w-0 items-center gap-2.5", className)}>
+      {identity}
     </div>
   )
 }

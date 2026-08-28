@@ -86,7 +86,8 @@ export function MenuSidebar({
       aria-hidden={ariaHidden}
       inert={inert}
       className={cn(
-        "handbook-rail min-h-0 shrink-0 flex-col overflow-hidden",
+        "min-h-0 shrink-0 flex-col overflow-hidden",
+        !isStrip && "handbook-rail",
         isStrip
           ? statisticsNavAsideClass
           : cn(

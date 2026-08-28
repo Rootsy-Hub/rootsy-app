@@ -116,15 +116,11 @@ import {
 } from "@/lib/purchaseOrderCheckout"
 import type { PurchaseCheckoutSnapshot } from "@/lib/purchaseOrderCheckoutState"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  RootsAlertDialogContent,
+  RootsAlertDialogFooter,
+  RootsAlertDialogPanel,
+} from "@/components/rootsy-dialog"
+import { AlertDialog } from "@/components/ui/alert-dialog"
 type ItemCarrito = {
   lineId: string
   productoId: string
@@ -1164,11 +1160,6 @@ function PurchasesPage() {
     ],
   )
 
-  const compraAlertDialogContent = cn(
-    "rootsy-app-light text-foreground",
-    "rounded-2xl border border-border/60 bg-card shadow-2xl sm:max-w-md",
-  )
-
   const headerUserName =
     bootstrap?.userFullName?.trim() ||
     user?.email?.split("@")[0] ||
@@ -1427,25 +1418,19 @@ function PurchasesPage() {
       />
 
       <AlertDialog open={descartarConfirmOpen} onOpenChange={setDescartarConfirmOpen}>
-        <AlertDialogContent className={compraAlertDialogContent}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Descartar esta compra?</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              Se perderán los ítems y datos ingresados. Esta acción no se puede
-              deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-border">Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              type="button"
-              onClick={limpiarCompra}
-              className="border-0 bg-rose-600 text-white hover:bg-rose-500 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-            >
-              Descartar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
+        <RootsAlertDialogContent>
+          <RootsAlertDialogPanel
+            title="¿Descartar esta compra?"
+            description="Se perderán los ítems y datos ingresados. Esta acción no se puede deshacer."
+          />
+          <RootsAlertDialogFooter
+            cancelLabel="Cancelar"
+            confirmLabel="Descartar"
+            destructive
+            onCancel={() => setDescartarConfirmOpen(false)}
+            onConfirm={limpiarCompra}
+          />
+        </RootsAlertDialogContent>
       </AlertDialog>
 
       <SimpleOperationCheckoutConfirmDialog

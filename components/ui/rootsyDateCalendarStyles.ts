@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils"
 
 /** Popover contenedor del calendario — paleta bruma/savia. */
 export const rootsyDatePopoverContentClass =
-  "border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] p-0 text-[var(--rootsy-bruma-900)] shadow-xl shadow-[color-mix(in_srgb,var(--rootsy-bruma-900)_8%,transparent)]"
+  "rootsy-app-light border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)] p-0 text-[var(--rootsy-bruma-900)] shadow-xl shadow-[color-mix(in_srgb,var(--rootsy-bruma-900)_8%,transparent)]"
 
 /** Isla del calendario dentro del popover. */
 export const rootsyDateCalendarIslandClass = cn(

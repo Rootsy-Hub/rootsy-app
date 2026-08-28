@@ -5,22 +5,16 @@ import { fetchOperationPurchaseById } from "@/lib/rootsyApi/operationsClient"
 import { OperationPurchaseDetailMeta } from "@/app/[siteId]/[popId]/operations/OperationPurchaseDetailMeta"
 import { OperationPurchaseDetailPayments } from "@/app/[siteId]/[popId]/operations/OperationPurchaseDetailPayments"
 import { PurchaseDetailTicketView } from "@/app/[siteId]/[popId]/operations/PurchaseDetailTicketView"
-import {
-  opsDialogHeader,
-  opsDialogSectionTitle,
-  opsDialogSurfaceMd,
-} from "@/app/[siteId]/[popId]/operations/operationDialogStyles"
+import { opsDialogSectionTitle } from "@/app/[siteId]/[popId]/operations/operationDialogStyles"
 import {
   LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX,
   layoutsOperarSummaryPanelMaxWidthClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  RootsDialogContent,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { Dialog } from "@/components/ui/dialog"
 import { useEffect, useState } from "react"
 
 type Props = {
@@ -62,15 +56,16 @@ export function OperationPurchaseDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={opsDialogSurfaceMd}>
-        <DialogHeader className={opsDialogHeader}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            Detalle de compra
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Detalle de compra
-          </DialogDescription>
-        </DialogHeader>
+      <RootsDialogContent
+        size="twoCol"
+        className={`sm:max-w-[min(92vw,calc(21rem+${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px+3rem))]`}
+      >
+        <RootsDialogHeader
+          open={open}
+          title="Detalle de compra"
+          description="Detalle de compra"
+          descriptionHidden
+        />
 
         {resolved ? (
           <div className={`grid min-h-0 flex-1 items-start lg:grid-cols-[minmax(17rem,21rem)_minmax(${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px,1fr)]`}>
@@ -104,7 +99,7 @@ export function OperationPurchaseDetailDialog({
             </div>
           </div>
         ) : null}
-      </DialogContent>
+      </RootsDialogContent>
     </Dialog>
   )
 }

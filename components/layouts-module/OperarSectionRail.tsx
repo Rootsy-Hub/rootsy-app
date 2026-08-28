@@ -4,6 +4,7 @@ import "@/app/library/layouts/layoutsOperarTheme.css"
 import {
   libraryNavItemIconClass,
   libraryNavItemLabelClass,
+  libraryNavSurfaceLightClass,
 } from "@/app/library/libraryColorTheme"
 import {
   layoutsOperarCatalogRailItemClass,
@@ -43,6 +44,8 @@ type Props = {
   items?: OperarSectionRailItem[]
   groups?: OperarSectionRailGroup[]
   density?: "default" | "comfortable"
+  /** `light` — Estadísticas y Ajustes en el valle. `pos` — Vender / Comprar. */
+  tone?: "pos" | "light"
   /** El padre scrollea (sidecar de estadísticas / ajustes). */
   embedded?: boolean
   className?: string
@@ -163,6 +166,7 @@ export const OperarSectionRail = forwardRef<HTMLElement, Props>(
       items,
       groups,
       density = "default",
+      tone = "pos",
       embedded = false,
       className,
       listClassName,
@@ -177,7 +181,9 @@ export const OperarSectionRail = forwardRef<HTMLElement, Props>(
       <nav
         ref={ref}
         className={cn(
-          layoutsOperarModuleBodyClass,
+          tone === "light"
+            ? cn("rootsy-app-light", libraryNavSurfaceLightClass)
+            : layoutsOperarModuleBodyClass,
           embedded ? "library-nav w-full min-w-0" : layoutsOperarCatalogRailNavClass,
           comfortable && "p-3 [&_button]:min-h-12 [&_button]:px-3 [&_button]:text-base",
           className,

@@ -1,20 +1,19 @@
 "use client"
 
-import { settingsQueryOptions } from "@/lib/settingsWorkspaceQuery"
+import { printersListQueryOptions } from "@/lib/printersWorkspaceQuery"
 import { useQuery } from "@tanstack/react-query"
 
-type UsePopSettingsOptions = {
+type UsePopPrintersOptions = {
   enabled?: boolean
 }
 
-export function usePopSettings(
+export function usePopPrinters(
   popId: string | undefined,
-  options?: UsePopSettingsOptions,
+  options?: UsePopPrintersOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
-
   return useQuery({
-    ...settingsQueryOptions(popId ?? ""),
+    ...printersListQueryOptions(popId ?? ""),
     enabled,
   })
 }

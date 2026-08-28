@@ -11,7 +11,7 @@ import {
   loadRootsyChatMessages,
 } from "@/app/[siteId]/[popId]/chat/chatRootsy"
 import "@/app/[siteId]/[popId]/chat/chatThreadSurface.css"
-import { ChatWorkspaceSkeleton } from "@/app/[siteId]/[popId]/chat/ChatWorkspaceSkeleton"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import {
   applyChatMessageToCache,
   applyOptimisticChatMessage,
@@ -53,6 +53,7 @@ import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import { usePopChatChannel } from "@/hooks/usePopChatChannel"
 import { usePopChatMessages } from "@/hooks/usePopChatMessages"
@@ -81,8 +82,9 @@ export function ChatWorkspaceView() {
   routerRef.current = router
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
-  const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
+  const { bootstrap, error: bootstrapError } =
     usePopWorkspace()
+  const afterHydration = useAfterHydration()
   const queryClient = useQueryClient()
 
   const workspaceQuery = usePopChatWorkspace(popId || undefined, {
@@ -475,26 +477,32 @@ export function ChatWorkspaceView() {
     ? `Este local ya tiene ${channelLimit} canales.`
     : undefined
 
+  if (loading) {
+    return <PopModuleLoading moduleKey="chat" />
+  }
+
+  const popName = bootstrap?.popName ?? ""
+
   return (
     <>
       <DataWorkspaceModuleLayout
         siteId={siteId}
         popId={popId}
-        popName={bootstrap?.popName ?? ""}
+        popName={popName}
         title="Chat"
         headerVariant={dataWorkspaceModuleHeaderVariant}
-        loading={bootstrapLoading}
+        loading={!popName}
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel}
         headerActions={
-          canCreate ? (
+          !afterHydration || canCreate ? (
             <RootsIconButton
               semantic="primary"
               atmosphere="eter"
               size="default"
               label={atLimitHint ?? "Nuevo canal"}
-              disabled={atLimit}
+              disabled={!canCreate || atLimit}
               onClick={() => {
                 setCreateBanner(null)
                 setCreateOpen(true)
@@ -534,10 +542,7 @@ export function ChatWorkspaceView() {
             />
           ) : null}
 
-          {loading ? (
-            <ChatWorkspaceSkeleton />
-          ) : (
-            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)]">
+          <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)]">
               <aside
                 className={cn(
                   dataWorkspaceDetailFlushBottomCardClass,
@@ -811,7 +816,6 @@ export function ChatWorkspaceView() {
                 )}
               </section>
             </div>
-          )}
         </div>
       </DataWorkspaceModuleLayout>
 

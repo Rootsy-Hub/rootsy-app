@@ -35,6 +35,7 @@ import {
 } from "@/lib/menuCatalog"
 import { popModuleKeyFromPath } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
+import { PopLink as Link } from "@/lib/pop-spa/PopLink"
 import { usePathname } from "next/navigation"
 import {
   ArrowLeft,
@@ -268,6 +269,7 @@ export function ModuleWorkspaceHeader({
             titleIcon={TitleIcon}
             pending={brandPending}
             atmosphere={resolvedAtmosphere}
+            homeHref={backHref}
           />
 
           <div className="ml-auto flex shrink-0 items-center gap-0.5">
@@ -349,6 +351,7 @@ export function ModuleWorkspaceHeader({
                 fallbackSeed={popName || "pop"}
                 tone={identityTone}
                 pending={brandPending}
+                href={backHref}
               />
             ) : null}
           </div>
@@ -425,12 +428,14 @@ function ModuleWorkspaceMobileTitle({
   titleIcon: TitleIcon,
   pending,
   atmosphere,
+  homeHref,
 }: {
   popName?: string
   title: string | null
   titleIcon: LucideIcon | null
   pending: boolean
   atmosphere: RootsButtonAtmosphere
+  homeHref?: string
 }) {
   const resolvedPopName = popName?.trim() || null
   const titleClass = moduleWorkspaceHeaderTitleClass(atmosphere)
@@ -453,6 +458,13 @@ function ModuleWorkspaceMobileTitle({
     <div className="min-w-0 flex-1 leading-tight">
       {pending && !resolvedPopName ? (
         <span className={cn(menuGhostBarClass, "mb-0.5 block h-2.5 w-20")} aria-hidden />
+      ) : resolvedPopName && homeHref ? (
+        <Link
+          href={homeHref}
+          className={cn("rootsy-text-meta truncate font-medium", mutedClass)}
+        >
+          {resolvedPopName}
+        </Link>
       ) : resolvedPopName ? (
         <p className={cn("rootsy-text-meta truncate font-medium", mutedClass)}>
           {resolvedPopName}

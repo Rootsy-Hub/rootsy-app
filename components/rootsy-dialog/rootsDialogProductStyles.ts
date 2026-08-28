@@ -57,7 +57,7 @@ const rootsDialogCloseButtonClass = cn(
 export const rootsDialogPanelShellClass = cn(
   rootsDialogPrimitiveResetClass,
   rootsDialogElevationScopeClass,
-  "roots-dialog-living-block overflow-hidden text-[var(--rootsy-bruma-900)]",
+  "rootsy-app-light roots-dialog-living-block overflow-hidden text-[var(--rootsy-bruma-900)]",
   "border-0 shadow-[var(--elevation-shadow-overlay)]",
   rootsDialogCloseButtonClass,
 )
@@ -156,7 +156,7 @@ export const rootsDialogFooterClass = cn(
 export const rootsAlertDialogSurfaceClass = cn(
   rootsDialogPrimitiveResetClass,
   rootsDialogElevationScopeClass,
-  "roots-dialog-living-block overflow-hidden rounded-xl border-0 text-[var(--rootsy-bruma-900)]",
+  "rootsy-app-light roots-dialog-living-block overflow-hidden rounded-xl border-0 text-[var(--rootsy-bruma-900)]",
   "shadow-[var(--elevation-shadow-overlay)] sm:max-w-md",
 )
 

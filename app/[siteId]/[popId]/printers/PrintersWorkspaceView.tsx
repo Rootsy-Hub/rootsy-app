@@ -4,7 +4,7 @@ import type {
   PopPrinterTableRow,
   UpsertPopPrinterInput,
 } from "@/app/[siteId]/[popId]/printers/actions"
-import { PrintersPageSkeleton } from "@/app/[siteId]/[popId]/printers/PrintersPageSkeleton"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { PrinterUpsertDialog } from "@/app/[siteId]/[popId]/printers/PrinterUpsertDialog"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
@@ -39,28 +39,31 @@ import {
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
+import { usePopPrinters } from "@/hooks/usePopPrinters"
 import { hasPopAccessPermission } from "@/lib/popAccessPermissions"
 import { POP_PERMS } from "@/lib/popPermissionConstants"
+import { popPrintersQueryRoot } from "@/lib/queryKeys"
 import {
   createPopPrinter,
   deletePopPrinter,
-  fetchPopPrinters,
   updatePopPrinter,
 } from "@/lib/rootsyApi/printersClient"
 import { cn } from "@/lib/utils"
+import { useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
 import { useParams } from "@/lib/pop-spa/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 
 export function PrintersWorkspaceView() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const { bootstrap, loading: bootstrapLoading, error: bootstrapError, hasPermission } =
+  const { bootstrap, error: bootstrapError, hasPermission } =
     usePopWorkspace()
   const afterHydration = useAfterHydration()
   const menuCache = usePopMenuCache(popId ?? "")
+  const queryClient = useQueryClient()
 
   const checkPerm = useCallback(
     (perm: { resource: string; action: string }) =>
@@ -79,9 +82,20 @@ export function PrintersWorkspaceView() {
   const canUpdate = checkPerm(POP_PERMS.PRINTER_UPDATE)
   const canDelete = checkPerm(POP_PERMS.PRINTER_DELETE)
 
-  const [rows, setRows] = useState<PopPrinterTableRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const printersQuery = usePopPrinters(popId, {
+    enabled: Boolean(popId && siteId),
+  })
+  const rows =
+    printersQuery.data?.success === true ? printersQuery.data.rows : []
+  const listPending = !printersQuery.data && printersQuery.isPending
+  const error =
+    printersQuery.data?.success === false
+      ? printersQuery.data.error || "Error"
+      : printersQuery.error instanceof Error
+        ? printersQuery.error.message
+        : printersQuery.error
+          ? String(printersQuery.error)
+          : null
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createSaving, setCreateSaving] = useState(false)
@@ -95,40 +109,12 @@ export function PrintersWorkspaceView() {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
+  const refreshPrinters = useCallback(async () => {
     if (!popId) return
-    const res = await fetchPopPrinters(popId)
-    if (!res.success) {
-      setError(res.error || "Error")
-      setRows([])
-      return
-    }
-    setRows(res.rows)
-    setError(null)
-  }, [popId])
-
-  useEffect(() => {
-    if (!popId || !siteId) {
-      setLoading(false)
-      setError("No se encontró el punto de venta.")
-      return
-    }
-    let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        await load()
-      } catch {
-        if (!cancelled) setError("Error inesperado")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [popId, siteId, load])
+    await queryClient.invalidateQueries({
+      queryKey: popPrintersQueryRoot(popId),
+    })
+  }, [popId, queryClient])
 
   const openCreate = () => {
     setCreateBanner(null)
@@ -146,7 +132,7 @@ export function PrintersWorkspaceView() {
       return
     }
     setCreateOpen(false)
-    await load()
+    await refreshPrinters()
   }
 
   const openEdit = (row: PopPrinterTableRow) => {
@@ -165,7 +151,7 @@ export function PrintersWorkspaceView() {
       return
     }
     setEditRow(null)
-    await load()
+    await refreshPrinters()
   }
 
   const submitDelete = async () => {
@@ -179,7 +165,7 @@ export function PrintersWorkspaceView() {
       return
     }
     setDeleteRow(null)
-    await load()
+    await refreshPrinters()
   }
 
   const popName = bootstrap?.popName ?? ""
@@ -193,6 +179,10 @@ export function PrintersWorkspaceView() {
     )
   }
 
+  if (listPending) {
+    return <PopModuleLoading moduleKey="printers" />
+  }
+
   return (
     <>
       <DataWorkspaceModuleLayout
@@ -201,17 +191,18 @@ export function PrintersWorkspaceView() {
         popName={popName}
         title="Impresoras"
         headerVariant={dataWorkspaceModuleHeaderVariant}
-        loading={bootstrapLoading}
+        loading={!popName}
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel}
         headerActions={
-          canCreate ? (
+          !afterHydration || canCreate ? (
             <RootsIconButton
               label="Nueva impresora"
               semantic="primary"
               atmosphere="eter"
               size="default"
+              disabled={!canCreate}
               onClick={() => openCreate()}
             >
               <Plus className="size-5" aria-hidden />
@@ -231,9 +222,7 @@ export function PrintersWorkspaceView() {
             />
           ) : null}
 
-          {loading ? (
-            <PrintersPageSkeleton />
-          ) : error ? (
+          {error ? (
             <RootsBanner intent="danger" layout="message" message={error} />
           ) : (
             <DataWorkspaceBlocksSection

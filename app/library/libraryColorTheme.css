@@ -189,6 +189,7 @@
   --library-nav-text: var(--rootsy-bruma-600);
   --library-nav-text-hover: var(--rootsy-bruma-900);
   --library-nav-text-active: var(--rootsy-bruma-900);
+  --library-nav-label: var(--rootsy-bruma-400);
 }
 
 .library-nav-surface-light .library-nav-item {

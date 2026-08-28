@@ -15,7 +15,14 @@ import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { buildPopRoleLabel } from "@/lib/popWorkspaceFromAccess"
 import { prefetchComandasWorkspaceQuery } from "@/lib/comandasWorkspaceQuery"
 import { prefetchCashRegistersListQuery } from "@/lib/cashRegistersListQuery"
+import { prefetchAuditWorkspaceQuery } from "@/lib/auditWorkspaceQuery"
+import { prefetchChatWorkspaceQuery } from "@/lib/chatWorkspaceQuery"
+import { prefetchCurrentAccountsWorkspaceQuery } from "@/lib/currentAccountsWorkspaceQuery"
+import { prefetchPrintersWorkspaceQuery } from "@/lib/printersWorkspaceQuery"
+import { prefetchSettingsWorkspaceQuery } from "@/lib/settingsWorkspaceQuery"
 import { prefetchExpensesWorkspaceQuery } from "@/lib/expensesWorkspaceQuery"
+import { prefetchInventoryWorkspaceQuery } from "@/lib/inventoryWorkspaceQuery"
+import { prefetchManufacturingWorkspaceQuery } from "@/lib/manufacturingWorkspaceQuery"
 import { prefetchHrDashboardQuery } from "@/lib/hrDashboardQuery"
 import { prefetchMesasWorkspaceQuery } from "@/lib/mesasWorkspaceQuery"
 import { prefetchMostradorWorkspaceQuery } from "@/lib/mostradorWorkspaceQuery"
@@ -148,6 +155,34 @@ export function PopModuleLoading({
     }
     if (moduleKey === "expenses") {
       void prefetchExpensesWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "inventory") {
+      void prefetchInventoryWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "manufacturing") {
+      void prefetchManufacturingWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "current-accounts") {
+      void prefetchCurrentAccountsWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "settings") {
+      void prefetchSettingsWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "audit") {
+      void prefetchAuditWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "printers") {
+      void prefetchPrintersWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "chat") {
+      void prefetchChatWorkspaceQuery(popId, queryClient)
     }
   }, [moduleKey, popId, queryClient])
 

@@ -15,12 +15,15 @@ import {
   comandasBrisaBodyRowClass,
   comandasBrisaColumnBodyClass,
   comandasBrisaColumnHeaderClass,
+  comandasBrisaColumnVisibilityClass,
   comandasBrisaColumnIconClass,
   comandasBrisaColumnTitleClass,
   comandasBrisaDropZoneBlockedClass,
   comandasBrisaDropZoneClass,
   comandasBrisaDropZoneOverClass,
   comandasBrisaHeaderRowClass,
+  comandasBrisaMobileTabClass,
+  comandasBrisaMobileTabsClass,
   comandasBrisaSkeletonBarClass,
   comandasBrisaSkeletonBoxClass,
   comandasBrisaTicketCardClass,
@@ -42,7 +45,7 @@ import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataW
 import { RootsBanner } from "@/components/rootsy-banner"
 import { ComandaTicketCardBody } from "@/app/[siteId]/[popId]/comandas/components/ComandaTicketCardBody"
 import { ComandasDeliveredHistoryDialog } from "@/app/[siteId]/[popId]/comandas/components/ComandasDeliveredHistoryDialog"
-import { RootsDefaultButton, RootsIconButton, RootsPrimaryButton } from "@/components/rootsy-button"
+import { RootsDefaultButton, RootsPrimaryButton } from "@/components/rootsy-button"
 import { RootsNaturePill } from "@/components/rootsy-pill/RootsNaturePill"
 import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -63,7 +66,6 @@ import {
   ChefHat,
   ClipboardList,
   CookingPot,
-  Minimize2,
 } from "lucide-react"
 
 function useDocumentFullscreen() {
@@ -85,25 +87,7 @@ function useDocumentFullscreen() {
     }
   }, [])
 
-  return { active, exit }
-}
-
-function BoardExitFullscreenButton({
-  onExit,
-}: {
-  onExit: () => void
-}) {
-  return (
-    <RootsIconButton
-      theme="workspace"
-      emphasis="ghost"
-      size="default"
-      label="Salir de pantalla completa"
-      onClick={onExit}
-    >
-      <Minimize2 aria-hidden />
-    </RootsIconButton>
-  )
+  return { active }
 }
 
 type BoardColumnId = Exclude<ComandaStatus, "pending" | "voided">
@@ -141,17 +125,15 @@ type Props = {
 
 function BoardIdentity({
   stationName,
-  showExitFullscreen,
-  onExitFullscreen,
+  kioskPad,
   onOpenDeliveredHistory,
 }: {
   stationName: string
-  showExitFullscreen?: boolean
-  onExitFullscreen?: () => void
+  kioskPad?: boolean
   onOpenDeliveredHistory: () => void
 }) {
   return (
-    <div className={comandasBrisaBoardIdentityClass}>
+    <div className={cn(comandasBrisaBoardIdentityClass, kioskPad && "pl-14")}>
       <div className={comandasBrisaBoardIdentityCopyClass}>
         <p className={comandasBrisaBoardIdentityEyebrowClass}>Comandas</p>
         <h1 className={comandasBrisaBoardIdentityTitleClass}>{stationName}</h1>
@@ -164,32 +146,24 @@ function BoardIdentity({
         >
           Entregados
         </RootsDefaultButton>
-        {showExitFullscreen && onExitFullscreen ? (
-          <BoardExitFullscreenButton onExit={onExitFullscreen} />
-        ) : null}
       </div>
     </div>
   )
 }
 
 function BoardIdentitySkeleton({
-  showExitFullscreen,
-  onExitFullscreen,
+  kioskPad,
 }: {
-  showExitFullscreen?: boolean
-  onExitFullscreen?: () => void
-}) {
+  kioskPad?: boolean
+} = {}) {
   return (
-    <div className={comandasBrisaBoardIdentityClass}>
+    <div className={cn(comandasBrisaBoardIdentityClass, kioskPad && "pl-14")}>
       <div className={comandasBrisaBoardIdentityCopyClass} aria-hidden>
         <span className={cn(comandasBrisaSkeletonBarClass, "h-2.5 w-16")} />
         <span className={cn(comandasBrisaSkeletonBarClass, "mt-2 h-4 w-36")} />
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <span className={cn(comandasBrisaSkeletonBoxClass, "h-8 w-28 rounded-lg")} />
-        {showExitFullscreen && onExitFullscreen ? (
-          <BoardExitFullscreenButton onExit={onExitFullscreen} />
-        ) : null}
       </div>
     </div>
   )
@@ -222,6 +196,65 @@ function ColumnHeader({
         <span aria-label={countLabel}>{count}</span>
       </RootsNaturePill>
     </div>
+  )
+}
+
+function MobileStatusTabs({
+  counts,
+  activeId,
+  onSelect,
+}: {
+  counts: Record<BoardColumnId, number>
+  activeId: BoardColumnId
+  onSelect: (id: BoardColumnId) => void
+}) {
+  return (
+    <div className={comandasBrisaMobileTabsClass} role="tablist" aria-label="Estado">
+      {BOARD_COLUMNS.map((column) => (
+        <MobileStatusTab
+          key={column.id}
+          column={column}
+          count={counts[column.id]}
+          active={column.id === activeId}
+          onSelect={onSelect}
+        />
+      ))}
+    </div>
+  )
+}
+
+function MobileStatusTab({
+  column,
+  count,
+  active,
+  onSelect,
+}: {
+  column: (typeof BOARD_COLUMNS)[number]
+  count: number
+  active: boolean
+  onSelect: (id: BoardColumnId) => void
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `mobile-tab-${column.id}`,
+    data: { columnId: column.id },
+  })
+
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      role="tab"
+      aria-selected={active}
+      className={cn(
+        comandasBrisaMobileTabClass(active),
+        isOver && "ring-1 ring-[var(--rootsy-savia-500)]",
+      )}
+      onClick={() => onSelect(column.id)}
+    >
+      <column.icon className="size-3.5 shrink-0" aria-hidden />
+      <span className="truncate">{column.label}</span>
+      <span className="tabular-nums">{count}</span>
+    </button>
   )
 }
 
@@ -286,12 +319,14 @@ function KanbanColumnBody({
   tickets,
   canUpdate,
   draggingTicket,
+  active,
   onAckVoid,
 }: {
   column: (typeof BOARD_COLUMNS)[number]
   tickets: ComandaBoardCard[]
   canUpdate: boolean
   draggingTicket: ComandaBoardCard | null
+  active: boolean
   onAckVoid: (ticketId: string) => void
 }) {
   const dropDisabled =
@@ -308,7 +343,12 @@ function KanbanColumnBody({
     draggingTicket == null || canMoveComandaTo(draggingTicket.status, column.id)
 
   return (
-    <div className={comandasBrisaColumnBodyClass(column.id)}>
+    <div
+      className={cn(
+        comandasBrisaColumnBodyClass(column.id),
+        comandasBrisaColumnVisibilityClass(active),
+      )}
+    >
       <div
         ref={setNodeRef}
         className={cn(
@@ -341,18 +381,18 @@ function KanbanColumnBody({
 }
 
 export function ComandasBoardSkeleton({
-  showExitFullscreen,
-  onExitFullscreen,
+  kioskPad,
 }: {
-  showExitFullscreen?: boolean
-  onExitFullscreen?: () => void
+  kioskPad?: boolean
 } = {}) {
   return (
     <div className={comandasBrisaBoardShellClass}>
-      <BoardIdentitySkeleton
-        showExitFullscreen={showExitFullscreen}
-        onExitFullscreen={onExitFullscreen}
-      />
+      <BoardIdentitySkeleton kioskPad={kioskPad} />
+      <div className={comandasBrisaMobileTabsClass} aria-hidden>
+        {BOARD_COLUMNS.map((column) => (
+          <span key={column.id} className={cn(comandasBrisaSkeletonBoxClass, "h-9 flex-1 rounded-lg")} />
+        ))}
+      </div>
       <div className={comandasBrisaHeaderRowClass}>
         {BOARD_COLUMNS.map((column) => (
           <div key={column.id} className={comandasBrisaColumnHeaderClass(column.id)}>
@@ -362,8 +402,14 @@ export function ComandasBoardSkeleton({
         ))}
       </div>
       <div className={comandasBrisaBodyRowClass}>
-        {BOARD_COLUMNS.map((column) => (
-          <div key={column.id} className="flex flex-col gap-4 p-4">
+        {BOARD_COLUMNS.map((column, index) => (
+          <div
+            key={column.id}
+            className={cn(
+              "flex-col gap-4 p-4",
+              comandasBrisaColumnVisibilityClass(index === 0),
+            )}
+          >
             <span className={cn(comandasBrisaSkeletonBoxClass, "h-36 w-full rounded-[1.375rem]")} />
             <span className={cn(comandasBrisaSkeletonBoxClass, "h-28 w-full rounded-[1.375rem]")} />
           </div>
@@ -385,6 +431,7 @@ export function ComandasBoard({
   const fullscreen = useDocumentFullscreen()
   const [draggingTicketId, setDraggingTicketId] = useState<string | null>(null)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [mobileColumn, setMobileColumn] = useState<BoardColumnId>("sent")
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -426,11 +473,19 @@ export function ComandasBoard({
     if (!card || !canDragComanda(card.status, card.sendKind)) return
 
     const overId = String(over.id)
-    const targetColumn = COMANDA_BOARD_COLUMNS.includes(overId as ComandaStatus)
-      ? (overId as ComandaStatus)
-      : cards.find((row) => row.id === overId)?.status
+    const tabColumn = overId.startsWith("mobile-tab-")
+      ? overId.slice("mobile-tab-".length)
+      : null
+    const targetColumn = tabColumn && COMANDA_BOARD_COLUMNS.includes(tabColumn as ComandaStatus)
+      ? (tabColumn as ComandaStatus)
+      : COMANDA_BOARD_COLUMNS.includes(overId as ComandaStatus)
+        ? (overId as ComandaStatus)
+        : cards.find((row) => row.id === overId)?.status
 
     if (!targetColumn || !canMoveComandaTo(card.status, targetColumn)) return
+    if (tabColumn && COMANDA_BOARD_COLUMNS.includes(tabColumn as BoardColumnId)) {
+      setMobileColumn(tabColumn as BoardColumnId)
+    }
     void onMoveTicket(card.primaryItemId, targetColumn)
   }
 
@@ -449,17 +504,23 @@ export function ComandasBoard({
           </div>
         ) : null}
         {loading ? (
-          <ComandasBoardSkeleton
-            showExitFullscreen={fullscreen.active}
-            onExitFullscreen={fullscreen.exit}
-          />
+          <ComandasBoardSkeleton kioskPad={fullscreen.active} />
         ) : (
           <>
             <BoardIdentity
               stationName={stationName || "Estación"}
-              showExitFullscreen={fullscreen.active}
-              onExitFullscreen={fullscreen.exit}
+              kioskPad={fullscreen.active}
               onOpenDeliveredHistory={() => setHistoryOpen(true)}
+            />
+            <MobileStatusTabs
+              counts={{
+                sent: ticketsByColumn.sent.length,
+                preparing: ticketsByColumn.preparing.length,
+                ready: ticketsByColumn.ready.length,
+                delivered: ticketsByColumn.delivered.length,
+              }}
+              activeId={mobileColumn}
+              onSelect={setMobileColumn}
             />
             <div className={comandasBrisaHeaderRowClass}>
               {BOARD_COLUMNS.map((column) => (
@@ -478,6 +539,7 @@ export function ComandasBoard({
                   tickets={ticketsByColumn[column.id]}
                   canUpdate={canUpdate}
                   draggingTicket={draggingTicket}
+                  active={column.id === mobileColumn}
                   onAckVoid={(ticketId) => {
                     void onMoveTicket(ticketId, "voided")
                   }}

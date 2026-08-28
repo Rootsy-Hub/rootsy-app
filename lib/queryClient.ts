@@ -30,6 +30,13 @@ export function createQueryClient() {
   client.setQueryDefaults(["service-operate"], sessionListQueryOptions)
   client.setQueryDefaults(["pop-comandas"], sessionListQueryOptions)
   client.setQueryDefaults(["pop-expenses"], sessionListQueryOptions)
+  client.setQueryDefaults(["pop-inventory"], sessionListQueryOptions)
+  client.setQueryDefaults(["pop-manufacturing"], sessionListQueryOptions)
+  client.setQueryDefaults(["pop-current-account-parties"], sessionListQueryOptions)
+  client.setQueryDefaults(["pop-settings"], sessionListQueryOptions)
+  client.setQueryDefaults(["pop-audit"], sessionListQueryOptions)
+  client.setQueryDefaults(["pop-printers"], sessionListQueryOptions)
+  client.setQueryDefaults(["pop-chat"], sessionListQueryOptions)
 
   return client
 }

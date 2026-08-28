@@ -23,6 +23,7 @@ export function DataWorkspaceModuleLayout({
   usePopBackdrop = false,
   useBackdrop = false,
   contentFlush = false,
+  showFullscreen = false,
   mainClassName,
   ...props
 }: DataWorkspaceModuleLayoutProps) {
@@ -33,6 +34,7 @@ export function DataWorkspaceModuleLayout({
       usePopBackdrop={useBackdrop ? usePopBackdrop : false}
       useBackdrop={useBackdrop}
       contentFlush={contentFlush}
+      showFullscreen={showFullscreen}
       mainClassName={cn(
         contentFlush && layoutsModuleContentShellClass,
         mainClassName,

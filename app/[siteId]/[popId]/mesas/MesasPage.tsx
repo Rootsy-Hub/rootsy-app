@@ -1,6 +1,7 @@
 "use client"
 
 import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
+import { DataWorkspaceBlocksEmptyState } from "@/components/data-workspace/DataWorkspaceBlocksEmptyState"
 import { MesasLayoutAdmin } from "@/app/[siteId]/[popId]/mesas/components/MesasLayoutAdmin"
 import { MesasWorkspace } from "@/app/[siteId]/[popId]/mesas/components/MesasWorkspace"
 import { useMesasFloorHydrate } from "@/hooks/useMesasFloorHydrate"
@@ -71,24 +72,24 @@ function MesasPage() {
 
   if (!popId || !siteId) {
     return (
-      <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
-        Punto de venta no encontrado
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <DataWorkspaceBlocksEmptyState title="Punto de venta no encontrado" />
       </div>
     )
   }
 
   if (!bootstrapLoading && bootstrapError) {
     return (
-      <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
-        {bootstrapError}
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <DataWorkspaceBlocksEmptyState title={bootstrapError} />
       </div>
     )
   }
 
   if (!bootstrapLoading && !access.canRead) {
     return (
-      <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
-        No tenés permiso para acceder a Mesas en este punto de venta.
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <DataWorkspaceBlocksEmptyState title="No tenés permiso para acceder a Mesas en este punto de venta." />
       </div>
     )
   }

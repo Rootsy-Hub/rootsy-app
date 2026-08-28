@@ -183,15 +183,6 @@ export function CounterOrderPanel({
     })
   }
 
-  if (order.status === "preparing" || order.status === "dispatched") {
-    footerActions.push({
-      variant: "secondary",
-      label: "Marcar entregado",
-      disabled: busy,
-      onClick: () => void run(() => onMoveOrder(order.id, "delivered")),
-    })
-  }
-
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <ChannelDataPanel className="flex-1">

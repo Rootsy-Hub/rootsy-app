@@ -59,6 +59,8 @@ function OperationsLayoutWithChrome({
   contentFlush = true,
   mainClassName,
   headerMobileMoreActions,
+  showFullscreen = true,
+  hideHeaderInFullscreen = true,
   ...props
 }: DataWorkspaceOperationsLayoutProps) {
   const chrome = useOperarCatalogMobileChrome()
@@ -70,6 +72,8 @@ function OperationsLayoutWithChrome({
   return (
     <DataWorkspaceModuleLayout
       {...props}
+      showFullscreen={showFullscreen}
+      hideHeaderInFullscreen={hideHeaderInFullscreen}
       hideSidebarToggleOnMobile
       headerMobileMoreActions={mobileMore.length > 0 ? mobileMore : undefined}
       contentFlush={contentFlush}

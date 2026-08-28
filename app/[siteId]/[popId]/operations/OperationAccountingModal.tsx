@@ -9,14 +9,15 @@ import {
   tdMoneyClass,
   tdMoneyMutedClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { Button } from "@/components/ui/button"
+import { DataWorkspaceBlocksEmptyState } from "@/components/data-workspace/DataWorkspaceBlocksEmptyState"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogErrorBanner,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { Button } from "@/components/ui/button"
+import { Dialog } from "@/components/ui/dialog"
 import {
   Table,
   TableBody,
@@ -68,15 +69,6 @@ function formatIsoDate(iso: string) {
   if (Number.isNaN(d.getTime())) return iso.slice(0, 10)
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short" }).format(d)
 }
-
-const dialogClass = cn(
-  "rootsy-app-light gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 text-foreground shadow-2xl ring-1 ring-black/[0.04] sm:max-w-2xl",
-  "max-h-[min(90vh,720px)] flex flex-col overflow-hidden",
-)
-const dialogHeader =
-  "shrink-0 space-y-1.5 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left"
-const dialogBody =
-  "min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
 
 const accountingLineMoneyClass = cn(
   "font-medium text-foreground",
@@ -276,32 +268,20 @@ export function OperationAccountingModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={dialogClass}>
-        <DialogHeader className={dialogHeader}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            {title}
-          </DialogTitle>
-          {subtitle ? (
-            <DialogDescription className="text-sm leading-relaxed">
-              {subtitle}
-            </DialogDescription>
-          ) : null}
-        </DialogHeader>
-        <div className={dialogBody}>
+      <RootsDialogContent size="wide" className="max-h-[min(90vh,720px)] sm:max-w-2xl">
+        <RootsDialogHeader
+          open={open}
+          title={title}
+          description={subtitle}
+        />
+        <RootsDialogBody>
           {error ? (
-            <p
-              role="alert"
-              className="rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              {error}
-            </p>
+            <RootsDialogErrorBanner>{error}</RootsDialogErrorBanner>
           ) : null}
           {loading ? (
             <ModalSkeleton />
           ) : !error && entries.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              No hay asientos contables registrados para esta operación.
-            </p>
+            <DataWorkspaceBlocksEmptyState description="No hay asientos contables registrados para esta operación." />
           ) : (
             <div className="space-y-6">
               {entries.map((entry) => (
@@ -309,8 +289,8 @@ export function OperationAccountingModal({
               ))}
             </div>
           )}
-        </div>
-      </DialogContent>
+        </RootsDialogBody>
+      </RootsDialogContent>
     </Dialog>
   )
 }

@@ -48,6 +48,7 @@ export function StatisticsSectionNav({
     <OperarSectionRail
       ref={navRef}
       embedded
+      tone="light"
       ariaLabel="Secciones de estadísticas"
       activeId={activeSectionId}
       className={statisticsNavShellClass}

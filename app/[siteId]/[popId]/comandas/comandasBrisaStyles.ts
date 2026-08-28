@@ -28,7 +28,7 @@ export const comandasBrisaBoardShellClass =
 export const comandasBrisaBoardIdentityClass = cn(
   "flex shrink-0 items-center justify-between gap-3",
   "border-b border-[var(--rootsy-bruma-200)]",
-  "bg-[var(--color-elevada)] px-4 py-3 sm:px-5",
+  "bg-[var(--rootsy-blanco)] px-4 py-3 sm:px-5",
 )
 
 export const comandasBrisaBoardIdentityCopyClass = "min-w-0"
@@ -39,18 +39,35 @@ export const comandasBrisaBoardIdentityEyebrowClass =
 export const comandasBrisaBoardIdentityTitleClass =
   "rootsy-text-section-title text-[var(--rootsy-bruma-900)]"
 
+/** Tabs de estado — solo teléfono. El monitor usa las 4 columnas. */
+export const comandasBrisaMobileTabsClass =
+  "flex shrink-0 items-center gap-1 border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)] px-3 py-2 md:hidden"
+
+export const comandasBrisaMobileTabClass = (active: boolean) =>
+  cn(
+    "inline-flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-1.5 py-2",
+    "rootsy-text-label",
+    active
+      ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,var(--rootsy-blanco))] font-semibold text-[var(--rootsy-bruma-900)]"
+      : "text-[var(--rootsy-bruma-500)]",
+  )
+
 /** Headers a todo el ancho — papel + riel de señal, sin losa pintada. */
 export const comandasBrisaHeaderRowClass = cn(
-  "rootsy-nature-palette grid shrink-0 grid-cols-4",
+  "rootsy-nature-palette hidden shrink-0 grid-cols-4 md:grid",
   "h-16 overflow-hidden",
   "divide-x divide-[var(--rootsy-bruma-200)]",
   "border-b border-[var(--rootsy-bruma-200)]",
 )
 
 export const comandasBrisaBodyRowClass = cn(
-  "grid min-h-0 flex-1 grid-cols-4 overflow-hidden",
-  "divide-x divide-[var(--rootsy-bruma-200)]",
+  "grid min-h-0 flex-1 grid-cols-1 overflow-hidden md:grid-cols-4",
+  "md:divide-x md:divide-[var(--rootsy-bruma-200)]",
 )
+
+export function comandasBrisaColumnVisibilityClass(active: boolean): string {
+  return cn(active ? "flex" : "hidden", "md:flex")
+}
 
 export function comandasBrisaColumnHeaderClass(status: ComandaStatus): string {
   const world = comandaStatusWorld(status)
