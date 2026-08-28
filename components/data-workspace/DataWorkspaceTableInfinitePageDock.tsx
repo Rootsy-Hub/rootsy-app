@@ -51,7 +51,7 @@ export function DataWorkspaceTableInfinitePageDock({
       className="data-workspace-table-page-dock isolate w-auto overflow-hidden rounded-xl shadow-[0_16px_40px_color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]"
     >
       <div
-        className="flex items-center gap-2.5 py-1.5 pl-3 pr-1.5"
+        className="relative z-[2] flex items-center gap-2.5 py-1.5 pl-3 pr-1.5"
         role="navigation"
         aria-label="Paginación del listado"
         aria-busy={listFetching}

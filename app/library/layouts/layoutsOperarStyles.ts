@@ -429,38 +429,58 @@ export const layoutsOperarCatalogSkeletonSurfaceClass = "bg-[var(--rootsy-sombra
 export const layoutsOperarCatalogSkeletonGhostClass =
   "animate-pulse bg-[color-mix(in_srgb,var(--rootsy-sombra-700)_38%,var(--rootsy-sombra-800))]"
 
-/** Clip de la card — radio + overflow. La grilla va adentro. */
+/**
+ * Card catálogo — un solo clip, geometría entera.
+ * Sin p-px (doble hairline) ni overflow anidado: el radio recorta foto y cuerpo.
+ */
 export const layoutsOperarProductCardClass = cn(
-  "layouts-operar-product-card group relative h-[256px] w-full overflow-hidden rounded-2xl p-px text-left",
+  "layouts-operar-product-card group relative box-border grid h-[256px] w-full",
+  "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip rounded-[16px] p-0 text-left",
   "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-800)]",
 )
 
-export const layoutsOperarProductCardGridInnerClass =
-  "grid h-full w-full grid-rows-[120px_minmax(0,1fr)_auto]"
+/** @deprecated La grilla vive en el shell. `contents` no genera caja. */
+export const layoutsOperarProductCardGridInnerClass = "contents"
 
-export const layoutsOperarProductCardTriggerClass =
-  "w-full bg-transparent p-0 text-left"
+/**
+ * Levante hover — `top` entero, no `transform`.
+ * El clip queda en el shell; acá la sombra puede salir.
+ */
+export const layoutsOperarProductCardLiftClass = cn(
+  "layouts-operar-product-card-lift group/lift relative top-0 z-0",
+  "transition-[top,box-shadow] duration-200 ease-out",
+  "hover:-top-[2px] hover:z-[1]",
+  "hover:shadow-[0_6px_16px_color-mix(in_srgb,var(--rootsy-negro)_62%,transparent)]",
+  "disabled:hover:top-0 disabled:hover:z-0 disabled:hover:shadow-none",
+)
+
+export const layoutsOperarProductCardTriggerClass = cn(
+  layoutsOperarProductCardLiftClass,
+  "w-full p-0 text-left",
+)
 
 /** Tarjeta horizontal — vista lista · sale `modoVista === "lista"`. */
 export const layoutsOperarProductCardListClass = cn(
-  "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-2xl p-px text-left",
+  "layouts-operar-product-card group relative box-border flex min-h-[80px] w-full items-stretch",
+  "overflow-clip rounded-[16px] p-0 text-left",
   "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-800)]",
+  layoutsOperarProductCardLiftClass,
 )
 
 export const layoutsOperarProductCardSkeletonShellClass = cn(
   layoutsOperarProductCardClass,
   layoutsOperarCatalogSkeletonSurfaceClass,
-  "pointer-events-none shadow-none hover:translate-y-0",
+  "pointer-events-none shadow-none",
 )
 
 export const layoutsOperarProductCardListSkeletonShellClass = cn(
   layoutsOperarProductCardListClass,
   layoutsOperarCatalogSkeletonSurfaceClass,
-  "pointer-events-none shadow-none hover:translate-y-0",
+  "pointer-events-none shadow-none",
 )
 
 export const layoutsOperarProductCardListMediaClass =
-  "relative h-20 w-20 shrink-0 overflow-hidden bg-[var(--layouts-operar-product-card-media-bg)]"
+  "relative h-20 w-20 shrink-0 overflow-clip bg-[var(--layouts-operar-product-card-media-bg)]"
 
 export const layoutsOperarProductCardGridTextClass =
   "min-h-0 overflow-hidden px-3 pt-3"
@@ -489,11 +509,18 @@ export const layoutsOperarCatalogArticleDemoScopeClass = cn(
 )
 
 export const layoutsOperarProductCardMediaClass =
-  "relative min-h-0 h-full w-full overflow-hidden bg-[var(--layouts-operar-product-card-media-bg)]"
+  "relative min-h-0 h-full w-full overflow-clip bg-[var(--layouts-operar-product-card-media-bg)]"
+
+/** Foto — zoom 3% dentro del pozo; el clip del media es recto, sin radio. */
+export const layoutsOperarProductCardMediaPhotoClass = cn(
+  "pointer-events-none block size-full max-h-none origin-center object-cover object-center",
+  "transition-[opacity,transform] duration-300 ease-out",
+  "group-hover/lift:scale-[1.03] group-disabled/lift:scale-100",
+)
 
 /** Superficie foto ausente — mismo fondo que la card, icono savia al centro. */
 export const layoutsOperarProductCardMediaEmptyStateClass = cn(
-  "relative flex size-full items-center justify-center overflow-hidden",
+  "relative flex size-full items-center justify-center",
   "bg-[var(--rootsy-sombra-800)]",
 )
 

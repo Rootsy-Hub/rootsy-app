@@ -60,7 +60,8 @@ export function DataWorkspaceListTableShell({
   const useChromeStack = activeFiltersBar != null
   const bodySurfaceClass = isFlush ? workspaceTableSurfaceClass : dataWorkspaceShellCard
   const resolvedBodySurface = className ? undefined : bodySurfaceClass
-  const floorHalo = useRootsyThinkingPresence(Boolean(infinite?.isFetchingMore))
+  const fetchingMore = Boolean(infinite?.isFetchingMore)
+  const floorHalo = useRootsyThinkingPresence(fetchingMore)
 
   useEffect(() => {
     if (!scrollRoot) return
@@ -154,6 +155,7 @@ export function DataWorkspaceListTableShell({
                   "pointer-events-auto",
                   footerFloatingCentered ? "w-auto" : "w-full",
                 )}
+                data-fetching-more={fetchingMore ? "" : undefined}
               >
                 {footer}
               </div>
@@ -162,7 +164,10 @@ export function DataWorkspaceListTableShell({
         </div>
       </div>
       {footer && !footerFloating ? (
-        <div className={cn("relative z-20 shrink-0", glassFooter && "bg-transparent")}>
+        <div
+          className={cn("relative z-20 shrink-0", glassFooter && "bg-transparent")}
+          data-fetching-more={fetchingMore ? "" : undefined}
+        >
           {footer}
         </div>
       ) : null}

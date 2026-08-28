@@ -4,7 +4,6 @@ import {
   layoutsOperarProductCardProposalAddClass,
   layoutsOperarProductCardProposalBodyClass,
   layoutsOperarProductCardProposalDescClass,
-  layoutsOperarProductCardProposalGridInnerClass,
   layoutsOperarProductCardProposalGridShellClass,
   layoutsOperarProductCardProposalListShellClass,
   layoutsOperarProductCardProposalPriceRowClass,
@@ -136,16 +135,14 @@ export function ServiceOperateServiceCard({
         data-proposal={proposalId}
         data-selected={selected || undefined}
       >
-        <div className={layoutsOperarProductCardProposalGridInnerClass(proposalId)}>
-          {media}
-          <div className={layoutsOperarProductCardProposalTextClass(proposalId)}>
-            {copy}
-          </div>
-          <div className={layoutsOperarProductCardProposalPriceRowClass(proposalId)}>
-            <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
-              {saleOpFmt.format(service.price)}
-            </span>
-          </div>
+        {media}
+        <div className={layoutsOperarProductCardProposalTextClass(proposalId)}>
+          {copy}
+        </div>
+        <div className={layoutsOperarProductCardProposalPriceRowClass(proposalId)}>
+          <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
+            {saleOpFmt.format(service.price)}
+          </span>
         </div>
       </div>
     </button>

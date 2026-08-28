@@ -7,7 +7,6 @@ import {
   layoutsOperarProductCardProposalAddClass,
   layoutsOperarProductCardProposalBodyClass,
   layoutsOperarProductCardProposalDescClass,
-  layoutsOperarProductCardProposalGridInnerClass,
   layoutsOperarProductCardProposalGridShellClass,
   layoutsOperarProductCardProposalListShellClass,
   layoutsOperarProductCardProposalTriggerClass,
@@ -24,6 +23,7 @@ import {
 import {
   layoutsOperarCatalogArticleDemoScopeClass,
   layoutsOperarProductCardMediaEmptyStateIconClass,
+  layoutsOperarProductCardMediaPhotoClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { SaleCatalogProductOfferOverlay } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
@@ -143,7 +143,7 @@ function LayoutsOperarProductCardProposalMedia({
           src={product.image ?? undefined}
           alt=""
           onError={() => setImageFailed(true)}
-          className="size-full max-h-none object-cover object-center transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+          className={layoutsOperarProductCardMediaPhotoClass}
         />
       )}
       {showOfferOverlay ? (
@@ -214,16 +214,14 @@ export function LayoutsOperarProductCardProposalGrid({
         className={layoutsOperarProductCardProposalGridShellClass(proposalId)}
         data-proposal={proposalId}
       >
-        <div className={layoutsOperarProductCardProposalGridInnerClass(proposalId)}>
-          <LayoutsOperarProductCardProposalMedia product={product} variant="grid" proposalId={proposalId} />
-          <div className={layoutsOperarProductCardProposalTextClass(proposalId)}>
-            <LayoutsOperarProductCardProposalCopy product={product} proposalId={proposalId} />
-          </div>
-          <div className={layoutsOperarProductCardProposalPriceRowClass(proposalId)}>
-            <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
-              {formatDemoPrice(product.price)}
-            </span>
-          </div>
+        <LayoutsOperarProductCardProposalMedia product={product} variant="grid" proposalId={proposalId} />
+        <div className={layoutsOperarProductCardProposalTextClass(proposalId)}>
+          <LayoutsOperarProductCardProposalCopy product={product} proposalId={proposalId} />
+        </div>
+        <div className={layoutsOperarProductCardProposalPriceRowClass(proposalId)}>
+          <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
+            {formatDemoPrice(product.price)}
+          </span>
         </div>
       </div>
     </button>

@@ -185,6 +185,7 @@
 .data-workspace-table-page-dock.menu-header-entity .menu-header-entity-body--floor {
   --tw-backdrop-blur: blur(18px);
   --tw-backdrop-saturate: saturate(1.08);
+  border-radius: inherit;
   background: color-mix(in srgb, var(--rootsy-sombra-950) 78%, transparent);
   border-color: color-mix(in srgb, var(--rootsy-sombra-400) 55%, transparent);
   backdrop-filter: blur(18px) saturate(1.08);
@@ -209,4 +210,145 @@
     .menu-header-entity-horizon
   ) {
   display: none;
+}
+
+/**
+ * Pulso de actividad — conic que recorre el borde + wash de accent.
+ * Se enciende con aria-busy (carga inicial) o [data-fetching-more] (infinite).
+ * El ::after tapa el centro; el anillo deja ver el conic. Solo rotate / background-position.
+ */
+:is(
+  .data-workspace-table-page-dock:has([aria-busy="true"]),
+  [data-fetching-more] .data-workspace-table-page-dock
+).data-workspace-table-page-dock {
+  overflow: visible;
+}
+
+:is(
+  .data-workspace-table-page-dock:has([aria-busy="true"]),
+  [data-fetching-more] .data-workspace-table-page-dock
+).data-workspace-table-page-dock.menu-header-entity
+  .menu-header-entity-body--floor {
+  isolation: isolate;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-foco) 22%, transparent),
+    0 0 18px color-mix(in srgb, var(--color-foco) 16%, transparent);
+}
+
+:is(
+  .data-workspace-table-page-dock:has([aria-busy="true"]),
+  [data-fetching-more] .data-workspace-table-page-dock
+).data-workspace-table-page-dock.menu-header-entity
+  .menu-header-entity-body--floor
+  > .relative {
+  z-index: 2;
+}
+
+:is(
+  .data-workspace-table-page-dock:has([aria-busy="true"]),
+  [data-fetching-more] .data-workspace-table-page-dock
+).data-workspace-table-page-dock.menu-header-entity
+  .menu-header-entity-body--floor::before,
+:is(
+  .data-workspace-table-page-dock:has([aria-busy="true"]),
+  [data-fetching-more] .data-workspace-table-page-dock
+).data-workspace-table-page-dock.menu-header-entity
+  .menu-header-entity-body--floor::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+:is(
+  .data-workspace-table-page-dock:has([aria-busy="true"]),
+  [data-fetching-more] .data-workspace-table-page-dock
+).data-workspace-table-page-dock.menu-header-entity
+  .menu-header-entity-body--floor::before {
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  width: 240%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 268deg,
+    color-mix(in srgb, var(--color-foco) 0%, transparent) 292deg,
+    color-mix(in srgb, var(--color-foco) 42%, transparent) 318deg,
+    color-mix(in srgb, var(--rootsy-savia-300) 88%, var(--rootsy-blanco)) 338deg,
+    color-mix(in srgb, var(--color-foco) 48%, transparent) 352deg,
+    transparent 360deg
+  );
+  animation: data-workspace-table-page-dock-orbit 2.2s linear infinite;
+}
+
+:is(
+  .data-workspace-table-page-dock:has([aria-busy="true"]),
+  [data-fetching-more] .data-workspace-table-page-dock
+).data-workspace-table-page-dock.menu-header-entity
+  .menu-header-entity-body--floor::after {
+  inset: 1.5px;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      118deg,
+      transparent 18%,
+      color-mix(in srgb, var(--color-foco) 10%, transparent) 42%,
+      color-mix(in srgb, var(--rootsy-savia-600) 12%, transparent) 52%,
+      color-mix(in srgb, var(--color-foco) 8%, transparent) 64%,
+      transparent 82%
+    )
+    0 0 / 220% 220%,
+    color-mix(in srgb, var(--rootsy-sombra-950) 94%, transparent);
+  animation: data-workspace-table-page-dock-wash 4.6s
+    cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes data-workspace-table-page-dock-orbit {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes data-workspace-table-page-dock-wash {
+  0%,
+  100% {
+    background-position: 12% 38%, 0 0;
+  }
+  50% {
+    background-position: 88% 62%, 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .data-workspace-table-page-dock:has([aria-busy="true"]),
+    [data-fetching-more] .data-workspace-table-page-dock
+  ).data-workspace-table-page-dock.menu-header-entity
+    .menu-header-entity-body--floor::before,
+  :is(
+    .data-workspace-table-page-dock:has([aria-busy="true"]),
+    [data-fetching-more] .data-workspace-table-page-dock
+  ).data-workspace-table-page-dock.menu-header-entity
+    .menu-header-entity-body--floor::after {
+    animation: none;
+  }
+
+  :is(
+    .data-workspace-table-page-dock:has([aria-busy="true"]),
+    [data-fetching-more] .data-workspace-table-page-dock
+  ).data-workspace-table-page-dock.menu-header-entity
+    .menu-header-entity-body--floor::before {
+    rotate: 210deg;
+  }
+
+  :is(
+    .data-workspace-table-page-dock:has([aria-busy="true"]),
+    [data-fetching-more] .data-workspace-table-page-dock
+  ).data-workspace-table-page-dock.menu-header-entity
+    .menu-header-entity-body--floor::after {
+    background-position: 50% 50%, 0 0;
+  }
 }

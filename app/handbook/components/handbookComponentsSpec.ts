@@ -360,9 +360,9 @@ export const HANDBOOK_COMPONENT_SECTIONS: Record<
       title: "Badges",
       description:
         "Cápsula de estado o tipo. Savia, bruma, aviso, peligro — no un color suelto.",
-      token: "RootsNaturePill · WorkspaceTableStatusBadge",
-      doText: "Un pill por estado. El copy es corto: Activo, Pendiente, Vencido.",
-      dontText: "No pintes el estado como un párrafo en color.",
+      token: "RootsNaturePill",
+      doText: "Un pill por estado u oferta. Tint 50/200/700 en luz filtrada; hoja + vivo 500 en sombra y éter.",
+      dontText: "No armes una cápsula suelta ni uses el Badge de shadcn.",
       status: "live",
     },
     {

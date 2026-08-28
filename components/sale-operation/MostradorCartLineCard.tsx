@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsNaturePill } from "@/components/rootsy-pill"
 import { CartLineScrollTarget } from "@/components/sale-operation/CartLineScrollTarget"
 import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
 import {
@@ -479,9 +480,9 @@ export function MostradorCartLineCard({
               </span>
             ) : null}
             {discountPillLabel ? (
-              <span className="inline-flex w-fit max-w-full rounded-full bg-[var(--rootsy-savia-200)] px-1.5 py-px text-[10px] font-bold leading-none text-[var(--rootsy-savia-900)]">
+              <RootsNaturePill variant="savia" atmosphere="bruma">
                 {discountPillLabel}
-              </span>
+              </RootsNaturePill>
             ) : null}
           </span>
         ) : null}

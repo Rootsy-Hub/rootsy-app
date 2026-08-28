@@ -388,18 +388,21 @@ function TablesPatternSpecimen({ extra }: { extra: string }) {
 
 function PageDockPatternSpecimen({ extra }: { extra: string }) {
   const isLoading = extra === "Cargando"
+  const isFetchingMore = extra === "Trayendo"
   const isEmpty = extra === "Vacío"
 
   return (
-    <DataWorkspaceTableInfinitePageDock
-      listFetching={isLoading}
-      loadedCount={isEmpty ? 0 : 75}
-      totalCount={isEmpty ? 0 : 167}
-      startPage={1}
-      totalPages={isEmpty ? 1 : 9}
-      loadedPages={isEmpty ? new Set() : new Set([1, 2, 3, 4])}
-      onPageJump={noop}
-    />
+    <div data-fetching-more={isFetchingMore ? "" : undefined}>
+      <DataWorkspaceTableInfinitePageDock
+        listFetching={isLoading}
+        loadedCount={isEmpty ? 0 : 75}
+        totalCount={isEmpty ? 0 : 167}
+        startPage={1}
+        totalPages={isEmpty ? 1 : 9}
+        loadedPages={isEmpty ? new Set() : new Set([1, 2, 3, 4])}
+        onPageJump={noop}
+      />
+    </div>
   )
 }
 
@@ -728,6 +731,7 @@ export function HandbookPatternsView() {
                           items: [
                             { name: "Reposo" },
                             { name: "Cargando" },
+                            { name: "Trayendo" },
                             { name: "Vacío" },
                           ],
                         },

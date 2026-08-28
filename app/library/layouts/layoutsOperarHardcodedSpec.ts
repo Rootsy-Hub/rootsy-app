@@ -526,18 +526,20 @@ export function layoutsOperarProductCardProposalGridShellClass(id: LayoutsOperar
 
   if (id === "losa-sombra") {
     return cn(
-      "layouts-operar-product-card group relative h-[256px] w-full overflow-hidden rounded-xl text-left",
+      "layouts-operar-product-card group relative box-border grid h-[256px] w-full",
+      "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip rounded-[12px] p-0 text-left",
       "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-800)]",
       "shadow-none transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_38%,var(--rootsy-sombra-700))]",
     )
   }
 
   return cn(
-    "layouts-operar-product-card group relative h-[256px] w-full overflow-hidden rounded-2xl text-left",
+    "layouts-operar-product-card group relative box-border grid h-[256px] w-full",
+    "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip rounded-[16px] p-0 text-left",
     "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
     "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_28%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
-    "transition-[box-shadow,transform,ring-color] duration-200 ease-out hover:-translate-y-0.5",
+    "transition-[box-shadow,ring-color] duration-200 ease-out",
     "hover:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_32%,transparent)]",
     "hover:shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-400)_40%,transparent)]",
   )
@@ -548,18 +550,20 @@ export function layoutsOperarProductCardProposalListShellClass(id: LayoutsOperar
 
   if (id === "losa-sombra") {
     return cn(
-      "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-xl text-left",
+      "layouts-operar-product-card group relative box-border flex min-h-[80px] w-full items-stretch",
+      "overflow-clip rounded-[12px] p-0 text-left",
       "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-800)]",
       "shadow-none transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_38%,var(--rootsy-sombra-700))]",
     )
   }
 
   return cn(
-    "layouts-operar-product-card group relative flex min-h-[80px] w-full items-stretch overflow-hidden rounded-2xl text-left",
+    "layouts-operar-product-card group relative box-border flex min-h-[80px] w-full items-stretch",
+    "overflow-clip rounded-[16px] p-0 text-left",
     "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
     "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_28%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
-    "transition-[box-shadow,transform,ring-color] duration-200 ease-out hover:-translate-y-0.5",
+    "transition-[box-shadow,ring-color] duration-200 ease-out",
     "hover:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_32%,transparent)]",
   )
 }
@@ -572,7 +576,7 @@ export function layoutsOperarProductCardProposalMediaClass(
     return variant === "grid" ? layoutsOperarProductCardMediaClass : layoutsOperarProductCardListMediaClass
   }
 
-  const base = "relative shrink-0 overflow-hidden"
+  const base = "relative shrink-0 overflow-clip"
 
   if (variant === "list") {
     return cn(base, "h-20 w-20")

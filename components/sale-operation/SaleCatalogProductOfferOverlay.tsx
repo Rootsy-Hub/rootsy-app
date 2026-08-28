@@ -1,8 +1,7 @@
 "use client"
 
-import { saleOpFmt, saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { RootsNaturePill } from "@/components/rootsy-pill"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 
 export function saleCatalogDiscountPercent(
   precioOriginal: number | null | undefined,
@@ -35,29 +34,19 @@ export function SaleCatalogProductOfferOverlay({
     >
       {descuentoPct != null ? (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span
-            className={cn(
-              saleOpImporteBaseClass,
-              "inline-flex h-6 items-center justify-center rounded-md bg-[var(--rootsy-sombra-900)] px-2 text-[10px] leading-none font-bold tracking-wider text-[var(--rootsy-savia-600)] uppercase shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-600)_45%,transparent)]",
-            )}
-          >
+          <RootsNaturePill variant="sombra" atmosphere="sombra">
             −{descuentoPct}%
-          </span>
+          </RootsNaturePill>
           {precioOriginal != null ? (
-            <span
-              className={cn(
-                saleOpImporteBaseClass,
-                "rounded-md bg-[var(--rootsy-sombra-800)] px-1.5 py-0.5 text-xs font-semibold text-[var(--rootsy-sombra-300)] line-through shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_40%,transparent)]",
-              )}
-            >
+            <RootsNaturePill variant="sombraMuted" atmosphere="sombra" strike>
               {saleOpFmt.format(precioOriginal)}
-            </span>
+            </RootsNaturePill>
           ) : null}
         </div>
       ) : (
-        <Badge className="w-fit bg-[var(--rootsy-sombra-900)] px-2 py-0.5 text-[10px] font-bold tracking-wider text-[var(--rootsy-savia-600)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-600)_45%,transparent)]">
+        <RootsNaturePill variant="sombra" atmosphere="sombra">
           OFERTA
-        </Badge>
+        </RootsNaturePill>
       )}
     </div>
   )

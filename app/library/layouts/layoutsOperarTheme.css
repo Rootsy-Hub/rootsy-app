@@ -354,26 +354,20 @@
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"],
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card:not([data-proposal]),
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:not([data-proposal]) {
-  border-radius: var(--radius-xlarge);
+  border-radius: var(--radius-xlarge, 16px);
   box-shadow: none;
   background: var(--rootsy-sombra-800);
   border-color: var(--layouts-operar-border-dark-card);
-  transform: translateY(0);
-  transition:
-    transform 200ms ease-out,
-    box-shadow 200ms ease-out,
-    border-color 200ms ease-out;
+  transform: none;
+  translate: none;
+  transition: border-color 200ms ease-out;
 }
 
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"]:hover,
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"]:hover,
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card:not([data-proposal]):hover,
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:not([data-proposal]):hover {
-  transform: translateY(-2px);
   border-color: var(--rootsy-sombra-700);
-  box-shadow:
-    0 6px 16px color-mix(in srgb, var(--rootsy-negro) 62%, transparent),
-    0 1px 0 color-mix(in srgb, var(--rootsy-sombra-50) 5%, transparent);
 }
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item:hover,

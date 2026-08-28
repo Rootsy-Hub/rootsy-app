@@ -10,7 +10,7 @@ const LIST_CARD_COUNT = 4
 const CARD_RADIUS_PX = 16
 
 const cardSurfaceStyle = {
-  overflow: "hidden" as const,
+  overflow: "clip" as const,
   borderRadius: CARD_RADIUS_PX,
   background: "var(--rootsy-sombra-800)",
   borderColor: "var(--layouts-operar-border-dark-card)",

@@ -13,10 +13,7 @@ import {
 } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
-import {
-  DataWorkspaceTableMoney,
-  WorkspaceTableStatusBadge,
-} from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { DataWorkspaceTableMoney } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import {
@@ -1596,61 +1593,74 @@ function SortableLive({ withActions }: { withActions: boolean }) {
   )
 }
 
+const PILL_SAMPLE: Record<string, string> = {
+  savia: "Activo",
+  bruma: "Tipo",
+  brumaMuted: "Inactivo",
+  info: "En curso",
+  warning: "Pendiente",
+  danger: "Vencido",
+  saviaSolid: "−10%",
+  sombra: "−10%",
+  sombraMuted: "$ 4.400",
+}
+
 function BadgesFinalSpecimen() {
   return (
-    <Stack>
-      <LiveView
-        background={BRUMA}
-        componentName="RootsNaturePill"
-        componentProperties={[
-          { name: "variant", values: ["savia", "bruma", "brumaMuted", "warning", "danger", "saviaSolid"] },
-        ]}
-        variants={[
-          { name: "savia" },
-          { name: "bruma" },
-          { name: "brumaMuted" },
-          { name: "warning" },
-          { name: "danger" },
-          { name: "saviaSolid" },
-        ]}
-        render={(variant) => (
-          <RootsNaturePill
-            variant={
-              variant as
-                | "savia"
-                | "bruma"
-                | "brumaMuted"
-                | "warning"
-                | "danger"
-                | "saviaSolid"
-            }
-          >
-            {variant === "savia" ? "Activo" : variant === "warning" ? "Pendiente" : variant === "danger" ? "Vencido" : "Tipo"}
-          </RootsNaturePill>
-        )}
-      />
-      <LiveView
-        background={BRUMA}
-        componentName="WorkspaceTableStatusBadge"
-        componentProperties={[
-          { name: "status", values: ["activo", "pendiente", "inactivo", "vencido", "info"] },
-        ]}
-        variants={[
-          { name: "activo" },
-          { name: "pendiente" },
-          { name: "inactivo" },
-          { name: "vencido" },
-          { name: "info" },
-        ]}
-        render={(variant) => (
-          <WorkspaceTableStatusBadge
-            status={variant as "activo" | "pendiente" | "inactivo" | "vencido" | "info"}
-          >
-            {variant}
-          </WorkspaceTableStatusBadge>
-        )}
-      />
-    </Stack>
+    <LiveView
+      background={BRUMA}
+      componentName="RootsNaturePill"
+      componentProperties={[
+        {
+          name: "variant",
+          values: [
+            "savia",
+            "bruma",
+            "brumaMuted",
+            "info",
+            "warning",
+            "danger",
+            "saviaSolid",
+            "sombra",
+            "sombraMuted",
+          ],
+        },
+        { name: "atmosphere", values: ["bruma", "sombra", "eter"] },
+        { name: "strike", values: ["true", "false"] },
+      ]}
+      variants={[
+        { name: "savia" },
+        { name: "bruma" },
+        { name: "brumaMuted" },
+        { name: "info" },
+        { name: "warning" },
+        { name: "danger" },
+        { name: "saviaSolid" },
+        { name: "sombra" },
+        { name: "sombraMuted" },
+      ]}
+      extras={[{ items: [{ name: "sin tachado" }, { name: "tachado" }] }]}
+      render={(variant, extras, context) => (
+        <RootsNaturePill
+          variant={
+            variant as
+              | "savia"
+              | "bruma"
+              | "brumaMuted"
+              | "info"
+              | "warning"
+              | "danger"
+              | "saviaSolid"
+              | "sombra"
+              | "sombraMuted"
+          }
+          atmosphere={buttonAtmosphereFromWorld(context.worldId)}
+          strike={extras[0] === "tachado"}
+        >
+          {PILL_SAMPLE[variant] ?? variant}
+        </RootsNaturePill>
+      )}
+    />
   )
 }
 

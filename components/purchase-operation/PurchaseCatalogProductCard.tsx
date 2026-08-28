@@ -4,7 +4,6 @@ import {
   layoutsOperarProductCardProposalAddClass,
   layoutsOperarProductCardProposalBodyClass,
   layoutsOperarProductCardProposalDescClass,
-  layoutsOperarProductCardProposalGridInnerClass,
   layoutsOperarProductCardProposalGridShellClass,
   layoutsOperarProductCardProposalListShellClass,
   layoutsOperarProductCardProposalTriggerClass,
@@ -117,21 +116,19 @@ export function PurchaseCatalogProductCard({
         className={layoutsOperarProductCardProposalGridShellClass(proposalId)}
         data-proposal={proposalId}
       >
-        <div className={layoutsOperarProductCardProposalGridInnerClass(proposalId)}>
-          {media}
-          <div className={layoutsOperarProductCardProposalTextClass(proposalId)}>
-            <h3 className={layoutsOperarProductCardProposalTitleClass(proposalId)}>
-              {product.nombre}
-            </h3>
-            <p className={layoutsOperarProductCardProposalDescClass(proposalId)}>
-              {product.descripcion}
-            </p>
-          </div>
-          <div className={layoutsOperarProductCardProposalPriceRowClass(proposalId)}>
-            <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
-              {purchaseCatalogCostHint(product)}
-            </span>
-          </div>
+        {media}
+        <div className={layoutsOperarProductCardProposalTextClass(proposalId)}>
+          <h3 className={layoutsOperarProductCardProposalTitleClass(proposalId)}>
+            {product.nombre}
+          </h3>
+          <p className={layoutsOperarProductCardProposalDescClass(proposalId)}>
+            {product.descripcion}
+          </p>
+        </div>
+        <div className={layoutsOperarProductCardProposalPriceRowClass(proposalId)}>
+          <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
+            {purchaseCatalogCostHint(product)}
+          </span>
         </div>
       </div>
     </button>
