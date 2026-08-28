@@ -1,3 +1,5 @@
+"use client"
+
 import type { HandbookColorFamily } from "@/app/handbook/color/handbookColorPalettes"
 import {
   HANDBOOK_ATMOSPHERES,

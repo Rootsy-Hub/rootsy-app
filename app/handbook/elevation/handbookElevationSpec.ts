@@ -14,6 +14,7 @@ import {
   ROOTSY_ELEVATION_Z_INDEX,
   SUNKEN_VS_NEUTRAL,
 } from "@/app/library/elevation/rootsyElevationSystem"
+import { rootsyColorHex } from "@/lib/design-system/tokens/colors"
 
 export const HANDBOOK_ELEVATION_LEVELS = ROOTSY_ELEVATION_LEVELS
 export const HANDBOOK_ELEVATION_SHADOWS = ROOTSY_ELEVATION_SHADOW_TOKENS
@@ -57,20 +58,31 @@ export const HANDBOOK_ELEVATION_ATMOSPHERES = [
   {
     id: "sombra" as const,
     name: "Sotobosque · Sombra",
-    stage: "var(--rootsy-sombra-950)",
+    stage: "var(--rootsy-sombra-900)",
     themeClass: "rootsy-theme-pos",
     headingId: "sotobosque-sombra",
     sunkenVs: {
-      sunken: "Opaco — negro o sombra 950. El pozo sobre la hoja 800. Agrupa canvas, rail y toolbox.",
+      sunken: "Opaco — sombra 950. El pozo sobre el suelo 900. Agrupa canvas, rail y toolbox.",
       neutral: "Transparente — hereda el dosel. Usar cuando el fondo debe continuar la pila.",
     },
   },
 ] as const
 
-const LIGHT_SHADOW_RAISED = "0 1px 2px rgb(5 8 7 / 0.07), 0 4px 14px rgb(5 8 7 / 0.08)"
-const LIGHT_SHADOW_OVERLAY = "0 22px 70px -18px rgb(5 8 7 / 0.28)"
-const DARK_SHADOW_RAISED = "0 1px 2px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.45)"
-const DARK_SHADOW_OVERLAY = "0 24px 80px -16px rgb(0 0 0 / 0.65)"
+function hexToRgbChannels(hex: string): string {
+  const h = hex.replace("#", "")
+  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)).join(" ")
+}
+
+function elevationShadowRaised(rgb: string) {
+  return `0 1px 2px rgb(${rgb} / 0.07), 0 4px 14px rgb(${rgb} / 0.08)`
+}
+
+function elevationShadowOverlay(rgb: string) {
+  return `0 22px 70px -18px rgb(${rgb} / 0.28)`
+}
+
+const BRUMA_SHADOW_RGB = "5 8 7"
+const SOMBRA_50_RGB = hexToRgbChannels(rootsyColorHex("sombra", "50"))
 
 export const HANDBOOK_ELEVATION_LEVEL_SURFACES: Record<
   HandbookElevationAtmosphereId,
@@ -85,27 +97,27 @@ export const HANDBOOK_ELEVATION_LEVEL_SURFACES: Record<
     },
     raised: {
       background: "var(--rootsy-blanco)",
-      boxShadow: LIGHT_SHADOW_RAISED,
+      boxShadow: elevationShadowRaised(BRUMA_SHADOW_RGB),
     },
     overlay: {
       background: "var(--rootsy-blanco)",
-      boxShadow: LIGHT_SHADOW_OVERLAY,
+      boxShadow: elevationShadowOverlay(BRUMA_SHADOW_RGB),
     },
   },
   sombra: {
-    sunken: { background: "var(--rootsy-negro)" },
-    default: { background: "var(--rootsy-sombra-800)" },
+    sunken: { background: "var(--rootsy-sombra-950)" },
+    default: { background: "var(--rootsy-sombra-900)" },
     "default-bordered": {
-      background: "var(--rootsy-negro)",
-      border: "1px solid var(--rootsy-bruma-800)",
+      background: "var(--rootsy-sombra-900)",
+      border: "1px solid var(--rootsy-sombra-800)",
     },
     raised: {
-      background: "var(--rootsy-sombra-800)",
-      boxShadow: DARK_SHADOW_RAISED,
+      background: "var(--rootsy-negro)",
+      boxShadow: elevationShadowRaised(SOMBRA_50_RGB),
     },
     overlay: {
-      background: "var(--rootsy-sombra-800)",
-      boxShadow: DARK_SHADOW_OVERLAY,
+      background: "var(--rootsy-negro)",
+      boxShadow: elevationShadowOverlay(SOMBRA_50_RGB),
     },
   },
 }
@@ -120,26 +132,10 @@ export const HANDBOOK_ELEVATION_LEVEL_COPY: Record<
       { usage: level.usage, pairRule: level.pairRule },
     ]),
   ),
-  sombra: {
-    sunken: {
-      usage: "Pozo negro. Canvas, rail y toolbox. Solo sobre default oscuro.",
-      pairRule: "Sin sombra. No usar sobre raised u overlay.",
-    },
-    default: {
-      usage: "Hoja 800. Toolbar, panel y slots donde se opera.",
-      pairRule: "Tarjetas planas: sumar borde bruma 800.",
-    },
-    "default-bordered": {
-      usage: "Tarjetas de producto, slots y listas densas.",
-      pairRule: "1px border bruma 800 · sin shadow.",
-    },
-    raised: {
-      usage: "Cards con foco, hover en entidades, una zona que se levanta.",
-      pairRule: "Siempre con elevation.shadow.raised.",
-    },
-    overlay: {
-      usage: "Diálogos, menús, toolbars flotantes sobre el dosel.",
-      pairRule: "Siempre con elevation.shadow.overlay.",
-    },
-  },
+  sombra: Object.fromEntries(
+    HANDBOOK_ELEVATION_LEVELS.map((level) => [
+      level.id,
+      { usage: level.usage, pairRule: level.pairRule },
+    ]),
+  ),
 }

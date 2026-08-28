@@ -8,14 +8,16 @@ import {
 } from "@/app/library/libraryColorTheme"
 import { rootsySpacePx } from "@/lib/design-system"
 import "@/app/library/layouts/rootsyLayoutsEarthFloor.css"
+import "@/app/library/layouts/layoutsOperarCheckoutFloor.css"
 import {
   rootsyLayoutsEarthFloorBandClass,
   rootsyLayoutsEarthFloorBorderClass,
-  rootsyLayoutsEarthFloorShadowClass,
   rootsyLayoutsEarthFloorSlotClass,
   rootsyLayoutsEarthFloorSlotConfiguredClass,
   rootsyLayoutsEarthFloorSlotIconClass,
+  rootsyLayoutsEarthFloorSlotLabelClass,
   rootsyLayoutsEarthFloorSlotMetaClass,
+  rootsyLayoutsEarthFloorSlotValueClass,
   rootsyLayoutsEarthFloorSurfaceClass,
 } from "@/app/library/layouts/rootsyLayoutsEarthFloor"
 import { ROOTSY_RADIUS_TOKENS } from "@/app/library/radius/rootsyRadiusSystem"
@@ -25,11 +27,11 @@ import { cn } from "@/lib/utils"
 export const layoutsOperarTicketActionCircleRadius =
   ROOTSY_RADIUS_TOKENS.find((item) => item.id === "full")!.value
 
-/** Descartar · space.600. Cobrar · space.800 — el umbral de la venta. */
-export const layoutsOperarTicketActionDiscardSizePx = rootsySpacePx("600")
-export const layoutsOperarTicketActionConfirmSizePx = rootsySpacePx("800")
+/** Descartar · space.500 (40). Cobrar · 56 — caben en el umbral de 79px. */
+export const layoutsOperarTicketActionDiscardSizePx = rootsySpacePx("500")
+export const layoutsOperarTicketActionConfirmSizePx = 56
 export const layoutsOperarTicketActionDiscardIconPx = rootsySpacePx("300")
-export const layoutsOperarTicketActionConfirmIconPx = rootsySpacePx("400")
+export const layoutsOperarTicketActionConfirmIconPx = rootsySpacePx("300")
 
 /** Rail categorías — w-64 · 4× space.800 (256px) · paridad Library / Estadísticas / Ajustes. */
 export const LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX = rootsySpacePx("800") * 4
@@ -81,6 +83,59 @@ export const layoutsOperarBodyMainGridClass = cn(
   "md:grid md:[grid-template-columns:var(--layouts-operar-grid-cols)]",
   "md:[grid-template-rows:minmax(0,1fr)]",
 )
+
+/** Desktop con piso de checkout — escena + umbral a ancho completo. */
+export const layoutsOperarBodyMainGridWithFloorClass = cn(
+  layoutsOperarBodyMainGridClass,
+  "md:[grid-template-rows:minmax(0,1fr)_var(--layouts-operar-checkout-floor-h)]",
+)
+
+export const layoutsOperarCheckoutFloorRowClass = cn(
+  "max-md:hidden md:col-span-2 md:row-start-2 min-h-0",
+)
+
+export const layoutsOperarCheckoutFloorClass = "layouts-operar-checkout-floor"
+export const layoutsOperarCheckoutFloorProposalClass = "layouts-operar-checkout-floor-proposal"
+export const layoutsOperarCheckoutFloorStepsClass = "layouts-operar-checkout-floor-steps"
+export const layoutsOperarCheckoutFloorCloseClass = "layouts-operar-checkout-floor-close"
+export const layoutsOperarCheckoutFloorTotalClass = "layouts-operar-checkout-floor-total"
+export const layoutsOperarCheckoutFloorTotalLabelClass = cn(
+  "layouts-operar-checkout-floor-total-label rootsy-text-label",
+)
+export const layoutsOperarCheckoutFloorTotalAmountClass = cn(
+  "layouts-operar-checkout-floor-total-amount truncate rootsy-text-heading-small",
+)
+export const layoutsOperarCheckoutFloorConfirmClass =
+  "layouts-operar-checkout-floor-confirm"
+export const layoutsOperarCheckoutFloorClusterClass =
+  "layouts-operar-checkout-floor-cluster"
+export const layoutsOperarCheckoutFloorClusterCloseClass =
+  "layouts-operar-checkout-floor-cluster-close"
+export const layoutsOperarCheckoutFloorLeadClass =
+  "layouts-operar-checkout-floor-lead"
+export const layoutsOperarCheckoutFloorStepsClusterClass =
+  "layouts-operar-checkout-floor-steps-cluster"
+export const layoutsOperarCheckoutFloorOptionsClusterClass =
+  "layouts-operar-checkout-floor-options-cluster"
+export const layoutsOperarCheckoutFloorSavingsClass =
+  "layouts-operar-checkout-floor-savings"
+export const layoutsOperarCheckoutFloorSavingsLabelClass = cn(
+  "layouts-operar-checkout-floor-savings-label rootsy-text-label",
+)
+export const layoutsOperarCheckoutFloorSavingsAmountClass = cn(
+  "layouts-operar-checkout-floor-savings-amount rootsy-text-heading-xsmall",
+)
+
+export const layoutsOperarCheckoutPipelineClass = "layouts-operar-checkout-pipeline"
+export const layoutsOperarCheckoutPipelineNodeClass = "layouts-operar-checkout-pipeline-node"
+export const layoutsOperarCheckoutPipelineValueClass = cn(
+  "layouts-operar-checkout-pipeline-value rootsy-text-heading-xsmall",
+)
+export const layoutsOperarCheckoutFichaCopyClass = "layouts-operar-checkout-ficha-copy"
+export const layoutsOperarCheckoutFichaLineClass = cn(
+  "layouts-operar-checkout-ficha-line rootsy-text-heading-xsmall",
+)
+export const layoutsOperarCheckoutFaceClass = "layouts-operar-checkout-face"
 
 /** 1.1 Columna izquierda — catálogo (1.1.1) + toolbox (1.1.2). */
 export const layoutsOperarOperationColumnClass = cn(
@@ -144,7 +199,7 @@ export const layoutsOperarWireframeSummaryPanelClass = cn(
   "border-l border-[var(--layouts-operar-border-split)]",
 )
 
-/** Canvas productos — aire sombra-950. Cards negro encima. */
+/** Canvas productos — mismo 950 que el rail y las cards. */
 export const layoutsOperarCatalogCanvasClass = cn(
   "grid min-h-0 min-w-0 flex-1 bg-[var(--rootsy-sombra-950)]",
   "[grid-template-rows:var(--layouts-operar-catalog-rows)]",
@@ -204,7 +259,7 @@ export const layoutsOperarCatalogToolbarViewToggleButtonClass = cn(
 )
 
 export const layoutsOperarCatalogToolbarViewToggleButtonActiveClass =
-  "font-medium text-[var(--rootsy-savia-500)]"
+  "font-medium text-[var(--rootsy-savia-50)]"
 
 export const layoutsOperarCatalogToolbarViewToggleButtonIdleClass = cn(
   "text-[var(--rootsy-sombra-50)] opacity-45",
@@ -426,7 +481,7 @@ export const layoutsOperarCatalogEmptyHintClass =
   "mt-1 font-canopy text-xs leading-snug text-[color-mix(in_srgb,var(--rootsy-sombra-300)_88%,transparent)]"
 
 /** Skeleton catálogo — 2 tonos muy cercanos (negro base · bloque apenas más claro). */
-export const layoutsOperarCatalogSkeletonSurfaceClass = "bg-[var(--rootsy-negro)]"
+export const layoutsOperarCatalogSkeletonSurfaceClass = "bg-[var(--rootsy-sombra-950)]"
 
 export const layoutsOperarCatalogSkeletonGhostClass =
   "animate-pulse bg-[color-mix(in_srgb,var(--rootsy-sombra-700)_38%,var(--rootsy-sombra-800))]"
@@ -437,8 +492,9 @@ export const layoutsOperarCatalogSkeletonGhostClass =
  */
 export const layoutsOperarProductCardClass = cn(
   "layouts-operar-product-card group relative box-border grid h-[256px] w-full",
-  "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip rounded-[16px] p-0 text-left",
-  "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-negro)]",
+  "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip p-0 text-left",
+  "rounded-[length:var(--radius-xlarge,16px)]",
+  "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
 )
 
 /** @deprecated La grilla vive en el shell. `contents` no genera caja. */
@@ -450,10 +506,10 @@ export const layoutsOperarProductCardGridInnerClass = "contents"
  */
 export const layoutsOperarProductCardLiftClass = cn(
   "layouts-operar-product-card-lift group/lift relative top-0 z-0",
-  "transition-[top,box-shadow] duration-200 ease-out",
+  "rounded-[length:var(--radius-xlarge,16px)] shadow-none",
+  "transition-[top] duration-200 ease-out",
   "hover:-top-[2px] hover:z-[1]",
-  "hover:shadow-[0_6px_16px_color-mix(in_srgb,var(--rootsy-negro)_62%,transparent)]",
-  "disabled:hover:top-0 disabled:hover:z-0 disabled:hover:shadow-none",
+  "disabled:hover:top-0 disabled:hover:z-0",
 )
 
 export const layoutsOperarProductCardTriggerClass = cn(
@@ -464,8 +520,8 @@ export const layoutsOperarProductCardTriggerClass = cn(
 /** Tarjeta horizontal — vista lista · sale `modoVista === "lista"`. */
 export const layoutsOperarProductCardListClass = cn(
   "layouts-operar-product-card group relative box-border flex min-h-[80px] w-full items-stretch",
-  "overflow-clip rounded-[16px] p-0 text-left",
-  "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-negro)]",
+  "overflow-visible rounded-[length:var(--radius-xlarge,16px)] p-0 text-left",
+  "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
   layoutsOperarProductCardLiftClass,
 )
 
@@ -482,7 +538,7 @@ export const layoutsOperarProductCardListSkeletonShellClass = cn(
 )
 
 export const layoutsOperarProductCardListMediaClass =
-  "relative h-20 w-20 shrink-0 overflow-clip bg-[var(--layouts-operar-product-card-media-bg)]"
+  "layouts-operar-product-card-media relative h-20 w-20 shrink-0 overflow-clip bg-[var(--layouts-operar-product-card-media-bg)] rounded-l-[length:var(--radius-xlarge,16px)]"
 
 export const layoutsOperarProductCardGridTextClass =
   "min-h-0 overflow-hidden px-3 pt-3"
@@ -511,7 +567,7 @@ export const layoutsOperarCatalogArticleDemoScopeClass = cn(
 )
 
 export const layoutsOperarProductCardMediaClass =
-  "relative min-h-0 h-full w-full overflow-clip bg-[var(--layouts-operar-product-card-media-bg)]"
+  "layouts-operar-product-card-media relative min-h-0 h-full w-full overflow-clip bg-[var(--layouts-operar-product-card-media-bg)]"
 
 /** Foto — zoom 3% dentro del pozo; el clip del media es recto, sin radio. */
 export const layoutsOperarProductCardMediaPhotoClass = cn(
@@ -523,7 +579,7 @@ export const layoutsOperarProductCardMediaPhotoClass = cn(
 /** Superficie foto ausente — mismo fondo que la card, icono savia al centro. */
 export const layoutsOperarProductCardMediaEmptyStateClass = cn(
   "relative flex size-full items-center justify-center",
-  "bg-[var(--rootsy-negro)]",
+  "bg-[var(--rootsy-sombra-950)]",
 )
 
 export const layoutsOperarProductCardMediaEmptyStateIconClass =
@@ -536,7 +592,7 @@ export const layoutsOperarProductCardTitleClass =
   "rootsy-text-heading-xsmall line-clamp-2 text-[var(--layouts-operar-product-card-title)]"
 
 export const layoutsOperarProductCardDescClass =
-  "rootsy-text-meta line-clamp-2 text-[var(--layouts-operar-product-card-desc)]"
+  "line-clamp-2 max-w-none font-[family-name:var(--rootsy-font-reading)] text-[length:var(--rootsy-text-body-small-size)] leading-[var(--rootsy-text-body-small-lh)] font-normal text-[var(--layouts-operar-product-card-desc)]"
 
 export const layoutsOperarProductCardPriceClass =
   "layouts-operar-product-card-price rootsy-text-metric-small text-[var(--layouts-operar-product-card-price)]"
@@ -618,28 +674,27 @@ export const layoutsOperarStepContextBackButtonClass =
 /** Toolbox — fila 1.1.2 dentro de la columna operación. */
 export const layoutsOperarToolboxRowClass = "row-start-2 z-[1] min-h-0 shrink-0 overflow-visible"
 
-/** Banda toolbox aislada — altura mínima desde anatomía. */
+/** Banda interna — llena el piso de 79px (el borde superior vive en el floor). */
 export const layoutsOperarToolboxBandClass = cn(
-  "relative min-h-0 w-full",
-  "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
+  "relative h-full min-h-0 w-full overflow-hidden",
 )
 
-/** Piso del toolbox — banda 950 sobre el vacío negro. */
+/** Piso del toolbox — 79px, luz filtrada, hairline superior 200. */
 export const layoutsOperarToolboxFloorClass = cn(
-  "relative w-full overflow-visible",
+  "relative box-border h-[79px] min-h-[79px] max-h-[79px] w-full overflow-hidden",
   rootsyLayoutsEarthFloorBandClass,
 )
 
-/** Grid interno toolbox — superficie en banda padre (zone style o bar surface). */
+/** Grid interno toolbox — 4 cols, separador bruma 200. */
 export const layoutsOperarToolboxBarGridClass = cn(
-  "box-border grid h-full min-h-0 grid-cols-2 lg:grid-cols-4",
-  "gap-[var(--layouts-operar-grid-gap,1rem)] p-[var(--layouts-operar-grid-gap,1rem)]",
+  "box-border grid h-full min-h-0 w-full grid-cols-4",
+  "divide-x divide-[var(--rootsy-bruma-200)] px-0 py-0",
 )
 
 /** Grid toolbox wizard de 3 pasos (servicio · configuración · pago). */
 export const layoutsOperarToolboxBarGrid3Class = cn(
-  "box-border grid h-full min-h-0 grid-cols-3",
-  "gap-[var(--layouts-operar-grid-gap,1rem)] p-[var(--layouts-operar-grid-gap,1rem)]",
+  "box-border grid h-full min-h-0 w-full grid-cols-3",
+  "divide-x divide-[var(--rootsy-bruma-200)] px-0 py-0",
 )
 
 /** Shell sombra-950 — demos toolbox aisladas sobre fondo claro de la doc. */
@@ -648,12 +703,11 @@ export const layoutsOperarToolboxDemoShellClass = cn(
   "overflow-hidden",
 )
 
-/** Barra toolbox — tierra empapada, paridad footer de tablas. */
+/** Barra toolbox — luz filtrada 100 + hairlines 200. */
 export const layoutsOperarToolboxBarClass = cn(
   layoutsOperarToolboxBarGridClass,
   rootsyLayoutsEarthFloorBorderClass,
   rootsyLayoutsEarthFloorSurfaceClass,
-  rootsyLayoutsEarthFloorShadowClass,
 )
 
 /** Barra toolbox wizard de 3 pasos. */
@@ -661,34 +715,53 @@ export const layoutsOperarToolboxBar3Class = cn(
   layoutsOperarToolboxBarGrid3Class,
   rootsyLayoutsEarthFloorBorderClass,
   rootsyLayoutsEarthFloorSurfaceClass,
-  rootsyLayoutsEarthFloorShadowClass,
 )
 
-/** Anillo savia — focus teclado y paso activo en toolbox wizard. */
+/** Anillo savia inset — focus teclado y paso activo, sin desbordar los 79px. */
 export const layoutsOperarToolboxSlotFocusRingClass =
-  "ring-2 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] ring-offset-2 ring-offset-[var(--rootsy-sombra-950)]"
+  "shadow-[inset_0_0_0_2px_var(--rootsy-savia-500)]"
 
 export function layoutsOperarToolboxSlotClass(configured: boolean, active = false) {
   return cn(
     rootsyLayoutsEarthFloorSlotClass,
-    "group flex h-full min-h-[var(--layouts-operar-toolbox-slot-min-h)] w-full items-center gap-2.5 rounded-2xl px-2.5 py-2 text-left sm:min-h-[var(--layouts-operar-toolbox-slot-min-h-sm)] sm:gap-3 sm:px-3",
+    "group flex h-full min-h-0 w-full min-w-0 items-center gap-3 rounded-none px-4 py-0 text-left",
     "focus-visible:outline-none",
     configured && rootsyLayoutsEarthFloorSlotConfiguredClass,
-    active
-      ? layoutsOperarToolboxSlotFocusRingClass
-      : "focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-sombra-950)]",
+    active && layoutsOperarToolboxSlotFocusRingClass,
   )
 }
 
+/** Dato del slot: valor cargado, o raya si está vacío. El título vive en el label. */
+export function layoutsOperarToolboxSlotLine(
+  _title: string,
+  value: string,
+  configured: boolean,
+) {
+  return configured ? value : "—"
+}
+
+export const layoutsOperarToolboxSlotCopyClass =
+  "flex min-w-0 flex-1 flex-col justify-center gap-0.5"
+
+export const layoutsOperarToolboxSlotLabelClass = cn(
+  rootsyLayoutsEarthFloorSlotLabelClass,
+  "block truncate rootsy-text-label",
+)
+
+export const layoutsOperarToolboxSlotLineClass = cn(
+  rootsyLayoutsEarthFloorSlotValueClass,
+  "min-w-0 truncate rootsy-text-heading-xsmall",
+)
+
 export const layoutsOperarToolboxSlotMetaClass = cn(
   rootsyLayoutsEarthFloorSlotMetaClass,
-  "mt-0.5 block truncate rootsy-text-meta",
+  "block truncate rootsy-text-meta",
 )
 
 export function layoutsOperarToolboxIconWrapClass(_configured: boolean) {
   return cn(
     rootsyLayoutsEarthFloorSlotIconClass,
-    "flex size-10 shrink-0 items-center justify-center rounded-lg",
+    "flex size-9 shrink-0 items-center justify-center",
   )
 }
 
@@ -763,23 +836,33 @@ export const layoutsOperarTicketScrollColumnClass = cn(
 )
 
 export const layoutsOperarSummaryHeaderRowClass =
-  "flex shrink-0 items-center justify-between gap-2 bg-[var(--rootsy-blanco)] px-3 py-2"
+  "flex shrink-0 items-center justify-between gap-2 bg-[var(--rootsy-bruma-100)] px-3 py-2"
 
 export const layoutsOperarSummaryCartRowClass =
-  "relative flex min-h-0 flex-col bg-[var(--rootsy-blanco)]"
+  "relative flex min-h-0 flex-col bg-[var(--rootsy-bruma-100)]"
 
 export const layoutsOperarSummaryActionsRowClass = cn(
-  "row-start-2 grid shrink-0 grid-cols-2 overflow-hidden",
-  "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-100)]",
-  "[height:var(--layouts-operar-ticket-actions-h)]",
+  "layouts-operar-ticket-actions row-start-2 grid shrink-0 grid-cols-2 overflow-hidden",
+  "box-border border-t border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-100)]",
+  "h-[var(--layouts-operar-ticket-actions-h)] min-h-[var(--layouts-operar-ticket-actions-h)]",
+  "md:-ml-px md:w-[calc(100%+1px)]",
 )
 
-/** 1.2.3 — umbral circular Descartar · Pedido/Mesa · Comandas · Cobrar. */
+/** 1.2.3 — umbral luz filtrada: total · Descartar · Cobrar. */
 export const layoutsOperarTicketCircleActionsRowClass = cn(
-  "row-start-2 flex shrink-0 items-center justify-center",
-  "gap-[var(--rootsy-space-300)]",
-  "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-100)]",
-  "[height:var(--layouts-operar-ticket-actions-h)]",
+  "layouts-operar-ticket-actions row-start-2 flex shrink-0 items-center overflow-hidden",
+  "box-border border-t border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-100)]",
+  "h-[var(--layouts-operar-ticket-actions-h)] min-h-[var(--layouts-operar-ticket-actions-h)] max-h-[var(--layouts-operar-ticket-actions-h)]",
+  "md:-ml-px md:w-[calc(100%+1px)]",
+)
+
+/** Interior del umbral — cifra de cierre a la izquierda, acciones a la derecha. */
+export const layoutsOperarTicketUmbralInnerClass =
+  "grid h-full w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4"
+
+export const layoutsOperarTicketUmbralTotalClass = cn(
+  "min-w-0 truncate tabular-nums rootsy-text-heading-small",
+  "text-[var(--rootsy-bruma-900)]",
 )
 
 /** 1.2.3.1 — columna Descartar */
@@ -801,9 +884,9 @@ export const layoutsOperarSummaryTotalRowClass = cn(
   "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
 )
 
-/** Total — elevada blanca, mismo papel que las líneas. */
+/** Total — mismo plano bruma-100 que pedido y listado. */
 export const layoutsOperarSummaryTotalsSurfaceClass = cn(
-  "bg-[var(--rootsy-blanco)]",
+  "bg-[var(--rootsy-bruma-100)]",
   "text-[var(--rootsy-bruma-900)]",
 )
 
@@ -820,7 +903,7 @@ export const layoutsOperarSummaryCartCellClass = cn(
 
 /** Lista arriba. Crece si sobra aire para que el total se apoye abajo. */
 export const layoutsOperarTicketBlocksFloorClass =
-  "flex min-h-0 grow flex-col bg-[var(--rootsy-blanco)]"
+  "flex min-h-0 grow flex-col bg-[var(--rootsy-bruma-100)]"
 
 /** Total al piso si no hay scroll. Si hay overflow, queda al final de la lista. */
 export const layoutsOperarSummaryTotalsPlacementClass = "mt-auto shrink-0"
@@ -831,7 +914,7 @@ export const layoutsOperarSummaryTotalsCellClass = cn(
   layoutsOperarSummaryTotalsPlacementClass,
 )
 
-export const layoutsOperarSummaryCartListSurfaceClass = "bg-[var(--rootsy-blanco)]"
+export const layoutsOperarSummaryCartListSurfaceClass = "bg-[var(--rootsy-bruma-100)]"
 
 export const layoutsOperarSummaryCartHeadingClass =
   "text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--layouts-operar-light-cart-heading)]"

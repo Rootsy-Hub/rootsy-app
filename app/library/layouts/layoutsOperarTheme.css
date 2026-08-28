@@ -9,15 +9,19 @@
 
 @import "./rootsyLayoutsEarthFloor.css";
 
-/* Rail categorías — mismo --color-shell que library-sidebar (Estadísticas / Ajustes).
- * handbook-rail pinta border-color con --color-borde (sombra-400) e !important:
- * acá se pisa a sombra-800, la misma costura que canvas / toolbar / toolbox. */
+/* Rail categorías — piso 950, sin sombra. */
 .rootsy-theme-pos .library-sidebar,
 .rootsy-theme-pos .handbook-rail {
-  --color-shell: var(--rootsy-sombra-800);
-  --color-borde: var(--rootsy-sombra-700);
-  background-color: var(--rootsy-sombra-800) !important;
-  border-color: var(--rootsy-sombra-700) !important;
+  --color-shell: var(--rootsy-sombra-950);
+  --color-borde: var(--rootsy-sombra-800);
+  --library-nav-label: var(--rootsy-sombra-400);
+  --library-nav-text: var(--rootsy-sombra-300);
+  --library-nav-text-hover: var(--rootsy-sombra-50);
+  --library-nav-text-active: var(--rootsy-savia-500);
+  z-index: 1;
+  background-color: var(--rootsy-sombra-950) !important;
+  border-color: var(--rootsy-sombra-800) !important;
+  box-shadow: none;
 }
 
 .rootsy-theme-pos.layouts-operar-body,
@@ -25,13 +29,15 @@
   /* Rail catálogo — tokens legacy (el nav reutiliza library-nav) */
   --layouts-operar-rail-section-label: var(--rootsy-sombra-400);
   --layouts-operar-rail-item-text: var(--rootsy-sombra-300);
+  --library-nav-text: var(--rootsy-sombra-300);
+  --library-nav-label: var(--rootsy-sombra-400);
   --layouts-operar-rail-item-text-hover: var(--rootsy-sombra-50);
-  --layouts-operar-rail-item-text-selected: var(--rootsy-savia-950);
-  --layouts-operar-rail-item-hover: color-mix(in srgb, var(--rootsy-sombra-900) 48%, transparent);
-  --layouts-operar-rail-item-selected: var(--rootsy-savia-500);
-  --layouts-operar-rail-item-border: color-mix(in srgb, var(--rootsy-sombra-900) 80%, transparent);
-  --layouts-operar-rail-accent: var(--rootsy-sombra-50);
-  --layouts-operar-rail-focus-ring: color-mix(in srgb, var(--rootsy-savia-400) 45%, transparent);
+  --layouts-operar-rail-item-text-selected: var(--rootsy-sombra-50);
+  --layouts-operar-rail-item-hover: var(--rootsy-sombra-800);
+  --layouts-operar-rail-item-selected: var(--rootsy-sombra-800);
+  --layouts-operar-rail-item-border: transparent;
+  --layouts-operar-rail-accent: var(--rootsy-savia-600);
+  --layouts-operar-rail-focus-ring: color-mix(in srgb, var(--rootsy-savia-600) 28%, transparent);
   --layouts-operar-rail-promo-selected: color-mix(
     in srgb,
     var(--rootsy-sombra-800) 72%,
@@ -79,15 +85,21 @@
   --layouts-operar-footer-icon-configured-bg: color-mix(in srgb, var(--rootsy-savia-500) 72%, var(--rootsy-savia-700));
   --layouts-operar-footer-icon-configured-text: var(--rootsy-savia-950);
 
-  /* Un solo trazo: border. El inset lo tapa la foto y el borde se ve distinto. */
   --layouts-operar-product-card-shadow: none;
   --layouts-operar-product-card-shadow-hover: none;
+  --layouts-operar-product-card-shadow-pressed: none;
   --layouts-operar-product-card-shadow-selected: none;
   --layouts-operar-product-card-title: var(--rootsy-sombra-50);
   --layouts-operar-product-card-desc: var(--rootsy-sombra-300);
   --layouts-operar-product-card-price: var(--layouts-operar-product-card-title);
   --layouts-operar-product-card-price-hover: var(--layouts-operar-product-card-title);
-  --layouts-operar-product-card-media-bg: var(--rootsy-negro);
+  --layouts-operar-product-card-media-bg: var(--rootsy-sombra-950);
+  --layouts-operar-product-card-media-veil: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--rootsy-sombra-950) 52%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-sombra-950) 18%, transparent) 46%,
+    transparent 78%
+  );
 
   /* Form controls dark — paridad catalog-toolbar-control */
   --layouts-operar-form-dark-surface: color-mix(in srgb, var(--rootsy-sombra-950) 55%, transparent);
@@ -227,17 +239,17 @@
 }
 
 /**
- * Pedido — velo sobre blanco. El blur se queda; el tinte es blanco, no bruma-50.
+ * Pedido — velo sobre bruma-100. El blur se queda; el tinte es el mismo plano.
  */
 .layouts-operar-ticket-header-frost {
-  background-color: color-mix(in srgb, var(--rootsy-blanco) 62%, transparent);
+  background-color: color-mix(in srgb, var(--rootsy-bruma-100) 62%, transparent);
   -webkit-backdrop-filter: blur(8px) saturate(1.06);
   backdrop-filter: blur(8px) saturate(1.06);
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .layouts-operar-ticket-header-frost {
-    background-color: var(--rootsy-blanco);
+    background-color: var(--rootsy-bruma-100);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -247,12 +259,12 @@
   scrollbar-gutter: stable;
 }
 
-/* Total del pedido — elevada blanca, mismo papel que las líneas. */
+/* Total del pedido — mismo plano bruma-100 que pedido y listado. */
 .rootsy-nature-palette .rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
 .rootsy-theme-pos .layouts-operar-body .layouts-operar-summary-totals,
 .layouts-operar-ticket-shell .layouts-operar-summary-totals {
-  background: var(--rootsy-blanco);
+  background: var(--rootsy-bruma-100);
   color: var(--rootsy-bruma-900);
 }
 
@@ -286,10 +298,17 @@
 }
 
 
+.rootsy-theme-pos.layouts-operar-body .library-nav-group-label,
+.rootsy-theme-pos .layouts-operar-body .library-nav-group-label,
+.rootsy-theme-pos .library-sidebar .library-nav-group-label,
+.rootsy-theme-pos .handbook-rail .library-nav-group-label {
+  color: var(--rootsy-sombra-400);
+}
+
 .rootsy-theme-pos.layouts-operar-body .library-nav-group--separated,
 .rootsy-theme-pos .layouts-operar-body .library-nav-group--separated,
 .rootsy-theme-pos .handbook-rail .library-nav-group--separated {
-  border-top-color: var(--rootsy-sombra-500);
+  border-top-color: var(--rootsy-sombra-800);
 }
 
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll,
@@ -348,46 +367,87 @@
   scrollbar-gutter: stable;
 }
 
+.rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card-lift,
+.rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card-lift {
+  border-radius: var(--radius-xlarge, 16px);
+  box-shadow: none;
+}
+
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-product-card-media:has(img)::after,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-product-card-media:has(img)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--layouts-operar-product-card-media-veil);
+}
+
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"],
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"],
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card:not([data-proposal]),
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:not([data-proposal]) {
   border-radius: var(--radius-xlarge, 16px);
   box-shadow: none;
-  background: var(--rootsy-negro);
-  border-color: var(--layouts-operar-border-dark-card);
+  background: var(--rootsy-sombra-800);
+  border-color: var(--rootsy-sombra-900);
   transform: none;
   translate: none;
-  transition: border-color 200ms ease-out;
 }
 
-.rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"]:hover,
-.rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"]:hover,
-.rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card:not([data-proposal]):hover,
-.rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:not([data-proposal]):hover {
-  border-color: var(--rootsy-bruma-700);
+.rootsy-theme-pos.layouts-operar-body .library-nav-item,
+.rootsy-theme-pos .layouts-operar-body .library-nav-item {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--rootsy-sombra-300);
+  font-weight: 400;
+}
+
+.rootsy-theme-pos.layouts-operar-body .library-nav-item .library-nav-item-icon,
+.rootsy-theme-pos .layouts-operar-body .library-nav-item .library-nav-item-icon {
+  color: var(--rootsy-sombra-400);
+  opacity: 1;
 }
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item:hover,
 .rootsy-theme-pos .layouts-operar-body .library-nav-item:hover {
-  background-color: var(--rootsy-sombra-700);
+  background-color: var(--rootsy-sombra-800);
+  border-color: transparent;
+  color: var(--rootsy-sombra-50);
+}
+
+.rootsy-theme-pos.layouts-operar-body .library-nav-item:hover .library-nav-item-icon,
+.rootsy-theme-pos .layouts-operar-body .library-nav-item:hover .library-nav-item-icon {
+  color: var(--rootsy-sombra-200);
+}
+
+.rootsy-theme-pos.layouts-operar-body .library-nav-item:focus-visible,
+.rootsy-theme-pos .layouts-operar-body .library-nav-item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--rootsy-savia-600) 28%, transparent);
+  outline-offset: 1px;
 }
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item--active,
 .rootsy-theme-pos .layouts-operar-body .library-nav-item--active,
 .rootsy-theme-pos .handbook-rail .library-nav-item--active,
 .handbook-rail .rootsy-theme-pos.layouts-operar-body .library-nav-item--active {
-  border-color: transparent;
-  background-color: var(--rootsy-savia-500);
-  color: var(--rootsy-savia-950);
+  border: none;
+  background-color: var(--rootsy-sombra-800);
+  box-shadow: none;
+  color: var(--rootsy-sombra-50);
+  font-weight: var(--rootsy-font-weight-bold);
 }
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item--active:hover,
 .rootsy-theme-pos .layouts-operar-body .library-nav-item--active:hover,
 .rootsy-theme-pos .handbook-rail .library-nav-item--active:hover,
 .handbook-rail .rootsy-theme-pos.layouts-operar-body .library-nav-item--active:hover {
-  background-color: var(--rootsy-savia-400);
-  color: var(--rootsy-savia-950);
+  background-color: var(--rootsy-sombra-800);
+  border: none;
+  box-shadow: none;
+  color: var(--rootsy-sombra-50);
+  font-weight: var(--rootsy-font-weight-bold);
 }
 
 .rootsy-theme-pos.layouts-operar-body .library-nav-item--active .library-nav-item-icon,
@@ -395,6 +455,7 @@
 .rootsy-theme-pos .handbook-rail .library-nav-item--active .library-nav-item-icon,
 .handbook-rail .rootsy-theme-pos.layouts-operar-body .library-nav-item--active .library-nav-item-icon {
   color: inherit;
+  opacity: 1;
 }
 
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-selected],

@@ -427,6 +427,7 @@ function LayoutsOperarSummaryPanel({
           <div className={layoutsOperarTicketProposalActionsClass(LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL)}>
             <SaleOperationActionsBar
               variant="operar"
+              closingTotal={0}
               onDiscard={() => {}}
               onConfirm={() => {}}
             />
@@ -822,7 +823,7 @@ export function LayoutsOperarCatalogSectionDemo() {
 export function LayoutsOperarToolboxSectionDemo() {
   return (
     <div className="space-y-6">
-      <LayoutsOperarDocSubsection title="Toolbox · Cliente · Comprobante · Pago · Descuento">
+      <LayoutsOperarDocSubsection title="Checkout · Cliente · Comprobante · Pago">
         <LayoutsOperarAnatomyScope
         className={cn(
           "rootsy-theme-pos rootsy-radius-system max-w-5xl rounded-2xl border border-[var(--rootsy-bruma-200)]",
@@ -843,8 +844,8 @@ export function LayoutsOperarToolboxSectionDemo() {
       </LayoutsOperarDocSubsection>
 
       <LayoutsOperarComponentsTable
-        rows={getLayoutsOperarScreenComponentsByLayer("Toolbox")}
-        caption="Inventario · toolbox"
+        rows={getLayoutsOperarScreenComponentsByLayer("Checkout")}
+        caption="Inventario · checkout"
       />
     </div>
   )

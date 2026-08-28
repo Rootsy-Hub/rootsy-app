@@ -2136,6 +2136,29 @@ export function useMesasSaleCheckout(
   const requiereCajaAbierta = openCashSession == null
   const cajaRequiredTitle = "Requiere caja abierta"
 
+  const discountHeader = useMemo(
+    () => ({
+      disabled:
+        mesaToolbarDisabled || requiereCajaAbierta || descuentoGeneralEditBlocked,
+      active: hayDescuento && !mesaToolbarDisabled && !requiereCajaAbierta,
+      title: mesaToolbarDisabled ? "Sin descuento" : descuentoToolbarLabel,
+      onClick: () => {
+        if (mesaToolbarDisabled || requiereCajaAbierta || descuentoGeneralEditBlocked) {
+          return
+        }
+        abrirModalDescuento()
+      },
+    }),
+    [
+      mesaToolbarDisabled,
+      requiereCajaAbierta,
+      descuentoGeneralEditBlocked,
+      hayDescuento,
+      descuentoToolbarLabel,
+      abrirModalDescuento,
+    ],
+  )
+
   return {
     catalogLoading,
     catalogError,
@@ -2216,9 +2239,6 @@ export function useMesasSaleCheckout(
           ? undefined
           : toolboxPaymentDisplay.pagoIcon,
       pagoConfigurado: pagoConfigurado && !mesaToolbarDisabled && openCashSession != null,
-      descuentoLabel: mesaToolbarDisabled ? "Sin descuento" : descuentoToolbarLabel,
-      hayDescuento: hayDescuento && !mesaToolbarDisabled && !requiereCajaAbierta,
-      descuentoDisabled: descuentoGeneralEditBlocked && !mesaToolbarDisabled,
       onClienteClick: () => {
         if (!canReadClients || mesaToolbarDisabled || requiereCajaAbierta) return
         setClienteModalAbierto(true)
@@ -2231,11 +2251,8 @@ export function useMesasSaleCheckout(
         if (requiereCajaAbierta || mesaToolbarDisabled) return
         setPagoModalAbierto(true)
       },
-      onDescuentoClick: () => {
-        if (mesaToolbarDisabled || requiereCajaAbierta || descuentoGeneralEditBlocked) return
-        abrirModalDescuento()
-      },
     },
+    discountHeader,
     actions: {
       discardDisabled: !puedeDescartarPedido || requiereCajaAbierta,
       discardTitle: requiereCajaAbierta

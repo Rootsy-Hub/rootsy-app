@@ -2,7 +2,9 @@
 
 import {
   layoutsOperarBodyMainGridClass,
+  layoutsOperarBodyMainGridWithFloorClass,
   layoutsOperarCatalogRowClass,
+  layoutsOperarCheckoutFloorRowClass,
   layoutsOperarOperationColumnClass,
   layoutsOperarToolboxRowClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
@@ -19,7 +21,9 @@ type Props = {
   catalog: ReactNode
   /** 1.1.2 — banda toolbox (4 slots). `null` oculta la fila (Mesas/Mostrador fuera de Pedido). */
   toolbox?: ReactNode
-  /** 1.2 — panel ticket (4 filas) */
+  /** Piso de checkout a ancho completo (desktop). */
+  floor?: ReactNode
+  /** 1.2 — panel ticket */
   ticket: ReactNode
   /** Ubicación de la banda toolbox dentro de la columna operación. */
   toolboxPosition?: "top" | "bottom"
@@ -33,18 +37,21 @@ type Props = {
   mobileCatalogDisabled?: boolean
   /** Muestra la banda toolbox en desktop. Default: hay toolbox. */
   desktopToolbox?: boolean
+  /** Muestra el piso de checkout en desktop. Default: hay floor. */
+  desktopFloor?: boolean
   className?: string
 }
 
 /**
  * Grid operar nivel 1 — producción (Vender · Mostrador · Mesas · Compras).
  *
- * Desktop: 1.1 col izquierda (catálogo + toolbox) · 1.2 ticket
+ * Desktop: escena 2 cols (catálogo | ticket) + piso de checkout a ancho completo.
  * Mobile: barra Mesas/Catálogo · una escena (pedido · catálogo · plano)
  */
 export function LayoutsOperarMainGrid({
   catalog,
   toolbox,
+  floor,
   ticket,
   toolboxPosition = "bottom",
   mobileHome,
@@ -52,12 +59,15 @@ export function LayoutsOperarMainGrid({
   mobileCatalog,
   mobileCatalogDisabled = false,
   desktopToolbox,
+  desktopFloor,
   className,
 }: Props) {
   const isMobile = useIsMobile()
   const stageApi = useOperarMobileStage()
   const showToolbox = toolbox != null
-  const showDesktopToolbox = desktopToolbox ?? showToolbox
+  const showFloor = floor != null
+  const showDesktopFloor = desktopFloor ?? showFloor
+  const showDesktopToolbox = desktopToolbox ?? (showToolbox && !showFloor)
   const toolboxOnTop = toolboxPosition === "top"
   const stage = stageApi?.stage ?? "ticket"
   const setHomeLabel = stageApi?.setHomeLabel
@@ -113,13 +123,20 @@ export function LayoutsOperarMainGrid({
           </div>
         </div>
         {showToolbox ? <div className="hidden">{toolbox}</div> : null}
+        {showFloor && !showToolbox ? <div className="hidden">{floor}</div> : null}
       </main>
     )
   }
 
   return (
     <main
-      className={cn("relative z-10 min-h-0 flex-1", layoutsOperarBodyMainGridClass, className)}
+      className={cn(
+        "relative z-10 min-h-0 flex-1",
+        showDesktopFloor
+          ? layoutsOperarBodyMainGridWithFloorClass
+          : layoutsOperarBodyMainGridClass,
+        className,
+      )}
     >
       <div
         className={cn(
@@ -147,11 +164,20 @@ export function LayoutsOperarMainGrid({
           >
             {toolbox}
           </div>
-        ) : showToolbox ? (
+        ) : showToolbox && !showFloor ? (
           <div className="hidden">{toolbox}</div>
         ) : null}
       </div>
       {ticket}
+      {showFloor ? (
+        <div
+          className={cn(
+            showDesktopFloor ? layoutsOperarCheckoutFloorRowClass : "hidden",
+          )}
+        >
+          {floor}
+        </div>
+      ) : null}
     </main>
   )
 }

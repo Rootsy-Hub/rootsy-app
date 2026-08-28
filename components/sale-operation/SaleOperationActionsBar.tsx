@@ -6,6 +6,8 @@ import {
   layoutsOperarTicketActionConfirmSizePx,
   layoutsOperarTicketActionDiscardIconPx,
   layoutsOperarTicketActionDiscardSizePx,
+  layoutsOperarTicketUmbralInnerClass,
+  layoutsOperarTicketUmbralTotalClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
 import {
@@ -18,6 +20,8 @@ import {
   saleOpActionIconWrapDiscardClass,
   saleOpActionPayClass,
   saleOpActionsBarShellClass,
+  saleOpFmt,
+  saleOpImporteBaseClass,
   saleOpTicketActionComandasClass,
   saleOpTicketActionPayClass,
 } from "@/components/sale-operation/saleOperationStyles"
@@ -53,6 +57,12 @@ export type SaleOperationActionsBarProps = {
   flush?: boolean
   /** Ticket operar — umbral circular Descartar · Cobrar / Pagar. */
   variant?: "default" | "operar" | "mobile"
+  /** Cifra de cierre en el umbral luz filtrada (variant operar). */
+  closingTotal?: number
+  /** El piso de checkout ya muestra el total. */
+  showClosingTotal?: boolean
+  /** El piso de propuesta pone Descartar a la izquierda. */
+  showDiscard?: boolean
   className?: string
 }
 
@@ -71,6 +81,9 @@ export function SaleOperationActionsBar({
   comandasTitle,
   flush = false,
   variant = "default",
+  closingTotal,
+  showClosingTotal = true,
+  showDiscard = true,
   className,
 }: SaleOperationActionsBarProps) {
   const confirmInactive = confirmDisabled || confirmLoading
@@ -170,12 +183,18 @@ export function SaleOperationActionsBar({
   const showComandas = typeof onComandas === "function"
 
   if (variant === "operar") {
-    return (
-      <div className="flex h-full w-full items-center justify-center gap-[var(--rootsy-space-300)]">
+    const actionButtons = (
+      <div
+        className={cn(
+          "flex h-full shrink-0 items-center gap-3",
+          showDiscard ? "px-4" : "px-0",
+        )}
+      >
+        {showDiscard ? (
         <RootsIconButton
           label="Descartar"
           semantic="destructiveSubtle"
-          atmosphere="bruma"
+          atmosphere="sombra"
           size="large"
           sizeChildren={false}
           disabled={discardDisabled}
@@ -189,6 +208,7 @@ export function SaleOperationActionsBar({
             aria-hidden
           />
         </RootsIconButton>
+        ) : null}
         {showComandas ? (
           <RootsIconButton
             label="Comandas"
@@ -224,6 +244,22 @@ export function SaleOperationActionsBar({
         >
           <ConfirmIcon size={layoutsOperarTicketActionConfirmIconPx} aria-hidden />
         </RootsIconButton>
+      </div>
+    )
+
+    if (!showClosingTotal) return actionButtons
+
+    return (
+      <div className={layoutsOperarTicketUmbralInnerClass}>
+        <p
+          className={cn(layoutsOperarTicketUmbralTotalClass, saleOpImporteBaseClass)}
+          aria-label={`Total a cobrar ${saleOpFmt.format(closingTotal ?? 0)}`}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {saleOpFmt.format(closingTotal ?? 0)}
+        </p>
+        {actionButtons}
       </div>
     )
   }

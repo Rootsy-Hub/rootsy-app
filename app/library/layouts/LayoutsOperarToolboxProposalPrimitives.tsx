@@ -13,7 +13,7 @@ import {
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import { layoutsOperarToolboxRowClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
-import { Banknote, Percent, Receipt, User } from "lucide-react"
+import { Banknote, Receipt, User } from "lucide-react"
 import type { ReactNode } from "react"
 
 type DemoToolboxSlot = {
@@ -28,30 +28,23 @@ const DEMO_TOOLBOX_SLOTS: DemoToolboxSlot[] = [
   {
     id: "cliente",
     label: "Cliente",
-    value: "Elegir cliente",
-    configured: false,
-    icon: <User className="size-4" aria-hidden />,
+    value: "María González",
+    configured: true,
+    icon: <User className="size-5" aria-hidden />,
   },
   {
     id: "comprobante",
     label: "Comprobante",
-    value: "Ticket",
+    value: "Factura B",
     configured: true,
-    icon: <Receipt className="size-4" aria-hidden />,
+    icon: <Receipt className="size-5" aria-hidden />,
   },
   {
     id: "pago",
     label: "Pago",
-    value: "Efectivo",
+    value: "Caja principal",
     configured: true,
-    icon: <Banknote className="size-4" aria-hidden />,
-  },
-  {
-    id: "descuento",
-    label: "Descuento",
-    value: "Sin descuento",
-    configured: false,
-    icon: <Percent className="size-4" aria-hidden />,
+    icon: <Banknote className="size-5" aria-hidden />,
   },
 ]
 
@@ -89,14 +82,14 @@ export function LayoutsOperarToolboxProposalBar({
           >
             {slot.icon}
           </span>
-          <span className="min-w-0 flex-1">
+          <span className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
             <span className={layoutsOperarToolboxProposalSlotLabelClass(proposalId)}>
               {slot.label}
             </span>
             <span
               className={layoutsOperarToolboxProposalSlotValueClass(proposalId, slot.configured)}
             >
-              {slot.value}
+              {slot.configured ? slot.value : "—"}
             </span>
           </span>
         </button>

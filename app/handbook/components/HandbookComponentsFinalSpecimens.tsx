@@ -40,6 +40,10 @@ import {
 import { OperarTicketEmptyState } from "@/components/layouts-module/OperarTicketEmptyState"
 import { PurchaseCatalogProductCard } from "@/components/purchase-operation/PurchaseCatalogProductCard"
 import type { PurchaseCatalogProduct } from "@/components/purchase-operation/purchaseCatalogTypes"
+import { getLayoutsOperarGridCssVariables } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
+import { layoutsOperarModuleBodyClass } from "@/app/library/layouts/layoutsOperarStyles"
+import type { LayoutsOperarCheckoutProposal } from "@/components/layouts-module/LayoutsOperarCheckoutSteps"
+import { LayoutsOperarSaleCheckoutFloor } from "@/components/layouts-module/LayoutsOperarSaleCheckoutFloor"
 import { PurchaseOperationToolbox } from "@/components/purchase-operation/PurchaseOperationToolbox"
 import { ReportHubCard } from "@/components/reports/ReportHubCard"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
@@ -141,13 +145,18 @@ import { STATISTICS_SECTIONS } from "@/lib/statisticsCatalog"
 import { cn } from "@/lib/utils"
 import {
   ArrowRight,
+  Banknote,
   BarChart3,
+  FileText,
   MoreHorizontal,
   Package,
   Pencil,
+  Percent,
   Plus,
   Receipt,
   Trash2,
+  Truck,
+  User,
   Users,
 } from "lucide-react"
 import { useMemo, useState, type ReactNode } from "react"
@@ -2266,6 +2275,151 @@ function DrawerFinalSpecimen() {
   )
 }
 
+function CheckoutFloorFrame({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className={cn(layoutsOperarModuleBodyClass, "w-full overflow-hidden")}
+      style={getLayoutsOperarGridCssVariables()}
+    >
+      {children}
+    </div>
+  )
+}
+
+function CheckoutFloorFinalSpecimen() {
+  return (
+    <Stack>
+      <LiveView
+        background={SOMBRA}
+        defaultOpen
+        canvasClassName="items-end justify-stretch px-0 py-8 min-h-[220px]"
+        componentName="LayoutsOperarSaleCheckoutFloor"
+        componentProperties={[
+          { name: "proposal", values: ["pipeline", "pills", "ficha"] },
+          { name: "proposalSteps", values: ["CheckoutStep[]"] },
+          { name: "closingTotal", values: ["number"] },
+        ]}
+        variants={[
+          { name: "Pipeline" },
+          { name: "Pills" },
+          { name: "Ficha" },
+        ]}
+        extras={[
+          {
+            items: [{ name: "vacío" }, { name: "en curso" }, { name: "listo" }],
+            initial: "en curso",
+          },
+          { items: [{ name: "Venta" }, { name: "Compra" }] },
+        ]}
+        render={(variant, extras) => {
+          const proposal = variant.toLowerCase() as LayoutsOperarCheckoutProposal
+          const state = extras[0] ?? "en curso"
+          const isPurchase = extras[1] === "Compra"
+          const empty = state === "vacío"
+          const ready = state === "listo"
+          const total = empty ? 0 : 37940
+          const partyConfigured = ready
+          const comprobanteConfigured = !empty
+          const pagoConfigured = !empty
+
+          const proposalOptions = empty
+            ? [
+                {
+                  id: "discount",
+                  icon: Percent,
+                  officeLabel: "Descuento",
+                  value: "Sin descuento",
+                  configured: false,
+                  onClick: noop,
+                },
+                {
+                  id: "save",
+                  icon: FileText,
+                  officeLabel: "Guardar",
+                  value: "Presupuesto",
+                  configured: false,
+                  ariaLabel: "Guardar como presupuesto",
+                  onClick: noop,
+                },
+              ]
+            : [
+                {
+                  id: "discount",
+                  icon: Percent,
+                  officeLabel: "Descuento",
+                  value: "10%",
+                  configured: true,
+                  onClick: noop,
+                },
+                {
+                  id: "save",
+                  icon: FileText,
+                  officeLabel: "Guardar",
+                  value: "Presupuesto",
+                  configured: false,
+                  ariaLabel: "Guardar como presupuesto",
+                  onClick: noop,
+                },
+              ]
+
+          const proposalSteps = [
+            {
+              id: "party",
+              icon: isPurchase ? Truck : User,
+              officeLabel: isPurchase ? "Proveedor" : "Cliente",
+              value: isPurchase
+                ? "Molino del Sur"
+                : "Arián Fernández",
+              configured: partyConfigured,
+              onClick: noop,
+            },
+            {
+              id: "comprobante",
+              icon: Receipt,
+              officeLabel: "Comprobante",
+              value: isPurchase ? "Remito" : "Fac B",
+              configured: comprobanteConfigured,
+              onClick: noop,
+            },
+            {
+              id: "pago",
+              icon: Banknote,
+              officeLabel: "Pago",
+              value: "Efectivo",
+              configured: pagoConfigured,
+              onClick: noop,
+            },
+          ]
+
+          return (
+            <CheckoutFloorFrame>
+              <LayoutsOperarSaleCheckoutFloor
+                proposal={proposal}
+                proposalSteps={proposalSteps}
+                proposalOptions={proposalOptions}
+                savingsAmount={empty ? 0 : 4200}
+                closingTotal={total}
+                totalLabel={isPurchase ? "Total a pagar" : "Total"}
+                regionLabel={
+                  isPurchase ? "Checkout de la compra" : "Checkout de la venta"
+                }
+                actions={{
+                  discardDisabled: empty,
+                  confirmDisabled: !ready,
+                  confirmLabel: isPurchase ? "Pagar" : "Vender",
+                  confirmTone: isPurchase ? "pay" : "charge",
+                  onDiscard: noop,
+                  onConfirm: noop,
+                }}
+              />
+            </CheckoutFloorFrame>
+          )
+        }}
+      />
+    </Stack>
+  )
+}
+
 function ToolboxFinalSpecimen() {
   return (
     <Stack>
@@ -2288,12 +2442,9 @@ function ToolboxFinalSpecimen() {
               comprobanteConfigurado={ready}
               pagoLabel={ready ? "Efectivo" : "Pago"}
               pagoConfigurado={ready}
-              descuentoLabel={ready ? "10%" : "Sin descuento"}
-              hayDescuento={ready}
               onClienteClick={noop}
               onComprobanteClick={noop}
               onPagoClick={noop}
-              onDescuentoClick={noop}
             />
           )
         }}
@@ -2316,12 +2467,9 @@ function ToolboxFinalSpecimen() {
               comprobanteConfigurado={ready}
               pagoLabel={ready ? "Cuenta" : "Pago"}
               pagoConfigurado={ready}
-              descuentoLabel="Sin descuento"
-              hayDescuento={false}
               onProveedorClick={noop}
               onComprobanteClick={noop}
               onPagoClick={noop}
-              onDescuentoClick={noop}
             />
           )
         }}
@@ -2394,5 +2542,6 @@ export const HANDBOOK_FINAL_SECTION_SPECIMENS: Record<string, () => ReactNode> =
   popovers: () => <PopoverFinalSpecimen />,
   drawers: () => <DrawerFinalSpecimen />,
   dialogs: () => <DialogFinalSpecimen />,
+  checkout: () => <CheckoutFloorFinalSpecimen />,
   toolboxes: () => <ToolboxFinalSpecimen />,
 }

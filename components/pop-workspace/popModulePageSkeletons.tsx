@@ -58,10 +58,11 @@ import { MenuSidebar } from "@/components/MenuSidebar"
 import { statisticsMainContentClass } from "@/components/statistics/statisticsWorkspaceStyles"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import { LayoutsOperarSaleCheckoutFloorSkeleton } from "@/components/layouts-module/LayoutsOperarSaleCheckoutFloor"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
 import { SaleCatalogSidebarNavSkeleton } from "@/components/sale-operation/SaleCatalogSidebarNavSkeleton"
 import { SaleCatalogToolbarSkeleton } from "@/components/sale-operation/SaleCatalogToolbarSkeleton"
-import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
+import { SaleOperationDiscountHeaderButton } from "@/components/sale-operation/SaleOperationDiscountHeaderButton"
 import {
   MesasFloorPlanSkeleton,
   MesasTablePickerListSkeleton,
@@ -653,7 +654,7 @@ function OperarCatalogModulePageSkeleton({
         <OperationsModuleBackdrop />
         <LayoutsOperarMainGrid
           catalog={<OperarCatalogColumnSkeleton />}
-          toolbox={<SaleOperationToolboxSkeleton />}
+          floor={<LayoutsOperarSaleCheckoutFloorSkeleton />}
           ticket={ticket ?? <TicketPanelSkeleton listTitle={ticketTitle} />}
         />
       </div>
@@ -667,6 +668,12 @@ export function SaleModulePageSkeleton(layout: PopModuleSkeletonLayout) {
       layout={layout}
       title="Vender"
       ticketTitle="Pedido"
+      headerActions={
+        <SaleOperationDiscountHeaderButton
+          disabled
+          onClick={() => undefined}
+        />
+      }
       headerMoreActions={[
         {
           label: "Crear presupuesto",
@@ -685,15 +692,21 @@ export function PurchasesModulePageSkeleton(layout: PopModuleSkeletonLayout) {
       title="Comprar"
       ticketTitle="Compra"
       headerActions={
-        <RootsIconButton
-          label="Crear orden de compra"
-          semantic="tertiary"
-          atmosphere="eter"
-          size="default"
-          disabled
-        >
-          <FileText className="size-5" aria-hidden />
-        </RootsIconButton>
+        <>
+          <SaleOperationDiscountHeaderButton
+            disabled
+            onClick={() => undefined}
+          />
+          <RootsIconButton
+            label="Crear orden de compra"
+            semantic="tertiary"
+            atmosphere="eter"
+            size="default"
+            disabled
+          >
+            <FileText className="size-5" aria-hidden />
+          </RootsIconButton>
+        </>
       }
       ticket={
         <aside
@@ -718,6 +731,12 @@ export function CobrarServiciosModulePageSkeleton(
       layout={layout}
       title="Vender servicio"
       ticketTitle="Servicio"
+      headerActions={
+        <SaleOperationDiscountHeaderButton
+          disabled
+          onClick={() => undefined}
+        />
+      }
       ticket={
         <aside className={serviceOperateSnapshotPanelClass} aria-hidden>
           <div className="row-start-1 min-h-0 shrink-0">
@@ -746,6 +765,12 @@ export function MesasModulePageSkeleton(layout: PopModuleSkeletonLayout) {
     <OperationsModulePageSkeleton
       layout={layout}
       title="Mesas"
+      headerActions={
+        <SaleOperationDiscountHeaderButton
+          disabled
+          onClick={() => undefined}
+        />
+      }
       headerMoreActions={[
         {
           label: "Salones",
@@ -830,15 +855,21 @@ export function MostradorModulePageSkeleton(layout: PopModuleSkeletonLayout) {
       layout={layout}
       title="Mostrador"
       headerActions={
-        <RootsIconButton
-          label="Nuevo pedido"
-          semantic="primary"
-          atmosphere="eter"
-          size="default"
-          disabled
-        >
-          <Plus className="size-5" aria-hidden />
-        </RootsIconButton>
+        <>
+          <SaleOperationDiscountHeaderButton
+            disabled
+            onClick={() => undefined}
+          />
+          <RootsIconButton
+            label="Nuevo pedido"
+            semantic="primary"
+            atmosphere="eter"
+            size="default"
+            disabled
+          >
+            <Plus className="size-5" aria-hidden />
+          </RootsIconButton>
+        </>
       }
     >
       <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">

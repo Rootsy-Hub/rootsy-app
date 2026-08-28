@@ -1,3 +1,5 @@
+"use client"
+
 import {
   HANDBOOK_BORDER_COLORS,
   HANDBOOK_BORDER_GUIDELINES,

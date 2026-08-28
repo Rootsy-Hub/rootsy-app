@@ -47,6 +47,7 @@ import {
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import { SaleCatalogBrowser } from "@/components/sale-operation/SaleCatalogBrowser"
 import { SaleDevtoolsPanel } from "@/components/sale-operation/SaleDevtoolsPanel"
+import { SaleOperationDiscountHeaderButton } from "@/components/sale-operation/SaleOperationDiscountHeaderButton"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { isDevModeEnabled } from "@/lib/devmode"
 import type { SaleComprobantePreviewInput } from "@/components/checkout/SaleComprobanteTicketPreview"
@@ -84,6 +85,8 @@ import {
   OperationsModuleBackdrop,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import { LayoutsOperarSaleCheckoutFloor } from "@/components/layouts-module/LayoutsOperarSaleCheckoutFloor"
+import type { LayoutsOperarCheckoutStep } from "@/components/layouts-module/LayoutsOperarCheckoutSteps"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -108,6 +111,7 @@ import {
   CircleX,
   FileText,
   Loader2,
+  Percent,
   MessageSquare,
   Receipt,
   User,
@@ -1178,6 +1182,147 @@ export function SaleWorkspaceView() {
       : `Fijo ${saleOpFmt.format(valorDescuentoFijo)}`
     : "Sin descuento"
 
+  const saleCheckoutActions = {
+    discardDisabled: !hayItemsEnPedido || !openCashSession,
+    discardTitle: !openCashSession ? "Requiere caja abierta" : undefined,
+    confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,
+    confirmLoading: ventaSubmitting,
+    onDiscard: () => {
+      if (!openCashSession || !hayItemsEnPedido) return
+      setDescartarConfirmOpen(true)
+    },
+    onConfirm: () => {
+      setVentaError(null)
+      setVenderConfirmOpen(true)
+    },
+    confirmLabel: "Vender",
+    confirmTitle: !hayItemsEnPedido
+      ? "Agregá productos al pedido."
+      : !pagoConfigurado
+        ? "Elegí una forma de pago o usá cuenta corriente del cliente."
+        : payOnClientAccount &&
+            !partyCanOperateOnCurrentAccount(clienteSeleccionado)
+          ? clienteSeleccionado?.id
+            ? "Este cliente no está dado de alta en Cuentas corrientes."
+            : "Elegí un cliente del catálogo para vender a cuenta corriente."
+          : !canCreateSale
+            ? "No tenés permiso para registrar ventas."
+            : !canReadCashRegisters
+              ? "Se requiere permiso para ver cajas y asociar la venta a una sesión."
+              : !openCashSession
+                ? "Abrí una sesión de caja en Cajas antes de vender."
+                : undefined,
+  }
+
+  const saleCheckoutToolbox = (
+    <SaleOperationToolbox
+      registerOnly
+      clienteLabel={
+        !canReadClients
+          ? "Sin permiso"
+          : (clienteSeleccionado?.name ?? "Elegir cliente")
+      }
+      clienteIvaLabel={openCashSession ? ventaIvaLabel : null}
+      clienteDisabled={!canReadClients || !openCashSession}
+      clienteConfigurado={Boolean(clienteSeleccionado) && Boolean(openCashSession)}
+      toolbarDisabled={!openCashSession}
+      comprobanteLabel={comprobanteDisplayLabel}
+      pagoLabel={
+        openCashSession
+          ? toolboxPaymentDisplay.pagoLabel
+          : "Requiere caja abierta"
+      }
+      pagoSubLabel={openCashSession ? toolboxPaymentDisplay.pagoSubLabel : null}
+      pagoIcon={openCashSession ? toolboxPaymentDisplay.pagoIcon : undefined}
+      pagoConfigurado={pagoConfigurado && Boolean(openCashSession)}
+      pagoDisabled={!openCashSession}
+      onClienteClick={onClienteToolbarClick}
+      onComprobanteClick={() => {
+        if (!openCashSession) return
+        setComprobanteModalAbierto(true)
+      }}
+      onPagoClick={() => {
+        if (!openCashSession) return
+        setPagoModalAbierto(true)
+      }}
+    />
+  )
+
+  const saleProposalSteps: LayoutsOperarCheckoutStep[] = [
+    {
+      id: "party",
+      icon: User,
+      officeLabel: "Cliente",
+      value: !canReadClients
+        ? "Sin permiso"
+        : (clienteSeleccionado?.name ?? "Elegir cliente"),
+      configured: Boolean(clienteSeleccionado) && Boolean(openCashSession),
+      disabled: !canReadClients || !openCashSession,
+      onClick: onClienteToolbarClick,
+    },
+    {
+      id: "comprobante",
+      icon: Receipt,
+      officeLabel: "Comprobante",
+      value: comprobanteDisplayLabel,
+      configured:
+        comprobanteDisplayLabel !== "Sin comprobante" && Boolean(openCashSession),
+      disabled: !openCashSession,
+      onClick: () => {
+        if (!openCashSession) return
+        setComprobanteModalAbierto(true)
+      },
+    },
+    {
+      id: "pago",
+      icon: openCashSession
+        ? (toolboxPaymentDisplay.pagoIcon ?? Banknote)
+        : Banknote,
+      officeLabel: "Pago",
+      value: openCashSession
+        ? toolboxPaymentDisplay.pagoLabel
+        : "Requiere caja abierta",
+      configured: pagoConfigurado && Boolean(openCashSession),
+      disabled: !openCashSession,
+      onClick: () => {
+        if (!openCashSession) return
+        setPagoModalAbierto(true)
+      },
+    },
+  ]
+
+  const ahorroTotal =
+    descuentoMonto + descuentoItemsMonto + promocionesAplicadasMonto
+
+  const saleProposalOptions: LayoutsOperarCheckoutStep[] = [
+    {
+      id: "discount",
+      icon: Percent,
+      officeLabel: "Descuento",
+      value: descuentoToolboxLabel,
+      configured: hayDescuento && Boolean(openCashSession),
+      disabled: !openCashSession,
+      onClick: () => {
+        if (!openCashSession) return
+        abrirModalDescuento()
+      },
+    },
+    {
+      id: "save",
+      icon: FileText,
+      officeLabel: "Guardar",
+      value: "Presupuesto",
+      configured: false,
+      disabled: !hayItemsEnPedido || presupuestoSubmitting,
+      ariaLabel: "Guardar como presupuesto",
+      onClick: () => {
+        if (!hayItemsEnPedido || presupuestoSubmitting) return
+        setPresupuestoError(null)
+        setPresupuestoConfirmOpen(true)
+      },
+    },
+  ]
+
   if (!popId || !siteId) {
     return (
       <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
@@ -1210,7 +1355,20 @@ export function SaleWorkspaceView() {
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
         headerActions={
-          isDevModeEnabled() ? <SaleDevtoolsPanel /> : undefined
+          <>
+            {isDevModeEnabled() ? <SaleDevtoolsPanel /> : null}
+            <div className="md:hidden">
+              <SaleOperationDiscountHeaderButton
+                disabled={!openCashSession}
+                active={hayDescuento && Boolean(openCashSession)}
+                title={descuentoToolboxLabel}
+                onClick={() => {
+                  if (!openCashSession) return
+                  abrirModalDescuento()
+                }}
+              />
+            </div>
+          </>
         }
         headerMoreActions={[
           {
@@ -1264,47 +1422,18 @@ export function SaleWorkspaceView() {
                 keepScanFocused
               />
             }
-            toolbox={
-              <SaleOperationToolbox
-                clienteLabel={
-                  !canReadClients
-                    ? "Sin permiso"
-                    : (clienteSeleccionado?.name ?? "Elegir cliente")
-                }
-                clienteIvaLabel={openCashSession ? ventaIvaLabel : null}
-                clienteDisabled={!canReadClients || !openCashSession}
-                clienteConfigurado={Boolean(clienteSeleccionado) && Boolean(openCashSession)}
-                toolbarDisabled={!openCashSession}
-                comprobanteLabel={comprobanteDisplayLabel}
-                pagoLabel={
-                  openCashSession
-                    ? toolboxPaymentDisplay.pagoLabel
-                    : "Requiere caja abierta"
-                }
-                pagoSubLabel={
-                  openCashSession ? toolboxPaymentDisplay.pagoSubLabel : null
-                }
-                pagoIcon={
-                  openCashSession ? toolboxPaymentDisplay.pagoIcon : undefined
-                }
-                pagoConfigurado={pagoConfigurado && Boolean(openCashSession)}
-                pagoDisabled={!openCashSession}
-                descuentoLabel={descuentoToolboxLabel}
-                hayDescuento={hayDescuento && Boolean(openCashSession)}
-                onClienteClick={onClienteToolbarClick}
-                onComprobanteClick={() => {
-                  if (!openCashSession) return
-                  setComprobanteModalAbierto(true)
-                }}
-                onPagoClick={() => {
-                  if (!openCashSession) return
-                  setPagoModalAbierto(true)
-                }}
-                onDescuentoClick={() => {
-                  if (!openCashSession) return
-                  abrirModalDescuento()
-                }}
-              />
+            floor={
+              <>
+                {saleCheckoutToolbox}
+                <LayoutsOperarSaleCheckoutFloor
+                  proposal="pills"
+                  proposalSteps={saleProposalSteps}
+                  proposalOptions={saleProposalOptions}
+                  savingsAmount={ahorroTotal}
+                  closingTotal={total}
+                  actions={saleCheckoutActions}
+                />
+              </>
             }
             ticket={
               <aside
@@ -1322,39 +1451,8 @@ export function SaleWorkspaceView() {
                   quitarQuantityDealApplication={quitarQuantityDealApplicationConFoco}
                   listTitle="Pedido"
                   cartScrollHighlight={cartScrollHighlight}
-                  actions={{
-                    discardDisabled: !hayItemsEnPedido || !openCashSession,
-                    discardTitle: !openCashSession
-                      ? "Requiere caja abierta"
-                      : undefined,
-                    confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,
-                    confirmLoading: ventaSubmitting,
-                    onDiscard: () => {
-                      if (!openCashSession || !hayItemsEnPedido) return
-                      setDescartarConfirmOpen(true)
-                    },
-                    onConfirm: () => {
-                      setVentaError(null)
-                      setVenderConfirmOpen(true)
-                    },
-                    confirmLabel: "Vender",
-                    confirmTitle: !hayItemsEnPedido
-                      ? "Agregá productos al pedido."
-                      : !pagoConfigurado
-                        ? "Elegí una forma de pago o usá cuenta corriente del cliente."
-                        : payOnClientAccount &&
-                            !partyCanOperateOnCurrentAccount(clienteSeleccionado)
-                          ? clienteSeleccionado?.id
-                            ? "Este cliente no está dado de alta en Cuentas corrientes."
-                            : "Elegí un cliente del catálogo para vender a cuenta corriente."
-                          : !canCreateSale
-                            ? "No tenés permiso para registrar ventas."
-                            : !canReadCashRegisters
-                              ? "Se requiere permiso para ver cajas y asociar la venta a una sesión."
-                              : !openCashSession
-                                ? "Abrí una sesión de caja en Cajas antes de vender."
-                                : undefined,
-                  }}
+                  showDesktopActions={false}
+                  actions={saleCheckoutActions}
                   totalBar={{
                     total,
                     subtotal,

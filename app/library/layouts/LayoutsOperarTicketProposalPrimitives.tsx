@@ -469,6 +469,7 @@ export function LayoutsOperarTicketProposalPanel({
       <div className={layoutsOperarTicketProposalActionsClass(proposalId)}>
         <SaleOperationActionsBar
           variant="operar"
+          closingTotal={LAYOUTS_OPERAR_DEMO_TICKET_TOTALS.total}
           onDiscard={() => {}}
           onConfirm={() => {}}
         />

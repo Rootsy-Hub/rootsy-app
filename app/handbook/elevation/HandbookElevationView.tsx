@@ -1,3 +1,5 @@
+"use client"
+
 import {
   HANDBOOK_ELEVATION_ATMOSPHERES,
   HANDBOOK_ELEVATION_DARK,
@@ -31,12 +33,9 @@ import {
 import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
 
-function Token({ children, dark }: { children: string; dark?: boolean }) {
+function Token({ children }: { children: string }) {
   return (
-    <code
-      className={cn("text-[0.75rem] font-medium", !dark && libraryDocTokenAccentClass)}
-      style={dark ? { color: "var(--rootsy-savia-400)" } : undefined}
-    >
+    <code className={cn("text-[0.75rem] font-medium", libraryDocTokenAccentClass)}>
       {children}
     </code>
   )
@@ -51,43 +50,27 @@ function ElevationCard({
 }) {
   const surface = HANDBOOK_ELEVATION_LEVEL_SURFACES[atmosphere][level.id]
   const copy = HANDBOOK_ELEVATION_LEVEL_COPY[atmosphere][level.id]
-  const isDark = atmosphere === "sombra"
 
   return (
     <div
-      className="rounded-2xl px-4 py-4"
+      className="relative rounded-2xl px-4 py-4"
       style={{
         background: surface?.background,
         border: surface?.border ?? "1px solid transparent",
         boxShadow: surface?.boxShadow,
+        zIndex: level.id === "overlay" ? 0 : 1,
       }}
     >
-      <p
-        className={libraryDocMetaLabelClass}
-        style={isDark ? { color: "var(--rootsy-sombra-400)" } : undefined}
-      >
-        {level.natureName}
-      </p>
-      <p
-        className={cn(libraryDocSectionTitleClass, "mt-1 text-sm")}
-        style={isDark ? { color: "var(--rootsy-sombra-50)" } : undefined}
-      >
-        {level.label}
-      </p>
+      <p className={libraryDocMetaLabelClass}>{level.natureName}</p>
+      <p className={cn(libraryDocSectionTitleClass, "mt-1 text-sm")}>{level.label}</p>
       <p className="mt-2">
-        <Token dark={isDark}>{level.token}</Token>
+        <Token>{level.token}</Token>
       </p>
-      <p
-        className={cn("mt-2 font-stream text-xs leading-relaxed", libraryDocMutedTextClass)}
-        style={isDark ? { color: "var(--rootsy-sombra-300)" } : undefined}
-      >
+      <p className={cn("mt-2 font-stream text-xs leading-relaxed", libraryDocMutedTextClass)}>
         {copy?.usage ?? level.usage}
       </p>
       {copy?.pairRule || level.pairRule ? (
-        <p
-          className={cn("mt-2 font-stream text-xs", libraryDocMutedTextClass)}
-          style={isDark ? { color: "var(--rootsy-sombra-300)" } : undefined}
-        >
+        <p className={cn("mt-2 font-stream text-xs", libraryDocMutedTextClass)}>
           {copy?.pairRule ?? level.pairRule}
         </p>
       ) : null}
@@ -108,8 +91,18 @@ function ElevationAtmosphereBlock({
         {atmosphere.name}
       </h3>
       <div
-        className={cn("mt-4 rounded-3xl p-6", atmosphere.themeClass)}
-        style={{ background: atmosphere.stage }}
+        className={cn("mt-4 isolate overflow-hidden rounded-3xl p-6", atmosphere.themeClass)}
+        style={{
+          background: atmosphere.stage,
+          ...(isDark
+            ? {
+                color: "var(--rootsy-sombra-50)",
+                ["--color-texto" as string]: "var(--rootsy-sombra-50)",
+                ["--color-texto-muted" as string]: "var(--rootsy-sombra-300)",
+                ["--color-accion-profundo" as string]: "var(--rootsy-savia-400)",
+              }
+            : null),
+        }}
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {HANDBOOK_ELEVATION_LEVELS.filter((level) => level.id !== "overflow").map((level) => (
@@ -117,57 +110,17 @@ function ElevationAtmosphereBlock({
           ))}
         </div>
       </div>
-      <h4
-        className={cn(libraryDocSubheadingClass, "mt-8 text-base")}
-      >
-        Sunken vs transparente
-      </h4>
+      <h4 className={cn(libraryDocSubheadingClass, "mt-8 text-base")}>Sunken vs transparente</h4>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div
-          className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}
-          style={
-            isDark
-              ? {
-                  background: "var(--rootsy-sombra-800)",
-                  borderColor: "var(--rootsy-sombra-700)",
-                }
-              : undefined
-          }
-        >
-          <p
-            className={cn(libraryDocSectionTitleClass, "text-sm")}
-            style={isDark ? { color: "var(--rootsy-sombra-50)" } : undefined}
-          >
-            Sunken
-          </p>
-          <p
-            className={cn("mt-2 font-stream text-sm leading-relaxed", libraryDocMutedTextClass)}
-            style={isDark ? { color: "var(--rootsy-sombra-300)" } : undefined}
-          >
+        <div className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
+          <p className={cn(libraryDocSectionTitleClass, "text-sm")}>Sunken</p>
+          <p className={cn("mt-2 font-stream text-sm leading-relaxed", libraryDocMutedTextClass)}>
             {atmosphere.sunkenVs.sunken}
           </p>
         </div>
-        <div
-          className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}
-          style={
-            isDark
-              ? {
-                  background: "var(--rootsy-sombra-800)",
-                  borderColor: "var(--rootsy-sombra-700)",
-                }
-              : undefined
-          }
-        >
-          <p
-            className={cn(libraryDocSectionTitleClass, "text-sm")}
-            style={isDark ? { color: "var(--rootsy-sombra-50)" } : undefined}
-          >
-            Neutro
-          </p>
-          <p
-            className={cn("mt-2 font-stream text-sm leading-relaxed", libraryDocMutedTextClass)}
-            style={isDark ? { color: "var(--rootsy-sombra-300)" } : undefined}
-          >
+        <div className={cn("rounded-2xl border px-4 py-4", libraryDocBorderClass)}>
+          <p className={cn(libraryDocSectionTitleClass, "text-sm")}>Neutro</p>
+          <p className={cn("mt-2 font-stream text-sm leading-relaxed", libraryDocMutedTextClass)}>
             {atmosphere.sunkenVs.neutral}
           </p>
         </div>
@@ -200,7 +153,7 @@ export function HandbookElevationView() {
         <h2 className={libraryDocSectionTitleClass}>Niveles</h2>
         <p className={cn(libraryDocBodyClass, "mt-4")}>
           Del suelo al dosel. Sunken agrupa. Default trabaja. Raised pide un foco. Overlay
-          interrumpe. La misma escala en las dos luces del sotobosque.
+          interrumpe.
         </p>
         {HANDBOOK_ELEVATION_ATMOSPHERES.map((atmosphere) => (
           <ElevationAtmosphereBlock key={atmosphere.id} atmosphere={atmosphere} />

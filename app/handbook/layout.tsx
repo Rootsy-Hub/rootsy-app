@@ -1,5 +1,5 @@
+import { HandbookApp } from "@/app/handbook/HandbookApp"
 import { HandbookShell } from "@/app/handbook/HandbookShell"
-import { HandbookWorkspace } from "@/app/handbook/HandbookWorkspace"
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function HandbookLayout({ children }: { children: ReactNode }) {
   return (
     <HandbookShell>
-      <HandbookWorkspace />
+      <HandbookApp />
       {children}
     </HandbookShell>
   )

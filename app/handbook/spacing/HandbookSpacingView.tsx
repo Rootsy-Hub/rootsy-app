@@ -1,3 +1,5 @@
+"use client"
+
 import {
   HANDBOOK_LAYOUT_PRIMITIVES,
   HANDBOOK_SPACING_BASE_PX,

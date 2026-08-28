@@ -1,3 +1,5 @@
+"use client"
+
 import { handbookColorHex } from "@/app/handbook/color/handbookColorPalettes"
 import {
   functionalRecipeHex,

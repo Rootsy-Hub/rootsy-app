@@ -121,7 +121,7 @@ export const HANDBOOK_COMPONENT_PAGES: Record<
   },
   overlays: {
     title: "Overlays",
-    lead: "Lo que se abre encima usa el mismo menú, el mismo diálogo y el mismo sheet. El toolbox de operar es la excepción: vive en el canvas, no en un portal.",
+    lead: "Lo que se abre encima usa el mismo menú, el mismo diálogo y el mismo sheet. El checkout de operar es la excepción: vive anclado al canvas, no en un portal.",
     principles: [
       {
         title: "Un menú, un dropdown",
@@ -132,8 +132,8 @@ export const HANDBOOK_COMPONENT_PAGES: Record<
         detail: "RootsDialogContent es crear, editar y confirmar. El sheet es el panel lateral (chat, mobile).",
       },
       {
-        title: "El toolbox no es un overlay",
-        detail: "En vender y comprar la configuración de la venta está anclada al canvas. No flota.",
+        title: "El checkout no es un overlay",
+        detail: "En vender y comprar los pasos y el cierre viven en el piso del canvas. No flotan.",
       },
     ],
   },
@@ -520,13 +520,23 @@ export const HANDBOOK_COMPONENT_SECTIONS: Record<
       status: "live",
     },
     {
+      id: "checkout",
+      title: "Checkout",
+      description:
+        "Piso de operar en tres propuestas: Pipeline, Pills y Ficha. Vacío = savia 500. Dato = lectura.",
+      token: "LayoutsOperarSaleCheckoutFloor",
+      doText: "El paso vacío pide oficio (savia, como Cobrar). El dato cargado se lee, no se grita.",
+      dontText: "No uses savia en un paso ya completo. Eso es lectura, no acción.",
+      status: "live",
+    },
+    {
       id: "toolboxes",
       title: "Toolboxes",
       description:
-        "Banda de operar: cliente, comprobante, pago, descuento. Anclada al canvas de venta y compra.",
+        "Los tres pasos del piso: cliente o proveedor, comprobante y pago. Van embebidos en el checkout.",
       token: "SaleOperationToolbox",
-      doText: "La configuración de la venta vive en el toolbox, no en un modal previo.",
-      dontText: "No conviertas esos slots en un formulario de cuatro selects al costado.",
+      doText: "La configuración de la venta vive en los pasos del piso, no en un modal previo.",
+      dontText: "No conviertas esos slots en un formulario de selects al costado.",
       status: "live",
     },
   ],

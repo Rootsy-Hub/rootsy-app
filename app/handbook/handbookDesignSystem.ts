@@ -320,6 +320,7 @@ export const HANDBOOK_DESIGN_SYSTEM_NAV: HandbookDesignSystemNavGroup[] = [
           heading("Popovers"),
           heading("Drawers"),
           heading("Dialogs"),
+          heading("Checkout"),
           heading("Toolboxes"),
         ],
       },

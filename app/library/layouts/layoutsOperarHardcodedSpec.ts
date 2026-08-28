@@ -71,7 +71,8 @@ export function getLayoutsOperarGridCssVariables(): CSSProperties {
   return {
     ["--layouts-operar-grid-cols" as string]: `minmax(0, 1fr) ${a.summaryPanelWidthPx}px`,
     ["--layouts-operar-grid-rows" as string]: `minmax(0, 1fr)`,
-    ["--layouts-operar-operation-rows" as string]: `minmax(0, 1fr) minmax(${a.toolboxRowMinHeightPx}px, auto)`,
+    ["--layouts-operar-operation-rows" as string]: `minmax(0, 1fr)`,
+    ["--layouts-operar-checkout-floor-h" as string]: `${a.checkoutFloorHeightPx}px`,
     ["--layouts-operar-catalog-rows" as string]: `${a.catalogToolbarHeightPx}px minmax(0, 1fr)`,
     ["--layouts-operar-catalog-toolbar-h" as string]: `${a.catalogToolbarHeightPx}px`,
     ["--layouts-operar-catalog-sidebar-w" as string]: `${a.catalogSidebarWidthPx}px`,
@@ -87,7 +88,7 @@ export function getLayoutsOperarGridCssVariables(): CSSProperties {
     ["--layouts-operar-toolbox-band-py-sm" as string]: `${a.toolboxBandPaddingYSmPx}px`,
     ["--layouts-operar-ticket-w" as string]: `${a.summaryPanelWidthPx}px`,
     ["--layouts-operar-ticket-header-h" as string]: `${a.ticketHeaderHeightPx}px`,
-    ["--layouts-operar-ticket-rows" as string]: `minmax(0, 1fr) ${a.ticketActionsHeightPx}px`,
+    ["--layouts-operar-ticket-rows" as string]: `minmax(0, 1fr)`,
     ["--layouts-operar-ticket-actions-h" as string]: `${a.ticketActionsHeightPx}px`,
     ["--layouts-operar-ticket-total-min-h" as string]: `${a.ticketTotalMinHeightPx}px`,
     ["--layouts-operar-ticket-total-min-h-sm" as string]: `${a.ticketTotalMinHeightSmPx}px`,
@@ -357,7 +358,7 @@ export const layoutsOperarToolboxSlotAnatomyClass =
 
 /** Grid interno toolbox con padding de banda desde anatomía. */
 export const layoutsOperarToolboxProposalBarGridBaseClass =
-  "box-border grid h-full min-h-0 grid-cols-2 lg:grid-cols-4"
+  "box-border grid h-full min-h-0 grid-cols-3"
 
 /** Slot toolbox — altura desde la propuesta activa o vars de anatomía (inset). */
 export function layoutsOperarToolboxProposalSlotAnatomyClass(
@@ -392,7 +393,7 @@ export function getLayoutsOperarToolboxProposalBarGridClass(
   return cn(
     layoutsOperarToolboxProposalBarGridBaseClass,
     "h-full min-h-0",
-    "gap-[var(--layouts-operar-grid-gap,1rem)] p-[var(--layouts-operar-grid-gap,1rem)]",
+    "gap-px px-0 py-0",
   )
 }
 
@@ -405,7 +406,7 @@ export function layoutsOperarToolboxProposalSlotClass(
   const isLast = slotIndex === slotCount - 1
   const focusRing =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] focus-visible:ring-inset"
-  const slotSpacing = "gap-2.5 px-2.5 py-2 text-left sm:gap-3 sm:px-3"
+  const slotSpacing = "gap-3 px-4 py-0 text-left"
   const slotAnatomy = layoutsOperarToolboxProposalSlotAnatomyClass(id)
 
   if (id === "cubiertas-sombra") {
@@ -438,10 +439,9 @@ export function layoutsOperarToolboxProposalSlotClass(
   return cn(
     slotAnatomy,
     rootsyLayoutsEarthFloorSlotClass,
-    "group rounded-xl border-0",
+    "group rounded-none border-0",
     slotSpacing,
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]/45",
-    "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-sombra-950)]",
+    "focus-visible:outline-none",
     configured && rootsyLayoutsEarthFloorSlotConfiguredClass,
   )
 }
@@ -470,7 +470,7 @@ export function layoutsOperarToolboxProposalIconWrapClass(
 
   return cn(
     rootsyLayoutsEarthFloorSlotIconClass,
-    "flex size-10 shrink-0 items-center justify-center rounded-lg",
+    "flex size-9 shrink-0 items-center justify-center",
   )
 }
 
@@ -483,7 +483,7 @@ export function layoutsOperarToolboxProposalSlotLabelClass(id: LayoutsOperarTool
   }
   return cn(
     rootsyLayoutsEarthFloorSlotLabelClass,
-    "mb-0.5 block rootsy-text-label",
+    "block rootsy-text-label",
   )
 }
 
@@ -507,7 +507,7 @@ export function layoutsOperarToolboxProposalSlotValueClass(
   }
   return cn(
     rootsyLayoutsEarthFloorSlotValueClass,
-    "block truncate rootsy-text-heading-xsmall",
+    "min-w-0 flex-1 truncate rootsy-text-heading-xsmall",
   )
 }
 

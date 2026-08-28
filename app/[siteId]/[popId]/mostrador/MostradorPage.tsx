@@ -15,9 +15,13 @@ import { isDevModeEnabled } from "@/lib/devmode"
 import { MOSTRADOR_QUERY_SPEC } from "@/lib/devmode/mostradorQuerySpec"
 import { mostradorAccessFromKeys } from "@/lib/popWorkspaceAccess"
 import { useAfterHydration } from "@/hooks/useIsHydrated"
+import {
+  SaleOperationDiscountHeaderButton,
+  type SaleOperationDiscountHeaderControl,
+} from "@/components/sale-operation/SaleOperationDiscountHeaderButton"
 import { Plus } from "lucide-react"
 import { useParams, useRouter } from "@/lib/pop-spa/navigation"
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 function MostradorPage() {
   const params = useParams()
@@ -49,6 +53,8 @@ function MostradorPage() {
   }, [bootstrapLoading, bootstrap, access.canRead, router, siteId, popId])
 
   const startCreateOrderRef = useRef<(() => void) | null>(null)
+  const [discountHeader, setDiscountHeader] =
+    useState<SaleOperationDiscountHeaderControl | null>(null)
 
   const registerStartCreateOrder = useCallback((handler: (() => void) | null) => {
     startCreateOrderRef.current = handler
@@ -92,28 +98,32 @@ function MostradorPage() {
       sidebarOpen={catalogSidebarOpen}
       onSidebarOpenChange={setCatalogSidebarOpen}
       headerActions={
-        isDevModeEnabled() || !afterHydration || access.canCreate ? (
-          <>
-            {isDevModeEnabled() ? (
-              <OperateQueryDevtoolsPanel
-                title="Mostrador"
-                spec={MOSTRADOR_QUERY_SPEC}
-              />
-            ) : null}
-            {!afterHydration || access.canCreate ? (
-              <RootsIconButton
-                label="Nuevo pedido"
-                semantic="primary"
-                atmosphere="eter"
-                size="default"
-                disabled={!access.canCreate}
-                onClick={() => startCreateOrderRef.current?.()}
-              >
-                <Plus className="size-5" aria-hidden />
-              </RootsIconButton>
-            ) : null}
-          </>
-        ) : undefined
+        <>
+          {isDevModeEnabled() ? (
+            <OperateQueryDevtoolsPanel
+              title="Mostrador"
+              spec={MOSTRADOR_QUERY_SPEC}
+            />
+          ) : null}
+          <SaleOperationDiscountHeaderButton
+            disabled={discountHeader?.disabled ?? true}
+            active={discountHeader?.active ?? false}
+            title={discountHeader?.title}
+            onClick={() => discountHeader?.onClick()}
+          />
+          {!afterHydration || access.canCreate ? (
+            <RootsIconButton
+              label="Nuevo pedido"
+              semantic="primary"
+              atmosphere="eter"
+              size="default"
+              disabled={!access.canCreate}
+              onClick={() => startCreateOrderRef.current?.()}
+            >
+              <Plus className="size-5" aria-hidden />
+            </RootsIconButton>
+          ) : null}
+        </>
       }
     >
       <MostradorWorkspace
@@ -122,6 +132,7 @@ function MostradorPage() {
         catalogSidebarOpen={catalogSidebarOpen}
         onCatalogSidebarOpenChange={setCatalogSidebarOpen}
         onRegisterStartCreateOrder={registerStartCreateOrder}
+        onRegisterDiscountHeader={setDiscountHeader}
       />
     </DataWorkspaceOperationsLayout>
   )

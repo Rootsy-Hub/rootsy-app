@@ -1,26 +1,21 @@
 "use client"
 
 import {
-  layoutsOperarToolboxProposalSlotLabelClass,
-  layoutsOperarToolboxProposalSlotValueClass,
-} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
-import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
-import {
   layoutsOperarToolboxBandClass,
-  layoutsOperarToolboxBarGridClass,
+  layoutsOperarToolboxBarGrid3Class,
   layoutsOperarToolboxIconWrapClass,
   layoutsOperarToolboxSlotClass,
-  layoutsOperarToolboxSlotMetaClass,
+  layoutsOperarToolboxSlotCopyClass,
+  layoutsOperarToolboxSlotLabelClass,
+  layoutsOperarToolboxSlotLine,
+  layoutsOperarToolboxSlotLineClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { LayoutsOperarToolboxFloor } from "@/components/layouts-module/LayoutsOperarToolboxFloor"
-import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { useRegisterOperarMobileToolbox } from "@/components/layouts-module/OperarMobileToolbox"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
-import { Banknote, Percent, Receipt, Truck } from "lucide-react"
+import { Banknote, Receipt, Truck } from "lucide-react"
 import { useMemo } from "react"
-
-const TOOLBOX_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL
 
 export type PurchaseOperationToolboxProps = {
   proveedorLabel: string
@@ -32,12 +27,11 @@ export type PurchaseOperationToolboxProps = {
   pagoSubLabel?: string | null
   pagoConfigurado: boolean
   pagoIcon?: LucideIcon
-  descuentoLabel: string
-  hayDescuento: boolean
   onProveedorClick: () => void
   onComprobanteClick: () => void
   onPagoClick: () => void
-  onDescuentoClick: () => void
+  /** Sin piso propio — va dentro del checkout floor. */
+  embedded?: boolean
   className?: string
 }
 
@@ -51,15 +45,24 @@ export function PurchaseOperationToolbox({
   pagoSubLabel,
   pagoConfigurado,
   pagoIcon: PagoIconProp,
-  descuentoLabel,
-  hayDescuento,
   onProveedorClick,
   onComprobanteClick,
   onPagoClick,
-  onDescuentoClick,
+  embedded = false,
   className,
 }: PurchaseOperationToolboxProps) {
   const PagoIcon = PagoIconProp ?? Banknote
+  const proveedorLine = layoutsOperarToolboxSlotLine(
+    "Proveedor",
+    proveedorLabel,
+    proveedorConfigurado,
+  )
+  const comprobanteLine = layoutsOperarToolboxSlotLine(
+    "Comprobante",
+    comprobanteLabel,
+    comprobanteConfigurado,
+  )
+  const pagoLine = layoutsOperarToolboxSlotLine("Pago", pagoLabel, pagoConfigurado)
 
   const mobileItems = useMemo(
     () => [
@@ -68,7 +71,9 @@ export function PurchaseOperationToolbox({
         icon: Truck,
         configured: proveedorConfigurado,
         disabled: false,
-        ariaLabel: `Proveedor: ${proveedorLabel}`,
+        ariaLabel: proveedorIvaLabel
+          ? `Proveedor: ${proveedorLabel}, ${proveedorIvaLabel}`
+          : `Proveedor: ${proveedorLabel}`,
         onClick: onProveedorClick,
       },
       {
@@ -89,17 +94,10 @@ export function PurchaseOperationToolbox({
           : `Pago: ${pagoLabel}`,
         onClick: onPagoClick,
       },
-      {
-        id: "descuento",
-        icon: Percent,
-        configured: hayDescuento,
-        disabled: false,
-        ariaLabel: `Descuento: ${descuentoLabel}`,
-        onClick: onDescuentoClick,
-      },
     ],
     [
       proveedorConfigurado,
+      proveedorIvaLabel,
       proveedorLabel,
       onProveedorClick,
       comprobanteConfigurado,
@@ -110,130 +108,79 @@ export function PurchaseOperationToolbox({
       pagoSubLabel,
       pagoLabel,
       onPagoClick,
-      hayDescuento,
-      descuentoLabel,
-      onDescuentoClick,
     ],
   )
   useRegisterOperarMobileToolbox(mobileItems)
 
-  return (
-    <LayoutsOperarToolboxFloor className={className}>
-      <div
-        role="toolbar"
-        aria-label="Configuración de la compra"
-        className={cn(layoutsOperarToolboxBandClass, layoutsOperarToolboxBarGridClass)}
+  const toolbar = (
+    <div
+      role="toolbar"
+      aria-label="Checkout de la compra"
+      className={cn(
+        layoutsOperarToolboxBandClass,
+        layoutsOperarToolboxBarGrid3Class,
+        embedded && "h-full divide-[var(--rootsy-sombra-800)]",
+        embedded && className,
+      )}
+    >
+      <button
+        type="button"
+        onClick={onProveedorClick}
+        className={layoutsOperarToolboxSlotClass(proveedorConfigurado)}
+        aria-label={
+          proveedorIvaLabel
+            ? `Proveedor: ${proveedorLabel}, ${proveedorIvaLabel}`
+            : `Proveedor: ${proveedorLabel}`
+        }
       >
-        <button
-          type="button"
-          onClick={onProveedorClick}
-          className={layoutsOperarToolboxSlotClass(proveedorConfigurado)}
-          aria-label={`Proveedor: ${proveedorLabel}`}
-        >
-          <span className={layoutsOperarToolboxIconWrapClass(proveedorConfigurado)}>
-            <Truck className="size-4.5 sm:size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
-              Proveedor
-            </span>
-            <span
-              className={layoutsOperarToolboxProposalSlotValueClass(
-                TOOLBOX_PROPOSAL,
-                proveedorConfigurado,
-              )}
-            >
-              {proveedorLabel}
-            </span>
-            {proveedorIvaLabel ? (
-              <span className={layoutsOperarToolboxSlotMetaClass}>
-                {proveedorIvaLabel}
-              </span>
-            ) : null}
-          </span>
-        </button>
+        <span className={layoutsOperarToolboxIconWrapClass(proveedorConfigurado)}>
+          <Truck className="size-5" aria-hidden />
+        </span>
+        <span className={layoutsOperarToolboxSlotCopyClass}>
+          <span className={layoutsOperarToolboxSlotLabelClass}>1 · Proveedor</span>
+          <span className={layoutsOperarToolboxSlotLineClass}>{proveedorLine}</span>
+        </span>
+      </button>
 
-        <button
-          type="button"
-          onClick={onComprobanteClick}
-          className={layoutsOperarToolboxSlotClass(comprobanteConfigurado)}
-          aria-label={`Comprobante: ${comprobanteLabel}`}
-        >
-          <span className={layoutsOperarToolboxIconWrapClass(comprobanteConfigurado)}>
-            <Receipt className="size-4.5 sm:size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
-              Comprobante
-            </span>
-            <span
-              className={layoutsOperarToolboxProposalSlotValueClass(
-                TOOLBOX_PROPOSAL,
-                comprobanteConfigurado,
-              )}
-            >
-              {comprobanteLabel}
-            </span>
-          </span>
-        </button>
+      <button
+        type="button"
+        onClick={onComprobanteClick}
+        className={layoutsOperarToolboxSlotClass(comprobanteConfigurado)}
+        aria-label={`Comprobante: ${comprobanteLabel}`}
+      >
+        <span className={layoutsOperarToolboxIconWrapClass(comprobanteConfigurado)}>
+          <Receipt className="size-5" aria-hidden />
+        </span>
+        <span className={layoutsOperarToolboxSlotCopyClass}>
+          <span className={layoutsOperarToolboxSlotLabelClass}>2 · Comprobante</span>
+          <span className={layoutsOperarToolboxSlotLineClass}>{comprobanteLine}</span>
+        </span>
+      </button>
 
-        <button
-          type="button"
-          onClick={onPagoClick}
-          className={layoutsOperarToolboxSlotClass(pagoConfigurado)}
-          aria-label={
-            pagoSubLabel
-              ? `Pago: ${pagoLabel}, ${pagoSubLabel}`
-              : `Pago: ${pagoLabel}`
-          }
-        >
-          <span className={layoutsOperarToolboxIconWrapClass(pagoConfigurado)}>
-            <PagoIcon className="size-4.5 sm:size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
-              Pago
-            </span>
-            <span
-              className={layoutsOperarToolboxProposalSlotValueClass(
-                TOOLBOX_PROPOSAL,
-                pagoConfigurado,
-              )}
-            >
-              {pagoLabel}
-            </span>
-            {pagoSubLabel ? (
-              <span className={layoutsOperarToolboxSlotMetaClass}>
-                {pagoSubLabel}
-              </span>
-            ) : null}
-          </span>
-        </button>
+      <button
+        type="button"
+        onClick={onPagoClick}
+        className={layoutsOperarToolboxSlotClass(pagoConfigurado)}
+        aria-label={
+          pagoSubLabel
+            ? `Pago: ${pagoLabel}, ${pagoSubLabel}`
+            : `Pago: ${pagoLabel}`
+        }
+      >
+        <span className={layoutsOperarToolboxIconWrapClass(pagoConfigurado)}>
+          <PagoIcon className="size-5" aria-hidden />
+        </span>
+        <span className={layoutsOperarToolboxSlotCopyClass}>
+          <span className={layoutsOperarToolboxSlotLabelClass}>3 · Pago</span>
+          <span className={layoutsOperarToolboxSlotLineClass}>{pagoLine}</span>
+        </span>
+      </button>
+    </div>
+  )
 
-        <button
-          type="button"
-          onClick={onDescuentoClick}
-          className={layoutsOperarToolboxSlotClass(hayDescuento)}
-          aria-label={`Descuento: ${descuentoLabel}`}
-        >
-          <span className={layoutsOperarToolboxIconWrapClass(hayDescuento)}>
-            <Percent className="size-4.5 sm:size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
-              Descuento
-            </span>
-            <span
-              className={cn(
-                layoutsOperarToolboxProposalSlotValueClass(TOOLBOX_PROPOSAL, hayDescuento),
-                hayDescuento && saleOpImporteBaseClass,
-              )}
-            >
-              {descuentoLabel}
-            </span>
-          </span>
-        </button>
-      </div>
-    </LayoutsOperarToolboxFloor>
+  if (embedded) return toolbar
+
+  return (
+    <LayoutsOperarToolboxFloor className={className}>{toolbar}</LayoutsOperarToolboxFloor>
   )
 }

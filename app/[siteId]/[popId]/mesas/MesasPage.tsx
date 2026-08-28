@@ -21,7 +21,11 @@ import { mesasLayoutQueryOptions } from "@/lib/mesasWorkspaceQuery"
 import { mesasAccessFromKeys } from "@/lib/popWorkspaceAccess"
 import { useParams } from "@/lib/pop-spa/navigation"
 import { useQuery } from "@tanstack/react-query"
-import { useCallback, useMemo, useRef } from "react"
+import {
+  SaleOperationDiscountHeaderButton,
+  type SaleOperationDiscountHeaderControl,
+} from "@/components/sale-operation/SaleOperationDiscountHeaderButton"
+import { useCallback, useMemo, useRef, useState } from "react"
 
 function MesasPage() {
   const params = useParams()
@@ -38,6 +42,8 @@ function MesasPage() {
 
   const reloadLayoutRef = useRef<() => Promise<void>>(async () => {})
   const layoutDataRef = useRef<() => MesasLayoutData | null>(() => null)
+  const [discountHeader, setDiscountHeader] =
+    useState<SaleOperationDiscountHeaderControl | null>(null)
 
   const access = useMemo(
     () => mesasAccessFromKeys(bootstrap?.permissionKeys ?? []),
@@ -117,12 +123,20 @@ function MesasPage() {
           userName={bootstrap?.userFullName || user?.email || ""}
           userAvatarSrc={bootstrap?.userImageUrl}
           headerActions={
-            isDevModeEnabled() ? (
-              <OperateQueryDevtoolsPanel
-                title="Mesas"
-                spec={MESAS_QUERY_SPEC}
+            <>
+              {isDevModeEnabled() ? (
+                <OperateQueryDevtoolsPanel
+                  title="Mesas"
+                  spec={MESAS_QUERY_SPEC}
+                />
+              ) : null}
+              <SaleOperationDiscountHeaderButton
+                disabled={discountHeader?.disabled ?? true}
+                active={discountHeader?.active ?? false}
+                title={discountHeader?.title}
+                onClick={() => discountHeader?.onClick()}
               />
-            ) : undefined
+            </>
           }
           headerMoreActions={moreActions}
           sidebarCollapsible
@@ -142,6 +156,7 @@ function MesasPage() {
             onRegisterLayoutData={(getter) => {
               layoutDataRef.current = getter
             }}
+            onRegisterDiscountHeader={setDiscountHeader}
           />
         </DataWorkspaceOperationsLayout>
       )}

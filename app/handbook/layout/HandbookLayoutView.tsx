@@ -1,3 +1,5 @@
+"use client"
+
 import {
   HANDBOOK_GRID_ANATOMY,
   HANDBOOK_GRID_BREAKPOINTS,

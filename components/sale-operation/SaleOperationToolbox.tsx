@@ -1,33 +1,28 @@
 "use client"
 
 import {
-  layoutsOperarToolboxProposalSlotLabelClass,
-  layoutsOperarToolboxProposalSlotValueClass,
-} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
-import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
-import {
   layoutsOperarToolboxBandClass,
-  layoutsOperarToolboxBarGridClass,
+  layoutsOperarToolboxBarGrid3Class,
   layoutsOperarToolboxIconWrapClass,
   layoutsOperarToolboxSlotClass,
-  layoutsOperarToolboxSlotMetaClass,
+  layoutsOperarToolboxSlotCopyClass,
+  layoutsOperarToolboxSlotLabelClass,
+  layoutsOperarToolboxSlotLine,
+  layoutsOperarToolboxSlotLineClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { LayoutsOperarToolboxFloor } from "@/components/layouts-module/LayoutsOperarToolboxFloor"
-import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { useRegisterOperarMobileToolbox } from "@/components/layouts-module/OperarMobileToolbox"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
-import { Banknote, Percent, Receipt, User } from "lucide-react"
+import { Banknote, Receipt, User } from "lucide-react"
 import { useMemo } from "react"
-
-const TOOLBOX_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL
 
 export type SaleOperationToolboxProps = {
   clienteLabel: string
   clienteIvaLabel: string | null
   clienteDisabled?: boolean
   clienteConfigurado?: boolean
-  /** Deshabilita comprobante, pago y descuento (p. ej. mesa sin sesión abierta). */
+  /** Deshabilita comprobante y pago (p. ej. mesa sin sesión abierta). */
   toolbarDisabled?: boolean
   /** Override solo para pago (p. ej. vender sin caja abierta). */
   pagoDisabled?: boolean
@@ -37,13 +32,13 @@ export type SaleOperationToolboxProps = {
   pagoSubLabel?: string | null
   pagoConfigurado: boolean
   pagoIcon?: LucideIcon
-  descuentoLabel: string
-  hayDescuento: boolean
-  descuentoDisabled?: boolean
   onClienteClick: () => void
   onComprobanteClick: () => void
   onPagoClick: () => void
-  onDescuentoClick: () => void
+  /** Sin piso propio — va dentro del checkout floor. */
+  embedded?: boolean
+  /** Solo registra los íconos mobile. El piso desktop usa otra variante. */
+  registerOnly?: boolean
   className?: string
 }
 
@@ -60,18 +55,23 @@ export function SaleOperationToolbox({
   pagoSubLabel,
   pagoConfigurado,
   pagoIcon: PagoIconProp,
-  descuentoLabel,
-  hayDescuento,
-  descuentoDisabled = false,
   onClienteClick,
   onComprobanteClick,
   onPagoClick,
-  onDescuentoClick,
+  embedded = false,
+  registerOnly = false,
   className,
 }: SaleOperationToolboxProps) {
   const pagoButtonDisabled = pagoDisabled ?? toolbarDisabled
   const comprobanteListo = comprobanteConfigurado ?? comprobanteLabel !== "Sin comprobante"
   const PagoIcon = PagoIconProp ?? Banknote
+  const clienteLine = layoutsOperarToolboxSlotLine("Cliente", clienteLabel, clienteConfigurado)
+  const comprobanteLine = layoutsOperarToolboxSlotLine(
+    "Comprobante",
+    comprobanteLabel,
+    comprobanteListo,
+  )
+  const pagoLine = layoutsOperarToolboxSlotLine("Pago", pagoLabel, pagoConfigurado)
 
   const mobileItems = useMemo(
     () => [
@@ -80,7 +80,9 @@ export function SaleOperationToolbox({
         icon: User,
         configured: clienteConfigurado,
         disabled: clienteDisabled || toolbarDisabled,
-        ariaLabel: `Cliente: ${clienteLabel}`,
+        ariaLabel: clienteIvaLabel
+          ? `Cliente: ${clienteLabel}, ${clienteIvaLabel}`
+          : `Cliente: ${clienteLabel}`,
         onClick: onClienteClick,
       },
       {
@@ -101,19 +103,12 @@ export function SaleOperationToolbox({
           : `Pago: ${pagoLabel}`,
         onClick: onPagoClick,
       },
-      {
-        id: "descuento",
-        icon: Percent,
-        configured: hayDescuento,
-        disabled: toolbarDisabled || descuentoDisabled,
-        ariaLabel: `Descuento: ${descuentoLabel}${descuentoDisabled ? " (bloqueado)" : ""}`,
-        onClick: onDescuentoClick,
-      },
     ],
     [
       clienteConfigurado,
       clienteDisabled,
       toolbarDisabled,
+      clienteIvaLabel,
       clienteLabel,
       onClienteClick,
       comprobanteListo,
@@ -125,149 +120,93 @@ export function SaleOperationToolbox({
       pagoSubLabel,
       pagoLabel,
       onPagoClick,
-      hayDescuento,
-      descuentoDisabled,
-      descuentoLabel,
-      onDescuentoClick,
     ],
   )
   useRegisterOperarMobileToolbox(mobileItems)
 
-  return (
-    <LayoutsOperarToolboxFloor className={className}>
-      <div
-        role="toolbar"
-        aria-label="Configuración de la operación"
-        className={cn(layoutsOperarToolboxBandClass, layoutsOperarToolboxBarGridClass)}
+  if (registerOnly) return null
+
+  const toolbar = (
+    <div
+      role="toolbar"
+      aria-label="Checkout de la venta"
+      className={cn(
+        layoutsOperarToolboxBandClass,
+        layoutsOperarToolboxBarGrid3Class,
+        embedded && "h-full divide-[var(--rootsy-sombra-800)]",
+        embedded && className,
+      )}
+    >
+      <button
+        type="button"
+        disabled={clienteDisabled || toolbarDisabled}
+        onClick={onClienteClick}
+        className={cn(
+          layoutsOperarToolboxSlotClass(clienteConfigurado),
+          (clienteDisabled || toolbarDisabled) && "opacity-45",
+        )}
+        aria-label={
+          clienteIvaLabel
+            ? `Cliente: ${clienteLabel}, ${clienteIvaLabel}`
+            : `Cliente: ${clienteLabel}`
+        }
       >
-        <button
-          type="button"
-          disabled={clienteDisabled || toolbarDisabled}
-          onClick={onClienteClick}
-          className={cn(
-            layoutsOperarToolboxSlotClass(clienteConfigurado),
-            (clienteDisabled || toolbarDisabled) && "opacity-45",
-          )}
-          aria-label={`Cliente: ${clienteLabel}`}
-        >
-          <span className={layoutsOperarToolboxIconWrapClass(clienteConfigurado)}>
-            <User className="size-4.5 sm:size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
-              Cliente
-            </span>
-            <span
-              className={layoutsOperarToolboxProposalSlotValueClass(
-                TOOLBOX_PROPOSAL,
-                clienteConfigurado,
-              )}
-            >
-              {clienteLabel}
-            </span>
-            {clienteIvaLabel ? (
-              <span className={layoutsOperarToolboxSlotMetaClass}>
-                {clienteIvaLabel}
-              </span>
-            ) : null}
-          </span>
-        </button>
+        <span className={layoutsOperarToolboxIconWrapClass(clienteConfigurado)}>
+          <User className="size-5" aria-hidden />
+        </span>
+        <span className={layoutsOperarToolboxSlotCopyClass}>
+          <span className={layoutsOperarToolboxSlotLabelClass}>1 · Cliente</span>
+          <span className={layoutsOperarToolboxSlotLineClass}>{clienteLine}</span>
+        </span>
+      </button>
 
-        <button
-          type="button"
-          disabled={toolbarDisabled}
-          onClick={onComprobanteClick}
-          className={cn(
-            layoutsOperarToolboxSlotClass(comprobanteListo),
-            toolbarDisabled && "opacity-45",
-          )}
-          aria-label={`Comprobante: ${comprobanteLabel}`}
-        >
-          <span
-            className={layoutsOperarToolboxIconWrapClass(comprobanteListo)}
-          >
-            <Receipt className="size-4.5 sm:size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
-              Comprobante
-            </span>
-            <span
-              className={layoutsOperarToolboxProposalSlotValueClass(
-                TOOLBOX_PROPOSAL,
-                comprobanteListo,
-              )}
-            >
-              {comprobanteLabel}
-            </span>
-          </span>
-        </button>
+      <button
+        type="button"
+        disabled={toolbarDisabled}
+        onClick={onComprobanteClick}
+        className={cn(
+          layoutsOperarToolboxSlotClass(comprobanteListo),
+          toolbarDisabled && "opacity-45",
+        )}
+        aria-label={`Comprobante: ${comprobanteLabel}`}
+      >
+        <span className={layoutsOperarToolboxIconWrapClass(comprobanteListo)}>
+          <Receipt className="size-5" aria-hidden />
+        </span>
+        <span className={layoutsOperarToolboxSlotCopyClass}>
+          <span className={layoutsOperarToolboxSlotLabelClass}>2 · Comprobante</span>
+          <span className={layoutsOperarToolboxSlotLineClass}>{comprobanteLine}</span>
+        </span>
+      </button>
 
-        <button
-          type="button"
-          disabled={pagoButtonDisabled}
-          onClick={onPagoClick}
-          className={cn(
-            layoutsOperarToolboxSlotClass(pagoConfigurado),
-            pagoButtonDisabled && "opacity-45",
-          )}
-          aria-label={
-            pagoSubLabel
-              ? `Pago: ${pagoLabel}, ${pagoSubLabel}`
-              : `Pago: ${pagoLabel}`
-          }
-        >
-          <span className={layoutsOperarToolboxIconWrapClass(pagoConfigurado)}>
-            <PagoIcon className="size-4.5 sm:size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
-              Pago
-            </span>
-            <span
-              className={layoutsOperarToolboxProposalSlotValueClass(
-                TOOLBOX_PROPOSAL,
-                pagoConfigurado,
-              )}
-            >
-              {pagoLabel}
-            </span>
-            {pagoSubLabel ? (
-              <span className={layoutsOperarToolboxSlotMetaClass}>
-                {pagoSubLabel}
-              </span>
-            ) : null}
-          </span>
-        </button>
+      <button
+        type="button"
+        disabled={pagoButtonDisabled}
+        onClick={onPagoClick}
+        className={cn(
+          layoutsOperarToolboxSlotClass(pagoConfigurado),
+          pagoButtonDisabled && "opacity-45",
+        )}
+        aria-label={
+          pagoSubLabel
+            ? `Pago: ${pagoLabel}, ${pagoSubLabel}`
+            : `Pago: ${pagoLabel}`
+        }
+      >
+        <span className={layoutsOperarToolboxIconWrapClass(pagoConfigurado)}>
+          <PagoIcon className="size-5" aria-hidden />
+        </span>
+        <span className={layoutsOperarToolboxSlotCopyClass}>
+          <span className={layoutsOperarToolboxSlotLabelClass}>3 · Pago</span>
+          <span className={layoutsOperarToolboxSlotLineClass}>{pagoLine}</span>
+        </span>
+      </button>
+    </div>
+  )
 
-        <button
-          type="button"
-          disabled={toolbarDisabled || descuentoDisabled}
-          onClick={onDescuentoClick}
-          className={cn(
-            layoutsOperarToolboxSlotClass(hayDescuento),
-            (toolbarDisabled || descuentoDisabled) && "opacity-45",
-          )}
-          aria-label={`Descuento: ${descuentoLabel}${descuentoDisabled ? " (bloqueado)" : ""}`}
-        >
-          <span className={layoutsOperarToolboxIconWrapClass(hayDescuento)}>
-            <Percent className="size-4.5 sm:size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
-              Descuento
-            </span>
-            <span
-              className={cn(
-                layoutsOperarToolboxProposalSlotValueClass(TOOLBOX_PROPOSAL, hayDescuento),
-                hayDescuento && saleOpImporteBaseClass,
-              )}
-            >
-              {descuentoLabel}
-            </span>
-          </span>
-        </button>
-      </div>
-    </LayoutsOperarToolboxFloor>
+  if (embedded) return toolbar
+
+  return (
+    <LayoutsOperarToolboxFloor className={className}>{toolbar}</LayoutsOperarToolboxFloor>
   )
 }

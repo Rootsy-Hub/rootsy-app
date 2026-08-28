@@ -1,3 +1,5 @@
+"use client"
+
 import {
   HANDBOOK_RADIUS_GUIDELINES,
   HANDBOOK_RADIUS_PRINCIPLES,

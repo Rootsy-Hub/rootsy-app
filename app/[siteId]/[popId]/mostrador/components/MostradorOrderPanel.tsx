@@ -10,6 +10,38 @@ type Props = {
   cartScrollHighlight?: CartListScrollHighlightValue
 }
 
+export function getMostradorOrderConfirmState(checkout: MostradorSaleCheckout) {
+  const requiereCajaAbierta = checkout.openCashSession == null
+  const confirmLabel =
+    checkout.puedeCerrarPedido && checkout.cerrarPedidoMode === "release"
+      ? "Liberar pedido"
+      : checkout.puedeCerrarPedido
+        ? "Cerrar pedido"
+        : "Cobrar pedido"
+  const confirmDisabled = checkout.puedeCerrarPedido
+    ? !checkout.puedeCerrarPedido
+    : requiereCajaAbierta || !checkout.puedeRegistrar
+  const confirmTitle = checkout.puedeCerrarPedido
+    ? checkout.cerrarPedidoMode === "release"
+      ? "No hay ítems ni cobros pendientes. Podés liberar el pedido."
+      : "Todo el pedido está cobrado. Podés cerrarlo para marcarlo como pagado."
+    : requiereCajaAbierta
+      ? "Requiere caja abierta"
+      : !checkout.puedeRegistrar
+        ? "Completá el pedido, pago y pedido seleccionado."
+        : undefined
+
+  return { confirmLabel, confirmDisabled, confirmTitle }
+}
+
+export function runMostradorOrderConfirm(checkout: MostradorSaleCheckout) {
+  if (checkout.puedeCerrarPedido) {
+    void checkout.cerrarPedido()
+    return
+  }
+  checkout.actions.onConfirm()
+}
+
 export function MostradorOrderPanel({
   checkout,
   orderLabel,
@@ -34,33 +66,10 @@ export function MostradorOrderPanel({
     paidPartialUnits,
     totalPagadoAcumulado,
     cartLineOverrides,
-    puedeCerrarPedido,
-    cerrarPedido,
-    cerrarPedidoMode,
-    puedeRegistrar,
-    openCashSession,
     orderPanelLoading,
   } = checkout
-
-  const requiereCajaAbierta = openCashSession == null
-  const confirmLabel =
-    puedeCerrarPedido && cerrarPedidoMode === "release"
-      ? "Liberar pedido"
-      : puedeCerrarPedido
-        ? "Cerrar pedido"
-        : "Cobrar pedido"
-  const confirmDisabled = puedeCerrarPedido
-    ? !puedeCerrarPedido
-    : requiereCajaAbierta || !puedeRegistrar
-  const confirmTitle = puedeCerrarPedido
-    ? cerrarPedidoMode === "release"
-      ? "No hay ítems ni cobros pendientes. Podés liberar el pedido."
-      : "Todo el pedido está cobrado. Podés cerrarlo para marcarlo como pagado."
-    : requiereCajaAbierta
-      ? "Requiere caja abierta"
-      : !puedeRegistrar
-        ? "Completá el pedido, pago y pedido seleccionado."
-        : undefined
+  const { confirmLabel, confirmDisabled, confirmTitle } =
+    getMostradorOrderConfirmState(checkout)
 
   return (
     <SaleOperationTicketOrderPanel
@@ -72,14 +81,13 @@ export function MostradorOrderPanel({
       anularLineaComanda={anularLineaComanda}
       cambiarCantidadPorLinea={cambiarCantidadPorLinea}
       quitarQuantityDealApplication={quitarQuantityDealApplication}
+      showDesktopActions={false}
       actions={{
         ...actions,
         confirmLabel,
         confirmDisabled,
         confirmTitle,
-        onConfirm: puedeCerrarPedido
-          ? () => void cerrarPedido()
-          : actions.onConfirm,
+        onConfirm: () => runMostradorOrderConfirm(checkout),
       }}
       totalBar={{
         total,

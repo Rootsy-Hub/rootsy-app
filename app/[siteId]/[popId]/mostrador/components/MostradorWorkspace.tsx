@@ -4,13 +4,18 @@ import { CounterOrderPanel } from "@/app/[siteId]/[popId]/mostrador/components/C
 import { MesasCheckoutModals } from "@/app/[siteId]/[popId]/mesas/components/MesasCheckoutModals"
 import { MostradorBoard } from "@/app/[siteId]/[popId]/mostrador/components/MostradorBoard"
 import { MostradorCatalogPanel } from "@/app/[siteId]/[popId]/mostrador/components/MostradorCatalogPanel"
-import { MostradorOrderPanel } from "@/app/[siteId]/[popId]/mostrador/components/MostradorOrderPanel"
+import {
+  getMostradorOrderConfirmState,
+  MostradorOrderPanel,
+  runMostradorOrderConfirm,
+} from "@/app/[siteId]/[popId]/mostrador/components/MostradorOrderPanel"
 import { MostradorRightPanelTabs } from "@/app/[siteId]/[popId]/mostrador/components/MostradorRightPanelTabs"
 import type { MostradorRightPanelView } from "@/app/[siteId]/[popId]/mostrador/mostradorTypes"
 import { useMostradorSaleCheckout } from "@/app/[siteId]/[popId]/mostrador/useMostradorSaleCheckout"
 import { useMostradorState } from "@/app/[siteId]/[popId]/mostrador/useMostradorState"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import { LayoutsOperarSaleCheckoutFloor } from "@/components/layouts-module/LayoutsOperarSaleCheckoutFloor"
 import { useOperarMobileStage } from "@/components/layouts-module/OperarMobileStage"
 import { OperarMobileToolboxIcons } from "@/components/layouts-module/OperarMobileToolbox"
 import {
@@ -20,6 +25,7 @@ import {
   layoutsOperarSummaryPanelInnerGridClass,
   layoutsOperarSummaryPanelTabBodyClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import type { SaleOperationDiscountHeaderControl } from "@/components/sale-operation/SaleOperationDiscountHeaderButton"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
@@ -42,6 +48,9 @@ type Props = {
   catalogSidebarOpen: boolean
   onCatalogSidebarOpenChange?: (open: boolean) => void
   onRegisterStartCreateOrder?: (handler: (() => void) | null) => void
+  onRegisterDiscountHeader?: (
+    control: SaleOperationDiscountHeaderControl | null,
+  ) => void
 }
 
 export function MostradorWorkspace({
@@ -50,6 +59,7 @@ export function MostradorWorkspace({
   catalogSidebarOpen,
   onCatalogSidebarOpenChange,
   onRegisterStartCreateOrder,
+  onRegisterDiscountHeader,
 }: Props) {
   useOperateCatalogHydrate(popId)
   const { user } = useAuth()
@@ -107,6 +117,12 @@ export function MostradorWorkspace({
       onCartLineAdded: handleCartLineAdded,
     },
   )
+  const mostradorOrderConfirm = getMostradorOrderConfirmState(checkout)
+
+  useEffect(() => {
+    onRegisterDiscountHeader?.(checkout.discountHeader)
+    return () => onRegisterDiscountHeader?.(null)
+  }, [checkout.discountHeader, onRegisterDiscountHeader])
 
   useSaleOpenCashSessionToasts(
     siteId,
@@ -236,14 +252,26 @@ export function MostradorWorkspace({
         mobileCatalog={catalogPanel}
         mobileCatalogDisabled={!selectedOrder && !creating}
         catalog={!showCatalog ? boardCanvas : catalogPanel}
-        toolbox={
-          checkout.toolboxLoading ? (
-            <SaleOperationToolboxSkeleton />
-          ) : (
-            <SaleOperationToolbox {...checkout.toolbox} />
-          )
+        floor={
+          <LayoutsOperarSaleCheckoutFloor
+            steps={
+              checkout.toolboxLoading ? (
+                <SaleOperationToolboxSkeleton embedded />
+              ) : (
+                <SaleOperationToolbox embedded {...checkout.toolbox} />
+              )
+            }
+            closingTotal={checkout.total}
+            actions={{
+              ...checkout.actions,
+              confirmLabel: mostradorOrderConfirm.confirmLabel,
+              confirmDisabled: mostradorOrderConfirm.confirmDisabled,
+              confirmTitle: mostradorOrderConfirm.confirmTitle,
+              onConfirm: () => runMostradorOrderConfirm(checkout),
+            }}
+          />
         }
-        desktopToolbox={showCatalog}
+        desktopFloor={showCatalog}
         ticket={
           <aside
             className={cn(

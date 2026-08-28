@@ -168,6 +168,7 @@ export function ServiceOperateSnapshotPanel({
         <div className={cn(layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL), "!row-start-3 max-md:hidden")}>
           <SaleOperationActionsBar
             variant="operar"
+            closingTotal={amount}
             discardDisabled={disabled || saving}
             confirmDisabled={!canCreate || disabled || saving}
             confirmLoading={saving}

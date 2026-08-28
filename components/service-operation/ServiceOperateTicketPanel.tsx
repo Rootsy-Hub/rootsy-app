@@ -325,6 +325,7 @@ export function ServiceOperateTicketPanel({
       <div className={cn(layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL), "!row-start-3")}>
         <SaleOperationActionsBar
           variant="operar"
+          closingTotal={amount}
           discardDisabled={disabled || saving}
           confirmDisabled={!canCreate || !selectedService || disabled || saving}
           confirmLoading={saving}

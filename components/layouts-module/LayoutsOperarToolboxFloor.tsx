@@ -10,7 +10,7 @@ type Props = {
 }
 
 /**
- * Bloque de fondo del toolbox — banda sombra-900.
+ * Piso del toolbox — 79px, luz filtrada, hairline superior 200.
  */
 export function LayoutsOperarToolboxFloor({ children, className }: Props) {
   return <div className={cn(layoutsOperarToolboxFloorClass, className)}>{children}</div>

@@ -51,6 +51,8 @@ export type SaleOperationTotalBarProps = {
   hideSectionTitle?: boolean
   /** Totales al pie de una lista, sin bloque separado. */
   embedded?: boolean
+  /** Temporal: oculta la fila Total + importe en el ticket. */
+  hideMainTotal?: boolean
 }
 
 const breakdownLabelPosClass =
@@ -90,6 +92,7 @@ export function SaleOperationTotalBar({
   tone = "pos",
   hideSectionTitle = false,
   embedded = false,
+  hideMainTotal = false,
 }: SaleOperationTotalBarProps) {
   const isModal = tone === "modal"
   const isOperar = tone === "operar"
@@ -286,7 +289,7 @@ export function SaleOperationTotalBar({
                 </p>
               </>
             ) : null}
-            {isOperar ? (
+            {isOperar && !hideMainTotal ? (
               <div
                 className={
                   embedded
@@ -298,6 +301,8 @@ export function SaleOperationTotalBar({
             ) : null}
           </>
         ) : null}
+        {hideMainTotal ? null : (
+          <>
         <p className={cn(totalLabelClass, "m-0", isModal && modalSummaryLabelClass)}>
           {displayedTotalLabel}
         </p>
@@ -308,6 +313,8 @@ export function SaleOperationTotalBar({
         >
           {saleOpFmt.format(total)}
         </p>
+          </>
+        )}
         {!isModal && !isOperar ? (
           <>
             <span aria-hidden className="min-h-0" />

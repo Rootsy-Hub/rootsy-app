@@ -2111,6 +2111,33 @@ export function useMostradorSaleCheckout(
   const requiereCajaAbierta = openCashSession == null
   const cajaRequiredTitle = "Requiere caja abierta"
 
+  const discountHeader = useMemo(
+    () => ({
+      disabled:
+        pedidoToolbarDisabled || requiereCajaAbierta || descuentoGeneralEditBlocked,
+      active: hayDescuento && !pedidoToolbarDisabled && !requiereCajaAbierta,
+      title: pedidoToolbarDisabled ? "Sin descuento" : descuentoToolbarLabel,
+      onClick: () => {
+        if (
+          pedidoToolbarDisabled ||
+          requiereCajaAbierta ||
+          descuentoGeneralEditBlocked
+        ) {
+          return
+        }
+        abrirModalDescuento()
+      },
+    }),
+    [
+      pedidoToolbarDisabled,
+      requiereCajaAbierta,
+      descuentoGeneralEditBlocked,
+      hayDescuento,
+      descuentoToolbarLabel,
+      abrirModalDescuento,
+    ],
+  )
+
   return {
     catalogLoading,
     catalogItemsEnsuring,
@@ -2191,9 +2218,6 @@ export function useMostradorSaleCheckout(
           ? undefined
           : toolboxPaymentDisplay.pagoIcon,
       pagoConfigurado: pagoConfigurado && !pedidoToolbarDisabled && openCashSession != null,
-      descuentoLabel: pedidoToolbarDisabled ? "Sin descuento" : descuentoToolbarLabel,
-      hayDescuento: hayDescuento && !pedidoToolbarDisabled && !requiereCajaAbierta,
-      descuentoDisabled: descuentoGeneralEditBlocked && !pedidoToolbarDisabled,
       onClienteClick: () => {
         if (!canReadClients || pedidoToolbarDisabled || requiereCajaAbierta) return
         setClienteModalAbierto(true)
@@ -2206,11 +2230,8 @@ export function useMostradorSaleCheckout(
         if (requiereCajaAbierta || pedidoToolbarDisabled) return
         setPagoModalAbierto(true)
       },
-      onDescuentoClick: () => {
-        if (pedidoToolbarDisabled || requiereCajaAbierta || descuentoGeneralEditBlocked) return
-        abrirModalDescuento()
-      },
     },
+    discountHeader,
     actions: {
       discardDisabled: !puedeDescartarPedido || requiereCajaAbierta,
       discardTitle: requiereCajaAbierta

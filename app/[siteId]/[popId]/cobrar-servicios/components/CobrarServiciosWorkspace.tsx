@@ -41,6 +41,7 @@ import { ServiceOperateComprobanteDialog } from "@/components/service-operation/
 import { ServiceOperatePaymentDialog } from "@/components/service-operation/ServiceOperatePaymentDialog"
 import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
 import { SaleFinalizeDialog } from "@/components/checkout/SaleFinalizeDialog"
+import { SaleOperationDiscountHeaderButton } from "@/components/sale-operation/SaleOperationDiscountHeaderButton"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { serviceOperateSnapshotPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
@@ -795,6 +796,14 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
+        headerActions={
+          <SaleOperationDiscountHeaderButton
+            disabled={descuentoDisabled || toolbarDisabled}
+            active={hayDescuento}
+            title={descuentoToolboxLabel}
+            onClick={abrirModalDescuento}
+          />
+        }
       >
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <LayoutsOperarMainGrid
@@ -833,13 +842,9 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                 pagoSubLabel={pagoSubLabel}
                 pagoConfigurado={pagoConfigurado}
                 pagoIcon={pagoIcon}
-                descuentoLabel={descuentoToolboxLabel}
-                hayDescuento={hayDescuento}
-                descuentoDisabled={descuentoDisabled || toolbarDisabled}
                 onClienteClick={abrirClienteModal}
                 onComprobanteClick={() => setComprobanteModalAbierto(true)}
                 onPagoClick={() => setPagoModalAbierto(true)}
-                onDescuentoClick={abrirModalDescuento}
               />
             }
             ticket={

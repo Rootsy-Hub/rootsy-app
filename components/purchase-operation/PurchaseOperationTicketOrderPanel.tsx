@@ -43,6 +43,8 @@ type Props = {
   listTitle?: string
   emptyTitle?: string
   emptyDescription?: string
+  /** Acciones desktop viven en el piso de checkout. Default: sí (docs / legado). */
+  showDesktopActions?: boolean
   cartScrollHighlight?: CartListScrollHighlightValue
 }
 
@@ -57,6 +59,7 @@ export function PurchaseOperationTicketOrderPanel({
   listTitle = "Tu compra",
   emptyTitle,
   emptyDescription,
+  showDesktopActions = true,
   cartScrollHighlight,
 }: Props) {
   const cartScrollContainerRef = cartScrollHighlight?.scrollRef
@@ -122,9 +125,13 @@ export function PurchaseOperationTicketOrderPanel({
 
       <OperarMobileToolboxIcons />
 
-      {hasTicketItems ? (
+      {showDesktopActions && hasTicketItems ? (
         <div className={cn(layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL), "max-md:hidden")}>
-          <SaleOperationActionsBar {...actions} variant="operar" />
+          <SaleOperationActionsBar
+            {...actions}
+            variant="operar"
+            closingTotal={actions.closingTotal ?? totalBar.total}
+          />
         </div>
       ) : null}
 

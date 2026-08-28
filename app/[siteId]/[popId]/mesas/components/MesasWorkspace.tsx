@@ -6,7 +6,11 @@ import { MesasCheckoutModals } from "@/app/[siteId]/[popId]/mesas/components/Mes
 import { MesaSessionPanel } from "@/app/[siteId]/[popId]/mesas/components/MesaSessionPanel"
 import { MesasFloorPlan } from "@/app/[siteId]/[popId]/mesas/components/MesasFloorPlan"
 import { MesasTablePickerList } from "@/app/[siteId]/[popId]/mesas/components/MesasTablePickerList"
-import { MesasOrderPanel } from "@/app/[siteId]/[popId]/mesas/components/MesasOrderPanel"
+import {
+  getMesasOrderConfirmState,
+  MesasOrderPanel,
+  runMesasOrderConfirm,
+} from "@/app/[siteId]/[popId]/mesas/components/MesasOrderPanel"
 import { MesasRightPanelTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasRightPanelTabs"
 import { MesasSalonTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasSalonTabs"
 import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
@@ -19,6 +23,7 @@ import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleC
 import { useMesasState } from "@/app/[siteId]/[popId]/mesas/useMesasState"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import { LayoutsOperarSaleCheckoutFloor } from "@/components/layouts-module/LayoutsOperarSaleCheckoutFloor"
 import { useOperarMobileStage } from "@/components/layouts-module/OperarMobileStage"
 import {
   layoutsOperarCatalogColumnClass,
@@ -33,6 +38,13 @@ import {
   mesasFloorEmptyTextClass,
   mesasLayoutErrorBannerClass,
 } from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
+import {
+  RootsAlertDialogContent,
+  RootsAlertDialogFooter,
+  RootsAlertDialogPanel,
+} from "@/components/rootsy-dialog/RootsAlertDialog"
+import { AlertDialog } from "@/components/ui/alert-dialog"
+import type { SaleOperationDiscountHeaderControl } from "@/components/sale-operation/SaleOperationDiscountHeaderButton"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import {
@@ -64,6 +76,9 @@ type Props = {
   canUpdateLayout: boolean
   onRegisterReload?: (reload: () => Promise<void>) => void
   onRegisterLayoutData?: (getter: () => MesasLayoutData | null) => void
+  onRegisterDiscountHeader?: (
+    control: SaleOperationDiscountHeaderControl | null,
+  ) => void
 }
 
 function sessionTitle(
@@ -82,6 +97,7 @@ export function MesasWorkspace({
   canUpdateLayout,
   onRegisterReload,
   onRegisterLayoutData,
+  onRegisterDiscountHeader,
 }: Props) {
   useOperateCatalogHydrate(popId)
   const { user } = useAuth()
@@ -194,6 +210,13 @@ export function MesasWorkspace({
       onCartLineAdded: handleCartLineAdded,
     },
   )
+  const [cannotChargeOpen, setCannotChargeOpen] = useState(false)
+  const mesasOrderConfirm = getMesasOrderConfirmState(checkout)
+
+  useEffect(() => {
+    onRegisterDiscountHeader?.(checkout.discountHeader)
+    return () => onRegisterDiscountHeader?.(null)
+  }, [checkout.discountHeader, onRegisterDiscountHeader])
 
   useSaleOpenCashSessionToasts(
     siteId,
@@ -560,14 +583,27 @@ export function MesasWorkspace({
         mobileCatalog={catalogPanel}
         mobileCatalogDisabled={!selectedSession}
         catalog={!showCatalog ? floorCanvas : catalogPanel}
-        toolbox={
-          checkout.toolboxLoading ? (
-            <SaleOperationToolboxSkeleton />
-          ) : (
-            <SaleOperationToolbox {...checkout.toolbox} />
-          )
+        floor={
+          <LayoutsOperarSaleCheckoutFloor
+            steps={
+              checkout.toolboxLoading ? (
+                <SaleOperationToolboxSkeleton embedded />
+              ) : (
+                <SaleOperationToolbox embedded {...checkout.toolbox} />
+              )
+            }
+            closingTotal={checkout.total}
+            actions={{
+              ...checkout.actions,
+              confirmLabel: mesasOrderConfirm.confirmLabel,
+              confirmDisabled: mesasOrderConfirm.confirmDisabled,
+              confirmTitle: mesasOrderConfirm.confirmTitle,
+              onConfirm: () =>
+                runMesasOrderConfirm(checkout, () => setCannotChargeOpen(true)),
+            }}
+          />
         }
-        desktopToolbox={showCatalog}
+        desktopFloor={showCatalog}
         ticket={
           <aside
             className={layoutsOperarSummaryPanelTabsClass}
@@ -662,6 +698,20 @@ export function MesasWorkspace({
       />
 
       <MesasCheckoutModals checkout={checkout} />
+
+      <AlertDialog open={cannotChargeOpen} onOpenChange={setCannotChargeOpen}>
+        <RootsAlertDialogContent>
+          <RootsAlertDialogPanel
+            title="No se puede cobrar"
+            description="Este pedido ya está cobrado. No queda saldo por cobrar."
+          />
+          <RootsAlertDialogFooter
+            hideCancel
+            confirmLabel="Entendido"
+            onConfirm={() => setCannotChargeOpen(false)}
+          />
+        </RootsAlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

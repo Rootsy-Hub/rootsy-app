@@ -1,15 +1,14 @@
 "use client"
 
 import {
-  layoutsOperarToolboxProposalSlotLabelClass,
-  layoutsOperarToolboxProposalSlotValueClass,
-} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
-import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
-import {
   layoutsOperarToolboxBandClass,
   layoutsOperarToolboxBarGridClass,
   layoutsOperarToolboxIconWrapClass,
   layoutsOperarToolboxSlotClass,
+  layoutsOperarToolboxSlotCopyClass,
+  layoutsOperarToolboxSlotLabelClass,
+  layoutsOperarToolboxSlotLine,
+  layoutsOperarToolboxSlotLineClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { LayoutsOperarToolboxFloor } from "@/components/layouts-module/LayoutsOperarToolboxFloor"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
@@ -17,8 +16,6 @@ import { SERVICE_OPERATE_STEP_LIST } from "@/components/service-operation/servic
 import type { ServiceOperateStep } from "@/lib/serviceOperateSteps"
 import { cn } from "@/lib/utils"
 import { Percent } from "lucide-react"
-
-const TOOLBOX_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL
 
 type StepSlot = {
   step: ServiceOperateStep
@@ -51,6 +48,8 @@ export function ServiceOperateStepToolbox({
   edge = "bottom",
   className,
 }: Props) {
+  const descuentoLine = layoutsOperarToolboxSlotLine("Descuento", descuentoLabel, hayDescuento)
+
   return (
     <LayoutsOperarToolboxFloor
       className={cn(
@@ -70,6 +69,7 @@ export function ServiceOperateStepToolbox({
           const configured = slot?.configured ?? false
           const disabled = slot?.disabled ?? false
           const selected = activeStep === step
+          const line = layoutsOperarToolboxSlotLine(label, value, configured)
 
           return (
             <button
@@ -94,20 +94,9 @@ export function ServiceOperateStepToolbox({
               >
                 {step}
               </span>
-              <span className="min-w-0 flex-1">
-                <span
-                  className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}
-                >
-                  {label}
-                </span>
-                <span
-                  className={layoutsOperarToolboxProposalSlotValueClass(
-                    TOOLBOX_PROPOSAL,
-                    configured,
-                  )}
-                >
-                  {value}
-                </span>
+              <span className={layoutsOperarToolboxSlotCopyClass}>
+                <span className={layoutsOperarToolboxSlotLabelClass}>{label}</span>
+                <span className={layoutsOperarToolboxSlotLineClass}>{line}</span>
               </span>
             </button>
           )
@@ -124,19 +113,17 @@ export function ServiceOperateStepToolbox({
           aria-label={`Descuento: ${descuentoLabel}${descuentoDisabled ? " (bloqueado)" : ""}`}
         >
           <span className={layoutsOperarToolboxIconWrapClass(hayDescuento)}>
-            <Percent className="size-4.5 sm:size-5" aria-hidden />
+            <Percent className="size-5" aria-hidden />
           </span>
-          <span className="min-w-0 flex-1">
-            <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
-              Descuento
-            </span>
+          <span className={layoutsOperarToolboxSlotCopyClass}>
+            <span className={layoutsOperarToolboxSlotLabelClass}>Descuento</span>
             <span
               className={cn(
-                layoutsOperarToolboxProposalSlotValueClass(TOOLBOX_PROPOSAL, hayDescuento),
+                layoutsOperarToolboxSlotLineClass,
                 hayDescuento && saleOpImporteBaseClass,
               )}
             >
-              {descuentoLabel}
+              {descuentoLine}
             </span>
           </span>
         </button>

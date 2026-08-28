@@ -1,3 +1,5 @@
+"use client"
+
 import {
   HANDBOOK_EDITORIAL_RULES,
   HANDBOOK_HIERARCHY_LAYERS,

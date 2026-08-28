@@ -1,3 +1,5 @@
+"use client"
+
 import "@/app/library/libraryColorTheme.css"
 import "@/app/handbook/handbookAtmosphere.css"
 import { libraryShellMainClass } from "@/app/library/libraryColorTheme"

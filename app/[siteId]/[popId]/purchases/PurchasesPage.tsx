@@ -14,6 +14,7 @@ import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs
 import { useQueryClient } from "@tanstack/react-query"
 import { PurchaseCatalogBrowser } from "@/components/purchase-operation/PurchaseCatalogBrowser"
 import { PurchaseOperationToolbox } from "@/components/purchase-operation/PurchaseOperationToolbox"
+import { SaleOperationDiscountHeaderButton } from "@/components/sale-operation/SaleOperationDiscountHeaderButton"
 import { PurchaseOperationTicketOrderPanel } from "@/components/purchase-operation/PurchaseOperationTicketOrderPanel"
 import type { PurchaseCatalogProduct } from "@/components/purchase-operation/purchaseCatalogTypes"
 import type { PurchaseLineEditInput } from "@/components/purchase-operation/PurchaseCartLineCard"
@@ -87,6 +88,7 @@ import {
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import { LayoutsOperarSaleCheckoutFloor } from "@/components/layouts-module/LayoutsOperarSaleCheckoutFloor"
 import {
   layoutsOperarSummaryPanelClass,
   layoutsOperarSummaryPanelMobileStackClass,
@@ -1167,6 +1169,49 @@ function PurchasesPage() {
   const userAvatarSrc = bootstrap?.userImageUrl ?? undefined
   const popName = bootstrap?.popName ?? ""
 
+  const purchaseCheckoutActions = {
+    discardDisabled: !hayItemsEnPedido,
+    confirmDisabled: !puedeComprar || compraSubmitting,
+    confirmLoading: compraSubmitting,
+    onDiscard: () => setDescartarConfirmOpen(true),
+    onConfirm: () => {
+      setCompraError(null)
+      setComprarConfirmOpen(true)
+    },
+    confirmLabel: "Pagar" as const,
+    confirmTone: "pay" as const,
+    confirmTitle: !hayItemsEnPedido
+      ? "Agregá artículos a la compra."
+      : !payOnSupplierAccount && !metodoPagoSeleccionado
+        ? "Elegí cómo vas a pagar o usá cuenta corriente."
+        : payOnSupplierAccount &&
+            !partyCanOperateOnCurrentAccount(proveedorSeleccionado)
+          ? proveedorSeleccionado?.id
+            ? "Este proveedor no está dado de alta en Cuentas corrientes."
+            : "Elegí un proveedor del catálogo para comprar a cuenta corriente."
+          : !canCreate
+            ? "No tenés permiso para registrar compras."
+            : undefined,
+  }
+
+  const purchaseCheckoutSteps = (
+    <PurchaseOperationToolbox
+      embedded
+      proveedorLabel={proveedorSeleccionado?.name ?? "Elegir proveedor"}
+      proveedorIvaLabel={compraIvaLabel}
+      proveedorConfigurado={Boolean(proveedorSeleccionado)}
+      comprobanteLabel={comprobanteToolboxLabel}
+      comprobanteConfigurado={comprobanteConfigurado}
+      pagoLabel={toolboxPaymentDisplay.pagoLabel}
+      pagoSubLabel={toolboxPaymentDisplay.pagoSubLabel}
+      pagoIcon={toolboxPaymentDisplay.pagoIcon}
+      pagoConfigurado={pagoConfigurado}
+      onProveedorClick={() => setProveedorModalAbierto(true)}
+      onComprobanteClick={() => setComprobanteModalAbierto(true)}
+      onPagoClick={() => setPagoModalAbierto(true)}
+    />
+  )
+
   if (!popId || !siteId) {
     return (
       <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
@@ -1194,19 +1239,26 @@ function PurchasesPage() {
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
         headerActions={
-          <RootsIconButton
-            label="Crear orden de compra"
-            semantic="tertiary"
-            atmosphere="eter"
-            size="default"
-            disabled={!hayItemsEnPedido || ordenSubmitting}
-            onClick={() => {
-              setOrdenError(null)
-              setOrdenConfirmOpen(true)
-            }}
-          >
-            <FileText className="size-5" aria-hidden />
-          </RootsIconButton>
+          <>
+            <SaleOperationDiscountHeaderButton
+              active={hayDescuento}
+              title={descuentoToolboxLabel}
+              onClick={abrirModalDescuento}
+            />
+            <RootsIconButton
+              label="Crear orden de compra"
+              semantic="tertiary"
+              atmosphere="eter"
+              size="default"
+              disabled={!hayItemsEnPedido || ordenSubmitting}
+              onClick={() => {
+                setOrdenError(null)
+                setOrdenConfirmOpen(true)
+              }}
+            >
+              <FileText className="size-5" aria-hidden />
+            </RootsIconButton>
+          </>
         }
       >
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
@@ -1244,23 +1296,13 @@ function PurchasesPage() {
                 onCatalogSidebarOpenChange={setCatalogSidebarOpen}
               />
             }
-            toolbox={
-              <PurchaseOperationToolbox
-                proveedorLabel={proveedorSeleccionado?.name ?? "Elegir proveedor"}
-                proveedorIvaLabel={compraIvaLabel}
-                proveedorConfigurado={Boolean(proveedorSeleccionado)}
-                comprobanteLabel={comprobanteToolboxLabel}
-                comprobanteConfigurado={comprobanteConfigurado}
-                pagoLabel={toolboxPaymentDisplay.pagoLabel}
-                pagoSubLabel={toolboxPaymentDisplay.pagoSubLabel}
-                pagoIcon={toolboxPaymentDisplay.pagoIcon}
-                pagoConfigurado={pagoConfigurado}
-                descuentoLabel={descuentoToolboxLabel}
-                hayDescuento={hayDescuento}
-                onProveedorClick={() => setProveedorModalAbierto(true)}
-                onComprobanteClick={() => setComprobanteModalAbierto(true)}
-                onPagoClick={() => setPagoModalAbierto(true)}
-                onDescuentoClick={abrirModalDescuento}
+            floor={
+              <LayoutsOperarSaleCheckoutFloor
+                steps={purchaseCheckoutSteps}
+                closingTotal={total}
+                totalLabel="Total a pagar"
+                regionLabel="Checkout de la compra"
+                actions={purchaseCheckoutActions}
               />
             }
             ticket={
@@ -1279,30 +1321,8 @@ function PurchasesPage() {
                   onRemoveLine={quitarDelCarrito}
                   listTitle="Tu compra"
                   cartScrollHighlight={cartScrollHighlight}
-                  actions={{
-                    discardDisabled: !hayItemsEnPedido,
-                    confirmDisabled: !puedeComprar || compraSubmitting,
-                    confirmLoading: compraSubmitting,
-                    onDiscard: () => setDescartarConfirmOpen(true),
-                    onConfirm: () => {
-                      setCompraError(null)
-                      setComprarConfirmOpen(true)
-                    },
-                    confirmLabel: "Pagar",
-                    confirmTone: "pay",
-                    confirmTitle: !hayItemsEnPedido
-                      ? "Agregá artículos a la compra."
-                      : !payOnSupplierAccount && !metodoPagoSeleccionado
-                        ? "Elegí cómo vas a pagar o usá cuenta corriente."
-                        : payOnSupplierAccount &&
-                            !partyCanOperateOnCurrentAccount(proveedorSeleccionado)
-                          ? proveedorSeleccionado?.id
-                            ? "Este proveedor no está dado de alta en Cuentas corrientes."
-                            : "Elegí un proveedor del catálogo para comprar a cuenta corriente."
-                          : !canCreate
-                            ? "No tenés permiso para registrar compras."
-                            : undefined,
-                  }}
+                  showDesktopActions={false}
+                  actions={purchaseCheckoutActions}
                   totalBar={{
                     total,
                     subtotal,

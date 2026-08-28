@@ -1,3 +1,5 @@
+"use client"
+
 import {
   HANDBOOK_ICON_CATEGORIES,
   HANDBOOK_ICON_COLORS,

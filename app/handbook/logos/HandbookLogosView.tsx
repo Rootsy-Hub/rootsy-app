@@ -1,3 +1,5 @@
+"use client"
+
 import {
   HANDBOOK_LOGO_ANATOMY,
   HANDBOOK_LOGO_CLEARANCE,

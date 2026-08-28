@@ -47,12 +47,12 @@ export const ROOTSY_LAYOUTS_OPERAR_PRINCIPLES = [
   {
     title: "Catálogo · dosel denso",
     detail:
-      "Sidebar w-64 (256px) · library-sidebar 800 + library-nav · canvas 950 · cards negro + borde bruma-800 · toolbox banda 950 · savia solo en oficio (nav, + , ícono) · pairing pos-core.",
+      "Sidebar w-64 (256px) · library-sidebar 800 + library-nav · canvas 950 · cards negro + borde bruma-800 · umbral toolbox + cierre en luz filtrada 100 · savia solo en oficio.",
   },
   {
     title: "Ticket · lienzo 100 · papel blanco",
     detail:
-      "Lienzo bruma-100 · líneas y total en blanco · bruma-50 solo como aire o velo · hairline bruma-200 · split sombra-700 · el total solo aparece con ítems.",
+      "Lienzo bruma-100 · líneas y desglose en blanco · umbral 79px bruma-100 · hairline bruma-200 · el split no corta el umbral · cifra de cierre junto a Cobrar.",
   },
 ] as const
 
@@ -79,16 +79,19 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
   toolboxBandPaddingYSmPx: OPERAR_FOOTER_BAND_PAD_Y_SM_PX,
   toolboxBandPaddingYToken: "space.200",
   toolboxBandPaddingYSmToken: "space.200",
-  /** Banda toolbox fila 2 — alineada con barra de totales del ticket. */
-  toolboxRowMinHeightPx: OPERAR_FOOTER_BAND_MIN_PX,
-  toolboxRowMinHeightSmPx: OPERAR_FOOTER_BAND_MIN_SM_PX,
-  toolboxRowMinHeightToken: "space.1000 + 2× space.200",
-  toolboxRowMinHeightSmToken: "space.1000 + space.050 + 2× space.200",
-  toolboxMinHeightClass: `min-h-[${OPERAR_FOOTER_BAND_MIN_PX}px] sm:min-h-[${OPERAR_FOOTER_BAND_MIN_SM_PX}px]`,
-  toolboxMinHeightSmClass: `sm:min-h-[${OPERAR_FOOTER_BAND_MIN_SM_PX}px]`,
+  /** Banda toolbox — 79px, slots al ras. */
+  toolboxRowMinHeightPx: 79,
+  toolboxRowMinHeightSmPx: 79,
+  toolboxRowMinHeightToken: "79px",
+  toolboxRowMinHeightSmToken: "79px",
+  toolboxMinHeightClass: "h-[79px] min-h-[79px]",
+  toolboxMinHeightSmClass: "sm:h-[79px] sm:min-h-[79px]",
+  /** Piso de checkout — misma altura que el header módulo (h-17). */
+  checkoutFloorHeightPx: ROOTSY_LAYOUTS_MODULE_HEADER.heightPx,
+  checkoutFloorHeightToken: ROOTSY_LAYOUTS_MODULE_HEADER.heightToken,
   ticketHeaderHeightPx: 40,
-  /** space.1000 — aire para círculo Cobrar space.800 (64) + Descartar space.600 (48). */
-  ticketActionsHeightPx: 80,
+  /** Acciones mobile / umbral legado. */
+  ticketActionsHeightPx: 79,
   /** Totales — misma altura mínima que toolbox para cerrar el grid en una sola línea base. */
   ticketTotalMinHeightPx: OPERAR_FOOTER_BAND_MIN_PX,
   ticketTotalMinHeightSmPx: OPERAR_FOOTER_BAND_MIN_SM_PX,
@@ -99,7 +102,7 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
   /** 6× space.500 — techo para que la card no se estire. */
   catalogCardMaxWidthPx: LAYOUTS_OPERAR_CATALOG_CARD_MAX_WIDTH_PX,
   catalogGridGapPx: LAYOUTS_OPERAR_CATALOG_GRID_GAP_PX,
-  toolboxSlots: ["Cliente", "Comprobante", "Pago", "Descuento"] as const,
+  toolboxSlots: ["Cliente", "Comprobante", "Pago"] as const,
 } as const
 
 /**
@@ -109,17 +112,17 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
 export const ROOTSY_LAYOUTS_OPERAR_SURFACES = {
   shell: { token: "negro", css: "var(--rootsy-negro)" },
   header: { token: "sombra-950→900", css: "linear-gradient chrome" },
-  rail: { token: "sombra-800 · library-sidebar", css: "var(--rootsy-sombra-800)" },
-  canvas: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
-  productCard: { token: "negro", css: "var(--rootsy-negro)" },
+  rail: { token: "sombra-950", css: "var(--rootsy-sombra-950)" },
+  canvas: { token: "sombra-800", css: "var(--rootsy-sombra-800)" },
+  productCard: { token: "sombra-950 · borde 900", css: "var(--rootsy-sombra-950)" },
   footer: {
     token: ROOTSY_LAYOUTS_EARTH_FLOOR.chromeToken,
     css: ROOTSY_LAYOUTS_EARTH_FLOOR.background,
   },
   lightPanel: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
-  lightContent: { token: "blanco", css: "var(--rootsy-blanco)" },
+  lightContent: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
   lightActions: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
-  lightTotals: { token: "blanco", css: "var(--rootsy-blanco)" },
+  lightTotals: { token: "bruma-100", css: "var(--rootsy-bruma-100)" },
 } as const
 
 /**

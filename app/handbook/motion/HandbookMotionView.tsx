@@ -1,3 +1,5 @@
+"use client"
+
 import {
   HANDBOOK_LOADING_STATES,
   HANDBOOK_MOTION_DURATIONS,

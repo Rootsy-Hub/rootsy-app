@@ -17,6 +17,47 @@ type Props = {
   cartScrollHighlight?: CartListScrollHighlightValue
 }
 
+export function getMesasOrderConfirmState(checkout: MesasSaleCheckout) {
+  const alreadyFullyCharged = checkout.totalPagadoAcumulado > 0 && checkout.total <= 0
+  const requiereCajaAbierta = checkout.openCashSession == null
+  const confirmLabel =
+    checkout.puedeCerrarMesa && !alreadyFullyCharged ? "Liberar mesa" : "Cobrar mesa"
+  const confirmDisabled = alreadyFullyCharged
+    ? false
+    : checkout.puedeCerrarMesa
+      ? !checkout.puedeCerrarMesa
+      : requiereCajaAbierta || !checkout.puedeRegistrar
+  const confirmTitle = alreadyFullyCharged
+    ? "El pedido ya está cobrado. No queda saldo."
+    : checkout.puedeCerrarMesa
+      ? checkout.cerrarMesaMode === "release"
+        ? "No hay ítems ni cobros pendientes. Podés liberar la mesa."
+        : "Todo el pedido está cobrado. Podés liberar la mesa."
+      : requiereCajaAbierta
+        ? "Requiere caja abierta"
+        : !checkout.puedeRegistrar
+          ? "Completá el pedido, pago y mesa abierta."
+          : undefined
+
+  return { alreadyFullyCharged, confirmLabel, confirmDisabled, confirmTitle }
+}
+
+export function runMesasOrderConfirm(
+  checkout: MesasSaleCheckout,
+  onCannotCharge: () => void,
+) {
+  const { alreadyFullyCharged } = getMesasOrderConfirmState(checkout)
+  if (alreadyFullyCharged) {
+    onCannotCharge()
+    return
+  }
+  if (checkout.puedeCerrarMesa) {
+    void checkout.cerrarMesa()
+    return
+  }
+  checkout.actions.onConfirm()
+}
+
 export function MesasOrderPanel({
   checkout,
   tableLabel,
@@ -41,35 +82,11 @@ export function MesasOrderPanel({
     paidPartialUnits,
     totalPagadoAcumulado,
     cartLineOverrides,
-    puedeCerrarMesa,
-    cerrarMesa,
-    cerrarMesaMode,
-    puedeRegistrar,
-    openCashSession,
     orderPanelLoading,
   } = checkout
   const [cannotChargeOpen, setCannotChargeOpen] = useState(false)
-
-  const alreadyFullyCharged = totalPagadoAcumulado > 0 && total <= 0
-  const requiereCajaAbierta = openCashSession == null
-  const confirmLabel =
-    puedeCerrarMesa && !alreadyFullyCharged ? "Liberar mesa" : "Cobrar mesa"
-  const confirmDisabled = alreadyFullyCharged
-    ? false
-    : puedeCerrarMesa
-      ? !puedeCerrarMesa
-      : requiereCajaAbierta || !puedeRegistrar
-  const confirmTitle = alreadyFullyCharged
-    ? "El pedido ya está cobrado. No queda saldo."
-    : puedeCerrarMesa
-      ? cerrarMesaMode === "release"
-        ? "No hay ítems ni cobros pendientes. Podés liberar la mesa."
-        : "Todo el pedido está cobrado. Podés liberar la mesa."
-      : requiereCajaAbierta
-        ? "Requiere caja abierta"
-        : !puedeRegistrar
-          ? "Completá el pedido, pago y mesa abierta."
-          : undefined
+  const { confirmLabel, confirmDisabled, confirmTitle } =
+    getMesasOrderConfirmState(checkout)
 
   return (
     <>
@@ -81,22 +98,13 @@ export function MesasOrderPanel({
         anularLineaComanda={anularLineaComanda}
         cambiarCantidadPorLinea={cambiarCantidadPorLinea}
         quitarQuantityDealApplication={quitarQuantityDealApplication}
+        showDesktopActions={false}
         actions={{
           ...actions,
           confirmLabel,
           confirmDisabled,
           confirmTitle,
-          onConfirm: () => {
-            if (alreadyFullyCharged) {
-              setCannotChargeOpen(true)
-              return
-            }
-            if (puedeCerrarMesa) {
-              void cerrarMesa()
-              return
-            }
-            actions.onConfirm()
-          },
+          onConfirm: () => runMesasOrderConfirm(checkout, () => setCannotChargeOpen(true)),
         }}
         totalBar={{
           total,

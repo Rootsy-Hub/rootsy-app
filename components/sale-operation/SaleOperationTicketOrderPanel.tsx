@@ -61,6 +61,8 @@ type Props = {
   emptyDescription?: string
   flush?: boolean
   loading?: boolean
+  /** Acciones desktop viven en el piso de checkout. Default: sí (docs / legado). */
+  showDesktopActions?: boolean
   cartScrollHighlight?: CartListScrollHighlightValue
 }
 
@@ -106,6 +108,7 @@ export function SaleOperationTicketOrderPanel({
   emptyTitle,
   emptyDescription,
   loading = false,
+  showDesktopActions = true,
   cartScrollHighlight,
 }: Props) {
   const cartScrollContainerRef = cartScrollHighlight?.scrollRef
@@ -224,7 +227,12 @@ export function SaleOperationTicketOrderPanel({
               ))}
             </div>
             <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
-              <SaleOperationTotalBar {...totalBar} tone="operar" className="w-full" />
+              <SaleOperationTotalBar
+                {...totalBar}
+                tone="operar"
+                hideMainTotal
+                className="w-full"
+              />
             </div>
           </div>
         )}
@@ -232,11 +240,12 @@ export function SaleOperationTicketOrderPanel({
 
       {!loading ? <OperarMobileToolboxIcons /> : null}
 
-      {!loading && hasTicketItems ? (
+      {showDesktopActions && !loading && hasTicketItems ? (
         <div className={cn(layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL), "max-md:hidden")}>
           <SaleOperationActionsBar
             {...actions}
             variant="operar"
+            closingTotal={actions.closingTotal ?? totalBar.total}
           />
         </div>
       ) : null}

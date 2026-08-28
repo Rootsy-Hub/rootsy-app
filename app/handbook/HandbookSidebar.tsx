@@ -1,3 +1,5 @@
+"use client"
+
 import { HandbookDesignSystemNav } from "@/app/handbook/HandbookDesignSystemNav"
 import {
   HANDBOOK_DESIGN_SYSTEM_BACK_HREF,
