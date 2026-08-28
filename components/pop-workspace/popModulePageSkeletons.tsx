@@ -3,11 +3,27 @@
 import "@/components/statistics/statisticsNavRail.css"
 import { InventoryHomeSkeleton } from "@/app/[siteId]/[popId]/inventory/InventoryHomeSkeleton"
 import { ExpensePageSkeleton } from "@/app/[siteId]/[popId]/expenses/ExpensePageSkeleton"
+import { ComandasStationMenu } from "@/app/[siteId]/[popId]/comandas/components/ComandasStationMenu"
 import { HrPageSkeleton } from "@/app/[siteId]/[popId]/hr/HrPageSkeleton"
 import { PrintersPageSkeleton } from "@/app/[siteId]/[popId]/printers/PrintersPageSkeleton"
 import { CashRegistersPageSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegistersGridSkeleton"
+import { MesasRightPanelTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasRightPanelTabs"
+import { MesasSalonTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasSalonTabs"
+import { MostradorRightPanelTabs } from "@/app/[siteId]/[popId]/mostrador/components/MostradorRightPanelTabs"
+import { OperarTicketEmptyState } from "@/components/layouts-module/OperarTicketEmptyState"
 import { RootsIconButton } from "@/components/rootsy-button"
-import { Plus } from "lucide-react"
+import { ChannelDataEmptyState } from "@/components/sale-operation/ChannelOperationDataPanel"
+import { ServiceOperateSnapshotPanelTabs } from "@/components/service-operation/ServiceOperateSnapshotPanelTabs"
+import {
+  FileText,
+  LayoutGrid,
+  MapPin,
+  Monitor,
+  Plus,
+  Shapes,
+  Tags,
+  UtensilsCrossed,
+} from "lucide-react"
 import { TreasuryAccountsPageSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountsGridSkeleton"
 import { ComandasBoardSkeleton } from "@/app/[siteId]/[popId]/comandas/components/ComandasBoard"
 import { comandasBrisaPageMainClass } from "@/app/[siteId]/[popId]/comandas/comandasBrisaStyles"
@@ -22,6 +38,7 @@ import {
   OperationsModulePageSkeleton,
 } from "@/components/pop-workspace/popModuleSkeletonShell"
 import type { PopModuleSkeletonLayout } from "@/components/pop-workspace/popModuleSkeletonShell"
+import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import { PopSettingsSectionLoading } from "@/components/settings/PopSettingsSectionLoading"
 import { PopSettingsSectionNav } from "@/components/settings/PopSettingsSectionNav"
 import { reportHubGridClass } from "@/components/reports/ReportHubCard"
@@ -48,9 +65,13 @@ import {
   layoutsOperarCatalogSidebarOpenClass,
   layoutsOperarSummaryPanelClass,
   layoutsOperarSummaryPanelMobileStackClass,
+  layoutsOperarSummaryPanelTabBodyClass,
+  layoutsOperarSummaryPanelTabsClass,
+  serviceOperateSnapshotPanelClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { POP_SETTINGS_SECTIONS } from "@/lib/popSettingsCatalog"
 import { cn } from "@/lib/utils"
+import type { ReactNode } from "react"
 
 const sk = dataWorkspaceBlocksSkeletonTone
 
@@ -134,7 +155,32 @@ export function HrModulePageSkeleton(layout: PopModuleSkeletonLayout) {
 
 export function ExpenseModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
-    <BlocksModulePageSkeleton layout={layout} title="Gastos">
+    <BlocksModulePageSkeleton
+      layout={layout}
+      title="Gastos"
+      headerActions={
+        <>
+          <RootsIconButton
+            label="Nueva promesa"
+            semantic="primary"
+            atmosphere="eter"
+            size="default"
+            disabled
+          >
+            <Plus className="size-5" aria-hidden />
+          </RootsIconButton>
+          <RootsIconButton
+            label="Categorías"
+            semantic="tertiary"
+            atmosphere="eter"
+            size="default"
+            disabled
+          >
+            <Tags className="size-5" aria-hidden />
+          </RootsIconButton>
+        </>
+      }
+    >
       <ExpensePageSkeleton />
     </BlocksModulePageSkeleton>
   )
@@ -307,6 +353,15 @@ export function ComandasModulePageSkeleton(layout: PopModuleSkeletonLayout) {
       title="Comandas"
       mainClassName={comandasBrisaPageMainClass}
       contentClassName={null}
+      sectionMenu={
+        <ComandasStationMenu
+          stations={[
+            { id: "station", name: "Estación", sortOrder: 0, isActive: true },
+          ]}
+          stationId="station"
+          onChange={() => undefined}
+        />
+      }
     >
       <ComandasBoardSkeleton />
     </BlocksModulePageSkeleton>
@@ -317,19 +372,30 @@ function OperarCatalogModulePageSkeleton({
   layout,
   title,
   ticketTitle,
+  headerMoreActions,
+  headerActions,
+  ticket,
 }: {
   layout: PopModuleSkeletonLayout
   title: string
   ticketTitle: string
+  headerMoreActions?: readonly DataWorkspaceHeaderMoreAction[]
+  headerActions?: ReactNode
+  ticket?: ReactNode
 }) {
   return (
-    <OperationsModulePageSkeleton layout={layout} title={title}>
+    <OperationsModulePageSkeleton
+      layout={layout}
+      title={title}
+      headerActions={headerActions}
+      headerMoreActions={headerMoreActions}
+    >
       <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
         <OperationsModuleBackdrop />
         <LayoutsOperarMainGrid
           catalog={<OperarCatalogColumnSkeleton />}
           toolbox={<SaleOperationToolboxSkeleton />}
-          ticket={<TicketPanelSkeleton listTitle={ticketTitle} />}
+          ticket={ticket ?? <TicketPanelSkeleton listTitle={ticketTitle} />}
         />
       </div>
     </OperationsModulePageSkeleton>
@@ -342,6 +408,13 @@ export function SaleModulePageSkeleton(layout: PopModuleSkeletonLayout) {
       layout={layout}
       title="Vender"
       ticketTitle="Pedido"
+      headerMoreActions={[
+        {
+          label: "Crear presupuesto",
+          icon: FileText,
+          onClick: () => undefined,
+        },
+      ]}
     />
   )
 }
@@ -352,6 +425,28 @@ export function PurchasesModulePageSkeleton(layout: PopModuleSkeletonLayout) {
       layout={layout}
       title="Comprar"
       ticketTitle="Compra"
+      headerActions={
+        <RootsIconButton
+          label="Crear orden de compra"
+          semantic="tertiary"
+          atmosphere="eter"
+          size="default"
+          disabled
+        >
+          <FileText className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
+      ticket={
+        <aside
+          className={cn(
+            layoutsOperarSummaryPanelClass,
+            layoutsOperarSummaryPanelMobileStackClass,
+          )}
+          aria-hidden
+        >
+          <OperarTicketEmptyState kind="purchase" />
+        </aside>
+      }
     />
   )
 }
@@ -364,13 +459,52 @@ export function CobrarServiciosModulePageSkeleton(
       layout={layout}
       title="Vender servicio"
       ticketTitle="Servicio"
+      ticket={
+        <aside className={serviceOperateSnapshotPanelClass} aria-hidden>
+          <div className="row-start-1 min-h-0 shrink-0">
+            <ServiceOperateSnapshotPanelTabs
+              value="config"
+              onChange={() => undefined}
+              cargoDisabled
+            />
+          </div>
+          <div
+            className={cn(
+              layoutsOperarSummaryPanelTabBodyClass,
+              "row-start-2 min-h-0",
+            )}
+          >
+            <OperarTicketEmptyState kind="service" />
+          </div>
+        </aside>
+      }
     />
   )
 }
 
 export function MesasModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
-    <OperationsModulePageSkeleton layout={layout} title="Mesas">
+    <OperationsModulePageSkeleton
+      layout={layout}
+      title="Mesas"
+      headerMoreActions={[
+        {
+          label: "Salones",
+          icon: MapPin,
+          onClick: () => undefined,
+        },
+        {
+          label: "Mesas",
+          icon: LayoutGrid,
+          onClick: () => undefined,
+        },
+        {
+          label: "Elementos del plano",
+          icon: Shapes,
+          onClick: () => undefined,
+        },
+      ]}
+    >
       <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
         <OperationsModuleBackdrop />
         <LayoutsOperarMainGrid
@@ -389,22 +523,39 @@ export function MesasModulePageSkeleton(layout: PopModuleSkeletonLayout) {
           }
           catalog={
             <section className={cn(layoutsOperarCatalogColumnClass, "flex-col")}>
-              <div
-                className={cn(
-                  layoutsOperarCatalogCanvasClass,
-                  "[grid-template-rows:minmax(0,1fr)]",
-                )}
-              >
-                <MesasFloorPlanSkeleton />
+              <div className={layoutsOperarCatalogCanvasClass}>
+                <MesasSalonTabs
+                  salons={[
+                    {
+                      id: "salon",
+                      name: "Salón",
+                      sortOrder: 0,
+                      isActive: true,
+                    },
+                  ]}
+                  activeSalonId="salon"
+                  onChange={() => undefined}
+                  tableCounts={{}}
+                  loading
+                />
+                <div className="row-start-2 flex h-full min-h-0 flex-col overflow-hidden">
+                  <MesasFloorPlanSkeleton />
+                </div>
               </div>
             </section>
           }
           ticket={
-            <aside className={layoutsOperarSummaryPanelClass} aria-hidden>
-              <div className="space-y-3 p-4">
-                <div className={cn(sk.bar, "h-4 w-28")} />
-                <div className={cn(sk.box, "h-40")} />
-                <div className={cn(sk.box, "h-24")} />
+            <aside className={layoutsOperarSummaryPanelTabsClass} aria-hidden>
+              <MesasRightPanelTabs
+                value="session"
+                onChange={() => undefined}
+                pedidoDisabled
+              />
+              <div className={layoutsOperarSummaryPanelTabBodyClass}>
+                <ChannelDataEmptyState
+                  icon={UtensilsCrossed}
+                  title="Seleccioná una mesa"
+                />
               </div>
             </aside>
           }
@@ -416,7 +567,21 @@ export function MesasModulePageSkeleton(layout: PopModuleSkeletonLayout) {
 
 export function MostradorModulePageSkeleton(layout: PopModuleSkeletonLayout) {
   return (
-    <OperationsModulePageSkeleton layout={layout} title="Mostrador">
+    <OperationsModulePageSkeleton
+      layout={layout}
+      title="Mostrador"
+      headerActions={
+        <RootsIconButton
+          label="Nuevo pedido"
+          semantic="primary"
+          atmosphere="eter"
+          size="default"
+          disabled
+        >
+          <Plus className="size-5" aria-hidden />
+        </RootsIconButton>
+      }
+    >
       <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
         <OperationsModuleBackdrop />
         <LayoutsOperarMainGrid
@@ -446,10 +611,17 @@ export function MostradorModulePageSkeleton(layout: PopModuleSkeletonLayout) {
             </section>
           }
           ticket={
-            <aside className={layoutsOperarSummaryPanelClass} aria-hidden>
-              <div className="space-y-3 p-4">
-                <div className={cn(sk.bar, "h-4 w-32")} />
-                <div className={cn(sk.box, "h-48")} />
+            <aside className={layoutsOperarSummaryPanelTabsClass} aria-hidden>
+              <MostradorRightPanelTabs
+                value="detail"
+                onChange={() => undefined}
+                cartDisabled
+              />
+              <div className={layoutsOperarSummaryPanelTabBodyClass}>
+                <ChannelDataEmptyState
+                  icon={Monitor}
+                  title="Seleccioná un pedido o creá uno nuevo"
+                />
               </div>
             </aside>
           }

@@ -1,8 +1,6 @@
 "use client"
 
-import { popExpensesQueryKey } from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
-import { fetchPopExpensesMonth } from "@/lib/rootsyApi/expensesClient"
+import { expensesMonthQueryOptions } from "@/lib/expensesWorkspaceQuery"
 import { useQuery } from "@tanstack/react-query"
 
 type UsePopExpensesMonthOptions = {
@@ -18,9 +16,7 @@ export function usePopExpensesMonth(
   const enabled = (options?.enabled ?? true) && Boolean(popId)
 
   return useQuery({
-    queryKey: popExpensesQueryKey(popId ?? "", year, month1),
-    queryFn: () => fetchPopExpensesMonth(popId!, year, month1),
+    ...expensesMonthQueryOptions(popId ?? "", year, month1),
     enabled,
-    ...sessionListQueryOptions,
   })
 }

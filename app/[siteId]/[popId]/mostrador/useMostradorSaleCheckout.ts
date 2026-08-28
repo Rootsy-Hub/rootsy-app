@@ -70,7 +70,10 @@ import {
   groupMostradorCartDisplayRows,
 } from "@/lib/mostradorCartDisplay"
 import {
+  ACTIVE_COMANDAS_CANCEL_TITLE,
+  ACTIVE_COMANDAS_DISCARD_TITLE,
   ensureCartLineComandaStatuses,
+  hasActiveCommandedLines,
   isComandaLocked,
   isComandaVoidable,
   pendingComandaComment,
@@ -967,12 +970,24 @@ export function useMostradorSaleCheckout(
   const hayDescuento = footerTotals.hayDescuento
   const hayItemsEnPedido = itemsDetalladosUnpaid.length > 0
 
+  const hayComandasActivas = useMemo(
+    () => hasActiveCommandedLines(carrito),
+    [carrito],
+  )
+
   const puedeDescartarPedido = useMemo(
     () =>
       hayItemsEnPedido &&
       !isPaid &&
+      !hayComandasActivas &&
       !hasAnyPartialPayment({ paidPartialUnits, totalPagadoAcumulado }),
-    [hayItemsEnPedido, isPaid, paidPartialUnits, totalPagadoAcumulado],
+    [
+      hayItemsEnPedido,
+      isPaid,
+      hayComandasActivas,
+      paidPartialUnits,
+      totalPagadoAcumulado,
+    ],
   )
 
   const hayPendingComandas = useMemo(
@@ -1142,6 +1157,7 @@ export function useMostradorSaleCheckout(
         totalPagadoAcumulado,
         quantityDealApplications,
         isAlreadySettled: isPaid,
+        hasActiveComandas: hayComandasActivas,
       }),
     [
       carrito,
@@ -1149,6 +1165,7 @@ export function useMostradorSaleCheckout(
       totalPagadoAcumulado,
       quantityDealApplications,
       isPaid,
+      hayComandasActivas,
     ],
   )
 
@@ -1159,9 +1176,14 @@ export function useMostradorSaleCheckout(
   const puedeCancelarPedido = useMemo(
     () =>
       !isPaid &&
+      !hayComandasActivas &&
       !hasAnyPartialPayment({ paidPartialUnits, totalPagadoAcumulado }),
-    [isPaid, paidPartialUnits, totalPagadoAcumulado],
+    [isPaid, hayComandasActivas, paidPartialUnits, totalPagadoAcumulado],
   )
+
+  const cancelarPedidoTitle = hayComandasActivas
+    ? ACTIVE_COMANDAS_CANCEL_TITLE
+    : undefined
 
   const partialPaymentUnits = useMemo(
     () =>
@@ -2050,6 +2072,7 @@ export function useMostradorSaleCheckout(
     cerrarPedidoMode,
     cerrarPedido,
     puedeCancelarPedido,
+    cancelarPedidoTitle,
     hayContenidoVenta,
     puedeRegistrar,
     submitting,
@@ -2107,7 +2130,11 @@ export function useMostradorSaleCheckout(
     },
     actions: {
       discardDisabled: !puedeDescartarPedido || requiereCajaAbierta,
-      discardTitle: requiereCajaAbierta ? cajaRequiredTitle : undefined,
+      discardTitle: requiereCajaAbierta
+        ? cajaRequiredTitle
+        : hayComandasActivas
+          ? ACTIVE_COMANDAS_DISCARD_TITLE
+          : undefined,
       confirmDisabled: !puedeRegistrar,
       confirmLoading: submitting,
       onDiscard: () => {

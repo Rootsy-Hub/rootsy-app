@@ -46,6 +46,7 @@ type Props = {
   ) => Promise<boolean> | boolean
   onCancelOrder: (orderId: string) => Promise<boolean> | boolean
   canCancelOrder?: boolean
+  cancelOrderTitle?: string
   onCloseOrder?: () => Promise<boolean> | boolean
   canCloseOrder?: boolean
   closeOrderBlockReason?: string | null
@@ -75,6 +76,7 @@ export function CounterOrderPanel({
   onMoveOrder,
   onCancelOrder,
   canCancelOrder = true,
+  cancelOrderTitle,
   onCloseOrder,
   canCloseOrder = false,
   closeOrderBlockReason = null,
@@ -152,7 +154,8 @@ export function CounterOrderPanel({
       label: "Cancelar pedido",
       disabled: busy || !canCancelOrder,
       title: !canCancelOrder
-        ? "No se puede cancelar un pedido con cobros registrados."
+        ? cancelOrderTitle ??
+          "No se puede cancelar un pedido con cobros registrados."
         : undefined,
       onClick: () => void run(() => onCancelOrder(order.id)),
     })

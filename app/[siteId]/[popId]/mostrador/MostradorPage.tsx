@@ -1,7 +1,9 @@
 "use client"
 
 import { RootsIconButton } from "@/components/rootsy-button"
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { MostradorWorkspace } from "@/app/[siteId]/[popId]/mostrador/components/MostradorWorkspace"
+import { useMostradorBoardPending } from "@/app/[siteId]/[popId]/mostrador/useMostradorState"
 import {
   DataWorkspaceOperationsLayout,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
@@ -12,6 +14,7 @@ import { OperateQueryDevtoolsPanel } from "@/components/sale-operation/SaleDevto
 import { isDevModeEnabled } from "@/lib/devmode"
 import { MOSTRADOR_QUERY_SPEC } from "@/lib/devmode/mostradorQuerySpec"
 import { mostradorAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import { useAfterHydration } from "@/hooks/useIsHydrated"
 import { Plus } from "lucide-react"
 import { useParams, useRouter } from "@/lib/pop-spa/navigation"
 import { useCallback, useEffect, useMemo, useRef } from "react"
@@ -30,6 +33,8 @@ function MostradorPage() {
   const { user } = useAuth()
   const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
     usePopWorkspace()
+  const afterHydration = useAfterHydration()
+  const boardPending = useMostradorBoardPending(popId)
 
   const access = useMemo(
     () => mostradorAccessFromKeys(bootstrap?.permissionKeys ?? []),
@@ -69,13 +74,17 @@ function MostradorPage() {
     return null
   }
 
+  if (boardPending) {
+    return <PopModuleLoading moduleKey="mostrador" />
+  }
+
   return (
     <DataWorkspaceOperationsLayout
       siteId={siteId}
       popId={popId}
       popName={bootstrap?.popName ?? ""}
       title="Mostrador"
-      loading={bootstrapLoading}
+      loading={!bootstrap?.popName}
       userName={bootstrap?.userFullName || user?.email || ""}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       sidebarCollapsible
@@ -83,7 +92,7 @@ function MostradorPage() {
       sidebarOpen={catalogSidebarOpen}
       onSidebarOpenChange={setCatalogSidebarOpen}
       headerActions={
-        isDevModeEnabled() || access.canCreate ? (
+        isDevModeEnabled() || !afterHydration || access.canCreate ? (
           <>
             {isDevModeEnabled() ? (
               <OperateQueryDevtoolsPanel
@@ -91,12 +100,13 @@ function MostradorPage() {
                 spec={MOSTRADOR_QUERY_SPEC}
               />
             ) : null}
-            {access.canCreate ? (
+            {!afterHydration || access.canCreate ? (
               <RootsIconButton
                 label="Nuevo pedido"
                 semantic="primary"
                 atmosphere="eter"
                 size="default"
+                disabled={!access.canCreate}
                 onClick={() => startCreateOrderRef.current?.()}
               >
                 <Plus className="size-5" aria-hidden />

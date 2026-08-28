@@ -6,9 +6,16 @@ import type {
   CreateCounterOrderInput,
   UpdateCounterOrderInput,
 } from "@/app/[siteId]/[popId]/mostrador/mostradorTypes"
+import { sourceHasActiveComandas } from "@/app/[siteId]/[popId]/comandas/sourceHasActiveComandas"
 import { syncComandasFromCounterCheckout } from "@/app/[siteId]/[popId]/comandas/syncComandasFromCheckout"
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { readCheckoutFromSessionMetadata } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
+import {
+  ACTIVE_COMANDAS_CANCEL_TITLE,
+  ACTIVE_COMANDAS_DISCARD_TITLE,
+  ACTIVE_COMANDAS_RELEASE_REASON,
+  hasActiveCommandedLines,
+} from "@/lib/comandaCartLine"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import {
   POP_PERMS,
@@ -646,6 +653,10 @@ export async function cancelCounterOrder(
     }
   }
 
+  if (await sourceHasActiveComandas(supabase, popId, "counter", orderId)) {
+    return { success: false, error: ACTIVE_COMANDAS_CANCEL_TITLE }
+  }
+
   const { data, error } = await supabase
     .from("counter_orders")
     .update({
@@ -712,6 +723,13 @@ export async function saveCounterOrderCheckout(
       success: false,
       error: "No se puede modificar un pedido ya cobrado.",
     }
+  }
+
+  if (
+    (await sourceHasActiveComandas(supabase, popId, "counter", orderId)) &&
+    !hasActiveCommandedLines(checkout.carrito)
+  ) {
+    return { success: false, error: ACTIVE_COMANDAS_DISCARD_TITLE }
   }
 
   const metadata =
@@ -816,6 +834,10 @@ export async function closeCounterOrderCheckout(
         error:
           "Hay ventas registradas para este pedido. No se puede liberar sin cerrar el cobro.",
       }
+    }
+
+    if (await sourceHasActiveComandas(supabase, popId, "counter", orderId)) {
+      return { success: false, error: ACTIVE_COMANDAS_RELEASE_REASON }
     }
 
     return cancelCounterOrder(popId, routeSiteId, orderId)

@@ -1,5 +1,6 @@
 "use client"
 
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { RootsIconButton } from "@/components/rootsy-button"
 import type {
   ExpenseCategoryFamily,
@@ -20,7 +21,6 @@ import { parseCheckoutCheckDetails } from "@/lib/checkoutCheck"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { ExpenseCategoriesDialog } from "@/app/[siteId]/[popId]/expenses/ExpenseCategoriesDialog"
 import { ExpenseKindCardsPanel } from "@/app/[siteId]/[popId]/expenses/ExpenseKindCards"
-import { ExpensePageSkeleton } from "@/app/[siteId]/[popId]/expenses/ExpensePageSkeleton"
 import { ExpensePeriodToolbar } from "@/app/[siteId]/[popId]/expenses/ExpensePeriodToolbar"
 import { ExpenseSummaryDashboard } from "@/app/[siteId]/[popId]/expenses/ExpenseSummaryDashboard"
 import {
@@ -132,7 +132,7 @@ export function ExpensesWorkspaceView() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
   const queryClient = useQueryClient()
-  const { bootstrap, loading: bootstrapLoading, error: bootstrapError, hasPermission } =
+  const { bootstrap, error: bootstrapError, hasPermission } =
     usePopWorkspace()
   const afterHydration = useAfterHydration()
   const menuCache = usePopMenuCache(popId ?? "")
@@ -181,10 +181,8 @@ export function ExpensesWorkspaceView() {
   const ledgerByCategoryId = expensesQuery.data?.ledgerByCategoryId ?? {}
   const totalDue = expensesQuery.data?.progress.totalDue ?? 0
   const totalPaid = expensesQuery.data?.progress.totalPaid ?? 0
-  const loading =
-    expensesQuery.isPending ||
-    (expensesQuery.isFetching && !expensesQuery.isFetched)
-  const listBusy = expensesQuery.isFetching
+  const monthPending = !expensesQuery.data && expensesQuery.isPending
+  const listBusy = expensesQuery.isFetching && Boolean(expensesQuery.data)
   const tableError =
     expensesQuery.data?.success === false
       ? expensesQuery.data.error
@@ -282,7 +280,6 @@ export function ExpensesWorkspaceView() {
     })
   }, [popId, queryClient])
 
-  const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
   const headerError = bootstrapError
 
@@ -518,6 +515,10 @@ export function ExpensesWorkspaceView() {
     )
   }
 
+  if (monthPending) {
+    return <PopModuleLoading moduleKey="expenses" />
+  }
+
   return (
     <>
       <DataWorkspaceModuleLayout
@@ -526,7 +527,7 @@ export function ExpensesWorkspaceView() {
         popName={popName}
         title="Gastos"
         headerVariant={dataWorkspaceModuleHeaderVariant}
-        loading={pageLoading}
+        loading={!popName}
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel}
@@ -535,23 +536,25 @@ export function ExpensesWorkspaceView() {
         mainClassName={dataWorkspaceBlocksPageMainClass}
         headerActions={
           <>
-            {canCreate ? (
+            {!afterHydration || canCreate ? (
               <RootsIconButton
                 label="Nueva promesa"
                 semantic="primary"
                 atmosphere="eter"
                 size="default"
+                disabled={!canCreate}
                 onClick={() => openCreate()}
               >
                 <Plus className="size-5" aria-hidden />
               </RootsIconButton>
             ) : null}
-            {canUpdate ? (
+            {!afterHydration || canUpdate ? (
               <RootsIconButton
                 label="Categorías"
                 semantic="tertiary"
                 atmosphere="eter"
                 size="default"
+                disabled={!canUpdate}
                 onClick={() => {
                   setCatBanner(null)
                   setCatOpen(true)
@@ -572,9 +575,7 @@ export function ExpensesWorkspaceView() {
             />
           ) : null}
 
-          {pageLoading ? (
-            <ExpensePageSkeleton />
-          ) : error ? (
+          {error ? (
             <RootsBanner intent="danger" layout="message" message={error} />
           ) : (
             <>

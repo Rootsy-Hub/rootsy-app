@@ -131,6 +131,49 @@ export const comandasBrisaTicketBadgeClass = dataWorkspaceEntityCardBadgeClass
 
 export const comandasBrisaTicketListClass = "flex flex-col gap-4"
 
+/** Historial — archivo en papel, no loseta de tablero. */
+export const comandasBrisaHistoryDialogClass = cn(
+  "rootsy-app-light",
+  "flex max-h-[min(92vh,40rem)] flex-col",
+)
+
+export const comandasBrisaHistoryListClass = "flex flex-col gap-2.5"
+
+export const comandasBrisaHistoryRowClass = cn(
+  "relative overflow-hidden rounded-2xl",
+  "border border-[var(--rootsy-bruma-200)]",
+  "bg-[var(--rootsy-blanco)]",
+  "px-4 py-3.5",
+)
+
+export const comandasBrisaHistoryRowVoidClass = cn(
+  "border-[color-mix(in_srgb,var(--rootsy-lava-500)_28%,var(--rootsy-bruma-200))]",
+  "bg-[color-mix(in_srgb,var(--rootsy-lava-50)_65%,var(--rootsy-blanco))]",
+)
+
+export const comandasBrisaHistoryOriginClass =
+  "rootsy-text-label text-[var(--rootsy-bruma-500)]"
+
+export const comandasBrisaHistoryTitleClass =
+  "rootsy-text-heading-xsmall text-[var(--rootsy-bruma-900)]"
+
+export const comandasBrisaHistoryClockClass =
+  "rootsy-text-heading-xsmall tabular-nums text-[var(--rootsy-bruma-900)]"
+
+export const comandasBrisaHistoryRelativeClass =
+  "rootsy-text-label text-[var(--rootsy-bruma-500)]"
+
+export const comandasBrisaHistoryItemClass =
+  "rootsy-text-body text-[var(--rootsy-bruma-800)]"
+
+export const comandasBrisaHistoryNoteClass =
+  "font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-600)]"
+
+export const comandasBrisaHistoryIconClass =
+  "mt-0.5 size-4 shrink-0 text-[var(--rootsy-savia-600)]"
+
+export const comandasBrisaHistoryIconVoidClass = "text-[var(--rootsy-lava-600)]"
+
 export const comandasBrisaTicketOverlayClass = cn(
   comandasBrisaTicketCardClass,
   "w-[min(100%,18rem)] cursor-grabbing",

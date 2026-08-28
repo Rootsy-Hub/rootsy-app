@@ -4,7 +4,6 @@ import {
   canAckComandaVoid,
   canDragComanda,
   canMoveComandaTo,
-  formatComandaElapsed,
   groupComandasForBoard,
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import {
@@ -24,18 +23,11 @@ import {
   comandasBrisaHeaderRowClass,
   comandasBrisaSkeletonBarClass,
   comandasBrisaSkeletonBoxClass,
-  comandasBrisaTicketBadgeClass,
-  comandasBrisaTicketBodyClass,
   comandasBrisaTicketCardClass,
   comandasBrisaTicketCardIdleClass,
   comandasBrisaTicketCardVoidClass,
-  comandasBrisaTicketDetailClass,
-  comandasBrisaTicketEyebrowClass,
-  comandasBrisaTicketHeaderClass,
   comandasBrisaTicketListClass,
-  comandasBrisaTicketMetaClass,
   comandasBrisaTicketOverlayClass,
-  comandasBrisaTicketTitleClass,
   comandasBrisaTicketVoidActionClass,
 } from "@/app/[siteId]/[popId]/comandas/comandasBrisaStyles"
 import {
@@ -48,7 +40,9 @@ import {
 import { comandaStatusPillVariant } from "@/app/[siteId]/[popId]/comandas/comandaStatusWorlds"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { RootsBanner } from "@/components/rootsy-banner"
-import { RootsIconButton, RootsPrimaryButton } from "@/components/rootsy-button"
+import { ComandaTicketCardBody } from "@/app/[siteId]/[popId]/comandas/components/ComandaTicketCardBody"
+import { ComandasDeliveredHistoryDialog } from "@/app/[siteId]/[popId]/comandas/components/ComandasDeliveredHistoryDialog"
+import { RootsDefaultButton, RootsIconButton, RootsPrimaryButton } from "@/components/rootsy-button"
 import { RootsNaturePill } from "@/components/rootsy-pill/RootsNaturePill"
 import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -64,8 +58,6 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
-import { formatDistanceToNow } from "date-fns"
-import { es } from "date-fns/locale"
 import {
   CheckCircle2,
   ChefHat,
@@ -140,6 +132,7 @@ type Props = {
   error?: string | null
   canUpdate: boolean
   stationName?: string
+  boardClock?: number
   onMoveTicket: (
     ticketId: string,
     status: ComandaStatus,
@@ -150,10 +143,12 @@ function BoardIdentity({
   stationName,
   showExitFullscreen,
   onExitFullscreen,
+  onOpenDeliveredHistory,
 }: {
   stationName: string
   showExitFullscreen?: boolean
   onExitFullscreen?: () => void
+  onOpenDeliveredHistory: () => void
 }) {
   return (
     <div className={comandasBrisaBoardIdentityClass}>
@@ -161,9 +156,18 @@ function BoardIdentity({
         <p className={comandasBrisaBoardIdentityEyebrowClass}>Comandas</p>
         <h1 className={comandasBrisaBoardIdentityTitleClass}>{stationName}</h1>
       </div>
-      {showExitFullscreen && onExitFullscreen ? (
-        <BoardExitFullscreenButton onExit={onExitFullscreen} />
-      ) : null}
+      <div className="flex shrink-0 items-center gap-2">
+        <RootsDefaultButton
+          size="compact"
+          icon={CheckCircle2}
+          onClick={onOpenDeliveredHistory}
+        >
+          Entregados
+        </RootsDefaultButton>
+        {showExitFullscreen && onExitFullscreen ? (
+          <BoardExitFullscreenButton onExit={onExitFullscreen} />
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -181,24 +185,14 @@ function BoardIdentitySkeleton({
         <span className={cn(comandasBrisaSkeletonBarClass, "h-2.5 w-16")} />
         <span className={cn(comandasBrisaSkeletonBarClass, "mt-2 h-4 w-36")} />
       </div>
-      {showExitFullscreen && onExitFullscreen ? (
-        <BoardExitFullscreenButton onExit={onExitFullscreen} />
-      ) : null}
+      <div className="flex shrink-0 items-center gap-2">
+        <span className={cn(comandasBrisaSkeletonBoxClass, "h-8 w-28 rounded-lg")} />
+        {showExitFullscreen && onExitFullscreen ? (
+          <BoardExitFullscreenButton onExit={onExitFullscreen} />
+        ) : null}
+      </div>
     </div>
   )
-}
-
-function ticketAgo(card: Pick<ComandaBoardCard, "statusChangedAt" | "createdAt">): string {
-  return formatComandaElapsed(card.statusChangedAt || card.createdAt)
-}
-
-function ticketAgoLabel(
-  card: Pick<ComandaBoardCard, "statusChangedAt" | "createdAt">,
-): string {
-  return formatDistanceToNow(new Date(card.statusChangedAt || card.createdAt), {
-    addSuffix: true,
-    locale: es,
-  })
 }
 
 function ColumnHeader({
@@ -228,73 +222,6 @@ function ColumnHeader({
         <span aria-label={countLabel}>{count}</span>
       </RootsNaturePill>
     </div>
-  )
-}
-
-function TicketCardContent({ card }: { card: ComandaBoardCard }) {
-  return (
-    <>
-      <div className={comandasBrisaTicketHeaderClass}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className={cn(comandasBrisaTicketEyebrowClass, "truncate")}>
-              {card.sendKind === "void"
-                ? "Anulación"
-                : card.sourceKind === "table"
-                  ? "Mesa"
-                  : "Mostrador"}
-            </p>
-            <p className={cn("mt-0.5 truncate", comandasBrisaTicketTitleClass)}>
-              {card.originLabel}
-            </p>
-          </div>
-          <span
-            className={cn(comandasBrisaTicketBadgeClass, "shrink-0 tabular-nums")}
-            title={ticketAgoLabel(card)}
-            aria-label={ticketAgoLabel(card)}
-          >
-            {ticketAgo(card)}
-          </span>
-        </div>
-      </div>
-      <div className={comandasBrisaTicketBodyClass}>
-        <ul className="space-y-1.5">
-          {card.items.map((item) => {
-            const qtyLabel = item.quantity > 1 ? `${item.quantity}× ` : ""
-            return (
-              <li key={item.id}>
-                <p
-                  className={cn(
-                    "truncate",
-                    comandasBrisaTicketMetaClass,
-                    card.sendKind === "void" && "text-rootsy-lava-700",
-                  )}
-                >
-                  {card.sendKind === "void" ? "Anular " : ""}
-                  {qtyLabel}
-                  {item.recipeName}
-                </p>
-                {item.comment ? (
-                  <p className={cn("mt-0.5 line-clamp-2", comandasBrisaTicketDetailClass)}>
-                    {item.comment}
-                  </p>
-                ) : null}
-              </li>
-            )
-          })}
-        </ul>
-        {card.customerName ? (
-          <p className={cn("mt-2", comandasBrisaTicketDetailClass)}>
-            {card.customerName}
-          </p>
-        ) : null}
-        {card.sendComment ? (
-          <p className={cn("mt-1 line-clamp-3", comandasBrisaTicketDetailClass)}>
-            {card.sendComment}
-          </p>
-        ) : null}
-      </div>
-    </>
   )
 }
 
@@ -336,7 +263,7 @@ function KanbanTicketCard({
           !draggable && comandasBrisaTicketCardIdleClass,
         )}
       >
-        <TicketCardContent card={card} />
+        <ComandaTicketCardBody card={card} />
         {showAck ? (
           <div className={comandasBrisaTicketVoidActionClass}>
             <RootsPrimaryButton
@@ -452,16 +379,21 @@ export function ComandasBoard({
   error,
   canUpdate,
   stationName,
+  boardClock = 0,
   onMoveTicket,
 }: Props) {
   const fullscreen = useDocumentFullscreen()
   const [draggingTicketId, setDraggingTicketId] = useState<string | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   )
 
-  const cards = useMemo(() => groupComandasForBoard(tickets), [tickets])
+  const cards = useMemo(
+    () => groupComandasForBoard(tickets),
+    [tickets, boardClock],
+  )
 
   const ticketsByColumn = useMemo(() => {
     const grouped: Record<BoardColumnId, ComandaBoardCard[]> = {
@@ -503,6 +435,7 @@ export function ComandasBoard({
   }
 
   return (
+    <>
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
@@ -522,13 +455,12 @@ export function ComandasBoard({
           />
         ) : (
           <>
-            {stationName || fullscreen.active ? (
-              <BoardIdentity
-                stationName={stationName || "Estación"}
-                showExitFullscreen={fullscreen.active}
-                onExitFullscreen={fullscreen.exit}
-              />
-            ) : null}
+            <BoardIdentity
+              stationName={stationName || "Estación"}
+              showExitFullscreen={fullscreen.active}
+              onExitFullscreen={fullscreen.exit}
+              onOpenDeliveredHistory={() => setHistoryOpen(true)}
+            />
             <div className={comandasBrisaHeaderRowClass}>
               {BOARD_COLUMNS.map((column) => (
                 <ColumnHeader
@@ -564,10 +496,17 @@ export function ComandasBoard({
               draggingTicket.sendKind === "void" && comandasBrisaTicketCardVoidClass,
             )}
           >
-            <TicketCardContent card={draggingTicket} />
+            <ComandaTicketCardBody card={draggingTicket} />
           </div>
         ) : null}
       </DragOverlay>
     </DndContext>
+    <ComandasDeliveredHistoryDialog
+      open={historyOpen}
+      onOpenChange={setHistoryOpen}
+      stationName={stationName || "Estación"}
+      tickets={tickets}
+    />
+    </>
   )
 }

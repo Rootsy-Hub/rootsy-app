@@ -4,21 +4,15 @@ import type { SaleCatalogArticle } from "@/app/[siteId]/[popId]/sale/actions"
 import { useCatalogItemCache } from "@/hooks/useCatalogItemCache"
 import { useOpenCashSession } from "@/hooks/useOpenCashSession"
 import { resolveOperateOpenCashSession } from "@/lib/saleOpenCashSession"
-import {
-  saleCatalogKnownArticlesQueryKey,
-  saleCatalogQueryKey,
-  saleComprobantesQueryKey,
-  salePaymentContextQueryKey,
-} from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
-import {
-  fetchSaleCatalog,
-  fetchSaleCatalogArticlesByIds,
-  fetchSaleComprobantes,
-  fetchSalePaymentContext,
-} from "@/lib/rootsyApi/saleClient"
+import { saleCatalogKnownArticlesQueryKey } from "@/lib/queryKeys"
+import { fetchSaleCatalogArticlesByIds } from "@/lib/rootsyApi/saleClient"
 import { DEFAULT_SALE_SITE_ID } from "@/lib/saleInvoiceTypes"
 import { useSalePriceListId } from "@/lib/salePriceListSession"
+import {
+  saleCatalogQueryOptions,
+  saleComprobantesQueryOptions,
+  salePaymentContextQueryOptions,
+} from "@/lib/saleWorkspaceQuery"
 import { useQuery } from "@tanstack/react-query"
 import { useCallback, useMemo } from "react"
 
@@ -33,36 +27,18 @@ export function useSaleCatalogLoader(
   const enabled = (options?.enabled ?? true) && Boolean(popId)
 
   const catalogQuery = useQuery({
-    queryKey: saleCatalogQueryKey(popId ?? ""),
-    queryFn: async () => {
-      const res = await fetchSaleCatalog(popId!)
-      if (!res.success) throw new Error(res.error)
-      return res
-    },
+    ...saleCatalogQueryOptions(popId ?? ""),
     enabled,
-    ...sessionListQueryOptions,
   })
 
   const paymentQuery = useQuery({
-    queryKey: salePaymentContextQueryKey(popId ?? ""),
-    queryFn: async () => {
-      const res = await fetchSalePaymentContext(popId!)
-      if (!res.success) throw new Error(res.error)
-      return res.context
-    },
+    ...salePaymentContextQueryOptions(popId ?? ""),
     enabled,
-    ...sessionListQueryOptions,
   })
 
   const comprobantesQuery = useQuery({
-    queryKey: saleComprobantesQueryKey(popId ?? ""),
-    queryFn: async () => {
-      const res = await fetchSaleComprobantes(popId!)
-      if (!res.success) throw new Error(res.error)
-      return res
-    },
+    ...saleComprobantesQueryOptions(popId ?? ""),
     enabled,
-    ...sessionListQueryOptions,
   })
 
   const data = catalogQuery.data
@@ -134,6 +110,7 @@ export function useSaleCatalogLoader(
     comprobanteEmitter: comprobantesQuery.data?.emitter ?? null,
     comprobantesLoaded: comprobantesQuery.isSuccess,
     catalogLoading: catalogQuery.isLoading,
+    catalogPending: catalogQuery.isPending && !catalogQuery.data,
     catalogError:
       catalogQuery.error instanceof Error
         ? catalogQuery.error.message

@@ -163,6 +163,14 @@ export function purchaseCatalogKnownArticlesQueryKey(popId: string) {
   return ["purchase-catalog", popId, "known-articles"] as const
 }
 
+export function serviceOperateCatalogQueryKey(popId: string) {
+  return ["service-operate", popId, "catalog"] as const
+}
+
+export function serviceOperatePageQueryKey(popId: string) {
+  return ["service-operate", popId, "page"] as const
+}
+
 export function saleComprobanteEmitterQueryKey(
   popId: string,
   cashRegisterId?: string | null,

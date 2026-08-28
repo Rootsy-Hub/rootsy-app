@@ -1,6 +1,7 @@
 "use server"
 
 import {
+  COMANDA_DELIVERED_HISTORY_MS,
   canAckComandaVoid,
   canMoveComandaTo,
   timestampsForStatusChange,
@@ -50,8 +51,6 @@ const COMANDA_SELECT = `
   send_id,
   comanda_sends ( comment, kind )
 `
-
-const DELIVERED_RETENTION_HOURS = 12
 
 function isUuid(value: string): boolean {
   return UUID_RE.test(value.trim())
@@ -251,7 +250,7 @@ export async function getComandas(
   }
 
   const since = new Date(
-    Date.now() - DELIVERED_RETENTION_HOURS * 60 * 60 * 1000,
+    Date.now() - COMANDA_DELIVERED_HISTORY_MS,
   ).toISOString()
 
   const [openRes, deliveredRes] = await Promise.all([

@@ -6,6 +6,7 @@ import {
 } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import {
   overlayComandasInFlight,
+  pruneExpiredDeliveredComandas,
   replaceComandaTicketCache,
   replaceComandasTicketsCaches,
 } from "@/app/[siteId]/[popId]/comandas/comandasQueryCache"
@@ -15,18 +16,12 @@ import type {
 } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import { useComandasBoardHydrate } from "@/hooks/useComandasBoardHydrate"
 import {
-  readComandasTicketsLocalOrFetch,
-  refreshComandasTicketsFromNetwork,
-} from "@/lib/popLocalDb/hydrateComandasBoard"
-import {
-  fetchComandaStations,
-  moveComandaStatusApi,
-} from "@/lib/rootsyApi/comandasClient"
-import {
-  popComandasStationsQueryKey,
-  popComandasTicketsQueryKey,
-} from "@/lib/queryKeys"
-import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
+  comandasStationsQueryOptions,
+  comandasTicketsQueryOptions,
+} from "@/lib/comandasWorkspaceQuery"
+import { refreshComandasTicketsFromNetwork } from "@/lib/popLocalDb/hydrateComandasBoard"
+import { moveComandaStatusApi } from "@/lib/rootsyApi/comandasClient"
+import { popComandasTicketsQueryKey } from "@/lib/queryKeys"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useRef, useState } from "react"
 
@@ -48,6 +43,28 @@ function applyStatusTimestamps(
   }
 }
 
+export function useComandasBoardPending(popId: string | undefined) {
+  const boardHydrate = useComandasBoardHydrate(popId)
+  const stationsQuery = useQuery({
+    ...comandasStationsQueryOptions(popId ?? ""),
+    enabled: Boolean(popId),
+  })
+  const firstStationId = stationsQuery.data?.[0]?.id ?? ""
+  const ticketsQuery = useQuery({
+    ...comandasTicketsQueryOptions(popId ?? "", firstStationId),
+    enabled:
+      Boolean(popId) && boardHydrate.canReadBoard && Boolean(firstStationId),
+  })
+  return (
+    Boolean(popId) &&
+    ((!stationsQuery.data && stationsQuery.isPending) ||
+      !boardHydrate.canReadBoard ||
+      (Boolean(firstStationId) &&
+        !ticketsQuery.data &&
+        ticketsQuery.isPending))
+  )
+}
+
 export function useComandasState(popId: string, _siteId: string) {
   const queryClient = useQueryClient()
   const boardHydrate = useComandasBoardHydrate(popId)
@@ -58,14 +75,8 @@ export function useComandasState(popId: string, _siteId: string) {
   const inFlightMovesRef = useRef(new Map<string, ComandaTicket>())
 
   const stationsQuery = useQuery({
-    queryKey: popComandasStationsQueryKey(popId),
-    queryFn: async () => {
-      const res = await fetchComandaStations(popId)
-      if (!res.success) throw new Error(res.error)
-      return res.stations
-    },
+    ...comandasStationsQueryOptions(popId),
     enabled,
-    ...sessionListQueryOptions,
   })
 
   const stations = stationsQuery.data ?? []
@@ -79,18 +90,34 @@ export function useComandasState(popId: string, _siteId: string) {
     })
   }, [stations])
 
+  const ticketsOptions = comandasTicketsQueryOptions(popId, stationId ?? "")
   const ticketsQuery = useQuery({
-    queryKey: popComandasTicketsQueryKey(popId, stationId ?? ""),
-    queryFn: async () => {
-      if (!stationId) return [] as ComandaTicket[]
-      const tickets = await readComandasTicketsLocalOrFetch(popId, stationId)
-      return overlayComandasInFlight(tickets, inFlightMovesRef.current)
-    },
+    ...ticketsOptions,
+    queryFn: async () =>
+      overlayComandasInFlight(
+        await ticketsOptions.queryFn(),
+        inFlightMovesRef.current,
+      ),
     enabled: boardEnabled && Boolean(stationId),
-    ...sessionListQueryOptions,
   })
 
   const tickets = ticketsQuery.data ?? []
+  const [boardClock, setBoardClock] = useState(0)
+  const deliveredExpiryKey = tickets
+    .filter((ticket) => ticket.status === "delivered")
+    .map((ticket) => `${ticket.id}:${ticket.statusChangedAt}`)
+    .sort()
+    .join("|")
+
+  useEffect(() => {
+    if (!popId) return
+    const nextExpiryMs = pruneExpiredDeliveredComandas(queryClient, popId)
+    if (nextExpiryMs == null) return
+    const timer = window.setTimeout(() => {
+      setBoardClock((tick) => tick + 1)
+    }, nextExpiryMs + 25)
+    return () => window.clearTimeout(timer)
+  }, [popId, queryClient, deliveredExpiryKey, boardClock])
 
   const reloadTickets = useCallback(async () => {
     if (!popId) return
@@ -190,6 +217,7 @@ export function useComandasState(popId: string, _siteId: string) {
     stationId,
     setStationId,
     tickets,
+    boardClock,
     loading:
       stationsQuery.isLoading ||
       !boardHydrate.canReadBoard ||

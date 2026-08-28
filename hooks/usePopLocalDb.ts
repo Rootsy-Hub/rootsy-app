@@ -7,6 +7,21 @@ export type PopLocalDbStatus = "loading" | "ready" | "fallback"
 
 const statusByPop = new Map<string, PopLocalDbStatus>()
 
+export async function ensurePopLocalDbStatus(
+  popId: string,
+): Promise<Exclude<PopLocalDbStatus, "loading">> {
+  const known = statusByPop.get(popId)
+  if (known === "ready" || known === "fallback") return known
+  try {
+    await openPopLocalDb(popId)
+    statusByPop.set(popId, "ready")
+    return "ready"
+  } catch {
+    statusByPop.set(popId, "fallback")
+    return "fallback"
+  }
+}
+
 export function usePopLocalDb(popId: string | undefined): PopLocalDbStatus {
   const [status, setStatus] = useState<PopLocalDbStatus>(() =>
     popId ? (statusByPop.get(popId) ?? "loading") : "loading",
@@ -24,16 +39,9 @@ export function usePopLocalDb(popId: string | undefined): PopLocalDbStatus {
     }
     let cancelled = false
     setStatus("loading")
-    void openPopLocalDb(popId).then(
-      () => {
-        statusByPop.set(popId, "ready")
-        if (!cancelled) setStatus("ready")
-      },
-      () => {
-        statusByPop.set(popId, "fallback")
-        if (!cancelled) setStatus("fallback")
-      },
-    )
+    void ensurePopLocalDbStatus(popId).then((next) => {
+      if (!cancelled) setStatus(next)
+    })
     return () => {
       cancelled = true
     }

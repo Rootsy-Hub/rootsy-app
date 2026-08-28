@@ -1,5 +1,6 @@
 "use client"
 
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import { RootsIconButton } from "@/components/rootsy-button"
 import dynamic from "next/dynamic"
 import {
@@ -92,6 +93,7 @@ import {
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useParams, useRouter, useSearchParams } from "@/lib/pop-spa/navigation"
 import {
   useCallback,
@@ -188,11 +190,11 @@ function PurchasesPage() {
     setOpen: setCatalogSidebarOpen,
   } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
   const { user } = useAuth()
+  const { bootstrap } = usePopWorkspace()
 
   const {
     catalogArticles,
     catalogCategorySections,
-    popName,
     canCreate,
     canUpdateArticles,
     treasuryPaymentContext,
@@ -200,6 +202,7 @@ function PurchasesPage() {
     mergeCatalogArticles,
     ensureCatalogArticles,
     catalogLoading: catalogQueryLoading,
+    catalogPending: catalogQueryPending,
     catalogError: catalogQueryError,
   } = usePurchaseCatalogLoader(popId, { enabled: Boolean(popId && siteId) })
   const catalogLoading = !popId || !siteId ? false : catalogQueryLoading
@@ -1166,15 +1169,12 @@ function PurchasesPage() {
     "rounded-2xl border border-border/60 bg-card shadow-2xl sm:max-w-md",
   )
 
-  const headerUserName = useMemo(() => {
-    const meta = user?.user_metadata?.full_name
-    if (typeof meta === "string" && meta.trim()) return meta.trim()
-    return user?.email?.split("@")[0] || "Usuario"
-  }, [user?.email, user?.user_metadata?.full_name])
-
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
+  const headerUserName =
+    bootstrap?.userFullName?.trim() ||
+    user?.email?.split("@")[0] ||
+    "Usuario"
+  const userAvatarSrc = bootstrap?.userImageUrl ?? undefined
+  const popName = bootstrap?.popName ?? ""
 
   if (!popId || !siteId) {
     return (
@@ -1184,6 +1184,10 @@ function PurchasesPage() {
     )
   }
 
+  if (catalogQueryPending) {
+    return <PopModuleLoading moduleKey="purchases" />
+  }
+
   return (
     <>
       <DataWorkspaceOperationsLayout
@@ -1191,7 +1195,7 @@ function PurchasesPage() {
         popId={popId}
         popName={popName}
         title="Comprar"
-        loading={catalogLoading || orderRestorePending}
+        loading={!popName}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
         sidebarCollapsible

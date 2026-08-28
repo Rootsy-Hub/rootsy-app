@@ -13,8 +13,15 @@ import { usePopAccessData } from "@/hooks/usePopAccessData"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { buildPopRoleLabel } from "@/lib/popWorkspaceFromAccess"
+import { prefetchComandasWorkspaceQuery } from "@/lib/comandasWorkspaceQuery"
 import { prefetchCashRegistersListQuery } from "@/lib/cashRegistersListQuery"
+import { prefetchExpensesWorkspaceQuery } from "@/lib/expensesWorkspaceQuery"
 import { prefetchHrDashboardQuery } from "@/lib/hrDashboardQuery"
+import { prefetchMesasWorkspaceQuery } from "@/lib/mesasWorkspaceQuery"
+import { prefetchMostradorWorkspaceQuery } from "@/lib/mostradorWorkspaceQuery"
+import { prefetchPurchaseWorkspaceQuery } from "@/lib/purchaseWorkspaceQuery"
+import { prefetchSaleWorkspaceQuery } from "@/lib/saleWorkspaceQuery"
+import { prefetchServiceOperateWorkspaceQuery } from "@/lib/serviceOperateWorkspaceQuery"
 import { prefetchTreasuryAccountsListQuery } from "@/lib/treasuryAccountsListQuery"
 import { popModuleKeyFromPath } from "@/lib/popRoutes"
 import { useParams, usePathname } from "@/lib/pop-spa/navigation"
@@ -113,6 +120,34 @@ export function PopModuleLoading({
     }
     if (moduleKey === "accounts") {
       void prefetchTreasuryAccountsListQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "sale") {
+      void prefetchSaleWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "mostrador") {
+      void prefetchMostradorWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "mesas") {
+      void prefetchMesasWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "purchases") {
+      void prefetchPurchaseWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "cobrar-servicios") {
+      void prefetchServiceOperateWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "comandas") {
+      void prefetchComandasWorkspaceQuery(popId, queryClient)
+      return
+    }
+    if (moduleKey === "expenses") {
+      void prefetchExpensesWorkspaceQuery(popId, queryClient)
     }
   }, [moduleKey, popId, queryClient])
 

@@ -1,4 +1,4 @@
-import { isComandaBoardVisible } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import { isComandaTicketStored } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type {
   ComandaStation,
   ComandaTicket,
@@ -21,7 +21,7 @@ import {
 const hydrateLocks = new Map<string, Promise<{ fetched: boolean }>>()
 
 function visibleTickets(tickets: ComandaTicket[]) {
-  return tickets.filter((ticket) => isComandaBoardVisible(ticket.status))
+  return tickets.filter((ticket) => isComandaTicketStored(ticket))
 }
 
 export async function fetchComandasBoardFromNetwork(popId: string): Promise<{

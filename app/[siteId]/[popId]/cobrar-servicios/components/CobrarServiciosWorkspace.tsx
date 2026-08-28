@@ -1,9 +1,8 @@
 "use client"
 
+import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
 import {
   createServiceCharges,
-  getActiveServicesPageData,
-  getServiceTypeChargeOptions,
   recordServiceChargePayment,
   type CreateServiceChargeInput,
   type ServiceTypeChargeOption,
@@ -85,10 +84,12 @@ import {
   paymentCheckoutKindIcon,
 } from "@/lib/paymentMethodCheckout"
 import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
+import { parseTreasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import {
-  parseTreasuryPaymentOptionKey,
-  type TreasuryPaymentContext,
-} from "@/lib/treasuryPaymentOptions"
+  serviceOperateCatalogQueryOptions,
+  serviceOperatePageQueryOptions,
+} from "@/lib/serviceOperateWorkspaceQuery"
+import { useQuery } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Clock3 } from "lucide-react"
 
@@ -188,21 +189,39 @@ function buildCreatePayload(
 
 export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
   const { user } = useAuth()
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap } = usePopWorkspace()
   const {
     open: catalogSidebarOpen,
     setOpen: setCatalogSidebarOpen,
   } = useDataWorkspaceSidebar(siteId, popId, true)
 
-  const [loading, setLoading] = useState(true)
-  const [catalogError, setCatalogError] = useState<string | null>(null)
-  const [services, setServices] = useState<ServiceTypeChargeOption[]>([])
-  const [treasuryPaymentContext, setTreasuryPaymentContext] =
-    useState<TreasuryPaymentContext | null>(null)
-  const [canCreate, setCanCreate] = useState(false)
-  const [canReadClients, setCanReadClients] = useState(false)
-  const [canCreateClient, setCanCreateClient] = useState(false)
-  const [canUpdateClient, setCanUpdateClient] = useState(false)
+  const catalogQuery = useQuery({
+    ...serviceOperateCatalogQueryOptions(popId),
+    enabled: Boolean(popId),
+  })
+  const pageQuery = useQuery({
+    ...serviceOperatePageQueryOptions(popId),
+    enabled: Boolean(popId),
+  })
+  const catalogPending =
+    (!catalogQuery.data && catalogQuery.isPending) ||
+    (!pageQuery.data && pageQuery.isPending)
+  const services = catalogQuery.data ?? []
+  const treasuryPaymentContext = pageQuery.data?.treasuryPaymentContext ?? null
+  const canCreate = pageQuery.data?.canCreate ?? false
+  const canReadClients = pageQuery.data?.canReadClients ?? false
+  const canCreateClient = pageQuery.data?.canCreateClient ?? false
+  const canUpdateClient = pageQuery.data?.canUpdateClient ?? false
+  const catalogError =
+    catalogQuery.error instanceof Error
+      ? catalogQuery.error.message
+      : catalogQuery.error
+        ? String(catalogQuery.error)
+        : pageQuery.error instanceof Error
+          ? pageQuery.error.message
+          : pageQuery.error
+            ? String(pageQuery.error)
+            : null
 
   const [form, setForm] = useState<ServiceChargeCreateWizardForm>(defaultFormState)
   const [fieldErrors, setFieldErrors] = useState<ServiceChargeCreateFieldErrors>({})
@@ -223,14 +242,12 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
   )
   const [descuentoDraftTexto, setDescuentoDraftTexto] = useState("")
 
-  const loadGenRef = useRef(0)
   const isMountedRef = useRef(false)
 
   useEffect(() => {
     isMountedRef.current = true
     return () => {
       isMountedRef.current = false
-      loadGenRef.current += 1
     }
   }, [])
 
@@ -281,32 +298,9 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     })
   }, [suggestedComprobante])
 
-  const loadPage = useCallback(async () => {
-    const gen = ++loadGenRef.current
-    setLoading(true)
-    const res = await getActiveServicesPageData(popId)
-    if (gen !== loadGenRef.current) return
-    if (!res.success) {
-      setCatalogError(res.error)
-      setServices([])
-      setLoading(false)
-      return
-    }
-    setCatalogError(null)
-    const optionsRes = await getServiceTypeChargeOptions(popId)
-    if (gen !== loadGenRef.current) return
-    setServices(optionsRes.success ? optionsRes.services : [])
-    setCanCreate(res.canCreate)
-    setCanReadClients(res.canReadClients)
-    setCanCreateClient(res.canCreateClient)
-    setCanUpdateClient(res.canUpdateClient)
-    setTreasuryPaymentContext(res.treasuryPaymentContext)
-    setLoading(false)
-  }, [popId])
-
-  useEffect(() => {
-    void loadPage()
-  }, [loadPage])
+  const reloadPage = useCallback(async () => {
+    await Promise.all([catalogQuery.refetch(), pageQuery.refetch()])
+  }, [catalogQuery, pageQuery])
 
   const patchForm = useCallback((patch: Partial<ServiceChargeCreateWizardForm>) => {
     setForm((current) => {
@@ -772,7 +766,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     setCreateChargeConfirmOpen(false)
     setSuccessOpen(true)
     resetCharge()
-    void loadPage()
+    void reloadPage()
   }
 
   const headerUserName =
@@ -781,15 +775,20 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     user?.email?.split("@")[0] ||
     "Usuario"
   const userAvatarSrc = bootstrap?.userImageUrl ?? undefined
+  const popName = bootstrap?.popName ?? ""
+
+  if (catalogPending) {
+    return <PopModuleLoading moduleKey="cobrar-servicios" />
+  }
 
   return (
     <>
       <DataWorkspaceOperationsLayout
         siteId={siteId}
         popId={popId}
-        popName={bootstrap?.popName ?? ""}
+        popName={popName}
         title="Vender servicio"
-        loading={bootstrapLoading}
+        loading={!popName}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
         sidebarCollapsible
@@ -804,7 +803,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                 <ServiceOperateCatalogBrowser
                   items={catalogItems}
                   categories={catalogCategories}
-                  loading={loading}
+                  loading={false}
                   error={catalogError}
                   selectedServiceId={form.serviceTypeId || null}
                   selectedService={selectedService}

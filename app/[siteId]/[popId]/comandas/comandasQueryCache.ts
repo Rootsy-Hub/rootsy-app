@@ -1,5 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query"
-import { isComandaBoardVisible } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import {
+  isComandaTicketStored,
+  msUntilComandaLeavesBoard,
+  msUntilComandaLeavesHistory,
+} from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type {
   ComandaTicket,
 } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
@@ -77,7 +81,7 @@ function writeTicketToStationCache(
 ) {
   const key = popComandasTicketsQueryKey(popId, ticket.stationId)
   const prev = queryClient.getQueryData<ComandaTicket[]>(key) ?? []
-  if (!isComandaBoardVisible(ticket.status)) {
+  if (!isComandaTicketStored(ticket)) {
     queryClient.setQueryData<ComandaTicket[]>(
       key,
       prev.filter((row) => row.id !== ticket.id),
@@ -109,7 +113,7 @@ export function upsertComandaTicketCache(
   if (
     current &&
     !inFlight?.has(mapped.id) &&
-    isComandaBoardVisible(mapped.status) &&
+    isComandaTicketStored(mapped) &&
     !isNewerTicket(mapped, current)
   ) {
     const kept = overlayInFlightTicket(current, inFlight)
@@ -150,7 +154,7 @@ export function applyComandaStatusToTicketsCache(
     return
   }
 
-  if (!isComandaBoardVisible(mapped.status)) {
+  if (!isComandaTicketStored(mapped)) {
     queryClient.setQueryData<ComandaTicket[]>(
       key,
       prev.filter((row) => {
@@ -192,6 +196,49 @@ export function applyComandaStatusToTicketsCache(
   })
 }
 
+export function pruneExpiredDeliveredComandas(
+  queryClient: QueryClient,
+  popId: string,
+  now = Date.now(),
+): number | null {
+  const queries = queryClient.getQueriesData<ComandaTicket[]>({
+    queryKey: popComandasTicketsQueryRoot(popId),
+  })
+  let nextExpiryMs: number | null = null
+  for (const [key, tickets] of queries) {
+    if (!tickets || tickets.length === 0) continue
+    const kept: ComandaTicket[] = []
+    const dropped: ComandaTicket[] = []
+    for (const ticket of tickets) {
+      if (isComandaTicketStored(ticket, now)) {
+        kept.push(ticket)
+        for (const wait of [
+          msUntilComandaLeavesBoard(ticket, now),
+          msUntilComandaLeavesHistory(ticket, now),
+        ]) {
+          if (wait != null && wait > 0 && (nextExpiryMs == null || wait < nextExpiryMs)) {
+            nextExpiryMs = wait
+          }
+        }
+      } else {
+        dropped.push(ticket)
+      }
+    }
+    if (dropped.length === 0) continue
+    queryClient.setQueryData<ComandaTicket[]>(key, kept)
+    writeComandasBoardIfOpen(popId, (db) => {
+      for (const ticket of dropped) {
+        if (ticket.sendId) {
+          deleteComandaTicketsBySendId(db, ticket.sendId)
+          continue
+        }
+        deleteComandaTicket(db, ticket.id)
+      }
+    })
+  }
+  return nextExpiryMs
+}
+
 export function replaceComandasTicketsCaches(
   queryClient: QueryClient,
   popId: string,
@@ -201,7 +248,10 @@ export function replaceComandasTicketsCaches(
   for (const station of stations) {
     queryClient.setQueryData<ComandaTicket[]>(
       popComandasTicketsQueryKey(popId, station.id),
-      tickets.filter((ticket) => ticket.stationId === station.id),
+      tickets.filter(
+        (ticket) =>
+          ticket.stationId === station.id && isComandaTicketStored(ticket),
+      ),
     )
   }
 }

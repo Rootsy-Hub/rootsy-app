@@ -7,6 +7,7 @@ import {
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceOperationsLayout } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
+import type { DataWorkspaceHeaderMoreAction } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -31,6 +32,7 @@ type BlocksShellProps = {
   /** Si es `null`, el hijo ocupa el main sin padding de bloques. */
   contentClassName?: string | null
   headerActions?: ReactNode
+  sectionMenu?: ReactNode
 }
 
 export function BlocksModulePageSkeleton({
@@ -42,6 +44,7 @@ export function BlocksModulePageSkeleton({
   mainMaxWidthClass = "max-w-none",
   contentClassName,
   headerActions,
+  sectionMenu,
 }: BlocksShellProps) {
   const wrapContent = contentClassName !== null
   return (
@@ -60,6 +63,7 @@ export function BlocksModulePageSkeleton({
       mainMaxWidthClass={mainMaxWidthClass}
       mainClassName={cn(dataWorkspaceBlocksPageMainClass, mainClassName)}
       headerActions={headerActions}
+      sectionMenu={sectionMenu}
     >
       {wrapContent ? (
         <div className={contentClassName ?? dataWorkspaceBlocksPageContentClass}>
@@ -76,10 +80,14 @@ export function OperationsModulePageSkeleton({
   layout,
   title,
   children,
+  headerActions,
+  headerMoreActions,
 }: {
   layout: PopModuleSkeletonLayout
   title: string
   children: ReactNode
+  headerActions?: ReactNode
+  headerMoreActions?: readonly DataWorkspaceHeaderMoreAction[]
 }) {
   return (
     <DataWorkspaceOperationsLayout
@@ -94,6 +102,8 @@ export function OperationsModulePageSkeleton({
       sidebarCollapsible
       sidebarEdgeToggle={false}
       sidebarOpen
+      headerActions={headerActions}
+      headerMoreActions={headerMoreActions}
     >
       {children}
     </DataWorkspaceOperationsLayout>

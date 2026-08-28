@@ -1,16 +1,12 @@
 "use client"
 
 import {
-  getPurchaseCatalog,
   getPurchaseCatalogArticlesByIds,
   type PurchaseCatalogArticle,
 } from "@/app/[siteId]/[popId]/purchases/actions"
 import { useCatalogItemCache } from "@/hooks/useCatalogItemCache"
-import {
-  purchaseCatalogKnownArticlesQueryKey,
-  purchaseCatalogQueryKey,
-} from "@/lib/queryKeys"
-import { operateCatalogQueryOptions } from "@/lib/queryStaleTimes"
+import { purchaseCatalogQueryOptions } from "@/lib/purchaseWorkspaceQuery"
+import { purchaseCatalogKnownArticlesQueryKey } from "@/lib/queryKeys"
 import { useQuery } from "@tanstack/react-query"
 import { useCallback } from "react"
 
@@ -25,16 +21,8 @@ export function usePurchaseCatalogLoader(
   const enabled = (options?.enabled ?? true) && Boolean(popId)
 
   const catalogQuery = useQuery({
-    queryKey: purchaseCatalogQueryKey(popId ?? ""),
-    queryFn: async () => {
-      const res = await getPurchaseCatalog(popId!, { items: "none" })
-      if (!res.success) {
-        throw new Error(res.error)
-      }
-      return res
-    },
+    ...purchaseCatalogQueryOptions(popId ?? ""),
     enabled,
-    ...operateCatalogQueryOptions,
   })
 
   const data = catalogQuery.data
@@ -70,6 +58,7 @@ export function usePurchaseCatalogLoader(
     treasuryPaymentContext: data?.treasuryPaymentContext ?? null,
     canReadPaymentMethods: data?.canReadPaymentMethods ?? false,
     catalogLoading: catalogQuery.isLoading,
+    catalogPending: catalogQuery.isPending && !catalogQuery.data,
     catalogError:
       catalogQuery.error instanceof Error
         ? catalogQuery.error.message

@@ -96,7 +96,9 @@ import {
   type MenuCatalogProduct,
 } from "@/lib/menuCatalogProduct"
 import {
+  ACTIVE_COMANDAS_DISCARD_TITLE,
   ensureCartLineComandaStatuses,
+  hasActiveCommandedLines,
   isComandaLocked,
   isComandaVoidable,
   pendingComandaComment,
@@ -970,11 +972,17 @@ export function useMesasSaleCheckout(
   const hayDescuento = footerTotals.hayDescuento
   const hayItemsEnPedido = itemsDetalladosUnpaid.length > 0
 
+  const hayComandasActivas = useMemo(
+    () => hasActiveCommandedLines(carrito),
+    [carrito],
+  )
+
   const puedeDescartarPedido = useMemo(
     () =>
       hayItemsEnPedido &&
+      !hayComandasActivas &&
       !hasAnyPartialPayment({ paidPartialUnits, totalPagadoAcumulado }),
-    [hayItemsEnPedido, paidPartialUnits, totalPagadoAcumulado],
+    [hayItemsEnPedido, hayComandasActivas, paidPartialUnits, totalPagadoAcumulado],
   )
 
   const hayPendingComandas = useMemo(
@@ -1138,8 +1146,15 @@ export function useMesasSaleCheckout(
         paidPartialUnits,
         totalPagadoAcumulado,
         quantityDealApplications,
+        hasActiveComandas: hayComandasActivas,
       }),
-    [carrito, paidPartialUnits, totalPagadoAcumulado, quantityDealApplications],
+    [
+      carrito,
+      paidPartialUnits,
+      totalPagadoAcumulado,
+      quantityDealApplications,
+      hayComandasActivas,
+    ],
   )
 
   const puedeCerrarMesa = channelCloseEligibility.canClose
@@ -2140,7 +2155,11 @@ export function useMesasSaleCheckout(
     },
     actions: {
       discardDisabled: !puedeDescartarPedido || requiereCajaAbierta,
-      discardTitle: requiereCajaAbierta ? cajaRequiredTitle : undefined,
+      discardTitle: requiereCajaAbierta
+        ? cajaRequiredTitle
+        : hayComandasActivas
+          ? ACTIVE_COMANDAS_DISCARD_TITLE
+          : undefined,
       confirmDisabled: !puedeRegistrar,
       confirmLoading: submitting,
       onDiscard: () => {

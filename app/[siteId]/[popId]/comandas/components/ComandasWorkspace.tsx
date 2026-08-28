@@ -15,6 +15,7 @@ export function ComandasWorkspace({ state, canUpdate }: Props) {
     stations,
     stationId,
     tickets,
+    boardClock,
     loading,
     error,
     moveTicket,
@@ -38,6 +39,7 @@ export function ComandasWorkspace({ state, canUpdate }: Props) {
           error={error}
           canUpdate={canUpdate}
           stationName={stationName}
+          boardClock={boardClock}
           onMoveTicket={moveTicket}
         />
       )}

@@ -1,4 +1,4 @@
-import { isComandaBoardVisible } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
+import { isComandaTicketStored } from "@/app/[siteId]/[popId]/comandas/comandasLogic"
 import type { ComandaTicket } from "@/app/[siteId]/[popId]/comandas/comandasTypes"
 import type { PopLocalDatabase } from "@/lib/popLocalDb/database"
 import {
@@ -28,14 +28,14 @@ export function replaceComandaTickets(
   db.transaction(() => {
     db.run("DELETE FROM comandas_tickets")
     for (const ticket of tickets) {
-      if (!isComandaBoardVisible(ticket.status)) continue
+      if (!isComandaTicketStored(ticket)) continue
       db.run(UPSERT_TICKET_SQL, ticketBindValues(ticket))
     }
   })
 }
 
 export function upsertComandaTicket(db: PopLocalDatabase, ticket: ComandaTicket) {
-  if (!isComandaBoardVisible(ticket.status)) {
+  if (!isComandaTicketStored(ticket)) {
     deleteComandaTicket(db, ticket.id)
     return
   }
@@ -60,4 +60,5 @@ export function listComandaTicketsByStation(
   return db
     .all(LIST_STATION_SQL, [stationId])
     .map((row) => sqlTicketRowToSnapshot(row))
+    .filter((ticket) => isComandaTicketStored(ticket))
 }
