@@ -53,6 +53,9 @@ export type SaleOperationTotalBarProps = {
   embedded?: boolean
   /** Temporal: oculta la fila Total + importe en el ticket. */
   hideMainTotal?: boolean
+  /** Abre el descuento general desde el ticket. */
+  onGeneralDiscountClick?: () => void
+  generalDiscountDisabled?: boolean
 }
 
 const breakdownLabelPosClass =
@@ -93,6 +96,8 @@ export function SaleOperationTotalBar({
   hideSectionTitle = false,
   embedded = false,
   hideMainTotal = false,
+  onGeneralDiscountClick,
+  generalDiscountDisabled = false,
 }: SaleOperationTotalBarProps) {
   const isModal = tone === "modal"
   const isOperar = tone === "operar"
@@ -111,6 +116,7 @@ export function SaleOperationTotalBar({
   const showPagado = totalPagado > 0
   const subtotalDisplay =
     subtotalOriginal > 0 ? subtotalOriginal : subtotal
+  const showDiscountAction = Boolean(onGeneralDiscountClick) && isOperar
   const showSubtotalBreakdown =
     isOperar ||
     (subtotalDisplay > 0 &&
@@ -259,7 +265,33 @@ export function SaleOperationTotalBar({
                 </p>
               </>
             ) : null}
-            {showGeneralDiscount ? (
+            {showDiscountAction ? (
+              <button
+                type="button"
+                disabled={generalDiscountDisabled}
+                onClick={onGeneralDiscountClick}
+                className={cn(
+                  "col-span-2 flex w-full items-center justify-between gap-4 text-left",
+                  "rounded-md px-0 py-0.5",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+                  generalDiscountDisabled && "cursor-not-allowed opacity-45",
+                )}
+                aria-label={
+                  showGeneralDiscount
+                    ? `Descuento general ${saleOpFmt.format(descuentoMonto)}. Editar descuento.`
+                    : "Agregar descuento general"
+                }
+              >
+                <span className={cn(breakdownLabelClass, "self-center")}>
+                  Descuento general
+                </span>
+                <p className={discountAmountClass}>
+                  {showGeneralDiscount
+                    ? `−${saleOpFmt.format(descuentoMonto)}`
+                    : "Agregar"}
+                </p>
+              </button>
+            ) : showGeneralDiscount ? (
               <>
                 <span
                   className={cn(

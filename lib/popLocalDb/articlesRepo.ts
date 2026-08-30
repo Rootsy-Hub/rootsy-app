@@ -143,6 +143,23 @@ export function listSaleBoardArticles(
   }
 }
 
+export function patchArticleStockOnHand(
+  db: PopLocalDatabase,
+  changes: Array<{ articleId: string; onHand: number }>,
+): number {
+  let patched = 0
+  for (const change of changes) {
+    const id = change.articleId.trim()
+    if (!id || !Number.isFinite(change.onHand)) continue
+    db.run("UPDATE articles SET stock_on_hand = ? WHERE id = ?", [
+      change.onHand,
+      id,
+    ])
+    patched += 1
+  }
+  return patched
+}
+
 export function deleteArticleById(db: PopLocalDatabase, articleId: string) {
   db.run("DELETE FROM articles WHERE id = ?", [articleId])
 }

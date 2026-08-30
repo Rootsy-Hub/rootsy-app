@@ -97,6 +97,9 @@ export function buildArticlesListSearch(input: GetPopArticlesTableInput): string
   if (input.itemKinds.length > 0) {
     params.set("itemKinds", input.itemKinds.join(","))
   }
+  if (input.ids && input.ids.length > 0) {
+    params.set("ids", input.ids.join(","))
+  }
   if (input.sort) params.set("sort", input.sort)
   if (input.ord && input.ord !== "asc") params.set("ord", input.ord)
   return params.toString()
@@ -127,6 +130,46 @@ export async function fetchPopArticlesTable(
     json && "error" in json && json.error ? json.error : `HTTP ${res.status}`,
     json && "redirect" in json ? json.redirect : undefined,
   )
+}
+
+const ARTICLE_IDS_CHUNK = 80
+
+export async function fetchPopArticlesByIds(
+  popId: string,
+  ids: string[],
+): Promise<ArticleListItem[]> {
+  const unique = [...new Set(ids.map((id) => id.trim()).filter(Boolean))]
+  const out: ArticleListItem[] = []
+  for (let i = 0; i < unique.length; i += ARTICLE_IDS_CHUNK) {
+    const chunk = unique.slice(i, i + ARTICLE_IDS_CHUNK)
+    let page = 1
+    for (;;) {
+      const res = await fetchPopArticlesTable(popId, {
+        page,
+        pageSize: 100,
+        search: "",
+        soloActivos: false,
+        soloInactivos: false,
+        conDescuento: false,
+        sinDescuento: false,
+        conStock: false,
+        sinStock: false,
+        stockNegativo: false,
+        ventaSinStock: false,
+        includeStock: true,
+        categoryId: "",
+        itemKinds: [],
+        ids: chunk,
+        sort: "name",
+        ord: "asc",
+      })
+      if (!res.success) throw new Error(res.error)
+      out.push(...res.articles)
+      if (page * 100 >= res.totalCount) break
+      page += 1
+    }
+  }
+  return out
 }
 
 export async function fetchPopArticle(

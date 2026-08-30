@@ -2,6 +2,11 @@
 
 import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import { RootsyApiError, rootsyApiFetch } from "@/lib/rootsyApi/server"
+import {
+  formatStockShortageMessage,
+  parseStockShortageBody,
+  type StockShortage,
+} from "@/lib/stockShortageMessage"
 
 export type CompleteSaleLineSnapshotInput = {
   name: string
@@ -64,10 +69,32 @@ export type CompleteSaleInput = {
   idempotencyKey?: string
 }
 
+export type CompleteSaleStockChange = {
+  articleId: string
+  onHand: number
+}
+
 type CreateSaleApiOk = {
   success: true
-  data: { saleId: string; replayed?: boolean }
+  data: {
+    saleId: string
+    replayed?: boolean
+    stockChanges?: CompleteSaleStockChange[]
+  }
 }
+
+export type CompleteSaleResult =
+  | {
+      success: true
+      saleId: string
+      stockChanges?: CompleteSaleStockChange[]
+    }
+  | {
+      success: false
+      error: string
+      shortages?: StockShortage[]
+      code?: string
+    }
 
 function saleChannel(input: CompleteSaleInput) {
   if (input.tableSessionId) {
@@ -92,7 +119,7 @@ function saleChannel(input: CompleteSaleInput) {
 export async function completeSale(
   popId: string,
   input: CompleteSaleInput,
-): Promise<{ success: true; saleId: string } | { success: false; error: string }> {
+): Promise<CompleteSaleResult> {
   if (input.lines.length === 0) {
     return { success: false, error: "No hay ítems para cobrar." }
   }
@@ -128,16 +155,37 @@ export async function completeSale(
         customerIvaCondition: input.customerIvaCondition,
         fiscalCustomer: input.fiscalCustomer,
         channel: saleChannel(input),
+        ...(input.priceListId &&
+        /^[0-9a-f-]{36}$/i.test(input.priceListId)
+          ? { priceListId: input.priceListId }
+          : {}),
       }),
       signal: AbortSignal.timeout(60_000),
     })
     if (!res.success || !res.data?.saleId) {
       return { success: false, error: "No se pudo registrar la venta." }
     }
-    return { success: true, saleId: res.data.saleId }
+    return {
+      success: true,
+      saleId: res.data.saleId,
+      stockChanges: res.data.stockChanges,
+    }
   } catch (error) {
     if (error instanceof RootsyApiError) {
-      return { success: false, error: error.message }
+      const parsed = parseStockShortageBody(error.body)
+      if (parsed.shortages.length > 0) {
+        return {
+          success: false,
+          error: formatStockShortageMessage(parsed.shortages),
+          shortages: parsed.shortages,
+          code: parsed.code,
+        }
+      }
+      return {
+        success: false,
+        error: error.message,
+        code: parsed.code,
+      }
     }
     return {
       success: false,

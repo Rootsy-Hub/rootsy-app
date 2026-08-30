@@ -70,6 +70,17 @@ export function mapSaleCatalogArticleRow(
       row.barcode != null && String(row.barcode).trim()
         ? String(row.barcode).trim()
         : null,
+    stockOnHand:
+      row.stock_on_hand != null && Number.isFinite(Number(row.stock_on_hand))
+        ? Number(row.stock_on_hand)
+        : row.stockOnHand != null && Number.isFinite(Number(row.stockOnHand))
+          ? Number(row.stockOnHand)
+          : undefined,
+    allowNegativeStock:
+      row.allow_negative_stock === true ||
+      row.allow_negative_stock === 1 ||
+      row.allow_negative_stock === "1" ||
+      row.allowNegativeStock === true,
   }
 }
 
@@ -106,6 +117,8 @@ export function articleSnapshotToSaleCatalogArticle(
     unitOfMeasure: row.unitOfMeasure,
     imageUrl: row.imageUrl,
     barcode: row.barcode,
+    stockOnHand: row.stockOnHand,
+    allowNegativeStock: row.allowNegativeStock,
   }
 }
 

@@ -13,8 +13,8 @@ const UPSERT_RECIPE_SQL = `
 INSERT OR REPLACE INTO recipes (
   id, name, description, image_url, category_id, category_name,
   sale_price, iva, is_active, allow_negative_stock, station_id,
-  list_prices, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  output_article_id, list_prices, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 export function upsertRecipeSnapshots(
@@ -41,6 +41,10 @@ function fillHydrateSeen(db: PopLocalDatabase, ids: string[]) {
 export function deleteRecipesNotIn(db: PopLocalDatabase, ids: string[]) {
   fillHydrateSeen(db, ids)
   db.run(
+    `DELETE FROM recipe_ingredients
+     WHERE recipe_id NOT IN (SELECT id FROM recipe_hydrate_seen)`,
+  )
+  db.run(
     `DELETE FROM recipes
      WHERE id NOT IN (SELECT id FROM recipe_hydrate_seen)`,
   )
@@ -48,6 +52,7 @@ export function deleteRecipesNotIn(db: PopLocalDatabase, ids: string[]) {
 }
 
 export function deleteRecipeById(db: PopLocalDatabase, recipeId: string) {
+  db.run("DELETE FROM recipe_ingredients WHERE recipe_id = ?", [recipeId])
   db.run("DELETE FROM recipes WHERE id = ?", [recipeId])
 }
 

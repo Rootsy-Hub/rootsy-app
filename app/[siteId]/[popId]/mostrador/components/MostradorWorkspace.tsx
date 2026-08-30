@@ -15,6 +15,9 @@ import { useMostradorSaleCheckout } from "@/app/[siteId]/[popId]/mostrador/useMo
 import { useMostradorState } from "@/app/[siteId]/[popId]/mostrador/useMostradorState"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import {
+  layoutsOperarCheckoutPillsFromToolbox,
+} from "@/components/layouts-module/LayoutsOperarCheckoutSteps"
 import { LayoutsOperarSaleCheckoutFloor } from "@/components/layouts-module/LayoutsOperarSaleCheckoutFloor"
 import { useOperarMobileStage } from "@/components/layouts-module/OperarMobileStage"
 import { OperarMobileToolboxIcons } from "@/components/layouts-module/OperarMobileToolbox"
@@ -27,7 +30,6 @@ import {
 } from "@/app/library/layouts/layoutsOperarStyles"
 import type { SaleOperationDiscountHeaderControl } from "@/components/sale-operation/SaleOperationDiscountHeaderButton"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
-import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { useCajasRealtime } from "@/hooks/useCajasRealtime"
 import { useMostradorRealtime } from "@/hooks/useMostradorRealtime"
@@ -118,6 +120,17 @@ export function MostradorWorkspace({
     },
   )
   const mostradorOrderConfirm = getMostradorOrderConfirmState(checkout)
+  const mostradorCheckoutPills = layoutsOperarCheckoutPillsFromToolbox({
+    ...checkout.toolbox,
+    discountLabel: checkout.discountHeader.title,
+    discountConfigured: checkout.discountHeader.active,
+    discountDisabled: checkout.discountHeader.disabled,
+    onDiscountClick: checkout.discountHeader.onClick,
+  })
+  const mostradorSavingsAmount =
+    checkout.descuentoMonto +
+    checkout.descuentoItemsMonto +
+    checkout.promocionesAplicadasMonto
 
   useEffect(() => {
     onRegisterDiscountHeader?.(checkout.discountHeader)
@@ -253,23 +266,23 @@ export function MostradorWorkspace({
         mobileCatalogDisabled={!selectedOrder && !creating}
         catalog={!showCatalog ? boardCanvas : catalogPanel}
         floor={
-          <LayoutsOperarSaleCheckoutFloor
-            steps={
-              checkout.toolboxLoading ? (
-                <SaleOperationToolboxSkeleton embedded />
-              ) : (
-                <SaleOperationToolbox embedded {...checkout.toolbox} />
-              )
-            }
-            closingTotal={checkout.total}
-            actions={{
-              ...checkout.actions,
-              confirmLabel: mostradorOrderConfirm.confirmLabel,
-              confirmDisabled: mostradorOrderConfirm.confirmDisabled,
-              confirmTitle: mostradorOrderConfirm.confirmTitle,
-              onConfirm: () => runMostradorOrderConfirm(checkout),
-            }}
-          />
+          <>
+            <SaleOperationToolbox registerOnly {...checkout.toolbox} />
+            <LayoutsOperarSaleCheckoutFloor
+              proposal="pills"
+              proposalSteps={mostradorCheckoutPills.steps}
+              proposalOptions={mostradorCheckoutPills.options}
+              savingsAmount={mostradorSavingsAmount}
+              closingTotal={checkout.total}
+              actions={{
+                ...checkout.actions,
+                confirmLabel: mostradorOrderConfirm.confirmLabel,
+                confirmDisabled: mostradorOrderConfirm.confirmDisabled,
+                confirmTitle: mostradorOrderConfirm.confirmTitle,
+                onConfirm: () => runMostradorOrderConfirm(checkout),
+              }}
+            />
+          </>
         }
         desktopFloor={showCatalog}
         ticket={

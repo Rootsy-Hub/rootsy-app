@@ -56,6 +56,7 @@ const HANDBOOK_NAV_ICONS: Record<string, LucideIcon> = {
   producto: Package,
   experiencia: Heart,
   "sistema-de-diseno": Component,
+  "sistema-de-diseno-v2": Layers,
   contenido: AlignLeft,
   organizacion: Building2,
   "forma-de-trabajo": Workflow,

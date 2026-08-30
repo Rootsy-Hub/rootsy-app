@@ -88,7 +88,7 @@ export function articleListItemToSnapshot(row: ArticleListItem): ArticleSnapshot
     isSellable: row.isSellable,
     isActive: row.isActive,
     allowNegativeStock: row.allowNegativeStock,
-    stockOnHand: 0,
+    stockOnHand: Number(row.stockOnHand) || 0,
     listPrices: (row.listPrices ?? []).map((price) => ({
       listId: price.listId,
       amount: price.amount,
@@ -146,7 +146,7 @@ export function articleSnapshotBindValues(
     row.isSellable ? 1 : 0,
     row.isActive ? 1 : 0,
     row.allowNegativeStock ? 1 : 0,
-    0,
+    row.stockOnHand,
     JSON.stringify(row.listPrices),
     updatedAt,
   ]

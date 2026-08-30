@@ -6,6 +6,7 @@ import {
   deleteArticleById,
   deleteMerchandiseNotInCategory,
   listSaleBoardArticles,
+  patchArticleStockOnHand,
   renameArticlesCategory,
   replaceMerchandiseArticles,
   upsertArticleSnapshots,
@@ -55,7 +56,7 @@ describe("pop local db articles", () => {
       ["a1", "a2"],
     )
     assert.equal(page.totalCount, 2)
-    assert.equal(page.articles[0]?.stockOnHand, 0)
+    assert.equal(page.articles[0]?.stockOnHand, 4)
   })
 
   it("guarda inactivos pero el tablero no los lista", async () => {
@@ -266,7 +267,7 @@ describe("pop local db articles", () => {
     } as Parameters<typeof articleListItemToSnapshot>[0]
     const mapped = articleListItemToSnapshot(item)
     assert.equal(mapped.sku, "SKU-1")
-    assert.equal(mapped.stockOnHand, 0)
+    assert.equal(mapped.stockOnHand, 3)
     assert.deepEqual(mapped.listPrices, [{ listId: "lista-2", amount: 88 }])
     assert.equal(sqlArticleRowToSnapshot({
       id: mapped.id,
@@ -289,5 +290,19 @@ describe("pop local db articles", () => {
       stock_on_hand: mapped.stockOnHand,
       list_prices: JSON.stringify(mapped.listPrices),
     })?.listPrices[0]?.amount, 88)
+  })
+
+  it("parchea stock_on_hand sin rehidratar", async () => {
+    const db = await createPopLocalDatabase()
+    replaceMerchandiseArticles(db, [
+      snap({ id: "a1", name: "Coca", stockOnHand: 4 }),
+    ])
+    patchArticleStockOnHand(db, [{ articleId: "a1", onHand: 1 }])
+    const page = listSaleBoardArticles(db, {
+      categoryId: "cat-1",
+      page: 1,
+      pageSize: 50,
+    })
+    assert.equal(page.articles[0]?.stockOnHand, 1)
   })
 })

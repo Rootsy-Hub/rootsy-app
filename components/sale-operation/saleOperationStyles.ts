@@ -38,22 +38,22 @@ export const saleOpImporteBaseClass = importeBaseClass
 
 export const saleOpImporteCartClass = cn(
   saleOpImporteBaseClass,
-  "text-sm font-semibold text-slate-900",
+  "text-sm font-semibold text-[var(--rootsy-bruma-900)]",
 )
 
 export const saleOpImporteCartMutedClass = cn(
   saleOpImporteBaseClass,
-  "text-xs text-slate-400",
+  "text-xs text-[var(--rootsy-bruma-400)]",
 )
 
 export const cartListHeaderRowClass =
   "flex items-center justify-between gap-2 px-3 py-2"
 
 /** Fondo del listado de ítems del ticket (más suave que blanco puro, distinto del aside #eef1f5). */
-export const saleOpCartListSurfaceClass = "bg-[#f4f6f9]"
+export const saleOpCartListSurfaceClass = "bg-[var(--rootsy-bruma-50)]"
 
 /** Separador horizontal sutil (1px) entre líneas del ticket — gris neutro, sin tinte. */
-export const saleOpCartLineDividerColorClass = "border-[#dfe4ea]"
+export const saleOpCartLineDividerColorClass = "border-[var(--rootsy-bruma-200)]"
 export const saleOpCartLineDividerBottomClass = cn(
   "border-b",
   saleOpCartLineDividerColorClass,
@@ -63,7 +63,7 @@ export const saleOpCartLineDividerTopClass = cn(
   saleOpCartLineDividerColorClass,
 )
 export const saleOpCartLineDivideYClass = cn(
-  "divide-y divide-[#dfe4ea]",
+  "divide-y divide-[var(--rootsy-bruma-200)]",
 )
 
 /** @deprecated Usar tokens de DataWorkspaceDetailEmptyState (layout.blocks.empty.detail). */
@@ -76,7 +76,7 @@ export {
 
 /** Barra de acciones del ticket (Descartar / Vender). */
 export const saleOpActionsBarShellClass = cn(
-  "grid w-full shrink-0 grid-cols-2 divide-x divide-[#dfe4ea] bg-white",
+  "grid w-full shrink-0 grid-cols-2 divide-x divide-[var(--rootsy-bruma-200)] bg-[var(--rootsy-blanco)]",
 )
 export const saleOpActionBtnBaseClass = cn(
   "inline-flex h-[3.25rem] w-full items-center justify-center gap-2 border-0 px-3 text-[14px] font-semibold tracking-tight shadow-none transition-[background-color,color,box-shadow] duration-150",
@@ -85,64 +85,64 @@ export const saleOpActionBtnBaseClass = cn(
 )
 export const saleOpActionDiscardClass = cn(
   saleOpActionBtnBaseClass,
-  "bg-[#f4f6f9] text-rose-700 hover:bg-rose-50 hover:text-rose-800 active:bg-rose-100/80",
-  "disabled:bg-[#f4f6f9] disabled:text-slate-500 disabled:hover:bg-[#f4f6f9] disabled:active:bg-[#f4f6f9]",
+  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-lava-700)] hover:bg-[var(--rootsy-lava-50)] hover:text-[var(--rootsy-lava-800)] active:bg-[var(--rootsy-lava-100)]",
+  "disabled:bg-[var(--rootsy-bruma-50)] disabled:text-[var(--rootsy-bruma-500)] disabled:hover:bg-[var(--rootsy-bruma-50)] disabled:active:bg-[var(--rootsy-bruma-50)]",
   "focus-visible:ring-rose-400/35",
 )
 export const saleOpActionConfirmClass = cn(
   saleOpActionBtnBaseClass,
-  "bg-emerald-600 text-white hover:bg-emerald-500 active:bg-emerald-700",
+  "bg-[var(--rootsy-savia-600)] text-white hover:bg-[var(--rootsy-savia-500)] active:bg-[var(--rootsy-savia-700)]",
   "shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]",
-  "disabled:bg-emerald-600/28 disabled:text-white/65 disabled:shadow-none disabled:hover:bg-emerald-600/28 disabled:active:bg-emerald-600/28",
-  "focus-visible:ring-emerald-400/45",
+  "disabled:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_28%,transparent)] disabled:text-white/65 disabled:shadow-none disabled:hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_28%,transparent)] disabled:active:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_28%,transparent)]",
+  "focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
 )
 
 /** Pagar — otoño 600/500/700 (cosecha, dinero que sale). No es danger. */
 export const saleOpActionPayClass = cn(
   saleOpActionBtnBaseClass,
-  "bg-[#D97706] text-white hover:bg-[#F59E0B] active:bg-[#B45309]",
+  "bg-[var(--rootsy-sol-600)] text-white hover:bg-[var(--rootsy-sol-500)] active:bg-[var(--rootsy-sol-700)]",
   "shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]",
-  "disabled:bg-[#D97706]/28 disabled:text-white/65 disabled:shadow-none disabled:hover:bg-[#D97706]/28 disabled:active:bg-[#D97706]/28",
-  "focus-visible:ring-[#F59E0B]/45",
+  "disabled:bg-[color-mix(in_srgb,var(--rootsy-sol-600)_28%,transparent)] disabled:text-white/65 disabled:shadow-none disabled:hover:bg-[color-mix(in_srgb,var(--rootsy-sol-600)_28%,transparent)] disabled:active:bg-[color-mix(in_srgb,var(--rootsy-sol-600)_28%,transparent)]",
+  "focus-visible:ring-[color-mix(in_srgb,var(--rootsy-sol-400)_45%,transparent)]",
 )
 
 /** Círculo operar Pagar — pisa savia del icon-button primary. */
 export const saleOpTicketActionPayClass = cn(
-  "!bg-[#D97706] !text-white !border-[#B45309]",
-  "hover:!bg-[#F59E0B] hover:!border-[#D97706]",
-  "active:!bg-[#B45309] active:!border-[#92400E]",
-  "focus-visible:!shadow-[0_0_0_3px_color-mix(in_srgb,#F59E0B_38%,transparent)]",
+  "!bg-[var(--rootsy-sol-600)] !text-white !border-[var(--rootsy-sol-700)]",
+  "hover:!bg-[var(--rootsy-sol-500)] hover:!border-[var(--rootsy-sol-600)]",
+  "active:!bg-[var(--rootsy-sol-700)] active:!border-[var(--rootsy-sol-800)]",
+  "focus-visible:!shadow-[0_0_0_3px_color-mix(in_srgb,var(--rootsy-sol-400)_38%,transparent)]",
 )
 
 /** Círculo operar Comandas — azul del estado “comandada”. */
 export const saleOpTicketActionComandasClass = cn(
-  "!bg-[#2563eb] !text-white !border-[#1d4ed8]",
-  "hover:!bg-[#3b82f6] hover:!border-[#2563eb]",
-  "active:!bg-[#1d4ed8] active:!border-[#1e3a8a]",
-  "focus-visible:!shadow-[0_0_0_3px_color-mix(in_srgb,#3b82f6_38%,transparent)]",
+  "!bg-[var(--rootsy-cielo-600)] !text-white !border-[var(--rootsy-cielo-700)]",
+  "hover:!bg-[var(--rootsy-cielo-500)] hover:!border-[var(--rootsy-cielo-600)]",
+  "active:!bg-[var(--rootsy-cielo-700)] active:!border-[var(--rootsy-cielo-800)]",
+  "focus-visible:!shadow-[0_0_0_3px_color-mix(in_srgb,var(--rootsy-cielo-400)_38%,transparent)]",
 )
 export const saleOpActionIconWrapDiscardClass =
   "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600"
 export const saleOpActionIconWrapComandasClass =
-  "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#2563eb]/12 text-[#2563eb]"
+  "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--rootsy-cielo-600)_12%,transparent)] text-[var(--rootsy-cielo-600)]"
 export const saleOpActionComandasClass = cn(
   saleOpActionBtnBaseClass,
-  "bg-[#f4f6f9] text-[#2563eb] hover:bg-blue-50 hover:text-[#1d4ed8] active:bg-blue-100/80",
-  "disabled:bg-[#f4f6f9] disabled:text-slate-500 disabled:hover:bg-[#f4f6f9] disabled:active:bg-[#f4f6f9]",
-  "focus-visible:ring-[#3b82f6]/35",
+  "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-cielo-600)] hover:bg-[var(--rootsy-cielo-50)] hover:text-[var(--rootsy-cielo-700)] active:bg-[var(--rootsy-cielo-100)]",
+  "disabled:bg-[var(--rootsy-bruma-50)] disabled:text-[var(--rootsy-bruma-500)] disabled:hover:bg-[var(--rootsy-bruma-50)] disabled:active:bg-[var(--rootsy-bruma-50)]",
+  "focus-visible:ring-[color-mix(in_srgb,var(--rootsy-cielo-400)_35%,transparent)]",
 )
 /** Mobile Mesas/Mostrador — el bloque entero es el color y el hit. */
 export const saleOpActionDiscardFillClass = cn(
   saleOpActionBtnBaseClass,
   "h-full bg-rose-500/10 text-rose-600 hover:bg-rose-500/16 active:bg-rose-500/22",
-  "disabled:bg-slate-200/60 disabled:text-slate-500 disabled:hover:bg-slate-200/60 disabled:active:bg-slate-200/60",
-  "focus-visible:ring-rose-400/35",
+  "disabled:bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_60%,transparent)] disabled:text-[var(--rootsy-bruma-500)] disabled:hover:bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_60%,transparent)] disabled:active:bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_60%,transparent)]",
+  "focus-visible:ring-[color-mix(in_srgb,var(--rootsy-lava-400)_35%,transparent)]",
 )
 export const saleOpActionComandasFillClass = cn(
   saleOpActionBtnBaseClass,
-  "h-full bg-[#2563eb]/12 text-[#2563eb] hover:bg-[#2563eb]/18 active:bg-[#2563eb]/24",
-  "disabled:bg-slate-200/60 disabled:text-slate-500 disabled:hover:bg-slate-200/60 disabled:active:bg-slate-200/60",
-  "focus-visible:ring-[#3b82f6]/35",
+  "h-full bg-[color-mix(in_srgb,var(--rootsy-cielo-600)_12%,transparent)] text-[var(--rootsy-cielo-600)] hover:bg-[color-mix(in_srgb,var(--rootsy-cielo-600)_18%,transparent)] active:bg-[color-mix(in_srgb,var(--rootsy-cielo-600)_24%,transparent)]",
+  "disabled:bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_60%,transparent)] disabled:text-[var(--rootsy-bruma-500)] disabled:hover:bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_60%,transparent)] disabled:active:bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_60%,transparent)]",
+  "focus-visible:ring-[color-mix(in_srgb,var(--rootsy-cielo-400)_35%,transparent)]",
 )
 export const saleOpActionIconWrapConfirmClass =
   "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
@@ -161,11 +161,11 @@ export const saleOpImporteTotalMutedClass = cn(
 
 export const saleOpImporteTotalDiscountClass = cn(
   saleOpImporteBaseClass,
-  "text-xs font-medium text-emerald-300/95",
+  "text-xs font-medium text-[color-mix(in_srgb,var(--rootsy-savia-300)_95%,transparent)]",
 )
 
 export const saleOpToolboxBarClass =
-  "box-border border-t border-white/10 bg-[#0b100e]/92 backdrop-blur-xl"
+  "box-border border-t border-white/10 bg-[color-mix(in_srgb,var(--rootsy-negro)_92%,transparent)] backdrop-blur-xl"
 
 export const saleOpFooterBandHeightClass = ROOTSY_LAYOUTS_OPERAR_ANATOMY.toolboxMinHeightClass
 
@@ -175,9 +175,9 @@ export function saleOpToolboxSlotClass(configurado: boolean) {
   const a = ROOTSY_LAYOUTS_OPERAR_ANATOMY
   return cn(
     `group flex h-full min-h-[${a.toolboxSlotMinHeightPx}px] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left transition-[background-color,box-shadow] duration-150 sm:min-h-[${a.toolboxSlotMinHeightSmPx}px] sm:gap-3 sm:px-3`,
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b100e]",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-negro)]",
     configurado
-      ? "bg-emerald-500/[0.09] shadow-[inset_0_1px_0_rgba(167,243,208,0.08)] hover:bg-emerald-500/12"
+      ? "bg-[color-mix(in_srgb,var(--rootsy-savia-500)_9%,transparent)] shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-200)_8%,transparent)] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-500)_12%,transparent)]"
       : "bg-white/[0.02] hover:bg-white/[0.05]",
   )
 }
@@ -186,7 +186,7 @@ export function saleOpToolboxIconWrap(configurado: boolean) {
   return cn(
     "flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
     configurado
-      ? "bg-emerald-500/20 text-emerald-200"
+      ? "bg-[color-mix(in_srgb,var(--rootsy-savia-500)_20%,transparent)] text-[var(--rootsy-savia-200)]"
       : "bg-white/[0.06] text-foreground/45 group-hover:bg-white/10 group-hover:text-foreground/75",
   )
 }
@@ -289,7 +289,7 @@ export const saleOpLightInsetPanel =
 export const saleOpLightUploadZone = cn(
   "rounded-xl border border-dashed border-zinc-200/90 bg-zinc-50/35 transition-colors",
   "hover:border-zinc-300 hover:bg-zinc-50/65",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/15",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_15%,transparent)]",
 )
 
 export const saleOpLightFormPrefix = "border-zinc-200 bg-zinc-50"
@@ -298,7 +298,7 @@ export const saleOpLightFormInput = cn(
   saleOpLightFormSurface,
   "h-11 w-full rounded-xl px-3 text-base shadow-none ring-0 outline-none transition-colors",
   "placeholder:text-zinc-400 dark:placeholder:text-zinc-400",
-  "focus-visible:border-emerald-600/50 focus-visible:ring-2 focus-visible:ring-emerald-600/20",
+  "focus-visible:border-[color-mix(in_srgb,var(--rootsy-savia-600)_50%,transparent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_20%,transparent)]",
 )
 
 export const saleOpLightSelectContent = cn(

@@ -1,14 +1,13 @@
 /**
  * Piso de checkout operar — umbral a ancho completo.
- * Negro → savia 975. Vacío = oficio savia 500 (como Cobrar). Dato = lectura.
+ * Negro → savia 975. Slots de dos líneas. Savia solo en el commit.
  */
 .layouts-operar-checkout-floor {
   box-sizing: border-box;
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--layouts-operar-ticket-w);
-  height: var(--layouts-operar-checkout-floor-h, 68px);
-  min-height: var(--layouts-operar-checkout-floor-h, 68px);
-  max-height: var(--layouts-operar-checkout-floor-h, 68px);
+  height: var(--layouts-operar-checkout-floor-h, 80px);
+  min-height: var(--layouts-operar-checkout-floor-h, 80px);
   overflow: hidden;
   background: linear-gradient(
     90deg,
@@ -68,7 +67,7 @@
 }
 
 .layouts-operar-checkout-floor .layouts-operar-earth-slot-value {
-  color: var(--rootsy-sombra-400);
+  color: var(--rootsy-sombra-300);
 }
 
 .layouts-operar-checkout-floor .layouts-operar-earth-slot.is-configured .layouts-operar-earth-slot-value {
@@ -76,33 +75,42 @@
 }
 
 .layouts-operar-checkout-floor .layouts-operar-earth-slot.is-configured .layouts-operar-earth-slot-icon {
-  color: var(--rootsy-savia-500);
+  color: var(--rootsy-sombra-200);
+}
+
+.layouts-operar-checkout-floor .layouts-operar-earth-slot:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.layouts-operar-checkout-floor .layouts-operar-earth-slot:disabled .layouts-operar-earth-slot-icon,
+.layouts-operar-checkout-floor .layouts-operar-earth-slot:disabled .layouts-operar-earth-slot-label,
+.layouts-operar-checkout-floor .layouts-operar-earth-slot:disabled .layouts-operar-earth-slot-value,
+.layouts-operar-checkout-floor .layouts-operar-earth-slot:disabled .layouts-operar-earth-slot-meta {
+  color: var(--rootsy-sombra-500);
 }
 
 .layouts-operar-checkout-floor-proposal {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
   gap: var(--rootsy-space-400);
   padding: 0 var(--rootsy-space-200);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--rootsy-eter-100) 6%, var(--rootsy-eter-950)) 0%,
-    var(--rootsy-eter-950) 100%
-  );
-  border-top-color: color-mix(in srgb, var(--rootsy-eter-100) 16%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--rootsy-eter-100) 8%, transparent);
+  background: transparent;
+  border-top-color: var(--rootsy-sombra-800);
 }
 
 .layouts-operar-checkout-floor-cluster {
   display: flex;
   min-width: 0;
-  align-items: center;
+  flex: 1 1 auto;
+  align-items: stretch;
   gap: var(--rootsy-space-200);
 }
 
 .layouts-operar-checkout-floor-cluster-close {
-  flex-shrink: 0;
+  flex: 0 0 auto;
+  align-items: center;
   gap: var(--rootsy-space-200);
 }
 
@@ -118,20 +126,26 @@
   width: 1px;
   height: 1.25rem;
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--rootsy-eter-100) 18%, transparent);
+  background: color-mix(in srgb, var(--rootsy-sombra-50) 16%, transparent);
 }
 
-.layouts-operar-checkout-floor-steps-cluster,
+.layouts-operar-checkout-floor-steps-cluster {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(3, minmax(7.5rem, 1fr));
+  align-items: stretch;
+  gap: 0;
+  height: 100%;
+}
+
 .layouts-operar-checkout-floor-options-cluster {
   display: flex;
-  min-width: 0;
+  flex-shrink: 0;
   align-items: center;
   gap: var(--rootsy-space-100);
-}
-
-.layouts-operar-checkout-floor-options-cluster {
   padding-left: var(--rootsy-space-200);
-  border-left: 1px solid color-mix(in srgb, var(--rootsy-eter-100) 18%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--rootsy-sombra-50) 16%, transparent);
 }
 
 .layouts-operar-checkout-floor-savings {
@@ -141,18 +155,18 @@
   justify-content: center;
   gap: 2px;
   padding-right: var(--rootsy-space-200);
-  border-right: 1px solid color-mix(in srgb, var(--rootsy-eter-100) 18%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--rootsy-sombra-50) 16%, transparent);
 }
 
 .layouts-operar-checkout-floor-savings-label {
   margin: 0;
-  color: color-mix(in srgb, var(--rootsy-eter-100) 52%, transparent);
+  color: var(--rootsy-sombra-300);
   line-height: 1;
 }
 
 .layouts-operar-checkout-floor-savings-amount {
   margin: 0;
-  color: var(--rootsy-savia-500);
+  color: var(--rootsy-savia-400);
   line-height: 1;
 }
 
@@ -161,14 +175,18 @@
 }
 
 .layouts-operar-checkout-floor-proposal .layouts-operar-checkout-floor-total-label {
-  color: color-mix(in srgb, var(--rootsy-eter-100) 52%, transparent);
+  color: var(--rootsy-sombra-300);
 }
 
 .layouts-operar-checkout-floor-proposal .layouts-operar-checkout-floor-total-amount {
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--rootsy-sombra-50);
   line-height: 1;
   letter-spacing: -0.02em;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.38);
+}
+
+.layouts-operar-checkout-floor-confirm {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .layouts-operar-checkout-face {

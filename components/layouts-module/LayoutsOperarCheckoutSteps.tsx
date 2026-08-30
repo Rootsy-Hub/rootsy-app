@@ -9,12 +9,19 @@ import {
   layoutsOperarCheckoutPipelineValueClass,
   layoutsOperarCheckoutFloorOptionsClusterClass,
   layoutsOperarCheckoutFloorStepsClusterClass,
+  layoutsOperarToolboxIconWrapClass,
+  layoutsOperarToolboxSlotClass,
+  layoutsOperarToolboxSlotCopyClass,
+  layoutsOperarToolboxSlotLabelClass,
+  layoutsOperarToolboxSlotLine,
+  layoutsOperarToolboxSlotLineClass,
+  layoutsOperarToolboxSlotMetaClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { RootsSemanticButton } from "@/components/rootsy-button"
 import { saleOpFmt, saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
-import { CircleDollarSign } from "lucide-react"
+import { Banknote, CircleDollarSign, Percent, Receipt, User } from "lucide-react"
 
 export type LayoutsOperarCheckoutProposal = "pipeline" | "pills" | "ficha"
 
@@ -23,10 +30,86 @@ export type LayoutsOperarCheckoutStep = {
   icon: LucideIcon
   officeLabel: string
   value: string
+  /** Segunda línea (IVA, destino de tesorería). */
+  meta?: string | null
   configured: boolean
   disabled?: boolean
   ariaLabel?: string
   onClick: () => void
+}
+
+export function layoutsOperarCheckoutPillsFromToolbox(input: {
+  clienteLabel: string
+  clienteMeta?: string | null
+  clienteDisabled?: boolean
+  clienteConfigurado?: boolean
+  toolbarDisabled?: boolean
+  pagoDisabled?: boolean
+  comprobanteLabel: string
+  comprobanteConfigurado?: boolean
+  pagoLabel: string
+  pagoMeta?: string | null
+  pagoConfigurado: boolean
+  pagoIcon?: LucideIcon
+  onClienteClick: () => void
+  onComprobanteClick: () => void
+  onPagoClick: () => void
+  discountLabel?: string
+  discountConfigured?: boolean
+  discountDisabled?: boolean
+  onDiscountClick?: () => void
+}): {
+  steps: LayoutsOperarCheckoutStep[]
+  options: LayoutsOperarCheckoutStep[]
+} {
+  const comprobanteListo =
+    input.comprobanteConfigurado ?? input.comprobanteLabel !== "Sin comprobante"
+  const pagoDisabled = input.pagoDisabled ?? input.toolbarDisabled
+  const steps: LayoutsOperarCheckoutStep[] = [
+    {
+      id: "party",
+      icon: User,
+      officeLabel: "Cliente",
+      value: input.clienteLabel,
+      meta: input.clienteMeta,
+      configured: Boolean(input.clienteConfigurado),
+      disabled: input.clienteDisabled,
+      onClick: input.onClienteClick,
+    },
+    {
+      id: "comprobante",
+      icon: Receipt,
+      officeLabel: "Comprobante",
+      value: input.comprobanteLabel,
+      configured: comprobanteListo && !input.toolbarDisabled,
+      disabled: input.toolbarDisabled,
+      onClick: input.onComprobanteClick,
+    },
+    {
+      id: "pago",
+      icon: input.pagoIcon ?? Banknote,
+      officeLabel: "Pago",
+      value: input.pagoLabel,
+      meta: input.pagoMeta,
+      configured: input.pagoConfigurado,
+      disabled: pagoDisabled,
+      onClick: input.onPagoClick,
+    },
+  ]
+  const options: LayoutsOperarCheckoutStep[] = input.onDiscountClick
+    ? [
+        {
+          id: "discount",
+          icon: Percent,
+          officeLabel: "Descuento",
+          value: input.discountLabel ?? "Descuento",
+          configured: Boolean(input.discountConfigured),
+          disabled: input.discountDisabled,
+          onClick: input.onDiscountClick,
+        },
+      ]
+    : []
+  return { steps, options }
 }
 
 type Props = {
@@ -54,9 +137,60 @@ function Face({
 
 function stepAriaLabel(step: LayoutsOperarCheckoutStep) {
   if (step.ariaLabel) return step.ariaLabel
-  return step.configured
-    ? `${step.officeLabel}: ${step.value}`
-    : `Completar ${step.officeLabel}`
+  if (!step.configured) return `Completar ${step.officeLabel}`
+  return step.meta
+    ? `${step.officeLabel}: ${step.value}, ${step.meta}`
+    : `${step.officeLabel}: ${step.value}`
+}
+
+function CheckoutValueSlots({
+  steps,
+  className,
+}: {
+  steps: readonly LayoutsOperarCheckoutStep[]
+  className: string
+}) {
+  return (
+    <div className={className} role="toolbar" aria-label="Pasos del checkout">
+      {steps.map((step) => {
+        const Icon = step.icon
+        const line = layoutsOperarToolboxSlotLine(
+          step.officeLabel,
+          step.value,
+          step.configured,
+        )
+        return (
+          <button
+            key={step.id}
+            type="button"
+            disabled={step.disabled}
+            onClick={step.onClick}
+            className={cn(
+              layoutsOperarToolboxSlotClass(step.configured),
+              step.disabled && "cursor-not-allowed",
+            )}
+            aria-label={stepAriaLabel(step)}
+            aria-pressed={step.configured}
+          >
+            <span className={layoutsOperarToolboxIconWrapClass(step.configured)}>
+              <Icon className="size-5" aria-hidden />
+            </span>
+            <span className={layoutsOperarToolboxSlotCopyClass}>
+              <span className={layoutsOperarToolboxSlotLabelClass}>
+                {step.officeLabel}
+              </span>
+              <span className={layoutsOperarToolboxSlotLineClass}>{line}</span>
+              {step.configured && step.meta ? (
+                <span className={layoutsOperarToolboxSlotMetaClass}>
+                  {step.meta}
+                </span>
+              ) : null}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 function CheckoutOptionPills({
@@ -75,7 +209,7 @@ function CheckoutOptionPills({
           semantic={step.configured ? "secondary" : "tertiary"}
           size="compact"
           shape="pill"
-          atmosphere="eter"
+          atmosphere="sombra"
           disabled={step.disabled}
           onClick={step.onClick}
           icon={step.icon}
@@ -100,7 +234,7 @@ export function LayoutsOperarCheckoutSteps({
   if (proposal === "pills") {
     return (
       <>
-        <CheckoutOptionPills
+        <CheckoutValueSlots
           steps={steps}
           className={layoutsOperarCheckoutFloorStepsClusterClass}
         />

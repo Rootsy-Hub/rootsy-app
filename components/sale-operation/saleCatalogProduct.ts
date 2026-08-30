@@ -1,5 +1,6 @@
 import type { SaleCatalogArticle } from "@/app/[siteId]/[popId]/sale/actions"
 import { formatArticleDiscountBadge } from "@/lib/articleDiscount"
+import { shortUnitOfMeasure } from "@/lib/articleItemKind"
 import { resolveCatalogProductImage } from "@/lib/menuCatalogProduct"
 import {
   hasSaleLineManualDiscount,
@@ -24,6 +25,8 @@ export type SaleCatalogProduct = {
   iva?: number
   /** Código de barras EAN/UPC (solo artículos de venta). */
   barcode?: string | null
+  stockOnHand?: number
+  allowNegativeStock?: boolean
 }
 
 export function saleCatalogArticleToProduct(
@@ -32,7 +35,7 @@ export function saleCatalogArticleToProduct(
   return {
     id: a.id,
     nombre: a.name,
-    descripcion: a.description.trim() ? a.description : "—",
+    descripcion: a.description.trim(),
     precio: a.salePrice,
     precioOriginal: a.originalSalePrice,
     discountMode: a.discountMode,
@@ -42,7 +45,57 @@ export function saleCatalogArticleToProduct(
     unitOfMeasure: a.unitOfMeasure,
     iva: a.iva,
     barcode: a.barcode ?? null,
+    stockOnHand: a.stockOnHand,
+    allowNegativeStock: a.allowNegativeStock,
   }
+}
+
+export function catalogProductVisibleDescription(
+  descripcion: string | null | undefined,
+): string | null {
+  const text = descripcion?.trim() ?? ""
+  if (!text || text === "—") return null
+  return text
+}
+
+export type CatalogProductStockState = {
+  qty: number
+  allowNegative: boolean
+  out: boolean
+  blocked: boolean
+  label: string
+}
+
+function formatCatalogStockQty(qty: number): string {
+  if (Number.isInteger(qty) || Math.abs(qty - Math.round(qty)) < 1e-6) {
+    return Math.round(qty).toLocaleString("es-AR")
+  }
+  return qty.toLocaleString("es-AR", { maximumFractionDigits: 2 })
+}
+
+export function catalogProductStockState(
+  product: Pick<SaleCatalogProduct, "stockOnHand" | "allowNegativeStock" | "unitOfMeasure">,
+): CatalogProductStockState | null {
+  if (product.stockOnHand == null || !Number.isFinite(product.stockOnHand)) {
+    return null
+  }
+  const qty = product.stockOnHand
+  const allowNegative = product.allowNegativeStock === true
+  const out = qty <= 1e-6
+  const unit = shortUnitOfMeasure(product.unitOfMeasure) || "un."
+  return {
+    qty,
+    allowNegative,
+    out,
+    blocked: out && !allowNegative,
+    label: out ? "Sin stock" : `${formatCatalogStockQty(qty)} ${unit}`,
+  }
+}
+
+export function catalogProductStockBlocked(
+  product: Pick<SaleCatalogProduct, "stockOnHand" | "allowNegativeStock">,
+): boolean {
+  return catalogProductStockState(product)?.blocked === true
 }
 
 export function resolveCatalogCartLinePricing(

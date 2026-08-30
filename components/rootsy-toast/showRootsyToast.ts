@@ -3,12 +3,16 @@ import {
   ROOTSY_TOAST_DURATION_MS,
   type RootsyToastIntent,
 } from "@/components/rootsy-toast/rootsyToast"
+import type { ReactNode } from "react"
 
 type ShowRootsyToastOptions = {
   title: string
   description?: string
   intent?: RootsyToastIntent
   duration?: number
+  action?: ReactNode
+  actionLabel?: string
+  onAction?: () => void
 }
 
 export function showRootsyToast(options: ShowRootsyToastOptions) {
@@ -21,5 +25,8 @@ export function showRootsyToast(options: ShowRootsyToastOptions) {
     duration,
     intent: options.intent ?? "success",
     dismissible: persist,
+    action: options.action,
+    actionLabel: options.actionLabel,
+    onAction: options.onAction,
   })
 }

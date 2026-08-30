@@ -1,10 +1,12 @@
 "use client"
 
 import { usePopLocalDb } from "@/hooks/usePopLocalDb"
+import { usePopOperateCapabilities } from "@/hooks/usePopOperateCapabilities"
 import {
   hydratePopArticlesFromNetwork,
   hydratePopCategoriesFromNetwork,
   hydratePopPromotionsFromNetwork,
+  hydratePopRecipeBomFromNetwork,
   hydratePopRecipeCategoriesFromNetwork,
   hydratePopRecipesFromNetwork,
 } from "@/lib/popLocalDb"
@@ -12,6 +14,7 @@ import {
   popLocalArticlesHydrateQueryKey,
   popLocalCategoriesHydrateQueryKey,
   popLocalPromotionsHydrateQueryKey,
+  popLocalRecipeBomHydrateQueryKey,
   popLocalRecipeCategoriesHydrateQueryKey,
   popLocalRecipesHydrateQueryKey,
 } from "@/lib/queryKeys"
@@ -28,8 +31,9 @@ const hydrateQueryOptions = {
 
 export function useOperateCatalogHydrate(popId: string | undefined) {
   const localStatus = usePopLocalDb(popId)
+  const { caps, ready: capsReady } = usePopOperateCapabilities()
   const sqliteReady = localStatus === "ready"
-  const enabled = Boolean(popId) && sqliteReady
+  const enabled = Boolean(popId) && sqliteReady && capsReady
 
   const articles = useQuery({
     queryKey: popLocalArticlesHydrateQueryKey(popId ?? ""),
@@ -57,7 +61,7 @@ export function useOperateCatalogHydrate(popId: string | undefined) {
       await hydratePopPromotionsFromNetwork(popId!)
       return true
     },
-    enabled,
+    enabled: enabled && caps.hydratePromotions,
     ...hydrateQueryOptions,
   })
 
@@ -67,7 +71,7 @@ export function useOperateCatalogHydrate(popId: string | undefined) {
       await hydratePopRecipeCategoriesFromNetwork(popId!)
       return true
     },
-    enabled,
+    enabled: enabled && caps.hydrateRecipes,
     ...hydrateQueryOptions,
   })
 
@@ -78,7 +82,22 @@ export function useOperateCatalogHydrate(popId: string | undefined) {
       return true
     },
     enabled:
-      enabled && (recipeCategories.isSuccess || recipeCategories.isError),
+      enabled &&
+      caps.hydrateRecipes &&
+      (recipeCategories.isSuccess || recipeCategories.isError),
+    ...hydrateQueryOptions,
+  })
+
+  const recipeBom = useQuery({
+    queryKey: popLocalRecipeBomHydrateQueryKey(popId ?? ""),
+    queryFn: async () => {
+      await hydratePopRecipeBomFromNetwork(popId!)
+      return true
+    },
+    enabled:
+      enabled &&
+      caps.hydrateBom &&
+      (recipes.isSuccess || recipes.isError),
     ...hydrateQueryOptions,
   })
 
@@ -89,5 +108,6 @@ export function useOperateCatalogHydrate(popId: string | undefined) {
     promotions,
     recipeCategories,
     recipes,
+    recipeBom,
   }
 }

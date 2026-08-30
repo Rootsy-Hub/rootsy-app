@@ -43,10 +43,12 @@ const OperarMobileStageContext = createContext<OperarMobileStageValue | null>(
 
 export function OperarMobileStageProvider({
   children,
+  initialStage = "ticket",
 }: {
   children: ReactNode
+  initialStage?: OperarMobileStageId
 }) {
-  const [stage, setStageState] = useState<OperarMobileStageId>("ticket")
+  const [stage, setStageState] = useState<OperarMobileStageId>(initialStage)
   const [homeLabel, setHomeLabelState] = useState<string | null>(null)
   const [catalogDisabled, setCatalogDisabled] = useState(false)
   const [categoryPicker, setCategoryPicker] =
@@ -73,7 +75,7 @@ export function OperarMobileStageProvider({
   const setHomeLabel = useCallback((label: string | null) => {
     setHomeLabelState(label)
     if (userSetStageRef.current) return
-    setStageState(label ? "home" : "ticket")
+    if (label) setStageState("home")
   }, [])
 
   useEffect(() => {

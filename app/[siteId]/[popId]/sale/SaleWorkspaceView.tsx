@@ -16,7 +16,7 @@ import { useSaleOpenCashSessionToasts } from "@/hooks/useSaleOpenCashSessionToas
 import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
 import { useSaleCatalogLoader } from "@/hooks/useSaleCatalogLoader"
 import { PopModuleLoading } from "@/app/[siteId]/[popId]/PopModuleLoading"
-import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
+import { applySaleStockChanges } from "@/lib/applySaleStockChanges"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   defaultCheckoutPaymentSelection,
@@ -73,6 +73,20 @@ const SalePaymentMethodDialog = dynamic(
     ),
   { ssr: false },
 )
+const OperationSaleInvoiceDialog = dynamic(
+  () =>
+    import("@/app/[siteId]/[popId]/operations/OperationSaleInvoiceDialog").then(
+      (mod) => mod.OperationSaleInvoiceDialog,
+    ),
+  { ssr: false },
+)
+const OperationSaleDetailDialog = dynamic(
+  () =>
+    import("@/app/[siteId]/[popId]/operations/OperationSaleDetailDialog").then(
+      (mod) => mod.OperationSaleDetailDialog,
+    ),
+  { ssr: false },
+)
 const GeneralDiscountDialog = dynamic(
   () =>
     import("@/components/checkout/GeneralDiscountDialog").then(
@@ -86,7 +100,15 @@ import {
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { LayoutsOperarSaleCheckoutFloor } from "@/components/layouts-module/LayoutsOperarSaleCheckoutFloor"
-import type { LayoutsOperarCheckoutStep } from "@/components/layouts-module/LayoutsOperarCheckoutSteps"
+import { RootsBanner } from "@/components/rootsy-banner"
+import { popScopedHref } from "@/lib/popRoutes"
+import { useSaleCheckoutModel } from "@/hooks/useSaleCheckoutModel"
+import { useSaleCheckoutShortcuts } from "@/hooks/useSaleCheckoutShortcuts"
+import { resolveSaleCheckoutRisk } from "@/lib/saleCheckoutRisk"
+import { showRootsyToast } from "@/components/rootsy-toast"
+import { SaleSuccessToastActions } from "@/components/sale-operation/SaleSuccessToastActions"
+import { fetchOperationSaleById } from "@/lib/rootsyApi/operationsClient"
+import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -106,15 +128,7 @@ import {
   useState,
 } from "react"
 import {
-  Banknote,
-  CircleCheck,
-  CircleX,
   FileText,
-  Loader2,
-  Percent,
-  MessageSquare,
-  Receipt,
-  User,
 } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { cn } from "@/lib/utils"
@@ -144,10 +158,7 @@ import {
 } from "@/lib/saleQuoteCheckout"
 import { partyCanOperateOnCurrentAccount } from "@/lib/currentAccounts"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
-import {
-  saleOpFmt,
-  saleOpImporteBaseClass,
-} from "@/components/sale-operation/saleOperationStyles"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import {
   layoutsOperarSummaryPanelClass,
   layoutsOperarSummaryPanelMobileStackClass,
@@ -166,21 +177,6 @@ type ClienteVentaSeleccionado = {
   currentAccountEnabled?: boolean
 }
 
-/** Tipografía numérica alineada al workspace (tablas de importes). */
-const ventaImporteBaseClass = saleOpImporteBaseClass
-const ventaImporteTotalClass = cn(
-  ventaImporteBaseClass,
-  "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",
-)
-const ventaImporteTotalMutedClass = cn(
-  ventaImporteBaseClass,
-  "text-[11px] line-through decoration-white/25 text-white/38",
-)
-const ventaImporteTotalDiscountClass = cn(
-  ventaImporteBaseClass,
-  "text-[11px] font-medium text-emerald-300/95",
-)
-
 const IVA_LABEL_BY_VALUE = Object.fromEntries(
   CLIENT_IVA_CONDITION_OPTIONS.map((o) => [o.value, o.label]),
 ) as Record<string, string>
@@ -188,13 +184,6 @@ const IVA_LABEL_BY_VALUE = Object.fromEntries(
 function labelCondicionIva(value: string | null | undefined) {
   if (!value?.trim()) return null
   return IVA_LABEL_BY_VALUE[value] ?? value
-}
-
-function normalizarBusqueda(s: string) {
-  return s
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
 }
 
 function SaleScanFocusBridge({
@@ -355,6 +344,10 @@ export function SaleWorkspaceView() {
   const [presupuestoError, setPresupuestoError] = useState<string | null>(null)
   const [ventaSubmitting, setVentaSubmitting] = useState(false)
   const [ventaError, setVentaError] = useState<string | null>(null)
+  const [lastCompletedSale, setLastCompletedSale] =
+    useState<OperationSaleRow | null>(null)
+  const [reprintSaleOpen, setReprintSaleOpen] = useState(false)
+  const [reviewSaleOpen, setReviewSaleOpen] = useState(false)
   const [descuentoDraftModo, setDescuentoDraftModo] = useState<
     "porcentaje" | "fijo"
   >("porcentaje")
@@ -449,7 +442,9 @@ export function SaleWorkspaceView() {
     descartarConfirmOpen ||
     venderConfirmOpen ||
     presupuestoConfirmOpen ||
-    promoWizardOpen
+    promoWizardOpen ||
+    reprintSaleOpen ||
+    reviewSaleOpen
 
   const descuentoItemsMonto = useMemo(
     () =>
@@ -635,12 +630,54 @@ export function SaleWorkspaceView() {
       })
       if (!res.success) {
         setVentaError(res.error)
+        setVenderConfirmOpen(true)
         return
       }
       saleIdempotencyKeyRef.current = crypto.randomUUID()
       setVenderConfirmOpen(false)
+      const soldTotal = total
+      const saleId = res.saleId
       limpiarVenta()
-      if (popId) invalidatePopOperateCatalogs(queryClient, popId)
+      if (popId) {
+        void applySaleStockChanges(queryClient, popId, res.stockChanges)
+      }
+      showRootsyToast({
+        title: `Venta · ${saleOpFmt.format(soldTotal)}`,
+        description: "Cobro listo. Reimprimí o abrí la venta.",
+        intent: "success",
+        duration: 8000,
+        action: (
+          <SaleSuccessToastActions
+            onReprint={() => {
+              void fetchOperationSaleById(popId, saleId).then((loaded) => {
+                if (!loaded.success) {
+                  showRootsyToast({
+                    title: loaded.error,
+                    intent: "danger",
+                  })
+                  return
+                }
+                setLastCompletedSale(loaded.sale)
+                setReprintSaleOpen(true)
+              })
+            }}
+            onReview={() => {
+              void fetchOperationSaleById(popId, saleId).then((loaded) => {
+                if (!loaded.success) {
+                  showRootsyToast({
+                    title: loaded.error,
+                    intent: "danger",
+                  })
+                  return
+                }
+                setLastCompletedSale(loaded.sale)
+                setReviewSaleOpen(true)
+              })
+            }}
+          />
+        ),
+      })
+      focusScan()
     } finally {
       setVentaSubmitting(false)
     }
@@ -665,6 +702,8 @@ export function SaleWorkspaceView() {
     ventaPadron.razonSocial,
     limpiarVenta,
     queryClient,
+    total,
+    focusScan,
   ])
 
   useEffect(() => {
@@ -1182,150 +1221,85 @@ export function SaleWorkspaceView() {
       : `Fijo ${saleOpFmt.format(valorDescuentoFijo)}`
     : "Sin descuento"
 
-  const saleCheckoutActions = {
-    discardDisabled: !hayItemsEnPedido || !openCashSession,
-    discardTitle: !openCashSession ? "Requiere caja abierta" : undefined,
-    confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,
-    confirmLoading: ventaSubmitting,
+  const saleCheckout = useSaleCheckoutModel({
+    hasItems: hayItemsEnPedido,
+    total,
+    subtotal,
+    discountAmount: descuentoMonto,
+    paymentReady: pagoConfigurado,
+    payOnClientAccount,
+    paymentKind: metodoPagoSeleccionado?.kind,
+    party: clienteSeleccionado,
+    partyTaxId: clienteSeleccionado?.taxId ?? fiscalDocVenta,
+    comprobanteLabel: comprobante,
+    comprobanteDisplayLabel,
+    canReadClients,
+    canCreateSale,
+    canReadCashRegisters,
+    cashOpen: Boolean(openCashSession),
+    submitting: ventaSubmitting,
+    clienteLabel: !canReadClients
+      ? "Sin permiso"
+      : (clienteSeleccionado?.name ?? "Elegir cliente"),
+    clienteIvaLabel: ventaIvaLabel,
+    pagoLabel: toolboxPaymentDisplay.pagoLabel,
+    pagoSubLabel: toolboxPaymentDisplay.pagoSubLabel,
+    pagoIcon: toolboxPaymentDisplay.pagoIcon,
+    onOpenClient: onClienteToolbarClick,
+    onOpenComprobante: () => {
+      if (!openCashSession) return
+      setComprobanteModalAbierto(true)
+    },
+    onOpenPago: () => {
+      if (!openCashSession) return
+      setPagoModalAbierto(true)
+    },
     onDiscard: () => {
       if (!openCashSession || !hayItemsEnPedido) return
       setDescartarConfirmOpen(true)
     },
     onConfirm: () => {
+      if (!puedeRegistrarVenta || ventaSubmitting) return
       setVentaError(null)
-      setVenderConfirmOpen(true)
+      const risk = resolveSaleCheckoutRisk({
+        payOnClientAccount,
+        paymentKind: metodoPagoSeleccionado?.kind,
+        discountAmount: descuentoMonto,
+        subtotal,
+        comprobanteLabel: comprobante,
+        partyTaxId: clienteSeleccionado?.taxId ?? fiscalDocVenta,
+      })
+      if (risk) {
+        setVenderConfirmOpen(true)
+        return
+      }
+      void confirmarVenta()
     },
-    confirmLabel: "Vender",
-    confirmTitle: !hayItemsEnPedido
-      ? "Agregá productos al pedido."
-      : !pagoConfigurado
-        ? "Elegí una forma de pago o usá cuenta corriente del cliente."
-        : payOnClientAccount &&
-            !partyCanOperateOnCurrentAccount(clienteSeleccionado)
-          ? clienteSeleccionado?.id
-            ? "Este cliente no está dado de alta en Cuentas corrientes."
-            : "Elegí un cliente del catálogo para vender a cuenta corriente."
-          : !canCreateSale
-            ? "No tenés permiso para registrar ventas."
-            : !canReadCashRegisters
-              ? "Se requiere permiso para ver cajas y asociar la venta a una sesión."
-              : !openCashSession
-                ? "Abrí una sesión de caja en Cajas antes de vender."
-                : undefined,
-  }
+  })
 
+  useSaleCheckoutShortcuts({
+    enabled: Boolean(popId && siteId) && !saleModalOpen,
+    onCharge: saleCheckout.actions.onConfirm,
+    onClient: saleCheckout.toolbox.onClienteClick,
+    onDiscount: () => {
+      if (!openCashSession) return
+      abrirModalDescuento()
+    },
+    onDiscard: saleCheckout.actions.onDiscard,
+  })
+
+  const saleCheckoutActions = saleCheckout.actions
+  const saleCheckoutPills = saleCheckout.pills
   const saleCheckoutToolbox = (
-    <SaleOperationToolbox
-      registerOnly
-      clienteLabel={
-        !canReadClients
-          ? "Sin permiso"
-          : (clienteSeleccionado?.name ?? "Elegir cliente")
-      }
-      clienteIvaLabel={openCashSession ? ventaIvaLabel : null}
-      clienteDisabled={!canReadClients || !openCashSession}
-      clienteConfigurado={Boolean(clienteSeleccionado) && Boolean(openCashSession)}
-      toolbarDisabled={!openCashSession}
-      comprobanteLabel={comprobanteDisplayLabel}
-      pagoLabel={
-        openCashSession
-          ? toolboxPaymentDisplay.pagoLabel
-          : "Requiere caja abierta"
-      }
-      pagoSubLabel={openCashSession ? toolboxPaymentDisplay.pagoSubLabel : null}
-      pagoIcon={openCashSession ? toolboxPaymentDisplay.pagoIcon : undefined}
-      pagoConfigurado={pagoConfigurado && Boolean(openCashSession)}
-      pagoDisabled={!openCashSession}
-      onClienteClick={onClienteToolbarClick}
-      onComprobanteClick={() => {
-        if (!openCashSession) return
-        setComprobanteModalAbierto(true)
-      }}
-      onPagoClick={() => {
-        if (!openCashSession) return
-        setPagoModalAbierto(true)
-      }}
-    />
+    <SaleOperationToolbox registerOnly {...saleCheckout.toolbox} />
   )
-
-  const saleProposalSteps: LayoutsOperarCheckoutStep[] = [
-    {
-      id: "party",
-      icon: User,
-      officeLabel: "Cliente",
-      value: !canReadClients
-        ? "Sin permiso"
-        : (clienteSeleccionado?.name ?? "Elegir cliente"),
-      configured: Boolean(clienteSeleccionado) && Boolean(openCashSession),
-      disabled: !canReadClients || !openCashSession,
-      onClick: onClienteToolbarClick,
-    },
-    {
-      id: "comprobante",
-      icon: Receipt,
-      officeLabel: "Comprobante",
-      value: comprobanteDisplayLabel,
-      configured:
-        comprobanteDisplayLabel !== "Sin comprobante" && Boolean(openCashSession),
-      disabled: !openCashSession,
-      onClick: () => {
-        if (!openCashSession) return
-        setComprobanteModalAbierto(true)
-      },
-    },
-    {
-      id: "pago",
-      icon: openCashSession
-        ? (toolboxPaymentDisplay.pagoIcon ?? Banknote)
-        : Banknote,
-      officeLabel: "Pago",
-      value: openCashSession
-        ? toolboxPaymentDisplay.pagoLabel
-        : "Requiere caja abierta",
-      configured: pagoConfigurado && Boolean(openCashSession),
-      disabled: !openCashSession,
-      onClick: () => {
-        if (!openCashSession) return
-        setPagoModalAbierto(true)
-      },
-    },
-  ]
 
   const ahorroTotal =
     descuentoMonto + descuentoItemsMonto + promocionesAplicadasMonto
 
-  const saleProposalOptions: LayoutsOperarCheckoutStep[] = [
-    {
-      id: "discount",
-      icon: Percent,
-      officeLabel: "Descuento",
-      value: descuentoToolboxLabel,
-      configured: hayDescuento && Boolean(openCashSession),
-      disabled: !openCashSession,
-      onClick: () => {
-        if (!openCashSession) return
-        abrirModalDescuento()
-      },
-    },
-    {
-      id: "save",
-      icon: FileText,
-      officeLabel: "Guardar",
-      value: "Presupuesto",
-      configured: false,
-      disabled: !hayItemsEnPedido || presupuestoSubmitting,
-      ariaLabel: "Guardar como presupuesto",
-      onClick: () => {
-        if (!hayItemsEnPedido || presupuestoSubmitting) return
-        setPresupuestoError(null)
-        setPresupuestoConfirmOpen(true)
-      },
-    },
-  ]
-
   if (!popId || !siteId) {
     return (
-      <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
+      <div className="min-h-screen bg-[var(--rootsy-negro)] p-10 text-sm text-[var(--rootsy-sombra-300)]">
         Punto de venta no encontrado
       </div>
     )
@@ -1347,6 +1321,7 @@ export function SaleWorkspaceView() {
         popId={popId}
         popName={bootstrap?.popName ?? ""}
         title="Vender"
+        mobileInitialStage="catalog"
         loading={!bootstrap?.popName}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
@@ -1385,9 +1360,23 @@ export function SaleWorkspaceView() {
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <OperationsModuleBackdrop />
 
+          {!openCashSession ? (
+            <div className="relative z-20 shrink-0">
+              <RootsBanner
+                intent="warning"
+                tone="dark"
+                variant="strip"
+                title="Necesitás una caja abierta"
+                message="Abrí un turno en Cajas para poder cobrar."
+                actionLabel="Ir a cajas"
+                actionHref={popScopedHref(siteId, popId, "cash-registers")}
+              />
+            </div>
+          ) : null}
+
           {quoteRestorePending ? (
             <div
-              className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#070a09]/90 backdrop-blur-[2px]"
+              className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[color-mix(in_srgb,var(--rootsy-negro)_90%,transparent)] backdrop-blur-[2px]"
               role="status"
               aria-live="polite"
               aria-busy="true"
@@ -1427,8 +1416,7 @@ export function SaleWorkspaceView() {
                 {saleCheckoutToolbox}
                 <LayoutsOperarSaleCheckoutFloor
                   proposal="pills"
-                  proposalSteps={saleProposalSteps}
-                  proposalOptions={saleProposalOptions}
+                  proposalSteps={saleCheckoutPills.steps}
                   savingsAmount={ahorroTotal}
                   closingTotal={total}
                   actions={saleCheckoutActions}
@@ -1463,6 +1451,11 @@ export function SaleWorkspaceView() {
                     hayDescuentoItems,
                     promocionesAplicadasMonto,
                     promocionesAplicadasCount,
+                    onGeneralDiscountClick: () => {
+                      if (!openCashSession) return
+                      abrirModalDescuento()
+                    },
+                    generalDiscountDisabled: !openCashSession,
                   }}
                 />
               </aside>
@@ -1639,6 +1632,21 @@ export function SaleWorkspaceView() {
         comprobanteLabel={comprobanteDisplayLabel}
         paymentLabel={pagoResumenLabel}
         onConfirm={confirmarVenta}
+      />
+
+      <OperationSaleInvoiceDialog
+        sale={lastCompletedSale}
+        open={reprintSaleOpen}
+        onOpenChange={setReprintSaleOpen}
+        siteId={siteId}
+        popId={popId}
+      />
+      <OperationSaleDetailDialog
+        sale={lastCompletedSale}
+        open={reviewSaleOpen}
+        onOpenChange={setReviewSaleOpen}
+        siteId={siteId}
+        popId={popId}
       />
       </>
     </SaleScanInputFocusProvider>

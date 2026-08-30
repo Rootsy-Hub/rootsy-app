@@ -115,7 +115,17 @@ export type RecipeSnapshot = {
   isActive: boolean
   allowNegativeStock: boolean
   stationId: string | null
+  outputArticleId: string | null
   listPrices: ArticleListPriceSnap[]
+}
+
+export type RecipeIngredientSnapshot = {
+  recipeId: string
+  articleId: string
+  quantity: number
+  wastePct: number | null
+  articleDefaultWastePct: number | null
+  sortOrder: number
 }
 
 export type ListMenuRecipesResult = {

@@ -48,7 +48,7 @@ import {
 } from "lucide-react"
 import { useId, type ReactNode, type RefObject } from "react"
 
-const DEFAULT_SCAN_SEARCH_PLACEHOLDER = "Escanear producto o buscar…"
+const DEFAULT_SCAN_SEARCH_PLACEHOLDER = "Escanear o buscar…"
 const MOBILE_SEARCH_PLACEHOLDER = "Buscar productos…"
 
 function IconoLimpiarBusqueda({ className }: { className?: string }) {

@@ -7,6 +7,7 @@ import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperati
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
 import {
   layoutsOperarSummaryCartListSurfaceClass,
+  layoutsOperarSummaryCartMetaClass,
   layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
   layoutsOperarTicketBlocksFloorClass,
@@ -145,6 +146,11 @@ export function SaleOperationTicketOrderPanel({
           >
             <div className="flex w-full min-w-0 items-baseline justify-between gap-2">
               <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
+              {!contextLabel && hasTicketItems ? (
+                <p className={layoutsOperarSummaryCartMetaClass}>
+                  {ticketLineCount === 1 ? "1 ítem" : `${ticketLineCount} ítems`}
+                </p>
+              ) : null}
               {contextLabel ? (
                 <p
                   className={cn(

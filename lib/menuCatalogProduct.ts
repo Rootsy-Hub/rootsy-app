@@ -34,7 +34,7 @@ export function menuRecipeToProduct(recipe: MenuCatalogRecipe): MenuCatalogProdu
   return {
     id: recipe.id,
     nombre: recipe.name,
-    descripcion: recipe.description.trim() ? recipe.description : "—",
+    descripcion: recipe.description.trim(),
     precio: recipe.salePrice,
     categoria: recipe.categoryName.trim() ? recipe.categoryName : "—",
     imagen: resolveCatalogProductImage(recipe.id, recipe.imageUrl),
@@ -77,7 +77,7 @@ export function catalogProductFromCartSnapshot(
   return {
     id: item.productoId,
     nombre: snapshot.nombre,
-    descripcion: snapshot.descripcion?.trim() ? snapshot.descripcion : "—",
+    descripcion: snapshot.descripcion?.trim() ?? "",
     precio: snapshot.precio,
     ...(snapshot.precioOriginal != null
       ? { precioOriginal: snapshot.precioOriginal }
@@ -154,7 +154,7 @@ export function menuArticleToProduct(article: MenuCatalogArticle): MenuCatalogPr
   return {
     id: article.id,
     nombre: article.name,
-    descripcion: article.description.trim() ? article.description : "—",
+    descripcion: article.description.trim(),
     precio: article.salePrice,
     precioOriginal: article.originalSalePrice,
     discountMode: article.discountMode,
@@ -167,5 +167,7 @@ export function menuArticleToProduct(article: MenuCatalogArticle): MenuCatalogPr
     unitOfMeasure: article.unitOfMeasure,
     iva: article.iva,
     barcode: article.barcode ?? null,
+    stockOnHand: article.stockOnHand,
+    allowNegativeStock: article.allowNegativeStock,
   }
 }

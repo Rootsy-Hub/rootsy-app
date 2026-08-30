@@ -6,6 +6,7 @@ import type {
 } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import type { SaleCatalogArticle } from "@/app/[siteId]/[popId]/sale/actions"
 import { usePopLocalDb } from "@/hooks/usePopLocalDb"
+import { usePopOperateCapabilities } from "@/hooks/usePopOperateCapabilities"
 import { prefetchCatalogProductImages } from "@/lib/catalogProductImageCache"
 import {
   uniqueById,
@@ -19,6 +20,7 @@ import {
   fetchSaleBoardPromotionPages,
   hydratePopArticlesFromNetwork,
   hydratePopPromotionsFromNetwork,
+  hydratePopRecipeBomFromNetwork,
   hydratePopRecipesFromNetwork,
   listAllPromotions,
   listMenuRecipes,
@@ -34,6 +36,7 @@ import {
   menuBoardRecipesQueryKey,
   popLocalArticlesHydrateQueryKey,
   popLocalPromotionsHydrateQueryKey,
+  popLocalRecipeBomHydrateQueryKey,
   popLocalRecipesHydrateQueryKey,
 } from "@/lib/queryKeys"
 import type { ArticleListItem } from "@/lib/rootsyApi/articlesClient"
@@ -124,15 +127,19 @@ export function useMenuCatalogBoardItems(
 ) {
   const queryClient = useQueryClient()
   const localStatus = usePopLocalDb(popId)
+  const { caps, ready: capsReady } = usePopOperateCapabilities()
   const sqliteReady = localStatus === "ready"
   const fallback = localStatus === "fallback"
   const search = filter.search.trim()
   const isSearch = Boolean(search)
   const wantArticles =
     isSearch || filter.section === "products" || filter.section === "discounts"
-  const wantRecipes = isSearch || filter.section === "recipes"
-  const wantPromotions = isSearch || filter.section === "promotions"
-  const listingEnabled = Boolean(popId) && (options?.enabled ?? true)
+  const wantRecipes =
+    (isSearch || filter.section === "recipes") && caps.hydrateRecipes
+  const wantPromotions =
+    (isSearch || filter.section === "promotions") && caps.hydratePromotions
+  const listingEnabled =
+    Boolean(popId) && (options?.enabled ?? true) && capsReady
   const categoryId = filter.categoryId ?? ""
   const catalogCategoryIds = filter.catalogCategoryIds
 
@@ -165,6 +172,27 @@ export function useMenuCatalogBoardItems(
       return true
     },
     enabled: sqliteReady && listingEnabled && wantRecipes,
+    ...hydrateQueryOptions,
+  })
+
+  const recipeBomHydrate = useQuery({
+    queryKey: popLocalRecipeBomHydrateQueryKey(popId ?? ""),
+    queryFn: async () => {
+      await hydratePopRecipeBomFromNetwork(popId!, {
+        onProgress: () => {
+          void queryClient.invalidateQueries({
+            queryKey: menuBoardItemsQueryRoot(popId!),
+          })
+        },
+      })
+      return true
+    },
+    enabled:
+      sqliteReady &&
+      listingEnabled &&
+      wantRecipes &&
+      caps.hydrateBom &&
+      (recipesHydrate.isSuccess || recipesHydrate.isError),
     ...hydrateQueryOptions,
   })
 
@@ -371,6 +399,10 @@ export function useMenuCatalogBoardItems(
   const hydrateError =
     (wantArticles && articles.length === 0 && articlesHydrate.error) ||
     (wantRecipes && recipes.length === 0 && recipesHydrate.error) ||
+    (wantRecipes &&
+      recipes.length === 0 &&
+      caps.hydrateBom &&
+      recipeBomHydrate.error) ||
     (wantPromotions && promotions.length === 0 && promotionsHydrate.error)
   const queryError = articlesQuery.error ?? recipesQuery.error ?? promotionsQuery.error
 

@@ -88,7 +88,7 @@ export const MESAS_QUERY_SPEC: readonly QuerySpecPlace[] = [
             calls: [
               {
                 endpoint:
-                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&includeStock=false&page=1&pageSize=100",
+                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&includeStock=true&page=1&pageSize=100",
                 detail:
                   "Hydrate one-shot si no hay marca en SQLite. Pagina todo merchandise. Si ya está hidratado, no pega. El grid de Mesas lee SELECT local.",
                 cache: CACHE_SQLITE_OPFS,

@@ -67,7 +67,7 @@ export function LayoutsOperarSaleCheckoutFloor({
       semantic="destructiveSubtle"
       size="compact"
       shape="pill"
-      atmosphere="eter"
+      atmosphere="sombra"
       disabled={actions.discardDisabled}
       title={actions.discardTitle}
       onClick={actions.onDiscard}
@@ -107,7 +107,7 @@ export function LayoutsOperarSaleCheckoutFloor({
       semantic="primary"
       size="large"
       shape="pill"
-      atmosphere="eter"
+      atmosphere="sombra"
       loading={actions.confirmLoading}
       disabled={actions.confirmDisabled}
       title={actions.confirmTitle}
@@ -127,7 +127,7 @@ export function LayoutsOperarSaleCheckoutFloor({
 
   if (isProposal) {
     return (
-      <RootsButtonAtmosphereProvider atmosphere="eter">
+      <RootsButtonAtmosphereProvider atmosphere="sombra">
       <div
         role="region"
         aria-label={regionLabel}
@@ -155,10 +155,10 @@ export function LayoutsOperarSaleCheckoutFloor({
           {isProposal && savingsAmount > 0 ? (
             <p
               className={layoutsOperarCheckoutFloorSavingsClass}
-              aria-label={`Se ahorra ${saleOpFmt.format(savingsAmount)}`}
+              aria-label={`Ahorro ${saleOpFmt.format(savingsAmount)}`}
             >
               <span className={layoutsOperarCheckoutFloorSavingsLabelClass}>
-                Se ahorra
+                Ahorro
               </span>
               <span
                 className={cn(

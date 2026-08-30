@@ -88,6 +88,28 @@ function migratePopLocalSchema(db: PopLocalDatabase, fromVersion: number) {
       db.exec("ALTER TABLE recipes ADD COLUMN station_id TEXT")
     }
   }
+  if (fromVersion < 8) {
+    if (!tableHasColumn(db, "recipes", "output_article_id")) {
+      db.exec("ALTER TABLE recipes ADD COLUMN output_article_id TEXT")
+    }
+    db.exec(`
+CREATE TABLE IF NOT EXISTS recipe_ingredients (
+  recipe_id TEXT NOT NULL,
+  article_id TEXT NOT NULL,
+  quantity REAL NOT NULL,
+  waste_pct REAL,
+  article_default_waste_pct REAL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (recipe_id, article_id)
+);
+`)
+    db.exec(
+      "CREATE INDEX IF NOT EXISTS recipe_ingredients_article ON recipe_ingredients (article_id)",
+    )
+    db.exec(
+      "CREATE INDEX IF NOT EXISTS recipes_output_article_id ON recipes (output_article_id)",
+    )
+  }
 }
 
 export function applyPopLocalSchema(db: PopLocalDatabase) {
@@ -100,5 +122,11 @@ export function applyPopLocalSchema(db: PopLocalDatabase) {
     migratePopLocalSchema(db, current)
   }
   db.exec("CREATE INDEX IF NOT EXISTS recipes_station_id ON recipes (station_id)")
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS recipes_output_article_id ON recipes (output_article_id)",
+  )
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS recipe_ingredients_article ON recipe_ingredients (article_id)",
+  )
   db.setMeta("schema_version", String(POP_LOCAL_SCHEMA_VERSION))
 }

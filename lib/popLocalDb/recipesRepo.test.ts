@@ -26,6 +26,7 @@ function recipe(
     isActive: true,
     allowNegativeStock: false,
     stationId: "st-1",
+    outputArticleId: null,
     listPrices: [],
     ...partial,
   }

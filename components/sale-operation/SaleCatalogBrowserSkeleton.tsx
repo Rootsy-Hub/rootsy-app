@@ -46,12 +46,12 @@ function SaleCatalogProductCardGridSkeleton() {
   return (
     <article
       aria-hidden
-      className="pointer-events-none relative h-64 w-full overflow-hidden border text-left"
+      className="pointer-events-none relative h-48 w-full overflow-hidden border text-left"
       style={cardSurfaceStyle}
     >
       <div
         className="grid h-full w-full"
-        style={{ gridTemplateRows: "120px minmax(0, 1fr) auto" }}
+        style={{ gridTemplateRows: "88px minmax(0, 1fr) auto" }}
       >
         <div className="animate-pulse" style={ghostStyle} />
         <div className="min-h-0 px-3 pt-3">

@@ -5,6 +5,7 @@ import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-cat
 import { findMenuCatalogItemByScan } from "@/lib/rootsyApi/menuCatalogClient"
 import { findSaleBoardArticleByScan, openPopLocalDb } from "@/lib/popLocalDb"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
+import { catalogProductStockBlocked } from "@/components/sale-operation/saleCatalogProduct"
 import type { MenuCartItemKind } from "@/lib/menuCart"
 import {
   menuArticleToProduct,
@@ -43,6 +44,8 @@ import { useSaleBoardCategories } from "@/hooks/useSaleBoardCategories"
 import { useSaleBoardPromotions } from "@/hooks/useSaleBoardPromotions"
 import { useMenuCatalogBoardItems } from "@/hooks/useMenuCatalogBoardItems"
 import { menuPromotionToProduct } from "@/lib/menuCheckoutPromotions"
+import { decorateMenuProductsAvailability } from "@/lib/catalogAvailabilityContext"
+import { useCatalogAvailabilityContext } from "@/hooks/useCatalogAvailabilityContext"
 import { findCatalogProductByScanQuery } from "@/lib/saleCatalogScan"
 import {
   OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
@@ -138,6 +141,7 @@ export function SaleCatalogBrowser({
 }: Props) {
   const source = itemsSource ?? catalogScope
   const isSaleBoard = source === "sale"
+  const catalogAvailability = useCatalogAvailabilityContext(popId)
   const savedView = useSyncExternalStore(
     subscribeSaleCatalogView,
     () => readSavedSaleCatalogView(popId),
@@ -258,6 +262,16 @@ export function SaleCatalogBrowser({
   const handleAddProduct = useCallback(
     (productId: string, kind?: MenuCartItemKind, quantity = cantidadIngreso) => {
       if (addDisabled) return
+      const product =
+        products.find((row) => row.id === productId) ??
+        namedProductsRef.current.find((row) => row.id === productId)
+      if (product && catalogProductStockBlocked(product)) {
+        showRootsyToast({
+          title: `${product.nombre} no tiene stock`,
+          intent: "warning",
+        })
+        return
+      }
       onAddProduct(productId, kind, quantity)
       if (isMobileViewport && kind !== "promotion") {
         const nombre =
@@ -428,19 +442,24 @@ export function SaleCatalogBrowser({
   )
 
   const promotionProducts = useMemo(() => {
-    if (source === "menu") {
-      return menuItems.promotions.map(menuPromotionToProduct)
-    }
-    return products.filter(
-      (product) => isMenuProduct(product) && product.kind === "promotion",
-    )
-  }, [menuItems.promotions, products, source])
+    const raw =
+      source === "menu"
+        ? menuItems.promotions.map(menuPromotionToProduct)
+        : products.filter(
+            (product): product is MenuCatalogProduct =>
+              isMenuProduct(product) && product.kind === "promotion",
+          )
+    return decorateMenuProductsAvailability(raw, catalogAvailability)
+  }, [catalogAvailability, menuItems.promotions, products, source])
 
   const pagedProducts = useMemo((): SaleCatalogProduct[] => {
     const articles = paged.articles.map(menuArticleToProduct)
     const recipes = pagedRecipes.map(menuRecipeToProduct)
-    return [...recipes, ...articles]
-  }, [paged.articles, pagedRecipes])
+    return decorateMenuProductsAvailability(
+      [...recipes, ...articles],
+      catalogAvailability,
+    )
+  }, [catalogAvailability, paged.articles, pagedRecipes])
 
   const productosFiltrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
@@ -485,6 +504,16 @@ export function SaleCatalogBrowser({
             const handle = await openPopLocalDb(popId)
             const article = findSaleBoardArticleByScan(handle.database, query)
             if (article) {
+              if (
+                article.stockOnHand <= 1e-6 &&
+                !article.allowNegativeStock
+              ) {
+                showRootsyToast({
+                  title: `${article.name} no tiene stock`,
+                  intent: "warning",
+                })
+                return
+              }
               handleAddProduct(article.id, "article")
               setBusqueda("")
               return
@@ -727,9 +756,10 @@ export function SaleCatalogBrowser({
           {showGridSkeleton ? (
             <SaleCatalogBrowserSkeleton variant={vistaEfectiva} />
           ) : displayError ? (
-            <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
-              <p className="max-w-md text-sm text-rose-300">{displayError}</p>
-            </div>
+            <SaleCatalogEmptyMascot
+              line1="No se pudo cargar el catálogo"
+              line2={displayError}
+            />
           ) : isEmpty ? (
             <SaleCatalogEmptyMascot
               hasSearch={busqueda.trim().length > 0}
@@ -768,7 +798,7 @@ export function SaleCatalogBrowser({
                   <SaleCatalogProductCard
                     product={product}
                     variant={vistaEfectiva}
-                    disabled={addDisabled}
+                    disabled={addDisabled || catalogProductStockBlocked(product)}
                     onClick={() => handleAddProduct(product.id, productKind)}
                   />
                 )

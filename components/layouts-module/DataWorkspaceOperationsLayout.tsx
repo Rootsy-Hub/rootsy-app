@@ -12,7 +12,10 @@ import {
   OperarCatalogMobileChromeProvider,
   useOperarCatalogMobileChrome,
 } from "@/components/layouts-module/OperarCatalogMobileChrome"
-import { OperarMobileStageProvider } from "@/components/layouts-module/OperarMobileStage"
+import {
+  OperarMobileStageProvider,
+  type OperarMobileStageId,
+} from "@/components/layouts-module/OperarMobileStage"
 import { OperarMobileToolboxProvider } from "@/components/layouts-module/OperarMobileToolbox"
 import {
   DataWorkspaceModuleLayout,
@@ -23,7 +26,9 @@ import type { ReactNode } from "react"
 
 export { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 
-export type DataWorkspaceOperationsLayoutProps = DataWorkspaceModuleLayoutProps
+export type DataWorkspaceOperationsLayoutProps = DataWorkspaceModuleLayoutProps & {
+  mobileInitialStage?: OperarMobileStageId
+}
 
 /**
  * Shell módulo POP + cuerpo operaciones (layout · operaciones).
@@ -34,11 +39,12 @@ export function DataWorkspaceOperationsLayout({
   contentFlush = true,
   mainClassName,
   headerMobileMoreActions,
+  mobileInitialStage,
   ...props
 }: DataWorkspaceOperationsLayoutProps) {
   return (
     <OperarCatalogMobileChromeProvider>
-      <OperarMobileStageProvider>
+      <OperarMobileStageProvider initialStage={mobileInitialStage}>
         <OperarMobileToolboxProvider>
           <OperationsLayoutWithChrome
             {...props}

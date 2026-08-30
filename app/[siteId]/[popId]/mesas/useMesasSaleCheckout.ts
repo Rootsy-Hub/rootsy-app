@@ -54,6 +54,7 @@ import {
 } from "@/lib/saleCheckoutPayment"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
+import { applySaleStockChanges } from "@/lib/applySaleStockChanges"
 import { getSalePriceListSession } from "@/lib/salePriceListSession"
 import {
   buildMenuProductMap,
@@ -99,6 +100,8 @@ import {
   snapshotFromCatalogProduct,
   type MenuCatalogProduct,
 } from "@/lib/menuCatalogProduct"
+import { decorateMenuProductsAvailability } from "@/lib/catalogAvailabilityContext"
+import { useCatalogAvailabilityContext } from "@/hooks/useCatalogAvailabilityContext"
 import {
   ACTIVE_COMANDAS_DISCARD_TITLE,
   ensureCartLineComandaStatuses,
@@ -224,6 +227,8 @@ export function useMesasSaleCheckout(
     enabled: false,
     toolboxEnabled,
   })
+
+  const catalogAvailability = useCatalogAvailabilityContext(popId)
 
   const localPromotions = useSaleBoardPromotions(popId, {
     enabled: Boolean(popId),
@@ -790,12 +795,15 @@ export function useMesasSaleCheckout(
   ])
 
   const productosCatalogo = useMemo((): MenuCatalogProduct[] => {
-    return [
-      ...menuPromotions.map(menuPromotionToProduct),
-      ...menuRecipes.map(menuRecipeToProduct),
-      ...menuArticles.map(menuArticleToProduct),
-    ]
-  }, [menuPromotions, menuRecipes, menuArticles])
+    return decorateMenuProductsAvailability(
+      [
+        ...menuPromotions.map(menuPromotionToProduct),
+        ...menuRecipes.map(menuRecipeToProduct),
+        ...menuArticles.map(menuArticleToProduct),
+      ],
+      catalogAvailability,
+    )
+  }, [catalogAvailability, menuPromotions, menuRecipes, menuArticles])
 
   const productosByKey = useMemo(
     () => buildMenuProductMap(productosCatalogo),
@@ -1904,6 +1912,7 @@ export function useMesasSaleCheckout(
           setSubmitError(res.error)
           return false
         }
+        void applySaleStockChanges(queryClient, popId, res.stockChanges)
         saleIdempotencyKeyRef.current = crypto.randomUUID()
 
         setConfirmOpen(false)

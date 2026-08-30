@@ -526,17 +526,17 @@ export function layoutsOperarProductCardProposalGridShellClass(id: LayoutsOperar
 
   if (id === "losa-sombra") {
     return cn(
-      "layouts-operar-product-card group relative box-border grid h-[256px] w-full",
-      "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip rounded-[12px] p-0 text-left",
+      "layouts-operar-product-card group relative box-border grid h-[192px] w-full",
+      "grid-rows-[88px_minmax(0,1fr)_auto] overflow-clip rounded-[12px] p-0 text-left",
       "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)] bg-[var(--rootsy-sombra-800)]",
       "shadow-none transition-colors duration-200 hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_38%,var(--rootsy-sombra-700))]",
     )
   }
 
   return cn(
-    "layouts-operar-product-card group relative box-border grid h-[256px] w-full",
-    "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip rounded-[16px] p-0 text-left",
-    "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
+    "layouts-operar-product-card group relative box-border grid h-[192px] w-full",
+    "grid-rows-[88px_minmax(0,1fr)_auto] overflow-clip rounded-[16px] p-0 text-left",
+    "border border-[var(--rootsy-sombra-500)] bg-[var(--rootsy-sombra-600)]",
     "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_28%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
     "transition-[box-shadow,ring-color] duration-200 ease-out",
@@ -560,7 +560,7 @@ export function layoutsOperarProductCardProposalListShellClass(id: LayoutsOperar
   return cn(
     "layouts-operar-product-card group relative box-border flex min-h-[80px] w-full items-stretch",
     "overflow-clip rounded-[16px] p-0 text-left",
-    "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
+    "border border-[var(--rootsy-sombra-500)] bg-[var(--rootsy-sombra-600)]",
     "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-sombra-400)_28%,transparent)]",
     "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)]",
     "transition-[box-shadow,ring-color] duration-200 ease-out",
@@ -724,8 +724,7 @@ export function layoutsOperarProductCardProposalAddClass(id: LayoutsOperarProduc
     "pointer-events-none absolute right-2 bottom-2 z-10 flex size-8 items-center justify-center rounded-full",
     "border border-[color-mix(in_srgb,var(--rootsy-savia-300)_45%,transparent)]",
     "bg-[var(--rootsy-savia-600)] text-[var(--rootsy-savia-950)]",
-    "opacity-60 transition-[opacity,transform] duration-200",
-    "group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100",
+    "opacity-100",
   )
 }
 

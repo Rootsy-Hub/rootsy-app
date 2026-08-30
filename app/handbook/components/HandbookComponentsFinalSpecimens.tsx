@@ -147,11 +147,9 @@ import {
   ArrowRight,
   Banknote,
   BarChart3,
-  FileText,
   MoreHorizontal,
   Package,
   Pencil,
-  Percent,
   Plus,
   Receipt,
   Trash2,
@@ -182,6 +180,8 @@ const SAMPLE_PRODUCT: SaleCatalogProduct = {
   precio: 1200,
   categoria: "Panadería",
   imagen: "",
+  unitOfMeasure: "unidad",
+  stockOnHand: 12,
 }
 
 const SAMPLE_PURCHASE: PurchaseCatalogProduct = {
@@ -2322,46 +2322,6 @@ function CheckoutFloorFinalSpecimen() {
           const comprobanteConfigured = !empty
           const pagoConfigured = !empty
 
-          const proposalOptions = empty
-            ? [
-                {
-                  id: "discount",
-                  icon: Percent,
-                  officeLabel: "Descuento",
-                  value: "Sin descuento",
-                  configured: false,
-                  onClick: noop,
-                },
-                {
-                  id: "save",
-                  icon: FileText,
-                  officeLabel: "Guardar",
-                  value: "Presupuesto",
-                  configured: false,
-                  ariaLabel: "Guardar como presupuesto",
-                  onClick: noop,
-                },
-              ]
-            : [
-                {
-                  id: "discount",
-                  icon: Percent,
-                  officeLabel: "Descuento",
-                  value: "10%",
-                  configured: true,
-                  onClick: noop,
-                },
-                {
-                  id: "save",
-                  icon: FileText,
-                  officeLabel: "Guardar",
-                  value: "Presupuesto",
-                  configured: false,
-                  ariaLabel: "Guardar como presupuesto",
-                  onClick: noop,
-                },
-              ]
-
           const proposalSteps = [
             {
               id: "party",
@@ -2396,7 +2356,6 @@ function CheckoutFloorFinalSpecimen() {
               <LayoutsOperarSaleCheckoutFloor
                 proposal={proposal}
                 proposalSteps={proposalSteps}
-                proposalOptions={proposalOptions}
                 savingsAmount={empty ? 0 : 4200}
                 closingTotal={total}
                 totalLabel={isPurchase ? "Total a pagar" : "Total"}

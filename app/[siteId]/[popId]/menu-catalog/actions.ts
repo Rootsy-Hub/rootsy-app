@@ -65,6 +65,8 @@ export type MenuCatalogArticle = {
   unitOfMeasure: string
   imageUrl: string | null
   barcode?: string | null
+  stockOnHand?: number
+  allowNegativeStock?: boolean
 }
 
 export type MenuCatalogCategorySection = {

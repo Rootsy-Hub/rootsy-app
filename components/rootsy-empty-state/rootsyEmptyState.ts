@@ -60,7 +60,7 @@ export type RootsyEmptyStateCopy = {
  *
  * La figura es un ícono suave sobre el glow del mundo. No el retrato de Rootsy.
  *
- * Sí, juntos: “No hay productos en Bebidas.” → “El pedido espera.”
+ * Sí, juntos: “No hay productos en Bebidas.” → “El pedido espera. Escaneá o tocá un producto.”
  * No: dos veces “Acá no hay…” / “Pedido vacío.”
  */
 export const ROOTSY_EMPTY_STATE_VOICE = {
@@ -73,7 +73,7 @@ export const ROOTSY_EMPTY_STATE_VOICE = {
     "Catálogo y pedido se leen como un solo turno: primero lo que falta, después dónde espera.",
   icon: "Un ícono del mundo, suave sobre el glow. No el retrato de Rootsy.",
   examples: {
-    yes: "No hay productos en Bebidas. El pedido espera.",
+    yes: "No hay productos en Bebidas. El pedido espera. Escaneá o tocá un producto.",
     no: "No hay productos. No hay nada en el pedido.",
   },
 } as const
@@ -106,6 +106,7 @@ export const ROOTSY_EMPTY_STATE_COPY = {
   ticket: {
     order: {
       title: "El pedido espera.",
+      description: "Escaneá o tocá un producto.",
     },
     purchase: {
       title: "La compra espera.",

@@ -7,6 +7,7 @@ import {
   clearPopLocalRecipeCategoriesHydrateMark,
   clearPopLocalRecipesHydrateMark,
   deleteArticleById,
+  patchArticleStockOnHand,
   deleteCategoryById,
   deletePromotionById,
   deleteRecipeById,
@@ -47,6 +48,7 @@ import { invalidateDataWorkspaceTableInfinite } from "@/lib/dataWorkspaceTableIn
 import {
   popArticleCategoriesQueryRoot,
   popArticleQueryKey,
+  catalogAvailabilityQueryKey,
   popArticlesQueryRoot,
   popLocalArticlesHydrateQueryRoot,
   popLocalCategoriesHydrateQueryKey,
@@ -98,6 +100,10 @@ function invalidateSaleBoardArticles(queryClient: QueryClient, popId: string) {
     popArticlesQueryRoot(popId),
   )
   invalidateMenuBoardItems(queryClient, popId)
+  void queryClient.invalidateQueries({
+    queryKey: catalogAvailabilityQueryKey(popId),
+    ...REFETCH_ALL,
+  })
 }
 
 function invalidateMenuCatalogSections(queryClient: QueryClient, popId: string) {
@@ -137,6 +143,34 @@ async function recoverCategoriesCatalog(queryClient: QueryClient, popId: string)
   invalidateLocalCategories(queryClient, popId)
 }
 
+function stockChangesFromPayload(
+  payload: Record<string, unknown>,
+): Array<{ articleId: string; onHand: number }> {
+  const raw = payload.changes
+  if (!Array.isArray(raw)) return []
+  const out: Array<{ articleId: string; onHand: number }> = []
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue
+    const item = row as { articleId?: unknown; onHand?: unknown }
+    const articleId = typeof item.articleId === "string" ? item.articleId.trim() : ""
+    const onHand = Number(item.onHand)
+    if (!articleId || !Number.isFinite(onHand)) continue
+    out.push({ articleId, onHand })
+  }
+  return out
+}
+
+async function writeStockChangedToSqlite(
+  popId: string,
+  changes: Array<{ articleId: string; onHand: number }>,
+) {
+  if (changes.length === 0) return
+  const handle = await openPopLocalDb(popId)
+  patchArticleStockOnHand(handle.database, changes)
+  handle.markDirty()
+  await handle.flush()
+}
+
 async function writeArticleEventToSqlite(popId: string, event: DomainEvent, articleId: string) {
   const handle = await openPopLocalDb(popId)
   if (event.type === "articles.deleted") {
@@ -158,6 +192,19 @@ export async function applyArticleRealtimeEvent(
   popId: string,
   event: DomainEvent,
 ) {
+  if (event.type === "articles.stock_changed") {
+    const changes = stockChangesFromPayload(event.payload)
+    if (changes.length === 0) return
+    try {
+      await retrySqlite(() => writeStockChangedToSqlite(popId, changes))
+    } catch {
+      await recoverArticlesCatalog(queryClient, popId)
+      return
+    }
+    invalidateSaleBoardArticles(queryClient, popId)
+    return
+  }
+
   const articleId =
     (event.resource?.type === "article" && event.resource.id) ||
     articleIdFromRealtimeEvent(event.payload)

@@ -15,6 +15,7 @@ type SqlRecipeRow = {
   is_active: unknown
   allow_negative_stock: unknown
   station_id: unknown
+  output_article_id: unknown
   list_prices: unknown
 }
 
@@ -67,6 +68,7 @@ export type RecipeDumpRow = Pick<
   | "iva"
   | "isActive"
   | "allowNegativeStock"
+  | "outputArticleId"
 > & {
   stationId?: string | null
   listPrices?: ArticleListPriceSnap[]
@@ -112,6 +114,7 @@ export function recipeDumpRowToSnapshot(
     isActive: row.isActive !== false,
     allowNegativeStock: Boolean(row.allowNegativeStock),
     stationId: row.stationId ?? stationId,
+    outputArticleId: row.outputArticleId ?? null,
     listPrices: row.listPrices ?? [],
   }
 }
@@ -129,6 +132,7 @@ export function sqlRecipeRowToSnapshot(row: SqlRecipeRow): RecipeSnapshot {
     isActive: asBool(row.is_active),
     allowNegativeStock: asBool(row.allow_negative_stock),
     stationId: asNullableString(row.station_id),
+    outputArticleId: asNullableString(row.output_article_id),
     listPrices: parseListPrices(row.list_prices),
   }
 }
@@ -149,6 +153,7 @@ export function recipeSnapshotBindValues(
     row.isActive ? 1 : 0,
     row.allowNegativeStock ? 1 : 0,
     row.stationId,
+    row.outputArticleId,
     JSON.stringify(row.listPrices),
     updatedAt,
   ]

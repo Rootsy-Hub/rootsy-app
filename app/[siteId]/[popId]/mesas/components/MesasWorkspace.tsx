@@ -23,6 +23,9 @@ import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleC
 import { useMesasState } from "@/app/[siteId]/[popId]/mesas/useMesasState"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import {
+  layoutsOperarCheckoutPillsFromToolbox,
+} from "@/components/layouts-module/LayoutsOperarCheckoutSteps"
 import { LayoutsOperarSaleCheckoutFloor } from "@/components/layouts-module/LayoutsOperarSaleCheckoutFloor"
 import { useOperarMobileStage } from "@/components/layouts-module/OperarMobileStage"
 import {
@@ -46,7 +49,6 @@ import {
 import { AlertDialog } from "@/components/ui/alert-dialog"
 import type { SaleOperationDiscountHeaderControl } from "@/components/sale-operation/SaleOperationDiscountHeaderButton"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
-import { SaleOperationToolboxSkeleton } from "@/components/sale-operation/SaleOperationToolboxSkeleton"
 import {
   MesasFloorPlanSkeleton,
   MesasTablePickerListSkeleton,
@@ -212,6 +214,17 @@ export function MesasWorkspace({
   )
   const [cannotChargeOpen, setCannotChargeOpen] = useState(false)
   const mesasOrderConfirm = getMesasOrderConfirmState(checkout)
+  const mesasCheckoutPills = layoutsOperarCheckoutPillsFromToolbox({
+    ...checkout.toolbox,
+    discountLabel: checkout.discountHeader.title,
+    discountConfigured: checkout.discountHeader.active,
+    discountDisabled: checkout.discountHeader.disabled,
+    onDiscountClick: checkout.discountHeader.onClick,
+  })
+  const mesasSavingsAmount =
+    checkout.descuentoMonto +
+    checkout.descuentoItemsMonto +
+    checkout.promocionesAplicadasMonto
 
   useEffect(() => {
     onRegisterDiscountHeader?.(checkout.discountHeader)
@@ -584,24 +597,24 @@ export function MesasWorkspace({
         mobileCatalogDisabled={!selectedSession}
         catalog={!showCatalog ? floorCanvas : catalogPanel}
         floor={
-          <LayoutsOperarSaleCheckoutFloor
-            steps={
-              checkout.toolboxLoading ? (
-                <SaleOperationToolboxSkeleton embedded />
-              ) : (
-                <SaleOperationToolbox embedded {...checkout.toolbox} />
-              )
-            }
-            closingTotal={checkout.total}
-            actions={{
-              ...checkout.actions,
-              confirmLabel: mesasOrderConfirm.confirmLabel,
-              confirmDisabled: mesasOrderConfirm.confirmDisabled,
-              confirmTitle: mesasOrderConfirm.confirmTitle,
-              onConfirm: () =>
-                runMesasOrderConfirm(checkout, () => setCannotChargeOpen(true)),
-            }}
-          />
+          <>
+            <SaleOperationToolbox registerOnly {...checkout.toolbox} />
+            <LayoutsOperarSaleCheckoutFloor
+              proposal="pills"
+              proposalSteps={mesasCheckoutPills.steps}
+              proposalOptions={mesasCheckoutPills.options}
+              savingsAmount={mesasSavingsAmount}
+              closingTotal={checkout.total}
+              actions={{
+                ...checkout.actions,
+                confirmLabel: mesasOrderConfirm.confirmLabel,
+                confirmDisabled: mesasOrderConfirm.confirmDisabled,
+                confirmTitle: mesasOrderConfirm.confirmTitle,
+                onConfirm: () =>
+                  runMesasOrderConfirm(checkout, () => setCannotChargeOpen(true)),
+              }}
+            />
+          </>
         }
         desktopFloor={showCatalog}
         ticket={

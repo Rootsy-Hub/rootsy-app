@@ -454,6 +454,14 @@ export function popLocalRecipesHydrateQueryKey(popId: string) {
   return [...popLocalDbQueryRoot(popId), "hydrate", "recipes"] as const
 }
 
+export function popLocalRecipeBomHydrateQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "hydrate", "recipe-bom"] as const
+}
+
+export function catalogAvailabilityQueryKey(popId: string) {
+  return [...popLocalDbQueryRoot(popId), "catalog-availability"] as const
+}
+
 export function popLocalRecipeCategoriesHydrateQueryKey(popId: string) {
   return [...popLocalDbQueryRoot(popId), "hydrate", "recipe-categories"] as const
 }

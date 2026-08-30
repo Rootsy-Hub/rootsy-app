@@ -1,6 +1,7 @@
 import { shortUnitOfMeasure } from "@/lib/articleItemKind"
 
 export type StockShortage = {
+  articleId?: string
   articleName: string
   sources: string[]
   needed: number
@@ -78,8 +79,47 @@ function formatShortageCompact(item: StockShortage): string {
 export function isStockShortageMessage(error: string): boolean {
   return (
     error.includes("No hay stock suficiente") ||
-    error.includes("sin stock suficiente")
+    error.includes("sin stock suficiente") ||
+    error.includes("El stock cambió mientras se cobraba")
   )
+}
+
+export function parseStockShortageBody(body: unknown): {
+  shortages: StockShortage[]
+  code?: string
+} {
+  if (!body || typeof body !== "object") return { shortages: [] }
+  const row = body as {
+    code?: unknown
+    shortages?: unknown
+  }
+  const code = typeof row.code === "string" ? row.code : undefined
+  if (!Array.isArray(row.shortages)) return { shortages: [], code }
+  const shortages: StockShortage[] = []
+  for (const item of row.shortages) {
+    if (!item || typeof item !== "object") continue
+    const raw = item as Record<string, unknown>
+    const articleName = String(raw.articleName ?? "").trim()
+    const needed = Number(raw.needed)
+    const onHand = Number(raw.onHand)
+    if (!articleName || !Number.isFinite(needed) || !Number.isFinite(onHand)) {
+      continue
+    }
+    const sources = Array.isArray(raw.sources)
+      ? raw.sources.map((source) => String(source)).filter(Boolean)
+      : []
+    const articleId = String(raw.articleId ?? "").trim()
+    shortages.push({
+      articleId: articleId || undefined,
+      articleName,
+      sources,
+      needed,
+      onHand,
+      unitOfMeasure:
+        raw.unitOfMeasure == null ? null : String(raw.unitOfMeasure),
+    })
+  }
+  return { shortages, code }
 }
 
 export function formatStockShortageMessage(shortages: StockShortage[]): string {

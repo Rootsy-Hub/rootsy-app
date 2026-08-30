@@ -90,6 +90,8 @@ export type GetPopArticlesTableInput = {
   categoryId: string
   /** Vacío o los tres tipos = sin filtrar por tipo. */
   itemKinds: ArticleItemKind[]
+  /** UUIDs para hydrate puntual (insumos de receta). */
+  ids?: string[]
   sort?: string | null
   ord?: "asc" | "desc"
 }

@@ -16,8 +16,16 @@ import {
   layoutsOperarProductCardProposalTitleClass,
   type LayoutsOperarProductCardProposalId,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
+import {
+  layoutsOperarProductCardStockClass,
+  layoutsOperarProductCardStockOutClass,
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
+import {
+  catalogProductStockState,
+  catalogProductVisibleDescription,
+} from "@/components/sale-operation/saleCatalogProduct"
 import { CatalogProductCardMediaPhoto } from "@/components/sale-operation/CatalogProductCardMediaPhoto"
 import {
   SaleCatalogProductOfferOverlay,
@@ -47,6 +55,27 @@ export function SaleCatalogProductCard({
   const showOfferOverlay =
     product.precioOriginal != null && product.precioOriginal > product.precio
   const mediaStyle = layoutsOperarProductCardProposalMediaStyle(proposalId)
+  const description = catalogProductVisibleDescription(product.descripcion)
+  const stock = catalogProductStockState(product)
+  const stockBlocked = stock?.blocked === true
+  const mutedByParent = disabled && !stockBlocked
+
+  const priceLabel = saleOpFmt.format(product.precio)
+  const productAriaLabel = stockBlocked
+    ? `${product.nombre}, ${priceLabel}, sin stock`
+    : `${product.nombre}, ${priceLabel}`
+
+  const stockMark = stock ? (
+    <span
+      className={
+        stock.out
+          ? layoutsOperarProductCardStockOutClass
+          : layoutsOperarProductCardStockClass
+      }
+    >
+      {stock.label}
+    </span>
+  ) : null
 
   const media = (
     <div
@@ -84,9 +113,11 @@ export function SaleCatalogProductCard({
         disabled={disabled}
         onClick={onClick}
         data-proposal={proposalId}
+        aria-label={productAriaLabel}
         className={cn(
           layoutsOperarProductCardProposalListShellClass(proposalId),
-          disabled && "cursor-not-allowed opacity-50",
+          mutedByParent && "cursor-not-allowed opacity-50",
+          stockBlocked && "cursor-not-allowed",
         )}
       >
         {media}
@@ -100,19 +131,22 @@ export function SaleCatalogProductCard({
             >
               {product.nombre}
             </h3>
-            <p
-              className={cn(
-                layoutsOperarProductCardProposalDescClass(proposalId),
-                "line-clamp-1",
-              )}
-            >
-              {product.descripcion}
-            </p>
+            {description ? (
+              <p
+                className={cn(
+                  layoutsOperarProductCardProposalDescClass(proposalId),
+                  "line-clamp-1",
+                )}
+              >
+                {description}
+              </p>
+            ) : null}
           </div>
-          <div className="shrink-0">
+          <div className="flex shrink-0 flex-col items-end gap-1">
             <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
               {saleOpFmt.format(product.precio)}
             </span>
+            {stockMark}
           </div>
         </div>
       </button>
@@ -125,9 +159,11 @@ export function SaleCatalogProductCard({
       disabled={disabled}
       onClick={onClick}
       data-proposal={proposalId}
+      aria-label={productAriaLabel}
       className={cn(
         layoutsOperarProductCardProposalTriggerClass(proposalId),
-        disabled && "cursor-not-allowed opacity-50",
+        mutedByParent && "cursor-not-allowed opacity-50",
+        stockBlocked && "cursor-not-allowed",
       )}
     >
       <div
@@ -139,14 +175,17 @@ export function SaleCatalogProductCard({
           <h3 className={layoutsOperarProductCardProposalTitleClass(proposalId)}>
             {product.nombre}
           </h3>
-          <p className={layoutsOperarProductCardProposalDescClass(proposalId)}>
-            {product.descripcion}
-          </p>
+          {description ? (
+            <p className={layoutsOperarProductCardProposalDescClass(proposalId)}>
+              {description}
+            </p>
+          ) : null}
         </div>
         <div className={layoutsOperarProductCardProposalPriceRowClass(proposalId)}>
           <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
             {saleOpFmt.format(product.precio)}
           </span>
+          {stockMark}
         </div>
       </div>
     </button>

@@ -192,6 +192,67 @@ export async function uploadRecipeImage(
   }
 }
 
+export type RecipeBomRow = {
+  recipeId: string
+  articleId: string
+  quantity: number
+  wastePct: number | null
+  articleDefaultWastePct: number | null
+  sortOrder: number
+}
+
+type RecipeBomListData = {
+  ingredients: RecipeBomRow[]
+  totalCount: number
+  page: number
+  pageSize: number
+}
+
+export const POP_RECIPE_BOM_PAGE_SIZE = 200
+
+export async function fetchPopRecipeBomPage(
+  popId: string,
+  page: number,
+  pageSize = POP_RECIPE_BOM_PAGE_SIZE,
+): Promise<
+  | { success: true; data: RecipeBomListData }
+  | { success: false; error: string }
+> {
+  const params = new URLSearchParams()
+  params.set("page", String(page))
+  params.set("pageSize", String(pageSize))
+  const res = await fetch(`/api/pops/${popId}/recipes/bom?${params}`, {
+    headers: { accept: "application/json" },
+  })
+  const json = (await res.json().catch(() => null)) as
+    | ApiOk<RecipeBomListData>
+    | ApiErr
+    | null
+  if (res.ok && json && "success" in json && json.success) {
+    return { success: true, data: json.data }
+  }
+  return {
+    success: false,
+    error:
+      json && "error" in json && json.error ? json.error : `HTTP ${res.status}`,
+  }
+}
+
+export async function fetchAllPopRecipeBom(
+  popId: string,
+): Promise<RecipeBomRow[]> {
+  const rows: RecipeBomRow[] = []
+  let page = 1
+  for (;;) {
+    const res = await fetchPopRecipeBomPage(popId, page)
+    if (!res.success) throw new Error(res.error)
+    rows.push(...res.data.ingredients)
+    if (page * res.data.pageSize >= res.data.totalCount) break
+    page += 1
+  }
+  return rows
+}
+
 export async function searchRecipeIngredientOptions(
   popId: string,
   query: string,

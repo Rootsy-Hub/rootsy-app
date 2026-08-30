@@ -1,10 +1,11 @@
 import type { PopLocalDatabase } from "@/lib/popLocalDb/database"
 
-const ARTICLES_HYDRATED_META = "articles_hydrated"
+const ARTICLES_HYDRATED_META = "articles_hydrated_v3"
 const ARTICLES_HYDRATED_BACKFILL_META = "articles_hydrated_backfilled"
 const CATEGORIES_HYDRATED_META = "categories_hydrated"
 const PROMOTIONS_HYDRATED_META = "promotions_hydrated"
-const RECIPES_HYDRATED_META = "recipes_hydrated"
+const RECIPES_HYDRATED_META = "recipes_hydrated_v2"
+const RECIPE_BOM_HYDRATED_META = "recipe_bom_hydrated"
 const RECIPE_CATEGORIES_HYDRATED_META = "recipe_categories_hydrated"
 const MESAS_FLOOR_HYDRATED_META = "mesas_floor_hydrated"
 const MOSTRADOR_BOARD_HYDRATED_META = "mostrador_board_hydrated"
@@ -70,6 +71,22 @@ export function markRecipesHydrated(
 
 export function clearRecipesHydratedMark(db: PopLocalDatabase) {
   db.run("DELETE FROM meta WHERE key = ?", [RECIPES_HYDRATED_META])
+  db.run("DELETE FROM meta WHERE key = ?", [RECIPE_BOM_HYDRATED_META])
+}
+
+export function isRecipeBomHydrated(db: PopLocalDatabase): boolean {
+  return Boolean(db.getMeta(RECIPE_BOM_HYDRATED_META))
+}
+
+export function markRecipeBomHydrated(
+  db: PopLocalDatabase,
+  at = new Date().toISOString(),
+) {
+  db.setMeta(RECIPE_BOM_HYDRATED_META, at)
+}
+
+export function clearRecipeBomHydratedMark(db: PopLocalDatabase) {
+  db.run("DELETE FROM meta WHERE key = ?", [RECIPE_BOM_HYDRATED_META])
 }
 
 export function isRecipeCategoriesHydrated(db: PopLocalDatabase): boolean {

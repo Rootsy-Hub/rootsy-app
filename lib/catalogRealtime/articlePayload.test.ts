@@ -17,7 +17,7 @@ describe("article realtime payload", () => {
     })
     assert.equal(snap?.id, "a1")
     assert.equal(snap?.salePrice, 150)
-    assert.equal(snap?.stockOnHand, 0)
+    assert.equal(snap?.stockOnHand, 4)
     assert.deepEqual(snap?.listPrices, [{ listId: "lista-2", amount: 140 }])
   })
 

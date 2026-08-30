@@ -130,12 +130,14 @@ function MesasPage() {
                   spec={MESAS_QUERY_SPEC}
                 />
               ) : null}
-              <SaleOperationDiscountHeaderButton
-                disabled={discountHeader?.disabled ?? true}
-                active={discountHeader?.active ?? false}
-                title={discountHeader?.title}
-                onClick={() => discountHeader?.onClick()}
-              />
+              <div className="md:hidden">
+                <SaleOperationDiscountHeaderButton
+                  disabled={discountHeader?.disabled ?? true}
+                  active={discountHeader?.active ?? false}
+                  title={discountHeader?.title}
+                  onClick={() => discountHeader?.onClick()}
+                />
+              </div>
             </>
           }
           headerMoreActions={moreActions}

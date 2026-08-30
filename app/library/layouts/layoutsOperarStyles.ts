@@ -199,16 +199,16 @@ export const layoutsOperarWireframeSummaryPanelClass = cn(
   "border-l border-[var(--layouts-operar-border-split)]",
 )
 
-/** Canvas productos — mismo 950 que el rail y las cards. */
+/** Canvas productos — mismo dosel sombra 700 que el rail. */
 export const layoutsOperarCatalogCanvasClass = cn(
-  "grid min-h-0 min-w-0 flex-1 bg-[var(--rootsy-sombra-950)]",
+  "layouts-operar-catalog-canvas grid min-h-0 min-w-0 flex-1 bg-[var(--rootsy-sombra-700)]",
   "[grid-template-rows:var(--layouts-operar-catalog-rows)]",
 )
 
 export const layoutsOperarCatalogToolbarClass = cn(
-  "flex min-w-0 shrink-0 items-center gap-3 px-4",
-  "bg-[var(--rootsy-sombra-800)]",
-  "border-b border-[var(--layouts-operar-border-dark-default)]",
+  "layouts-operar-catalog-toolbar flex min-w-0 shrink-0 items-center gap-3 px-4",
+  "bg-[var(--rootsy-sombra-700)]",
+  "border-b border-[var(--rootsy-sombra-600)]",
   "[height:var(--layouts-operar-catalog-toolbar-h)]",
 )
 
@@ -216,19 +216,19 @@ export const layoutsOperarCatalogToolbarClass = cn(
 export const layoutsOperarCatalogToolbarControlShellClass = cn(
   "layouts-operar-catalog-toolbar-control",
   "h-10 shrink-0 rounded-[length:var(--radius-large,12px)]",
-  "border border-[var(--layouts-operar-border-dark-hairline)]",
-  "bg-[var(--rootsy-sombra-950)]",
+  "border border-[var(--rootsy-sombra-600)]",
+  "bg-[var(--rootsy-sombra-800)]",
   "shadow-none",
   "transition-[border-color] duration-200 ease-out",
-  "hover:border-[var(--rootsy-sombra-600)]",
-  "hover:bg-[var(--rootsy-sombra-950)]",
+  "hover:border-[var(--rootsy-sombra-500)]",
+  "hover:bg-[var(--rootsy-sombra-600)]",
 )
 
 /** Focus — savia-400 sobre dosel, mismo ink que el rail activo. */
 export const layoutsOperarCatalogToolbarControlFocusClass = cn(
   "outline-none",
-  "focus-visible:border-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]",
-  "focus-visible:bg-[var(--rootsy-sombra-950)]",
+  "focus-visible:border-[var(--rootsy-savia-400)]",
+  "focus-visible:bg-[var(--rootsy-sombra-600)]",
   "focus-visible:text-[var(--rootsy-sombra-50)]",
   "focus-visible:ring-0 focus-visible:ring-offset-0",
 )
@@ -242,8 +242,8 @@ export const layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass = cn(
 export const layoutsOperarCatalogToolbarScanInputFocusClass = cn(
   "layouts-operar-catalog-toolbar-scan-input outline-none",
   layoutsOperarCatalogToolbarControlFocusClass,
-  "focus:border-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]",
-  "focus:bg-[var(--rootsy-sombra-950)]",
+  "focus:border-[var(--rootsy-savia-400)]",
+  "focus:bg-[var(--rootsy-sombra-600)]",
   "focus:text-[var(--rootsy-sombra-50)]",
   "focus:font-medium",
 )
@@ -259,17 +259,17 @@ export const layoutsOperarCatalogToolbarViewToggleButtonClass = cn(
 )
 
 export const layoutsOperarCatalogToolbarViewToggleButtonActiveClass =
-  "font-medium text-[var(--rootsy-savia-50)]"
+  "font-medium text-[var(--rootsy-savia-400)] bg-[var(--rootsy-sombra-600)]"
 
 export const layoutsOperarCatalogToolbarViewToggleButtonIdleClass = cn(
-  "text-[var(--rootsy-sombra-50)] opacity-45",
-  "hover:bg-transparent hover:opacity-100 hover:text-[var(--rootsy-sombra-50)]",
+  "text-[var(--rootsy-sombra-200)]",
+  "hover:bg-transparent hover:text-[var(--rootsy-sombra-50)]",
 )
 
 export const layoutsOperarCatalogToolbarScanInputClass = cn(
   layoutsOperarCatalogToolbarControlShellClass,
   layoutsOperarCatalogToolbarScanInputFocusClass,
-  "w-full min-w-0 pl-10 pr-10 rootsy-text-body text-[var(--rootsy-sombra-300)]",
+  "w-full min-w-0 pl-10 pr-10 rootsy-text-body text-[var(--rootsy-sombra-200)]",
   "placeholder:text-[var(--rootsy-sombra-300)]",
 )
 
@@ -491,10 +491,12 @@ export const layoutsOperarCatalogSkeletonGhostClass =
  * Sin p-px (doble hairline) ni overflow anidado: el radio recorta foto y cuerpo.
  */
 export const layoutsOperarProductCardClass = cn(
-  "layouts-operar-product-card group relative box-border grid h-[256px] w-full",
-  "grid-rows-[120px_minmax(0,1fr)_auto] overflow-clip p-0 text-left",
+  "layouts-operar-product-card group relative box-border grid h-[208px] w-full",
+  "grid-rows-[96px_minmax(0,1fr)_auto] overflow-clip p-0 text-left",
   "rounded-[length:var(--radius-xlarge,16px)]",
-  "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
+  "border border-[var(--rootsy-sombra-500)] bg-[var(--rootsy-sombra-600)]",
+  "transition-[border-color,background-color] duration-200 ease-out",
+  "hover:border-[var(--rootsy-sombra-400)] hover:bg-[var(--rootsy-sombra-500)]",
 )
 
 /** @deprecated La grilla vive en el shell. `contents` no genera caja. */
@@ -510,6 +512,9 @@ export const layoutsOperarProductCardLiftClass = cn(
   "transition-[top] duration-200 ease-out",
   "hover:-top-[2px] hover:z-[1]",
   "disabled:hover:top-0 disabled:hover:z-0",
+  "focus-visible:outline-none",
+  "focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]",
+  "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-sombra-700)]",
 )
 
 export const layoutsOperarProductCardTriggerClass = cn(
@@ -521,7 +526,7 @@ export const layoutsOperarProductCardTriggerClass = cn(
 export const layoutsOperarProductCardListClass = cn(
   "layouts-operar-product-card group relative box-border flex min-h-[80px] w-full items-stretch",
   "overflow-visible rounded-[length:var(--radius-xlarge,16px)] p-0 text-left",
-  "border border-[var(--rootsy-sombra-900)] bg-[var(--rootsy-sombra-800)]",
+  "border border-[var(--rootsy-sombra-500)] bg-[var(--rootsy-sombra-600)]",
   layoutsOperarProductCardLiftClass,
 )
 
@@ -544,7 +549,7 @@ export const layoutsOperarProductCardGridTextClass =
   "min-h-0 overflow-hidden px-3 pt-3"
 
 export const layoutsOperarProductCardGridPriceRowClass =
-  "px-3 pb-3 pt-1.5"
+  "flex items-end justify-between gap-2 px-3 pb-3 pt-1.5"
 
 /** @deprecated El cuerpo de grilla son text + price como filas 2 y 3. */
 export const layoutsOperarProductCardGridBodyClass =
@@ -597,6 +602,12 @@ export const layoutsOperarProductCardDescClass =
 export const layoutsOperarProductCardPriceClass =
   "layouts-operar-product-card-price rootsy-text-metric-small text-[var(--layouts-operar-product-card-price)]"
 
+export const layoutsOperarProductCardStockClass =
+  "shrink-0 font-canopy text-[11px] font-medium leading-none tabular-nums text-[var(--rootsy-sombra-200)]"
+
+export const layoutsOperarProductCardStockOutClass =
+  "shrink-0 font-canopy text-[11px] font-semibold leading-none text-[var(--rootsy-sol-400)]"
+
 export const layoutsOperarProductCardOfferClass =
   "absolute left-2 top-2 z-10 rounded-md bg-[var(--rootsy-sombra-900)] px-1.5 py-0.5 rootsy-text-label font-bold text-[var(--rootsy-savia-600)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-600)_45%,transparent)]"
 
@@ -604,7 +615,8 @@ export const layoutsOperarProductCardAddClass = cn(
   "pointer-events-none absolute right-2 bottom-2 z-10 flex size-8 items-center justify-center rounded-full",
   "border border-[color-mix(in_srgb,var(--rootsy-savia-300)_45%,transparent)]",
   "bg-[var(--rootsy-savia-500)] text-[var(--rootsy-savia-950)]",
-  "opacity-0 transition-opacity duration-200 group-hover:opacity-100",
+  "opacity-100 transition-transform duration-150 ease-out",
+  "group-active/lift:scale-95",
 )
 
 /** Tarjeta catálogo seleccionada — paridad CheckoutOptionCard dark + hover savia de product card. */

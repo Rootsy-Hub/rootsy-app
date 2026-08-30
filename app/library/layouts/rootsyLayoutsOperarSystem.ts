@@ -86,16 +86,18 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
   toolboxRowMinHeightSmToken: "79px",
   toolboxMinHeightClass: "h-[79px] min-h-[79px]",
   toolboxMinHeightSmClass: "sm:h-[79px] sm:min-h-[79px]",
-  /** Piso de checkout — misma altura que el header módulo (h-17). */
-  checkoutFloorHeightPx: ROOTSY_LAYOUTS_MODULE_HEADER.heightPx,
-  checkoutFloorHeightToken: ROOTSY_LAYOUTS_MODULE_HEADER.heightToken,
+  /** Piso de checkout — space.1000 para slots de dos líneas. */
+  checkoutFloorHeightPx: rootsySpacePx("1000"),
+  checkoutFloorHeightToken: "space.1000",
   ticketHeaderHeightPx: 40,
   /** Acciones mobile / umbral legado. */
   ticketActionsHeightPx: 79,
   /** Totales — misma altura mínima que toolbox para cerrar el grid en una sola línea base. */
   ticketTotalMinHeightPx: OPERAR_FOOTER_BAND_MIN_PX,
   ticketTotalMinHeightSmPx: OPERAR_FOOTER_BAND_MIN_SM_PX,
-  productCardHeightPx: 256,
+  /** Grilla — 208px (media 96 + título 2 líneas + precio/stock). */
+  productCardHeightPx: 208,
+  /** Lista horizontal — thumb 80px. La grilla usa 96px en `grid-rows`. */
   productCardMediaHeightPx: 80,
   /** 5× space.500 — piso para que la card no se aplaste. */
   catalogCardMinWidthPx: LAYOUTS_OPERAR_CATALOG_CARD_MIN_WIDTH_PX,

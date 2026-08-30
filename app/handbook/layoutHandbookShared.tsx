@@ -62,6 +62,7 @@ export const HANDBOOK_NAV_GROUPS: HandbookNavGroup[] = [
       { id: "producto", label: "Producto" },
       { id: "experiencia", label: "Experiencia" },
       { id: "sistema-de-diseno", label: "Sistema de diseño" },
+      { id: "sistema-de-diseno-v2", label: "Sistema de diseño v2" },
       { id: "contenido", label: "Contenido" },
     ],
   },
@@ -96,6 +97,7 @@ export function isValidHandbookSection(sectionId: string): boolean {
 }
 
 export function handbookSectionHref(sectionId: string): string {
+  if (sectionId === "sistema-de-diseno-v2") return "/handbook/v2"
   return `/handbook/${sectionId}`
 }
 

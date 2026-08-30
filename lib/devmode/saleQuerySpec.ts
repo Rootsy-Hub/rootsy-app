@@ -102,9 +102,9 @@ export const SALE_QUERY_SPEC: readonly QuerySpecPlace[] = [
             calls: [
               {
                 endpoint:
-                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&includeStock=false&page=1&pageSize=100",
+                  "GET /v1/pops/:popId/articles?itemKinds=merchandise&includeStock=true&page=1&pageSize=100",
                 detail:
-                  "Al entrar, si no hay marca global de hidratación: pagina todo merchandise sin soloActivos ni categoryId. includeStock=false: no consulta inventory. Persiste activos e inactivos. El tablero filtra en SELECT local (activo + vendible + categoría). Fallback HTTP: el mismo GET y filtra en cliente.",
+                  "Al entrar, si no hay marca global de hidratación: pagina todo merchandise sin soloActivos ni categoryId. includeStock=true: trae inventory para pintar stock en la card. Persiste activos e inactivos. El tablero filtra en SELECT local (activo + vendible + categoría). Fallback HTTP: el mismo GET y filtra en cliente.",
                 cache: CACHE_SQLITE_OPFS,
               },
             ],

@@ -18,6 +18,8 @@ import { HandbookTypographyView } from "@/app/handbook/typography/HandbookTypogr
 import { HandbookMobileNav } from "@/app/handbook/HandbookMobileNav"
 import { HandbookSectionView } from "@/app/handbook/HandbookSectionView"
 import { HandbookSidebar } from "@/app/handbook/HandbookSidebar"
+import { HandbookV2Workspace } from "@/app/handbook/HandbookV2Workspace"
+import { isHandbookV2Path } from "@/app/handbook/handbookV2"
 import {
   DEFAULT_HANDBOOK_DESIGN_SYSTEM_PAGE,
   HANDBOOK_DESIGN_SYSTEM_ROOT,
@@ -88,6 +90,10 @@ export function HandbookWorkspace() {
 
   useEffect(() => {
     if (mode !== "handbook") return
+    if (sectionId === "sistema-de-diseno-v2") {
+      router.replace("/handbook/v2")
+      return
+    }
     if (!isValidHandbookSection(sectionId) || sectionId === "sistema-de-diseno") {
       router.replace(handbookSectionHref(DEFAULT_HANDBOOK_SECTION))
     }
@@ -126,6 +132,12 @@ export function HandbookWorkspace() {
       return
     }
 
+    if (nextSectionId === "sistema-de-diseno-v2") {
+      pendingRef.current = "v2:overview"
+      router.push("/handbook/v2")
+      return
+    }
+
     if (nextSectionId === sectionId && mode === "handbook") return
     pendingRef.current = `hb:${nextSectionId}`
     setMode("handbook")
@@ -143,7 +155,14 @@ export function HandbookWorkspace() {
   const activeDesignSystemPageId = isHandbookDesignSystemPageId(designSystemPageId)
     ? designSystemPageId
     : DEFAULT_HANDBOOK_DESIGN_SYSTEM_PAGE
-  const handbookReady = isValidHandbookSection(sectionId) && sectionId !== "sistema-de-diseno"
+  const handbookReady =
+    isValidHandbookSection(sectionId) &&
+    sectionId !== "sistema-de-diseno" &&
+    sectionId !== "sistema-de-diseno-v2"
+
+  if (isHandbookV2Path(pathname)) {
+    return <HandbookV2Workspace />
+  }
 
   if (!isDesignSystem && !handbookReady) {
     return null

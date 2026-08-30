@@ -12,6 +12,7 @@ export {
   deleteMerchandiseNotInCategory,
   findSaleBoardArticleByScan,
   getArticleById,
+  patchArticleStockOnHand,
   listSaleBoardArticles,
   renameArticlesCategory,
   replaceMerchandiseArticles,
@@ -51,6 +52,16 @@ export {
   popLocalRecipesHydrateInput,
   POP_LOCAL_RECIPES_PAGE_SIZE,
 } from "@/lib/popLocalDb/hydrateRecipes"
+export {
+  clearPopLocalRecipeBomHydrateMark,
+  hydratePopRecipeBomFromNetwork,
+} from "@/lib/popLocalDb/hydrateRecipeBom"
+export {
+  listAllRecipeIngredients,
+  listArticleStockSnaps,
+  replaceAllRecipeIngredients,
+  upsertRecipeIngredientSnapshots,
+} from "@/lib/popLocalDb/recipeIngredientsRepo"
 export {
   clearPopLocalRecipeCategoriesHydrateMark,
   hydratePopRecipeCategoriesFromNetwork,
@@ -171,5 +182,6 @@ export type {
   ListSaleBoardArticlesResult,
   PromotionSnapshot,
   RecipeCategorySnapshot,
+  RecipeIngredientSnapshot,
   RecipeSnapshot,
 } from "@/lib/popLocalDb/types"

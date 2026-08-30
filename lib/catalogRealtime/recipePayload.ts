@@ -30,6 +30,10 @@ export function recipeSnapshotFromRealtimePayload(
     iva: Number(row.iva) || 0,
     isActive: row.isActive !== false,
     allowNegativeStock: Boolean(row.allowNegativeStock),
+    outputArticleId:
+      typeof row.outputArticleId === "string" && row.outputArticleId.trim()
+        ? row.outputArticleId.trim()
+        : null,
     stationId:
       typeof row.stationId === "string" && row.stationId.trim()
         ? row.stationId.trim()

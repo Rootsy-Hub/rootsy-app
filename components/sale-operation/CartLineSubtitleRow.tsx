@@ -19,7 +19,7 @@ export function CartLineSubtitleRow({
   return (
     <p
       className={cn(
-        "mt-0.5 line-clamp-1 text-xs leading-snug text-slate-500",
+        "mt-0.5 line-clamp-1 text-xs leading-snug text-[var(--rootsy-bruma-500)]",
         className,
         !text && "invisible select-none",
       )}
